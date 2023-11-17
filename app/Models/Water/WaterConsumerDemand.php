@@ -440,7 +440,7 @@ class WaterConsumerDemand extends Model
                 'water_second_consumers.ward_mstr_id',
                 'ulb_ward_masters.ward_name'
             )
-            // ->paginate($perPage);
-            ->get();
+            ->paginate($perPage);
+            // ->get();
     }
 }

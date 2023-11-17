@@ -1630,10 +1630,14 @@ class WaterReportController extends Controller
                 $wardId = $request->wardId;
             }
 
-            if ($request->userId)
+            if ($request->userId) {
                 $userId = $request->userId;
-            else
-                $userId = auth()->user()->id;                   // In Case of any logged in TC User
+            }
+
+            # In Case of any logged in TC User
+            if ($refUser->user_type == "TC") {
+                $userId = $refUser->id;
+            }
 
             if ($request->paymentMode) {
                 $paymentMode = $request->paymentMode;
@@ -1927,7 +1931,8 @@ class WaterReportController extends Controller
             $from = "
             FROM ulb_ward_masters 
             LEFT JOIN(
-                SELECT water_second_consumers.ward_mstr_id,            
+                SELECT water_second_consumers.ward_mstr_id, 
+                COUNT(DISTINCT water_second_consumers.id)AS ref_consumer_count,       
                     COUNT(DISTINCT (CASE WHEN water_consumer_demands.demand_from >= '$fromDate' AND water_consumer_demands.demand_upto <= '$uptoDate'  THEN water_consumer_demands.consumer_id               
                                     END)                        
                         ) as current_demand_hh,    
@@ -1936,10 +1941,10 @@ class WaterReportController extends Controller
                         ELSE 0                                   
                         END                         
                     ) AS current_demand,       
-                    COUNT(DISTINCT ( CASE WHEN water_consumer_demands.demand_from >= '$previousFromDate' AND water_consumer_demands.demand_upto <= '$previousUptoDate'  THEN water_consumer_demands.balance_amount    
+                    COUNT(DISTINCT ( CASE WHEN water_consumer_demands.demand_upto <= '$previousUptoDate'  THEN water_consumer_demands.consumer_id    
                                     END)                            
                         ) as arrear_demand_hh,                       
-                    SUM(CASE WHEN  water_consumer_demands.demand_from >= '$previousFromDate' AND water_consumer_demands.demand_upto <= '$previousUptoDate' THEN (water_consumer_demands.balance_amount) ELSE 0 END ) AS arrear_demand,     
+                    SUM(CASE WHEN water_consumer_demands.demand_upto <= '$previousUptoDate' THEN (water_consumer_demands.balance_amount) ELSE 0 END ) AS arrear_demand,     
                     SUM(amount) AS total_demand,
                     COUNT(DISTINCT (CASE WHEN  water_consumer_demands.demand_from >= '$fromDate' AND water_consumer_demands.demand_upto <= '$uptoDate'   AND water_consumer_demands.paid_status =1 THEN water_consumer_demands.consumer_id               
                                         END)                        
@@ -1949,10 +1954,10 @@ class WaterReportController extends Controller
                             ELSE 0                                   
                             END                        
                         ) AS current_collection,
-                    COUNT(DISTINCT ( CASE WHEN  water_consumer_demands.demand_from >= '$previousFromDate' AND water_consumer_demands.demand_upto <= '$previousUptoDate' AND water_consumer_demands.paid_status =1 THEN water_consumer_demands.consumer_id
+                    COUNT(DISTINCT ( CASE WHEN water_consumer_demands.demand_upto <= '$previousUptoDate' AND water_consumer_demands.paid_status =1 THEN water_consumer_demands.consumer_id
                                         END)                            
                             ) as arrear_collection_hh, 
-                    SUM(CASE WHEN water_consumer_demands.demand_from >= '$previousFromDate' AND water_consumer_demands.demand_upto <= '$previousUptoDate'  AND water_consumer_demands.paid_status =1  THEN water_consumer_demands.balance_amount ELSE 0 END ) AS arrear_collection,
+                    SUM(CASE WHEN water_consumer_demands.demand_upto <= '$previousUptoDate'  AND water_consumer_demands.paid_status =1  THEN water_consumer_demands.balance_amount ELSE 0 END ) AS arrear_collection,
                     SUM(CASE WHEN water_consumer_demands.paid_status =1  then water_consumer_demands.balance_amount ELSE 0 END) AS total_collection,
                     COUNT(DISTINCT(CASE WHEN water_consumer_demands.paid_status =1  then water_second_consumers.id end)) AS collection_from_no_of_hh 
                 FROM water_consumer_demands                    
@@ -1974,100 +1979,11 @@ class WaterReportController extends Controller
             WHERE  ulb_ward_masters.ulb_id = $ulbId  
                 " . ($wardId ? " AND ulb_ward_masters.id = $wardId" : "") . "
                 " . ($zoneId ? " AND ulb_ward_masters.zone = $zoneId" : "") . "
-            GROUP BY ulb_ward_masters.ward_name         
+            GROUP BY ulb_ward_masters.ward_name,
+            demands.ref_consumer_count         
         ";
-            $select = "SELECT ulb_ward_masters.ward_name AS ward_no,
-                        SUM(COALESCE(demands.current_demand_hh, 0::numeric)) AS current_demand_hh,   
-                        SUM(COALESCE(demands.arrear_demand_hh, 0::numeric)) AS arrear_demand_hh,      
-                        SUM(COALESCE(demands.current_collection_hh, 0::numeric)) AS current_collection_hh,  
-                        SUM(COALESCE(demands.arrear_collection_hh, 0::numeric)) AS arrear_collection_hh,      
-                        SUM(COALESCE(demands.collection_from_no_of_hh, 0::numeric)) AS collection_from_hh,   
-                        round(
-                            SUM(
-                                (
-                                        COALESCE(demands.arrear_collection_hh, 0::numeric) 
-                                        / (case when COALESCE(demands.arrear_demand_hh, 0::numeric) > 0  then demands.arrear_demand_hh else 1 end)
-                                )
-                                *100
-                            )
-                        ) AS arrear_hh_eff,                            
-                        round(
-                            SUM(
-                                (
-                                    COALESCE(demands.current_collection_hh, 0::numeric) 
-                                    / (case when COALESCE(demands.current_demand_hh, 0::numeric) > 0 then demands.current_demand_hh else 1 end)
-                                )
-                                *100
-                            )
-                        ) AS current_hh_eff,                            
-                        round(
-                            SUM(
-                                COALESCE(                                
-                                    COALESCE(demands.current_demand_hh, 0::numeric)  
-                                    +COALESCE(demands.arrear_demand_hh, 0::numeric)
-                                    - COALESCE(demands.collection_from_no_of_hh, 0::numeric), 0::numeric     
-                                )
-                            )
-                        ) AS balance_hh,                                                   
-                        round(
-                            SUM(
-                                COALESCE(                                
-                                    COALESCE(demands.arrear_demand, 0::numeric) + COALESCE(arrear.balance, 0::numeric)   
-                                )
-                            )
-                        ) AS arrear_demand,    
-                        round(SUM(COALESCE(demands.current_demand, 0::numeric))) AS current_demand,   
-                        round(SUM(COALESCE(demands.arrear_collection, 0::numeric))) AS arrear_collection,   
-                        round(SUM(COALESCE(demands.current_collection, 0::numeric))) AS current_collection, 
-                        round(
-                            SUM(
-                                (                                    
-                                    COALESCE(demands.arrear_demand, 0::numeric) + COALESCE(arrear.balance, 0::numeric)                              
-                                    - COALESCE(demands.arrear_collection, 0::numeric)           
-                                )
-                            )
-                        )AS old_due,                          
-                        round(SUM((COALESCE(demands.current_demand, 0::numeric) - COALESCE(demands.current_collection, 0::numeric)))) AS current_due,    
-                        round(SUM((COALESCE(demands.current_demand_hh, 0::numeric) - COALESCE(demands.current_collection_hh, 0::numeric)))) AS current_balance_hh, 
-                        round(SUM((COALESCE(demands.arrear_demand_hh, 0::numeric) - COALESCE(demands.arrear_collection_hh, 0::numeric)))) AS arrear_balance_hh,   
-                        round(
-                            SUM(
-                                (
-                                    COALESCE(demands.arrear_collection ::numeric , 0::numeric)
-                                    / (case when (COALESCE(demands.arrear_demand, 0::numeric) + COALESCE(arrear.balance, 0::numeric)) > 0 then demands.arrear_demand else 1 end)
-                                    
-                                )
-                                *100
-                            )
-                        ) AS arrear_eff,                            
-                        round(
-                            SUM(
-                                (
-                                    COALESCE(demands.current_collection, 0::numeric)
-                                        / (case when COALESCE(demands.current_demand, 0::numeric) > 0  then demands.current_demand else 1 end)
-                                    
-                                )
-                                *100
-                            )
-                        ) AS current_eff,
-                        round(
-                            SUM(
-                                (                                
-                                    COALESCE(                                   
-                                        COALESCE(demands.current_demand, 0::numeric)         
-                                        + (                                       
-                                            COALESCE(demands.arrear_demand, 0::numeric) + COALESCE(arrear.balance, 0::numeric)  
-                                        ), 0::numeric                                
-                                    )                                 
-                                    - COALESCE(                              
-                                        COALESCE(demands.current_collection, 0::numeric)   
-                                        + COALESCE(demands.arrear_collection, 0::numeric), 0::numeric     
-                                    )                            
-                                )
-                            )
-                        ) AS outstanding                                  
-        ";
-            $select = "SELECT ulb_ward_masters.ward_name AS ward_no,ulb_ward_masters.ward_name,
+
+            $select = "SELECT ulb_ward_masters.ward_name AS ward_no,ulb_ward_masters.ward_name,ref_consumer_count,
                             SUM(COALESCE(demands.current_demand_hh, 0::numeric)) AS current_demand_hh,   
                             SUM(COALESCE(demands.arrear_demand_hh, 0::numeric)) AS arrear_demand_hh,      
                             SUM(COALESCE(demands.current_collection_hh, 0::numeric)) AS current_collection_hh,  
@@ -2160,6 +2076,7 @@ class WaterReportController extends Controller
             ";
             $dcb = DB::connection('pgsql_water')->select($select . $from);
 
+            $data['total_consumer_count'] = round(collect($dcb)->sum('ref_consumer_count'), 0);
             $data['total_arrear_demand'] = round(collect($dcb)->sum('arrear_demand'), 0);
             $data['total_current_demand'] = round(collect($dcb)->sum('current_demand'), 0);
             $data['total_arrear_collection'] = round(collect($dcb)->sum('arrear_collection'), 0);
@@ -2210,6 +2127,7 @@ class WaterReportController extends Controller
             $zoneId = null;
             $paymentMode = null;
             $perPage = $request->perPage ? $request->perPage : 5;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
             if ($request->fromDate) {
                 $fromDate = $request->fromDate;
@@ -2243,7 +2161,7 @@ class WaterReportController extends Controller
             }
 
             // DB::connection('pgsql_water')->enableQueryLog();
-            
+
             $rawData = ("SELECT 
             water_consumer_demands.*,
             ulb_ward_masters.ward_name AS ward_no,
@@ -2260,21 +2178,20 @@ class WaterReportController extends Controller
             zone_masters.zone_name
         FROM (
             SELECT 
-                COUNT(water_consumer_demands.id),
-                SUM(balance_amount),
+                COUNT(water_consumer_demands.id)as demand_count,
+                SUM(balance_amount) as sum_balance_amount,
                 water_consumer_demands.consumer_id,
                 water_consumer_demands.connection_type,
-                  water_consumer_demands.amount as demandAmount,
                   water_consumer_demands.status
             FROM water_consumer_demands
             WHERE  
-                demand_from >= '2023-04-01'
-                AND demand_upto <= '2024-03-31'
+                demand_from >= '$fromDate'
+                AND demand_upto <= '$uptoDate'
                 AND water_consumer_demands.status = TRUE
                 AND water_consumer_demands.consumer_id IS NOT NULL
+                AND water_consumer_demands.paid_status= 0
             GROUP BY water_consumer_demands.consumer_id, 
                              water_consumer_demands.connection_type,
-                             water_consumer_demands.amount,
                              water_consumer_demands.status
         ) water_consumer_demands
         JOIN water_second_consumers ON water_second_consumers.id = water_consumer_demands.consumer_id
@@ -2299,16 +2216,47 @@ class WaterReportController extends Controller
                 $rawData = $rawData . "and ulb_ward_masters.id = $wardId";
             }
             if ($zoneId) {
-                $rawData = $rawData ." and water_second_consumers.zone_mstr_id = $zoneId";
+                $rawData = $rawData . " and water_second_consumers.zone_mstr_id = $zoneId";
             }
             if ($meterStatus) {
                 $rawData = $rawData . "and water_consumer_demands.connection_type = $meterStatus";
             }
-         $data = DB::connection('pgsql_water')->select(DB::raw($rawData . "OFFSET 0
+
+            $data = DB::connection('pgsql_water')->select(DB::raw($rawData . "OFFSET 0
          LIMIT $perPage"));
 
 
-            return ["kjsfd" =>$data];
+            $count = (collect(DB::connection('pgsql_water')->SELECT("SELECT COUNT(*) AS total
+                                FROM ($rawData) total"))->first());
+            $total = ($count)->total ?? 0;
+            $lastPage = ceil($total / $perPage);
+            $list = [
+                "current_page" => $page,
+                "data" => $data,
+                "total" => $total,
+                "per_page" => $perPage,
+                "last_page" => $lastPage
+            ];
+            return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime = NULL, $action, $deviceId);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            // return ["kjsfd" => $data];
             $paginator = collect();
 
             $page = $request->page && $request->page > 0 ? $request->page : 1;
@@ -2343,7 +2291,7 @@ class WaterReportController extends Controller
             //     return responseMsgs(true, "", remove_null($list), $apiId, $version, $queryRunTime, $action, $deviceId);
             // }
 
-            return  $paginator = $data->paginate($perPage);
+
 
             $list = [
                 "current_page" => $paginator->currentPage(),
@@ -2354,7 +2302,7 @@ class WaterReportController extends Controller
                 "total" => $paginator->total(),
             ];
             // $queryRunTime = (collect(DB::connection('pgsql_water'))->sum("time"));
-            return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime = NULL, $action, $deviceId);
+            return responseMsgs(true, "", $data, $apiId, $version, $queryRunTime = NULL, $action, $deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
@@ -2561,23 +2509,12 @@ class WaterReportController extends Controller
         if ($request->zoneId) {
             $zoneId = $request->zoneId;
         }
-        if ($request->perPage){
-            $perPage = $request->perPage;
+        if ($request->perPage) {
+            $perPage = $request->perPage ?? 1;
         }
-        // return $request->all();
-
-        //  $mreq = new Request([
-        //     "fromDate" => $fromDate,
-        //     "uptoDate" => $uptoDate,
-        //     "ulbId" => $ulbId,
-        //     "wardMstrId" => $wardId,
-        //     "perPage" => $request->perPage
-        // ]);
-
-
-        $data = $mconsumerDemand->previousDemand($fromDate,$uptoDate,$wardId,$ulbId,$perPage)->get();
-        if(!$data){
-            throw new Exception ('no demand found!');
+        $data = $mconsumerDemand->wardWiseConsumer($fromDate, $uptoDate, $wardId, $ulbId, $perPage);
+        if (!$data) {
+            throw new Exception('no demand found!');
         }
 
         $queryRunTime = (collect(DB::getQueryLog())->sum("time"));

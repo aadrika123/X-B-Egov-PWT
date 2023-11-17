@@ -800,11 +800,11 @@ class WaterConsumer extends Controller
             $mWorkflowTrack->saveTrack($metaReqs);
             $returnData = [
                 'applicationNo'         => $applicationNo,
-                "Id"                    => $metaRequest['relatedId'], 
+                "Id"                    => $metaRequest['relatedId'],
                 'applicationDetails'    => $metaRequest,
             ];
             $this->commit();
-            return responseMsgs(true, "Respective Consumer Deactivated!",$returnData , "", "02", ".ms", "POST", $request->deviceId);
+            return responseMsgs(true, "Respective Consumer Deactivated!", $returnData, "", "02", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             $this->rollback();
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
@@ -2305,13 +2305,55 @@ class WaterConsumer extends Controller
             }
 
             $this->begin();
-            $mWaterSecondConsumer->editConsumerdtls($request,$userId);
-            $mWaterConsumerOwners->editConsumerOwnerDtls($request,$userId);
+            $mWaterSecondConsumer->editConsumerdtls($request, $userId);
+            $mWaterConsumerOwners->editConsumerOwnerDtls($request, $userId);
             $this->commit();
             return responseMsgs(true, "update consumer details succesfull!", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             $this->rollback();
             return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
+        }
+    }
+
+
+    /**
+     * | Send whatsapp
+     */
+    public function sendSms(Request $request)
+    {
+        try {
+            $whatsapp2 = (Whatsapp_Send(
+                9031248170,
+                "test_file_v3",
+                [
+                    "content_type" => "pdf",
+                    [
+                        [
+                            "link" => "https://egov.modernulb.com/Uploads/Icon/Water%20_%20Akola%20Municipal%20Corportation%202.pdf",
+                            "filename" => "TEST_PDF" . ".pdf"
+                        ],
+                    ],
+                    "text" => [
+                        "17",
+                        "CON-100345",
+                        "https://modernulb.com/water/waterViewDemand/28"
+                    ]
+                ]
+            ));
+
+            // $whatsapp2 = (Whatsapp_Send(
+            //     7319867430,
+            //     "test_file_v4",
+            //     [
+            //         "content_type" => "text",
+            //         [
+            //             "https://www.smartulb.co.in/RMCDMC/getImageLink.php?path=RANCHI/water_consumer_deactivation/26dd0dbc6e3f4c8043749885523d6a25.pdf",
+            //             "notice.pdf"
+            //         ]
+            //     ]
+            // ));
+        } catch (Exception $e) {
+            throw new Exception($e->getMessage());
         }
     }
 }

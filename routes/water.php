@@ -184,7 +184,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('report-cosumer', 'consumerReport');                                                //03
         Route::post('connection-collection', 'connectionCollection');                                   //04
         #akola
-        Route::post('report/water-ward-wise-dcb','WaterWardWiseDCB');
+        Route::post('report/water-ward-wise-dcb', 'WaterWardWiseDCB');
         Route::post('report/water-dcb', 'WaterdcbReport');
         Route::post('report/water-transaction', 'getTransactionDetail');
         Route::post('report/tc-visit-report', 'tCvisitReport');
@@ -193,11 +193,10 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('ward-list', 'WardList');
         Route::post('report/tc-collection', 'WaterCollectionReport');                                       // tc collection report
         Route::post('reports/user-wise/coll-summary', 'userWiseCollectionSummary');                        // tc over all report
-        Route::post('report/water-demands-reports','WaterDemandsReport');
-        Route::post('consumer/demands/bulk-receipt','bulkReceipt');
-        Route::post('report/water-collection-report','WaterCollectionConsumerReport');
-        Route::post('report/ward-wise-demand','wardWiseConsumerReport');
-
+        Route::post('report/water-demands-reports', 'WaterDemandsReport');
+        Route::post('consumer/demands/bulk-receipt', 'bulkReceipt');
+        Route::post('report/water-collection-report', 'WaterCollectionConsumerReport');
+        Route::post('report/ward-wise-demand', 'wardWiseConsumerReport');
     });
 
 
@@ -225,4 +224,5 @@ Route::controller(WaterApplication::class)->group(function () {
 });
 Route::controller(WaterConsumer::class)->group(function () {
     Route::post('consumerChargeCal', 'calConsumerDemand');                                              //18        
+    Route::post('sendSms', 'sendSms');
 });
