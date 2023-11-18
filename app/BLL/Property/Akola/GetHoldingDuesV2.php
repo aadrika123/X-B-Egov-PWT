@@ -77,7 +77,7 @@ class GetHoldingDuesV2
             $demandList = $demandList->where('fyear', '<', $fy)->values();
 
         foreach ($demandList as $list) {
-            $calculate2PercPenalty->calculatePenalty($list);
+            $calculate2PercPenalty->calculatePenalty($list,$propBasicDtls->prop_type_mstr_id);
         }
 
         $demandList = collect($demandList)->sortBy('fyear')->values();
@@ -152,7 +152,8 @@ class GetHoldingDuesV2
             'user_id',
             'applicant_name',
             'property_no',
-            "categoryType"
+            "property_type",
+            
         ]);
         $basicDtls['moduleId'] = 1;
         $basicDtls['workflowId'] = 0;

@@ -14,7 +14,7 @@ class Calculate2PercPenalty
     /**
      * | @param demand 
      */
-    public function calculatePenalty($demand)
+    public function calculatePenalty($demand,$prop_type_mstr_id=null)
     {
         $currentFy = getFY();
         $currentMonth = Carbon::now()->format('m');
@@ -43,7 +43,13 @@ class Calculate2PercPenalty
                 $uptoDate = new Carbon($uptoYear."-04-01");
                 $now = Carbon::now()->firstOfMonth()->format("Y-m-d");
                 $noOfPenalMonths = $uptoDate->diffInMonths($now)+1;  
-            }            
+            } 
+            
+            if(!$demand->is_old &&  $prop_type_mstr_id==4 && $demand->created_at)
+            {
+                $noOfPenalMonths = (getFY($demand->created_at)==getFY())?0:$noOfPenalMonths;
+            }   
+                    
             $monthlyBalance = $demand->balance;
         }
 
