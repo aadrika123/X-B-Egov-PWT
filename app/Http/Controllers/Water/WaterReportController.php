@@ -2119,7 +2119,7 @@ class WaterReportController extends Controller
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         // return $request->all();
         try {
-            $meterStatus    = null;
+            $metertype    = null;
             $refUser        = authUser($request);
             $ulbId          = $refUser->ulb_id;
             $wardId = null;
@@ -2153,11 +2153,11 @@ class WaterReportController extends Controller
             if ($request->zoneId) {
                 $zoneId = $request->zoneId;
             }
-            if ($request->meterStatus == 1) {
-                $meterStatus = 'Meter';
+            if ($request->metertype == 1) {
+                $metertype = 'Meter';
             }
-            if ($request->meterStatus == 3) {
-                $meterStatus = 'Fixed';
+            if ($request->metertype == 2) {
+                $metertype = 'Fixed';
             }
 
             // DB::connection('pgsql_water')->enableQueryLog();
@@ -2218,8 +2218,8 @@ class WaterReportController extends Controller
             if ($zoneId) {
                 $rawData = $rawData . " and water_second_consumers.zone_mstr_id = $zoneId";
             }
-            if ($meterStatus) {
-                $rawData = $rawData . "and water_consumer_demands.connection_type = '$meterStatus'";
+            if ($metertype) {
+                $rawData = $rawData . "and water_consumer_demands.connection_type = '$metertype'";
             }
 
             $data = DB::connection('pgsql_water')->select(DB::raw($rawData . " OFFSET 0
@@ -2237,22 +2237,6 @@ class WaterReportController extends Controller
                 "last_page" => $lastPage
             ];
             return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime = NULL, $action, $deviceId);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
             // return ["kjsfd" => $data];

@@ -36,7 +36,7 @@ class colllectionReport extends FormRequest
             "perPage" => "nullable|digits_between:1,9223372036854775807",
             "all" => "nullable|in:1,0",
             "footer" => "nullable|in:1,0",
-            "meterStatus"=> "nullable|in:1,3"
+            "metertype"=> "nullable|in:1,2"
         ];
         return $rules;
     }
