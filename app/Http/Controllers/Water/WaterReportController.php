@@ -2219,12 +2219,11 @@ class WaterReportController extends Controller
                 $rawData = $rawData . " and water_second_consumers.zone_mstr_id = $zoneId";
             }
             if ($meterStatus) {
-                $rawData = $rawData . "and water_consumer_demands.connection_type = $meterStatus";
+                $rawData = $rawData . "and water_consumer_demands.connection_type = '$meterStatus'";
             }
 
-            $data = DB::connection('pgsql_water')->select(DB::raw($rawData . "OFFSET 0
-         LIMIT $perPage"));
-
+            $data = DB::connection('pgsql_water')->select(DB::raw($rawData . " OFFSET 0
+                    LIMIT $perPage"));
 
             $count = (collect(DB::connection('pgsql_water')->SELECT("SELECT COUNT(*) AS total
                                 FROM ($rawData) total"))->first());
