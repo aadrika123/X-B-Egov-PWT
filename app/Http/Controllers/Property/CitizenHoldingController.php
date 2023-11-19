@@ -59,6 +59,12 @@ class CitizenHoldingController extends Controller
                 return $demandsResponse;
             }
             $demand = (object)$demandsResponse->original["data"];
+            $payableAmt = $demand["payableAmt"];
+            $arrear = $demand["arrear"];
+            if($request->paymentType!="isPartPayment")
+            {
+                $request->merge(["paidAmount"=>$request->paymentType=="isFullPayment"?$payableAmt:$arrear]);
+            }
             $request->merge([
                 "amount"=>$request->paidAmount,
                 "id"    =>$request->propId,
@@ -89,7 +95,7 @@ class CitizenHoldingController extends Controller
             DB::beginTransaction();
             $respons["requestId"] = $this->_PropIciciPaymentsRequest->store($request);                
             DB::commit();
-            
+
             $respons = collect($respons)->only(
                 [
                    "encryptUrl",
