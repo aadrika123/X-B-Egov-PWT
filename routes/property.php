@@ -349,6 +349,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
 
   Route::controller(CitizenHoldingController::class)->group(function () {
     Route::post('citizen/get-holding-dues', 'getHoldingDues');                    // (02.1) unthicatd/Property/ Holding Dues
+    Route::post('citizen/icic-init-payment', 'ICICPaymentRequest');               // (02.2) unthicatd/Property/ initiate payment
   });
 
   /**

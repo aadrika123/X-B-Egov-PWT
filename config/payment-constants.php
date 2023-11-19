@@ -7,6 +7,7 @@
  */
 return [
     "ULB_LOGO_URL" =>  env("ulb_logo_url", "http://localhost/"),
+    "PROPERTY_FRONT_URL" =>  (env("FRONT_URL", "")."/citizen/property/payment-status"),
     'PAYMENT_MODE' => [
         '1' => 'ONLINE',
         '2' => 'NETBANKING',

@@ -341,6 +341,7 @@ class ActiveSafControllerV2 extends Controller
             [
                 'filteredBy' => "required",
                 'parameter' => "nullable",
+                'propId' => "nullable|digits_between:1,9223372036854775807",
                 'zoneId' => "nullable|digits_between:1,9223372036854775807",
                 'wardId' => "nullable|digits_between:1,9223372036854775807",
             ]
@@ -442,6 +443,10 @@ class ActiveSafControllerV2 extends Controller
             }
             if ($request->wardId) {
                 $data = $data->where("prop_properties.ward_mstr_id", $request->wardId);
+            }
+            if($request->propId)
+            {
+                $data = $data->where("prop_properties.id", $request->propId);
             }
 
             if ($isLegacy == false) {
