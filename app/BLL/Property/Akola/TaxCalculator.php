@@ -35,6 +35,7 @@ class TaxCalculator
     private $_currentFyear;
     private $_residentialUsageType;
     private $_newForm;
+    public $_oldUnpayedAmount;
 
     /**
      * | Initialization of global variables
@@ -78,15 +79,16 @@ class TaxCalculator
             $oldestFloor = collect($this->_REQUEST->floor)->sortBy('dateFrom')->first();
             $this->_propFyearFrom = Carbon::parse($oldestFloor['dateFrom'])->format('Y');                // For Vacant Land Only
         }
-        if(isset($this->_REQUEST->assessmentType) && $this->_REQUEST->assessmentType != 1 && $this->_REQUEST->assessmentType != 5)
+        if(isset($this->_REQUEST->assessmentType) && ((Config::get("PropertyConstaint.ASSESSMENT-TYPE.".$this->_REQUEST->assessmentType)!='New Assessment' || $this->_REQUEST->assessmentType !='1') && (Config::get("PropertyConstaint.ASSESSMENT-TYPE.".$this->_REQUEST->assessmentType)!='Amalgamation' || $this->_REQUEST->assessmentType !='5')))
         {
+           
             $mPropFloors = new PropFloor();
             $mPropOwners = new PropOwner();
             $priProperty = PropProperty::find($this->_REQUEST->previousHoldingId);
             $floors = $mPropFloors->getPropFloors($priProperty->id);
             $unPaidDemand = $priProperty->PropDueDemands()->get();
-            $unPaidAmount = collect($unPaidDemand)->sum("due_total_tax")??0;
-            if($unPaidAmount>0)
+            $this->_oldUnpayedAmount = collect($unPaidDemand)->sum("due_total_tax")??0;
+            if($this->_oldUnpayedAmount>0)
             {
                 // throw new Exception("Old Demand Not Cleard");
             }
@@ -126,7 +128,7 @@ class TaxCalculator
             $this->_calculationDateFrom = collect($this->_REQUEST->floor)->sortBy('dateFrom')->first()['dateFrom'];
         else
             $this->_calculationDateFrom = $this->_REQUEST->dateOfPurchase;
-        if(isset($this->_REQUEST->assessmentType) && $this->_REQUEST->assessmentType != 1 && $this->_REQUEST->assessmentType != 5)
+        if(isset($this->_REQUEST->assessmentType) && ((Config::get("PropertyConstaint.ASSESSMENT-TYPE.".$this->_REQUEST->assessmentType)!='New Assessment' || $this->_REQUEST->assessmentType !='1') && (Config::get("PropertyConstaint.ASSESSMENT-TYPE.".$this->_REQUEST->assessmentType)!='Amalgamation' || $this->_REQUEST->assessmentType !='5')))
         {
             $this->_calculationDateFrom = $this->_newForm ? $this->_newForm : $this->_calculationDateFrom;
         }
