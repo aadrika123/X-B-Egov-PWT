@@ -94,7 +94,8 @@ class reqApplySaf extends FormRequest
                 $rules["floor.*.occupancyType"]     =   "required|int";
 
                 $rules["floor.*.buildupArea"]       =   "required|numeric|not_in:0";
-                $rules["floor.*.dateFrom"]          =   "required|date|date_format:Y-m-d|before_or_equal:$mNowDate|after_or_equal:$this->dateOfPurchase";
+                // $rules["floor.*.dateFrom"]          =   "required|date|date_format:Y-m-d|before_or_equal:$mNowDate|after_or_equal:$this->dateOfPurchase";
+                $rules["floor.*.dateFrom"]           = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate".($this->assessmentType==4?"":"|after_or_equal:$this->dateOfPurchase");
                 $rules["floor.*.dateUpto"]          =   "nullable|date|date_format:Y-m-d|before_or_equal:$mNowDate|before:$this->dateFrom";
             }
         }

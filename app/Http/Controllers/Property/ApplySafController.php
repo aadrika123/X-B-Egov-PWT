@@ -212,6 +212,10 @@ class ApplySafController extends Controller
             $workflow_id = Config::get('workflow-constants.SAF_AMALGAMATION_ID');
             $request->assessmentType = Config::get('PropertyConstaint.ASSESSMENT-TYPE.5');
         }
+        if ($request->assessmentType == 6) {                                                    // Amalgamation
+            $workflow_id = Config::get('workflow-constants.SAF_OLD_MUTATION_ID');
+            $request->assessmentType = Config::get('PropertyConstaint.ASSESSMENT-TYPE.3');
+        }
 
         return WfWorkflow::where('wf_master_id', $workflow_id)
             ->where('ulb_id', $ulb_id)

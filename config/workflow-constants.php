@@ -12,6 +12,7 @@ return [
     "SAF_WORKFLOW_ID"           => "1",
     "SAF_REASSESSMENT_ID"       => "2",
     "SAF_MUTATION_ID"           => "3",
+    "SAF_OLD_MUTATION_ID"       => "39",
     "GBSAF_NEW_ASSESSMENT"      => "4",
     "GBSAF_REASSESSMENT"        => "5",
     "SAF_BIFURCATION_ID"        => "6",

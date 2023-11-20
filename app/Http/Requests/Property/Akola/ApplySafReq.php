@@ -32,6 +32,7 @@ class ApplySafReq extends FormRequest
         $todayDate = Carbon::now()->format('Y-m-d');
         $validation = [
             "propertyType" => "required|integer",
+            "propertyType" => "required|integer",
             "areaOfPlot" => "required|numeric",
             "category" => "required|integer",
             "dateOfPurchase" => "required|date|date_format:Y-m-d|before_or_equal:$todayDate",
@@ -47,6 +48,9 @@ class ApplySafReq extends FormRequest
             "owner.*.isArmedForce" => "nullable|bool",
             "owner.*.isSpeciallyAbled" => "nullable|bool"
         ];
+        if (isset($this->assessmentType) && $this->assessmentType != 1 && $this->assessmentType != 5) {           // Holding No Required for Reassess,Mutation,Bifurcation,Amalgamation
+            $validation['previousHoldingId'] = "required|numeric";
+        }
 
         if ($this->propertyType != 4) {
             $validation = array_merge($validation, [
@@ -55,7 +59,8 @@ class ApplySafReq extends FormRequest
                 "floor.*.constructionType" => "required|integer",
                 "floor.*.usageType" => "required|integer",
                 "floor.*.buildupArea" => "required|numeric",
-                "floor.*.dateFrom" => "required|date|date_format:Y-m-d|before_or_equal:$this->todayDate|after_or_equal:$this->dateOfPurchase"
+                // "floor.*.dateFrom" => "required|date|date_format:Y-m-d|before_or_equal:$this->todayDate|after_or_equal:$this->dateOfPurchase"
+                "floor.*.dateFrom" => "required|date|date_format:Y-m-d|before_or_equal:$this->todayDate".($this->assessmentType==3?"":"|after_or_equal:$this->dateOfPurchase")
             ]);
         }
         return $validation;
@@ -71,7 +76,7 @@ class ApplySafReq extends FormRequest
                     'message' => $validator->errors(),
                     'errors' => $validator->errors()
                 ],
-                422
+                200
             )
         );
     }

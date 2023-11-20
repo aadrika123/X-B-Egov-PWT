@@ -925,4 +925,41 @@ class PropProperty extends Model
         ->where("prop_property_update_requests.pending_status",1)
         ->orderBy("id","ASC");
     }
+
+    public function Owneres()
+    {
+        return $this->hasMany(PropOwner::class,"property_id","id")
+                ->where("status",1)
+                ->orderBy("id","ASC");        
+    }
+    public function floars()
+    {
+        return $this->hasMany(PropFloor::class,"property_id","id")
+                ->where(function($where){
+                    $where->whereNull("date_upto")
+                    ->OrWhere("date_upto",">=",Carbon::now()->format("Y-m-d"));
+                })
+                ->orderBy("id","ASC");
+    }
+
+    public function PropDueDemands()
+    {
+        return $this->hasMany(PropDemand::class,"property_id","id")
+            ->where("status",1)
+            ->where("due_total_tax",">",0)
+            ->orderBy("fyear","ASC");
+    }
+    public function PropLastPaidDemands()
+    {
+        return $this->hasOne(PropDemand::class,"property_id","id")
+            ->where("status",1)
+            ->where("due_total_tax","=",0)
+            ->orderBy("fyear","DESC");
+    }
+    public function PropLastDemands()
+    {
+        return $this->hasOne(PropDemand::class,"property_id","id")
+            ->where("status",1)
+            ->orderBy("fyear","DESC")->first();
+    }
 }
