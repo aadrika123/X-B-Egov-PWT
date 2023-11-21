@@ -3,6 +3,7 @@
 namespace App\Traits\Property;
 
 use App\Http\Controllers\Property\ActiveSafController;
+use App\Models\Property\PropFloor;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropOwnerUpdateRequest;
 use App\Models\Property\PropProperty;
@@ -740,4 +741,19 @@ trait Property
         }
         return $ownerCom;
     }
+
+    public function generatePropFloar(Request $request,PropFloor $floors)
+    {
+         $arr=[
+                    "propFloorDetailId"=>$floors->prop_floor_details_id,
+                    "floorNo"=>$floors->floor_mstr_id,
+                    "usageType"=>$floors->usage_type_mstr_id,
+                    "constructionType"=>$floors->const_type_mstr_id,
+                    "occupancyType"=>$floors->occupancy_type_mstr_id,
+                    "buildupArea"=>$floors->builtup_area,
+                    "dateFrom"=>$floors->date_from,
+                    "dateUpto"=>$floors->date_upto
+                ];
+        return $arr;
+    } 
 }

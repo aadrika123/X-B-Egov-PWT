@@ -143,7 +143,10 @@ class ApplySafController extends Controller
             $this->mergeAssessedExtraFields();                                          // Merge Extra Fields for Property Reassessment,Mutation,Bifurcation & Amalgamation(2.2)
             // Generate Calculation
             $taxCalculator->calculateTax();
-
+            if(($taxCalculator->_oldUnpayedAmount??0)>0)
+            {
+                throw new Exception("Old Demand Amount Of ".$taxCalculator->_oldUnpayedAmount." Not Cleard");
+            }
             DB::beginTransaction();
             $createSaf = $saf->store($request);                                         // Store SAF Using Model function 
             $safId = $createSaf->original['safId'];
@@ -211,6 +214,10 @@ class ApplySafController extends Controller
         if ($request->assessmentType == 5) {                                                    // Amalgamation
             $workflow_id = Config::get('workflow-constants.SAF_AMALGAMATION_ID');
             $request->assessmentType = Config::get('PropertyConstaint.ASSESSMENT-TYPE.5');
+        }
+        if ($request->assessmentType == 6) {                                                    // Amalgamation
+            $workflow_id = Config::get('workflow-constants.SAF_OLD_MUTATION_ID');
+            $request->assessmentType = Config::get('PropertyConstaint.ASSESSMENT-TYPE.3');
         }
 
         return WfWorkflow::where('wf_master_id', $workflow_id)

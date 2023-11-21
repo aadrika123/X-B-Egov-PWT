@@ -24,6 +24,7 @@ use App\Http\Controllers\Property\ConcessionDocController;
 use App\Http\Controllers\Property\GbSafController;
 use App\Http\Controllers\Property\HoldingTaxController;
 use App\Http\Controllers\Property\PropertyController;
+use App\Http\Controllers\Property\PropertyMutationController;
 use App\Http\Controllers\Property\ReportController;
 use App\Http\Controllers\Property\SafDocController;
 use App\Http\Controllers\Property\WaiverController;
@@ -58,6 +59,10 @@ Route::post('api-test', function () {
 Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_maker']], function () {
   // Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
 
+  Route::controller(PropertyMutationController::class)->group(function(){
+    Route::post('mutation','addMutationApplication');
+    
+  });
   /**
    * | SAF
      | Serial No : 01
@@ -344,10 +349,12 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('legacy-payment-holding', 'legacyPaymentHolding');                // (14) Legacy Property Payment
     Route::post('v1/get-billref-no', 'generateBillRefNo');                        // (15) Pine Lab Get Reference No
     Route::post('oldChequeTranEntery', 'oldChequeEntery');  
+    Route::post('get-holding-dues-of-property', 'getHoldingDues')->withoutMiddleware(['request_logger', 'expireBearerToken']);
   });
 
   Route::controller(CitizenHoldingController::class)->group(function () {
     Route::post('citizen/get-holding-dues', 'getHoldingDues');                    // (02.1) unthicatd/Property/ Holding Dues
+    Route::post('citizen/icic-init-payment', 'ICICPaymentRequest');               // (02.2) unthicatd/Property/ initiate payment
   });
 
   /**
@@ -542,6 +549,7 @@ Route::controller(CalculatorController::class)->group(function () {
  */
 Route::controller(ActiveSafControllerV2::class)->group(function () {
   Route::post('search-holding', 'searchHolding');                     //04
+  Route::post('search-holding-direct', 'searchHoldingDirect');  # created by prity pandey on  18-11-2023
 });
 /**
  * | Holding Tax Controller(Created By-Anshu Kumar)

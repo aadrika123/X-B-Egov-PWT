@@ -2119,7 +2119,7 @@ class WaterReportController extends Controller
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         // return $request->all();
         try {
-            $meterStatus    = null;
+            $metertype    = null;
             $refUser        = authUser($request);
             $ulbId          = $refUser->ulb_id;
             $wardId = null;
@@ -2153,11 +2153,11 @@ class WaterReportController extends Controller
             if ($request->zoneId) {
                 $zoneId = $request->zoneId;
             }
-            if ($request->meterStatus == 1) {
-                $meterStatus = 'Meter';
+            if ($request->metertype == 1) {
+                $metertype = 'Meter';
             }
-            if ($request->meterStatus == 3) {
-                $meterStatus = 'Fixed';
+            if ($request->metertype == 2) {
+                $metertype = 'Fixed';
             }
 
             // DB::connection('pgsql_water')->enableQueryLog();
@@ -2182,7 +2182,9 @@ class WaterReportController extends Controller
                 SUM(balance_amount) as sum_balance_amount,
                 water_consumer_demands.consumer_id,
                 water_consumer_demands.connection_type,
-                  water_consumer_demands.status
+                water_consumer_demands.status,
+                min(water_consumer_demands.demand_from) as demand_from ,
+                max(water_consumer_demands.demand_upto) as demand_upto
             FROM water_consumer_demands
             WHERE  
                 demand_from >= '$fromDate'
@@ -2218,8 +2220,8 @@ class WaterReportController extends Controller
             if ($zoneId) {
                 $rawData = $rawData . " and water_second_consumers.zone_mstr_id = $zoneId";
             }
-            if ($meterStatus) {
-                $rawData = $rawData . "and water_consumer_demands.connection_type = '$meterStatus'";
+            if ($metertype) {
+                $rawData = $rawData . "and water_consumer_demands.connection_type = '$metertype'";
             }
 
             $data = DB::connection('pgsql_water')->select(DB::raw($rawData . " OFFSET 0
@@ -2237,22 +2239,6 @@ class WaterReportController extends Controller
                 "last_page" => $lastPage
             ];
             return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime = NULL, $action, $deviceId);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
             // return ["kjsfd" => $data];
@@ -2479,9 +2465,8 @@ class WaterReportController extends Controller
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
-    /**
-     * |
-     */
+
+
     /**
      * | Ward wise demand report
      */
@@ -2511,7 +2496,7 @@ class WaterReportController extends Controller
         if ($request->perPage) {
             $perPage = $request->perPage ?? 1;
         }
-        $data = $mconsumerDemand->wardWiseConsumer($fromDate, $uptoDate, $wardId, $ulbId, $perPage);
+        $data = $mconsumerDemand->wardWiseConsumer($fromDate, $uptoDate, $wardId, $ulbId, $perPage)->paginate($perPage);;
         if (!$data) {
             throw new Exception('no demand found!');
         }
