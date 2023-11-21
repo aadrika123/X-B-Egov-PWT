@@ -336,13 +336,13 @@ class PropertyController extends Controller
             // "owner.*.ownerName"      => "required|regex:/^[A-Za-z.\s]+$/i",
             "owner.*.ownerName"      => "required",
             "owner.*.ownerNameMarathi"  => "required|string",
-            // "owner.*.guardianName"      => "required|regex:/^[A-Za-z.\s]+$/i",
-            // "owner.*.guardianNameMarathi" => "required|string",
-            "owner.*.relation" => "nullable|string|in:S/O,W/O,D/O,C/O",
+            // "owner.*.guardianName"      => "nullable|",
+            // "owner.*.guardianNameMarathi" => "nullable|string",
+            // "owner.*.relation" => "nullable|string|in:S/O,W/O,D/O,C/O",
             "owner.*.mobileNo" => "nullable|digits:10|regex:/[0-9]{10}/",
             "owner.*.aadhar" => "digits:12|regex:/[0-9]{12}/|nullable",
             "owner.*.pan" => "string|nullable",
-            "owner.*.email" => "email|nullable",
+            // "owner.*.email" => "email|nullable",
         ];
         $validated = Validator::make(
             $req->all(),

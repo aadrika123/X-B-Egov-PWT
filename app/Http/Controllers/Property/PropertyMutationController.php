@@ -88,6 +88,7 @@ class PropertyMutationController extends Controller
                 $newFloars["floor"][]=($this->generatePropFloar($request,$val));
 
             }
+            $request->merge(["no_calculater"=>true]);
             $request->merge($newFloars);
             $ApplySafContoller = new ApplySafController();
             $applySafRequet = new reqApplySaf();
