@@ -66,6 +66,8 @@ use Illuminate\Support\Facades\Redis;
 use Predis\Command\Redis\SELECT;
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\PDF;
+use App\BLL\Payment\GetRefUrl;
+use App\Models\Payment\IciciPaymentReq;
 
 /**
  * | ----------------------------------------------------------------------------------
@@ -3020,4 +3022,50 @@ class WaterPaymentController extends Controller
             ],
         ));
     }
+    /**
+     * icic payment url 
+     */
+    public function getReferalUrl(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                "workflowId"    => "nullable|int",
+                "amount"        => "required|min:1",
+                "id"            => "required",
+                "callbackUrl"   => "required",
+                "moduleId"      => "required"
+            ]
+        );
+        if ($validated->fails()) {
+            return validationError($validated);
+        }
+
+        try {
+            $getRefUrl          = new GetRefUrl();
+            $mIciciPaymentReq   = new IciciPaymentReq();
+            $url                = $getRefUrl->generateRefUrl($req);
+            $paymentReq = [
+                "user_id"           => $req->auth->id ?? $req->userId,
+                "workflow_id"       => $req->workflowId ?? 0,
+                "req_ref_no"        => $getRefUrl->_refNo,
+                "amount"            => $req->amount,
+                "application_id"    => $req->id,
+                "module_id"         => $req->moduleId,
+                "ulb_id"            => $req->ulbId ?? 2,
+                "referal_url"       => $url['encryptUrl'],
+                "call_back_url"     => $req->callbackUrl
+            ];
+            $mIciciPaymentReq->create($paymentReq);
+            $returnDetails = [
+                "encryptUrl" => $url['encryptUrl'],
+                "req_ref_no" => $getRefUrl->_refNo
+            ];
+            return responseMsgs(true,  ["plainUrl" => $url['plainUrl'], "req_ref_no" => $getRefUrl->_refNo], $returnDetails);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), []);
+        }
+    }
+
+
 }
