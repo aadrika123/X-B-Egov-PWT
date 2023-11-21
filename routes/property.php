@@ -61,6 +61,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
 
   Route::controller(PropertyMutationController::class)->group(function(){
     Route::post('mutation','addMutationApplication');
+    Route::post('mutation/approve','approve');
     
   });
   /**
@@ -387,6 +388,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('v1/basic-edit/Aprv-rejt', 'approvedRejectRequest');
     Route::post('check-property', 'CheckProperty');
     Route::post('v1/holding-copy', 'getHoldingCopy');                         // 04
+    Route::post('v1/old-tran_inserty', 'entery');
   });
 
   /**
