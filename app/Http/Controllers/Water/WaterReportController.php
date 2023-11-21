@@ -2182,7 +2182,9 @@ class WaterReportController extends Controller
                 SUM(balance_amount) as sum_balance_amount,
                 water_consumer_demands.consumer_id,
                 water_consumer_demands.connection_type,
-                  water_consumer_demands.status
+                water_consumer_demands.status,
+                min(water_consumer_demands.demand_from) as demand_from ,
+                max(water_consumer_demands.demand_upto) as demand_upto
             FROM water_consumer_demands
             WHERE  
                 demand_from >= '$fromDate'
@@ -2463,9 +2465,8 @@ class WaterReportController extends Controller
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
-    /**
-     * |
-     */
+
+
     /**
      * | Ward wise demand report
      */
@@ -2495,7 +2496,7 @@ class WaterReportController extends Controller
         if ($request->perPage) {
             $perPage = $request->perPage ?? 1;
         }
-        $data = $mconsumerDemand->wardWiseConsumer($fromDate, $uptoDate, $wardId, $ulbId, $perPage);
+        $data = $mconsumerDemand->wardWiseConsumer($fromDate, $uptoDate, $wardId, $ulbId, $perPage)->paginate($perPage);;
         if (!$data) {
             throw new Exception('no demand found!');
         }
