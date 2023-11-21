@@ -269,64 +269,63 @@ class PropertyController extends Controller
      */
     public function basicPropertyEditV1(Request $req)
     {
-        $controller = App::makeWith(ActiveSafController::class,["iSafRepository"=>app(\App\Repository\Property\Interfaces\iSafRepository::class)]);
+        $controller = App::makeWith(ActiveSafController::class, ["iSafRepository" => app(\App\Repository\Property\Interfaces\iSafRepository::class)]);
         $response = $controller->masterSaf(new Request);
-        if(!$response->original["status"]) 
-        {
+        if (!$response->original["status"]) {
             return $response;
-        }       
+        }
         $data = $response->original["data"];
-        $categories = $data["categories"];        
-        $categoriesIds = collect($categories)->implode("id",",");
+        $categories = $data["categories"];
+        $categoriesIds = collect($categories)->implode("id", ",");
 
         $construction_type = $data["construction_type"];
-        $construction_typeIds = collect($construction_type)->implode("id",",");
-        
+        $construction_typeIds = collect($construction_type)->implode("id", ",");
+
         $floor_type = $data["floor_type"];
-        $floor_typeIds = collect($floor_type)->implode("id",",");
-        
+        $floor_typeIds = collect($floor_type)->implode("id", ",");
+
         $occupancy_type = $data["occupancy_type"];
-        $occupancy_typeIds = collect($occupancy_type)->implode("id",",");
-        
+        $occupancy_typeIds = collect($occupancy_type)->implode("id", ",");
+
         $ownership_types = $data["ownership_types"];
-        $ownership_typesIds = collect($ownership_types)->implode("id",",");
-        
+        $ownership_typesIds = collect($ownership_types)->implode("id", ",");
+
         $property_type = $data["property_type"];
-        $property_typeIds = collect($property_type)->implode("id",",");
-        
+        $property_typeIds = collect($property_type)->implode("id", ",");
+
         $transfer_mode = $data["transfer_mode"];
-        $transfer_modeIds = collect($transfer_mode)->implode("id",",");
-        
+        $transfer_modeIds = collect($transfer_mode)->implode("id", ",");
+
         $usage_type = $data["usage_type"];
-        $usage_typeIds = collect($usage_type)->implode("id",",");
-        
+        $usage_typeIds = collect($usage_type)->implode("id", ",");
+
         $ward_master = $data["ward_master"];
-        $ward_masterIds = collect($ward_master)->implode("id",",");        
-        $zoneWiseWardIds = collect($ward_master)->where("zone",$req->zone)->implode("id",",");
-        if(!$zoneWiseWardIds)
-        {
-            $zoneWiseWardIds="0";
+        $ward_masterIds = collect($ward_master)->implode("id", ",");
+        $zoneWiseWardIds = collect($ward_master)->where("zone", $req->zone)->implode("id", ",");
+        if (!$zoneWiseWardIds) {
+            $zoneWiseWardIds = "0";
         }
-        
+
 
         $zone = $data["zone"];
-        $zoneIds = collect($zone)->implode("id",",");
-        
-        
+        $zoneIds = collect($zone)->implode("id", ",");
+
+
         $rules = [
             "propertyId" => "required|digits_between:1,9223372036854775807",
             "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
-            "applicantName" => "required|regex:/^[A-Za-z.\s]+$/i",
+            // "applicantName" => "required|regex:/^[A-Za-z.\s]+$/i",
+            "applicantName" => "required",
             "applicantMarathi" => "required|string",
 
             "appartmentName"   => "nullable|string",
-            "electricityConnection"=>"nullable|string",
-            "electricityCustNo"=>"nullable|string",
-            "electricityAccNo"=>"nullable|string",
-            "electricityBindBookNo"=>"nullable|string",
-            "electricityConsCategory"=>"nullable|string",
-            "buildingPlanApprovalNo"=>"nullable|string",
-            "buildingPlanApprovalDate" =>"nullable|date|",
+            "electricityConnection" => "nullable|string",
+            "electricityCustNo" => "nullable|string",
+            "electricityAccNo" => "nullable|string",
+            "electricityBindBookNo" => "nullable|string",
+            "electricityConsCategory" => "nullable|string",
+            "buildingPlanApprovalNo" => "nullable|string",
+            "buildingPlanApprovalDate" => "nullable|date|",
 
             "ownershipType" => "required|In:$ownership_typesIds",
             "zone" => "required|In:$zoneIds",
@@ -334,15 +333,16 @@ class PropertyController extends Controller
 
             "owner"      => "required|array",
             "owner.*.ownerId"      => "required|digits_between:1,9223372036854775807",
-            "owner.*.ownerName"      => "required|regex:/^[A-Za-z.\s]+$/i",
+            // "owner.*.ownerName"      => "required|regex:/^[A-Za-z.\s]+$/i",
+            "owner.*.ownerName"      => "required",
             "owner.*.ownerNameMarathi"  => "required|string",
-            "owner.*.guardianName"      => "required|regex:/^[A-Za-z.\s]+$/i",
-            "owner.*.guardianNameMarathi" => "required|string",
-            "owner.*.relation" => "nullable|string|in:S/O,W/O,D/O,C/O",
+            // "owner.*.guardianName"      => "nullable|",
+            // "owner.*.guardianNameMarathi" => "nullable|string",
+            // "owner.*.relation" => "nullable|string|in:S/O,W/O,D/O,C/O",
             "owner.*.mobileNo" => "nullable|digits:10|regex:/[0-9]{10}/",
             "owner.*.aadhar" => "digits:12|regex:/[0-9]{12}/|nullable",
             "owner.*.pan" => "string|nullable",
-            "owner.*.email" => "email|nullable",
+            // "owner.*.email" => "email|nullable",
         ];
         $validated = Validator::make(
             $req->all(),
@@ -357,8 +357,7 @@ class PropertyController extends Controller
         }
         try {
             $refUser            = Auth()->user();
-            if(!$refUser)
-            {
+            if (!$refUser) {
                 throw new Exception("Access denied");
             }
             $refUserId          = $refUser->id;
@@ -368,14 +367,13 @@ class PropertyController extends Controller
             $mPropProperty = new PropProperty();
             $mPropOwners = new PropOwner();
             $rPropProerty = new PropPropertyUpdateRequest();
-            $rPropOwners = new PropOwnerUpdateRequest();            
+            $rPropOwners = new PropOwnerUpdateRequest();
             $mCommonFunction = new CommonFunction();
             $propId = $req->propertyId;
             $prop = $mPropProperty->find($propId);
-            if(!$prop)
-            {
+            if (!$prop) {
                 throw new Exception("Data Not Found");
-            } 
+            }
             $refWorkflowId      = Config::get("workflow-constants.PROPERTY_UPDATE_ID");
             $refWfWorkflow     = WfWorkflow::where('wf_master_id', $refWorkflowId)
                 ->where('ulb_id', $refUlbId)
@@ -384,49 +382,45 @@ class PropertyController extends Controller
                 throw new Exception("Workflow Not Available");
             }
             $pendingRequest = $prop->getUpdatePendingRqu()->first();
-            if($pendingRequest)
-            {
+            if ($pendingRequest) {
                 throw new Exception("Already Update Request Apply Which is Pending");
-            }            
-            
+            }
+
             $refWorkflows       = $mCommonFunction->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
             $mUserType          = $mCommonFunction->userType($refWorkflowId);
             $document = $req->document;
-            $refImageName = $req->propertyId."-".(strtotime(Carbon::now()->format('Y-m-dH:s:i')));            
+            $refImageName = $req->propertyId . "-" . (strtotime(Carbon::now()->format('Y-m-dH:s:i')));
             $imageName = $docUpload->upload($refImageName, $document, $relativePath);
-            $metaReqs["supportingDocument"] =($relativePath."/".$imageName);
-            
+            $metaReqs["supportingDocument"] = ($relativePath . "/" . $imageName);
+
             $roadWidthType = $this->readRoadWidthType($req->roadType);
-            
+
 
             $metaReqs['roadWidthType'] = $roadWidthType;
 
             $metaReqs['workflowId'] = $refWfWorkflow->id;       // inserting workflow id
-            $metaReqs['initiatorRoleId'] = $refWorkflows['initiator']['id']; 
-            $metaReqs['finisherRoleId'] = $refWorkflows['finisher']['id']; 
+            $metaReqs['initiatorRoleId'] = $refWorkflows['initiator']['id'];
+            $metaReqs['finisherRoleId'] = $refWorkflows['finisher']['id'];
             $metaReqs['currentRole'] = $refWorkflows['initiator']['id'];
             $metaReqs['userId'] = $refUserId;
             $metaReqs['pendingStatus'] = 1;
-            $req->merge($metaReqs); 
-            $req->merge(["isFullUpdate"=>false]);
-            $propRequest = $this->generatePropUpdateRequest($req,$prop,$req->isFullUpdate);
-            $req->merge($propRequest); 
-           
+            $req->merge($metaReqs);
+            $req->merge(["isFullUpdate" => false]);
+            $propRequest = $this->generatePropUpdateRequest($req, $prop, $req->isFullUpdate);
+            $req->merge($propRequest);
+
             DB::beginTransaction();
             $updetReq = $rPropProerty->store($req);
-            foreach($req->owner as $val)
-            {
-                $testOwner = $mPropOwners->select("*")->where("id",$val["ownerId"])->where("property_id",$propId)->first();
-                if(!$testOwner)
-                {
+            foreach ($req->owner as $val) {
+                $testOwner = $mPropOwners->select("*")->where("id", $val["ownerId"])->where("property_id", $propId)->first();
+                if (!$testOwner) {
                     throw new Exception("Invalid Owner Id Pass");
-                }                
-                $newOwnerArr = $this->generatePropOwnerUpdateRequest($val,$testOwner,$req->isFullUpdate);
+                }
+                $newOwnerArr = $this->generatePropOwnerUpdateRequest($val, $testOwner, $req->isFullUpdate);
                 $newOwnerArr["requestId"] = $updetReq["id"];
                 $newOwnerArr["userId"] = $refUlbId;
                 $rPropOwners->store($newOwnerArr);
-                               
-            } 
+            }
             $rules = [
                 "applicationId" => $updetReq["id"],
                 "status" => 1,
@@ -455,7 +449,7 @@ class PropertyController extends Controller
      */
     public function updateRequestInbox(Request $request)
     {
-        try{
+        try {
             $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
             $refUlbId           = $refUser->ulb_id;
@@ -475,14 +469,13 @@ class PropertyController extends Controller
             if (!$mRole) {
                 throw new Exception("You Are Not Authorized For This Action");
             }
-            if ($mRole->is_initiator)    
-            {
+            if ($mRole->is_initiator) {
                 $mWardPermission = $ModelWard->getAllWard($refUlbId)->map(function ($val) {
                     $val->ward_no = $val->ward_name;
                     return $val;
                 });
                 $mWardPermission = objToArray($mWardPermission);
-            } 
+            }
 
             $mWardIds = array_map(function ($val) {
                 return $val['id'];
@@ -491,8 +484,8 @@ class PropertyController extends Controller
             $mRoleId = $mRole->role_id;
 
             $data = (new PropPropertyUpdateRequest)->WorkFlowMetaList()
-                        ->where("current_role_id", $mRoleId)
-                        ->where("prop_properties.ulb_id", $refUlbId);
+                ->where("current_role_id", $mRoleId)
+                ->where("prop_properties.ulb_id", $refUlbId);
             if ($request->wardNo && $request->wardNo != "ALL") {
                 $mWardIds = [$request->wardNo];
             }
@@ -500,8 +493,7 @@ class PropertyController extends Controller
                 $data = $data
                     ->whereBetween(DB::raw('prop_property_update_requests.created_at::date'), [$request->formDate, $request->toDate]);
             }
-            if (trim($request->key)) 
-            {
+            if (trim($request->key)) {
                 $key = trim($request->key);
                 $data = $data->where(function ($query) use ($key) {
                     $query->orwhere('prop_properties.holding_no', 'ILIKE', '%' . $key . '%')
@@ -516,12 +508,11 @@ class PropertyController extends Controller
             }
             $data = $data
                 ->whereIn('prop_properties.ward_mstr_id', $mWardIds)
-                ->orderBy("prop_property_update_requests.created_at","DESC"); 
-            if($request->all)
-            {
-                $data= $data->get();
+                ->orderBy("prop_property_update_requests.created_at", "DESC");
+            if ($request->all) {
+                $data = $data->get();
                 return responseMsg(true, "", $data);
-            } 
+            }
             $perPage = $request->perPage ? $request->perPage :  10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
 
@@ -532,12 +523,10 @@ class PropertyController extends Controller
                 "data" => $paginator->items(),
                 "total" => $paginator->total(),
             ];
-            return responseMsg(true, "", remove_null($list)); 
-            
-        }catch (Exception $e) {
+            return responseMsg(true, "", remove_null($list));
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
-
     }
 
     /**
@@ -549,7 +538,7 @@ class PropertyController extends Controller
      */
     public function updateRequestOutbox(Request $request)
     {
-        try{
+        try {
             $refUser            = Auth()->user();
             $refUserId          = $refUser->id;
             $refUlbId           = $refUser->ulb_id;
@@ -569,14 +558,13 @@ class PropertyController extends Controller
             if (!$mRole) {
                 throw new Exception("You Are Not Authorized For This Action");
             }
-            if ($mRole->is_initiator)    
-            {
+            if ($mRole->is_initiator) {
                 $mWardPermission = $ModelWard->getAllWard($refUlbId)->map(function ($val) {
                     $val->ward_no = $val->ward_name;
                     return $val;
                 });
                 $mWardPermission = objToArray($mWardPermission);
-            } 
+            }
 
             $mWardIds = array_map(function ($val) {
                 return $val['id'];
@@ -585,8 +573,8 @@ class PropertyController extends Controller
             $mRoleId = $mRole->role_id;
 
             $data = (new PropPropertyUpdateRequest)->WorkFlowMetaList()
-                        ->where("current_role_id","<>", $mRoleId)
-                        ->where("prop_properties.ulb_id", $refUlbId);
+                ->where("current_role_id", "<>", $mRoleId)
+                ->where("prop_properties.ulb_id", $refUlbId);
             if ($request->wardNo && $request->wardNo != "ALL") {
                 $mWardIds = [$request->wardNo];
             }
@@ -594,8 +582,7 @@ class PropertyController extends Controller
                 $data = $data
                     ->whereBetween(DB::raw('prop_property_update_requests.created_at::date'), [$request->formDate, $request->toDate]);
             }
-            if (trim($request->key)) 
-            {
+            if (trim($request->key)) {
                 $key = trim($request->key);
                 $data = $data->where(function ($query) use ($key) {
                     $query->orwhere('prop_properties.holding_no', 'ILIKE', '%' . $key . '%')
@@ -610,12 +597,11 @@ class PropertyController extends Controller
             }
             $data = $data
                 ->whereIn('prop_properties.ward_mstr_id', $mWardIds)
-                ->orderBy("prop_property_update_requests.created_at","DESC"); 
-            if($request->all)
-            {
-                $data= $data->get();
+                ->orderBy("prop_property_update_requests.created_at", "DESC");
+            if ($request->all) {
+                $data = $data->get();
                 return responseMsg(true, "", $data);
-            } 
+            }
             $perPage = $request->perPage ? $request->perPage :  10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
 
@@ -626,17 +612,15 @@ class PropertyController extends Controller
                 "data" => $paginator->items(),
                 "total" => $paginator->total(),
             ];
-            return responseMsg(true, "", remove_null($list)); 
-            
-        }catch (Exception $e) {
+            return responseMsg(true, "", remove_null($list));
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
-
     }
 
     public function updateRequestView(Request $request)
     {
-        try{
+        try {
             $validated = Validator::make(
                 $request->all(),
                 [
@@ -654,25 +638,23 @@ class PropertyController extends Controller
             if (!$application) {
                 throw new Exception("Data Not Found");
             }
-            $users = User::select("*")->where("id",$application->user_id)->first();
+            $users = User::select("*")->where("id", $application->user_id)->first();
             $docUrl = Config::get('module-constants.DOC_URL');
             $data["userDtl"] = [
-                "employeeName"=>$users->name,
-                "mobile"=>$users->mobile,
-                "document"=>$application->supporting_doc ? ($docUrl."/".$application->supporting_doc):"",
-                "applicationDate"=>$application->created_at ? Carbon::parse($application->created_at)->format("m-d-Y H:s:i A"):null,
-                "requestNo"=>$application->request_no,
-                "updationType"=>$application->is_full_update?"Full Update":"Basice Update",
-            ]; 
+                "employeeName" => $users->name,
+                "mobile" => $users->mobile,
+                "document" => $application->supporting_doc ? ($docUrl . "/" . $application->supporting_doc) : "",
+                "applicationDate" => $application->created_at ? Carbon::parse($application->created_at)->format("m-d-Y H:s:i A") : null,
+                "requestNo" => $application->request_no,
+                "updationType" => $application->is_full_update ? "Full Update" : "Basice Update",
+            ];
             $data["propCom"] = $this->PropUpdateCom($application);
             $data["ownerCom"] = $this->OwerUpdateCom($application);
-            
-            return responseMsgs(true,"data fetched", remove_null($data), "010109", "1.0", "286ms", "POST", $request->deviceId);
 
-        }catch (Exception $e) {
+            return responseMsgs(true, "data fetched", remove_null($data), "010109", "1.0", "286ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
-
     }
 
     /**
@@ -684,7 +666,7 @@ class PropertyController extends Controller
      */
     public function postNextUpdateRequest(Request $request)
     {
-        try{
+        try {
             $user = Auth()->user();
             $user_id = $user->id;
             $ulb_id = $user->ulb_id;
@@ -693,7 +675,7 @@ class PropertyController extends Controller
             $mModuleId = config::get("module-constants.PROPERTY_MODULE_ID");
             $_TRADE_CONSTAINT = config::get("TradeConstant");
 
-            $role = $mCommonFunction->getUserRoll($user_id, $ulb_id, $refWorkflowId);            
+            $role = $mCommonFunction->getUserRoll($user_id, $ulb_id, $refWorkflowId);
             $rules = [
                 "action"        => 'required|in:forward,backward',
                 'applicationId' => 'required|digits_between:1,9223372036854775807',
@@ -728,8 +710,7 @@ class PropertyController extends Controller
                 $request->merge(["status" => 1]);
                 return $this->approvedRejectRequest($request);
             }
-            if($request->action != 'forward')
-            {
+            if ($request->action != 'forward') {
                 $request->merge(["status" => 0]);
                 return $this->approvedRejectRequest($request);
             }
@@ -751,7 +732,7 @@ class PropertyController extends Controller
             $initFinish   = $mCommonFunction->iniatorFinisher($user_id, $ulb_id, $refWorkflowId);
             $receiverRole = array_values(objToArray($allRolse->where("id", $request->receiverRoleId)))[0] ?? [];
             $senderRole   = array_values(objToArray($allRolse->where("id", $request->senderRoleId)))[0] ?? [];
-            
+
             if ($application->current_role_id != $role->role_id) {
                 throw new Exception("You Have Not Pending This Application");
             }
@@ -763,7 +744,7 @@ class PropertyController extends Controller
             DB::beginTransaction();
             DB::connection("pgsql_master")->beginTransaction();
             $application->max_level_attained = ($application->max_level_attained < ($receiverRole["serial_no"] ?? 0)) ? ($receiverRole["serial_no"] ?? 0) : $application->max_level_attained;
-            $application->current_role_id = $request->receiverRoleId;            
+            $application->current_role_id = $request->receiverRoleId;
             $application->update();
 
             $track = new WorkflowTrack();
@@ -786,13 +767,13 @@ class PropertyController extends Controller
             $metaReqs['forwardDate'] = Carbon::now()->format('Y-m-d');
             $metaReqs['forwardTime'] = Carbon::now()->format('H:i:s');
             $metaReqs['verificationStatus'] = ($request->action == 'forward') ? $_TRADE_CONSTAINT["VERIFICATION-STATUS"]["VERIFY"] : $_TRADE_CONSTAINT["VERIFICATION-STATUS"]["BACKWARD"];
-            
+
             $request->merge($metaReqs);
             $track->saveTrack($request);
             DB::commit();
             DB::connection("pgsql_master")->commit();
             return responseMsgs(true, $sms, "", "010109", "1.0", "286ms", "POST", $request->deviceId);
-        }catch (Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             DB::connection("pgsql_master")->rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -832,30 +813,28 @@ class PropertyController extends Controller
             $refWorkflowId  = Config::get("workflow-constants.PROPERTY_UPDATE_ID");
             $mModuleId = config::get("module-constants.PROPERTY_MODULE_ID");
             $_TRADE_CONSTAINT = config::get("TradeConstant");
-            
+
             if (!$mCommonFunction->checkUsersWithtocken("users")) {
                 throw new Exception("Citizen Not Allowed");
             }
 
             $application = PropPropertyUpdateRequest::find($request->applicationId);
-            
+
             $role = $mCommonFunction->getUserRoll($user_id, $ulb_id, $refWorkflowId);
 
-            if(!$application)
-            {
+            if (!$application) {
                 throw new Exception("Data Not Found!");
             }
-            if($application->pending_status==5)
-            {
-                throw new Exception("Application Already Approved On ".$application->approval_date);
+            if ($application->pending_status == 5) {
+                throw new Exception("Application Already Approved On " . $application->approval_date);
             }
-            if (!$role || ($application->finisher_role_id != $role->role_id??0)) {
+            if (!$role || ($application->finisher_role_id != $role->role_id ?? 0)) {
                 throw new Exception("Forbidden Access");
             }
             if (!$request->senderRoleId) {
                 $request->merge(["senderRoleId" => $role->role_id ?? 0]);
             }
-            $owneres = $application->getOwnersUpdateReq()->get(); 
+            $owneres = $application->getOwnersUpdateReq()->get();
             if (!$request->receiverRoleId) {
                 if ($request->status == '1') {
                     $request->merge(["receiverRoleId" => $role->forward_role_id ?? 0]);
@@ -863,7 +842,7 @@ class PropertyController extends Controller
                 if ($request->status == '0') {
                     $request->merge(["receiverRoleId" => $role->backward_role_id ?? 0]);
                 }
-            }            
+            }
             $track = new WorkflowTrack();
             $lastworkflowtrack = $track->select("*")
                 ->where('ref_table_id_value', $request->applicationId)
@@ -883,39 +862,37 @@ class PropertyController extends Controller
             $metaReqs['forwardTime'] = Carbon::now()->format('H:i:s');
             $metaReqs['verificationStatus'] = ($request->status == 1) ? $_TRADE_CONSTAINT["VERIFICATION-STATUS"]["APROVE"] : $_TRADE_CONSTAINT["VERIFICATION-STATUS"]["REJECT"];
             $request->merge($metaReqs);
-            
+
             DB::beginTransaction();
             DB::connection("pgsql_master")->beginTransaction();
             $track->saveTrack($request);
-            
+
             // Approval
             if ($request->status == 1) {
-                $propArr=$this->updateProperty($application);                
-                $propUpdate = (new PropProperty)->edit($application->prop_id,$propArr);                                
-                foreach($owneres as $val)
-                {
-                    $ownerArr=$this->updatePropOwner($val);
-                    $ownerUpdate = (new PropOwner)->edit($val->owner_id,$ownerArr);
+                $propArr = $this->updateProperty($application);
+                $propUpdate = (new PropProperty)->edit($application->prop_id, $propArr);
+                foreach ($owneres as $val) {
+                    $ownerArr = $this->updatePropOwner($val);
+                    $ownerUpdate = (new PropOwner)->edit($val->owner_id, $ownerArr);
                 }
                 $application->pending_status = 5;
-                $msg =  $application->holding_no." Updated Successfull" ;
+                $msg =  $application->holding_no . " Updated Successfull";
             }
 
             // Rejection
             if ($request->status == 0) {
                 // Objection Application replication
                 $application->pending_status = 4;
-                $msg = $application->request_no ." Of Holding No ".$application->holding_no." Rejected";
+                $msg = $application->request_no . " Of Holding No " . $application->holding_no . " Rejected";
             }
-            
+
             $application->approval_date = Carbon::now()->format('Y-m-d');
             $application->approved_by = $user_id;
             $application->update();
             DB::commit();
             DB::connection("pgsql_master")->commit();
             return responseMsgs(true, $msg, "", '010811', '01', '474ms-573', 'Post', '');
-            
-        }catch (Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             DB::connection("pgsql_master")->rollBack();
             return responseMsg(false, $e->getMessage(), "");
@@ -1242,7 +1219,7 @@ class PropertyController extends Controller
                 $propDemand->maintanance_amt = roundFigure($propDemand->alv * 0.10);
                 $propDemand->tax_value = roundFigure($propDemand->alv - ($propDemand->maintanance_amt + $propDemand->aging_amt));
             }
-            $propUsageTypes = collect($propDemand)->isNotEmpty() && $propDemand->professional_tax==0 ? 'निवासी' : 'अनिवासी';
+            $propUsageTypes = collect($propDemand)->isNotEmpty() && $propDemand->professional_tax == 0 ? 'निवासी' : 'अनिवासी';
 
             $responseDetails = [
                 'zone_no' => $propDetails->zone_name,

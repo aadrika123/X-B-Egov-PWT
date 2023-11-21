@@ -143,6 +143,15 @@ class IciciPaymentController extends Controller
                         ])->post($endPoint->end_point, $webhookDataInArray);
                         $reqResponse;
                         break;
+                    case ('1'):
+                        # For Property
+                        $id = 5;                                                                            // Static
+                        $endPoint = $mApiMaster->getApiEndpoint($id);
+                        $reqResponse = Http::withHeaders([
+                            "api-key" => "eff41ef6-d430-4887-aa55-9fcf46c72c99"
+                        ])->post($endPoint->end_point, $webhookDataInArray);
+                        $reqResponse;
+                        break;
                 }
             }
             return responseMsgs(true, "Data Received Successfully", []);
@@ -251,3 +260,27 @@ class IciciPaymentController extends Controller
             //     "Remarks"       => "1699511340737516641~Subject to realization",
             //     "HashVal"       => "2a39772feae0571f53a113c82d8fd6d6a35ce5eff0795b529dc9dd97503ef30700ad372506e82de9a31bf62f016169a86e9b2572dce9256f3363f858d28dbf02"
             // ];
+
+            // [
+            //     ic_id
+            //     trn_id
+            //     pay_mode
+            //     trn_date
+            //     settle_dt
+            //     icici_status
+            //     initiate_dt
+            //     tran_amt
+            //     base_amt
+            //     proc_fees
+            //     s_tax
+            //     m_sgst 
+            //     m_cgst  
+            //     m_utgst  
+            //     m_stcess  
+            //     m_ctcess 
+            //     m_igst  
+            //     gst_state
+            //     billing_state
+            //     remarks
+            //     hash_val
+            // ]
