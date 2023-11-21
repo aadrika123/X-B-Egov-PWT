@@ -81,7 +81,7 @@ class BankReconcillationController extends Controller
                 if ($request->chequeNo) {
                     $data =  $chequeTranDtl
                         ->where('cheque_no', $request->chequeNo)
-                        ->first();
+                        ->get();
                 }
                 if (!isset($data)) {
                     $data = $chequeTranDtl
@@ -97,7 +97,7 @@ class BankReconcillationController extends Controller
                 if ($request->chequeNo) {
                     $data =  $chequeTranDtl
                         ->where('cheque_no', $request->chequeNo)
-                        ->first();
+                        ->get();
                 }
                 if (!isset($data)) {
                     $data = $chequeTranDtl
@@ -112,7 +112,7 @@ class BankReconcillationController extends Controller
                 if ($request->chequeNo) {
                     $data =  $chequeTranDtl
                         ->where('cheque_no', $request->chequeNo)
-                        ->first();
+                        ->get();
                 }
                 if (!isset($data)) {
                     $data = $chequeTranDtl

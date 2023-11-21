@@ -34,6 +34,8 @@ class TaxCalculator
     private $_agingPercs;
     private $_currentFyear;
     private $_residentialUsageType;
+    private $_newForm;
+    public $_oldUnpayedAmount;
 
     /**
      * | Initialization of global variables
@@ -77,24 +79,27 @@ class TaxCalculator
             $oldestFloor = collect($this->_REQUEST->floor)->sortBy('dateFrom')->first();
             $this->_propFyearFrom = Carbon::parse($oldestFloor['dateFrom'])->format('Y');                // For Vacant Land Only
         }
-        // if(isset($this->_REQUEST->assessmentType) && $this->_REQUEST->assessmentType != 1 && $this->_REQUEST->assessmentType != 5)
-        // {
-        //     $mPropFloors = new PropFloor();
-        //     $mPropOwners = new PropOwner();
-        //     $priProperty = PropProperty::find($this->_REQUEST->previousHoldingId);
-        //     $floors = $mPropFloors->getPropFloors($priProperty->id);
-        //     $unPaidDemand = $priProperty->PropDueDemands()->get();
-        //     $unPaidAmount = collect($unPaidDemand)->sum("due_total_tax")??0;
-        //     if($unPaidAmount>0)
-        //     {
-        //         // throw new Exception("Old Demand Not Cleard");
-        //     }
-        //     $lastPropDemand = $priProperty->PropLastDemands()->get();
-        //     $paydUptoDemand = $priProperty->PropLastPaidDemands()->get();
-        //     $test = $unPaidDemand->toArray();
-        //     dd($test,collect($collect));
-        //     dd($unPaidDemand,$lastPropDemand,$paydUptoDemand,$floors,$priProperty,$this->_REQUEST->all());
-        // }
+        if(isset($this->_REQUEST->assessmentType) && ((Config::get("PropertyConstaint.ASSESSMENT-TYPE.".$this->_REQUEST->assessmentType)!='New Assessment' || $this->_REQUEST->assessmentType !='1') && (Config::get("PropertyConstaint.ASSESSMENT-TYPE.".$this->_REQUEST->assessmentType)!='Amalgamation' || $this->_REQUEST->assessmentType !='5')))
+        {
+           
+            $mPropFloors = new PropFloor();
+            $mPropOwners = new PropOwner();
+            $priProperty = PropProperty::find($this->_REQUEST->previousHoldingId);
+            $floors = $mPropFloors->getPropFloors($priProperty->id);
+            $unPaidDemand = $priProperty->PropDueDemands()->get();
+            $this->_oldUnpayedAmount = collect($unPaidDemand)->sum("due_total_tax")??0;
+            if($this->_oldUnpayedAmount>0)
+            {
+                // throw new Exception("Old Demand Not Cleard");
+            }
+            $lastPropDemand = $priProperty->PropLastDemands();
+            $paydUptoDemand = $priProperty->PropLastPaidDemands()->get();
+            $test = $unPaidDemand->toArray();
+            list($fromYear,$lastYear) = explode("-",$lastPropDemand->fyear??getFY());
+            $this->_newForm = $lastYear."-04-01";
+            $this->_propFyearFrom = Carbon::parse($this->_newForm)->format('Y');
+            
+        }
 
         $currentFYear = $this->_carbonToday->format('Y');
         $this->_pendingYrs = ($currentFYear - $this->_propFyearFrom) + 1;                      // Read Total FYears
@@ -123,7 +128,10 @@ class TaxCalculator
             $this->_calculationDateFrom = collect($this->_REQUEST->floor)->sortBy('dateFrom')->first()['dateFrom'];
         else
             $this->_calculationDateFrom = $this->_REQUEST->dateOfPurchase;
-
+        if(isset($this->_REQUEST->assessmentType) && ((Config::get("PropertyConstaint.ASSESSMENT-TYPE.".$this->_REQUEST->assessmentType)!='New Assessment' || $this->_REQUEST->assessmentType !='1') && (Config::get("PropertyConstaint.ASSESSMENT-TYPE.".$this->_REQUEST->assessmentType)!='Amalgamation' || $this->_REQUEST->assessmentType !='5')))
+        {
+            $this->_calculationDateFrom = $this->_newForm ? $this->_newForm : $this->_calculationDateFrom;
+        }
         $this->_currentFyear = calculateFYear(Carbon::now()->format('Y-m-d'));
     }
 
@@ -369,9 +377,10 @@ class TaxCalculator
     {
         $annualTaxes = $floorTaxes->pipe(function (Collection $taxes) {
             $totalKeys = $taxes->count();
+            $totalKeys = $totalKeys ?$totalKeys :1;
             return [
                 "alv" => (float)roundFigure($taxes->sum('alv')),
-                "maintancePerc" => $taxes->first()['maintancePerc'],
+                "maintancePerc" => $taxes->first()['maintancePerc']??0,
                 "maintantance10Perc" => roundFigure($taxes->sum('maintantance10Perc')),
                 "valueAfterMaintance" => roundFigure($taxes->sum('valueAfterMaintance')),
                 "agingPerc" => roundFigure($taxes->sum('agingPerc') / $totalKeys),
@@ -467,15 +476,19 @@ class TaxCalculator
         if ($isArmedForce) {
             $currentYearTax = $this->_GRID['fyearWiseTaxes']->where('fyear', $this->_currentFyear)->first();       // General Tax of current fyear will be our rebate
 
-            if (collect($currentYearTax)->isEmpty())
+            if (collect($currentYearTax)->isEmpty() && $this->_REQUEST->assessmentType == 1)
                 throw new Exception("Current Year Taxes Not Available");
+            if (collect($currentYearTax)->isEmpty() && $this->_REQUEST->assessmentType != 1)
+            {
+                $currentYearTax['generalTax'] = [];
+            }
 
             $cyGeneralTax = $currentYearTax['generalTax'];
             $this->_GRID['isRebateApplied'] = true;
-            $this->_GRID['rebateAmt'] = $cyGeneralTax;
+            $this->_GRID['rebateAmt'] = $cyGeneralTax?$cyGeneralTax:0;
         }
 
         // Calculation of Payable Amount
-        $this->_GRID['payableAmt'] = round($this->_GRID['grandTaxes']['totalTax'] - $this->_GRID['rebateAmt']);
+        $this->_GRID['payableAmt'] = round($this->_GRID['grandTaxes']['totalTax'] - ($this->_GRID['rebateAmt']??0));
     }
 }

@@ -24,6 +24,7 @@ use App\Http\Controllers\Property\ConcessionDocController;
 use App\Http\Controllers\Property\GbSafController;
 use App\Http\Controllers\Property\HoldingTaxController;
 use App\Http\Controllers\Property\PropertyController;
+use App\Http\Controllers\Property\PropertyMutationController;
 use App\Http\Controllers\Property\ReportController;
 use App\Http\Controllers\Property\SafDocController;
 use App\Http\Controllers\Property\WaiverController;
@@ -58,6 +59,10 @@ Route::post('api-test', function () {
 Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_maker']], function () {
   // Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
 
+  Route::controller(PropertyMutationController::class)->group(function(){
+    Route::post('mutation','addMutationApplication');
+    
+  });
   /**
    * | SAF
      | Serial No : 01

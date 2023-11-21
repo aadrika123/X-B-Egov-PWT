@@ -143,7 +143,10 @@ class ApplySafController extends Controller
             $this->mergeAssessedExtraFields();                                          // Merge Extra Fields for Property Reassessment,Mutation,Bifurcation & Amalgamation(2.2)
             // Generate Calculation
             $taxCalculator->calculateTax();
-
+            if(($taxCalculator->_oldUnpayedAmount??0)>0)
+            {
+                throw new Exception("Old Demand Amount Of ".$taxCalculator->_oldUnpayedAmount." Not Cleard");
+            }
             DB::beginTransaction();
             $createSaf = $saf->store($request);                                         // Store SAF Using Model function 
             $safId = $createSaf->original['safId'];
