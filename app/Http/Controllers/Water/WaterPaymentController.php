@@ -1797,7 +1797,6 @@ class WaterPaymentController extends Controller
                 "currentMeterReading"   => $currentDemand ?? null,
                 "paidAmtInWords"        => getIndianCurrency($transactionDetails->amount),
                 "arshad"                => 'arshad'
-
             ];
             # sending pdf of demand rerceipt via whatsapp
             //   $this->whatsAppSend($returnValues);
@@ -2570,33 +2569,35 @@ class WaterPaymentController extends Controller
         }
     }
     # function for whatsapp 
-    public function whatsAppSend($returnValues)
+    public function whatsAppSend()
     {
         $data["data"] = ["afsdf", "sdlfjksld", "dfksdfjk"];
         # Watsapp pdf sending
         $filename = "1-2-" . time() . '.' . 'pdf';
         $url = "Uploads/water/payment/" . $filename;
         $customPaper = array(0, 0, 720, 1440);
-        $pdf = PDF::loadView('water_consumer_payment',  ['returnValues' => $returnValues])->setPaper($customPaper, 'portrait');
+        $pdf = PDF::loadView('water_consumer_payment',  ['returnValues' => $data])->setPaper($customPaper, 'portrait');
         $file = $pdf->download($filename . '.' . 'pdf');
         $pdf = Storage::put('public' . '/' . $url, $file);
         $whatsapp2 = (Whatsapp_Send(
-            7991154536,
+            6206998554,
             "file_test",
             [
                 "content_type" => "pdf",
                 [
-                    "link" => config('app.url') . "/getImageLink?path=" . $url,
-                    "filename" => "TEST_PDF" . ".pdf"
+                    [
+                        "link" => config('app.url') . "/getImageLink?path=" . $url,
+                        "filename" => "TEST_PDF" . ".pdf"
+                    ]
+                
                 ]
             ],
         ));
-
-        // $data["test"] = json_encode($whatsapp);
+         // $data["test"] = json_encode($whatsapp2);
         // $data["test2"] = json_encode($whatsapp2);
         // dd($url, $file);
 
-        // return view("water_consumer_payment", $data);
+        return view("water_consumer_payment", $data);
     }
 
     /**
