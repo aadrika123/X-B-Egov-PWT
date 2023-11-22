@@ -47,19 +47,34 @@ if (!function_exists('WHATSAPPJHGOVT')) {
                         )
                         : (
                             ($message['content_type'] ?? "") == "text" ?
-                            ([
+                            (
                                 [
-                                    "type" => "body",
-                                    "parameters" => array_map(function ($val) {
-                                        return ["type" => "text", "text" => $val];
-                                    }, $message[0] ?? [])
+                                    [
+                                        "type" => "body",
+                                        "parameters" => array_map(function ($val) {
+                                            return ["type" => "text", "text" => $val];
+                                        }, $message[0] ?? [])
+                                    ]
                                 ]
-                            ]
                             )
-                            :
-                            ""
+                            : (
+                                ($message['content_type'] ?? "") == "pdf_only" ?
+                                (
+                                    [
+                                        [
+                                            "type" => "header",
+                                            "parameters" => [
+                                                [
+                                                    "type" => "document",
+                                                    "document" => $message[0][0]
+                                                ]
+                                            ]
+                                        ]
+                                    ]
+                                )
+                                : ""
+                            )
                         )
-
                     )
                     : ""),
                 // ]
