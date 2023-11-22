@@ -17,43 +17,37 @@
             font-size: 8px;
             color: black;
         }
-        th, td {
+        th {
             background-color: #f2f2f2;
         }
 .gap{
- margin-top: 10px; 
+ margin-top: 1px; 
 }
  .back{
    background-color: red;
  } 
  .main{
-    width: 90%;
-    padding: 8px;
-    border: 2px dashed  black;
+    width: 100%;
+    padding: 1px;
+    border: 1px dashed  black;
     
  }
- .flexdiv{
-           border: 1px solid #ddd;
-            display: flex;
-            justify-content:space-evenly;
-            align-items: center;
-            margin-top: 10px;
-   }
+ 
    .dasheddiv{
-     border-bottom: 2px dashed  black;
-     margin-top: 10px; 
-     margin-bottom: 10px;
+     border-bottom: 1px dashed  black;
+     margin-top: 2px; 
+     margin-bottom: 2px;
     }
   
      .container {
-      width: 30px;
-      height: 30px;
+      width: 10%;
+      height: 20%;
       overflow: hidden;
       /*border: 1px solid #ccc;*/
     }
      .container1 {
-      width: 130px;
-      height: 130px;
+      width: 5%;
+      height: 5%;
       overflow: hidden;
       /*border: 1px solid #ccc;*/
     }
@@ -64,8 +58,8 @@
       object-fit: cover;  
     }
    img{
-     width:80px ;
-     height: 70px;
+     width:80%;
+     height: 80%;
      /*padding: 10px;*/
    }
    .logo{
@@ -75,9 +69,9 @@
        border-collapse: collapse;
    }
    .colimages{
-     width:70px ;
-     height: 70px;
-     margin-top: 30px;
+     width:90% ;
+     height: 90%;
+     /*margin-top: 30px;*/
    }
     </style>
   <body>
@@ -342,147 +336,7 @@
              </tr>
            </tbody>
     </table>
-   
-    <!--<div class="meaterPhoto">-->
-    <!--  <div class="meater">-->
-    <!--    <p>-->
-    <!--      <img class="" src="https://images.pexels.com/photos/145683/pexels-photo-145683.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" alt="" />-->
-    <!--     </p>-->
-    <!--  </div>-->
-    <!--  <div class="prevdetails">-->
-    <!--    <table class="paddingtd">-->
-    <!--     <tbody>-->
-    <!--        <tr>-->
-    <!--            <td>Data 1</td>-->
-    <!--            <td>Data 2</td>-->
-    <!--            <td>Data 3</td>-->
-    <!--         </tr>-->
-    <!--       <tr>-->
-    <!--            <td>Data 4</td>-->
-    <!--            <td>Data 5</td>-->
-    <!--            <td>Data 6</td>-->
-    <!--         </tr>-->
-    <!--        <tr>-->
-    <!--            <td>Data 1</td>-->
-    <!--            <td>Data 2</td>-->
-    <!--            <td>Data 3</td>-->
-    <!--         </tr>-->
-    <!--        <tr>-->
-    <!--            <td>Data 1</td>-->
-    <!--            <td>Data 2</td>-->
-    <!--            <td>Data 3</td>-->
-    <!--         </tr>-->
-    <!--        <tr>-->
-    <!--            <td>Data 4</td>-->
-    <!--            <td>Data 5</td>-->
-    <!--            <td>Data 6</td>-->
-    <!--         </tr>-->
-    <!--        <tr>-->
-    <!--            <td>Data 1</td>-->
-    <!--            <td>Data 2</td>-->
-    <!--            <td>Data 3</td>-->
-    <!--         </tr>-->
-    <!--        <tr>-->
-    <!--            <td>Data 1</td>-->
-    <!--            <td>Data 2</td>-->
-    <!--            <td>Data 3</td>-->
-    <!--         </tr>-->
-    <!--       <tr>-->
-    <!--            <td>Data 4</td>-->
-    <!--            <td>Data 5</td>-->
-    <!--            <td>Data 6</td>-->
-    <!--         </tr>-->
-    <!--        <tr>-->
-    <!--            <td>Data 1</td>-->
-    <!--            <td>Data 2</td>-->
-    <!--            <td>Data 3</td>-->
-    <!--         </tr>-->
-    <!--        <tr>-->
-    <!--            <td>Data 1</td>-->
-    <!--            <td>Data 2</td>-->
-    <!--            <td>Data 3</td>-->
-    <!--         </tr>-->
-    <!--        <tr>-->
-    <!--            <td>Data 4</td>-->
-    <!--            <td>Data 5</td>-->
-    <!--            <td>Data 6</td>-->
-    <!--         </tr>-->
-    <!--        <tr>-->
-    <!--            <td>Data 1</td>-->
-    <!--            <td>Data 2</td>-->
-    <!--            <td>Data 3</td>-->
-    <!--         </tr>-->
-    <!--     </tbody>-->
-    <!--</table>-->
-    <!--  </div>-->
-    <!--  <div class="billdetails">-->
-    <!--    <table class="paddingtd">-->
-    <!--     <tbody>-->
-    <!--        <tr>-->
-    <!--            <td>Data 1</td>-->
-    <!--            <td>Data 2</td>-->
-    <!--            <td>Data 3</td>-->
-    <!--         </tr>-->
-    <!--       <tr>-->
-    <!--            <td>Data 4</td>-->
-    <!--            <td>Data 5</td>-->
-    <!--            <td>Data 6</td>-->
-    <!--         </tr>-->
-    <!--        <tr>-->
-    <!--            <td>Data 1</td>-->
-    <!--            <td>Data 2</td>-->
-    <!--            <td>Data 3</td>-->
-    <!--         </tr>-->
-    <!--        <tr>-->
-    <!--            <td>Data 1</td>-->
-    <!--            <td>Data 2</td>-->
-    <!--            <td>Data 3</td>-->
-    <!--         </tr>-->
-    <!--        <tr>-->
-    <!--            <td>Data 4</td>-->
-    <!--            <td>Data 5</td>-->
-    <!--            <td>Data 6</td>-->
-    <!--         </tr>-->
-    <!--        <tr>-->
-    <!--            <td>Data 1</td>-->
-    <!--            <td>Data 2</td>-->
-    <!--            <td>Data 3</td>-->
-    <!--         </tr>-->
-    <!--        <tr>-->
-    <!--            <td>Data 1</td>-->
-    <!--            <td>Data 2</td>-->
-    <!--            <td>Data 3</td>-->
-    <!--         </tr>-->
-    <!--       <tr>-->
-    <!--            <td>Data 4</td>-->
-    <!--            <td>Data 5</td>-->
-    <!--            <td>Data 6</td>-->
-    <!--         </tr>-->
-    <!--        <tr>-->
-    <!--            <td>Data 1</td>-->
-    <!--            <td>Data 2</td>-->
-    <!--            <td>Data 3</td>-->
-    <!--         </tr>-->
-    <!--        <tr>-->
-    <!--            <td>Data 1</td>-->
-    <!--            <td>Data 2</td>-->
-    <!--            <td>Data 3</td>-->
-    <!--         </tr>-->
-    <!--        <tr>-->
-    <!--            <td>Data 4</td>-->
-    <!--            <td>Data 5</td>-->
-    <!--            <td>Data 6</td>-->
-    <!--         </tr>-->
-    <!--        <tr>-->
-    <!--            <td>Data 1</td>-->
-    <!--            <td>Data 2</td>-->
-    <!--            <td>Data 3</td>-->
-    <!--         </tr>-->
-    <!--     </tbody>-->
-    <!--</table>-->
-    <!--  </div>-->
-    <!--</div>-->
-   <table>
+    <table>
        <tbody >
             <tr>
                 <td>Datafdfgfdg 1</td>

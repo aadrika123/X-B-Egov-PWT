@@ -1932,7 +1932,7 @@ class WaterReportController extends Controller
             FROM ulb_ward_masters 
             LEFT JOIN(
                 SELECT water_second_consumers.ward_mstr_id, 
-                COUNT(DISTINCT water_second_consumers.id) AS ref_consumer_count,       
+                COUNT(DISTINCT water_consumer_demands.consumer_id) AS ref_consumer_count,       
                     COUNT(DISTINCT (CASE WHEN water_consumer_demands.demand_from >= '$fromDate' AND water_consumer_demands.demand_upto <= '$uptoDate'  THEN water_consumer_demands.consumer_id               
                                     END)                        
                         ) as current_demand_hh,    
@@ -2036,7 +2036,7 @@ class WaterReportController extends Controller
                             )AS old_due,                          
                             round(SUM((COALESCE(demands.current_demand, 0::numeric) - COALESCE(demands.current_collection, 0::numeric)))) AS current_due,    
                             round(SUM((COALESCE(demands.current_demand_hh, 0::numeric) - COALESCE(demands.current_collection_hh, 0::numeric)))) AS current_balance_hh, 
-                            round(SUM((COALESCE(demands.arrear_demand_hh, 0::numeric) - COALESCE(demands.arrear_collection_hh, 0::numeric)))) AS arrear_balance_hh,   
+                            round(SUM((COALESCE(demands.ref_consumer_count, 0::numeric) - COALESCE(demands.arrear_collection_hh, 0::numeric)))) AS arrear_balance_hh,   
                             round(
                                 SUM(
                                     (
