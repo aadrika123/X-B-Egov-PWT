@@ -1292,7 +1292,7 @@ class ActiveSafController extends Controller
             $safId = $req->applicationId;
             // Derivative Assignments
             $safDetails = PropActiveSaf::findOrFail($req->applicationId);
-            if($safDetails->workflow_id==202)
+            if($safDetails->workflow_id==202 && $req->status ==1)
             {
                 $controller = new PropertyMutationController();
                 return $controller->approve($req);
