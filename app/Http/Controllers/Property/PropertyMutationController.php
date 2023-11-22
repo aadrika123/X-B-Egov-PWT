@@ -184,7 +184,8 @@ class PropertyMutationController extends Controller
 
             $new_saf_owners = PropActiveSafsOwner::select("*")->where("saf_id",$newSafData->id)->orderBy("id","ASC")->get(); 
             foreach ($new_saf_owners as $ownerDetail) {
-                $propOwner = $approvedOwner = $ownerDetail->replicate();
+                $approvedOwner = $ownerDetail->replicate();
+                $propOwner = $ownerDetail->replicate();
                 $approvedOwner->setTable('prop_safs_owners'); 
                 $approvedOwner->id = $ownerDetail->id;
                 $approvedOwner->save();
@@ -199,7 +200,8 @@ class PropertyMutationController extends Controller
             if ($newSafData->prop_type_mstr_id != 4) { 
                 $new_saf_floors = PropActiveSafsFloor::select("*")->where("saf_id",$newSafData->id)->OrderBy("id","ASC")->get(); 
                 foreach ($new_saf_floors as $floorDetail) {
-                    $propFloor = $approvedFloor = $floorDetail->replicate();
+                    $approvedFloor = $floorDetail->replicate();
+                    $propFloor = $floorDetail->replicate();
                     $approvedFloor->setTable('prop_safs_floors');                    
                     $approvedFloor->id = $floorDetail->id;                    
                     $approvedFloor->save();
