@@ -1247,4 +1247,15 @@ class PropertyController extends Controller
             return responseMsgs(false, $e->getMessage(), []);
         }
     }
+
+    public function Entery(Request $request)
+    {
+        try{
+            
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false, $e->getMessage(), "");
+        }
+    }
 }
