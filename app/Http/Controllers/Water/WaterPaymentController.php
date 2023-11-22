@@ -1797,7 +1797,6 @@ class WaterPaymentController extends Controller
                 "currentMeterReading"   => $currentDemand ?? null,
                 "paidAmtInWords"        => getIndianCurrency($transactionDetails->amount),
                 "arshad"                => 'arshad'
-
             ];
             # sending pdf of demand rerceipt via whatsapp
             // $this->whatsAppSend($returnValues);
@@ -2586,16 +2585,12 @@ class WaterPaymentController extends Controller
             [
                 "content_type" => "pdf",
                 [
-
                     "link" => config('app.url') . "/getImageLink?path=" . $url,
                     "filename" => "TEST_PDF" . ".pdf"
-
-
                 ]
             ],
         ));
-
-        // $data["test"] = json_encode($whatsapp);
+         // $data["test"] = json_encode($whatsapp2);
         // $data["test2"] = json_encode($whatsapp2);
         // dd($url, $file);
 

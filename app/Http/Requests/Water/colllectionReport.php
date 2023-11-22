@@ -26,8 +26,8 @@ class colllectionReport extends FormRequest
     public function rules()
     {
         $rules = [
-            "fromDate" => "required|date|date_format:Y-m-d",
-            "uptoDate" => "required|date|date_format:Y-m-d",
+            "fromDate" => "nullable|date|date_format:Y-m-d",
+            "uptoDate" => "nullable|date|date_format:Y-m-d",
             "wardId" => "nullable|digits_between:1,9223372036854775807",
             "zoneId" => "nullable|digits_between:1,9223372036854775807",
             "userId" => "nullable|digits_between:1,9223372036854775807",
