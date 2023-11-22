@@ -751,7 +751,7 @@ class WaterPaymentController extends Controller
                 $mWaterConsumerCollection->saveConsumerCollection($charges, $waterTrans, $user->id, Null);
             }
             $request->merge([
-                'tranId'    => $waterTrans['id']
+                'tranId' => $waterTrans['id']
             ]);
             $this->commit();
             return responseMsgs(true, "payment Done!", $request->all(), "", "01", ".ms", "POST", $request->deviceId);
@@ -892,15 +892,15 @@ class WaterPaymentController extends Controller
         $mWaterTran         = new WaterTran();
 
         if (in_array($request['paymentMode'], $offlinePaymentModes)) {
-            $charges->paid_status           = 2;                                       // Update Demand Paid Status // Static
+            $charges->paid_status           = 2;                                        // Update Demand Paid Status // Static
             $charges->due_balance_amount    = 0;
             $mWaterTran->saveVerifyStatus($waterTrans['id']);
         } else {
             $charges->due_balance_amount    = 0;
-            $charges->paid_status           = 1;                                      // Update Demand Paid Status // Static
+            $charges->paid_status           = 1;                                        // Update Demand Paid Status // Static
             $charges->is_full_paid          = true;
         }
-        $charges->save();                                                   // Save Demand
+        $charges->save();                                                               // Save Demand
 
         # Save transaction details 
         $waterTranDetail->saveDefaultTrans(
@@ -908,7 +908,7 @@ class WaterPaymentController extends Controller
             $request->consumerId ?? $request->applicationId,
             $waterTrans['id'],
             $charges['id'],
-            $charges->amount
+            $request['amount']
         );
     }
 
@@ -1799,7 +1799,7 @@ class WaterPaymentController extends Controller
                 "arshad"                => 'arshad'
             ];
             # sending pdf of demand rerceipt via whatsapp
-            //   $this->whatsAppSend($returnValues);
+            // $this->whatsAppSend($returnValues);
             # send notification 
             // $sms = AkolaProperty(["owner_name" => $returnValues['arshad'], "saf_no" => $returnValues['transactionNo']], "New Assessment");
             // if (($sms["status"] !== false)) {
@@ -2585,11 +2585,8 @@ class WaterPaymentController extends Controller
             [
                 "content_type" => "pdf",
                 [
-                    [
-                        "link" => config('app.url') . "/getImageLink?path=" . $url,
-                        "filename" => "TEST_PDF" . ".pdf"
-                    ]
-                
+                    "link" => config('app.url') . "/getImageLink?path=" . $url,
+                    "filename" => "TEST_PDF" . ".pdf"
                 ]
             ],
         ));
@@ -3067,6 +3064,5 @@ class WaterPaymentController extends Controller
             return responseMsgs(false, $e->getMessage(), []);
         }
     }
-
-
+    
 }

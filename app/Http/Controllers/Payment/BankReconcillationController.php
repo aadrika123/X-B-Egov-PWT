@@ -391,7 +391,7 @@ class BankReconcillationController extends Controller
                                 [
                                     'paid_status'           => $applicationPaymentStatus,
                                     'is_full_paid'          => false,
-                                    'due_balance_amount'    => ($conumserDemand->due_balance_amount + $values->paid_amount)
+                                    'due_balance_amount'    => (($conumserDemand->due_balance_amount ?? 0) + ($values->paid_amount ?? 0))
                                 ]
                             );
 
