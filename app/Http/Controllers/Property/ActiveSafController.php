@@ -1292,6 +1292,11 @@ class ActiveSafController extends Controller
             $safId = $req->applicationId;
             // Derivative Assignments
             $safDetails = PropActiveSaf::findOrFail($req->applicationId);
+            if($safDetails->workflow_id==202)
+            {
+                $controller = new PropertyMutationController();
+                return $controller->approve($req);
+            }
             $senderRoleId = $safDetails->current_role;
             $workflowId = $safDetails->workflow_id;
             $getRoleReq = new Request([                                                 // make request to get role id of the user
