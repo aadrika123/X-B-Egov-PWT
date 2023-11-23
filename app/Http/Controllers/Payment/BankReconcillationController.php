@@ -632,6 +632,11 @@ class BankReconcillationController extends Controller
 
             #_For Water Transaction Deactivation
             if ($req->moduleId == $waterModuleId) {
+                $waterReq = new Request([
+                    "transactionId" => $req->id
+                ]);
+                $cWaterPaymentController = new WaterPaymentController();
+                $cWaterPaymentController->transactionDeactivation($waterReq);
                 $waterTranDeativetion = new WaterTransactionDeactivateDtl();
                 $waterTranDeativetion->create($deactivationArr);
             }

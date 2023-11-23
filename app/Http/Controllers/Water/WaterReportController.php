@@ -1979,6 +1979,7 @@ class WaterReportController extends Controller
             WHERE  ulb_ward_masters.ulb_id = $ulbId  
                 " . ($wardId ? " AND ulb_ward_masters.id = $wardId" : "") . "
                 " . ($zoneId ? " AND ulb_ward_masters.zone = $zoneId" : "") . "
+                AND ulb_ward_masters.status = 1
             GROUP BY ulb_ward_masters.ward_name,
             demands.ref_consumer_count         
         ";
