@@ -2590,7 +2590,7 @@ class WaterPaymentController extends Controller
                 ]
             ],
         ));
-         // $data["test"] = json_encode($whatsapp2);
+        // $data["test"] = json_encode($whatsapp2);
         // $data["test2"] = json_encode($whatsapp2);
         // dd($url, $file);
 
@@ -2762,54 +2762,6 @@ class WaterPaymentController extends Controller
         );
         $mWaterConsumerCollection->saveConsumerCollection($popedDemand, $waterTrans, $request->auth['id'], $refAmount);
     }
-
-
-    /**
-     * | Demand updation for consumer demand
-        | Serial No :
-        | Under Con
-     */
-    public function transactionDeactivation(Request $request)
-    {
-        $validated = Validator::make(
-            $request->all(),
-            [
-                "transactionId" => "required|",
-            ]
-        );
-        if ($validated->fails()) {
-            return validationError($validated);
-        }
-
-        try {
-            $mWaterTran                 = new WaterTran();
-            $mWaterTranDetail           = new WaterTranDetail();
-            $mWaterConsumerCollection   = new WaterConsumerCollection();
-            $mWaterConsumerDemand       = new WaterConsumerDemand();
-
-            $transactionId = $request->transactionId;
-            $transactionDetails = $mWaterTran->ConsumerTransactionV2($transactionId)
-                ->select(
-                    'water_tran_details.id AS trans_detail_id',
-                    'water_trans.id AS transaction_id',
-                    'water_tran_details.*'
-                )->get();
-
-            if (!($transactionDetails->first())) {
-                throw new Exception("Transaction detials not found!");
-            }
-            $this->checkParamforTranDeactivation($transactionDetails);
-
-            $this->begin();
-
-            $this->commit();
-            return responseMsgs(true, "payment Done!", $request->all(), "", "01", responseTime(), "POST", $request->deviceId);
-        } catch (Exception $e) {
-            $this->rollback();
-            return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), "POST", $request->deviceId);
-        }
-    }
-
 
     /**
      * | Check the params for transaction deactivation
@@ -3064,5 +3016,79 @@ class WaterPaymentController extends Controller
             return responseMsgs(false, $e->getMessage(), []);
         }
     }
-    
+    /**
+     * | Demand updation for consumer demand
+        | Serial No :
+        | Under Con
+     */
+    public function transactionDeactivation(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "transactionId" => "required|",
+            ]
+        );
+        if ($validated->fails()) {
+            return validationError($validated);
+        }
+
+        try {
+            $mWaterTran                 = new WaterTran();
+            $mWaterTranDetail           = new WaterTranDetail();
+            $mWaterConsumerCollection   = new WaterConsumerCollection();
+            $mWaterConsumerDemand       = new WaterConsumerDemand();
+            $mwaterChequeDtls           = new WaterChequeDtl();
+
+            $paidStatus         = 0;                                                                        // Static
+            $transactionId      = $request->transactionId;
+            $transactionDetails = $mWaterTran->ConsumerTransactionV2($transactionId)
+                ->select(
+                    'water_tran_details.id AS trans_detail_id',
+                    'water_trans.id AS transaction_id',
+                    'water_trans.amount AS tranAmount',
+                    'water_tran_details.*'
+                )
+                ->where('tran_type', "=", "Demand Collection")
+                // ->groupBY(
+                //     'water_tran_details.id',
+                //     'water_trans.id'
+                // )
+                ->get();
+
+            if (!$transactionDetails->first()) {
+                throw new Exception("Transaction detials not found!");
+            }
+
+            # Database entraction
+            $this->begin();
+            # Demand deactivation and roll back to old demand
+            $transactionDetails->map(function ($values, $key)
+            use ($mWaterConsumerDemand, $paidStatus) {
+                $refDemandDetails = $mWaterConsumerDemand->getActualamount($values->demand_id)->first();
+                if (!$refDemandDetails) {
+                    throw new Exception("Demand details not found!");
+                }
+                $deactivatDemandReq = [
+                    'is_full_paid'          => false,
+                    'due_balance_amount'    => (($refDemandDetails->due_balance_amount ?? 0) + ($values->tranAmount ?? 0)),
+                    'paid_status'           => $paidStatus
+                ];
+                $mWaterConsumerDemand->updateDemand($deactivatDemandReq, $values->demand_id);
+            });
+
+            $deactivateReq = [
+                'status' => $paidStatus,
+            ];
+            $mWaterTran->updateTransatcion($transactionId, $deactivateReq);
+            $mWaterTranDetail->updateTranDetails($transactionId, $deactivateReq);
+            $mWaterConsumerCollection->updateConsumerCollection($transactionId, $deactivateReq);
+            $mwaterChequeDtls->updatedeactivateChequeDtls($transactionId, $deactivateReq);
+            $this->commit();
+            return responseMsgs(true, "transaction deactivated succesfully!", $request->all(), "", "01", responseTime(), "POST", $request->deviceId);
+        } catch (Exception $e) {
+            $this->rollback();
+            return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), "POST", $request->deviceId);
+        }
+    }
 }
