@@ -113,7 +113,9 @@ class CitizenHoldingController extends Controller
     {
         $jsonData = json_encode($req->all());
         $a = Storage::disk('public')->put($req['reqRefNo'] . '.json', $jsonData);
-        $mPropIciciPaymentsResponse = new PropIciciPaymentsResponse();
+
+        $this->_PropIciciPaymentsRequest->where('req_ref_no', $req['reqRefNo'])
+            ->update(['payment_status' => 1]);
 
         $mReqs = [
             "tran_id"       => $req['TrnId'],
@@ -139,7 +141,7 @@ class CitizenHoldingController extends Controller
             "req_ref_no"    => $req['reqRefNo'],
             "response_json" => $jsonData,
         ];
-        $mPropIciciPaymentsResponse->store($mReqs);
+        $this->_PropIciciPaymentsRespone->store($mReqs);
         return $a;
     }
 }
