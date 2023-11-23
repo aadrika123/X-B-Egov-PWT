@@ -12,6 +12,7 @@ use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropProperty;
+use App\Models\Property\PropSaf;
 use App\Models\WorkflowTrack;
 use App\Traits\Property\Property;
 use Carbon\Carbon;
@@ -294,5 +295,44 @@ class PropertyMutationController extends Controller
             return responseMsg(false, $e->getMessage(), "");
 
         }
+    }
+
+    public function approveList(Request $request)
+    {
+    
+        try{
+            $properties = PropSaf::select(
+                'prop_safs.id as property_id',
+                'prop_safs.holding_no',
+                'owner.owner_name',
+                'owner.guardian_name',
+                'owner.mobile_no',
+                'prop_active_apps.application_date',
+                'ulb_ward_masters.zone',
+                'ulb_ward_masters.ward_name'
+            )
+            ->join(DB::raw('(SELECT
+                                STRING_AGG(prop_owners.owner_name, \',\') AS owner_name,
+                                STRING_AGG(prop_owners.guardian_name, \',\') AS guardian_name,
+                                STRING_AGG(prop_owners.mobile_no::TEXT, \',\') AS mobile_no,
+                                saf_id
+                            FROM prop_owners
+                            JOIN prop_safs ON prop_safs.id = prop_owners.saf_id
+                            WHERE prop_owners.status = 1 AND prop_safs.workflow_id = 202
+                            GROUP BY prop_owners.saf_id) AS owner'), function ($join) {
+                    $join->on('owner.saf_id', '=', 'prop_safs.id');
+                })
+            ->join('prop_active_apps', 'prop_safs.app_id', '=', 'prop_active_apps.id')
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'prop_safs.ward_mstr_id')
+            ->where('prop_safs.workflow_id', 202)
+            ->get();
+                
+
+    
+            return responseMsg(true, $properties, "010501", "1.0", "", "POST", $request->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+        
     }
 }
