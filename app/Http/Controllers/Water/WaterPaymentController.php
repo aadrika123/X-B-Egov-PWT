@@ -792,29 +792,28 @@ class WaterPaymentController extends Controller
             ->where('demand_upto', '<=', $endDate)
             ->get();
         $checkCharges = collect($allCharges)->last();
-        if (!$checkCharges->id || is_null($checkCharges)) {
+        if (is_null($checkCharges) || !$checkCharges->id) {
             throw new Exception("Charges for respective date doesn't exist!......");
         }
 
         # calculation Part
-        $refadvanceAmount = $this->checkAdvance($request);
+        $refadvanceAmount   = $this->checkAdvance($request);
         $totalPaymentAmount = (collect($allCharges)->sum('due_balance_amount')) - $refadvanceAmount['advanceAmount'];
         $totalPaymentAmount = round($totalPaymentAmount);
+        $totalPenalty       = collect($allCharges)->sum('penalty');
         if ($totalPaymentAmount != $refAmount) {
             throw new Exception("amount Not Matched!");
         }
-        $totalPenalty = collect($allCharges)->sum('penalty');
 
         # checking the advance amount 
-        $allunpaidCharges = $mWaterConsumerDemand->getFirstConsumerDemandV2($consumerId)
-            ->get();
+        $allunpaidCharges = $mWaterConsumerDemand->getFirstConsumerDemandV2($consumerId)->get();
         $leftAmount = (collect($allunpaidCharges)->sum('due_balance_amount') - collect($allCharges)->sum('due_balance_amount'));
         return [
             "consumer"          => $refConsumer,
             "consumerChages"    => $allCharges,
             "leftDemandAmount"  => $leftAmount,
             "adjustedAmount"    => $refadvanceAmount['advanceAmount'],
-            "penaltyAmount"     => $totalPenalty
+            "penaltyAmount"     => $totalPenalty,
         ];
     }
 
@@ -1848,19 +1847,17 @@ class WaterPaymentController extends Controller
             $endDate                = $endDate->toDateString();
 
             # Restrict the online payment maide 
-            if ($request->paymentMode !== $paymentMode['5']) {
+            if ($request->paymentMode != $paymentMode['5']) {
                 throw new Exception('Invalid payment method');
             }
-            # consumer demands 
-            $refDemand = $mWaterConsumerDemand->getConsumerDemand($request->consumerId);
-            if (!$refDemand->last()) {
-                throw new Exception('demand not found!');
-            }
+
+            # Consumer demands 
+            $refDemand = $mWaterConsumerDemand->getConsumerDemandV3($request->consumerId);
             $lastDemand = $refDemand->last();
             if (!$lastDemand) {
-                throw new Exception("demand from not found!");
+                throw new Exception('Demand not found!');
             }
-            $startingDate = Carbon::createFromFormat('Y-m-d', $lastDemand['demand_from']);
+            $startingDate   = Carbon::createFromFormat('Y-m-d', $lastDemand['demand_from']);
             $startingDate   = $startingDate->toDateString();
             $refDetails     = $this->preOfflinePaymentParams($request, $startingDate, $endDate);
 
@@ -1869,14 +1866,23 @@ class WaterPaymentController extends Controller
                 'amount'        => round($request->amount),
                 'workflowId'    => 0,                                                                   // Static
                 'id'            => $request->consumerId,
-                'departmentId'  => $waterModuleId,
+                'moduleId'      => $waterModuleId,
                 'ulbId'         => $refDetails['consumer']['ulb_id'],
+                'callbackUrl'   => "callback url",
                 'auth'          => $refUser
             ]);
 
+            # Generate referal url
             $temp = $iciciPaymentController->getReferalUrl($myRequest);
+            if ($temp->original['status'] == false) {
+                throw new Exception($temp->original['message'] . " " . ($temp->original['data'][0] ?? ""));
+            }
             $paymentDetails = $temp->original['data'];
-            // $mWaterIciciRequest->savePaymentReq($paymentDetails, $request, $refDetails, $paymentFor['1']);
+            $request->merge([
+                "uniqueNo" => time() . $request->consumerId . round($request->amount)
+            ]);
+            $mWaterIciciRequest->savePaymentReq($paymentDetails, $request, $refDetails, $paymentFor['1']);
+
             $this->commit();
 
             $returnDetails['name']   = $refUser->user_name;
@@ -3089,6 +3095,31 @@ class WaterPaymentController extends Controller
         } catch (Exception $e) {
             $this->rollback();
             return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), "POST", $request->deviceId);
+        }
+    }
+
+
+    /**
+     * | icici Payment initiation for water
+        | Serial No :
+        | Under Con
+     */
+    public function initiateIciciDemandPayment(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "transactionId" => "required|",
+            ]
+        );
+        if ($validated->fails()) {
+            return validationError($validated);
+        }
+        try {
+
+            return responseMsgs(true, "payment initiated successfully!", $request->all(), "", "01", responseTime(), "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
 }

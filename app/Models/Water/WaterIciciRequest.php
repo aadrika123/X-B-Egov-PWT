@@ -12,7 +12,7 @@ class WaterIciciRequest extends Model
     /**
      * | Save the details for online payment detials 
      */
-    public function savePaymentReq($paymentDetails, $request, $refDetails)
+    public function savePaymentReq($paymentDetails, $request, $refDetails,)
     {
         $WaterIciciRequest = new WaterIciciRequest;
         // $WaterIciciRequest->related_id        = $request->consumerId ?? $request->applicationId;
