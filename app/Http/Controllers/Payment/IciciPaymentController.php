@@ -45,6 +45,7 @@ class IciciPaymentController extends Controller
      */
     public function getReferalUrl(Request $req)
     {
+
         $validated = Validator::make(
             $req->all(),
             [
