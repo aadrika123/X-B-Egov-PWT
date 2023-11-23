@@ -12,9 +12,11 @@ use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropProperty;
+use App\Models\WorkflowTrack;
 use App\Traits\Property\Property;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 class PropertyMutationController extends Controller
@@ -139,7 +141,14 @@ class PropertyMutationController extends Controller
                     'errors' => $validator->errors()
                 ], 200);
             }
-
+            $holdingNo =  "";
+            $ptNo = "";
+            $famNo ="";
+            $famId =0;
+            $propId =0;
+            $msg = "Application Rejected Successfully";
+            $userId = authUser($request)->id;
+            $track = new WorkflowTrack();
             $newSafData = PropActiveSaf::find($request->applicationId);
             if (!$newSafData) {
                 throw new Exception("Data Not Found");
@@ -153,80 +162,135 @@ class PropertyMutationController extends Controller
             if ($ulbWorkflowId->id != $newSafData->workflow_id) {
                 throw new Exception("This Data not Able To Approved From Hear");
             }
-
+            $new_saf_owners = PropActiveSafsOwner::select("*")->where("saf_id",$newSafData->id)->orderBy("id","ASC")->get();
+            $new_saf_floors = PropActiveSafsFloor::select("*")->where("saf_id",$newSafData->id)->OrderBy("id","ASC")->get(); 
             DB::beginTransaction();
-
-            $propProperties = $newSafData->toBePropertyBySafId($newSafData->id);
-            $propProperties->saf_id = $newSafData->id;
-            $propProperties->holding_no = $newSafData->holding_no;
-            $propProperties->new_holding_no = $newSafData->holding_no; 
-            $propProperties = PropProperty::create($propProperties->toArray());
-
-            $oldProp = PropProperty::find($newSafData->previous_holding_id);
-            $oldProp->status =0;
-            $oldProp->update();
-            // foreach($oldOwners = $oldProp->Owneres()->get() as $val)
-            // {
-            //     $val->status =0;
-            //     $val->update();
-            // }
-            // foreach($oldFloor = $oldProp->Owneres()->get() as $val)
-            // {
-            //     $val->status =0;
-            //     $val->update();
-            // }
-
-            $prop_saf = $newSafData->replicate();
-            $prop_saf->setTable('prop_safs');
+            DB::connection('pgsql_master')->beginTransaction();
+            $prop_saf = $newSafData->replicate();          
             $prop_saf->id = $newSafData->id;
+            if($request->status==1)
+            {
+
+                $propProperties = $newSafData->toBePropertyBySafId($newSafData->id);
+                $propProperties->saf_id = $newSafData->id;
+                $propProperties->holding_no = $newSafData->holding_no;
+                $propProperties->new_holding_no = $newSafData->holding_no; 
+                $propProperties = PropProperty::create($propProperties->toArray());
+    
+                $oldProp = PropProperty::find($newSafData->previous_holding_id);
+                $oldProp->status =0;
+                $oldProp->update();
+                // foreach($oldOwners = $oldProp->Owneres()->get() as $val)
+                // {
+                //     $val->status =0;
+                //     $val->update();
+                // }
+                // foreach($oldFloor = $oldProp->Owneres()->get() as $val)
+                // {
+                //     $val->status =0;
+                //     $val->update();
+                // }
+    
+                $prop_saf->setTable('prop_safs');
+    
+                 
+                foreach ($new_saf_owners as $ownerDetail) {
+                    $approvedOwner = $ownerDetail->replicate();
+                    $propOwner = $ownerDetail->replicate();
+                    $approvedOwner->setTable('prop_safs_owners'); 
+                    $approvedOwner->id = $ownerDetail->id;
+                    $approvedOwner->save();
+    
+                    $propOwner->setTable('prop_owners');
+                    $propOwner->property_id = $propProperties->id;
+                    $propOwner->save();
+                    
+                    $ownerDetail->delete();
+                }
+    
+                if ($newSafData->prop_type_mstr_id != 4) { 
+                   
+                    foreach ($new_saf_floors as $floorDetail) {
+                        $approvedFloor = $floorDetail->replicate();
+                        $propFloor = $floorDetail->replicate();
+                        $approvedFloor->setTable('prop_safs_floors');                    
+                        $approvedFloor->id = $floorDetail->id;                    
+                        $approvedFloor->save();
+    
+                        $propFloor->setTable('prop_floors');
+                        $propFloor->property_id = $propProperties->id;
+                        $propFloor->save();
+                        $floorDetail->delete();
+                    }
+                }
+                $msg = "Mutation Application Approved Successfully";
+                $metaReqs['verificationStatus'] = 1;
+                $holdingNo =  $propProperties->holding_no;
+                $ptNo = $propProperties->pt_no;
+                $famNo ="";
+                $famId =0;
+                $propId =$propProperties->id;
+            }
+            else
+            {
+               
+                $prop_saf->setTable('prop_rejected_safs');
+                foreach ($new_saf_owners as $ownerDetail) {
+                    $approvedOwner = $ownerDetail->replicate();
+                    $approvedOwner->setTable('prop_rejected_safs_owners'); 
+                    $approvedOwner->id = $ownerDetail->id;
+                    $approvedOwner->save();
+                    
+                    $ownerDetail->delete();
+                }
+    
+                if ($newSafData->prop_type_mstr_id != 4) { 
+                   
+                    foreach ($new_saf_floors as $floorDetail) {
+                        $approvedFloor = $floorDetail->replicate();
+                        $approvedFloor->setTable('prop_rejected_safs_floors');                    
+                        $approvedFloor->id = $floorDetail->id;                    
+                        $approvedFloor->save();
+    
+                        $floorDetail->delete();
+                    }
+                }
+                $msg = "Mutation Application Rejected Successfully";
+                $metaReqs['verificationStatus'] = 0;
+                
+            }
+            
             $prop_saf->save();
             $newSafData->delete();
 
-            $new_saf_owners = PropActiveSafsOwner::select("*")->where("saf_id",$newSafData->id)->orderBy("id","ASC")->get(); 
-            foreach ($new_saf_owners as $ownerDetail) {
-                $approvedOwner = $ownerDetail->replicate();
-                $propOwner = $ownerDetail->replicate();
-                $approvedOwner->setTable('prop_safs_owners'); 
-                $approvedOwner->id = $ownerDetail->id;
-                $approvedOwner->save();
-
-                $propOwner->setTable('prop_owners');
-                $propOwner->property_id = $propProperties->id;
-                $propOwner->save();
-                
-                $ownerDetail->delete();
-            }
-
-            if ($newSafData->prop_type_mstr_id != 4) { 
-                $new_saf_floors = PropActiveSafsFloor::select("*")->where("saf_id",$newSafData->id)->OrderBy("id","ASC")->get(); 
-                foreach ($new_saf_floors as $floorDetail) {
-                    $approvedFloor = $floorDetail->replicate();
-                    $propFloor = $floorDetail->replicate();
-                    $approvedFloor->setTable('prop_safs_floors');                    
-                    $approvedFloor->id = $floorDetail->id;                    
-                    $approvedFloor->save();
-
-                    $propFloor->setTable('prop_floors');
-                    $propFloor->property_id = $propProperties->id;
-                    $propFloor->save();
-                    $floorDetail->delete();
-                }
-            }
+            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs['workflowId'] = $newSafData->workflow_id;
+            $metaReqs['refTableDotId'] = Config::get('PropertyConstaint.SAF_REF_TABLE');
+            $metaReqs['refTableIdValue'] = $newSafData->id;
+            $metaReqs['senderRoleId'] = $newSafData->current_role;
+            $metaReqs['verificationStatus'] = 1;
+            $metaReqs['user_id'] = $userId;
+            $metaReqs['trackDate'] = Carbon::now()->format('Y-m-d H:i:s');
+            $request->merge($metaReqs);
+            $track->saveTrack($request);
             DB::commit();
+            DB::connection('pgsql_master')->commit();
+           
             $responseFields = [
-                'holdingNo' => $propProperties->holding_no,
-                'ptNo' => $propProperties->pt_no,
-                'famNo' => "",
-                'famId' => "0",
-                'propId' => $propProperties->id
+                'holdingNo' => $holdingNo,
+                'ptNo' => $ptNo,
+                'famNo' => $famNo,
+                'famId' => $famId,
+                'propId' => $propId,
             ];
             
-            return responseMsgs(true, "mutation Approved successfully", $responseFields, '010801', '01', '623ms', 'Post', '');
+            return responseMsgs(true, $msg, $responseFields, '010801', '01', '623ms', 'Post', '');
             }
 
         
         catch (Exception $e) {
             DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "");
 
         }

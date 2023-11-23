@@ -23,7 +23,7 @@ class WaterConsumerDemand extends Model
      */
     public function getDemandBydemandId($demandId)
     {
-        return WaterConsumerDemand::whereIn('id', $demandId)
+        return WaterConsumerDemand::where('id', $demandId)
             ->where('paid_status', 1);
     }
     /**
@@ -118,12 +118,10 @@ class WaterConsumerDemand extends Model
      * | Demand Ids will be in array
      * | @param DemandIds
      */
-    public function deactivateDemand($demandIds)
+    public function updateDemand($updateList, $demandIds)
     {
-        WaterConsumerDemand::whereIn('id', $demandIds)
-            ->update([
-                'status' => false
-            ]);
+        WaterConsumerDemand::where('id', $demandIds)
+            ->update($updateList);
     }
 
 
@@ -403,12 +401,12 @@ class WaterConsumerDemand extends Model
     public function getActualamount($demandId)
     {
         return WaterConsumerDemand::where('id', $demandId)
-            ->where('status', True);
+            ->where('status', true);
     }
     /**
      * ward wise demand report
      */
-    public function wardWiseConsumer($fromDate,$uptoDate,$wardId,$ulbId,$perPage)
+    public function wardWiseConsumer($fromDate, $uptoDate, $wardId, $ulbId, $perPage)
     {
         return WaterConsumerDemand::select(
             'water_consumer_demands.*',
@@ -422,10 +420,10 @@ class WaterConsumerDemand extends Model
         )
             ->join('water_second_consumers', 'water_second_consumers.id', 'water_consumer_demands.consumer_id')
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_second_consumers.id')
-            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id','water_second_consumers.ward_mstr_id')
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_second_consumers.ward_mstr_id')
             ->where('water_consumer_demands.paid_status', 0)
-            ->where('water_consumer_demands.demand_from','>=', $fromDate)
-            ->where('water_consumer_demands.demand_upto','<=', $uptoDate)
+            ->where('water_consumer_demands.demand_from', '>=', $fromDate)
+            ->where('water_consumer_demands.demand_upto', '<=', $uptoDate)
             ->where('water_second_consumers.ulb_id', $ulbId)
             ->where('water_second_consumers.ward_mstr_id', $wardId)
             ->where('water_consumer_demands.status', true)
@@ -440,6 +438,6 @@ class WaterConsumerDemand extends Model
                 'water_second_consumers.ward_mstr_id',
                 'ulb_ward_masters.ward_name'
             );
-            // ->get();
+        // ->get();
     }
 }
