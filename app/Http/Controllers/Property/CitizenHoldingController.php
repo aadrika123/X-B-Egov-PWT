@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 
 class CitizenHoldingController extends Controller
@@ -24,7 +25,7 @@ class CitizenHoldingController extends Controller
     private $_PropIciciPaymentsRespone;
     public function __construct()
     {
-        $this->_HoldingTaxController = App::makeWith(HoldingTaxController::class,["iSafRepository"=>app(iSafRepository::class)]);  
+        $this->_HoldingTaxController = App::makeWith(HoldingTaxController::class, ["iSafRepository" => app(iSafRepository::class)]);
         $this->_IciciPaymentController = App::makeWith(IciciPaymentController::class);
         $this->_callbackUrl = Config::get("payment-constants.PROPERTY_FRONT_URL");
         $this->_PropIciciPaymentsRequest = new PropIciciPaymentsRequest();
@@ -40,7 +41,7 @@ class CitizenHoldingController extends Controller
     {
         $validater = Validator::make(
             $request->all(),
-            [                  
+            [
                 "propId" => "required|digits_between:1,9223372036854775807",
                 'paidAmount' => 'nullable|required_if:paymentType,==,isPartPayment|integer',
             ]
@@ -50,71 +51,67 @@ class CitizenHoldingController extends Controller
                 'status' => false,
                 'message' => 'validation error',
                 'errors' => $validater->errors()
-            ]);        
+            ]);
         }
-        try{
-            $demandsResponse = $this->_HoldingTaxController->getHoldingDues($request);            
-            if(!$demandsResponse->original["status"])
-            {
+        try {
+            $demandsResponse = $this->_HoldingTaxController->getHoldingDues($request);
+            if (!$demandsResponse->original["status"]) {
                 return $demandsResponse;
             }
             $demand = (object)$demandsResponse->original["data"];
             $payableAmt = $demand["payableAmt"];
             $arrear = $demand["arrear"];
-            if($request->paymentType!="isPartPayment")
-            {
-                $request->merge(["paidAmount"=>$request->paymentType=="isFullPayment"?$payableAmt:$arrear]);
+            if ($request->paymentType != "isPartPayment") {
+                $request->merge(["paidAmount" => $request->paymentType == "isFullPayment" ? $payableAmt : $arrear]);
             }
             $request->merge([
-                "amount"=>$request->paidAmount,
-                "id"    =>$request->propId,
-                "ulbId" =>$demand["basicDetails"]["ulb_id"],
-                "demandList" =>$demand["demandList"],
+                "amount" => $request->paidAmount,
+                "id"    => $request->propId,
+                "ulbId" => $demand["basicDetails"]["ulb_id"],
+                "demandList" => $demand["demandList"],
                 "fromFyear" => collect($demand['demandList'])->first()['fyear'],
                 "toFyear" => collect($demand['demandList'])->last()['fyear'],
                 "demandAmt" => $demand['grandTaxes']['balance'],
                 "arrearSettled" => $demand['arrear'],
-                "workflowId"=>$demand["basicDetails"]["workflowId"],
-                "moduleId"=>$demand["basicDetails"]["moduleId"],
-                "moduleId"=>$demand["basicDetails"]["moduleId"],
-                "callbackUrl" =>$this->_callbackUrl,
+                "workflowId" => $demand["basicDetails"]["workflowId"],
+                "moduleId" => $demand["basicDetails"]["moduleId"],
+                "moduleId" => $demand["basicDetails"]["moduleId"],
+                "callbackUrl" => $this->_callbackUrl,
             ]);
             $respons = $this->_IciciPaymentController->getReferalUrl($request);
-            if(!$respons->original["status"])
-            {
+            if (!$respons->original["status"]) {
                 throw new Exception("Payment Not Initiate");
             }
-            $respons=$respons->original["data"];
+            $respons = $respons->original["data"];
             $request->merge([
-                "encryptUrl"=>$respons["encryptUrl"],
-                "reqRefNo"  =>$respons["req_ref_no"]
+                "encryptUrl" => $respons["encryptUrl"],
+                "reqRefNo"  => $respons["req_ref_no"]
             ]);
             $respons["propId"] = $request->propId;
             $respons["paidAmount"] = $request->paidAmount;
-            
+
             DB::beginTransaction();
-            $respons["requestId"] = $this->_PropIciciPaymentsRequest->store($request);                
+            $respons["requestId"] = $this->_PropIciciPaymentsRequest->store($request);
             DB::commit();
 
             $respons = collect($respons)->only(
                 [
-                   "encryptUrl",
-                   "propId", 
-                   "paidAmount",
-                   "requestId",
+                    "encryptUrl",
+                    "propId",
+                    "paidAmount",
+                    "requestId",
                 ]
-            );      
+            );
             return responseMsgs(true, "request Initiated", $respons, "phc1.1", "1.0", "", "POST", $request->deviceId ?? "");
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), $request->all(), "phc1.1", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }
 
-    public function ICICPaymentResponse($request)
+    public function ICICPaymentResponse($req)
     {
-
+        $a = Storage::disk('public')->put(123 . '.json', json_encode($req->all()));
+        return $a;
     }
 }
