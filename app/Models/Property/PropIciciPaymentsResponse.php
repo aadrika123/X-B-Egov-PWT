@@ -8,4 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 class PropIciciPaymentsResponse extends Model
 {
     use HasFactory;
+    protected $guarded = [];
+
+    public function store($req)
+    {
+        $data = PropIciciPaymentsResponse::create($req);
+        return $data;
+    }
 }
