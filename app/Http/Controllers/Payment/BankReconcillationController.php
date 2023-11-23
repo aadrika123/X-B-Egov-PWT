@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Payment;
 
 use App\BLL\Property\DeactivateTran;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Water\WaterPaymentController;
 use App\MicroServices\DocUpload;
 use App\Models\Payment\PaymentReconciliation;
 use App\Models\Payment\TempTransaction;
@@ -447,6 +448,21 @@ class BankReconcillationController extends Controller
 
                 # If the payment got clear
                 if ($paymentStatus == 1) {
+                    # For demand payment 
+                    if ($transaction->tran_type == 'Demand Collection') {
+                        # Update consumer demand
+                        $waterTranDtls = WaterTranDetail::where('tran_id', $transaction->id)
+                            ->where('status', '<>', 0)
+                            ->get();
+                        $demandIds = $waterTranDtls->pluck('demand_id');
+                        WaterConsumerDemand::whereIn('id', $demandIds)
+                            ->update([
+                                "paid_status" => $paymentStatus
+                            ]);
+                    }
+                    # ❗❗❗ Unfinished section
+                    if ($transaction->tran_type != 'Demand Collection') {
+                    }
                 }
 
                 $request->merge([
@@ -616,6 +632,11 @@ class BankReconcillationController extends Controller
 
             #_For Water Transaction Deactivation
             if ($req->moduleId == $waterModuleId) {
+                $waterReq = new Request([
+                    "transactionId" => $req->id
+                ]);
+                $cWaterPaymentController = new WaterPaymentController();
+                $cWaterPaymentController->transactionDeactivation($waterReq);
                 $waterTranDeativetion = new WaterTransactionDeactivateDtl();
                 $waterTranDeativetion->create($deactivationArr);
             }

@@ -43,8 +43,7 @@ class WaterTran extends Model
     public function ConsumerTransactionV2($transactionId)
     {
         return WaterTran::join('water_tran_details', 'water_tran_details.tran_id', 'water_trans.id')
-            ->where('id', $transactionId)
-            ->where('tran_type', "=", "Demand Collection")
+            ->where('water_trans.id', $transactionId)
             ->where('water_trans.status', 1)
             ->where('water_tran_details.status', 1);
     }
@@ -334,5 +333,14 @@ class WaterTran extends Model
             ->leftjoin('users', 'water_trans.emp_dtl_id', 'users.id')
             ->where('users.' . $key, 'LIKE', '%' . $refNo . '%')
             ->where('water_trans.user_type', 'TC');
+    }
+    /**
+     * deactivate transaction 
+     */
+    public function updateTransatcion($transactionId, $updateData)
+    {
+        WaterTran::where('id', $transactionId)
+            ->where('status', 1)
+            ->update($updateData);
     }
 }

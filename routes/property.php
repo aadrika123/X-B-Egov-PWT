@@ -59,10 +59,9 @@ Route::post('api-test', function () {
 Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_maker']], function () {
   // Route::group(['middleware' => ['json.response', 'auth_maker']], function () {
 
-  Route::controller(PropertyMutationController::class)->group(function(){
-    Route::post('mutation','addMutationApplication');
-    Route::post('mutation/approve','approve');
-    
+  Route::controller(PropertyMutationController::class)->group(function () {
+    Route::post('mutation', 'addMutationApplication');
+    Route::post('mutation/approve', 'approve');
   });
   /**
    * | SAF
@@ -349,13 +348,14 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('prop-dues', 'propertyDues');                                     // (13) Property Dues Dynamic
     Route::post('legacy-payment-holding', 'legacyPaymentHolding');                // (14) Legacy Property Payment
     Route::post('v1/get-billref-no', 'generateBillRefNo');                        // (15) Pine Lab Get Reference No
-    Route::post('oldChequeTranEntery', 'oldChequeEntery');  
+    Route::post('oldChequeTranEntery', 'oldChequeEntery');
     Route::post('get-holding-dues-of-property', 'getHoldingDues')->withoutMiddleware(['request_logger', 'expireBearerToken']);
   });
 
   Route::controller(CitizenHoldingController::class)->group(function () {
     Route::post('citizen/get-holding-dues', 'getHoldingDues');                    // (02.1) unthicatd/Property/ Holding Dues
     Route::post('citizen/icic-init-payment', 'ICICPaymentRequest');               // (02.2) unthicatd/Property/ initiate payment
+    Route::post('citizen/icici-payment-response', 'ICICPaymentResponse');         // (02.3) unthicatd/Property/ payment response
   });
 
   /**
@@ -382,9 +382,9 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('citizen-holding-saf', 'citizenHoldingSaf');                  // 03
     Route::post('basic-edit', 'basicPropertyEdit');
     Route::post('v1/basic-edit', 'basicPropertyEditV1'); #->withoutMiddleware(['request_logger', 'expireBearerToken', 'auth_maker'])
-    Route::post('v1/basic-edit/inbox', 'updateRequestInbox'); 
-    Route::post('v1/basic-edit/view', 'updateRequestView'); 
-    Route::post('v1/basic-edit/post-next', 'postNextUpdateRequest'); 
+    Route::post('v1/basic-edit/inbox', 'updateRequestInbox');
+    Route::post('v1/basic-edit/view', 'updateRequestView');
+    Route::post('v1/basic-edit/post-next', 'postNextUpdateRequest');
     Route::post('v1/basic-edit/Aprv-rejt', 'approvedRejectRequest');
     Route::post('check-property', 'CheckProperty');
     Route::post('v1/holding-copy', 'getHoldingCopy');                         // 04

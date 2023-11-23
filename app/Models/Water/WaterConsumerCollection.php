@@ -2,6 +2,7 @@
 
 namespace App\Models\Water;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -32,5 +33,22 @@ class WaterConsumerCollection extends Model
         $mWaterConsumerCollection->connection_type      = $charges->connection_type;
         $mWaterConsumerCollection->paid_amount          = $refPaidAmount ?? $charges->due_balance_amount;
         $mWaterConsumerCollection->save();
+    }
+    /**
+     * get consumer_collection
+     */
+    public function getConsumerCollection($demandId)
+    {
+        return WaterConsumerCollection::where('demand_id', $demandId)
+            ->where('status', 1);
+    }
+
+    /**
+     * deactivate consumer collections by tran id
+     */
+    public function updateConsumerCollection($tranId, $updateDetils)
+    {
+        return WaterConsumerCollection::where('transaction_id', $tranId)
+            ->update($updateDetils);
     }
 }
