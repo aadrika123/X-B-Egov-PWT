@@ -4,6 +4,7 @@ namespace App\Models\Water;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 class WaterChequeDtl extends Model
 {
@@ -47,5 +48,12 @@ class WaterChequeDtl extends Model
         $mPropChequeDtl->cheque_no          =  $req['cheque_no'];
         $mPropChequeDtl->user_id            =  $req['user_id'];
         $mPropChequeDtl->save();
+    }
+    /* deactivate transaction
+    */
+    public function updatedeactivateChequeDtls($transactionId, $updateDetails)
+    {
+        return WaterChequeDtl::where('transaction_id', $transactionId)
+            ->update($updateDetails);
     }
 }

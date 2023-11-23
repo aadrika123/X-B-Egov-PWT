@@ -77,4 +77,12 @@ class WaterTranDetail extends Model
         return WaterTranDetail::where('tran_id', $transactionId)
             ->where('status', 1);
     }
+    /**
+     * | deactivate transaction for multiplem
+     */
+    public function updateTranDetails($transactionId, $updateDetails)
+    {
+        WaterTranDetail::where('tran_id', $transactionId)
+            ->update($updateDetails);
+    }
 }
