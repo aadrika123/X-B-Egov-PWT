@@ -814,6 +814,8 @@ class WaterPaymentController extends Controller
             "leftDemandAmount"  => $leftAmount,
             "adjustedAmount"    => $refadvanceAmount['advanceAmount'],
             "penaltyAmount"     => $totalPenalty,
+            "refDemandFrom"     => $startingDate,
+            "refDemandUpto"     => $endDate,
         ];
     }
 
@@ -1868,7 +1870,7 @@ class WaterPaymentController extends Controller
                 'id'            => $request->consumerId,
                 'moduleId'      => $waterModuleId,
                 'ulbId'         => $refDetails['consumer']['ulb_id'],
-                'callbackUrl'   => "callback url",
+                'callbackUrl'   => "https://modernulb.com/water/waterViewPaymentHistory/" . $request->consumerId,
                 'auth'          => $refUser
             ]);
 
@@ -1879,7 +1881,7 @@ class WaterPaymentController extends Controller
             }
             $paymentDetails = $temp->original['data'];
             $request->merge([
-                "uniqueNo" => time() . $request->consumerId . round($request->amount)
+                "uniqueNo" => time() . $request->consumerId . rand(1, 999999)
             ]);
             $mWaterIciciRequest->savePaymentReq($paymentDetails, $request, $refDetails, $paymentFor['1']);
 
