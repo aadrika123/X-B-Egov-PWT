@@ -302,7 +302,7 @@ class CommonFunction implements ICommonFunction
     public function checkUsersWithtocken($tbl = "users")
     {
         $refUser            = Auth()->user();
-        $tableName = $refUser->gettable();
+        $tableName = $refUser ? $refUser->gettable() : "";
         if ($tableName != $tbl) {
             return false;
         }
