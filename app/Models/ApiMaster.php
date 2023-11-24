@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class ApiMaster extends Model
 {
     use HasFactory;
+    protected $connection = "pgsql_master";
 
     /**
      * | get Api with Advertisment 

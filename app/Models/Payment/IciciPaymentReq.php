@@ -47,4 +47,15 @@ class IciciPaymentReq extends Model
     {
         return self::where('req_ref_no', $reqRefNo);
     }
+
+
+    /**
+     * | Save the request details
+     */
+    public function updateRequestDetails($id, $updReqs)
+    {
+        return self::where('id', $id)
+            ->where('status', 1)
+            ->update($updReqs);
+    }
 }
