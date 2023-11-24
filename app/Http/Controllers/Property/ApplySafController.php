@@ -175,12 +175,14 @@ class ApplySafController extends Controller
             }
             $this->sendToWorkflow($createSaf, $user_id);
             DB::commit();
+
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
                 "applyDate" => ymdToDmyDate($mApplyDate),
                 "safId" => $safId,
                 "calculatedTaxes" => (!$request->no_calculater ? $taxCalculator->_GRID: []),
             ], "010102", "1.0", "1s", "POST", $request->deviceId);
+            
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "010102", "1.0", "1s", "POST", $request->deviceId);
