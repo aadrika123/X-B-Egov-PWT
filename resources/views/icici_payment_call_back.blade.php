@@ -24,7 +24,8 @@
         }
 
         .message {
-            font-size: 24px;
+            font-weight: 600;
+            font-size: 28px;
             color: #333;
             margin-bottom: 20px;
         }
@@ -50,7 +51,11 @@
 <body>
     <div class="container">
         <p class="message">Thank you for your payment.</p>
+        <br>
+        <p><b>Your Unique Ref No:</b>{{ $UniqueRefNumber }} </p>
+        <p><b>You have made payment from </b>{{ $PaymentMode }}</p>
         <p>Click the button below to redirect and view your payment history.</p>
+
         <a href="{{ $callBack }}" class="button">Get Payment History</a>
     </div>
 </body>
