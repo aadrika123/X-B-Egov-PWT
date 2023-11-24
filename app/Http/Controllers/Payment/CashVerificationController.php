@@ -567,33 +567,32 @@ class CashVerificationController extends Controller
             return validationError($validator);
         }
         try {
-            // $mUser = Auth()->user();
-            // $userId = $mUser->id ?? 2;
-            // $ulbId = $mUser->ulb_id ?? 2;
-            // $perPage = $request->perPage ?? 10;
-            // $moduleId = $request->moduleId;
-            // $fromDate = $request->fromDate;
-            // $uptoDate = $request->uptoDate;
-            // $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
-            // $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
-            // $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
-            // $mPropTransaction = new PropTransaction();
+            $mUser = Auth()->user();
+            $userId = $mUser->id ?? 2;
+            $ulbId = $mUser->ulb_id ?? 2;
+            $perPage = $request->perPage ?? 10;
+            $moduleId = $request->moduleId;
+            $fromDate = $request->fromDate . ' 00:00:00';
+            $uptoDate = $request->uptoDate . ' 23:59:59';
+            $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
+            $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
+            $mPropTransaction = new PropTransaction();
 
-            // switch ($moduleId) {
-            //     case $propertyModuleId:
-            //         $data = $mPropTransaction->where('status', 0)
-            //             ->whereBetween($fromDate, $uptoDate)
-            //             ->get();
-            //         break;
+            switch ($moduleId) {
+                case $propertyModuleId:
+                    $data = PropTransaction::whereBetween('updated_at', [$fromDate, $uptoDate])
+                        ->get();
+                    break;
 
-            //     case $waterModuleId:
-            //         # code...
-            //         break;
+                case $waterModuleId:
+                    # code...
+                    break;
 
-            //     case $tradeModuleId:
-            //         # code...
-            //         break;
-            // }
+                case $tradeModuleId:
+                    # code...
+                    break;
+            }
 
             return responseMsgs(true, "Deactivated Tran Detail", $data, "010201", "1.0", responseTime(), "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
