@@ -1932,7 +1932,8 @@ class WaterReportController extends Controller
             FROM ulb_ward_masters 
             LEFT JOIN(
                 SELECT water_second_consumers.ward_mstr_id, 
-                COUNT(DISTINCT water_consumer_demands.consumer_id) AS ref_consumer_count,       
+                COUNT(DISTINCT water_consumer_demands.consumer_id) AS ref_consumer_count,
+                COUNT(DISTINCT water_consumer_demands.consumer_id) AS consumer_count_total,       
                     COUNT(DISTINCT (CASE WHEN water_consumer_demands.demand_from >= '$fromDate' AND water_consumer_demands.demand_upto <= '$uptoDate'  THEN water_consumer_demands.consumer_id               
                                     END)                        
                         ) as current_demand_hh,    
@@ -1944,7 +1945,7 @@ class WaterReportController extends Controller
                     COUNT(DISTINCT ( CASE WHEN water_consumer_demands.demand_upto <= '$previousUptoDate'  THEN water_consumer_demands.consumer_id    
                                     END)                            
                         ) as arrear_demand_hh,                       
-                    SUM(CASE WHEN water_consumer_demands.demand_upto <= '$previousUptoDate' THEN (water_consumer_demands.balance_amount) ELSE 0 END ) AS arrear_demand,     
+                    SUM(water_consumer_demands.balance_amount ) AS arrear_demand,     
                     SUM(amount) AS total_demand,
                     COUNT(DISTINCT (CASE WHEN  water_consumer_demands.demand_from >= '$fromDate' AND water_consumer_demands.demand_upto <= '$uptoDate'   AND water_consumer_demands.paid_status =1 THEN water_consumer_demands.consumer_id               
                                         END)                        
@@ -1981,10 +1982,11 @@ class WaterReportController extends Controller
                 " . ($zoneId ? " AND ulb_ward_masters.zone = $zoneId" : "") . "
                 AND ulb_ward_masters.status = 1
             GROUP BY ulb_ward_masters.ward_name,
-            demands.ref_consumer_count         
+            demands.ref_consumer_count,
+            demands.consumer_count_total         
         ";
 
-            $select = "SELECT ulb_ward_masters.ward_name AS ward_no,ulb_ward_masters.ward_name,ref_consumer_count,
+            $select = "SELECT ulb_ward_masters.ward_name AS ward_no,ulb_ward_masters.ward_name,ref_consumer_count,consumer_count_total,
                             SUM(COALESCE(demands.current_demand_hh, 0::numeric)) AS current_demand_hh,   
                             SUM(COALESCE(demands.arrear_demand_hh, 0::numeric)) AS arrear_demand_hh,      
                             SUM(COALESCE(demands.current_collection_hh, 0::numeric)) AS current_collection_hh,  
@@ -2502,5 +2504,89 @@ class WaterReportController extends Controller
 
         $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
         return responseMsgs(true, "Ward Wise Demand Data!", remove_null($data), 'pr6.1', '1.1', $queryRunTime, 'Post', '');
+    }
+
+    /**
+     * water billingSummary
+     */
+    public function billingSummary(Request $request)
+    {
+        $request->validate(
+            [
+                "fiYear" => "nullable|regex:/^\d{4}-\d{4}$/",
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "zoneId" => "nullable|digits_between:1,9223372036854775807",
+                // "page" => "nullable|digits_between:1,9223372036854775807",
+                // "perPage" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        $request->merge(["metaData" => ["pr8.1", 1.1, null, $request->getMethod(), null,]]);
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try {
+            $refUser        = authUser($request);
+            $ulbId          = $refUser->ulb_id;
+            $wardId = null;
+            $userId = null;
+            $zoneId = null;
+            $paymentMode = null;
+            $perPage = $request->perPage ? $request->perPage : 5;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
+            if ($request->fromDate) {
+                $fromDate = $request->fromDate;
+            }
+            if ($request->uptoDate) {
+                $uptoDate = $request->uptoDate;
+            }
+            if ($request->ulbId) {
+                $ulbId = $request->ulbId;
+            }
+            if ($request->wardId) {
+                $wardId = $request->wardId;
+            }
+            if ($request->zoneId || $request->zone) {
+                $zoneId = $request->zoneId ?? $request->zone;
+            }
+            $rawData = ("SELECT 
+            subquery.unpaid_meter_count,
+            subquery.unpaid_fixed_count,
+            subquery.paid_meter_amount,
+            subquery.paid_fixed_amount,
+            subquery.fixed_paid_bill_count,
+            subquery.unpaid_meter_count + subquery.unpaid_fixed_count AS total_unpaid_billing_count,
+            subquery.total_unpaid_demand_of_meter+subquery.total_unpaid_demand_of_fixed AS total_unpaid_amount,
+            subquery.meter_paid_bill_count + subquery.fixed_paid_bill_count as total_paid_bills_count,
+            subquery.unpaid_meter_count+subquery.unpaid_fixed_count as total_unpaid_bill_count,
+            subquery.ward_name
+        FROM (
+            SELECT 
+                SUM(CASE WHEN water_consumer_demands.connection_type='Meter' AND water_consumer_demands.paid_status=0 THEN water_consumer_demands.balance_amount ELSE 0 END) AS total_unpaid_demand_of_meter,
+                SUM(CASE WHEN water_consumer_demands.connection_type='Fixed' AND water_consumer_demands.paid_status=0 THEN water_consumer_demands.balance_amount ELSE 0 END) AS total_unpaid_demand_of_fixed, 
+                SUM(CASE WHEN water_consumer_demands.connection_type='Meter' AND water_consumer_demands.paid_status=1 THEN water_consumer_demands.balance_amount ELSE 0 END) AS paid_meter_amount, 
+                SUM(CASE WHEN water_consumer_demands.connection_type='Fixed' AND water_consumer_demands.paid_status=1 THEN water_consumer_demands.balance_amount ELSE 0 END) AS paid_fixed_amount, 
+                COUNT(DISTINCT CASE WHEN water_consumer_demands.connection_type='Meter' AND water_consumer_demands.paid_status=1 THEN water_consumer_demands.consumer_id END) AS meter_paid_bill_count, 
+                COUNT(DISTINCT CASE WHEN water_consumer_demands.connection_type='Fixed' AND water_consumer_demands.paid_status=1 THEN water_consumer_demands.consumer_id END) AS fixed_paid_bill_count,
+                COUNT(DISTINCT CASE WHEN water_consumer_demands.connection_type='Meter' AND water_consumer_demands.paid_status=0 THEN water_consumer_demands.consumer_id END) AS unpaid_meter_count,
+                COUNT(DISTINCT CASE WHEN water_consumer_demands.connection_type='Fixed' AND water_consumer_demands.paid_status=0 THEN water_consumer_demands.consumer_id END) AS unpaid_fixed_count, 
+                ulb_ward_masters.ward_name
+            FROM
+                water_second_consumers
+            JOIN water_consumer_demands ON water_consumer_demands.consumer_id = water_second_consumers.id
+            LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id = water_second_consumers.ward_mstr_id
+            JOIN water_consumer_meters ON water_second_consumers.id = water_consumer_meters.consumer_id
+            WHERE
+                 water_consumer_demands.demand_from '>=' '$wardId'
+                AND  water_consumer_demands.status = TRUE
+            GROUP BY
+                ulb_ward_masters.ward_name
+        ) AS subquery");
+            $billing = DB::connection('pgsql_water')->select($rawData);
+
+            return responseMsgs(true, "", $billing, $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
     }
 }

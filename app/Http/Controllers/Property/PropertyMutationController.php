@@ -109,7 +109,6 @@ class PropertyMutationController extends Controller
             
             
             $app = PropActiveApp::create([
-                'citizen_id' => $request->citizenId,
                 'application_type' => $request->applicationType,
                 'application_date' => $request->applicationDate
             ]);            
