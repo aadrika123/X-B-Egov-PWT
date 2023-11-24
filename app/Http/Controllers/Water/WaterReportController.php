@@ -2576,9 +2576,11 @@ class WaterReportController extends Controller
             JOIN water_consumer_demands ON water_consumer_demands.consumer_id = water_second_consumers.id
             LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id = water_second_consumers.ward_mstr_id
             JOIN water_consumer_meters ON water_second_consumers.id = water_consumer_meters.consumer_id
-            WHERE
-                 water_consumer_demands.demand_from '>=' '$wardId'
-                AND  water_consumer_demands.status = TRUE
+            WHERE 
+                water_consumer_demands.status = TRUE
+                " . ($wardId ? " AND water_second_consumers.ward_mstr_id = $wardId" : "") . "
+                " . ($zoneId ? " AND water_second_consumers.zone_mstr_id = $zoneId" : "") . "
+                " . ($userId ? " AND wt.emp_dtl_id = $userId" : "") . "
             GROUP BY
                 ulb_ward_masters.ward_name
         ) AS subquery");
