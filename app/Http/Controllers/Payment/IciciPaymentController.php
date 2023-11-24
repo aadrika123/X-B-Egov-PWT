@@ -161,12 +161,6 @@ class IciciPaymentController extends Controller
                         break;
                     case ('1'):
                         # For Property
-                        // $id = 5;                                                                            // Static
-                        // $endPoint = $mApiMaster->getApiEndpoint($id);
-                        // $reqResponse = Http::withHeaders([
-                        //     "api-key" => "eff41ef6-d430-4887-aa55-9fcf46c72c99"
-                        // ])->post($endPoint->end_point, $webhookDataInArray);
-                        // $reqResponse;
                         $propReq = new Request($webhookDataInArray);
                         $cCitizenHoldingController = new CitizenHoldingController($this->_safRepo);
                         $cCitizenHoldingController->ICICPaymentResponse($propReq);
