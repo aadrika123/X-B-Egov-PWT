@@ -62,6 +62,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
   Route::controller(PropertyMutationController::class)->group(function () {
     Route::post('mutation', 'addMutationApplication');
     Route::post('mutation/approve', 'approve');
+    Route::post('approved-mutation-list','approveList');
   });
   /**
    * | SAF
