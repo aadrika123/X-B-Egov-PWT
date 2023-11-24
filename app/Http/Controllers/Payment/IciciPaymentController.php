@@ -39,6 +39,12 @@ use Illuminate\Support\Facades\Validator;
 
 class IciciPaymentController extends Controller
 {
+    protected $_safRepo;
+
+    public function __construct(iSafRepository $safRepo)
+    {
+        $this->_safRepo = $safRepo;
+    }
 
     /**
      * | Generation of Referal url for payment for Testing for ICICI payent gateway
@@ -162,7 +168,7 @@ class IciciPaymentController extends Controller
                         // ])->post($endPoint->end_point, $webhookDataInArray);
                         // $reqResponse;
                         $propReq = new Request($webhookDataInArray);
-                        $cCitizenHoldingController = new CitizenHoldingController();
+                        $cCitizenHoldingController = new CitizenHoldingController($this->_safRepo);
                         $cCitizenHoldingController->ICICPaymentResponse($propReq);
                         break;
                 }
