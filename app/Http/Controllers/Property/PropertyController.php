@@ -1334,7 +1334,7 @@ class PropertyController extends Controller
                 from old_trans_demand_logs
                 group by tran_id
             )old_trans_demand_logs on old_trans_demand_logs.tran_id = prop_transactions.id
-            where te.sums=te.taxTotal  and old_trans_demand_logs.tran_id is null --and prop_transactions.id = 552818
+            where round(te.sums)=round(te.taxTotal)  and old_trans_demand_logs.tran_id is null --and prop_transactions.id = 552818
             order by prop_transactions.id
             ;
             ';

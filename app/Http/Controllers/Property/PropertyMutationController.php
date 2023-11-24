@@ -164,6 +164,7 @@ class PropertyMutationController extends Controller
             }
             $new_saf_owners = PropActiveSafsOwner::select("*")->where("saf_id",$newSafData->id)->orderBy("id","ASC")->get();
             $new_saf_floors = PropActiveSafsFloor::select("*")->where("saf_id",$newSafData->id)->OrderBy("id","ASC")->get(); 
+            $oldProp = PropProperty::find($newSafData->previous_holding_id);
             DB::beginTransaction();
             DB::connection('pgsql_master')->beginTransaction();
             $prop_saf = $newSafData->replicate();          
@@ -175,9 +176,10 @@ class PropertyMutationController extends Controller
                 $propProperties->saf_id = $newSafData->id;
                 $propProperties->holding_no = $newSafData->holding_no;
                 $propProperties->new_holding_no = $newSafData->holding_no; 
+                $propProperties->property_no = $oldProp->property_no;
                 $propProperties = PropProperty::create($propProperties->toArray());
     
-                $oldProp = PropProperty::find($newSafData->previous_holding_id);
+                
                 $oldProp->status =0;
                 $oldProp->update();
                 // foreach($oldOwners = $oldProp->Owneres()->get() as $val)
