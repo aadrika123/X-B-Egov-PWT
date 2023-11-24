@@ -164,6 +164,7 @@ class PropertyMutationController extends Controller
             }
             $new_saf_owners = PropActiveSafsOwner::select("*")->where("saf_id",$newSafData->id)->orderBy("id","ASC")->get();
             $new_saf_floors = PropActiveSafsFloor::select("*")->where("saf_id",$newSafData->id)->OrderBy("id","ASC")->get(); 
+            $oldProp = PropProperty::find($newSafData->previous_holding_id);
             DB::beginTransaction();
             DB::connection('pgsql_master')->beginTransaction();
             $prop_saf = $newSafData->replicate();          
@@ -175,9 +176,10 @@ class PropertyMutationController extends Controller
                 $propProperties->saf_id = $newSafData->id;
                 $propProperties->holding_no = $newSafData->holding_no;
                 $propProperties->new_holding_no = $newSafData->holding_no; 
+                $propProperties->property_no = $oldProp->property_no;
                 $propProperties = PropProperty::create($propProperties->toArray());
     
-                $oldProp = PropProperty::find($newSafData->previous_holding_id);
+                
                 $oldProp->status =0;
                 $oldProp->update();
                 // foreach($oldOwners = $oldProp->Owneres()->get() as $val)
@@ -300,14 +302,34 @@ class PropertyMutationController extends Controller
     {
     
         try{
+            $validator = Validator::make($request->all(), [
+                'applicationNo' => 'nullable',
+                "fromDate" => "nullable|date|date_format:Y-m-d",
+                "uptoDate" => "nullable|date|date_format:Y-m-d",
+                'zoneId' => "nullable",
+                'wardId' => "nullable",
+
+            ]);
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $validator->errors()
+                ], 200);
+            }
             $properties = PropSaf::select(
-                'prop_safs.id as property_id',
+                'prop_properties.id as property_id',
+                "prop_properties.saf_id",
                 'prop_safs.holding_no',
+                'prop_properties.property_no',
+                'prop_safs.prop_address',
+                'prop_safs.assessment_type',
+                'prop_safs.saf_no as application_no',
                 'owner.owner_name',
                 'owner.guardian_name',
                 'owner.mobile_no',
                 'prop_active_apps.application_date',
-                'ulb_ward_masters.zone',
+                'zone_masters.zone_name',
                 'ulb_ward_masters.ward_name'
             )
             ->join(DB::raw('(SELECT
@@ -322,16 +344,42 @@ class PropertyMutationController extends Controller
                     $join->on('owner.saf_id', '=', 'prop_safs.id');
                 })
             ->join('prop_active_apps', 'prop_safs.app_id', '=', 'prop_active_apps.id')
+            ->join('prop_properties', 'prop_properties.saf_id', '=', 'prop_safs.id')
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'prop_safs.ward_mstr_id')
-            ->where('prop_safs.workflow_id', 202)
-            ->get();
-                
+            ->join('zone_masters', 'zone_masters.id', '=', 'ulb_ward_masters.zone')
+            ->where('prop_safs.workflow_id', 202);
 
-    
-            return responseMsg(true,"Eo Approved List" ,$properties, "010501", "1.0", "", "POST", $request->deviceId ?? "");
+        if ($request->applicationNo) {
+            $properties->where('prop_safs.saf_no', $request->applicationNo);
+        }
+
+        if ($request->fromDate && $request->uptoDate) {
+            $properties->whereBetween('prop_active_apps.application_date', [$request->fromDate, $request->uptoDate]);
+        }
+
+        if ($request->zoneId) {
+            
+            $properties->where('zone_masters.id', $request->zoneId);
+        }
+
+        if ($request->wardId) {
+           
+            $properties->where('ulb_ward_masters.id', $request->wardId);
+        }
+            $perPage = $request->perPage ;
+            $paginator = $properties->paginate($perPage);             
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ]; 
+            
+            return responseMsg(true,"Eo Approved List" ,$list, "010501", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
         
     }
+
 }

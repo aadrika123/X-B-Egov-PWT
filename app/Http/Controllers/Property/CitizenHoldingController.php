@@ -142,8 +142,8 @@ class CitizenHoldingController extends Controller
         $data = $mHoldingTaxController->offlinePaymentHoldingV2($newReqs);
 
         $mReqs = [
-            "tran_id"       => $data->original['transactionId'] ?? null,
-            "tran_no"       => $data->original['TransactionNo'] ?? null,
+            "tran_id"       => $data->original['data']['transactionId'] ?? null,
+            "tran_no"       => $data->original['data']['TransactionNo'] ?? null,
             "payment_mode"  => $req['PayMode'],
             "tran_date"     => $req['TrnDate'],
             "status"        => $req['Status'],
