@@ -71,7 +71,7 @@ class PostPropPaymentV2
         $this->_fy = getFY();
         $this->_offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
         $this->_todayDate = Carbon::now();
-        $this->_userId = auth()->user()->id;
+        $this->_userId = auth()->user()->id ?? $this->_REQ['userId'];
         $this->_mPropDemand = new PropDemand();
         $idGeneration = new IdGeneration;
         $this->_mPropTrans = new PropTransaction();
@@ -117,7 +117,7 @@ class PostPropPaymentV2
             throw new Exception("Payment Amount should be greater than 0");
 
         // Property Transactions
-        $tranBy = auth()->user()->user_type;
+        $tranBy = auth()->user()->user_type ??  $this->_REQ['userType'];
 
         $this->_REQ->merge([
             'userId' => $this->_userId,
@@ -459,7 +459,7 @@ class PostPropPaymentV2
         $this->_REQ["wardNo"] = $wardNo;
         $counter = (new UlbWardMaster)->getTranCounter($wardDetails->id)->counter ?? null;
         $user = Auth()->user();
-        $mUserType = $user->user_type;
+        $mUserType = $user->user_type ?? $this->_REQ['userType'];
         $type = "O";
         if ($mUserType == "TC") {
             $type = "T";
