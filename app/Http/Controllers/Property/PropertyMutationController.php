@@ -109,7 +109,7 @@ class PropertyMutationController extends Controller
             
             
             $app = PropActiveApp::create([
-                'citizen_id' => $request->citizenId,
+                
                 'application_type' => $request->applicationType,
                 'application_date' => $request->applicationDate
             ]);            
@@ -164,7 +164,8 @@ class PropertyMutationController extends Controller
                 throw new Exception("This Data not Able To Approved From Hear");
             }
             $new_saf_owners = PropActiveSafsOwner::select("*")->where("saf_id",$newSafData->id)->orderBy("id","ASC")->get();
-            $new_saf_floors = PropActiveSafsFloor::select("*")->where("saf_id",$newSafData->id)->OrderBy("id","ASC")->get(); 
+            $new_saf_floors = PropActiveSafsFloor::select("*")->where("saf_id",$newSafData->id)->OrderBy("id","ASC")->get();
+            $oldProp = PropProperty::find($newSafData->previous_holding_id); 
             DB::beginTransaction();
             DB::connection('pgsql_master')->beginTransaction();
             $prop_saf = $newSafData->replicate();          
@@ -176,6 +177,8 @@ class PropertyMutationController extends Controller
                 $propProperties->saf_id = $newSafData->id;
                 $propProperties->holding_no = $newSafData->holding_no;
                 $propProperties->new_holding_no = $newSafData->holding_no; 
+                $propProperties->property_no = $oldProp->property_no;
+
                 $propProperties = PropProperty::create($propProperties->toArray());
     
                 $oldProp = PropProperty::find($newSafData->previous_holding_id);
@@ -302,13 +305,18 @@ class PropertyMutationController extends Controller
     
         try{
             $properties = PropSaf::select(
-                'prop_safs.id as property_id',
+                'prop_properties.id as property_id',
+                "prop_properties.saf_id",
                 'prop_safs.holding_no',
+                'prop_properties.property_no',
+                'prop_safs.prop_address',
+                'prop_safs.assessment_type',
+                'prop_safs.saf_no as application_no',
                 'owner.owner_name',
                 'owner.guardian_name',
                 'owner.mobile_no',
                 'prop_active_apps.application_date',
-                'ulb_ward_masters.zone',
+                'zone_masters.zone_name',
                 'ulb_ward_masters.ward_name'
             )
             ->join(DB::raw('(SELECT
@@ -323,16 +331,24 @@ class PropertyMutationController extends Controller
                     $join->on('owner.saf_id', '=', 'prop_safs.id');
                 })
             ->join('prop_active_apps', 'prop_safs.app_id', '=', 'prop_active_apps.id')
+            ->join('prop_properties', 'prop_properties.saf_id', '=', 'prop_safs.id')
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'prop_safs.ward_mstr_id')
-            ->where('prop_safs.workflow_id', 202)
-            ->get();
-                
+            ->join('zone_masters', 'zone_masters.id', '=', 'ulb_ward_masters.zone')
+            ->where('prop_safs.workflow_id', 202);
+        
 
-    
-            return responseMsg(true,"Eo Approved List" ,$properties, "010501", "1.0", "", "POST", $request->deviceId ?? "");
+            $perPage = $request->perPage​ ? $request -> perPage : 10;
+            $paginator = $properties->paginate($perPage);             
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ]; 
+            return responseMsg(true,"Eo Approved List" ,remove_null($list), "010501", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
         
-    }
+}
 }
