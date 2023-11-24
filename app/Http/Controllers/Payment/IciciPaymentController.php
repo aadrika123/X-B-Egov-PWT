@@ -54,10 +54,10 @@ class IciciPaymentController extends Controller
     public function getReferalUrl(Request $req)
     {
 
-        $req->request->add([
-            "callbackUrl" => "https://modernulb.com/citizen/property/payment-status",
-            "moduleId"    => 1,
-        ]);
+        // $req->request->add([
+        //     "callbackUrl" => "https://modernulb.com/citizen/property/payment-status",
+        //     "moduleId"    => 1,
+        // ]);
 
         $validated = Validator::make(
             $req->all(),
