@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Payment;
 
 use App\BLL\Payment\GetRefUrl;
+use App\Http\Controllers\CitizenController;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Property\ActiveSafController;
+use App\Http\Controllers\Property\CitizenHoldingController;
 use App\Http\Controllers\Property\HoldingTaxController;
 use App\Http\Requests\Property\ReqPayment;
 use App\MicroServices\IdGeneration;
@@ -116,8 +118,10 @@ class IciciPaymentController extends Controller
             $refNo = $refNo['0'];
             $webhookDataInArray['reqRefNo'] = $refNo;
 
+
             # Get the payamen request
             $paymentReqsData = $mIciciPaymentReq->findByReqRefNoV3($refNo)->first();
+            $webhookDataInArray['id'] = $paymentReqsData->application_id;
             if (!$paymentReqsData) {
                 throw new Exception("Payment request dont exist for $refNo");
             }
@@ -151,12 +155,15 @@ class IciciPaymentController extends Controller
                         break;
                     case ('1'):
                         # For Property
-                        $id = 5;                                                                            // Static
-                        $endPoint = $mApiMaster->getApiEndpoint($id);
-                        $reqResponse = Http::withHeaders([
-                            "api-key" => "eff41ef6-d430-4887-aa55-9fcf46c72c99"
-                        ])->post($endPoint->end_point, $webhookDataInArray);
-                        $reqResponse;
+                        // $id = 5;                                                                            // Static
+                        // $endPoint = $mApiMaster->getApiEndpoint($id);
+                        // $reqResponse = Http::withHeaders([
+                        //     "api-key" => "eff41ef6-d430-4887-aa55-9fcf46c72c99"
+                        // ])->post($endPoint->end_point, $webhookDataInArray);
+                        // $reqResponse;
+                        $propReq = new Request($webhookDataInArray);
+                        $cCitizenHoldingController = new CitizenHoldingController();
+                        $cCitizenHoldingController->ICICPaymentResponse($propReq);
                         break;
                 }
             }
@@ -201,6 +208,14 @@ class IciciPaymentController extends Controller
                     # Redirect to the error page
                     $erroData = [
                         "redirectUrl" => "https://modernulb.com/citizen"
+                    ];
+                    return view('icic_payment_erro', $erroData);
+                }
+                # For water Payment redirection
+                if ($paymentReqsData->module_id == 2) {
+                    $redirectUrl = Config::get("payment-constants.WATER_FAIL_URL");
+                    $erroData = [
+                        "redirectUrl" => $redirectUrl . $paymentReqsData->application_id
                     ];
                     return view('icic_payment_erro', $erroData);
                 }

@@ -1291,7 +1291,22 @@ class ActiveSafController extends Controller
             $userId = authUser($req)->id;
             $safId = $req->applicationId;
             // Derivative Assignments
-            $safDetails = PropActiveSaf::findOrFail($req->applicationId);
+            $safDetails = PropActiveSaf::find($req->applicationId);
+            if(!$safDetails){
+                $saf= PropSaf::find($req->applicationId);
+                if(!$saf){
+                    $saf= DB::table("prop_rejected_safs")->where("id",$req->applicationId)->first();
+                    if(!$saf)
+                        throw new Exception("data not Found!");
+                    else{
+                        throw new Exception("Application is already Rejectd");
+                    }
+
+                }
+                throw new Exception("Application is already Approved");
+                
+                
+            }
             if($safDetails->workflow_id==202 )
             {
                 $controller = new PropertyMutationController();

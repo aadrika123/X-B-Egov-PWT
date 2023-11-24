@@ -109,9 +109,39 @@ class CitizenHoldingController extends Controller
         }
     }
 
-    public function ICICPaymentResponse($req)
+    public function ICICPaymentResponse(Request $req)
     {
-        $a = Storage::disk('public')->put(123 . '.json', json_encode($req->all()));
+        $jsonData = json_encode($req->all());
+        $a = Storage::disk('public')->put($req['reqRefNo'] . '.json', $jsonData);
+
+        $this->_PropIciciPaymentsRequest->where('req_ref_no', $req['reqRefNo'])
+            ->update(['payment_status' => 1]);
+
+        $mReqs = [
+            "tran_id"       => $req['TrnId'],
+            "payment_mode"  => $req['PayMode'],
+            "tran_date"     => $req['TrnDate'],
+            "status"        => $req['Status'],
+            "response_code" => $req['ResponseCode'],
+            "initiate_date" => $req['InitiateDT'],
+            "tran_amount"   => $req['TranAmt'],
+            "base_amount"   => $req['BaseAmt'],
+            "proc_fee"      => $req['ProcFees'],
+            "s_tax"         => $req['STax'],
+            "m_sgst"        => $req['M_SGST'],
+            "m_cgst"        => $req['M_CGST'],
+            "m_utgst"       => $req['M_UTGST'],
+            "m_stcess"      => $req['M_STCESS'],
+            "m_ctcess"      => $req['M_CTCESS'],
+            "m_igst"        => $req['M_IGST'],
+            "gst_state"     => $req['GSTState'],
+            "billing_state" => $req['BillingState'],
+            "remarks"       => $req['Remarks'],
+            "hash_value"    => $req['HashVal'],
+            "req_ref_no"    => $req['reqRefNo'],
+            "response_json" => $jsonData,
+        ];
+        $this->_PropIciciPaymentsRespone->store($mReqs);
         return $a;
     }
 }

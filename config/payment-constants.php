@@ -7,7 +7,8 @@
  */
 return [
     "ULB_LOGO_URL" =>  env("ulb_logo_url", "http://localhost/"),
-    "PROPERTY_FRONT_URL" =>  (env("FRONT_URL", "https://modernulb.com")."/citizen/property/payment-status"),
+    "PROPERTY_FRONT_URL" => (env("FRONT_URL", "https://modernulb.com") . "/citizen/property/payment-status"),
+    "WATER_FAIL_URL"    => (env("FRONT_URL","https://modernulb.com") . "/water/water-demand-payment/"),
     'PAYMENT_MODE' => [
         '1' => 'ONLINE',
         '2' => 'NETBANKING',
