@@ -62,7 +62,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
   Route::controller(PropertyMutationController::class)->group(function () {
     Route::post('mutation', 'addMutationApplication');
     Route::post('mutation/approve', 'approve');
-    Route::post('approved-mutation-list','approveList');
+    Route::post('approved-mutation-list', 'approveList');
   });
   /**
    * | SAF
@@ -452,7 +452,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('verify-cash', 'cashVerify');                                   //05
     Route::post('cash-receipt', 'cashReceipt');                                 //06
     Route::post('edit-chequedtl', 'editChequeNo');                              //07
-    Route::post('tran/deactivated-list', 'tranDeactivatedList');                              //07
+    Route::post('tran/deactivated-list', 'tranDeactivatedList');                //08
   });
 
   Route::controller(BankReconcillationController::class)->group(function () {
@@ -568,6 +568,9 @@ Route::controller(HoldingTaxController::class)->group(function () {
   Route::post('prop-comparative-demand', 'comparativeDemand');                              // (10) Property Comparative Demand
   Route::post('cluster/payment-history', 'clusterPaymentHistory');                           // (13) Cluster Payment History
   Route::post('cluster/payment-receipt', 'clusterPaymentReceipt');                           // (14) Generate Cluster Payment Receipt for Saf and Property
+
+  //unauthenticated api for prop-payment-history created by prity pandey
+  Route::post('prop-payment-history-direct', 'propPaymentHistory')->withoutMiddleware(['request_logger', 'expireBearerToken']);
 });
 
 
