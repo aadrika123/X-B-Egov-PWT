@@ -199,11 +199,32 @@ class IciciPaymentController extends Controller
                 }
                 # Redirect to the desired url 
                 $refData = [
-                    "callBack" => $paymentReqsData->call_back_url
+                    "callBack"          => $paymentReqsData->call_back_url,
+                    "UniqueRefNumber"   => $req->Unique_Ref_Number ?? "",
+                    "PaymentMode"       => $req->Payment_Mode ?? ""
                 ];
                 return view('icici_payment_call_back', $refData);
             } else {
                 $paymentReqsData = $mIciciPaymentReq->findByReqRefNoV2($req->ReferenceNo);
+
+                // switch ($req) {
+                //     case (!$paymentReqsData):
+                //         $erroData = [
+                //             "redirectUrl" => "https://modernulb.com/citizen"
+                //         ];
+                //         break;
+
+                //     case ($paymentReqsData->module_id == 2):
+                //         $redirectUrl = Config::get("payment-constants.WATER_FAIL_URL");
+                //         $erroData = [
+                //             "redirectUrl" => $redirectUrl . $paymentReqsData->application_id
+                //         ];
+                //         break;
+                // }
+                // return view('icic_payment_erro', $erroData);
+
+
+
                 if (!$paymentReqsData) {
                     # Redirect to the error page
                     $erroData = [
