@@ -10,4 +10,9 @@ class IciciPaymentResponse extends Model
     use HasFactory;
     protected $guarded = [];
     protected $connection = 'pgsql_master';
+
+    public function store($req)
+    {
+        return IciciPaymentResponse::create($req);
+    }
 }

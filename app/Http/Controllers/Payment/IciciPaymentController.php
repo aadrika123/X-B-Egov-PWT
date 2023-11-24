@@ -29,7 +29,7 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-
+use Illuminate\Support\Facades\App;
 
 /**
  * | Created On - 30-09-2023
@@ -39,26 +39,14 @@ use Illuminate\Support\Facades\Validator;
 
 class IciciPaymentController extends Controller
 {
-    protected $_safRepo;
-
-    public function __construct(iSafRepository $safRepo)
-    {
-        $this->_safRepo = $safRepo;
-    }
 
     /**
      * | Generation of Referal url for payment for Testing for ICICI payent gateway
         | Serila No :
-        | Under Con
+        | Working
      */
     public function getReferalUrl(Request $req)
     {
-
-        // $req->request->add([
-        //     "callbackUrl" => "https://modernulb.com/citizen/property/payment-status",
-        //     "moduleId"    => 1,
-        // ]);
-
         $validated = Validator::make(
             $req->all(),
             [
@@ -103,14 +91,14 @@ class IciciPaymentController extends Controller
     /**
      * | Get Webhook data for icici payament 
         | Serial No :
-        | Under Con
+        | Working
      */
     public function getWebhookData(Request $req)
     {
-        $mIciciPaymentReq = new IciciPaymentReq();
-        $mIciciPaymentRes = new IciciPaymentResponse();
-        $mApiMaster = new ApiMaster();
-        $getRefUrl = new GetRefUrl();
+        $mIciciPaymentReq   = new IciciPaymentReq();
+        $mIciciPaymentRes   = new IciciPaymentResponse();
+        $mApiMaster         = new ApiMaster();
+        $getRefUrl          = new GetRefUrl();
 
         try {
             # Save the data in file 
@@ -127,26 +115,48 @@ class IciciPaymentController extends Controller
 
             # Get the payamen request
             $paymentReqsData = $mIciciPaymentReq->findByReqRefNoV3($refNo)->first();
-            $webhookDataInArray['id'] = $paymentReqsData->application_id;
             if (!$paymentReqsData) {
                 throw new Exception("Payment request dont exist for $refNo");
             }
+            $webhookDataInArray['id'] = $paymentReqsData->application_id;
 
+            # Save webhook payment data 
+            $mReqs = [
+                "rt"            => $webhookDataInArray['RT']            ?? "",
+                "ic_id"         => $webhookDataInArray['IcId']          ?? "",
+                "trn_id"        => $webhookDataInArray['TrnId']         ?? "",
+                "pay_mode"      => $webhookDataInArray['PayMode']       ?? "",
+                "trn_date"      => $webhookDataInArray['TrnDate']       ?? "",
+                "settle_dt"     => $webhookDataInArray['SettleDT']      ?? "",
+                "icici_status"  => $webhookDataInArray['Status']        ?? "",
+                "initiate_dt"   => $webhookDataInArray['InitiateDT']    ?? "",
+                "tran_amt"      => $webhookDataInArray['TranAmt']       ?? "",
+                "base_amt"      => $webhookDataInArray['BaseAmt']       ?? "",
+                "proc_fees"     => $webhookDataInArray['ProcFees']      ?? "",
+                "s_tax"         => $webhookDataInArray['STax']          ?? "",
+                "m_sgst"        => $webhookDataInArray['M_SGST']        ?? "",
+                "m_cgst"        => $webhookDataInArray['M_CGST']        ?? "",
+                "m_utgst"       => $webhookDataInArray['M_UTGST']       ?? "",
+                "m_stcess"      => $webhookDataInArray['M_STCESS']      ?? "",
+                "m_ctcess"      => $webhookDataInArray['M_CTCESS']      ?? "",
+                "m_igst"        => $webhookDataInArray['M_IGST']        ?? "",
+                "gst_state"     => $webhookDataInArray['GSTState']      ?? "",
+                "billing_state" => $webhookDataInArray['BillingState']  ?? "",
+                "remarks"       => $webhookDataInArray['Remarks']       ?? "",
+                "hash_val"      => $webhookDataInArray['HashVal']       ?? "",
+                "req_ref_no"    => $webhookDataInArray['reqRefNo']      ?? "",
+                "req_ref_id"    => $paymentReqsData->id                 ?? ""
+            ];
+            $mIciciPaymentRes->store($mReqs);
+
+            # For payment sucess payment
             if ($webhookData->Status == 'SUCCESS' || $webhookData->ResponseCode == 'E000') {
-                // $updReqs = [
-                //     'res_ref_no'        => $refNo,
-                //     'payment_status'    => 1
-                // ];
-                // $paymentReqsData->update($updReqs);                 // Table Updation
-                // $resPayReqs = [
-                //     "payment_req_id"    => $paymentReqsData->id,
-                //     "req_ref_id"        => $reqRefNo,
-                //     "res_ref_id"        => $resRefNo,
-                //     "icici_signature"   => $req->signature,
-                //     "payment_status"    => 1
-                // ];
-                // $mIciciPaymentRes->create($resPayReqs);             // Response Data 
 
+                # Update the request table for payment 
+                $updReqs = [
+                    'payment_status' => 1                                                                               // Static
+                ];
+                $mIciciPaymentReq->updateRequestDetails($paymentReqsData->id, $updReqs);
 
                 // ❗❗ Pending for Module Specific Table Updation / Dont user to transfer data to module ❗❗
                 switch ($paymentReqsData->module_id) {
@@ -162,11 +172,15 @@ class IciciPaymentController extends Controller
                     case ('1'):
                         # For Property
                         $propReq = new Request($webhookDataInArray);
-                        $cCitizenHoldingController = new CitizenHoldingController($this->_safRepo);
+                        $cCitizenHoldingController = App::makeWith(CitizenHoldingController::class, ["iSafRepository", iSafRepository::class]);
                         $cCitizenHoldingController->ICICPaymentResponse($propReq);
+                        break;
+                    case ('2'):
+                        # For Waters
                         break;
                 }
             }
+
             return responseMsgs(true, "Data Received Successfully", []);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), []);
@@ -197,53 +211,43 @@ class IciciPaymentController extends Controller
                     ];
                     return view('icic_payment_erro', $erroData);
                 }
-                # Redirect to the desired url 
-                $refData = [
-                    "callBack"          => $paymentReqsData->call_back_url,
-                    "UniqueRefNumber"   => $req->Unique_Ref_Number ?? "",
-                    "PaymentMode"       => $req->Payment_Mode ?? ""
-                ];
+                # Redirect to the desired url for sucess
+                switch ($req) {
+                        # For property
+                    case ($paymentReqsData->module_id == 1):
+                        $refData = [
+                            "callBack"          => $paymentReqsData->call_back_url . "/" . $paymentReqsData->application_id,
+                            "UniqueRefNumber"   => $req->Unique_Ref_Number ?? "",
+                            "PaymentMode"       => $req->Payment_Mode ?? ""
+                        ];
+                        break;
+
+                    default:
+                        $refData = [
+                            "callBack"          => $paymentReqsData->call_back_url,
+                            "UniqueRefNumber"   => $req->Unique_Ref_Number ?? "",
+                            "PaymentMode"       => $req->Payment_Mode ?? ""
+                        ];
+                        break;
+                }
                 return view('icici_payment_call_back', $refData);
             } else {
-                $paymentReqsData = $mIciciPaymentReq->findByReqRefNoV2($req->ReferenceNo);
-
-                // switch ($req) {
-                //     case (!$paymentReqsData):
-                //         $erroData = [
-                //             "redirectUrl" => "https://modernulb.com/citizen"
-                //         ];
-                //         break;
-
-                //     case ($paymentReqsData->module_id == 2):
-                //         $redirectUrl = Config::get("payment-constants.WATER_FAIL_URL");
-                //         $erroData = [
-                //             "redirectUrl" => $redirectUrl . $paymentReqsData->application_id
-                //         ];
-                //         break;
-                // }
-                // return view('icic_payment_erro', $erroData);
-
-
-
-                if (!$paymentReqsData) {
-                    # Redirect to the error page
-                    $erroData = [
-                        "redirectUrl" => "https://modernulb.com/citizen"
-                    ];
-                    return view('icic_payment_erro', $erroData);
+                $paymentReqsData = $mIciciPaymentReq->findByReqRefNoV2($req->Unique_Ref_Number);
+                # Module specific distribution
+                switch ($req) {
+                    case (!$paymentReqsData):
+                        $erroData = [
+                            "redirectUrl" => "https://modernulb.com/citizen"
+                        ];
+                        break;
+                        # For water 
+                    case ($paymentReqsData->module_id == 2):
+                        $redirectUrl = Config::get("payment-constants.WATER_FAIL_URL");
+                        $erroData = [
+                            "redirectUrl" => $redirectUrl . $paymentReqsData->application_id
+                        ];
+                        break;
                 }
-                # For water Payment redirection
-                if ($paymentReqsData->module_id == 2) {
-                    $redirectUrl = Config::get("payment-constants.WATER_FAIL_URL");
-                    $erroData = [
-                        "redirectUrl" => $redirectUrl . $paymentReqsData->application_id
-                    ];
-                    return view('icic_payment_erro', $erroData);
-                }
-                # Redirect to the desired url 
-                $erroData = [
-                    "redirectUrl" => $paymentReqsData->call_back_url
-                ];
                 return view('icic_payment_erro', $erroData);
             }
         } catch (Exception $e) {
@@ -326,3 +330,30 @@ class IciciPaymentController extends Controller
             //     remarks
             //     hash_val
             // ]
+
+
+            
+            // RT: "Tran",
+            // IcId: "378278",
+            // TrnId: "231124170702576",
+            // PayMode: "UPI_ICICI",
+            // TrnDate: "2023-11-24 13:07:40.0",
+            // SettleDT: "NA",
+            // Status: "SUCCESS",
+            // ResponseCode: "E000",
+            // InitiateDT: "24-Nov-23",
+            // TranAmt: "1",
+            // BaseAmt: "1",
+            // ProcFees: "0.00",
+            // STax: "0.0",
+            // M_SGST: "0",
+            // M_CGST: "0",
+            // M_UTGST: "0",
+            // M_STCESS: "0",
+            // M_CTCESS: "0",
+            // M_IGST: "0",
+            // GSTState: "MH",
+            // BillingState: "MH",
+            // Remarks: "1700811455465720694~Subject to realization",
+            // HashVal: "33291846dc673e69dc3903bbb1cbfffe949d757d65af07759c79289ce47473439af9eb5654e55ff064fbcb97e87171b9bb2cd53db993c7cd35d98e3aa90b9fec",
+            // reqRefNo: "1700811455465720694",
