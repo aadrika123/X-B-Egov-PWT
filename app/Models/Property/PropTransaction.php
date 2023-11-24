@@ -192,7 +192,7 @@ class PropTransaction extends Model
         $propTrans->tran_date = $req['todayDate'];
         $propTrans->tran_no = $req['tranNo'];
         $propTrans->payment_mode = $req['paymentMode'];
-        $propTrans->user_id = $req['userId'] ?? auth()->user()->id;
+        $propTrans->user_id = $req['userId'] ?? (auth()->user() ? auth()->user()->id : null);
         $propTrans->ulb_id = $req['ulbId'];
         $propTrans->from_fyear = $fromDemand['fyear'] ?? $fromFyear;         // 🔴 In Case of only arrear payment fromFyear 
         $propTrans->to_fyear = $toDemand['fyear'] ?? $uptoFyear;            // 🔴 In Case of only arrear payment uptoFyear 

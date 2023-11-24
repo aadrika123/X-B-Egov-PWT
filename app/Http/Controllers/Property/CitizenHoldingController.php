@@ -6,6 +6,7 @@ use App\BLL\Property\Akola\GetHoldingDuesV2;
 use App\Repository\Property\Interfaces\iSafRepository;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Payment\IciciPaymentController;
+use App\Http\Requests\Property\ReqPayment;
 use App\Models\Property\PropIciciPaymentsRequest;
 use App\Models\Property\PropIciciPaymentsResponse;
 use Exception;
@@ -23,8 +24,11 @@ class CitizenHoldingController extends Controller
     private $_callbackUrl;
     private $_PropIciciPaymentsRequest;
     private $_PropIciciPaymentsRespone;
-    public function __construct()
+    protected $_safRepo;
+
+    public function __construct(iSafRepository $safRepo)
     {
+        $this->_safRepo = $safRepo;
         $this->_HoldingTaxController = App::makeWith(HoldingTaxController::class, ["iSafRepository" => app(iSafRepository::class)]);
         $this->_IciciPaymentController = App::makeWith(IciciPaymentController::class);
         $this->_callbackUrl = Config::get("payment-constants.PROPERTY_FRONT_URL");
@@ -43,7 +47,8 @@ class CitizenHoldingController extends Controller
             $request->all(),
             [
                 "propId" => "required|digits_between:1,9223372036854775807",
-                'paidAmount' => 'nullable|required_if:paymentType,==,isPartPayment|integer',
+                'paymentType' => 'required|In:isFullPayment,isArrearPayment,isPartPayment',
+                'paidAmount' => 'nullable|required_if:paymentType,==,isPartPayment|numeric',
             ]
         );
         if ($validater->fails()) {
@@ -54,6 +59,7 @@ class CitizenHoldingController extends Controller
             ]);
         }
         try {
+            // $user = authUser($request);
             $demandsResponse = $this->_HoldingTaxController->getHoldingDues($request);
             if (!$demandsResponse->original["status"]) {
                 return $demandsResponse;
@@ -77,6 +83,9 @@ class CitizenHoldingController extends Controller
                 "moduleId" => $demand["basicDetails"]["moduleId"],
                 "moduleId" => $demand["basicDetails"]["moduleId"],
                 "callbackUrl" => $this->_callbackUrl,
+                // "userId" => $user->id,
+                // "userType"  => $user->user_type,
+                // "auth"  => $user
             ]);
             $respons = $this->_IciciPaymentController->getReferalUrl($request);
             if (!$respons->original["status"]) {
@@ -111,14 +120,30 @@ class CitizenHoldingController extends Controller
 
     public function ICICPaymentResponse(Request $req)
     {
+        $mHoldingTaxController = new HoldingTaxController($this->_safRepo);
         $jsonData = json_encode($req->all());
         $a = Storage::disk('public')->put($req['reqRefNo'] . '.json', $jsonData);
 
-        $this->_PropIciciPaymentsRequest->where('req_ref_no', $req['reqRefNo'])
-            ->update(['payment_status' => 1]);
+        $reqData  = $this->_PropIciciPaymentsRequest->where('req_ref_no', $req['reqRefNo'])
+            ->where('payment_status', 0)
+            ->first();
+
+        if (collect($reqData)->isEmpty())
+            throw new Exception("No Transaction Found");
+
+        $reqData->update(['payment_status' => 1]);
+
+        $newReqs = new ReqPayment([
+            "paymentType" => $reqData->tran_type,
+            "paidAmount" => $reqData->payable_amount,
+            "id"         => $reqData->prop_id,
+            "paymentMode" => "ONLINE",
+        ]);
+        $data = $mHoldingTaxController->offlinePaymentHoldingV2($newReqs);
 
         $mReqs = [
-            "tran_id"       => $req['TrnId'],
+            "tran_id"       => $data->original['transactionId'] ?? null,
+            "tran_no"       => $data->original['TransactionNo'] ?? null,
             "payment_mode"  => $req['PayMode'],
             "tran_date"     => $req['TrnDate'],
             "status"        => $req['Status'],
@@ -142,6 +167,7 @@ class CitizenHoldingController extends Controller
             "response_json" => $jsonData,
         ];
         $this->_PropIciciPaymentsRespone->store($mReqs);
-        return $a;
+
+        return $data;
     }
 }

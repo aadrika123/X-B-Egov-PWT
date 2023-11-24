@@ -424,7 +424,7 @@ class HoldingTaxController extends Controller
             $req->all(),
             [
                 'paymentType' => 'required|In:isFullPayment,isArrearPayment,isPartPayment',
-                'paidAmount' => 'nullable|required_if:paymentType,==,isPartPayment|integer'
+                'paidAmount' => 'nullable|required_if:paymentType,==,isPartPayment|numeric'
             ]
         );
         if ($validated->fails()) {
@@ -1343,7 +1343,7 @@ class HoldingTaxController extends Controller
 
     public function oldChequeEntery(Request $request)
     {
-        try{
+        try {
             $user = Auth()->user();
             $userId = $user->id;
             $ulbId = $user->ulbId;
@@ -1354,7 +1354,8 @@ class HoldingTaxController extends Controller
             $log = new OldChequeTranEntery();
             $now = Carbon::now()->format("Y-m-d");
             $mRegex         = '/^[a-zA-Z1-9][a-zA-Z1-9\.\s\/\-\_\,]+$/i';
-            $validator = Validator::make($request->all(),
+            $validator = Validator::make(
+                $request->all(),
                 [
                     "propId"        =>  "required|digits_between:1,9223372036854775807",
                     "demandId"      =>  "required|digits_between:1,9223372036854775807",
@@ -1362,23 +1363,23 @@ class HoldingTaxController extends Controller
                     "ReceiptNo"     =>  "required|digits_between:1,922337",
                     "tranDate"      =>  "required|date|before_or_equal:$now",
                     "paymentMode"   =>  "required|in:CASH,CHEQUE,DD,NEFT",
-                    "chequeNo"      =>  ($request->paymentMode && $request->paymentMode !="CASH" ? "required":"nullable"),
-                    "bankName"      =>  ($request->paymentMode && $request->paymentMode !="CASH" ? "required|regex:$mRegex":"nullable"),
+                    "chequeNo"      => ($request->paymentMode && $request->paymentMode != "CASH" ? "required" : "nullable"),
+                    "bankName"      => ($request->paymentMode && $request->paymentMode != "CASH" ? "required|regex:$mRegex" : "nullable"),
                     "branchName"    =>  "nullable|regex:$mRegex",
                     "clearStatus"   =>  "required|in:pending,clear",
                     "amount"        =>  "required|numeric|min:0|max:9999999",
                     "penalty"       =>  "required|numeric|min:0|max:9999999",
-                    "maintananceAmt"=>  "required|numeric|min:0|max:922337",
+                    "maintananceAmt" =>  "required|numeric|min:0|max:922337",
                     "agingAmt"      =>  "required|numeric|min:0|max:922337",
                     "generalTax"    =>  "required|numeric|min:0|max:922337",
                     "roadTax"       =>  "required|numeric|min:0|max:922337",
                     "firefightingTax"  =>  "required|numeric|min:0|max:922337",
                     "educationTax"  =>  "required|numeric|min:0|max:922337",
                     "waterTax"      =>  "required|numeric|min:0|max:922337",
-                    "cleanlinessTax"=>  "required|numeric|min:0|max:922337",
+                    "cleanlinessTax" =>  "required|numeric|min:0|max:922337",
                     "sewarageTax"   =>  "required|numeric|min:0|max:922337",
                     "treeTax"       =>  "required|numeric|min:0|max:922337",
-                    "professionalTax"=> "required|numeric|min:0|max:922337",
+                    "professionalTax" => "required|numeric|min:0|max:922337",
                     "totalTax"      => "required|numeric|min:0|max:922337",
                     "tax1"          => "required|numeric|min:0|max:922337",
                     "tax2"          => "required|numeric|min:0|max:922337",
@@ -1391,138 +1392,130 @@ class HoldingTaxController extends Controller
                     "lightCess" => "required|numeric|min:0|max:922337",
                     "majorBuilding" => "required|numeric|min:0|max:922337",
                     "openPloatTax" => "required|numeric|min:0|max:922337",
-                ] 
+                ]
             );
             if ($validator->fails()) {
                 return responseMsg(false, $validator->errors(), "");
             }
-            $penalty = $request->penalty ;
-            $totalTax = $request->totalTax - $penalty ;
-            $testTotal = ( $request->maintananceAmt + $request->agingAmt + $request->generalTax + 
-                          $request->roadTax + $request->educationTax + 
-                          $request->waterTax + $request->firefightingTax + 
-                          $request->cleanlinessTax + $request->sewarageTax + $request->treeTax +
-                          $request->professionalTax + $request->tax1 + $request->tax2 + 
-                          $request->tax3 + $request->spEducationTax + $request->waterBenefit + 
-                          $request->waterBill + $request->spWaterCess + $request->drainCess + 
-                          $request->lightCess + $request->majorBuilding + $request->openPloatTax
-                         );
-            
-            if(round($testTotal) != round($totalTax))
-            {
-                throw new Exception("total Tax Missmatched ".round($testTotal)."-------".round($totalTax));
+            $penalty = $request->penalty;
+            $totalTax = $request->totalTax - $penalty;
+            $testTotal = ($request->maintananceAmt + $request->agingAmt + $request->generalTax +
+                $request->roadTax + $request->educationTax +
+                $request->waterTax + $request->firefightingTax +
+                $request->cleanlinessTax + $request->sewarageTax + $request->treeTax +
+                $request->professionalTax + $request->tax1 + $request->tax2 +
+                $request->tax3 + $request->spEducationTax + $request->waterBenefit +
+                $request->waterBill + $request->spWaterCess + $request->drainCess +
+                $request->lightCess + $request->majorBuilding + $request->openPloatTax
+            );
+
+            if (round($testTotal) != round($totalTax)) {
+                throw new Exception("total Tax Missmatched " . round($testTotal) . "-------" . round($totalTax));
             }
-            if(round($request->amount) != round($totalTax + $penalty))
-            {
+            if (round($request->amount) != round($totalTax + $penalty)) {
                 throw new Exception("total payble Amount Missmatched");
             }
             $enterChek = OldChequeTranEntery::select("*")
-                        ->where("prop_id",$request->propId)
-                        ->where("book_no",trim($request->bookNo))
-                        ->where("receipt_no",trim($request->ReceiptNo))
-                        ->where("cheque_no",trim($request->chequeNo))
-                        ->where("status",1)
-                        ->first();
-            if($enterChek)
-            {
-                throw new Exception("This Transection Already Inserted on : ".$enterChek->created_at);
+                ->where("prop_id", $request->propId)
+                ->where("book_no", trim($request->bookNo))
+                ->where("receipt_no", trim($request->ReceiptNo))
+                ->where("cheque_no", trim($request->chequeNo))
+                ->where("status", 1)
+                ->first();
+            if ($enterChek) {
+                throw new Exception("This Transection Already Inserted on : " . $enterChek->created_at);
             }
             $prop = PropProperty::find($request->propId);
-            if(!$prop)
-            {
+            if (!$prop) {
                 throw new Exception("Property Not Found");
             }
-            $olddemand = PropDemand::where("id",$request->demandId)->where("property_id",$request->propId)->first();
-            $demand = PropDemand::where("id",$request->demandId)->where("property_id",$request->propId)->first();
-            if(!$demand)
-            {
+            $olddemand = PropDemand::where("id", $request->demandId)->where("property_id", $request->propId)->first();
+            $demand = PropDemand::where("id", $request->demandId)->where("property_id", $request->propId)->first();
+            if (!$demand) {
                 throw new Exception("Demand Not Found");
             }
             $meta_request = [
                 "totalTax" => $totalTax,
-                "demand"=>$demand,
-                "userId"=>$userId,
+                "demand" => $demand,
+                "userId" => $userId,
             ];
             $request->merge($meta_request);
             DB::beginTransaction();
 
-            $this->demandUpdate($request,$demand);
-            
+            $this->demandUpdate($request, $demand);
+
             $demand->update();
 
-            $this->tranInsert($request,$tran,$demand,$prop);
+            $this->tranInsert($request, $tran, $demand, $prop);
             $tran->save();
-            $request->merge(["tranId"=>$tran->id]);
+            $request->merge(["tranId" => $tran->id]);
             $interId = $log->store($request);
-            $this->tranDtlInsert($request,$tranDtl,$tran,$demand,$prop);
+            $this->tranDtlInsert($request, $tranDtl, $tran, $demand, $prop);
             $tranDtl->save();
-            if($request->paymentMode!="CASH")
-            {
-                $this->chequDtlInsert($request,$cheqeDtl,$tran,$prop);
+            if ($request->paymentMode != "CASH") {
+                $this->chequDtlInsert($request, $cheqeDtl, $tran, $prop);
                 $cheqeDtl->save();
             }
-            $this->penaltyRebateInsert($request,$penaltyrebates,$tran);
+            $this->penaltyRebateInsert($request, $penaltyrebates, $tran);
             $penaltyrebates->save();
-            
+
             // dd($olddemand,$totalTax,$interId,$demand,$tran,$tranDtl,$cheqeDtl);
             DB::commit();
             $returnData = ['TransactionNo' => $tran->tran_no, 'transactionId' => $tran->id];
             return responseMsgs(true, "Transection Inserted", $returnData, "1", "1.0", "", "", $request->deviceId ?? "");
-        }
-        catch(Exception $e){
+        } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "1", "1.0", "", "", $request->deviceId ?? "");
-        }        
-    }
-
-    private function demandUpdate(Request $request,PropDemand $demand)
-    {
-        $demand->maintanance_amt = $demand->maintanance_amt + $request->maintananceAmt ;
-        $demand->aging_amt       = $demand->aging_amt       + $request->agingAmt ;
-        $demand->general_tax     = $demand->general_tax     + $request->generalTax ;
-        $demand->road_tax        = $demand->road_tax        + $request->roadTax ;
-        $demand->firefighting_tax= $demand->firefighting_tax + $request->firefightingTax ;
-        $demand->education_tax   = $demand->education_tax   + $request->educationTax ;
-        $demand->water_tax       = $demand->water_tax       + $request->waterTax ;
-        $demand->cleanliness_tax = $demand->cleanliness_tax + $request->cleanlinessTax ;
-        $demand->sewarage_tax    = $demand->sewarage_tax    + $request->sewarageTax ;
-        $demand->tree_tax        = $demand->tree_tax        + $request->treeTax ;
-        $demand->professional_tax = $demand->professional_tax + $request->professionalTax ;
-        $demand->total_tax       = $demand->total_tax       + $request->totalTax ;
-        $demand->tax1            = $demand->tax1            + $request->tax1 ;
-        $demand->tax2            = $demand->tax2            + $request->tax2 ;
-        $demand->tax3            = $demand->tax3            + $request->tax3 ;
-        $demand->sp_education_tax = $demand->sp_education_tax + $request->sp_educationTax ;
-        $demand->water_benefit   = $demand->water_benefit   + $request->waterBenefit ;
-        $demand->water_bill      = $demand->water_bill   + $request->waterBill ;
-        $demand->sp_water_cess   = $demand->sp_water_cess   + $request->spWaterCess ;
-        $demand->drain_cess      = $demand->drain_cess   + $request->drainCess ;
-        $demand->light_cess      = $demand->light_cess   + $request->lightCess ;
-        $demand->major_building  = $demand->major_building   + $request->majorBuilding ;
-        $demand->open_ploat_tax  = $demand->open_ploat_tax   + $request->openPloatTax ;
-        if(!$demand->paid_status && $demand->due_total_tax>0)
-        {
-            $demand->is_full_paid =false;
-            $demand->paid_status =1;
         }
     }
-    private function tranInsert(Request $request,PropTransaction $tran,PropDemand $demand,PropProperty $prop)
+
+    private function demandUpdate(Request $request, PropDemand $demand)
+    {
+        $demand->maintanance_amt = $demand->maintanance_amt + $request->maintananceAmt;
+        $demand->aging_amt       = $demand->aging_amt       + $request->agingAmt;
+        $demand->general_tax     = $demand->general_tax     + $request->generalTax;
+        $demand->road_tax        = $demand->road_tax        + $request->roadTax;
+        $demand->firefighting_tax = $demand->firefighting_tax + $request->firefightingTax;
+        $demand->education_tax   = $demand->education_tax   + $request->educationTax;
+        $demand->water_tax       = $demand->water_tax       + $request->waterTax;
+        $demand->cleanliness_tax = $demand->cleanliness_tax + $request->cleanlinessTax;
+        $demand->sewarage_tax    = $demand->sewarage_tax    + $request->sewarageTax;
+        $demand->tree_tax        = $demand->tree_tax        + $request->treeTax;
+        $demand->professional_tax = $demand->professional_tax + $request->professionalTax;
+        $demand->total_tax       = $demand->total_tax       + $request->totalTax;
+        $demand->tax1            = $demand->tax1            + $request->tax1;
+        $demand->tax2            = $demand->tax2            + $request->tax2;
+        $demand->tax3            = $demand->tax3            + $request->tax3;
+        $demand->sp_education_tax = $demand->sp_education_tax + $request->sp_educationTax;
+        $demand->water_benefit   = $demand->water_benefit   + $request->waterBenefit;
+        $demand->water_bill      = $demand->water_bill   + $request->waterBill;
+        $demand->sp_water_cess   = $demand->sp_water_cess   + $request->spWaterCess;
+        $demand->drain_cess      = $demand->drain_cess   + $request->drainCess;
+        $demand->light_cess      = $demand->light_cess   + $request->lightCess;
+        $demand->major_building  = $demand->major_building   + $request->majorBuilding;
+        $demand->open_ploat_tax  = $demand->open_ploat_tax   + $request->openPloatTax;
+        if (!$demand->paid_status && $demand->due_total_tax > 0) {
+            $demand->is_full_paid = false;
+            $demand->paid_status = 1;
+        }
+    }
+    private function tranInsert(Request $request, PropTransaction $tran, PropDemand $demand, PropProperty $prop)
     {
         $tran->property_id = $request->propId;
         $tran->tran_date   = Carbon::parse($request->tranDate)->format("Y-m-d");
-        $tran->tran_no     = $request->bookNo."-".$request->ReceiptNo;
+        $tran->tran_no     = $request->bookNo . "-" . $request->ReceiptNo;
         $tran->tran_no     = $tran->tran_no;
         $tran->payment_mode = $request->paymentMode;
         $tran->amount       = $request->amount;
         $tran->tran_type    = "Property";
-        $tran->verify_status = $request->clearStatus=="clear" ? 1 : 2;
-        $tran->user_id      = 	18;
-        $tran->from_fyear   = 	$demand->fyear;
-        $tran->to_fyear     = 	$demand->fyear;
-        $tran->ulb_id       = 	$prop->ulb_id;
+        $tran->verify_status = $request->clearStatus == "clear" ? 1 : 2;
+        $tran->user_id      =     18;
+        $tran->from_fyear   =     $demand->fyear;
+        $tran->to_fyear     =     $demand->fyear;
+        $tran->ulb_id       =     $prop->ulb_id;
     }
 
-    private function tranDtlInsert(Request $request,PropTranDtl $tranDtl,PropTransaction $tran,PropDemand $demand,PropProperty $prop)
+    private function tranDtlInsert(Request $request, PropTranDtl $tranDtl, PropTransaction $tran, PropDemand $demand, PropProperty $prop)
     {
         $tranDtl->tran_id        = $tran->id;
         $tranDtl->prop_demand_id = $demand->id;
@@ -1552,7 +1545,7 @@ class HoldingTaxController extends Controller
         $tranDtl->paid_major_building  = $request->majorBuilding;
         $tranDtl->paid_open_ploat_tax  = $request->openPloatTax;
     }
-    private function chequDtlInsert(Request $request,PropChequeDtl $cheqeDtl,PropTransaction $tran,PropProperty $prop)
+    private function chequDtlInsert(Request $request, PropChequeDtl $cheqeDtl, PropTransaction $tran, PropProperty $prop)
     {
         $cheqeDtl->prop_id = $prop->id;
         $cheqeDtl->transaction_id = $tran->id;
@@ -1561,12 +1554,11 @@ class HoldingTaxController extends Controller
         $cheqeDtl->branch_name = $request->branchName;
         $cheqeDtl->status = $tran->verify_status;
         $cheqeDtl->cheque_no = $request->chequeNo;
-        if($cheqeDtl->status==1)
-        {
+        if ($cheqeDtl->status == 1) {
             $cheqeDtl->clear_bounce_date = $tran->tran_date;
         }
     }
-    private function penaltyRebateInsert(Request $request,PropPenaltyrebate $penaltyrebates,PropTransaction $tran)
+    private function penaltyRebateInsert(Request $request, PropPenaltyrebate $penaltyrebates, PropTransaction $tran)
     {
         $penaltyrebates->tran_id =  $tran->id;
         $penaltyrebates->head_name =  'Monthly Penalty';
