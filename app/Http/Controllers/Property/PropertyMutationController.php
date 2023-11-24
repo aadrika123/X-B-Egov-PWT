@@ -329,7 +329,7 @@ class PropertyMutationController extends Controller
                 
 
     
-            return responseMsg(true, $properties, "010501", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsg(true,"Eo Approved List" ,$properties, "010501", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
