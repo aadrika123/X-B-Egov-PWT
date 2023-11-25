@@ -603,9 +603,13 @@ class HoldingTaxController extends Controller
      */
     public function propPaymentHistory(Request $req)
     {
-        $req->validate([
-            'propId' => 'required|digits_between:1,9223372036854775807'
-        ]);
+        $validated = Validator::make(
+            $req->all(),
+            ['propId' => 'required|digits_between:1,9223372036854775807']
+        );
+        if ($validated->fails()) {
+            return validationError($validated);
+        }
 
         try {
             $mPropTrans = new PropTransaction();
