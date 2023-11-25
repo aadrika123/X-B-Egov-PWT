@@ -41,7 +41,7 @@ class GetRefUrl
         // $tranAmt            = 1;
         $tranAmt            =  $req->amount;                                                                            // Remove the static amount
         // $mandatoryField     = "$refNo|" . self::$subMerchantId . "|$tranAmt|" . $todayDate . "|0123456789|xy|xy";               // 10 is transactional amount
-        $mandatoryField     = "$refNo|" . self::$subMerchantId . "|$tranAmt|" . "1";                                              // 10 is transactional amount
+        $mandatoryField     = "$refNo|" . self::$subMerchantId . "|$tranAmt|" . $req->moduleId;                                              // 10 is transactional amount
         $eMandatoryField    = $this->encryptAes($mandatoryField);
         // $optionalField      = $this->encryptAes("X|X|X");
         $optionalField      = $this->encryptAes("");
