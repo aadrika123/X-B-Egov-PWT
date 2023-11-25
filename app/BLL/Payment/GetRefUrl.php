@@ -38,8 +38,8 @@ class GetRefUrl
         $todayDate          = Carbon::now()->format('d/M/Y');
         $refNo              = time() . rand();
         $this->_refNo       = $refNo;
-        $tranAmt            = 1;
-        // $tranAmt            =  $req->amount;                                                                            // Remove the static amount
+        // $tranAmt            = 1;
+        $tranAmt            =  $req->amount;                                                                            // Remove the static amount
         // $mandatoryField     = "$refNo|" . self::$subMerchantId . "|$tranAmt|" . $todayDate . "|0123456789|xy|xy";               // 10 is transactional amount
         $mandatoryField     = "$refNo|" . self::$subMerchantId . "|$tranAmt|" . "1";                                              // 10 is transactional amount
         $eMandatoryField    = $this->encryptAes($mandatoryField);
