@@ -33,6 +33,7 @@ class WaterConsumerDemand extends Model
     public function getDemandBydemandIds($consumerId)
     {
         return WaterConsumerDemand::select(
+            'water_consumer_demands.id AS ref_demand_id',
             'water_consumer_demands.*',
             'water_second_consumers.*',
             'water_consumer_owners.applicant_name',
@@ -42,8 +43,8 @@ class WaterConsumerDemand extends Model
             ->leftjoin('water_consumer_initial_meters', 'water_consumer_initial_meters.consumer_id', 'water_consumer_demands.consumer_id')
             ->join('water_second_consumers', 'water_second_consumers.id', '=', 'water_consumer_demands.consumer_id')
             ->where('water_consumer_demands.paid_status', 0)
-            ->orderByDesc('water_consumer_demands.id')
             ->where('water_consumer_demands.consumer_id', $consumerId)
+            ->orderByDesc('water_consumer_demands.generation_date')
             ->first();
     }
 

@@ -15,7 +15,7 @@ class WaterMeterReadingDoc extends Model
      * | Save the meter reading document
      * | @param 
      */
-    public function saveDemandDocs($meterDetails,$documentPath,$demandId)
+    public function saveDemandDocs($meterDetails, $documentPath, $demandId)
     {
         $mWaterMeterReadingDoc = new WaterMeterReadingDoc();
         $mWaterMeterReadingDoc->demand_id       = $demandId;
@@ -23,5 +23,16 @@ class WaterMeterReadingDoc extends Model
         $mWaterMeterReadingDoc->file_name       = $documentPath['document'];
         $mWaterMeterReadingDoc->relative_path   = $documentPath['relaivePath'];
         $mWaterMeterReadingDoc->save();
+    }
+
+    /**
+     * | get
+     */
+
+    public function getDocByDemandId($demandId)
+    {
+        return WaterMeterReadingDoc::where('demand_id', $demandId)
+            ->orderByDesc('id')
+            ->first();
     }
 }

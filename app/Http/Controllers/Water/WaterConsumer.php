@@ -60,6 +60,7 @@ class WaterConsumer extends Controller
     use Workflow;
 
     private $Repository;
+    private $_docUrl;
     protected $_DB_NAME;
     protected $_DB;
 
@@ -68,6 +69,7 @@ class WaterConsumer extends Controller
         $this->Repository = $Repository;
         $this->_DB_NAME = "pgsql_water";
         $this->_DB = DB::connection($this->_DB_NAME);
+        $this->_docUrl = Config::get("waterConstaint.DOC_URL");
     }
     /**
      * | Database transaction
@@ -2234,8 +2236,10 @@ class WaterConsumer extends Controller
             return validationError($validated);
         }
         try {
+            $docUrl                     = $this->_docUrl;
             $mWaterDemands              = new WaterConsumerDemand();
             $mWaterConsumerInitialMeter = new WaterConsumerInitialMeter();
+            $mWaterMeterReadingDoc      = new WaterMeterReadingDoc();
             $NowDate                    = Carbon::now()->format('Y-m-d');
             $bilDueDate                 = Carbon::now()->addDays(15)->format('Y-m-d');
             $ConsumerId                 = $request->consumerId;
@@ -2250,6 +2254,7 @@ class WaterConsumer extends Controller
             $ConsumerInitial = $mWaterConsumerInitialMeter->calculateUnitsConsumed($ConsumerId);  # unit consumed
             $finalReading = $ConsumerInitial->first()->initial_reading;
             $initialReading = $ConsumerInitial->last()->initial_reading ?? 0;
+            $documents = $mWaterMeterReadingDoc->getDocByDemandId($demandDetails->ref_demand_id);
             $demands =  [
                 'billDate'          => $NowDate,
                 'bilDueDate'        => $bilDueDate,
@@ -2258,7 +2263,7 @@ class WaterConsumer extends Controller
                 'finalReading'      => (int)$finalReading,
                 'initialDate'       => "",
                 'amount'            =>  $roundedSumAmount,
-                "meterImg"          => ""
+                "meterImg"          => $docUrl . "/" . $documents->relative_path . $documents->file_name
             ];
             $returnValues = collect($demandDetails)->merge($demands);
             return responseMsgs(true, "Consumer Details!", remove_null($returnValues), "", "01", ".ms", "POST", $request->deviceId);

@@ -93,7 +93,7 @@ class WaterSecondConsumer extends Model
      * | @var 
      * | @return 
      */
-    public function getConsumerByItsDetails($req, $key, $refNo)
+    public function getConsumerByItsDetails($req, $key, $refNo, $wardId, $zoneId)
     {
         return WaterSecondConsumer::select([
             'water_consumer_demands.id AS demand_id',
@@ -117,8 +117,8 @@ class WaterSecondConsumer extends Model
             DB::raw("string_agg(wco.email, ',') as owner_email"),
             DB::raw("ulb_ward_masters.ward_name AS ward_mstr_id"),
         ])
-            ->LEFTJOIN(
-                DB::RAW("(SELECT DISTINCT ON (consumer_id) id,balance_amount,amount,consumer_id,paid_status
+            ->leftJoin(
+                DB::raw("(SELECT DISTINCT ON (consumer_id) id,balance_amount,amount,consumer_id,paid_status
                             FROM water_consumer_demands AS wcd
                             WHERE status = true
                             ORDER BY consumer_id,id DESC) AS water_consumer_demands
@@ -127,11 +127,17 @@ class WaterSecondConsumer extends Model
                     $join->on("water_consumer_demands.consumer_id", "=", "water_second_consumers.id");
                 }
             )
-            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_second_consumers.ward_mstr_id')
+            ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
             ->join('water_consumer_owners as wco', 'water_second_consumers.id', '=', 'wco.consumer_id')
             ->where('water_second_consumers.status', 1)
             ->where('wco.status', true)
             ->where('water_second_consumers.' . $key, 'LIKE', '%' . $refNo . '%')
+            ->when($wardId, function ($query) use ($wardId) {
+                return $query->where('water_second_consumers.ward_mstr_id', $wardId);
+            })
+            ->when($zoneId, function ($query) use ($zoneId) {
+                return $query->where('water_second_consumers.zone_mstr_id', $zoneId);
+            })
             ->groupBy(
                 'water_consumer_demands.id',
                 'water_consumer_demands.paid_status',
@@ -142,7 +148,7 @@ class WaterSecondConsumer extends Model
                 'ulb_ward_masters.ward_name',
             );
     }
-
+    
     /**
      * | get the water consumer detaials by Owner details
      * | @param consumerNo

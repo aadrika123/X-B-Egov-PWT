@@ -174,44 +174,46 @@ return [
         "New Pipeline" => 2
     ],
 
-    "AKOLA_CATEGORY" =>[
+    "AKOLA_CATEGORY" => [
         "Slum"      => 1,
         "General"   => 2
     ],
-     "PAYMENT_FOR_CONSUMER" => [
+    "PAYMENT_FOR_CONSUMER" => [
         "1" => "NEW_CONNECTION",
-        ],
+    ],
 
-        'WATER_CONSUMER_MASTSER_DATA'=>[
-            "PIPE_DIAMETER" => [
-                "15",
-                "20",
-                "25"
-            ],
-            "PROPERTY_TYPE"=>[
-              'id'=>1,
-              'name'=>'Residential',
-              [
-                 'id'=>2,
-                 'name'=>'Commercial'
-              ]
+    'WATER_CONSUMER_MASTSER_DATA' => [
+        "PIPE_DIAMETER" => [
+            "15",
+            "20",
+            "25"
         ],
-            "CATEGORY"=>[
-                "SLUM",
-                "GENERAL"
-            ],
-        ],
-        'water_property_type_mstr' => [
-            [
-                'id' => 1,
-                'property_type' => 'Residential',
-            ],
+        "PROPERTY_TYPE" => [
+            'id' => 1,
+            'name' => 'Residential',
             [
                 'id' => 2,
-                'property_type' => 'Commercial',
-            ],
-           
+                'name' => 'Commercial'
+            ]
         ],
-        
-     
-    ];
+        "CATEGORY" => [
+            "SLUM",
+            "GENERAL"
+        ],
+    ],
+    'water_property_type_mstr' => [
+        [
+            'id' => 1,
+            'property_type' => 'Residential',
+        ],
+        [
+            'id' => 2,
+            'property_type' => 'Commercial',
+        ],
+
+    ],
+    
+    "DOC_URL" => env("DOC_URL"),
+
+
+];
