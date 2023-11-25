@@ -49,7 +49,7 @@ class GetRefUrl
         $eRefNo             = $this->encryptAes($refNo);
         $subMerchantId      = $this->encryptAes(self::$subMerchantId);
         // $eTranAmt           = $this->encryptAes($tranAmt);
-        $eTranAmt           = $this->encryptAes(1);
+        $eTranAmt           = $this->encryptAes($tranAmt);
         $paymentMode        = $this->encryptAes(self::$paymentMode);
 
         $plainUrl = self::$baseUrl . '/EazyPG?merchantid=' . self::$icid . '&mandatory fields=' . $mandatoryField . "&optional fields=''" . '&returnurl=' . self::$returnUrl . '&Reference No=' . $refNo
