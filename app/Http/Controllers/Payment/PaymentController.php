@@ -66,7 +66,6 @@ class PaymentController extends Controller
             # Get the payment req for refNo
             switch ($paymentReqData->payment_status) {
                 case ($confPaymentStatus['PENDING']):
-                    $PaymentHistory = $getPayemntDetails->getPaymentStatusByUrl($resRefNo);
                     break;
                 default:
 
@@ -124,6 +123,11 @@ class PaymentController extends Controller
         $orderId = explode("=", chunk_split($orderId, 30, "="))[0];
         return $orderId;
     }
+
+    /**
+     * | Pine lab integration 
+     */
+    // ----------------------------------------------------------------------------------------------- //
 
     /**
      * | Save Pine lab Request
@@ -252,7 +256,7 @@ class PaymentController extends Controller
             ];
 
 
-            if ($pinelabData['Response']['ResponseCode'] == 00) {                           // Success Response code(00)
+            if ($pinelabData['Response']['ResponseCode'] == 00) {                                                   // Success Response code(00)
 
                 # Updating the payment request data 
                 $paymentData->payment_status = 1;
@@ -267,17 +271,17 @@ class PaymentController extends Controller
                             $moduleData = new Request($moduleData);
                             $propTranDtl = $objHoldingTaxController->paymentHolding($moduleData);
                             $data->tranId = $propTranDtl['tran_id'];
-                        } else {                                            //<------------------ (SAF PAYMENT)
+                        } else {                                                                                    // SAF PAYMENT
                             $obj = new ActiveSafController($this->_safRepo);
                             $moduleData = new ReqPayment($moduleData);
                             $obj->paymentSaf($moduleData);
                         }
                         break;
-                        // case ('2'):                                             //<------------------ (Water)
+                        // case ('2'):                                                                              // Water
                         //     $objWater = new WaterNewConnection();
                         //     $objWater->razorPayResponse($moduleData);
                         //     break;
-                    case ('3'):                                             //<------------------ (TRADE)
+                    case ('3'):                                                                                     // TRADE
                         $objTrade = new TradeCitizen();
                         $objTrade->pinelabResponse($moduleData);
                         break;
@@ -289,6 +293,7 @@ class PaymentController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
+
 
 
     /**
