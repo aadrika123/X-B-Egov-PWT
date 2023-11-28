@@ -1961,7 +1961,7 @@ class ReportController extends Controller
                 "ulbId" => "nullable|digits_between:1,9223372036854775807",
                 "wardId" => "nullable|digits_between:1,9223372036854775807",
                 "zoneId" => "nullable|digits_between:1,9223372036854775807",
-                "appType" => "required|in:REJECTERD,APPROED",
+                "appType" => "required|in:REJECTED,APPROVED",
                 "userId" => "nullable|digits_between:1,9223372036854775807",
                 "page" => "nullable|digits_between:1,9223372036854775807",
                 "perPage" => "nullable|digits_between:1,9223372036854775807",
