@@ -9,6 +9,7 @@ use App\Http\Requests\Property\Reports\LevelUserPending;
 use App\Http\Requests\Property\Reports\SafPropIndividualDemandAndCollection;
 use App\Http\Requests\Property\Reports\UserWiseLevelPending;
 use App\Http\Requests\Property\Reports\UserWiseWardWireLevelPending;
+use App\Models\MplYearlyReport;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropTransaction;
 use App\Repository\Common\CommonFunction;
@@ -454,7 +455,7 @@ class ReportController extends Controller
         $validated = Validator::make(
             $request->all(),
             [
-                "fiYear"=>"required|regex:/^\d{4}-\d{4}$/",
+                "fiYear" => "required|regex:/^\d{4}-\d{4}$/",
                 "ulbId" => "nullable|digits_between:1,9223372036854775807",
                 "wardMstrId" => "nullable|digits_between:1,9223372036854775807",
                 "page" => "nullable|digits_between:1,9223372036854775807",
@@ -574,7 +575,7 @@ class ReportController extends Controller
      * | Admin Dashboard Report
      */
     public function adminDashReport(Request $request)
-    {        
+    {
         $validated = Validator::make(
             $request->all(),
             [
@@ -607,9 +608,9 @@ class ReportController extends Controller
             [
                 "fromDate" => "nullable|date|date_format:Y-m-d",
                 "uptoDate" => "nullable|date|date_format:Y-m-d",
-                "wardId" =>"nullable|digits_between:1,9223372036854775807",
-                "zoneId"  =>"nullable|digits_between:1,9223",
-                "userId" =>"nullable|digits_between:1,9223",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "zoneId"  => "nullable|digits_between:1,9223",
+                "userId" => "nullable|digits_between:1,9223",
             ]
         );
         if ($validated->fails()) {
@@ -629,9 +630,9 @@ class ReportController extends Controller
             [
                 "fromDate" => "nullable|date|date_format:Y-m-d",
                 "uptoDate" => "nullable|date|date_format:Y-m-d",
-                "wardId" =>"nullable|digits_between:1,9223372036854775807",
-                "zoneId"  =>"nullable|digits_between:1,9223",
-                "userId" =>"nullable|digits_between:1,9223",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "zoneId"  => "nullable|digits_between:1,9223",
+                "userId" => "nullable|digits_between:1,9223",
             ]
         );
         if ($validated->fails()) {
@@ -649,158 +650,158 @@ class ReportController extends Controller
         try {
             $ulbId = $request->ulbId ?? 2;
             $fyear = getFY();
-            $fyArr = explode("-",$fyear);
-            $privYear = ($fyArr[0]-1)."-".($fyArr[1]-1);            
+            $fyArr = explode("-", $fyear);
+            $privYear = ($fyArr[0] - 1) . "-" . ($fyArr[1] - 1);
             $prevYearData =  DB::connection('pgsql_reports')
-                            ->table('mpl_yearly_reports')
-                            ->where('ulb_id', $ulbId)
-                            ->where("fyear",$privYear)
-                            ->first();
+                ->table('mpl_yearly_reports')
+                ->where('ulb_id', $ulbId)
+                ->where("fyear", $privYear)
+                ->first();
             $currentYearData =  DB::connection('pgsql_reports')
-                                ->table('mpl_yearly_reports')
-                                ->where('ulb_id', $ulbId)
-                                ->where("fyear",$fyear)
-                                ->first();
+                ->table('mpl_yearly_reports')
+                ->where('ulb_id', $ulbId)
+                ->where("fyear", $fyear)
+                ->first();
             // dd($prevYearData->assessed_property_target_for_this_year??0);
 
             #_Assessed Properties ??
-            $data['Assessed Properties']['target_for_last_year']    = $prevYearData->assessed_property_target_for_this_year??0;
-            $data['Assessed Properties']['last_year_achievement']   = $prevYearData->assessed_property_this_year_achievement??0;
-            $data['Assessed Properties']['target_for_this_year']    = $currentYearData->assessed_property_target_for_this_year??0;
-            $data['Assessed Properties']['this_year_achievement']   = $currentYearData->assessed_property_this_year_achievement??0;
+            $data['Assessed Properties']['target_for_last_year']    = $prevYearData->assessed_property_target_for_this_year ?? 0;
+            $data['Assessed Properties']['last_year_achievement']   = $prevYearData->assessed_property_this_year_achievement ?? 0;
+            $data['Assessed Properties']['target_for_this_year']    = $currentYearData->assessed_property_target_for_this_year ?? 0;
+            $data['Assessed Properties']['this_year_achievement']   = $currentYearData->assessed_property_this_year_achievement ?? 0;
 
             #_Saf Achievement
-            $data['Saf Achievement']['previous_year_target']        = $prevYearData->saf_current_year_target??0;
-            $data['Saf Achievement']['previous_year_achievement']   = $prevYearData->saf_current_year_achievement??0;
-            $data['Saf Achievement']['current_year_target']         = $currentYearData->saf_current_year_target??0;
-            $data['Saf Achievement']['current_year_achievement']    = $currentYearData->saf_current_year_achievement??0;
+            $data['Saf Achievement']['previous_year_target']        = $prevYearData->saf_current_year_target ?? 0;
+            $data['Saf Achievement']['previous_year_achievement']   = $prevYearData->saf_current_year_achievement ?? 0;
+            $data['Saf Achievement']['current_year_target']         = $currentYearData->saf_current_year_target ?? 0;
+            $data['Saf Achievement']['current_year_achievement']    = $currentYearData->saf_current_year_achievement ?? 0;
 
             #_Assessment Categories ??
-            $data['Assessment Categories']['total_assessment']  = $currentYearData->total_assessment??0;
-            $data['Assessment Categories']['residential']       = $currentYearData->total_assessed_residential??0;
-            $data['Assessment Categories']['commercial']        = $currentYearData->total_assessed_commercial??0;
-            $data['Assessment Categories']['industrial']        = $currentYearData->total_assessed_industrial??0;
-            $data['Assessment Categories']['gbsaf']             = $currentYearData->total_assessed_gbsaf??0;
+            $data['Assessment Categories']['total_assessment']  = $currentYearData->total_assessment ?? 0;
+            $data['Assessment Categories']['residential']       = $currentYearData->total_assessed_residential ?? 0;
+            $data['Assessment Categories']['commercial']        = $currentYearData->total_assessed_commercial ?? 0;
+            $data['Assessment Categories']['industrial']        = $currentYearData->total_assessed_industrial ?? 0;
+            $data['Assessment Categories']['gbsaf']             = $currentYearData->total_assessed_gbsaf ?? 0;
 
             #_Ownership ??
-            $data['Ownership']['total_ownership'] = $currentYearData->total_property??0;
-            $data['Ownership']['owned_property']  = $currentYearData->owned_property??0;
-            $data['Ownership']['rented_property'] = $currentYearData->rented_property??0;
-            $data['Ownership']['vacant_property'] = $currentYearData->vacant_property??0;
+            $data['Ownership']['total_ownership'] = $currentYearData->total_property ?? 0;
+            $data['Ownership']['owned_property']  = $currentYearData->owned_property ?? 0;
+            $data['Ownership']['rented_property'] = $currentYearData->rented_property ?? 0;
+            $data['Ownership']['vacant_property'] = $currentYearData->vacant_property ?? 0;
 
             #_Unpaid Properties
-            $data['Unpaid Properties']['count_not_paid_3yrs']  = $prevYearData->count_not_paid_3yrs??0;
-            $data['Unpaid Properties']['amount_not_paid_3yrs'] = round(($prevYearData->amount_not_paid_3yrs??0) / 100000, 2); #_in lacs
-            $data['Unpaid Properties']['count_not_paid_2yrs']  = $prevYearData->count_not_paid_2yrs??0;
-            $data['Unpaid Properties']['amount_not_paid_2yrs'] = round(($prevYearData->amount_not_paid_2yrs??0) / 100000, 2); #_in lacs
-            $data['Unpaid Properties']['count_not_paid_1yrs']  = $prevYearData->count_not_paid_1yrs??0;
-            $data['Unpaid Properties']['amount_not_paid_1yrs'] = round(($prevYearData->amount_not_paid_1yrs??0) / 100000, 2); #_in lacs
+            $data['Unpaid Properties']['count_not_paid_3yrs']  = $prevYearData->count_not_paid_3yrs ?? 0;
+            $data['Unpaid Properties']['amount_not_paid_3yrs'] = round(($prevYearData->amount_not_paid_3yrs ?? 0) / 100000, 2); #_in lacs
+            $data['Unpaid Properties']['count_not_paid_2yrs']  = $prevYearData->count_not_paid_2yrs ?? 0;
+            $data['Unpaid Properties']['amount_not_paid_2yrs'] = round(($prevYearData->amount_not_paid_2yrs ?? 0) / 100000, 2); #_in lacs
+            $data['Unpaid Properties']['count_not_paid_1yrs']  = $prevYearData->count_not_paid_1yrs ?? 0;
+            $data['Unpaid Properties']['amount_not_paid_1yrs'] = round(($prevYearData->amount_not_paid_1yrs ?? 0) / 100000, 2); #_in lacs
 
             #_Outstanding Demand Last Year
             // 604529369.42  =>total demand
-            $data['Outstanding Demand Last Year']['outstanding']        = round(($prevYearData->demand_outstanding??0) / 100000, 2);          #_in lacs
-            $data['Outstanding Demand Last Year']['outstanding_count']  = $prevYearData->demand_outstanding_count??0;
-            $data['Outstanding Demand Last Year']['outstanding_amount'] = round(($prevYearData->demand_outstanding_amount??0) / 100000, 2);   #_in lacs
-            $data['Outstanding Demand Last Year']['extempted']          = round(($prevYearData->demand_extempted??0) / 100000, 2);            #_in lacs
-            $data['Outstanding Demand Last Year']['extempted_count']    = $prevYearData->demand_extempted_count??0;                           #_in lacs
-            $data['Outstanding Demand Last Year']['extempted_amount']   = round(($prevYearData->demand_extempted_amount??0) / 100000, 2);     #_in lacs
-            $data['Outstanding Demand Last Year']['recoverable_demand'] = round(($prevYearData->demand_recoverable_demand??0) / 100000, 2);   #_in lacs   #_collection amount
-            $data['Outstanding Demand Last Year']['payment_done']       = round(($prevYearData->demand_payment_done??0) / 100000, 2);         #_in lacs
-            $data['Outstanding Demand Last Year']['payment_due']        = round(($prevYearData->demand_balance_this_year??0) / 100000, 2);          #_in lacs
+            $data['Outstanding Demand Last Year']['outstanding']        = round(($prevYearData->demand_outstanding ?? 0) / 100000, 2);          #_in lacs
+            $data['Outstanding Demand Last Year']['outstanding_count']  = $prevYearData->demand_outstanding_count ?? 0;
+            $data['Outstanding Demand Last Year']['outstanding_amount'] = round(($prevYearData->demand_outstanding_amount ?? 0) / 100000, 2);   #_in lacs
+            $data['Outstanding Demand Last Year']['extempted']          = round(($prevYearData->demand_extempted ?? 0) / 100000, 2);            #_in lacs
+            $data['Outstanding Demand Last Year']['extempted_count']    = $prevYearData->demand_extempted_count ?? 0;                           #_in lacs
+            $data['Outstanding Demand Last Year']['extempted_amount']   = round(($prevYearData->demand_extempted_amount ?? 0) / 100000, 2);     #_in lacs
+            $data['Outstanding Demand Last Year']['recoverable_demand'] = round(($prevYearData->demand_recoverable_demand ?? 0) / 100000, 2);   #_in lacs   #_collection amount
+            $data['Outstanding Demand Last Year']['payment_done']       = round(($prevYearData->demand_payment_done ?? 0) / 100000, 2);         #_in lacs
+            $data['Outstanding Demand Last Year']['payment_due']        = round(($prevYearData->demand_balance_this_year ?? 0) / 100000, 2);          #_in lacs
 
             #_Outstanding Demand Current Year
-            $data['Outstanding Demand Current Year']['outstanding']        = round(($currentYearData->demand_outstanding??0) / 100000, 2);             #_in lacs
-            $data['Outstanding Demand Current Year']['outstanding_count']  = $currentYearData->demand_outstanding_count??0;
-            $data['Outstanding Demand Current Year']['outstanding_amount'] = round(($currentYearData->demand_outstanding_amount??0) / 100000, 2);      #_in lacs
-            $data['Outstanding Demand Current Year']['extempted']          = round(($currentYearData->demand_extempted??0) / 100000, 2);               #_in lacs
-            $data['Outstanding Demand Current Year']['extempted_count']    = $currentYearData->demand_extempted_count??0;
-            $data['Outstanding Demand Current Year']['extempted_amount']   = round(($currentYearData->demand_extempted_amount??0) / 100000, 2);        #_in lacs
-            $data['Outstanding Demand Current Year']['recoverable_demand'] = round(($currentYearData->demand_recoverable_demand??0) / 100000, 2);             #_in lacs
-            $data['Outstanding Demand Current Year']['payment_done']       = round(($currentYearData->demand_payment_done??0) / 100000, 2);            #_in lacs
-            $data['Outstanding Demand Current Year']['payment_due']        = round(($currentYearData->demand_balance_this_year??0) / 100000, 2);             #_in lacs
+            $data['Outstanding Demand Current Year']['outstanding']        = round(($currentYearData->demand_outstanding ?? 0) / 100000, 2);             #_in lacs
+            $data['Outstanding Demand Current Year']['outstanding_count']  = $currentYearData->demand_outstanding_count ?? 0;
+            $data['Outstanding Demand Current Year']['outstanding_amount'] = round(($currentYearData->demand_outstanding_amount ?? 0) / 100000, 2);      #_in lacs
+            $data['Outstanding Demand Current Year']['extempted']          = round(($currentYearData->demand_extempted ?? 0) / 100000, 2);               #_in lacs
+            $data['Outstanding Demand Current Year']['extempted_count']    = $currentYearData->demand_extempted_count ?? 0;
+            $data['Outstanding Demand Current Year']['extempted_amount']   = round(($currentYearData->demand_extempted_amount ?? 0) / 100000, 2);        #_in lacs
+            $data['Outstanding Demand Current Year']['recoverable_demand'] = round(($currentYearData->demand_recoverable_demand ?? 0) / 100000, 2);             #_in lacs
+            $data['Outstanding Demand Current Year']['payment_done']       = round(($currentYearData->demand_payment_done ?? 0) / 100000, 2);            #_in lacs
+            $data['Outstanding Demand Current Year']['payment_due']        = round(($currentYearData->demand_balance_this_year ?? 0) / 100000, 2);             #_in lacs
 
             #_Payments
-            $data['Payments']['previous_to_last_year_payment_count']  = $prevYearData->previous_to_last_year_payment_count??0;
-            $data['Payments']['previous_to_last_year_payment_amount'] = round(($prevYearData->previous_to_last_year_payment_amount??0) / 100000, 2);   #_in lacs
-            $data['Payments']['last_year_payment_count']              = $prevYearData->last_year_payment_count??0;
-            $data['Payments']['last_year_payment_amount']             = round(($prevYearData->last_year_payment_amount??0) / 100000, 2);               #_in lacs
-            $data['Payments']['this_year_payment_count']              = $currentYearData->this_year_payment_count??0;
-            $data['Payments']['this_year_payment_amount']             = round(($currentYearData->this_year_payment_amount??0) / 100000, 2);            #_in lacs
+            $data['Payments']['previous_to_last_year_payment_count']  = $prevYearData->previous_to_last_year_payment_count ?? 0;
+            $data['Payments']['previous_to_last_year_payment_amount'] = round(($prevYearData->previous_to_last_year_payment_amount ?? 0) / 100000, 2);   #_in lacs
+            $data['Payments']['last_year_payment_count']              = $prevYearData->last_year_payment_count ?? 0;
+            $data['Payments']['last_year_payment_amount']             = round(($prevYearData->last_year_payment_amount ?? 0) / 100000, 2);               #_in lacs
+            $data['Payments']['this_year_payment_count']              = $currentYearData->this_year_payment_count ?? 0;
+            $data['Payments']['this_year_payment_amount']             = round(($currentYearData->this_year_payment_amount ?? 0) / 100000, 2);            #_in lacs
 
             #_Single Payment
-            $data['Single Payment']['before_previous_year_count'] = $prevYearData->single_payment_before_this_year_count??0;
-            $data['Single Payment']['previous_year_count']        = $currentYearData->single_payment_before_this_year_count??0; // ?? one time payment in saf only
+            $data['Single Payment']['before_previous_year_count'] = $prevYearData->single_payment_before_this_year_count ?? 0;
+            $data['Single Payment']['previous_year_count']        = $currentYearData->single_payment_before_this_year_count ?? 0; // ?? one time payment in saf only
 
             #_Notice
-            $data['Notice']['last_year_count']     = $prevYearData->notice_this_year_count??0;
-            $data['Notice']['last_year_amount']    = round(($prevYearData->notice_this_year_amount??0) / 100000, 2);               #_in lacs
-            $data['Notice']['last_year_recovery']  = round(($prevYearData->notice_this_year_recovery??0) / 100000, 2);             #_in lacs
-            $data['Notice']['this_year_count']     = $currentYearData->notice_this_year_count??0;
-            $data['Notice']['this_year_amount']    = round(($currentYearData->notice_this_year_amount??0) / 100000, 2);            #_in lacs
-            $data['Notice']['this_year_recovery']  = round(($currentYearData->notice_this_year_recovery??0) / 100000, 2);          #_in lacs
+            $data['Notice']['last_year_count']     = $prevYearData->notice_this_year_count ?? 0;
+            $data['Notice']['last_year_amount']    = round(($prevYearData->notice_this_year_amount ?? 0) / 100000, 2);               #_in lacs
+            $data['Notice']['last_year_recovery']  = round(($prevYearData->notice_this_year_recovery ?? 0) / 100000, 2);             #_in lacs
+            $data['Notice']['this_year_count']     = $currentYearData->notice_this_year_count ?? 0;
+            $data['Notice']['this_year_amount']    = round(($currentYearData->notice_this_year_amount ?? 0) / 100000, 2);            #_in lacs
+            $data['Notice']['this_year_recovery']  = round(($currentYearData->notice_this_year_recovery ?? 0) / 100000, 2);          #_in lacs
 
             #_Mutation
-            $data['Mutation']['last_year_count']  = $prevYearData->mutation_this_year_count??0;
-            $data['Mutation']['last_year_amount'] = round(($prevYearData->mutation_this_year_amount??0) / 100000, 2);              #_in lacs
-            $data['Mutation']['this_year_count']  = $currentYearData->mutation_this_year_count??0;
-            $data['Mutation']['this_year_amount'] = round(($currentYearData->mutation_this_year_amount??0) / 100000, 2);           #_in lacs
+            $data['Mutation']['last_year_count']  = $prevYearData->mutation_this_year_count ?? 0;
+            $data['Mutation']['last_year_amount'] = round(($prevYearData->mutation_this_year_amount ?? 0) / 100000, 2);              #_in lacs
+            $data['Mutation']['this_year_count']  = $currentYearData->mutation_this_year_count ?? 0;
+            $data['Mutation']['this_year_amount'] = round(($currentYearData->mutation_this_year_amount ?? 0) / 100000, 2);           #_in lacs
 
             #_Top Areas Property Transactions 
             /**
              include ward no
              */
-            $data['Top Areas Property Transactions']['ward1_count'] = $currentYearData->top_area_property_transaction_ward1_count??0;
-            $data['Top Areas Property Transactions']['ward2_count'] = $currentYearData->top_area_property_transaction_ward2_count??0;
-            $data['Top Areas Property Transactions']['ward3_count'] = $currentYearData->top_area_property_transaction_ward3_count??0;
-            $data['Top Areas Property Transactions']['ward4_count'] = $currentYearData->top_area_property_transaction_ward4_count??0;
-            $data['Top Areas Property Transactions']['ward5_count'] = $currentYearData->top_area_property_transaction_ward5_count??0;
+            $data['Top Areas Property Transactions']['ward1_count'] = $currentYearData->top_area_property_transaction_ward1_count ?? 0;
+            $data['Top Areas Property Transactions']['ward2_count'] = $currentYearData->top_area_property_transaction_ward2_count ?? 0;
+            $data['Top Areas Property Transactions']['ward3_count'] = $currentYearData->top_area_property_transaction_ward3_count ?? 0;
+            $data['Top Areas Property Transactions']['ward4_count'] = $currentYearData->top_area_property_transaction_ward4_count ?? 0;
+            $data['Top Areas Property Transactions']['ward5_count'] = $currentYearData->top_area_property_transaction_ward5_count ?? 0;
 
             #_Top Areas Saf
             /**
              include ward no
              */
-            $data['Top Areas Saf']['ward1_count'] = $currentYearData->top_area_saf_ward1_count??0;
-            $data['Top Areas Saf']['ward2_count'] = $currentYearData->top_area_saf_ward2_count??0;
-            $data['Top Areas Saf']['ward3_count'] = $currentYearData->top_area_saf_ward3_count??0;
-            $data['Top Areas Saf']['ward4_count'] = $currentYearData->top_area_saf_ward4_count??0;
-            $data['Top Areas Saf']['ward5_count'] = $currentYearData->top_area_saf_ward5_count??0;
+            $data['Top Areas Saf']['ward1_count'] = $currentYearData->top_area_saf_ward1_count ?? 0;
+            $data['Top Areas Saf']['ward2_count'] = $currentYearData->top_area_saf_ward2_count ?? 0;
+            $data['Top Areas Saf']['ward3_count'] = $currentYearData->top_area_saf_ward3_count ?? 0;
+            $data['Top Areas Saf']['ward4_count'] = $currentYearData->top_area_saf_ward4_count ?? 0;
+            $data['Top Areas Saf']['ward5_count'] = $currentYearData->top_area_saf_ward5_count ?? 0;
 
             #_Payment Modes
-            $data['Payment Modes']['current_year_cash_collection']   = round(($currentYearData->current_year_cash_collection??0) / 100000, 2);             #_in lacs
-            $data['Payment Modes']['last_year_cash_collection']      = round(($prevYearData->current_year_cash_collection??0) / 100000, 2);                   #_in lacs
-            $data['Payment Modes']['current_year_upi_collection']    = round(($currentYearData->current_year_upi_collection??0) / 100000, 2);              #_in lacs
-            $data['Payment Modes']['last_year_upi_collection']       = round(($prevYearData->current_year_upi_collection??0) / 100000, 2);                    #_in lacs
-            $data['Payment Modes']['current_year_card_collection']   = round(($currentYearData->current_year_card_collection??0) / 100000, 2);             #_in lacs
-            $data['Payment Modes']['last_year_card_collection']      = round(($prevYearData->current_year_card_collection??0) / 100000, 2);                   #_in lacs
-            $data['Payment Modes']['current_year_cheque_collection'] = round(($currentYearData->current_year_cheque_collection??0) / 100000, 2);           #_in lacs
-            $data['Payment Modes']['last_year_cheque_collection']    = round(($prevYearData->current_year_cheque_collection??0) / 100000, 2);                 #_in lacs
-            $data['Payment Modes']['current_year_dd_collection']     = round(($currentYearData->current_year_dd_collection??0) / 100000, 2);               #_in lacs
-            $data['Payment Modes']['last_year_dd_collection']        = round(($prevYearData->current_year_dd_collection??0) / 100000, 2);                     #_in lacs
+            $data['Payment Modes']['current_year_cash_collection']   = round(($currentYearData->current_year_cash_collection ?? 0) / 100000, 2);             #_in lacs
+            $data['Payment Modes']['last_year_cash_collection']      = round(($prevYearData->current_year_cash_collection ?? 0) / 100000, 2);                   #_in lacs
+            $data['Payment Modes']['current_year_upi_collection']    = round(($currentYearData->current_year_upi_collection ?? 0) / 100000, 2);              #_in lacs
+            $data['Payment Modes']['last_year_upi_collection']       = round(($prevYearData->current_year_upi_collection ?? 0) / 100000, 2);                    #_in lacs
+            $data['Payment Modes']['current_year_card_collection']   = round(($currentYearData->current_year_card_collection ?? 0) / 100000, 2);             #_in lacs
+            $data['Payment Modes']['last_year_card_collection']      = round(($prevYearData->current_year_card_collection ?? 0) / 100000, 2);                   #_in lacs
+            $data['Payment Modes']['current_year_cheque_collection'] = round(($currentYearData->current_year_cheque_collection ?? 0) / 100000, 2);           #_in lacs
+            $data['Payment Modes']['last_year_cheque_collection']    = round(($prevYearData->current_year_cheque_collection ?? 0) / 100000, 2);                 #_in lacs
+            $data['Payment Modes']['current_year_dd_collection']     = round(($currentYearData->current_year_dd_collection ?? 0) / 100000, 2);               #_in lacs
+            $data['Payment Modes']['last_year_dd_collection']        = round(($prevYearData->current_year_dd_collection ?? 0) / 100000, 2);                     #_in lacs
 
             #_Citizen Engagement
-            $data['Citizen Engagement']['online_application_count_prev_year']  = $prevYearData->online_application_count_this_year??0;
-            $data['Citizen Engagement']['online_application_count_this_year']  = $currentYearData->online_application_count_this_year??0;
-            $data['Citizen Engagement']['online_application_amount_prev_year'] = round(($prevYearData->online_application_amount_this_year??0) / 100000, 2);       #_in lacs
-            $data['Citizen Engagement']['online_application_amount_this_year'] = round(($currentYearData->online_application_amount_this_year??0) / 100000, 2);    #_in lacs
-            $data['Citizen Engagement']['jsk_application_count_prev_year']     = $prevYearData->jsk_application_count_this_year??0;
-            $data['Citizen Engagement']['jsk_application_count_this_year']     = $currentYearData->jsk_application_count_this_year??0;
-            $data['Citizen Engagement']['jsk_application_amount_prev_year']    = round(($prevYearData->jsk_application_amount_this_year??0) / 100000, 2);          #_in lacs
-            $data['Citizen Engagement']['jsk_application_amount_this_year']    = round(($currentYearData->jsk_application_amount_this_year??0) / 100000, 2);       #_in lacs
+            $data['Citizen Engagement']['online_application_count_prev_year']  = $prevYearData->online_application_count_this_year ?? 0;
+            $data['Citizen Engagement']['online_application_count_this_year']  = $currentYearData->online_application_count_this_year ?? 0;
+            $data['Citizen Engagement']['online_application_amount_prev_year'] = round(($prevYearData->online_application_amount_this_year ?? 0) / 100000, 2);       #_in lacs
+            $data['Citizen Engagement']['online_application_amount_this_year'] = round(($currentYearData->online_application_amount_this_year ?? 0) / 100000, 2);    #_in lacs
+            $data['Citizen Engagement']['jsk_application_count_prev_year']     = $prevYearData->jsk_application_count_this_year ?? 0;
+            $data['Citizen Engagement']['jsk_application_count_this_year']     = $currentYearData->jsk_application_count_this_year ?? 0;
+            $data['Citizen Engagement']['jsk_application_amount_prev_year']    = round(($prevYearData->jsk_application_amount_this_year ?? 0) / 100000, 2);          #_in lacs
+            $data['Citizen Engagement']['jsk_application_amount_this_year']    = round(($currentYearData->jsk_application_amount_this_year ?? 0) / 100000, 2);       #_in lacs
 
             #_Compliances
-            $data['Compliances']['no_of_property_inspected_prev_year'] = $prevYearData->no_of_property_inspected_this_year??0;
-            $data['Compliances']['no_of_defaulter_prev_year']          = $prevYearData->no_of_defaulter_this_year??0;
-            $data['Compliances']['no_of_property_inspected_this_year'] = $currentYearData->no_of_property_inspected_this_year??0;
-            $data['Compliances']['no_of_defaulter_this_year']          = $currentYearData->no_of_defaulter_this_year??0;
+            $data['Compliances']['no_of_property_inspected_prev_year'] = $prevYearData->no_of_property_inspected_this_year ?? 0;
+            $data['Compliances']['no_of_defaulter_prev_year']          = $prevYearData->no_of_defaulter_this_year ?? 0;
+            $data['Compliances']['no_of_property_inspected_this_year'] = $currentYearData->no_of_property_inspected_this_year ?? 0;
+            $data['Compliances']['no_of_defaulter_this_year']          = $currentYearData->no_of_defaulter_this_year ?? 0;
 
-            $data['Demand']['prev_year']             = round(($prevYearData->demand_for_this_year??0) / 100000, 2); #_in lacs
-            $data['Demand']['current_year']          = round(($currentYearData->demand_for_this_year??0) / 100000, 2); #_in lacs
-            $data['Collection']['prev_year']         = round(($prevYearData->demand_coll_this_year??0) / 100000, 2); #_in lacs
-            $data['Collection']['current_year']      = round(($currentYearData->demand_coll_this_year??0) / 100000, 2); #_in lacs
-            $data['Balance']['prev_year']            = round(($prevYearData->demand_balance_this_year??0)  / 100000, 2); #_in lacs
-            $data['Balance']['current_year']         = round(($currentYearData->demand_balance_this_year??0) / 100000, 2); #_in lacs
-            $data['Total Payment From HH']['prev_year']    = $prevYearData->demand_coll_from_this_year_prop_count??0;
-            $data['Total Payment From HH']['current_year'] = $currentYearData->demand_coll_from_this_year_prop_count??0;
+            $data['Demand']['prev_year']             = round(($prevYearData->demand_for_this_year ?? 0) / 100000, 2); #_in lacs
+            $data['Demand']['current_year']          = round(($currentYearData->demand_for_this_year ?? 0) / 100000, 2); #_in lacs
+            $data['Collection']['prev_year']         = round(($prevYearData->demand_coll_this_year ?? 0) / 100000, 2); #_in lacs
+            $data['Collection']['current_year']      = round(($currentYearData->demand_coll_this_year ?? 0) / 100000, 2); #_in lacs
+            $data['Balance']['prev_year']            = round(($prevYearData->demand_balance_this_year ?? 0)  / 100000, 2); #_in lacs
+            $data['Balance']['current_year']         = round(($currentYearData->demand_balance_this_year ?? 0) / 100000, 2); #_in lacs
+            $data['Total Payment From HH']['prev_year']    = $prevYearData->demand_coll_from_this_year_prop_count ?? 0;
+            $data['Total Payment From HH']['current_year'] = $currentYearData->demand_coll_from_this_year_prop_count ?? 0;
 
 
             return responseMsgs(true, "Mpl Report", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
@@ -814,18 +815,18 @@ class ReportController extends Controller
         try {
             $ulbId = $request->ulbId ?? 2;
             $fyear = getFY();
-            $fyArr = explode("-",$fyear);
-            $privYear = ($fyArr[0]-1)."-".($fyArr[1]-1);            
+            $fyArr = explode("-", $fyear);
+            $privYear = ($fyArr[0] - 1) . "-" . ($fyArr[1] - 1);
             $prevYearData =  DB::connection('pgsql_reports')
-                            ->table('mpl_yearly_reports')
-                            ->where('ulb_id', $ulbId)
-                            ->where("fyear",$privYear)
-                            ->first();
+                ->table('mpl_yearly_reports')
+                ->where('ulb_id', $ulbId)
+                ->where("fyear", $privYear)
+                ->first();
             $currentYearData =  DB::connection('pgsql_reports')
-                                ->table('mpl_yearly_reports')
-                                ->where('ulb_id', $ulbId)
-                                ->where("fyear",$fyear)
-                                ->first();
+                ->table('mpl_yearly_reports')
+                ->where('ulb_id', $ulbId)
+                ->where("fyear", $fyear)
+                ->first();
 
             #_Assessed Properties ??
             $data['Assessed Properties']['target_for_last_year']    = $prevYearData->assessed_property_target_for_this_year ?? 0;
@@ -887,7 +888,7 @@ class ReportController extends Controller
             $data['Unpaid Properties']["current"]['count_not_paid_1yrs']  = $currentYearData->count_not_paid_1yrs ?? 0;
             $data['Unpaid Properties']["current"]['amount_not_paid_1yrs'] = round(($currentYearData->amount_not_paid_1yrs ?? 0) / 10000000, 2); #_in cr
             $data['Unpaid Properties']["current"]['count_not_paid_this_yrs']  = $currentYearData->property_count_not_paid_this_years ?? 0;
-            $data['Unpaid Properties']["current"]['amount_not_paid_this_yrs'] = round(($currentYearData->property_amount_not_paid_this_years ?? 0) / 10000000, 2);#_in cr
+            $data['Unpaid Properties']["current"]['amount_not_paid_this_yrs'] = round(($currentYearData->property_amount_not_paid_this_years ?? 0) / 10000000, 2); #_in cr
 
             #_Outstanding Demand Last Year
             // 604529369.42  =>total demand
@@ -993,14 +994,14 @@ class ReportController extends Controller
             $data['Compliances']['no_of_property_inspected_this_year'] = $currentYearData->no_of_property_inspected_this_year ?? 0;
             $data['Compliances']['no_of_defaulter_this_year']          = $currentYearData->no_of_defaulter_this_year ?? 0;
 
-            $data['Demand']['prev_year']             = round(($prevYearData->demand_for_this_year??0) / 10000000, 2); #_in cr
-            $data['Demand']['current_year']          = round(($currentYearData->demand_for_this_year??0) / 10000000, 2); #_in cr
-            $data['Collection']['prev_year']         = round(($prevYearData->demand_coll_this_year??0) / 10000000, 2); #_in cr
-            $data['Collection']['current_year']      = round(($currentYearData->demand_coll_this_year??0) / 10000000, 2); #_in cr
-            $data['Balance']['prev_year']            = round(($prevYearData->demand_balance_this_year??0)  / 10000000, 2); #_in cr
-            $data['Balance']['current_year']         = round(($currentYearData->demand_balance_this_year??0) / 10000000, 2); #_in cr
-            $data['Total Payment From HH']['prev_year']    = $prevYearData->demand_coll_from_this_year_prop_count??0;
-            $data['Total Payment From HH']['current_year'] = $currentYearData->demand_coll_from_this_year_prop_count??0;
+            $data['Demand']['prev_year']             = round(($prevYearData->demand_for_this_year ?? 0) / 10000000, 2); #_in cr
+            $data['Demand']['current_year']          = round(($currentYearData->demand_for_this_year ?? 0) / 10000000, 2); #_in cr
+            $data['Collection']['prev_year']         = round(($prevYearData->demand_coll_this_year ?? 0) / 10000000, 2); #_in cr
+            $data['Collection']['current_year']      = round(($currentYearData->demand_coll_this_year ?? 0) / 10000000, 2); #_in cr
+            $data['Balance']['prev_year']            = round(($prevYearData->demand_balance_this_year ?? 0)  / 10000000, 2); #_in cr
+            $data['Balance']['current_year']         = round(($currentYearData->demand_balance_this_year ?? 0) / 10000000, 2); #_in cr
+            $data['Total Payment From HH']['prev_year']    = $prevYearData->demand_coll_from_this_year_prop_count ?? 0;
+            $data['Total Payment From HH']['current_year'] = $currentYearData->demand_coll_from_this_year_prop_count ?? 0;
 
             $data['Property Count']['till_prev_year'] = $prevYearData->total_property ?? 0;
             $data['Property Count']['till_current_year'] = $currentYearData->total_property ?? 0;
@@ -1012,157 +1013,157 @@ class ReportController extends Controller
             $data['member_count']['jsk'] = $currentYearData->jsk_count ?? 0;
             $data['member_count']['utc'] = $currentYearData->utc_count ?? 0;
 
-            $data['citizen']["Engagement"]=[                
-                "apr"=>[
-                    'month'=>"apr",
-                    "value"=>0,
-                ] ,
-                "may"=>[
-                    'month'=>"may",
-                    "value"=>0,
-                ] ,
-                "june"=>[
-                    'month'=>"june",
-                    "value"=>0,
-                ] ,
-                "july"=>[
-                    'month'=>"july",
-                    "value"=>0,
-                ] ,
-                "aug"=>[
-                    'month'=>"aug",
-                    "value"=>0,
-                ] ,
-                "sept"=>[
-                    'month'=>"sept",
-                    "value"=>0,
-                ] ,
-                "oct"=>[
-                    'month'=>"oct",
-                    "value"=>0,
-                ] ,
-                "nov"=>[
-                    'month'=>"nov",
-                    "value"=>0,
-                ] ,
-                "dec"=>[
-                    'month'=>"dec",
-                    "value"=>0,
-                ] ,
-                "jan"=>[
-                    'month'=>"jan",
-                    "value"=>0,
-                ] ,
-                "feb"=>[
-                    'month'=>"feb",
-                    "value"=>0,
-                ] ,
-                "mar"=>[
-                    'month'=>"mar",
-                    "value"=>0,
-                ] ,
+            $data['citizen']["Engagement"] = [
+                "apr" => [
+                    'month' => "apr",
+                    "value" => 0,
+                ],
+                "may" => [
+                    'month' => "may",
+                    "value" => 0,
+                ],
+                "june" => [
+                    'month' => "june",
+                    "value" => 0,
+                ],
+                "july" => [
+                    'month' => "july",
+                    "value" => 0,
+                ],
+                "aug" => [
+                    'month' => "aug",
+                    "value" => 0,
+                ],
+                "sept" => [
+                    'month' => "sept",
+                    "value" => 0,
+                ],
+                "oct" => [
+                    'month' => "oct",
+                    "value" => 0,
+                ],
+                "nov" => [
+                    'month' => "nov",
+                    "value" => 0,
+                ],
+                "dec" => [
+                    'month' => "dec",
+                    "value" => 0,
+                ],
+                "jan" => [
+                    'month' => "jan",
+                    "value" => 0,
+                ],
+                "feb" => [
+                    'month' => "feb",
+                    "value" => 0,
+                ],
+                "mar" => [
+                    'month' => "mar",
+                    "value" => 0,
+                ],
             ];
             #_Top Areas Saf
             /**
              include ward no
-             */           
-            $data["Top Areas Saf"]=[
-                "ward1"=>[
-                    "key"=>"ward1",
-                    "count"=>$currentYearData->top_area_saf_ward1_count ?? 0,
-                    "ward"=> $currentYearData->top_area_saf_ward1_name ?? "",
-                    "area"=> $currentYearData->top_area_saf_ward1_area ?? "",
+             */
+            $data["Top Areas Saf"] = [
+                "ward1" => [
+                    "key" => "ward1",
+                    "count" => $currentYearData->top_area_saf_ward1_count ?? 0,
+                    "ward" => $currentYearData->top_area_saf_ward1_name ?? "",
+                    "area" => $currentYearData->top_area_saf_ward1_area ?? "",
                 ],
-                "ward2"=>[
-                    "key"=>"ward2",
-                    "count"=>$currentYearData->top_area_saf_ward2_count ?? 0,
-                    "ward"=> $currentYearData->top_area_saf_ward2_name ?? "",
-                    "area"=> $currentYearData->top_area_saf_ward2_area ?? "",
+                "ward2" => [
+                    "key" => "ward2",
+                    "count" => $currentYearData->top_area_saf_ward2_count ?? 0,
+                    "ward" => $currentYearData->top_area_saf_ward2_name ?? "",
+                    "area" => $currentYearData->top_area_saf_ward2_area ?? "",
                 ],
-                "ward3"=>[
-                    "key"=>"ward3",
-                    "count"=>$currentYearData->top_area_saf_ward3_count ?? 0,
-                    "ward"=> $currentYearData->top_area_saf_ward3_name ?? "",
-                    "area"=> $currentYearData->top_area_saf_ward3_area ?? "",
+                "ward3" => [
+                    "key" => "ward3",
+                    "count" => $currentYearData->top_area_saf_ward3_count ?? 0,
+                    "ward" => $currentYearData->top_area_saf_ward3_name ?? "",
+                    "area" => $currentYearData->top_area_saf_ward3_area ?? "",
                 ],
-                "ward4"=>[
-                    "key"=>"ward4",
-                    "count"=>$currentYearData->top_area_saf_ward4_count ?? 0,
-                    "ward"=> $currentYearData->top_area_saf_ward4_name ?? "",
-                    "area"=> $currentYearData->top_area_saf_ward4_area ?? "",
+                "ward4" => [
+                    "key" => "ward4",
+                    "count" => $currentYearData->top_area_saf_ward4_count ?? 0,
+                    "ward" => $currentYearData->top_area_saf_ward4_name ?? "",
+                    "area" => $currentYearData->top_area_saf_ward4_area ?? "",
                 ],
-                "ward5"=>[
-                    "key"=>"ward5",
-                    "count"=>$currentYearData->top_area_saf_ward5_count ?? 0,
-                    "ward"=> $currentYearData->top_area_saf_ward5_name ?? "",
-                    "area"=> $currentYearData->top_area_saf_ward5_area ?? "",
+                "ward5" => [
+                    "key" => "ward5",
+                    "count" => $currentYearData->top_area_saf_ward5_count ?? 0,
+                    "ward" => $currentYearData->top_area_saf_ward5_name ?? "",
+                    "area" => $currentYearData->top_area_saf_ward5_area ?? "",
                 ],
             ];
 
             /**
              * | Top Defaulter Ward Name
              */
-            
-             $data["Top Defaulter"]=[
-                "ward1"=>[
-                    "key"=>"ward1",
-                    "count"=>$currentYearData->top_defaulter_ward1_count ?? 0,
-                    "amount"=> round(($currentYearData->top_defaulter_ward1_amount ?? 0) / 10000000, 2),#_in cr
-                    "ward"=> $currentYearData->top_defaulter_ward1_name ?? "",
+
+            $data["Top Defaulter"] = [
+                "ward1" => [
+                    "key" => "ward1",
+                    "count" => $currentYearData->top_defaulter_ward1_count ?? 0,
+                    "amount" => round(($currentYearData->top_defaulter_ward1_amount ?? 0) / 10000000, 2), #_in cr
+                    "ward" => $currentYearData->top_defaulter_ward1_name ?? "",
                 ],
-                "ward2"=>[
-                    "key"=>"ward2",
-                    "count"=>$currentYearData->top_defaulter_ward2_count ?? 0,
-                    "amount"=> round(($currentYearData->top_defaulter_ward2_amount ?? 0) / 10000000, 2),#_in cr
-                    "ward"=> $currentYearData->top_defaulter_ward2_name ?? "",
+                "ward2" => [
+                    "key" => "ward2",
+                    "count" => $currentYearData->top_defaulter_ward2_count ?? 0,
+                    "amount" => round(($currentYearData->top_defaulter_ward2_amount ?? 0) / 10000000, 2), #_in cr
+                    "ward" => $currentYearData->top_defaulter_ward2_name ?? "",
                 ],
-                "ward3"=>[
-                    "key"=>"ward3",
-                    "count"=>$currentYearData->top_defaulter_ward3_count ?? 0,
-                    "amount"=> round(($currentYearData->top_defaulter_ward3_amount ?? 0) / 10000000, 2),#_in cr
-                    "ward"=> $currentYearData->top_defaulter_ward3_name ?? "",
+                "ward3" => [
+                    "key" => "ward3",
+                    "count" => $currentYearData->top_defaulter_ward3_count ?? 0,
+                    "amount" => round(($currentYearData->top_defaulter_ward3_amount ?? 0) / 10000000, 2), #_in cr
+                    "ward" => $currentYearData->top_defaulter_ward3_name ?? "",
                 ],
-                "ward4"=>[
-                    "key"=>"ward4",
-                    "count"=>$currentYearData->top_defaulter_ward4_count ?? 0,
-                    "amount"=> round(($currentYearData->top_defaulter_ward4_amount ?? 0) / 10000000, 2),#_in cr
-                    "ward"=> $currentYearData->top_defaulter_ward4_name ?? "",
+                "ward4" => [
+                    "key" => "ward4",
+                    "count" => $currentYearData->top_defaulter_ward4_count ?? 0,
+                    "amount" => round(($currentYearData->top_defaulter_ward4_amount ?? 0) / 10000000, 2), #_in cr
+                    "ward" => $currentYearData->top_defaulter_ward4_name ?? "",
                 ],
-                "ward5"=>[
-                    "key"=>"ward5",
-                    "count"=>$currentYearData->top_defaulter_ward5_count ?? 0,
-                    "amount"=> round(($currentYearData->top_defaulter_ward5_amount ?? 0) / 10000000, 2),#_in cr
-                    "ward"=> $currentYearData->top_defaulter_ward5_name ?? "",
+                "ward5" => [
+                    "key" => "ward5",
+                    "count" => $currentYearData->top_defaulter_ward5_count ?? 0,
+                    "amount" => round(($currentYearData->top_defaulter_ward5_amount ?? 0) / 10000000, 2), #_in cr
+                    "ward" => $currentYearData->top_defaulter_ward5_name ?? "",
                 ],
-                "ward6"=>[
-                    "key"=>"ward6",
-                    "count"=>$currentYearData->top_defaulter_ward6_count ?? 0,
-                    "amount"=> round(($currentYearData->top_defaulter_ward6_amount ?? 0) / 10000000, 2),#_in cr
-                    "ward"=> $currentYearData->top_defaulter_ward6_name ?? "",
+                "ward6" => [
+                    "key" => "ward6",
+                    "count" => $currentYearData->top_defaulter_ward6_count ?? 0,
+                    "amount" => round(($currentYearData->top_defaulter_ward6_amount ?? 0) / 10000000, 2), #_in cr
+                    "ward" => $currentYearData->top_defaulter_ward6_name ?? "",
                 ],
-                "ward7"=>[
-                    "key"=>"ward7",
-                    "count"=>$currentYearData->top_defaulter_ward7_count ?? 0,
-                    "amount"=> round(($currentYearData->top_defaulter_ward7_amount ?? 0) / 10000000, 2),#_in cr
-                    "ward"=> $currentYearData->top_defaulter_ward7_name ?? "",
+                "ward7" => [
+                    "key" => "ward7",
+                    "count" => $currentYearData->top_defaulter_ward7_count ?? 0,
+                    "amount" => round(($currentYearData->top_defaulter_ward7_amount ?? 0) / 10000000, 2), #_in cr
+                    "ward" => $currentYearData->top_defaulter_ward7_name ?? "",
                 ],
-                "ward8"=>[
-                    "key"=>"ward8",
-                    "count"=>$currentYearData->top_defaulter_ward8_count ?? 0,
-                    "amount"=> round(($currentYearData->top_defaulter_ward8_amount ?? 0) / 10000000, 2),#_in cr
-                    "ward"=> $currentYearData->top_defaulter_ward8_name ?? "",
+                "ward8" => [
+                    "key" => "ward8",
+                    "count" => $currentYearData->top_defaulter_ward8_count ?? 0,
+                    "amount" => round(($currentYearData->top_defaulter_ward8_amount ?? 0) / 10000000, 2), #_in cr
+                    "ward" => $currentYearData->top_defaulter_ward8_name ?? "",
                 ],
-                "ward9"=>[
-                    "key"=>"ward9",
-                    "count"=>$currentYearData->top_defaulter_ward9_count ?? 0,
-                    "amount"=> round(($currentYearData->top_defaulter_ward9_amount ?? 0) / 10000000, 2),#_in cr
-                    "ward"=> $currentYearData->top_defaulter_ward9_name ?? "",
+                "ward9" => [
+                    "key" => "ward9",
+                    "count" => $currentYearData->top_defaulter_ward9_count ?? 0,
+                    "amount" => round(($currentYearData->top_defaulter_ward9_amount ?? 0) / 10000000, 2), #_in cr
+                    "ward" => $currentYearData->top_defaulter_ward9_name ?? "",
                 ],
-                "ward10"=>[
-                    "key"=>"ward10",
-                    "count"=>$currentYearData->top_defaulter_ward10_count ?? 0,
-                    "amount"=> round(($currentYearData->top_defaulter_ward10_amount ?? 0) / 10000000, 2),#_in cr
-                    "ward"=> $currentYearData->top_defaulter_ward10_name ?? "",
+                "ward10" => [
+                    "key" => "ward10",
+                    "count" => $currentYearData->top_defaulter_ward10_count ?? 0,
+                    "amount" => round(($currentYearData->top_defaulter_ward10_amount ?? 0) / 10000000, 2), #_in cr
+                    "ward" => $currentYearData->top_defaulter_ward10_name ?? "",
                 ],
             ];
 
@@ -1174,17 +1175,16 @@ class ReportController extends Controller
 
     public function mplReportCollection(Request $request)
     {
-        try{
+        try {
             $request->merge(["metaData" => ["pr111.1", 1.1, null, $request->getMethod(), null,]]);
-            $ulbId = $request->ulbId ?? 2;            
+            $ulbId = $request->ulbId ?? 2;
             $currentDate = Carbon::now()->format("Y-m-d");
-            $toDayCollection = PropTransaction::whereIn('status',[1,2])->where("tran_date",$currentDate)->sum("amount");            
-            $data["toDayCollection"] = ($toDayCollection? $toDayCollection:0); 
+            $toDayCollection = PropTransaction::whereIn('status', [1, 2])->where("tran_date", $currentDate)->sum("amount");
+            $data["toDayCollection"] = ($toDayCollection ? $toDayCollection : 0);
             return responseMsgs(true, "Mpl Report Today Coll", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
-        }catch (Exception $e) {
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
         }
-
     }
 
     public function userWiseCollectionSummary(Request $request)
@@ -1193,7 +1193,7 @@ class ReportController extends Controller
             $request->all(),
             [
                 "fromDate" => "nullable|date|date_format:Y-m-d",
-                "uptoDate" => "nullable|date|date_format:Y-m-d|after_or_equal:".$request->fromDate,
+                "uptoDate" => "nullable|date|date_format:Y-m-d|after_or_equal:" . $request->fromDate,
                 "ulbId" => "nullable|digits_between:1,9223372036854775807",
                 "wardId" => "nullable|digits_between:1,9223372036854775807",
                 "zoneId" => "nullable|digits_between:1,9223372036854775807",
@@ -1208,37 +1208,31 @@ class ReportController extends Controller
                 'errors' => $validated->errors()
             ]);
         }
-        try{         
+        try {
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
             $user = Auth()->user();
             $ulbId = $user->ulb_id ?? 2;
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $limit = $perPage;
-            $offset =  $request->page && $request->page > 0 ? (($request->page-1) * $perPage) : 0;
+            $offset =  $request->page && $request->page > 0 ? (($request->page - 1) * $perPage) : 0;
             $wardId = $zoneId = $paymentMode = $userId = null;
-            if($request->fromDate)
-            {
+            if ($request->fromDate) {
                 $fromDate = $request->fromDate;
             }
-            if($request->uptoDate)
-            {
+            if ($request->uptoDate) {
                 $uptoDate = $request->uptoDate;
             }
-            if($request->wardId)
-            {
+            if ($request->wardId) {
                 $wardId = $request->wardId;
             }
-            if($request->zoneId)
-            {
+            if ($request->zoneId) {
                 $zoneId = $request->zoneId;
             }
-            if($request->paymentMode)
-            {
+            if ($request->paymentMode) {
                 $paymentMode = $request->paymentMode;
             }
-            if($request->userId)
-            {
+            if ($request->userId) {
                 $userId = $request->userId;
             }
             $sql = "
@@ -1257,20 +1251,20 @@ class ReportController extends Controller
                     JOIN prop_properties on prop_properties.id = prop_transactions.property_id                   
                     WHERE prop_transactions.status IN (1,2)
                         AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
-                        ".($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "")."
-                        ".($zoneId ? " AND prop_properties.zone_mstr_id	 = $zoneId" : "")."
-                        ".($userId ? " AND prop_transactions.user_id = $userId" : "")."
+                        " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
+                        " . ($zoneId ? " AND prop_properties.zone_mstr_id	 = $zoneId" : "") . "
+                        " . ($userId ? " AND prop_transactions.user_id = $userId" : "") . "
                     GROUP BY prop_transactions.user_id
                     ORDER BY prop_transactions.user_id
                 )prop_transactions
                 JOIN users ON users.id = prop_transactions.user_id
             ";
-            $data = DB::select($sql." limit $limit offset $offset");
+            $data = DB::select($sql . " limit $limit offset $offset");
             $count = (collect(DB::SELECT("SELECT COUNT(*)AS total, SUM(total_amount) AS total_amount,sum(total_tran) as total_tran
                                           FROM ($sql) total"))->first());
-            $total = ($count)->total??0;
-            $sum = ($count)->total_amount??0;
-            $totalBillCut = ($count)->total_tran??0;
+            $total = ($count)->total ?? 0;
+            $sum = ($count)->total_amount ?? 0;
+            $totalBillCut = ($count)->total_tran ?? 0;
             $lastPage = ceil($total / $perPage);
             $list = [
                 "current_page" => $page,
@@ -1282,8 +1276,677 @@ class ReportController extends Controller
                 "last_page" => $lastPage
             ];
             return responseMsgs(true, "", $list, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
-        }catch (Exception $e) {
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
         }
+    }
+
+    /**
+     * | Inserting Data in report table for live dashboard
+     */
+    public function data(Request $request)
+    {
+
+        // return  SMSAKGOVT(8797770238, "hello", "123");
+
+        $sql = "SELECT 
+                        total_assessment.*, 
+                        applied_safs.*, 
+                        applied_industries_safs.*, 
+                        applied_gb_safs.*, 
+                        total_props.*, 
+                        total_vacant_land.*, 
+                        total_occupancy_props.*,
+                        pnding_3yrs.*,
+                        pnding_2yrs.*,
+                        pnding_1yrs.*,
+                        outstandings_last_yr.*,
+                        outstanding_current_yr.*,
+                        payments.*,
+                        mutations.*,
+                        top_wards_collections.*,
+                        top_area_safs.*,
+                        area_wise_defaulter.*,
+                        payment_modes.*
+        
+                FROM 
+                    (
+                  SELECT 
+                    COUNT(a.*) AS total_assessed_props 
+                  FROM 
+                    (
+                      SELECT 
+                        id 
+                      FROM 
+                        prop_active_safs 
+                      WHERE 
+                        status = 1 AND ulb_id=2						-- Parameterise This
+                        AND application_date BETWEEN '2023-04-01' 	-- Parameterise This
+                        AND '2024-03-31' 								-- Parameterise this
+                      UNION ALL 
+                      SELECT 
+                        id 
+                      FROM 
+                        prop_safs 
+                      WHERE 
+                        status = 1  AND ulb_id=2
+                        AND application_date BETWEEN '2023-04-01' 	-- Parameterise this
+                        AND '2024-03-31' 								-- Parameterise this
+                      UNION ALL 
+                      SELECT 
+                        id 
+                      FROM 
+                        prop_rejected_safs 
+                      WHERE 
+                        status = 1 AND ulb_id=2
+                        AND application_date BETWEEN '2023-04-01' 	-- Parameterise this
+                        AND '2024-03-31'								-- Parameterise this
+                    ) AS a
+                ) AS total_assessment, 
+                (
+                  SELECT 
+                    SUM(a.applied_comm_safs) AS applied_comm_safs, 
+                    SUM(a.applied_res_safs) AS applied_res_safs 
+                  FROM 
+                    (
+                      SELECT 
+                        SUM(
+                          CASE WHEN holding_type IN (
+                            'PURE_COMMERCIAL', 'MIX_COMMERCIAL'
+                          ) THEN 1 ELSE 0 END
+                        ) AS applied_comm_safs, 
+                        SUM(
+                          CASE WHEN holding_type = 'PURE_RESIDENTIAL' THEN 1 ELSE 0 END
+                        ) AS applied_res_safs 
+                      FROM 
+                        prop_active_safs 
+                      WHERE 
+                        status = 1 AND ulb_id=2
+                        AND application_date BETWEEN '2023-04-01' 			--Parameterise this
+                        AND '2024-03-31' 										--Parameterise this
+                      UNION ALL 
+                      SELECT 
+                        SUM(
+                          CASE WHEN holding_type IN (
+                            'PURE_COMMERCIAL', 'MIX_COMMERCIAL'
+                          ) THEN 1 ELSE 0 END
+                        ) AS applied_comm_safs, 
+                        SUM(
+                          CASE WHEN holding_type = 'PURE_RESIDENTIAL' THEN 1 ELSE 0 END
+                        ) AS applied_res_safs 
+                      FROM 
+                        prop_safs 
+                      WHERE 
+                        status = 1 AND ulb_id=2
+                        AND application_date BETWEEN '2023-04-01' 			--Parameterise this
+                        AND '2024-03-31' 										--Parameterise this
+                      UNION ALL 
+                      SELECT 
+                        SUM(
+                          CASE WHEN holding_type IN (
+                            'PURE_COMMERCIAL', 'MIX_COMMERCIAL'
+                          ) THEN 1 ELSE 0 END
+                        ) AS applied_comm_safs, 
+                        SUM(
+                          CASE WHEN holding_type = 'PURE_RESIDENTIAL' THEN 1 ELSE 0 END
+                        ) AS applied_res_safs 
+                      FROM 
+                        prop_rejected_safs 
+                      WHERE 
+                        status = 1 AND ulb_id=2
+                        AND application_date BETWEEN '2023-04-01' 			--Parameterise this
+                        AND '2024-03-31'										--Parameterise this
+                    ) AS a
+                ) AS applied_safs, 
+                (
+                  SELECT 
+                    SUM(a.count) AS applied_industries_safs 
+                  FROM 
+                    (
+                      SELECT 
+                        COUNT(DISTINCT s.id) 
+                      FROM 
+                        prop_active_safs s 
+                        JOIN prop_active_safs_floors f ON f.saf_id = s.id 
+                      WHERE 
+                        f.usage_type_mstr_id = 33 						--Parameterise this
+                        AND f.status = 1 
+                        AND s.status = 1 
+                        AND s.ulb_id=2
+                      UNION ALL 
+                      SELECT 
+                        COUNT(DISTINCT s.id) 
+                      FROM 
+                        prop_safs s 
+                        JOIN prop_safs_floors f ON f.saf_id = s.id 
+                      WHERE 
+                        f.usage_type_mstr_id = 33 						--Parameterise this
+                        AND f.status = 1 
+                        AND s.status = 1 
+                        AND s.ulb_id=2
+                      UNION ALL 
+                      SELECT 
+                        COUNT(DISTINCT s.id) 
+                      FROM 
+                        prop_rejected_safs s 
+                        JOIN prop_rejected_safs_floors f ON f.saf_id = s.id 
+                      WHERE 
+                        f.usage_type_mstr_id = 33 						-- Parameterise this
+                        AND f.status = 1 
+                        AND s.status = 1
+                        AND s.ulb_id=2
+                    ) AS a
+                ) AS applied_industries_safs, 
+                (
+                  SELECT 
+                    SUM(a.id) AS applied_gb_safs 
+                  FROM 
+                    (
+                      SELECT 
+                        COUNT(id) AS id 
+                      FROM 
+                        prop_active_safs 
+                      WHERE 
+                        is_gb_saf = TRUE 
+                        AND status = 1 AND ulb_id=2
+                      UNION ALL 
+                      SELECT 
+                        COUNT(id) AS id 
+                      FROM 
+                        prop_safs 
+                      WHERE 
+                        is_gb_saf = TRUE 
+                        AND status = 1 AND ulb_id=2
+                      UNION ALL 
+                      SELECT 
+                        COUNT(id) AS id 
+                      FROM 
+                        prop_rejected_safs 
+                      WHERE 
+                        is_gb_saf = TRUE 
+                        AND status = 1 AND ulb_id=2
+                    ) AS a
+                ) AS applied_gb_safs, 
+                (
+                  SELECT 
+                    COUNT(id) AS total_props 
+                  FROM 
+                    prop_properties 
+                  WHERE 
+                    status = 1 AND ulb_id=2
+                ) AS total_props, 
+                (
+                  SELECT 
+                    COUNT(id) AS total_vacant_land 
+                  FROM 
+                    prop_properties p 
+                  WHERE 
+                    p.prop_type_mstr_id = 4 
+                    AND status = 1 AND ulb_id=2
+                ) AS total_vacant_land, 
+                (
+                  SELECT 
+                    SUM(
+                      CASE WHEN nature = 'owned' THEN 1 ELSE 0 END
+                    )+ d.total_owned_props AS total_owned_props, 
+                    SUM(
+                      CASE WHEN nature = 'rented' THEN 1 ELSE 0 END
+                    ) AS total_owned_props, 
+                    SUM(
+                      CASE WHEN nature = 'mixed' THEN 1 ELSE 0 END
+                    ) AS total_mixed_owned_props 
+                  FROM 
+                    (
+                      SELECT 
+                        a.*, 
+                        CASE WHEN a.cnt = a.owned THEN 'owned' WHEN a.cnt = a.rented THEN 'rented' ELSE 'mixed' END AS nature 
+                      FROM 
+                        (
+                          SELECT 
+                            property_id, 
+                            COUNT(prop_floors.id) AS cnt, 
+                            SUM(
+                              CASE WHEN occupancy_type_mstr_id = 1 THEN 1 ELSE 0 END
+                            ) AS owned, 
+                            SUM(
+                              CASE WHEN occupancy_type_mstr_id = 2 THEN 1 ELSE 0 END
+                            ) AS rented 
+                          FROM 
+                            prop_floors 
+                          JOIN prop_properties ON prop_properties.id=prop_floors.property_id
+                          WHERE prop_properties.status=1 AND prop_properties.ulb_id=2
+                          GROUP BY 
+                            property_id
+                        ) AS a
+                    ) AS b, 
+                    (
+                      SELECT 
+                        COUNT(id) AS total_owned_props 
+                      FROM 
+                        prop_properties 
+                      WHERE 
+                        prop_type_mstr_id = 4 
+                        AND status = 1 AND ulb_id=2
+                    ) AS d 
+                  GROUP BY 
+                    d.total_owned_props
+                ) AS total_occupancy_props,
+                (		-- Pending Count From 3 Yrs
+                    SELECT COUNT(DISTINCT p.id) AS pending_cnt_3yrs,
+                             SUM(d.balance) AS amt_not_paid_3yrs	
+                      FROM prop_demands d
+                      JOIN prop_properties p ON p.id=d.property_id
+                    WHERE d.paid_status=0 AND d.status=1 AND d.fyear>='2020-2021' AND p.ulb_id=2      -- Parameterise This
+                    AND p.status=1
+                ) AS pnding_3yrs,
+                (      -- Pending From 2 Yrs
+                    SELECT COUNT(DISTINCT p.id) AS pending_cnt_2yrs,
+                       SUM(d.balance) AS amt_not_paid_2yrs
+                    
+                      FROM prop_demands d
+                      JOIN prop_properties p ON p.id=d.property_id
+                      WHERE d.paid_status=0 AND d.status=1 AND d.fyear>='2021-2022' AND p.ulb_id=2      	-- Parameterise This
+                    AND p.status=1
+                ) AS pnding_2yrs,
+                (      -- Pending From 1 Yrs
+                    SELECT COUNT(DISTINCT p.id) AS pending_cnt_1yrs,
+                       SUM(d.balance) AS amt_not_paid_1yrs
+                    
+                      FROM prop_demands d
+                      JOIN prop_properties p ON p.id=d.property_id
+                      WHERE d.paid_status=0 AND d.status=1 AND d.fyear>='2022-2023' AND p.ulb_id=2      	-- Parameterise This
+                    AND p.status=1
+                ) AS pnding_1yrs,
+                (		-- Outstanding Demand Last Yrs
+                    SELECT outstandings.*,
+                           payment_done.*
+                          FROM 
+                              (
+                              SELECT SUM(d.balance) AS outstanding_amt_lastyear,
+                                 COUNT(p.id) AS outstanding_cnt_lastyear
+                            
+                                 FROM prop_demands d
+                                   JOIN prop_properties p ON p.id=d.property_id
+                              WHERE d.fyear='2022-2023'							-- Parameterise This
+                              AND d.status=1 AND d.paid_status=0 AND p.status=1	AND p.ulb_id=2      	-- Parameterise This
+                          ) AS outstandings,
+                          (
+                              SELECT SUM(balance) AS recoverable_demand_lastyear
+                                     FROM prop_demands
+                              WHERE status=1 AND fyear='2022-2023' AND ulb_id=2						-- Parameterise This
+                          ) AS payment_done
+                ) AS outstandings_last_yr,
+                (
+                    -- Outstanding Demand Current Yr
+                    SELECT outstandings.*,
+                           payment_done.*
+                          FROM 
+                              (
+                              SELECT SUM(d.balance) AS outstanding_amt_curryear,
+                                 COUNT(p.id) AS outstanding_cnt_curryear
+                            
+                                 FROM prop_demands d
+                                   JOIN prop_properties p ON p.id=d.property_id
+                              WHERE d.fyear='2023-2024'
+                              AND d.status=1 AND d.paid_status=0 AND p.status=1 AND p.ulb_id=2
+                          ) AS outstandings,
+                          (
+                              SELECT SUM(balance) AS recoverable_demand_currentyr
+                                     FROM prop_demands
+                              WHERE status=1 AND fyear='2023-2024' AND ulb_id=2      					-- Parameterise This
+                          ) AS payment_done
+                ) AS outstanding_current_yr,
+                (
+                   -- Payment Details
+                    SELECT SUM(payments.lastyr_pmt_amt) AS lastyr_pmt_amt,
+                       SUM(payments.lastyr_pmt_cnt) AS lastyr_pmt_cnt,
+                       SUM(payments.currentyr_pmt_amt) AS currentyr_pmt_amt,
+                       SUM(payments.currentyr_pmt_cnt) AS currentyr_pmt_cnt
+                          FROM 
+                              (
+                                  SELECT 
+                                   CASE WHEN tran_date BETWEEN '2022-04-01' AND '2023-03-31' THEN SUM(amount) END AS lastyr_pmt_amt,      -- Parameterize this for last yr fyear range date	
+                                   CASE WHEN tran_date BETWEEN '2022-04-01' AND '2023-03-31' THEN COUNT(id) END AS lastyr_pmt_cnt,		-- Parameterize this for last yr fyear range date
+                            
+                                   CASE WHEN tran_date BETWEEN '2023-04-01' AND '2024-03-31' THEN SUM(amount) END AS currentyr_pmt_amt,	-- Parameterize this for current yr fyear range date
+                                   CASE WHEN tran_date BETWEEN '2023-04-01' AND '2024-03-31' THEN COUNT(id) END AS currentyr_pmt_cnt      -- Parameterize this for current yr fyear range date
+                            
+                              FROM prop_transactions
+                              WHERE tran_date BETWEEN '2022-04-01' AND '2024-03-31' AND status=1	AND ulb_id=2			-- Parameterize this for last two yrs fyear range date
+                              GROUP BY tran_date
+                          ) AS payments
+                ) AS payments,
+                (
+                    -- Mutations
+                     SELECT 
+
+                             SUM(mutations.last_yr_mutation_count) AS last_yr_mutation_count,
+                             SUM(mutations.current_yr_mutation_count) AS current_yr_mutation_count
+
+                             FROM 
+                                  (
+                                
+                                          SELECT 
+                                
+                                          COALESCE(CASE WHEN application_date BETWEEN '2022-04-01' AND '2023-03-31'		-- Parameterize this for last yr fyear range date
+                                                   THEN count(id) END,0)AS last_yr_mutation_count,
+                                          COALESCE(CASE WHEN application_date BETWEEN '2023-04-01' AND '2024-03-31'		-- Parameterize this for current fyear range date
+                                                   THEN count(id) END,0) AS current_yr_mutation_count
+                                
+                                          FROM prop_active_safs
+                                          WHERE assessment_type='Mutation' AND status=1
+                                          AND application_date BETWEEN '2022-04-01' AND '2024-03-31' AND ulb_id=2
+                                      GROUP BY application_date
+                                
+                                      UNION ALL 
+                                
+                                      SELECT 
+                                
+                                          COALESCE(CASE WHEN application_date BETWEEN '2022-04-01' AND '2023-03-31'         -- Parameterize this for last yr fyear range date
+                                                  THEN count(id) END,0)AS last_yr_mutation_count,
+                                          COALESCE(CASE WHEN application_date BETWEEN '2023-04-01' AND '2024-03-31'		   -- Parameterize this for current fyear range date
+                                                   THEN count(id) END,0) AS current_yr_mutation_count
+                                
+                                          FROM prop_safs
+                                          WHERE assessment_type='Mutation' AND status=1
+                                          AND application_date BETWEEN '2022-04-01' AND '2024-03-31' AND ulb_id=2
+                                      GROUP BY application_date
+                                
+                                      UNION ALL
+                                
+                                      SELECT 
+                                
+                                          COALESCE(CASE WHEN application_date BETWEEN '2022-04-01' AND '2023-03-31'		-- Parameterize this for last yr fyear range date
+                                                   THEN count(id) END,0)AS last_yr_mutation_count,
+                                          COALESCE(CASE WHEN application_date BETWEEN '2023-04-01' AND '2024-03-31'		-- Parameterize this for current fyear range date
+                                                   THEN count(id) END,0) AS current_yr_mutation_count
+                                
+                                          FROM prop_rejected_safs
+                                          WHERE assessment_type='Mutation' AND status=1
+                                          AND application_date BETWEEN '2022-04-01' AND '2024-03-31' AND ulb_id=2			-- Parameterize this for last two fyear range date
+                                      GROUP BY application_date
+                              )  AS mutations
+                ) AS mutations,
+                (
+                   -- Top Areas Property Transactions
+                    SELECT (string_to_array(string_agg(top_wards_collections.ward_name::TEXT,','),','))[1] AS first_ward_no,
+                          (string_to_array(string_agg(top_wards_collections.ward_name::TEXT,','),','))[2] AS sec_ward_no,
+                          (string_to_array(string_agg(top_wards_collections.ward_name::TEXT,','),','))[3] AS third_ward_no,
+                          (string_to_array(string_agg(top_wards_collections.ward_name::TEXT,','),','))[4] AS forth_ward_no,
+                          (string_to_array(string_agg(top_wards_collections.ward_name::TEXT,','),','))[5] AS fifth_ward_no,
+                          (string_to_array(string_agg(top_wards_collections.collection_count::TEXT,','),','))[1] AS first_ward_count,
+                          (string_to_array(string_agg(top_wards_collections.collection_count::TEXT,','),','))[2] AS sec_ward_count,
+                          (string_to_array(string_agg(top_wards_collections.collection_count::TEXT,','),','))[3] AS third_ward_count,
+                          (string_to_array(string_agg(top_wards_collections.collection_count::TEXT,','),','))[4] AS forth_ward_count,
+                          (string_to_array(string_agg(top_wards_collections.collection_count::TEXT,','),','))[5] AS fifth_ward_count,
+                          (string_to_array(string_agg(top_wards_collections.collected_amt::TEXT,','),','))[1] AS first_ward_amt,
+                          (string_to_array(string_agg(top_wards_collections.collected_amt::TEXT,','),','))[2] AS sec_ward_amt,
+                          (string_to_array(string_agg(top_wards_collections.collected_amt::TEXT,','),','))[3] AS third_ward_amt,
+                          (string_to_array(string_agg(top_wards_collections.collected_amt::TEXT,','),','))[4] AS forth_ward_amt,
+                          (string_to_array(string_agg(top_wards_collections.collected_amt::TEXT,','),','))[5] AS fifth_ward_amt
+                
+                          FROM (
+                              SELECT 
+                                      p.ward_mstr_id,
+                                      SUM(t.amount) AS collected_amt,
+                                      COUNT(t.id) AS collection_count,
+                                      u.ward_name
+                        
+                                  FROM prop_transactions t
+                                  JOIN prop_properties p ON p.id=t.property_id
+                                  JOIN ulb_ward_masters u ON u.id=p.ward_mstr_id
+                                  WHERE t.tran_date BETWEEN '2023-04-01' AND '2024-03-31'							-- Parameterize this for current fyear range date
+                                  AND p.ulb_id=2
+                                  GROUP BY p.ward_mstr_id,u.ward_name
+                                  ORDER BY collection_count DESC 
+                              LIMIT 5
+                          ) AS top_wards_collections
+                ) AS top_wards_collections,
+                (
+                   -- Top Area Safs
+                    SELECT 
+                      (string_to_array(string_agg(top_area_safs.ward_name::TEXT,','),','))[1] AS first_ward_no,
+                      (string_to_array(string_agg(top_area_safs.ward_name::TEXT,','),','))[2] AS sec_ward_no,
+                      (string_to_array(string_agg(top_area_safs.ward_name::TEXT,','),','))[3] AS third_ward_no,
+                      (string_to_array(string_agg(top_area_safs.ward_name::TEXT,','),','))[4] AS forth_ward_no,
+                      (string_to_array(string_agg(top_area_safs.ward_name::TEXT,','),','))[5] AS fifth_ward_no,
+                      (string_to_array(string_agg(top_area_safs.application_count::TEXT,','),','))[1] AS first_ward_saf_count,
+                      (string_to_array(string_agg(top_area_safs.application_count::TEXT,','),','))[2] AS sec_ward_saf_count,
+                      (string_to_array(string_agg(top_area_safs.application_count::TEXT,','),','))[3] AS third_ward_saf_count,
+                      (string_to_array(string_agg(top_area_safs.application_count::TEXT,','),','))[4] AS forth_ward_saf_count,
+                      (string_to_array(string_agg(top_area_safs.application_count::TEXT,','),','))[5] AS fifth_ward_saf_count
+
+                      FROM 
+
+                              (
+                                  SELECT 
+                                      top_areas_safs.ward_mstr_id,
+                                      SUM(top_areas_safs.application_count) AS application_count,
+                                      u.ward_name 
+                            
+                                      FROM 
+
+                                           (
+                                               SELECT 
+                                                   COUNT(id) AS application_count,
+                                                   ward_mstr_id
+
+                                              FROM prop_active_safs
+                                              WHERE application_date BETWEEN '2023-04-01' AND '2024-03-31'       -- Parameterize this for current fyear range date
+                                              AND ulb_id=2
+                                              GROUP BY ward_mstr_id
+
+                                                  UNION ALL 
+
+
+                                          SELECT 
+                                                   COUNT(id) AS application_count,
+                                                   ward_mstr_id
+
+                                              FROM prop_safs
+                                              WHERE application_date BETWEEN '2023-04-01' AND '2024-03-31'     -- Parameterize this for current fyear range date
+                                              AND ulb_id=2
+                                              GROUP BY ward_mstr_id
+
+                                                  UNION ALL 
+
+                                          SELECT 
+                                                   COUNT(id) AS application_count,
+                                                   ward_mstr_id
+
+                                              FROM prop_rejected_safs
+                                              WHERE application_date BETWEEN '2023-04-01' AND '2024-03-31'   -- Parameterize this for current fyear range date
+                                              AND ulb_id=2
+                                              GROUP BY ward_mstr_id
+                                           ) AS top_areas_safs
+
+                                          JOIN ulb_ward_masters u ON u.id=top_areas_safs.ward_mstr_id
+                                          GROUP BY top_areas_safs.ward_mstr_id,u.ward_name 
+                                          ORDER BY application_count DESC 
+                                          LIMIT 5
+                              ) AS top_area_safs
+                ) AS top_area_safs,
+                (
+                 -- AreaWise Defaulters
+                    SELECT 
+                      (string_to_array(string_agg(a.ward_name::TEXT,','),','))[1] AS first_ward_no,
+                      (string_to_array(string_agg(a.ward_name::TEXT,','),','))[2] AS sec_ward_no,
+                      (string_to_array(string_agg(a.ward_name::TEXT,','),','))[3] AS third_ward_no,
+                      (string_to_array(string_agg(a.ward_name::TEXT,','),','))[4] AS forth_ward_no,
+                      (string_to_array(string_agg(a.ward_name::TEXT,','),','))[5] AS fifth_ward_no,
+                      (string_to_array(string_agg(a.defaulter_property_cnt::TEXT,','),','))[1] AS first_ward_prop_cnt,
+                      (string_to_array(string_agg(a.defaulter_property_cnt::TEXT,','),','))[2] AS sec_ward_prop_cnt,
+                      (string_to_array(string_agg(a.defaulter_property_cnt::TEXT,','),','))[3] AS third_ward_prop_cnt,
+                      (string_to_array(string_agg(a.defaulter_property_cnt::TEXT,','),','))[4] AS forth_ward_prop_cnt,
+                      (string_to_array(string_agg(a.defaulter_property_cnt::TEXT,','),','))[5] AS fifth_ward_prop_cnt,
+                      (string_to_array(string_agg(a.unpaid_amount::TEXT,','),','))[1] AS first_unpaid_amount,
+                      (string_to_array(string_agg(a.unpaid_amount::TEXT,','),','))[2] AS sec_unpaid_amount,
+                      (string_to_array(string_agg(a.unpaid_amount::TEXT,','),','))[3] AS third_unpaid_amount,
+                      (string_to_array(string_agg(a.unpaid_amount::TEXT,','),','))[4] AS forth_unpaid_amount,
+                      (string_to_array(string_agg(a.unpaid_amount::TEXT,','),','))[5] AS fifth_unpaid_amount
+
+                      FROM 
+                          (
+                              SELECT 
+                                  COUNT(a.property_id) AS defaulter_property_cnt,
+                                  w.ward_name,
+                                  SUM(a.unpaid_amt) AS unpaid_amount
+
+                                  FROM 
+                                      (
+                                          SELECT
+                                               property_id,
+                                               COUNT(id) AS demand_cnt,
+                                               SUM(CASE WHEN paid_status=1 THEN 1 ELSE 0 END) AS paid_count,
+                                               SUM(CASE WHEN paid_status=0 THEN 1 ELSE 0 END) AS unpaid_count,
+                                               SUM(CASE WHEN paid_status=0 THEN balance ELSE 0 END) AS unpaid_amt
+
+                                          FROM prop_demands
+                                          WHERE fyear='2023-2024'								-- Parameterize this for current fyear range date
+                                          AND status=1 AND ulb_id=2
+                                          GROUP BY property_id
+                                          ORDER BY property_id
+                                  ) a 
+                                  JOIN prop_properties p ON p.id=a.property_id
+                                  JOIN ulb_ward_masters w ON w.id=p.ward_mstr_id
+                                    
+                                  WHERE a.demand_cnt=a.unpaid_count
+                                  AND p.status=1
+                                    
+                                  GROUP BY w.ward_name 
+                                    
+                                  ORDER BY defaulter_property_cnt DESC 
+                                  LIMIT 5
+                          ) a 
+                ) AS area_wise_defaulter,
+                (	
+                  -- Online Payments	
+                  WITH 
+                     current_payments AS (
+                          SELECT 
+
+                                   SUM(CASE WHEN UPPER(payment_mode)='CASH' THEN amount ELSE 0 END) AS current_cash_payment,
+                                   SUM(CASE WHEN UPPER(payment_mode)='CHEQUE' THEN amount ELSE 0 END) AS current_cheque_payment,
+                                   SUM(CASE WHEN UPPER(payment_mode)='DD' THEN amount ELSE 0 END) AS current_dd_payment,
+                                   SUM(CASE WHEN UPPER(payment_mode)='NEFT' THEN amount ELSE 0 END) AS current_neft_payment,
+                                   SUM(CASE WHEN UPPER(payment_mode)='ONLINE' THEN amount ELSE 0 END) AS current_online_payment,
+                                   SUM(CASE WHEN UPPER(payment_mode)='ONLINE' THEN 1 ELSE 0 END) AS current_online_counts
+
+                           FROM prop_transactions
+                           WHERE tran_date BETWEEN '2023-04-01' AND '2024-03-31'					-- Parameterize this for current fyear range date
+                           AND status=1 AND ulb_id=2
+                       ),
+                       lastyear_payments AS (
+                           SELECT 
+
+                                   SUM(CASE WHEN UPPER(payment_mode)='CASH' THEN amount ELSE 0 END) AS lastyear_cash_payment,
+                                   SUM(CASE WHEN UPPER(payment_mode)='CHEQUE' THEN amount ELSE 0 END) AS lastyear_cheque_payment,
+                                   SUM(CASE WHEN UPPER(payment_mode)='DD' THEN amount ELSE 0 END) AS lastyear_dd_payment,
+                                   SUM(CASE WHEN UPPER(payment_mode)='NEFT' THEN amount ELSE 0 END) AS lastyear_neft_payment,
+                                   SUM(CASE WHEN UPPER(payment_mode)='ONLINE' THEN amount ELSE 0 END) AS lastyear_online_payment,
+                                   SUM(CASE WHEN UPPER(payment_mode)='ONLINE' THEN 1 ELSE 0 END) AS current_online_counts
+
+                           FROM prop_transactions
+                           WHERE tran_date BETWEEN '2022-04-01' AND '2023-03-31'				-- Parameterize this for Past fyear range date
+                           AND status=1 AND ulb_id=2
+                       ),
+                    jsk_collections AS (													    -- Jsk Collections
+
+                           SELECT 
+                             COALESCE(SUM(CASE WHEN (t.tran_date BETWEEN '2022-04-01' AND '2023-03-31') THEN t.amount ELSE 0 END),0) AS prev_year_jskcollection,    -- Parameterize this for Past fyear range date
+                             COALESCE(SUM(CASE WHEN (t.tran_date BETWEEN '2022-04-01' AND '2023-03-31') THEN 1 ELSE 0 END),0) AS prev_year_jskcount,                -- Parameterize this for Past fyear range date
+                             COALESCE(SUM(CASE WHEN (t.tran_date BETWEEN '2023-04-01' AND '2024-03-31') THEN t.amount ELSE 0 END),0) AS current_year_jskcollection, -- Parameterize this for current fyear range date
+                             COALESCE(SUM(CASE WHEN (t.tran_date BETWEEN '2023-04-01' AND '2024-03-31') THEN 1 ELSE 0 END),0) AS current_year_jskcount			  -- Parameterize this for current fyear range date
+
+                          FROM prop_transactions t
+                          JOIN users u ON u.id=t.user_id   
+                          WHERE UPPER(u.user_type)='JSK' AND u.suspended=false  AND t.status=1
+                          AND t.tran_date BETWEEN '2022-04-01' AND '2024-03-31'  AND t.ulb_id=2	-- Parameterize this for last two fyears
+                  )
+
+                       SELECT * FROM current_payments,lastyear_payments,jsk_collections
+                ) AS payment_modes";
+        $data = DB::select($sql);
+        return $data = $data[0];
+        $mMplYearlyReport = new MplYearlyReport();
+        $currentFy = getFY();
+
+        $updateReqs = [
+            "assessed_property_this_year_achievement" => $data->total_assessed_props,
+            "assessed_property_this_year_achievement" => $data->applied_comm_safs,
+            "assessed_property_this_year_achievement" => $data->applied_res_safs,
+            "assessed_property_this_year_achievement" => $data->applied_industries_safs,
+            "assessed_property_this_year_achievement" => $data->applied_gb_safs,
+            "assessed_property_this_year_achievement" => $data->total_props,
+            "assessed_property_this_year_achievement" => $data->total_vacant_land,
+            "assessed_property_this_year_achievement" => $data->total_owned_props,
+            "assessed_property_this_year_achievement" => $data->total_mixed_owned_props,
+            "assessed_property_this_year_achievement" => $data->pending_cnt_3yrs,
+            "assessed_property_this_year_achievement" => $data->amt_not_paid_3yrs,
+            "assessed_property_this_year_achievement" => $data->pending_cnt_2yrs,
+            "assessed_property_this_year_achievement" => $data->amt_not_paid_2yrs,
+            "assessed_property_this_year_achievement" => $data->pending_cnt_1yrs,
+            "assessed_property_this_year_achievement" => $data->amt_not_paid_1yrs,
+            "assessed_property_this_year_achievement" => $data->outstanding_amt_lastyear,
+            "assessed_property_this_year_achievement" => $data->outstanding_cnt_lastyear,
+            "assessed_property_this_year_achievement" => $data->recoverable_demand_lastyear,
+            "assessed_property_this_year_achievement" => $data->outstanding_amt_curryear,
+            "assessed_property_this_year_achievement" => $data->outstanding_cnt_curryear,
+            "assessed_property_this_year_achievement" => $data->recoverable_demand_currentyr,
+            "assessed_property_this_year_achievement" => $data->lastyr_pmt_amt,
+            "assessed_property_this_year_achievement" => $data->lastyr_pmt_cnt,
+            "assessed_property_this_year_achievement" => $data->currentyr_pmt_amt,
+            "assessed_property_this_year_achievement" => $data->currentyr_pmt_cnt,
+            "assessed_property_this_year_achievement" => $data->last_yr_mutation_count,
+            "assessed_property_this_year_achievement" => $data->current_yr_mutation_count,
+            "assessed_property_this_year_achievement" => $data->first_ward_no,
+            "assessed_property_this_year_achievement" => $data->sec_ward_no,
+            "assessed_property_this_year_achievement" => $data->third_ward_no,
+            "assessed_property_this_year_achievement" => $data->forth_ward_no,
+            "assessed_property_this_year_achievement" => $data->fifth_ward_no,
+            "assessed_property_this_year_achievement" => $data->first_ward_count,
+            "assessed_property_this_year_achievement" => $data->sec_ward_count,
+            "assessed_property_this_year_achievement" => $data->third_ward_count,
+            "assessed_property_this_year_achievement" => $data->forth_ward_count,
+            "assessed_property_this_year_achievement" => $data->fifth_ward_count,
+            "assessed_property_this_year_achievement" => $data->first_ward_amt,
+            "assessed_property_this_year_achievement" => $data->sec_ward_amt,
+            "assessed_property_this_year_achievement" => $data->third_ward_amt,
+            "assessed_property_this_year_achievement" => $data->forth_ward_amt,
+            "assessed_property_this_year_achievement" => $data->fifth_ward_amt,
+            "assessed_property_this_year_achievement" => $data->first_ward_saf_count,
+            "assessed_property_this_year_achievement" => $data->sec_ward_saf_count,
+            "assessed_property_this_year_achievement" => $data->third_ward_saf_count,
+            "assessed_property_this_year_achievement" => $data->forth_ward_saf_count,
+            "assessed_property_this_year_achievement" => $data->fifth_ward_saf_count,
+            "assessed_property_this_year_achievement" => $data->first_ward_prop_cnt,
+            "assessed_property_this_year_achievement" => $data->sec_ward_prop_cnt,
+            "assessed_property_this_year_achievement" => $data->third_ward_prop_cnt,
+            "assessed_property_this_year_achievement" => $data->forth_ward_prop_cnt,
+            "assessed_property_this_year_achievement" => $data->fifth_ward_prop_cnt,
+            "assessed_property_this_year_achievement" => $data->first_unpaid_amount,
+            "assessed_property_this_year_achievement" => $data->sec_unpaid_amount,
+            "assessed_property_this_year_achievement" => $data->third_unpaid_amount,
+            "assessed_property_this_year_achievement" => $data->forth_unpaid_amount,
+            "assessed_property_this_year_achievement" => $data->fifth_unpaid_amount,
+            "assessed_property_this_year_achievement" => $data->current_cash_payment,
+            "assessed_property_this_year_achievement" => $data->current_cheque_payment,
+            "assessed_property_this_year_achievement" => $data->current_dd_payment,
+            "assessed_property_this_year_achievement" => $data->current_neft_payment,
+            "assessed_property_this_year_achievement" => $data->current_online_payment,
+            "assessed_property_this_year_achievement" => $data->current_online_counts,
+            "assessed_property_this_year_achievement" => $data->lastyear_cash_payment,
+            "assessed_property_this_year_achievement" => $data->lastyear_cheque_payment,
+            "assessed_property_this_year_achievement" => $data->lastyear_dd_payment,
+            "assessed_property_this_year_achievement" => $data->lastyear_neft_payment,
+            "assessed_property_this_year_achievement" => $data->lastyear_online_payment,
+            "assessed_property_this_year_achievement" => $data->prev_year_jskcollection,
+            "assessed_property_this_year_achievement" => $data->prev_year_jskcount,
+            "assessed_property_this_year_achievement" => $data->current_year_jskcollection,
+            "assessed_property_this_year_achievement" => $data->current_year_jskcount
+        ];
+
+        $mMplYearlyReport->where('fyear', $currentFy)
+            ->update($updateReqs);
     }
 }
