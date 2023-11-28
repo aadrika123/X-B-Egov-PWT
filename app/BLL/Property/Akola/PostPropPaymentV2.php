@@ -194,9 +194,9 @@ class PostPropPaymentV2
      */
     public function postPayment()
     {
-        if ($this->_REQ->paymentType == 'isPartPayment') {
+        // if ($this->_REQ->paymentType == 'isPartPayment') {
             return $this->postPaymentV2();
-        }
+        //  }
         $this->readPaymentParams();
 
         // 🔴🔴🔴🔴Begining Transactions 🔴🔴🔴
@@ -728,12 +728,15 @@ class PostPropPaymentV2
             throw new Exception("Amount should be less then the payable amount");
 
         // return (["Full Payment"]);
+        
+        if(!$this->_REQ->paidAmount){
+            $this->_REQ->merge(['paidAmount' => $this->_REQ['amount']]);
+        }
 
         $payableAmount = $this->_REQ->paidAmount - $this->_propCalculation->original['data']["previousInterest"];
         $demands = collect($this->_propCalculation->original['data']["demandList"])->sortBy(["fyear", "id"]);
         $paidPenalty = $this->_propCalculation->original['data']["previousInterest"];
         $paidDemands = [];
-
         foreach ($demands as $key => $val) {
             if ($payableAmount <= 0) {
                 continue;
