@@ -1685,6 +1685,9 @@ class WaterPaymentController extends Controller
             #  Data not equal to Cash
             if (!in_array($transactionDetails['payment_mode'], [$mPaymentModes['1'], $mPaymentModes['5']])) {
                 $chequeDetails = $mWaterChequeDtl->getChequeDtlsByTransId($transactionDetails['id'])->first();
+                if ($chequeDetails->status == 2) {
+                    $returnValues['chequeStatus'] = 'Provitinal Receipt';
+                }
             }
             # Application Deatils
             $consumerDetails = $mWaterConsumer->fullWaterDetails($transactionDetails->related_id)->first();
