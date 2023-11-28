@@ -11,6 +11,7 @@ use App\Http\Requests\Property\Reports\UserWiseLevelPending;
 use App\Http\Requests\Property\Reports\UserWiseWardWireLevelPending;
 use App\Models\MplYearlyReport;
 use App\Models\Property\PropDemand;
+use App\Models\Property\PropSaf;
 use App\Models\Property\PropTransaction;
 use App\Repository\Common\CommonFunction;
 use App\Repository\Property\Interfaces\IReport;
@@ -1948,5 +1949,164 @@ class ReportController extends Controller
 
         $mMplYearlyReport->where('fyear', $currentFy)
             ->update($updateReqs);
+    }
+
+    public function AprovedRejectList(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "fromDate" => "nullable|date|date_format:Y-m-d",
+                "uptoDate" => "nullable|date|date_format:Y-m-d|after_or_equal:" . $request->fromDate,
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "zoneId" => "nullable|digits_between:1,9223372036854775807",
+                "appType" => "required|in:REJECTED,APPROVED",
+                "userId" => "nullable|digits_between:1,9223372036854775807",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        if ($validated->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validated->errors()
+            ]);
+        }
+        $request->merge(["metaData" => ["pr112.1", 1.1, null, $request->getMethod(), null,]]);
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try{
+            $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
+            $ulbId = $userId = $key = $assessmentType = $wardId = $zoneId = null;
+            if($request->fromDate)
+            {
+                $fromDate =$request->fromDate;
+            }
+            if($request->uptoDate)
+            {
+                $uptoDate =$request->uptoDate;
+            }
+            if($request->wardId)
+            {
+                $wardId =$request->wardId;
+            }
+            if($request->zoneId)
+            {
+                $zoneId =$request->zoneId;
+            }
+            if($request->userId)
+            {
+                $userId =$request->userId;
+            }
+            if($request->assessmentType)
+            {
+                $assessmentType =$request->assessmentType;
+            }
+            if($request->key)
+            {
+                $key =trim($request->key);
+            }
+            $data = DB::table("prop_safs")
+            ->leftjoin(DB::raw("(
+                select string_agg(owner_name,',') as owner_name,
+                    string_agg(guardian_name,',') as guardian_name,
+                    string_agg(mobile_no,',') as mobile_no,
+                    string_agg(owner_name_marathi,',') as owner_name_marathi,
+                    string_agg(guardian_name_marathi,',') as guardian_name_marathi,
+                    saf_id
+                from prop_safs_owners
+                where status =1
+                group by saf_id
+            )owners"
+        ),"owners.saf_id","prop_safs.id");
+            if($request->appType=="REJECTED")
+            {
+                $data = DB::table("prop_rejected_safs as prop_safs")
+                ->leftjoin(DB::raw("(
+                    select string_agg(owner_name,',') as owner_name,
+                        string_agg(guardian_name,',') as guardian_name,
+                        string_agg(mobile_no,',') as mobile_no,
+                        string_agg(owner_name_marathi,',') as owner_name_marathi,
+                        string_agg(guardian_name_marathi,',') as guardian_name_marathi,
+                        saf_id
+                    from prop_rejected_safs_owners
+                    where status =1
+                    group by saf_id
+                )owners"
+            ),"owners.saf_id","prop_safs.id");
+            }
+
+            $data = $data->select(DB::raw("prop_safs.id as saf_id, prop_properties.id as prop_id,prop_safs.saf_no, 	
+                            prop_properties.holding_no,
+                            prop_properties.prop_address,
+                            ulb_ward_masters.ward_name,
+                            zone_masters.zone_name,
+                            owners.owner_name,
+                            owners.guardian_name,
+                            owners.mobile_no,
+                            owners.owner_name_marathi,
+                            owners.guardian_name_marathi,
+                            TO_CHAR(prop_safs.application_date, 'DD-MM-YYYY') as application_date,
+                            TO_CHAR(workflow_tracks.track_date, 'DD-MM-YYYY') as approve_reject_date,
+                            users.name as user_name
+                            ")
+                    ) 
+                    
+                    ->join("workflow_tracks","workflow_tracks.ref_table_id_value","prop_safs.id") 
+                    ->join("ulb_ward_masters","ulb_ward_masters.id","prop_safs.ward_mstr_id")
+                    ->join("zone_masters","zone_masters.id","prop_safs.zone_mstr_id")
+                    ->join(DB::raw("
+                            (
+                                select max(id) as id
+                                from workflow_tracks
+                                where status = true
+                                    and ref_table_dot_id = 'prop_active_safs.id'
+                                group by ref_table_dot_id, ref_table_id_value
+                            )lasts
+                        "),"lasts.id","workflow_tracks.id")  
+                    ->leftjoin("prop_properties","prop_properties.saf_id","prop_safs.id")
+                    ->join("users","users.id","workflow_tracks.user_id")
+                    ->where("prop_safs.status",1)
+                    ->whereBetween(DB::raw("cast(workflow_tracks.track_date as date)"),[$fromDate,$uptoDate]);
+            if($key)
+            {
+                $key = trim($key);
+                $data = $data->where(function ($query) use ($key) {
+                    $query->orwhere('prop_properties.holding_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere("prop_properties.property_no", 'ILIKE', '%' . $key . '%')
+                        ->orwhere('prop_safs.saf_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owners.owner_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owners.guardian_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owners.mobile_no', 'ILIKE', '%' . $key . '%');
+                });
+            }
+            if($userId){
+                $data = $data->where("users.id",$userId);
+            }
+            if($wardId){
+                $data = $data->where("ulb_ward_masters.id",$wardId);
+            }
+            if($zoneId){
+                $data = $data->where("zone_masters.id",$zoneId);
+            }
+            if($assessmentType){
+                $data = $data->where("prop_safs.assessment_type",$assessmentType);
+            }
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $paginator = $data->paginate($perPage);            
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true, "", remove_null($list), $apiId, $version, $queryRunTime, $action, $deviceId);
+
+        }catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), []);
+        }
     }
 }

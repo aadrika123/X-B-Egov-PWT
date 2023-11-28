@@ -47,6 +47,11 @@ class HoldingNoGenerator
     public function generateHoldingNo($activeSaf)
     {
         $this->_activeSafs = $activeSaf;
+        if(in_array($activeSaf->assessment_type, [$this->_cAssessmentTypes[2],$this->_cAssessmentTypes[3]]) &&  $activeSaf->holding_no)
+        {
+            return $activeSaf->holding_no;
+        }
+        if($this->_activeSafs)
         $wardDtls = $this->_mUlbWardMstr->getWardById($activeSaf->ward_mstr_id);
         if (collect($wardDtls)->isEmpty())
             throw new Exception("Ward Details Not Available");
@@ -64,6 +69,8 @@ class HoldingNoGenerator
         $read14Digit = $this->read14Digit();
         $read15Digit = $this->read15Digit();
         $holdingNo = $wardNo . $roadType . $counter . $subHoldingNo . $read14Digit . $read15Digit;
+        $wardDtls->holding_counter += 1;  
+        $wardDtls->save();
         return $holdingNo;
     }
 
