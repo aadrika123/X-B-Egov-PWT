@@ -409,6 +409,7 @@ class PropertyController extends Controller
             $req->merge(["isFullUpdate" => false]);
 
             $propRequest = $this->generatePropUpdateRequest($req, $prop, $req->isFullUpdate);
+            $propRequest["dateOfPurchase"] = $req->landOccupationDate;
             $req->merge($propRequest);
 
             DB::beginTransaction();
@@ -418,7 +419,7 @@ class PropertyController extends Controller
                 if (!$testOwner) {
                     throw new Exception("Invalid Owner Id Pass");
                 }
-                $newOwnerArr = $this->generatePropOwnerUpdateRequest($val, $testOwner, $req->isFullUpdate);
+                $newOwnerArr = $this->generatePropOwnerUpdateRequest($val, $testOwner, true);
                 $newOwnerArr["requestId"] = $updetReq["id"];
                 $newOwnerArr["userId"] = $refUlbId;
                 $rPropOwners->store($newOwnerArr);

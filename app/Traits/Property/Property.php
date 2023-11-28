@@ -99,7 +99,7 @@ trait Property
             "isWaterHarvesting" =>  $request->isWaterHarvesting ??  $property->is_water_harvesting,            
             "rwhDateFrom" =>  $request->rwhDateFrom ??  $property->rwh_date_from,
 
-            "dateOfPurchase" =>  $request->landOccupationDate ??  $property->land_occupation_date,
+            "dateOfPurchase" =>  $request->landOccupationDate ??  $property->land_occupation_date,    // flag
             "flatRegistryDate" =>  $request->flatRegistryDate ??  $property->flat_registry_date,
             "assessmentType" =>  $request->assessmentType ??  $property->assessment_type,
             "holdingType" =>  $request->holdingType ??  $property->holding_type,
