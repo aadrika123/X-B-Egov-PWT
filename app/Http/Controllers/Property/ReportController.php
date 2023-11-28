@@ -2008,10 +2008,34 @@ class ReportController extends Controller
             {
                 $key =trim($request->key);
             }
-            $data = DB::table("prop_safs");
-            if($request->appType=="REJECTERD")
+            $data = DB::table("prop_safs")
+            ->leftjoin(DB::raw("(
+                select string_agg(owner_name,',') as owner_name,
+                    string_agg(guardian_name,',') as guardian_name,
+                    string_agg(mobile_no,',') as mobile_no,
+                    string_agg(owner_name_marathi,',') as owner_name_marathi,
+                    string_agg(guardian_name_marathi,',') as guardian_name_marathi,
+                    saf_id
+                from prop_safs_owners
+                where status =1
+                group by saf_id
+            )owners"
+        ),"owners.saf_id","prop_safs.id");
+            if($request->appType=="REJECTED")
             {
-                $data = DB::table("prop_rejected_safs as prop_safs");
+                $data = DB::table("prop_rejected_safs as prop_safs")
+                ->leftjoin(DB::raw("(
+                    select string_agg(owner_name,',') as owner_name,
+                        string_agg(guardian_name,',') as guardian_name,
+                        string_agg(mobile_no,',') as mobile_no,
+                        string_agg(owner_name_marathi,',') as owner_name_marathi,
+                        string_agg(guardian_name_marathi,',') as guardian_name_marathi,
+                        saf_id
+                    from prop_rejected_safs_owners
+                    where status =1
+                    group by saf_id
+                )owners"
+            ),"owners.saf_id","prop_safs.id");
             }
 
             $data = $data->select(DB::raw("prop_safs.id as saf_id, prop_properties.id as prop_id,prop_safs.saf_no, 	
@@ -2041,18 +2065,7 @@ class ReportController extends Controller
                                     and ref_table_dot_id = 'prop_active_safs.id'
                                 group by ref_table_dot_id, ref_table_id_value
                             )lasts
-                        "),"lasts.id","workflow_tracks.id")                 
-                    ->leftjoin(DB::raw("(
-                        select string_agg(owner_name,',') as owner_name,
-                            string_agg(guardian_name,',') as guardian_name,
-                            string_agg(mobile_no,',') as mobile_no,
-                            string_agg(owner_name_marathi,',') as owner_name_marathi,
-                            string_agg(guardian_name_marathi,',') as guardian_name_marathi,
-                            saf_id
-                        from prop_active_safs_owners
-                        where status =1
-                        group by saf_id
-                    )owners"),"owners.saf_id","prop_safs.id")
+                        "),"lasts.id","workflow_tracks.id")  
                     ->leftjoin("prop_properties","prop_properties.saf_id","prop_safs.id")
                     ->join("users","users.id","workflow_tracks.user_id")
                     ->where("prop_safs.status",1)
