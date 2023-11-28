@@ -61,6 +61,11 @@ class PropertyMutationController extends Controller
                     'errors' => $validator->errors()
                 ], 200);
             }
+            $test = PropActiveSaf::select("*")->where("previous_holding_id",$request->propertyId)->first();
+            if($test)
+            {
+                throw new Exception("Application Already Apply For ".$test->assessment_type." On ".$test->application_date ." Please Wait For Approvale");
+            }
             $propProperty = PropProperty::find($request->propertyId);         
             if(!$propProperty)
             {
@@ -116,7 +121,7 @@ class PropertyMutationController extends Controller
             $newSafData = PropActiveSaf::find($safId);
             $newSafData->app_id = $appId; 
             $newSafData->update();
-          DB::commit();
+           DB::commit();
   
           return responseMsgs(true, "mutation applied successfully", $safData, '010801', '01', '623ms', 'Post', '');
         
