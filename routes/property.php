@@ -507,6 +507,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('reports/mpl-totdayCollection', 'mplReportCollection');                    //done
     Route::post('reports/user-wise/coll-summary', 'userWiseCollectionSummary');
     Route::post('reports/arrove-reject-lst', 'AprovedRejectList');
+    Route::post('data', 'data');
   });
 
   /**
