@@ -482,6 +482,12 @@ class ReportController extends Controller
         return $this->Repository->dcbPieChart($request);
     }
 
+    public function propSafCollectionTc(Request $request)
+    {
+        $request->merge(["userJoin"=>"JOIN"]);
+        return $this->propSafCollection($request);
+    }
+
     /**
      * | 
      */

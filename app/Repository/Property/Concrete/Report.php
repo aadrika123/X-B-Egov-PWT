@@ -51,9 +51,13 @@ class Report implements IReport
         try {
             $refUser        = authUser($request);
             $ulbId          = $refUser->ulb_id;
+            $userJoin = "LEFTJOIN";
             $wardId = $zoneId = $userId =  $paymentMode = null;
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
 
+            if ($request->userJoin) {
+                $userJoin = $request->userJoin;
+            }
             if ($request->fromDate) {
                 $fromDate = $request->fromDate;
             }
@@ -129,7 +133,7 @@ class Report implements IReport
                 )
                 ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "prop_properties.ward_mstr_id")
                 ->LEFTJOIN("zone_masters", "zone_masters.id", "prop_properties.zone_mstr_id")
-                ->LEFTJOIN("users", "users.id", "prop_transactions.user_id")
+                ->$userJoin("users", "users.id", "prop_transactions.user_id")
                 ->LEFTJOIN("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "prop_transactions.id")
                 ->WHERENOTNULL("prop_transactions.property_id")
                 ->WHEREIN("prop_transactions.status", [1, 2])
@@ -215,9 +219,12 @@ class Report implements IReport
             $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
+            $userJoin = "LEFTJOIN";
             $wardId = $zoneId = $userId = $paymentMode = null;
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
-
+            if ($request->userJoin) {
+                $userJoin = $request->userJoin;
+            }
             if ($request->fromDate) {
                 $fromDate = $request->fromDate;
             }
@@ -295,7 +302,7 @@ class Report implements IReport
                 )
                 ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "prop_active_safs.ward_mstr_id")
                 ->LEFTJOIN("zone_masters", "zone_masters.id", "prop_active_safs.zone_mstr_id")
-                ->LEFTJOIN("users", "users.id", "prop_transactions.user_id")
+                ->$userJoin("users", "users.id", "prop_transactions.user_id")
                 ->LEFTJOIN("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "prop_transactions.id")
                 ->WHERENOTNULL("prop_transactions.saf_id")
                 ->WHEREIN("prop_transactions.status", [1, 2])

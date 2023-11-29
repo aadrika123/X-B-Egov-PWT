@@ -490,6 +490,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('reports/not-pay-from', 'notPayedFrom');
     Route::post('reports/dcb-piechart', 'dcbPieChart');                                             //done
     Route::post('reports/prop/saf/collection', 'propSafCollection');                          //done
+    Route::post('reports/prop/saf/collection-tc', 'propSafCollectionTc');
     Route::post('reports/prop/saf/collection-user-wise', 'propSafCollectionUserWise');
     Route::post('reports/rebate/penalty', 'rebateNpenalty');
 
