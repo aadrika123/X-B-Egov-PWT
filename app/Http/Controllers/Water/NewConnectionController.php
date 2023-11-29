@@ -1838,6 +1838,7 @@ class NewConnectionController extends Controller
             $refstring      = strtolower($string);
             $wardId         = $request->wardId;
             $zoneId         = $request->zoneId;
+            
 
             switch ($key) {
                 case ("consumerNo"):                                                                        // Static

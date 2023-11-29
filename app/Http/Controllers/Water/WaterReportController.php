@@ -2229,13 +2229,17 @@ class WaterReportController extends Controller
                     LIMIT $perPage"));
 
             $count = (collect(DB::connection('pgsql_water')->SELECT("SELECT COUNT(*) AS total
-                                FROM ($rawData) total"))->first());
+                                FROM ($rawData) total"))->first());                                           // consumer count by searching format 
+            $amount =  (collect(DB::connection('pgsql_water')->SELECT("SELECT  SUM(sum_balance_amount) AS total  
+            FROM ($rawData) total"))->first());                                                        // consumer amount  
             $total = ($count)->total ?? 0;
+            $totalAmount = ($amount)->total ?? 0;
             $lastPage = ceil($total / $perPage);
             $list = [
                 "current_page" => $page,
                 "data" => $data,
                 "total" => $total,
+                "totalAmount" => $totalAmount,
                 "per_page" => $perPage,
                 "last_page" => $lastPage
             ];
@@ -2550,10 +2554,13 @@ class WaterReportController extends Controller
                 $zoneId = $request->zoneId ?? $request->zone;
             }
             $rawData = ("SELECT 
+            subquery.total_unpaid_demand_of_meter,
+            subquery.total_unpaid_demand_of_fixed,
             subquery.unpaid_meter_count,
             subquery.unpaid_fixed_count,
             subquery.paid_meter_amount,
             subquery.paid_fixed_amount,
+            subquery.meter_paid_bill_count,
             subquery.fixed_paid_bill_count,
             subquery.unpaid_meter_count + subquery.unpaid_fixed_count AS total_unpaid_billing_count,
             subquery.total_unpaid_demand_of_meter+subquery.total_unpaid_demand_of_fixed AS total_unpaid_amount,
@@ -2585,8 +2592,9 @@ class WaterReportController extends Controller
                 ulb_ward_masters.ward_name
         ) AS subquery");
             $billing = DB::connection('pgsql_water')->select($rawData);
+            $resultObject = (object) $billing[0];
 
-            return responseMsgs(true, "", $billing, $apiId, $version, $queryRunTime, $action, $deviceId);
+            return responseMsgs(true, "", $resultObject, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
