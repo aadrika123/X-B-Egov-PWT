@@ -121,6 +121,8 @@ class GetHoldingDuesV2
 
         // Read Rebate ❗❗❗ Rebate is pending
         $firstOwner = $mPropOwners->firstOwner($req->propId);
+        $owners = $mPropOwners->getOwnersByPropId($req->propId);
+        
         // if($firstOwner->is_armed_force)
         //     // $rebate=
         $demand['arrearPayableAmt'] = round($demand['arrear'] + $demand['arrearMonthlyPenalty']);
@@ -161,8 +163,8 @@ class GetHoldingDuesV2
         $basicDtls["ownership_type"] = $ownershipType;
         $basicDtls["demand_receipt_date"] = Carbon::now()->format('d-m-Y');
         $basicDtls["tc_name"] = $userDtls->name ?? null;
-        $basicDtls["owner_name"] = $firstOwner->owner_name ?? null;
-        $basicDtls["owner_name_marathi"] = $firstOwner->owner_name_marathi ?? null;
+        $basicDtls["owner_name"] = $owners->implode("owner_name",",")??($firstOwner->owner_name ?? null);
+        $basicDtls["owner_name_marathi"] = $owners->implode("owner_name_marathi",",")??$firstOwner->owner_name_marathi ?? null;
 
         $demand['basicDetails'] = $basicDtls;
 

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Property;
 
 use App\BLL\Property\Akola\GetHoldingDuesV2;
+use App\BLL\Property\Akola\PostPropPaymentV2;
 use App\Repository\Property\Interfaces\iSafRepository;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Payment\IciciPaymentController;
@@ -65,11 +66,25 @@ class CitizenHoldingController extends Controller
                 return $demandsResponse;
             }
             $demand = (object)$demandsResponse->original["data"];
+            
+            if ($demand["payableAmt"]<=0) {
+                throw new Exception("Deamnd Amount is 0 ");
+            }
             $payableAmt = $demand["payableAmt"];
             $arrear = $demand["arrear"];
             if ($request->paymentType != "isPartPayment") {
                 $request->merge(["paidAmount" => $request->paymentType == "isFullPayment" ? $payableAmt : $arrear]);
             }
+
+            $newReqs = new ReqPayment($request->all());
+            $newReqs->merge([
+                "id"         => $request->propId,
+                "paymentMode" => "ONLINE",
+            ]);
+            $postPropPayment = new PostPropPaymentV2($newReqs);
+            $postPropPayment->_propCalculation = $demandsResponse;
+            $postPropPayment->chakPayentAmount();
+
             $request->merge([
                 "amount" => $request->paidAmount,
                 "id"    => $request->propId,

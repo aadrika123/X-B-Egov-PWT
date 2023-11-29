@@ -53,7 +53,7 @@ class PropOwner extends Model
         return DB::table('prop_owners')
             ->where('property_id', $propertyId)
             ->where('status', 1)
-            ->orderBy('id')
+            ->orderBy('id','ASC')
             ->get();
     }
 
