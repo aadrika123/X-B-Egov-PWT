@@ -1104,7 +1104,6 @@ class ReportController extends Controller
             /**
              * | Top Defaulter Ward Name
              */
-
             $data["Top Defaulter"] = [
                 "ward1" => [
                     "key" => "ward1",
@@ -1287,9 +1286,7 @@ class ReportController extends Controller
      */
     public function data(Request $request)
     {
-
         // return  SMSAKGOVT(8797770238, "hello", "123");
-
         $sql = "SELECT 
                         total_assessment.*, 
                         applied_safs.*, 
@@ -1999,39 +1996,33 @@ class ReportController extends Controller
         $request->merge(["metaData" => ["pr112.1", 1.1, null, $request->getMethod(), null,]]);
         $metaData = collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
-        try{
+        try {
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
             $ulbId = $userId = $key = $assessmentType = $wardId = $zoneId = null;
-            if($request->fromDate)
-            {
-                $fromDate =$request->fromDate;
+            if ($request->fromDate) {
+                $fromDate = $request->fromDate;
             }
-            if($request->uptoDate)
-            {
-                $uptoDate =$request->uptoDate;
+            if ($request->uptoDate) {
+                $uptoDate = $request->uptoDate;
             }
-            if($request->wardId)
-            {
-                $wardId =$request->wardId;
+            if ($request->wardId) {
+                $wardId = $request->wardId;
             }
-            if($request->zoneId)
-            {
-                $zoneId =$request->zoneId;
+            if ($request->zoneId) {
+                $zoneId = $request->zoneId;
             }
-            if($request->userId)
-            {
-                $userId =$request->userId;
+            if ($request->userId) {
+                $userId = $request->userId;
             }
-            if($request->assessmentType)
-            {
-                $assessmentType =$request->assessmentType;
+            if ($request->assessmentType) {
+                $assessmentType = $request->assessmentType;
             }
-            if($request->key)
-            {
-                $key =trim($request->key);
+            if ($request->key) {
+                $key = trim($request->key);
             }
             $data = DB::table("prop_safs")
-            ->leftjoin(DB::raw("(
+                ->leftjoin(DB::raw(
+                    "(
                 select string_agg(owner_name,',') as owner_name,
                     string_agg(guardian_name,',') as guardian_name,
                     string_agg(mobile_no,',') as mobile_no,
@@ -2042,11 +2033,11 @@ class ReportController extends Controller
                 where status =1
                 group by saf_id
             )owners"
-        ),"owners.saf_id","prop_safs.id");
-            if($request->appType=="REJECTED")
-            {
+                ), "owners.saf_id", "prop_safs.id");
+            if ($request->appType == "REJECTED") {
                 $data = DB::table("prop_rejected_safs as prop_safs")
-                ->leftjoin(DB::raw("(
+                    ->leftjoin(DB::raw(
+                        "(
                     select string_agg(owner_name,',') as owner_name,
                         string_agg(guardian_name,',') as guardian_name,
                         string_agg(mobile_no,',') as mobile_no,
@@ -2057,10 +2048,11 @@ class ReportController extends Controller
                     where status =1
                     group by saf_id
                 )owners"
-            ),"owners.saf_id","prop_safs.id");
+                    ), "owners.saf_id", "prop_safs.id");
             }
 
-            $data = $data->select(DB::raw("prop_safs.id as saf_id, prop_properties.id as prop_id,prop_safs.saf_no, 	
+            $data = $data->select(
+                DB::raw("prop_safs.id as saf_id, prop_properties.id as prop_id,prop_safs.saf_no, 	
                             prop_properties.holding_no,
                             prop_properties.prop_address,
                             ulb_ward_masters.ward_name,
@@ -2074,12 +2066,12 @@ class ReportController extends Controller
                             TO_CHAR(workflow_tracks.track_date, 'DD-MM-YYYY') as approve_reject_date,
                             users.name as user_name
                             ")
-                    ) 
-                    
-                    ->join("workflow_tracks","workflow_tracks.ref_table_id_value","prop_safs.id") 
-                    ->join("ulb_ward_masters","ulb_ward_masters.id","prop_safs.ward_mstr_id")
-                    ->join("zone_masters","zone_masters.id","prop_safs.zone_mstr_id")
-                    ->join(DB::raw("
+            )
+
+                ->join("workflow_tracks", "workflow_tracks.ref_table_id_value", "prop_safs.id")
+                ->join("ulb_ward_masters", "ulb_ward_masters.id", "prop_safs.ward_mstr_id")
+                ->join("zone_masters", "zone_masters.id", "prop_safs.zone_mstr_id")
+                ->join(DB::raw("
                             (
                                 select max(id) as id
                                 from workflow_tracks
@@ -2087,13 +2079,12 @@ class ReportController extends Controller
                                     and ref_table_dot_id = 'prop_active_safs.id'
                                 group by ref_table_dot_id, ref_table_id_value
                             )lasts
-                        "),"lasts.id","workflow_tracks.id")  
-                    ->leftjoin("prop_properties","prop_properties.saf_id","prop_safs.id")
-                    ->join("users","users.id","workflow_tracks.user_id")
-                    ->where("prop_safs.status",1)
-                    ->whereBetween(DB::raw("cast(workflow_tracks.track_date as date)"),[$fromDate,$uptoDate]);
-            if($key)
-            {
+                        "), "lasts.id", "workflow_tracks.id")
+                ->leftjoin("prop_properties", "prop_properties.saf_id", "prop_safs.id")
+                ->join("users", "users.id", "workflow_tracks.user_id")
+                ->where("prop_safs.status", 1)
+                ->whereBetween(DB::raw("cast(workflow_tracks.track_date as date)"), [$fromDate, $uptoDate]);
+            if ($key) {
                 $key = trim($key);
                 $data = $data->where(function ($query) use ($key) {
                     $query->orwhere('prop_properties.holding_no', 'ILIKE', '%' . $key . '%')
@@ -2104,20 +2095,20 @@ class ReportController extends Controller
                         ->orwhere('owners.mobile_no', 'ILIKE', '%' . $key . '%');
                 });
             }
-            if($userId){
-                $data = $data->where("users.id",$userId);
+            if ($userId) {
+                $data = $data->where("users.id", $userId);
             }
-            if($wardId){
-                $data = $data->where("ulb_ward_masters.id",$wardId);
+            if ($wardId) {
+                $data = $data->where("ulb_ward_masters.id", $wardId);
             }
-            if($zoneId){
-                $data = $data->where("zone_masters.id",$zoneId);
+            if ($zoneId) {
+                $data = $data->where("zone_masters.id", $zoneId);
             }
-            if($assessmentType){
-                $data = $data->where("prop_safs.assessment_type",$assessmentType);
+            if ($assessmentType) {
+                $data = $data->where("prop_safs.assessment_type", $assessmentType);
             }
             $perPage = $request->perPage ? $request->perPage : 10;
-            $paginator = $data->paginate($perPage);            
+            $paginator = $data->paginate($perPage);
             $list = [
                 "current_page" => $paginator->currentPage(),
                 "last_page" => $paginator->lastPage(),
@@ -2126,8 +2117,7 @@ class ReportController extends Controller
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", remove_null($list), $apiId, $version, $queryRunTime, $action, $deviceId);
-
-        }catch (Exception $e) {
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), []);
         }
     }
