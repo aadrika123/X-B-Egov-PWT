@@ -1255,6 +1255,7 @@ class ReportController extends Controller
                         " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
                         " . ($zoneId ? " AND prop_properties.zone_mstr_id	 = $zoneId" : "") . "
                         " . ($userId ? " AND prop_transactions.user_id = $userId" : "") . "
+                        " . ($paymentMode ? " AND upper(prop_transactions.payment_mode) = upper('$paymentMode')" : "") . "
                     GROUP BY prop_transactions.user_id
                     ORDER BY prop_transactions.user_id
                 )prop_transactions
