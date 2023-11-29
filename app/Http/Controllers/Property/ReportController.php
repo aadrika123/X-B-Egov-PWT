@@ -2032,7 +2032,7 @@ class ReportController extends Controller
                     "(
                 select string_agg(owner_name,',') as owner_name,
                     string_agg(guardian_name,',') as guardian_name,
-                    string_agg(mobile_no,',') as mobile_no,
+                    string_agg(mobile_no::text,',') as mobile_no,
                     string_agg(owner_name_marathi,',') as owner_name_marathi,
                     string_agg(guardian_name_marathi,',') as guardian_name_marathi,
                     saf_id
@@ -2047,7 +2047,7 @@ class ReportController extends Controller
                         "(
                     select string_agg(owner_name,',') as owner_name,
                         string_agg(guardian_name,',') as guardian_name,
-                        string_agg(mobile_no,',') as mobile_no,
+                        string_agg(mobile_no::text,',') as mobile_no,
                         string_agg(owner_name_marathi,',') as owner_name_marathi,
                         string_agg(guardian_name_marathi,',') as guardian_name_marathi,
                         saf_id
