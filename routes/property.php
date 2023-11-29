@@ -357,7 +357,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('citizen/get-holding-dues', 'getHoldingDues');                    // (02.1) unthicatd/Property/ Holding Dues
     Route::post('citizen/icic-init-payment', 'ICICPaymentRequest');               // (02.2) unthicatd/Property/ initiate payment
     Route::post('citizen/icici-payment-response', 'ICICPaymentResponse');         // (02.3) unthicatd/Property/ payment response
-    Route::post('citizen/test', 'testIcic');    
+    Route::post('citizen/test', 'testIcic');
   });
 
   /**
@@ -507,6 +507,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('reports/mpl-totdayCollection', 'mplReportCollection');                    //done
     Route::post('reports/user-wise/coll-summary', 'userWiseCollectionSummary');
     Route::post('reports/arrove-reject-lst', 'AprovedRejectList');
+    Route::post('data', 'data');
   });
 
   /**

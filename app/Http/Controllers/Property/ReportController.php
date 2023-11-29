@@ -1104,7 +1104,6 @@ class ReportController extends Controller
             /**
              * | Top Defaulter Ward Name
              */
-
             $data["Top Defaulter"] = [
                 "ward1" => [
                     "key" => "ward1",
@@ -1288,9 +1287,7 @@ class ReportController extends Controller
      */
     public function data(Request $request)
     {
-
         // return  SMSAKGOVT(8797770238, "hello", "123");
-
         $sql = "SELECT 
                         total_assessment.*, 
                         applied_safs.*, 
@@ -1324,7 +1321,7 @@ class ReportController extends Controller
                       WHERE 
                         status = 1 AND ulb_id=2						-- Parameterise This
                         AND application_date BETWEEN '2023-04-01' 	-- Parameterise This
-                        AND '2024-03-31' 								-- Parameterise this
+                        AND '2024-03-31' 							-- Parameterise this
                       UNION ALL 
                       SELECT 
                         id 
@@ -1365,7 +1362,7 @@ class ReportController extends Controller
                       WHERE 
                         status = 1 AND ulb_id=2
                         AND application_date BETWEEN '2023-04-01' 			--Parameterise this
-                        AND '2024-03-31' 										--Parameterise this
+                        AND '2024-03-31' 									--Parameterise this
                       UNION ALL 
                       SELECT 
                         SUM(
@@ -1381,7 +1378,7 @@ class ReportController extends Controller
                       WHERE 
                         status = 1 AND ulb_id=2
                         AND application_date BETWEEN '2023-04-01' 			--Parameterise this
-                        AND '2024-03-31' 										--Parameterise this
+                        AND '2024-03-31' 									--Parameterise this
                       UNION ALL 
                       SELECT 
                         SUM(
@@ -1397,7 +1394,7 @@ class ReportController extends Controller
                       WHERE 
                         status = 1 AND ulb_id=2
                         AND application_date BETWEEN '2023-04-01' 			--Parameterise this
-                        AND '2024-03-31'										--Parameterise this
+                        AND '2024-03-31'									--Parameterise this
                     ) AS a
                 ) AS applied_safs, 
                 (
@@ -1411,7 +1408,7 @@ class ReportController extends Controller
                         prop_active_safs s 
                         JOIN prop_active_safs_floors f ON f.saf_id = s.id 
                       WHERE 
-                        f.usage_type_mstr_id = 33 						--Parameterise this
+                        f.usage_type_mstr_id = 6 						--Parameterise this
                         AND f.status = 1 
                         AND s.status = 1 
                         AND s.ulb_id=2
@@ -1422,7 +1419,7 @@ class ReportController extends Controller
                         prop_safs s 
                         JOIN prop_safs_floors f ON f.saf_id = s.id 
                       WHERE 
-                        f.usage_type_mstr_id = 33 						--Parameterise this
+                        f.usage_type_mstr_id = 6 						--Parameterise this
                         AND f.status = 1 
                         AND s.status = 1 
                         AND s.ulb_id=2
@@ -1433,7 +1430,7 @@ class ReportController extends Controller
                         prop_rejected_safs s 
                         JOIN prop_rejected_safs_floors f ON f.saf_id = s.id 
                       WHERE 
-                        f.usage_type_mstr_id = 33 						-- Parameterise this
+                        f.usage_type_mstr_id = 6 						-- Parameterise this
                         AND f.status = 1 
                         AND s.status = 1
                         AND s.ulb_id=2
@@ -1547,7 +1544,7 @@ class ReportController extends Controller
                     
                       FROM prop_demands d
                       JOIN prop_properties p ON p.id=d.property_id
-                      WHERE d.paid_status=0 AND d.status=1 AND d.fyear>='2021-2022' AND p.ulb_id=2      	-- Parameterise This
+                      WHERE d.paid_status=0 AND d.status=1 AND d.fyear>='2021-2022' AND p.ulb_id=2      -- Parameterise This
                     AND p.status=1
                 ) AS pnding_2yrs,
                 (      -- Pending From 1 Yrs
@@ -1556,7 +1553,7 @@ class ReportController extends Controller
                     
                       FROM prop_demands d
                       JOIN prop_properties p ON p.id=d.property_id
-                      WHERE d.paid_status=0 AND d.status=1 AND d.fyear>='2022-2023' AND p.ulb_id=2      	-- Parameterise This
+                      WHERE d.paid_status=0 AND d.status=1 AND d.fyear>='2022-2023' AND p.ulb_id=2      -- Parameterise This
                     AND p.status=1
                 ) AS pnding_1yrs,
                 (		-- Outstanding Demand Last Yrs
@@ -1671,21 +1668,21 @@ class ReportController extends Controller
                 ) AS mutations,
                 (
                    -- Top Areas Property Transactions
-                    SELECT (string_to_array(string_agg(top_wards_collections.ward_name::TEXT,','),','))[1] AS first_ward_no,
-                          (string_to_array(string_agg(top_wards_collections.ward_name::TEXT,','),','))[2] AS sec_ward_no,
-                          (string_to_array(string_agg(top_wards_collections.ward_name::TEXT,','),','))[3] AS third_ward_no,
-                          (string_to_array(string_agg(top_wards_collections.ward_name::TEXT,','),','))[4] AS forth_ward_no,
-                          (string_to_array(string_agg(top_wards_collections.ward_name::TEXT,','),','))[5] AS fifth_ward_no,
-                          (string_to_array(string_agg(top_wards_collections.collection_count::TEXT,','),','))[1] AS first_ward_count,
-                          (string_to_array(string_agg(top_wards_collections.collection_count::TEXT,','),','))[2] AS sec_ward_count,
-                          (string_to_array(string_agg(top_wards_collections.collection_count::TEXT,','),','))[3] AS third_ward_count,
-                          (string_to_array(string_agg(top_wards_collections.collection_count::TEXT,','),','))[4] AS forth_ward_count,
-                          (string_to_array(string_agg(top_wards_collections.collection_count::TEXT,','),','))[5] AS fifth_ward_count,
-                          (string_to_array(string_agg(top_wards_collections.collected_amt::TEXT,','),','))[1] AS first_ward_amt,
-                          (string_to_array(string_agg(top_wards_collections.collected_amt::TEXT,','),','))[2] AS sec_ward_amt,
-                          (string_to_array(string_agg(top_wards_collections.collected_amt::TEXT,','),','))[3] AS third_ward_amt,
-                          (string_to_array(string_agg(top_wards_collections.collected_amt::TEXT,','),','))[4] AS forth_ward_amt,
-                          (string_to_array(string_agg(top_wards_collections.collected_amt::TEXT,','),','))[5] AS fifth_ward_amt
+                    SELECT (string_to_array(string_agg(top_wards_collections.ward_name::TEXT,','),','))[1] AS top_transaction_first_ward_no,
+                           (string_to_array(string_agg(top_wards_collections.ward_name::TEXT,','),','))[2] AS top_transaction_sec_ward_no,
+                           (string_to_array(string_agg(top_wards_collections.ward_name::TEXT,','),','))[3] AS top_transaction_third_ward_no,
+                           (string_to_array(string_agg(top_wards_collections.ward_name::TEXT,','),','))[4] AS top_transaction_forth_ward_no,
+                           (string_to_array(string_agg(top_wards_collections.ward_name::TEXT,','),','))[5] AS top_transaction_fifth_ward_no,
+                           (string_to_array(string_agg(top_wards_collections.collection_count::TEXT,','),','))[1] AS top_transaction_first_ward_count,
+                           (string_to_array(string_agg(top_wards_collections.collection_count::TEXT,','),','))[2] AS top_transaction_sec_ward_count,
+                           (string_to_array(string_agg(top_wards_collections.collection_count::TEXT,','),','))[3] AS top_transaction_third_ward_count,
+                           (string_to_array(string_agg(top_wards_collections.collection_count::TEXT,','),','))[4] AS top_transaction_forth_ward_count,
+                           (string_to_array(string_agg(top_wards_collections.collection_count::TEXT,','),','))[5] AS top_transaction_fifth_ward_count,
+                           (string_to_array(string_agg(top_wards_collections.collected_amt::TEXT,','),','))[1] AS top_transaction_first_ward_amt,
+                           (string_to_array(string_agg(top_wards_collections.collected_amt::TEXT,','),','))[2] AS top_transaction_sec_ward_amt,
+                           (string_to_array(string_agg(top_wards_collections.collected_amt::TEXT,','),','))[3] AS top_transaction_third_ward_amt,
+                           (string_to_array(string_agg(top_wards_collections.collected_amt::TEXT,','),','))[4] AS top_transaction_forth_ward_amt,
+                           (string_to_array(string_agg(top_wards_collections.collected_amt::TEXT,','),','))[5] AS top_transaction_fifth_ward_amt
                 
                           FROM (
                               SELECT 
@@ -1707,16 +1704,16 @@ class ReportController extends Controller
                 (
                    -- Top Area Safs
                     SELECT 
-                      (string_to_array(string_agg(top_area_safs.ward_name::TEXT,','),','))[1] AS first_ward_no,
-                      (string_to_array(string_agg(top_area_safs.ward_name::TEXT,','),','))[2] AS sec_ward_no,
-                      (string_to_array(string_agg(top_area_safs.ward_name::TEXT,','),','))[3] AS third_ward_no,
-                      (string_to_array(string_agg(top_area_safs.ward_name::TEXT,','),','))[4] AS forth_ward_no,
-                      (string_to_array(string_agg(top_area_safs.ward_name::TEXT,','),','))[5] AS fifth_ward_no,
-                      (string_to_array(string_agg(top_area_safs.application_count::TEXT,','),','))[1] AS first_ward_saf_count,
-                      (string_to_array(string_agg(top_area_safs.application_count::TEXT,','),','))[2] AS sec_ward_saf_count,
-                      (string_to_array(string_agg(top_area_safs.application_count::TEXT,','),','))[3] AS third_ward_saf_count,
-                      (string_to_array(string_agg(top_area_safs.application_count::TEXT,','),','))[4] AS forth_ward_saf_count,
-                      (string_to_array(string_agg(top_area_safs.application_count::TEXT,','),','))[5] AS fifth_ward_saf_count
+                      (string_to_array(string_agg(top_area_safs.ward_name::TEXT,','),','))[1] AS top_saf_first_ward_no,
+                      (string_to_array(string_agg(top_area_safs.ward_name::TEXT,','),','))[2] AS top_saf_sec_ward_no,
+                      (string_to_array(string_agg(top_area_safs.ward_name::TEXT,','),','))[3] AS top_saf_third_ward_no,
+                      (string_to_array(string_agg(top_area_safs.ward_name::TEXT,','),','))[4] AS top_saf_forth_ward_no,
+                      (string_to_array(string_agg(top_area_safs.ward_name::TEXT,','),','))[5] AS top_saf_fifth_ward_no,
+                      (string_to_array(string_agg(top_area_safs.application_count::TEXT,','),','))[1] AS top_saf_first_ward_count,
+                      (string_to_array(string_agg(top_area_safs.application_count::TEXT,','),','))[2] AS top_saf_sec_ward_count,
+                      (string_to_array(string_agg(top_area_safs.application_count::TEXT,','),','))[3] AS top_saf_third_ward_count,
+                      (string_to_array(string_agg(top_area_safs.application_count::TEXT,','),','))[4] AS top_saf_forth_ward_count,
+                      (string_to_array(string_agg(top_area_safs.application_count::TEXT,','),','))[5] AS top_saf_fifth_ward_count
 
                       FROM 
 
@@ -1771,21 +1768,21 @@ class ReportController extends Controller
                 (
                  -- AreaWise Defaulters
                     SELECT 
-                      (string_to_array(string_agg(a.ward_name::TEXT,','),','))[1] AS first_ward_no,
-                      (string_to_array(string_agg(a.ward_name::TEXT,','),','))[2] AS sec_ward_no,
-                      (string_to_array(string_agg(a.ward_name::TEXT,','),','))[3] AS third_ward_no,
-                      (string_to_array(string_agg(a.ward_name::TEXT,','),','))[4] AS forth_ward_no,
-                      (string_to_array(string_agg(a.ward_name::TEXT,','),','))[5] AS fifth_ward_no,
-                      (string_to_array(string_agg(a.defaulter_property_cnt::TEXT,','),','))[1] AS first_ward_prop_cnt,
-                      (string_to_array(string_agg(a.defaulter_property_cnt::TEXT,','),','))[2] AS sec_ward_prop_cnt,
-                      (string_to_array(string_agg(a.defaulter_property_cnt::TEXT,','),','))[3] AS third_ward_prop_cnt,
-                      (string_to_array(string_agg(a.defaulter_property_cnt::TEXT,','),','))[4] AS forth_ward_prop_cnt,
-                      (string_to_array(string_agg(a.defaulter_property_cnt::TEXT,','),','))[5] AS fifth_ward_prop_cnt,
-                      (string_to_array(string_agg(a.unpaid_amount::TEXT,','),','))[1] AS first_unpaid_amount,
-                      (string_to_array(string_agg(a.unpaid_amount::TEXT,','),','))[2] AS sec_unpaid_amount,
-                      (string_to_array(string_agg(a.unpaid_amount::TEXT,','),','))[3] AS third_unpaid_amount,
-                      (string_to_array(string_agg(a.unpaid_amount::TEXT,','),','))[4] AS forth_unpaid_amount,
-                      (string_to_array(string_agg(a.unpaid_amount::TEXT,','),','))[5] AS fifth_unpaid_amount
+                      (string_to_array(string_agg(a.ward_name::TEXT,','),','))[1] AS defaulter_first_ward_no,
+                      (string_to_array(string_agg(a.ward_name::TEXT,','),','))[2] AS defaulter_sec_ward_no,
+                      (string_to_array(string_agg(a.ward_name::TEXT,','),','))[3] AS defaulter_third_ward_no,
+                      (string_to_array(string_agg(a.ward_name::TEXT,','),','))[4] AS defaulter_forth_ward_no,
+                      (string_to_array(string_agg(a.ward_name::TEXT,','),','))[5] AS defaulter_fifth_ward_no,
+                      (string_to_array(string_agg(a.defaulter_property_cnt::TEXT,','),','))[1] AS defaulter_first_ward_prop_cnt,
+                      (string_to_array(string_agg(a.defaulter_property_cnt::TEXT,','),','))[2] AS defaulter_sec_ward_prop_cnt,
+                      (string_to_array(string_agg(a.defaulter_property_cnt::TEXT,','),','))[3] AS defaulter_third_ward_prop_cnt,
+                      (string_to_array(string_agg(a.defaulter_property_cnt::TEXT,','),','))[4] AS defaulter_forth_ward_prop_cnt,
+                      (string_to_array(string_agg(a.defaulter_property_cnt::TEXT,','),','))[5] AS defaulter_fifth_ward_prop_cnt,
+                      (string_to_array(string_agg(a.unpaid_amount::TEXT,','),','))[1] AS defaulter_first_unpaid_amount,
+                      (string_to_array(string_agg(a.unpaid_amount::TEXT,','),','))[2] AS defaulter_sec_unpaid_amount,
+                      (string_to_array(string_agg(a.unpaid_amount::TEXT,','),','))[3] AS defaulter_third_unpaid_amount,
+                      (string_to_array(string_agg(a.unpaid_amount::TEXT,','),','))[4] AS defaulter_forth_unpaid_amount,
+                      (string_to_array(string_agg(a.unpaid_amount::TEXT,','),','))[5] AS defaulter_fifth_unpaid_amount
 
                       FROM 
                           (
@@ -1830,7 +1827,9 @@ class ReportController extends Controller
                                    SUM(CASE WHEN UPPER(payment_mode)='CASH' THEN amount ELSE 0 END) AS current_cash_payment,
                                    SUM(CASE WHEN UPPER(payment_mode)='CHEQUE' THEN amount ELSE 0 END) AS current_cheque_payment,
                                    SUM(CASE WHEN UPPER(payment_mode)='DD' THEN amount ELSE 0 END) AS current_dd_payment,
+                                   SUM(CASE WHEN UPPER(payment_mode)='CARD PAYMENT' THEN amount ELSE 0 END) AS current_card_payment,
                                    SUM(CASE WHEN UPPER(payment_mode)='NEFT' THEN amount ELSE 0 END) AS current_neft_payment,
+                                   SUM(CASE WHEN UPPER(payment_mode)='RTGS' THEN amount ELSE 0 END) AS current_rtgs_payment,
                                    SUM(CASE WHEN UPPER(payment_mode)='ONLINE' THEN amount ELSE 0 END) AS current_online_payment,
                                    SUM(CASE WHEN UPPER(payment_mode)='ONLINE' THEN 1 ELSE 0 END) AS current_online_counts
 
@@ -1869,83 +1868,103 @@ class ReportController extends Controller
                        SELECT * FROM current_payments,lastyear_payments,jsk_collections
                 ) AS payment_modes";
         $data = DB::select($sql);
-        return $data = $data[0];
+        return  $data = $data[0];
         $mMplYearlyReport = new MplYearlyReport();
         $currentFy = getFY();
 
         $updateReqs = [
-            "assessed_property_this_year_achievement" => $data->total_assessed_props,
-            "assessed_property_this_year_achievement" => $data->applied_comm_safs,
-            "assessed_property_this_year_achievement" => $data->applied_res_safs,
-            "assessed_property_this_year_achievement" => $data->applied_industries_safs,
-            "assessed_property_this_year_achievement" => $data->applied_gb_safs,
-            "assessed_property_this_year_achievement" => $data->total_props,
-            "assessed_property_this_year_achievement" => $data->total_vacant_land,
-            "assessed_property_this_year_achievement" => $data->total_owned_props,
-            "assessed_property_this_year_achievement" => $data->total_mixed_owned_props,
-            "assessed_property_this_year_achievement" => $data->pending_cnt_3yrs,
-            "assessed_property_this_year_achievement" => $data->amt_not_paid_3yrs,
-            "assessed_property_this_year_achievement" => $data->pending_cnt_2yrs,
-            "assessed_property_this_year_achievement" => $data->amt_not_paid_2yrs,
-            "assessed_property_this_year_achievement" => $data->pending_cnt_1yrs,
-            "assessed_property_this_year_achievement" => $data->amt_not_paid_1yrs,
-            "assessed_property_this_year_achievement" => $data->outstanding_amt_lastyear,
-            "assessed_property_this_year_achievement" => $data->outstanding_cnt_lastyear,
-            "assessed_property_this_year_achievement" => $data->recoverable_demand_lastyear,
-            "assessed_property_this_year_achievement" => $data->outstanding_amt_curryear,
-            "assessed_property_this_year_achievement" => $data->outstanding_cnt_curryear,
-            "assessed_property_this_year_achievement" => $data->recoverable_demand_currentyr,
-            "assessed_property_this_year_achievement" => $data->lastyr_pmt_amt,
-            "assessed_property_this_year_achievement" => $data->lastyr_pmt_cnt,
-            "assessed_property_this_year_achievement" => $data->currentyr_pmt_amt,
-            "assessed_property_this_year_achievement" => $data->currentyr_pmt_cnt,
-            "assessed_property_this_year_achievement" => $data->last_yr_mutation_count,
-            "assessed_property_this_year_achievement" => $data->current_yr_mutation_count,
-            "assessed_property_this_year_achievement" => $data->first_ward_no,
-            "assessed_property_this_year_achievement" => $data->sec_ward_no,
-            "assessed_property_this_year_achievement" => $data->third_ward_no,
-            "assessed_property_this_year_achievement" => $data->forth_ward_no,
-            "assessed_property_this_year_achievement" => $data->fifth_ward_no,
-            "assessed_property_this_year_achievement" => $data->first_ward_count,
-            "assessed_property_this_year_achievement" => $data->sec_ward_count,
-            "assessed_property_this_year_achievement" => $data->third_ward_count,
-            "assessed_property_this_year_achievement" => $data->forth_ward_count,
-            "assessed_property_this_year_achievement" => $data->fifth_ward_count,
-            "assessed_property_this_year_achievement" => $data->first_ward_amt,
-            "assessed_property_this_year_achievement" => $data->sec_ward_amt,
-            "assessed_property_this_year_achievement" => $data->third_ward_amt,
-            "assessed_property_this_year_achievement" => $data->forth_ward_amt,
-            "assessed_property_this_year_achievement" => $data->fifth_ward_amt,
-            "assessed_property_this_year_achievement" => $data->first_ward_saf_count,
-            "assessed_property_this_year_achievement" => $data->sec_ward_saf_count,
-            "assessed_property_this_year_achievement" => $data->third_ward_saf_count,
-            "assessed_property_this_year_achievement" => $data->forth_ward_saf_count,
-            "assessed_property_this_year_achievement" => $data->fifth_ward_saf_count,
-            "assessed_property_this_year_achievement" => $data->first_ward_prop_cnt,
-            "assessed_property_this_year_achievement" => $data->sec_ward_prop_cnt,
-            "assessed_property_this_year_achievement" => $data->third_ward_prop_cnt,
-            "assessed_property_this_year_achievement" => $data->forth_ward_prop_cnt,
-            "assessed_property_this_year_achievement" => $data->fifth_ward_prop_cnt,
-            "assessed_property_this_year_achievement" => $data->first_unpaid_amount,
-            "assessed_property_this_year_achievement" => $data->sec_unpaid_amount,
-            "assessed_property_this_year_achievement" => $data->third_unpaid_amount,
-            "assessed_property_this_year_achievement" => $data->forth_unpaid_amount,
-            "assessed_property_this_year_achievement" => $data->fifth_unpaid_amount,
-            "assessed_property_this_year_achievement" => $data->current_cash_payment,
-            "assessed_property_this_year_achievement" => $data->current_cheque_payment,
-            "assessed_property_this_year_achievement" => $data->current_dd_payment,
-            "assessed_property_this_year_achievement" => $data->current_neft_payment,
-            "assessed_property_this_year_achievement" => $data->current_online_payment,
-            "assessed_property_this_year_achievement" => $data->current_online_counts,
-            "assessed_property_this_year_achievement" => $data->lastyear_cash_payment,
-            "assessed_property_this_year_achievement" => $data->lastyear_cheque_payment,
-            "assessed_property_this_year_achievement" => $data->lastyear_dd_payment,
-            "assessed_property_this_year_achievement" => $data->lastyear_neft_payment,
-            "assessed_property_this_year_achievement" => $data->lastyear_online_payment,
-            "assessed_property_this_year_achievement" => $data->prev_year_jskcollection,
-            "assessed_property_this_year_achievement" => $data->prev_year_jskcount,
-            "assessed_property_this_year_achievement" => $data->current_year_jskcollection,
-            "assessed_property_this_year_achievement" => $data->current_year_jskcount
+            "total_assessment" => $data->total_assessed_props,
+            "total_assessed_residential" => $data->applied_res_safs,
+            "total_assessed_commercial" => $data->applied_comm_safs,
+            "total_assessed_industrial" => $data->applied_industries_safs,
+            "total_assessed_gbsaf" => $data->applied_gb_safs,
+            "total_prop_vacand" => $data->total_vacant_land,
+            "total_prop_residential" => $data->total_owned_props,
+            "total_prop_mixe" => $data->total_mixed_owned_props,
+
+            "total_property" => $data->total_props,
+            "vacant_property" => $data->total_vacant_land,
+            "owned_property" => $data->total_owned_props,
+            "count_not_paid_3yrs" => $data->pending_cnt_3yrs,
+            "amount_not_paid_3yrs" => $data->amt_not_paid_3yrs,
+            "count_not_paid_2yrs" => $data->pending_cnt_2yrs,
+            "amount_not_paid_2yrs" => $data->amt_not_paid_2yrs,
+            "count_not_paid_1yrs" => $data->pending_cnt_1yrs,
+            "amount_not_paid_1yrs" => $data->amt_not_paid_1yrs,
+            // "assessed_property_this_year_achievement" => $data->outstanding_amt_lastyear,
+            // "assessed_property_this_year_achievement" => $data->outstanding_cnt_lastyear,
+            // "assessed_property_this_year_achievement" => $data->recoverable_demand_lastyear,
+            "demand_outstanding_this_year" => $data->outstanding_amt_curryear,
+            "demand_outstanding_from_this_year_prop_count" => $data->outstanding_cnt_curryear,
+            "demand_outstanding_coll_this_year" => $data->recoverable_demand_currentyr,
+
+            "last_year_payment_amount" => $data->lastyr_pmt_amt,
+            "last_year_payment_count" => $data->lastyr_pmt_cnt,
+            "this_year_payment_count" => $data->currentyr_pmt_cnt,
+            "this_year_payment_amount" => $data->currentyr_pmt_amt,
+            "mutation_this_year_count" => $data->current_yr_mutation_count,
+            // "assessed_property_this_year_achievement" => $data->last_yr_mutation_count,
+
+            // "assessed_property_this_year_achievement" => $data->top_transaction_first_ward_no,
+            // "assessed_property_this_year_achievement" => $data->top_transaction_sec_ward_no,
+            // "assessed_property_this_year_achievement" => $data->top_transaction_third_ward_no,
+            // "assessed_property_this_year_achievement" => $data->top_transaction_forth_ward_no,
+            // "assessed_property_this_year_achievement" => $data->top_transaction_fifth_ward_no,
+            "top_area_property_transaction_ward1_count" => $data->top_transaction_first_ward_count,
+            "top_area_property_transaction_ward2_count" => $data->top_transaction_sec_ward_count,
+            "top_area_property_transaction_ward3_count" => $data->top_transaction_third_ward_count,
+            "top_area_property_transaction_ward4_count" => $data->top_transaction_forth_ward_count,
+            "top_area_property_transaction_ward5_count" => $data->top_transaction_fifth_ward_count,
+            // "assessed_property_this_year_achievement" => $data->top_transaction_first_ward_amt,
+            // "assessed_property_this_year_achievement" => $data->top_transaction_sec_ward_amt,
+            // "assessed_property_this_year_achievement" => $data->top_transaction_third_ward_amt,
+            // "assessed_property_this_year_achievement" => $data->top_transaction_forth_ward_amt,
+            // "assessed_property_this_year_achievement" => $data->top_transaction_fifth_ward_amt,
+
+            "top_area_saf_ward1_name" => $data->top_saf_first_ward_no,
+            "top_area_saf_ward2_name" => $data->top_saf_sec_ward_no,
+            "top_area_saf_ward3_name" => $data->top_saf_third_ward_no,
+            "top_area_saf_ward4_name" => $data->top_saf_forth_ward_no,
+            "top_area_saf_ward5_name" => $data->top_saf_fifth_ward_no,
+            "top_area_saf_ward1_count" => $data->top_saf_first_ward_count,
+            "top_area_saf_ward2_count" => $data->top_saf_sec_ward_count,
+            "top_area_saf_ward3_count" => $data->top_saf_third_ward_count,
+            "top_area_saf_ward4_count" => $data->top_saf_forth_ward_count,
+            "top_area_saf_ward5_count" => $data->top_saf_fifth_ward_count,
+
+            "top_defaulter_ward1_name" => $data->defaulter_first_ward_no,
+            "top_defaulter_ward2_name" => $data->defaulter_sec_ward_no,
+            "top_defaulter_ward3_name" => $data->defaulter_third_ward_no,
+            "top_defaulter_ward4_name" => $data->defaulter_forth_ward_no,
+            "top_defaulter_ward5_name" => $data->defaulter_fifth_ward_no,
+            "top_defaulter_ward1_count" => $data->defaulter_first_ward_prop_cnt,
+            "top_defaulter_ward2_count" => $data->defaulter_sec_ward_prop_cnt,
+            "top_defaulter_ward3_count" => $data->defaulter_third_ward_prop_cnt,
+            "top_defaulter_ward4_count" => $data->defaulter_forth_ward_prop_cnt,
+            "top_defaulter_ward5_count" => $data->defaulter_fifth_ward_prop_cnt,
+            "top_defaulter_ward1_amount" => $data->defaulter_first_unpaid_amount,
+            "top_defaulter_ward2_amount" => $data->defaulter_sec_unpaid_amount,
+            "top_defaulter_ward3_amount" => $data->defaulter_third_unpaid_amount,
+            "top_defaulter_ward4_amount" => $data->defaulter_forth_unpaid_amount,
+            "top_defaulter_ward5_amount" => $data->defaulter_fifth_unpaid_amount,
+
+            "current_year_cash_collection" => $data->current_cash_payment,
+            "current_year_cheque_collection" => $data->current_cheque_payment,
+            "current_year_dd_collection"   => $data->current_dd_payment,
+            "current_year_card_collection" => $data->current_card_payment,
+            "current_year_neft_collection" => $data->current_neft_payment,
+            "current_year_rtgs_collection" => $data->current_rtgs_payment,
+            // "assessed_property_this_year_achievement" => $data->current_online_payment,
+            // "assessed_property_this_year_achievement" => $data->current_online_counts,
+            // "assessed_property_this_year_achievement" => $data->prev_year_jskcollection,
+            // "assessed_property_this_year_achievement" => $data->prev_year_jskcount,
+            // "assessed_property_this_year_achievement" => $data->current_year_jskcollection,
+            // "assessed_property_this_year_achievement" => $data->current_year_jskcount,
+            // "assessed_property_this_year_achievement" => $data->lastyear_cash_payment,
+            // "assessed_property_this_year_achievement" => $data->lastyear_cheque_payment,
+            // "assessed_property_this_year_achievement" => $data->lastyear_dd_payment,
+            // "assessed_property_this_year_achievement" => $data->lastyear_neft_payment,
+            // "assessed_property_this_year_achievement" => $data->lastyear_online_payment,
         ];
 
         $mMplYearlyReport->where('fyear', $currentFy)
@@ -1978,39 +1997,33 @@ class ReportController extends Controller
         $request->merge(["metaData" => ["pr112.1", 1.1, null, $request->getMethod(), null,]]);
         $metaData = collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
-        try{
+        try {
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
             $ulbId = $userId = $key = $assessmentType = $wardId = $zoneId = null;
-            if($request->fromDate)
-            {
-                $fromDate =$request->fromDate;
+            if ($request->fromDate) {
+                $fromDate = $request->fromDate;
             }
-            if($request->uptoDate)
-            {
-                $uptoDate =$request->uptoDate;
+            if ($request->uptoDate) {
+                $uptoDate = $request->uptoDate;
             }
-            if($request->wardId)
-            {
-                $wardId =$request->wardId;
+            if ($request->wardId) {
+                $wardId = $request->wardId;
             }
-            if($request->zoneId)
-            {
-                $zoneId =$request->zoneId;
+            if ($request->zoneId) {
+                $zoneId = $request->zoneId;
             }
-            if($request->userId)
-            {
-                $userId =$request->userId;
+            if ($request->userId) {
+                $userId = $request->userId;
             }
-            if($request->assessmentType)
-            {
-                $assessmentType =$request->assessmentType;
+            if ($request->assessmentType) {
+                $assessmentType = $request->assessmentType;
             }
-            if($request->key)
-            {
-                $key =trim($request->key);
+            if ($request->key) {
+                $key = trim($request->key);
             }
             $data = DB::table("prop_safs")
-            ->leftjoin(DB::raw("(
+                ->leftjoin(DB::raw(
+                    "(
                 select string_agg(owner_name,',') as owner_name,
                     string_agg(guardian_name,',') as guardian_name,
                     string_agg(mobile_no,',') as mobile_no,
@@ -2021,11 +2034,11 @@ class ReportController extends Controller
                 where status =1
                 group by saf_id
             )owners"
-        ),"owners.saf_id","prop_safs.id");
-            if($request->appType=="REJECTED")
-            {
+                ), "owners.saf_id", "prop_safs.id");
+            if ($request->appType == "REJECTED") {
                 $data = DB::table("prop_rejected_safs as prop_safs")
-                ->leftjoin(DB::raw("(
+                    ->leftjoin(DB::raw(
+                        "(
                     select string_agg(owner_name,',') as owner_name,
                         string_agg(guardian_name,',') as guardian_name,
                         string_agg(mobile_no,',') as mobile_no,
@@ -2036,10 +2049,11 @@ class ReportController extends Controller
                     where status =1
                     group by saf_id
                 )owners"
-            ),"owners.saf_id","prop_safs.id");
+                    ), "owners.saf_id", "prop_safs.id");
             }
 
-            $data = $data->select(DB::raw("prop_safs.id as saf_id, prop_properties.id as prop_id,prop_safs.saf_no, 	
+            $data = $data->select(
+                DB::raw("prop_safs.id as saf_id, prop_properties.id as prop_id,prop_safs.saf_no, 	
                             prop_properties.holding_no,
                             prop_properties.prop_address,
                             ulb_ward_masters.ward_name,
@@ -2053,12 +2067,12 @@ class ReportController extends Controller
                             TO_CHAR(workflow_tracks.track_date, 'DD-MM-YYYY') as approve_reject_date,
                             users.name as user_name
                             ")
-                    ) 
-                    
-                    ->join("workflow_tracks","workflow_tracks.ref_table_id_value","prop_safs.id") 
-                    ->join("ulb_ward_masters","ulb_ward_masters.id","prop_safs.ward_mstr_id")
-                    ->join("zone_masters","zone_masters.id","prop_safs.zone_mstr_id")
-                    ->join(DB::raw("
+            )
+
+                ->join("workflow_tracks", "workflow_tracks.ref_table_id_value", "prop_safs.id")
+                ->join("ulb_ward_masters", "ulb_ward_masters.id", "prop_safs.ward_mstr_id")
+                ->join("zone_masters", "zone_masters.id", "prop_safs.zone_mstr_id")
+                ->join(DB::raw("
                             (
                                 select max(id) as id
                                 from workflow_tracks
@@ -2066,13 +2080,12 @@ class ReportController extends Controller
                                     and ref_table_dot_id = 'prop_active_safs.id'
                                 group by ref_table_dot_id, ref_table_id_value
                             )lasts
-                        "),"lasts.id","workflow_tracks.id")  
-                    ->leftjoin("prop_properties","prop_properties.saf_id","prop_safs.id")
-                    ->join("users","users.id","workflow_tracks.user_id")
-                    ->where("prop_safs.status",1)
-                    ->whereBetween(DB::raw("cast(workflow_tracks.track_date as date)"),[$fromDate,$uptoDate]);
-            if($key)
-            {
+                        "), "lasts.id", "workflow_tracks.id")
+                ->leftjoin("prop_properties", "prop_properties.saf_id", "prop_safs.id")
+                ->join("users", "users.id", "workflow_tracks.user_id")
+                ->where("prop_safs.status", 1)
+                ->whereBetween(DB::raw("cast(workflow_tracks.track_date as date)"), [$fromDate, $uptoDate]);
+            if ($key) {
                 $key = trim($key);
                 $data = $data->where(function ($query) use ($key) {
                     $query->orwhere('prop_properties.holding_no', 'ILIKE', '%' . $key . '%')
@@ -2083,20 +2096,20 @@ class ReportController extends Controller
                         ->orwhere('owners.mobile_no', 'ILIKE', '%' . $key . '%');
                 });
             }
-            if($userId){
-                $data = $data->where("users.id",$userId);
+            if ($userId) {
+                $data = $data->where("users.id", $userId);
             }
-            if($wardId){
-                $data = $data->where("ulb_ward_masters.id",$wardId);
+            if ($wardId) {
+                $data = $data->where("ulb_ward_masters.id", $wardId);
             }
-            if($zoneId){
-                $data = $data->where("zone_masters.id",$zoneId);
+            if ($zoneId) {
+                $data = $data->where("zone_masters.id", $zoneId);
             }
-            if($assessmentType){
-                $data = $data->where("prop_safs.assessment_type",$assessmentType);
+            if ($assessmentType) {
+                $data = $data->where("prop_safs.assessment_type", $assessmentType);
             }
             $perPage = $request->perPage ? $request->perPage : 10;
-            $paginator = $data->paginate($perPage);            
+            $paginator = $data->paginate($perPage);
             $list = [
                 "current_page" => $paginator->currentPage(),
                 "last_page" => $paginator->lastPage(),
@@ -2105,8 +2118,7 @@ class ReportController extends Controller
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", remove_null($list), $apiId, $version, $queryRunTime, $action, $deviceId);
-
-        }catch (Exception $e) {
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), []);
         }
     }

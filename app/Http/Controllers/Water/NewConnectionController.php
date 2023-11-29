@@ -71,7 +71,6 @@ use Ramsey\Collection\Collection as CollectionCollection;
 use SebastianBergmann\Type\VoidType;
 use Symfony\Contracts\Service\Attribute\Required;
 
-
 class NewConnectionController extends Controller
 {
     use Ward;
