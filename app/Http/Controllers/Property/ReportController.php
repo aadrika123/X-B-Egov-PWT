@@ -2059,7 +2059,8 @@ class ReportController extends Controller
             }
 
             $data = $data->select(
-                DB::raw("prop_safs.id as saf_id, prop_properties.id as prop_id,prop_safs.saf_no, 	
+                DB::raw("prop_safs.id as saf_id, prop_properties.id as prop_id,prop_safs.saf_no,
+                            prop_safs.assessment_type, 	
                             prop_properties.holding_no,
                             prop_properties.prop_address,
                             ulb_ward_masters.ward_name,
