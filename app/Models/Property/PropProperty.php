@@ -674,7 +674,16 @@ class PropProperty extends Model
                            ) as geotag"), function ($join) {
                 $join->on("geotag.saf_id", "=", "prop_properties.saf_id");
             })
-            ->leftjoin('prop_owners as o', 'o.property_id', 'prop_properties.id')
+            // ->leftjoin('prop_owners as o', 'o.property_id', 'prop_properties.id')
+            ->leftjoin(DB::raw("(
+                select string_agg(mobile_no::text,',') as mobile_no,
+                        string_agg(owner_name,',') as owner_name,
+                        string_agg(case when owner_name_marathi <>'' then owner_name_marathi else owner_name end ,',') as owner_name_marathi,
+                        property_id
+                from prop_owners
+                where status  =1 
+                group by property_id
+            )as o"), 'o.property_id', 'prop_properties.id')
             ->leftJoin(DB::raw(
                 "(SELECT 
                     paid_status,
