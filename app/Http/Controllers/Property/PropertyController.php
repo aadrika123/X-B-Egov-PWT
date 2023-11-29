@@ -314,37 +314,36 @@ class PropertyController extends Controller
 
 
         $rules = [
-            "propertyId" => "required|digits_between:1,9223372036854775807",
-            "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
+            "propertyId"                => "required|digits_between:1,9223372036854775807",
+            "document"                  => "required|mimes:pdf,jpeg,png,jpg,gif",
+            "applicantName"             => "required",
+            "applicantMarathi"          => "required|string",
+            "appartmentName"            => "nullable|string",
+            "electricityConnection"     => "nullable|string",
+            "electricityCustNo"         => "nullable|string",
+            "electricityAccNo"          => "nullable|string",
+            "electricityBindBookNo"     => "nullable|string",
+            "electricityConsCategory"   => "nullable|string",
+            "buildingPlanApprovalNo"    => "nullable|string",
+            "buildingPlanApprovalDate"  => "nullable|date|",
             // "applicantName" => "required|regex:/^[A-Za-z.\s]+$/i",
-            "applicantName" => "required",
-            "applicantMarathi" => "required|string",
 
-            "appartmentName"   => "nullable|string",
-            "electricityConnection" => "nullable|string",
-            "electricityCustNo" => "nullable|string",
-            "electricityAccNo" => "nullable|string",
-            "electricityBindBookNo" => "nullable|string",
-            "electricityConsCategory" => "nullable|string",
-            "buildingPlanApprovalNo" => "nullable|string",
-            "buildingPlanApprovalDate" => "nullable|date|",
+            "ownershipType"             => "required|In:$ownership_typesIds",
+            "zone"                      => "required|In:$zoneIds",
+            "ward"                      => "required|In:$zoneWiseWardIds",
+            "owner"                     => "required|array",
 
-            "ownershipType" => "required|In:$ownership_typesIds",
-            "zone" => "required|In:$zoneIds",
-            "ward" => "required|In:$zoneWiseWardIds",
-
-            "owner"      => "required|array",
-            "owner.*.ownerId"      => "required|digits_between:1,9223372036854775807",
-            // "owner.*.ownerName"      => "required|regex:/^[A-Za-z.\s]+$/i",
-            "owner.*.ownerName"      => "required",
+            "owner.*.ownerId"           => "nullable|digits_between:1,9223372036854775807",
+            "owner.*.ownerName"         => "required",
             "owner.*.ownerNameMarathi"  => "required|string",
-            // "owner.*.guardianName"      => "nullable|",
-            // "owner.*.guardianNameMarathi" => "nullable|string",
-            // "owner.*.relation" => "nullable|string|in:S/O,W/O,D/O,C/O",
-            "owner.*.mobileNo" => "nullable|digits:10|regex:/[0-9]{10}/",
-            "owner.*.aadhar" => "digits:12|regex:/[0-9]{12}/|nullable",
-            "owner.*.pan" => "string|nullable",
-            // "owner.*.email" => "email|nullable",
+            "owner.*.mobileNo"          => "nullable|digits:10|regex:/[0-9]{10}/",
+            "owner.*.aadhar"            => "digits:12|regex:/[0-9]{12}/|nullable",
+            "owner.*.pan"               => "string|nullable",
+            // "owner.*.ownerName"              => "required|regex:/^[A-Za-z.\s]+$/i",
+            // "owner.*.guardianName"           => "nullable|",
+            // "owner.*.guardianNameMarathi"    => "nullable|string",
+            // "owner.*.relation"               => "nullable|string|in:S/O,W/O,D/O,C/O",
+            // "owner.*.email"                  => "email|nullable",
         ];
         $validated = Validator::make(
             $req->all(),
@@ -358,26 +357,28 @@ class PropertyController extends Controller
             ]);
         }
         try {
-            $refUser            = Auth()->user();
+            $refUser = Auth()->user();
             if (!$refUser) {
                 throw new Exception("Access denied");
             }
             $refUserId          = $refUser->id;
             $refUlbId           = $refUser->ulb_id;
-            $relativePath = Config::get('PropertyConstaint.PROP_UPDATE_RELATIVE_PATH');
-            $docUpload = new DocUpload;
-            $mPropProperty = new PropProperty();
-            $mPropOwners = new PropOwner();
-            $rPropProerty = new PropPropertyUpdateRequest();
-            $rPropOwners = new PropOwnerUpdateRequest();
-            $mCommonFunction = new CommonFunction();
-            $propId = $req->propertyId;
+            $propId             = $req->propertyId;
+
+            $relativePath       = Config::get('PropertyConstaint.PROP_UPDATE_RELATIVE_PATH');
+            $docUpload          = new DocUpload;
+            $mPropProperty      = new PropProperty();
+            $mPropOwners        = new PropOwner();
+            $rPropProerty       = new PropPropertyUpdateRequest();
+            $rPropOwners        = new PropOwnerUpdateRequest();
+            $mCommonFunction    = new CommonFunction();
+
             $prop = $mPropProperty->find($propId);
             if (!$prop) {
                 throw new Exception("Data Not Found");
             }
-            $refWorkflowId      = Config::get("workflow-constants.PROPERTY_UPDATE_ID");
-            $refWfWorkflow     = WfWorkflow::where('wf_master_id', $refWorkflowId)
+            $refWorkflowId = Config::get("workflow-constants.PROPERTY_UPDATE_ID");
+            $refWfWorkflow = WfWorkflow::where('wf_master_id', $refWorkflowId)
                 ->where('ulb_id', $refUlbId)
                 ->first();
             if (!$refWfWorkflow) {
@@ -388,27 +389,27 @@ class PropertyController extends Controller
                 throw new Exception("Already Update Request Apply Which is Pending");
             }
 
-            $refWorkflows       = $mCommonFunction->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
-            $mUserType          = $mCommonFunction->userType($refWorkflowId);
-            $document = $req->document;
-            $refImageName = $req->propertyId . "-" . (strtotime(Carbon::now()->format('Y-m-dH:s:i')));
-            $imageName = $docUpload->upload($refImageName, $document, $relativePath);
-            $metaReqs["supportingDocument"] = ($relativePath . "/" . $imageName);
-
+            $refWorkflows   = $mCommonFunction->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
+            $mUserType      = $mCommonFunction->userType($refWorkflowId);
+            $document       = $req->document;
+            $refImageName   = $req->propertyId . "-" . (strtotime(Carbon::now()->format('Y-m-dH:s:i')));
+            $imageName      = $docUpload->upload($refImageName, $document, $relativePath);
+            
             $roadWidthType = $this->readRoadWidthType($req->roadType);
 
-
-            $metaReqs['roadWidthType'] = $roadWidthType;
-
-            $metaReqs['workflowId'] = $refWfWorkflow->id;       // inserting workflow id
-            $metaReqs['initiatorRoleId'] = $refWorkflows['initiator']['id'];
-            $metaReqs['finisherRoleId'] = $refWorkflows['finisher']['id'];
-            $metaReqs['currentRole'] = $refWorkflows['initiator']['id'];
-            $metaReqs['userId'] = $refUserId;
-            $metaReqs['pendingStatus'] = 1;
+            $metaReqs["supportingDocument"] = ($relativePath . "/" . $imageName);
+            $metaReqs['roadWidthType']      = $roadWidthType;
+            $metaReqs['workflowId']         = $refWfWorkflow->id;       // inserting workflow id
+            $metaReqs['initiatorRoleId']    = $refWorkflows['initiator']['id'];
+            $metaReqs['finisherRoleId']     = $refWorkflows['finisher']['id'];
+            $metaReqs['currentRole']        = $refWorkflows['initiator']['id'];
+            $metaReqs['userId']             = $refUserId;
+            $metaReqs['pendingStatus']      = 1;
             $req->merge($metaReqs);
             $req->merge(["isFullUpdate" => false]);
+
             $propRequest = $this->generatePropUpdateRequest($req, $prop, $req->isFullUpdate);
+            $propRequest["dateOfPurchase"] = $req->landOccupationDate;
             $req->merge($propRequest);
 
             DB::beginTransaction();
@@ -418,7 +419,7 @@ class PropertyController extends Controller
                 if (!$testOwner) {
                     throw new Exception("Invalid Owner Id Pass");
                 }
-                $newOwnerArr = $this->generatePropOwnerUpdateRequest($val, $testOwner, $req->isFullUpdate);
+                $newOwnerArr = $this->generatePropOwnerUpdateRequest($val, $testOwner, true);
                 $newOwnerArr["requestId"] = $updetReq["id"];
                 $newOwnerArr["userId"] = $refUlbId;
                 $rPropOwners->store($newOwnerArr);
@@ -1252,7 +1253,7 @@ class PropertyController extends Controller
 
     public function Entery(Request $request)
     {
-        try{
+        try {
             $sql = '
                 select
                 prop_transactions.id as tran_id ,
@@ -1294,8 +1295,8 @@ class PropertyController extends Controller
             join(
                 select *
                 from(
-                    select "Sheet2"."ID" ,concat(("Sheet2"."FinanceYear"),'."'-'".',("Sheet2"."FinanceYear"+1) )as from_fyears, 
-                            concat(("Sheet2"."PendingYear"),'."'-'".',("Sheet2"."PendingYear"+1) )as upto_fyears,
+                    select "Sheet2"."ID" ,concat(("Sheet2"."FinanceYear"),' . "'-'" . ',("Sheet2"."FinanceYear"+1) )as from_fyears, 
+                            concat(("Sheet2"."PendingYear"),' . "'-'" . ',("Sheet2"."PendingYear"+1) )as upto_fyears,
                         (
                             "Sheet2"."PropertyTax" +
                             "Sheet2"."RoadCess" +
@@ -1338,217 +1339,211 @@ class PropertyController extends Controller
             order by prop_transactions.id
             ;
             ';
-            
-        $data1 = DB::select($sql);
-        $data = (collect($data1)->take(20))->toArray();
-        
-        
-        foreach($data as $val){
-            DB::beginTransaction();
-            $fyearList = [];
-            $diff = 1;
-            if($val->from_fyears!=$val->upto_fyears && $val->from_fyears > $val->upto_fyears)
-            {
-                $from = $val->from_fyears;
-                $val->from_fyears = $val->upto_fyears;
-                $val->upto_fyears = $from;
-                list($fFrom,$fUpto) = explode("-",$val->from_fyears);
-                list($uFrom,$uUpto) = explode("-",$val->upto_fyears);
-            }
-           
-            $fyearList[]=$fromYear =$val->from_fyears;
-            
-            while($fromYear<$val->upto_fyears){
-                $diff+=1;
-                list($From,$Upto) = explode("-",$fromYear);
-                $fyearList[]=$fromYear=($From+1)."-".($Upto+1);
-            }
-            
-            foreach($fyearList as $fyear)
-            {
-                $type ="old";
-                $demand = PropDemand::where("fyear",$fyear)
-                    ->where("property_id",$val->property_id)
-                    ->OrderBy("id","DESC")
-                    ->first();
-                $demand2 = PropDemand::where("fyear",$fyear)
-                    ->where("property_id",$val->property_id)
-                    ->OrderBy("id","DESC")
-                    ->first();
-                $logs = json_encode($demand->toArray());
-                #===== new tax Insert =============
-                if(!$demand)
-                {
-                    $type ="new";
-                    $demand = new PropDemand();
-                    $demand->alv =0;
-                    $demand->due_maintanance_amt     = $demand->maintanance_amt = $val->paid_maintanance_amt/$diff;
-                    $demand->due_aging_amt           = $demand->aging_amt       = $val->paid_aging_amt/$diff;
-                    $demand->due_general_tax         = $demand->general_tax     = $val->paid_general_tax/$diff;
-                    $demand->due_road_tax            = $demand->road_tax        = $val->paid_road_tax/$diff;
-                    $demand->due_firefighting_tax    = $demand->firefighting_tax = $val->paid_firefighting_tax/$diff;
-                    $demand->due_education_tax       = $demand->education_tax   = $val->paid_education_tax/$diff;
-                    $demand->due_water_tax           = $demand->water_tax       = $val->paid_water_tax/$diff;
-                    $demand->due_cleanliness_tax     = $demand->cleanliness_tax = $val->paid_cleanliness_tax/$diff;
-                    $demand->due_sewarage_tax        = $demand->sewarage_tax    = $val->paid_sewarage_tax/$diff;
-                    $demand->due_tree_tax            = $demand->tree_tax        = $val->paid_tree_tax/$diff;
-                    $demand->due_professional_tax    = $demand->professional_tax = $val->paid_professional_tax/$diff;
-                    $demand->due_total_tax           = $demand->total_tax       = $val->paid_total_tax/$diff;
-                    $demand->due_balance             = $demand->balance         = $val->paid_total_tax/$diff;                    
-                    $demand->due_tax1                = $demand->tax1            = $val->paid_tax1/$diff;
-                    $demand->due_tax2                = $demand->tax2            = $val->paid_tax2/$diff;
-                    $demand->due_tax3                = $demand->tax3            = $val->paid_tax3/$diff;
-                    $demand->due_sp_education_tax    = $demand->sp_education_tax = $val->paid_sp_education_tax/$diff;
-                    $demand->due_water_benefit       = $demand->water_benefit   = $val->paid_water_benefit/$diff;
-                    $demand->due_water_bill          =  $demand->water_bill     = $val->paid_water_bill/$diff;
-                    $demand->due_sp_water_cess       =  $demand->sp_water_cess  = $val->paid_sp_water_cess/$diff;
-                    $demand->due_drain_cess          = $demand->drain_cess      = $val->paid_drain_cess/$diff;
-                    $demand->due_light_cess          = $demand->light_cess      = $val->paid_light_cess/$diff;
-                    $demand->due_major_building      = $demand->major_building  = $val->paid_major_building/$diff;
-                    $demand->due_open_ploat_tax      = $demand->open_ploat_tax  = $val->paid_open_ploat_tax/$diff;
 
-                    $demand->is_arrear = getFY()<$fyear? true:false;
-                    $demand->paid_status = 1;
-                    $demand->fyear = $fyear;
-                    $demand->created_at = $val->created_at;
-                    $demand->ulb_id = $val->ulb_id;
-                    $demand->save();
+            $data1 = DB::select($sql);
+            $data = (collect($data1)->take(20))->toArray();
 
+
+            foreach ($data as $val) {
+                DB::beginTransaction();
+                $fyearList = [];
+                $diff = 1;
+                if ($val->from_fyears != $val->upto_fyears && $val->from_fyears > $val->upto_fyears) {
+                    $from = $val->from_fyears;
+                    $val->from_fyears = $val->upto_fyears;
+                    $val->upto_fyears = $from;
+                    list($fFrom, $fUpto) = explode("-", $val->from_fyears);
+                    list($uFrom, $uUpto) = explode("-", $val->upto_fyears);
                 }
-                #===== end =============
-                #===== tax update =============
-                    $demand->maintanance_amt = $demand->maintanance_amt>0 ? $demand->maintanance_amt : ($val->paid_maintanance_amt   / $diff);                
-                    $demand->aging_amt       = $demand->aging_amt     >0  ? $demand->aging_amt       : ($val->paid_aging_amt    /    $diff);
-                    $demand->general_tax     = $demand->general_tax   >0  ? $demand->general_tax     : ($val->paid_general_tax / $diff);
-                    $demand->road_tax        = $demand->road_tax      >0  ? $demand->road_tax        : ($val->paid_road_tax / $diff);
-                    $demand->firefighting_tax= $demand->firefighting_tax>0? $demand->firefighting_tax: ($val->paid_firefighting_tax / $diff);
-                    $demand->education_tax   = $demand->education_tax >0  ? $demand->education_tax   : ($val->paid_education_tax / $diff);
-                    $demand->water_tax       = $demand->water_tax     >0  ? $demand->water_tax       : ($val->paid_water_tax / $diff);
-                    $demand->cleanliness_tax = $demand->cleanliness_tax>0 ? $demand->cleanliness_tax : ($val->paid_cleanliness_tax / $diff);
-                    $demand->sewarage_tax    = $demand->sewarage_tax  >0  ? $demand->sewarage_tax    : ($val->paid_sewarage_tax / $diff);
-                    $demand->tree_tax        = $demand->tree_tax      >0  ? $demand->tree_tax        : ($val->paid_tree_tax / $diff);
-                    $demand->professional_tax= $demand->professional_tax? $demand->professional_tax: ($val->paid_professional_tax / $diff);                
-                    $demand->tax1            = $demand->tax1          >0  ? $demand->tax1            : ($val->paid_tax1 / $diff);
-                    $demand->tax2            = $demand->tax2          >0  ? $demand->tax2            : ($val->paid_tax2 / $diff);
-                    $demand->tax3            = $demand->tax3          >0  ? $demand->tax3            : ($val->paid_tax3 / $diff);
-                    $demand->sp_education_tax= $demand->sp_education_tax>0? $demand->sp_education_tax: ($val->paid_sp_education_tax / $diff);
-                    $demand->water_benefit   = $demand->water_benefit >0  ? $demand->water_benefit   : ($val->paid_water_benefit / $diff);
-                    $demand->water_bill      = $demand->water_bill    >0  ? $demand->water_bill      : ($val->paid_water_bill / $diff);
-                    $demand->sp_water_cess   = $demand->sp_water_cess >0  ? $demand->sp_water_cess   : ($val->paid_sp_water_cess / $diff);
-                    $demand->drain_cess      = $demand->drain_cess    >0  ? $demand->drain_cess      : ($val->paid_drain_cess / $diff);
-                    $demand->light_cess      = $demand->light_cess    >0  ? $demand->light_cess      : ($val->paid_light_cess / $diff);
-                    $demand->major_building  = $demand->major_building>0  ? $demand->major_building  : ($val->paid_major_building / $diff);
-                    $demand->open_ploat_tax  = $demand->open_ploat_tax>0  ? $demand->open_ploat_tax  : ($val->paid_open_ploat_tax / $diff);
+
+                $fyearList[] = $fromYear = $val->from_fyears;
+
+                while ($fromYear < $val->upto_fyears) {
+                    $diff += 1;
+                    list($From, $Upto) = explode("-", $fromYear);
+                    $fyearList[] = $fromYear = ($From + 1) . "-" . ($Upto + 1);
+                }
+
+                foreach ($fyearList as $fyear) {
+                    $type = "old";
+                    $demand = PropDemand::where("fyear", $fyear)
+                        ->where("property_id", $val->property_id)
+                        ->OrderBy("id", "DESC")
+                        ->first();
+                    $demand2 = PropDemand::where("fyear", $fyear)
+                        ->where("property_id", $val->property_id)
+                        ->OrderBy("id", "DESC")
+                        ->first();
+                    $logs = json_encode($demand->toArray());
+                    #===== new tax Insert =============
+                    if (!$demand) {
+                        $type = "new";
+                        $demand = new PropDemand();
+                        $demand->alv = 0;
+                        $demand->due_maintanance_amt     = $demand->maintanance_amt = $val->paid_maintanance_amt / $diff;
+                        $demand->due_aging_amt           = $demand->aging_amt       = $val->paid_aging_amt / $diff;
+                        $demand->due_general_tax         = $demand->general_tax     = $val->paid_general_tax / $diff;
+                        $demand->due_road_tax            = $demand->road_tax        = $val->paid_road_tax / $diff;
+                        $demand->due_firefighting_tax    = $demand->firefighting_tax = $val->paid_firefighting_tax / $diff;
+                        $demand->due_education_tax       = $demand->education_tax   = $val->paid_education_tax / $diff;
+                        $demand->due_water_tax           = $demand->water_tax       = $val->paid_water_tax / $diff;
+                        $demand->due_cleanliness_tax     = $demand->cleanliness_tax = $val->paid_cleanliness_tax / $diff;
+                        $demand->due_sewarage_tax        = $demand->sewarage_tax    = $val->paid_sewarage_tax / $diff;
+                        $demand->due_tree_tax            = $demand->tree_tax        = $val->paid_tree_tax / $diff;
+                        $demand->due_professional_tax    = $demand->professional_tax = $val->paid_professional_tax / $diff;
+                        $demand->due_total_tax           = $demand->total_tax       = $val->paid_total_tax / $diff;
+                        $demand->due_balance             = $demand->balance         = $val->paid_total_tax / $diff;
+                        $demand->due_tax1                = $demand->tax1            = $val->paid_tax1 / $diff;
+                        $demand->due_tax2                = $demand->tax2            = $val->paid_tax2 / $diff;
+                        $demand->due_tax3                = $demand->tax3            = $val->paid_tax3 / $diff;
+                        $demand->due_sp_education_tax    = $demand->sp_education_tax = $val->paid_sp_education_tax / $diff;
+                        $demand->due_water_benefit       = $demand->water_benefit   = $val->paid_water_benefit / $diff;
+                        $demand->due_water_bill          =  $demand->water_bill     = $val->paid_water_bill / $diff;
+                        $demand->due_sp_water_cess       =  $demand->sp_water_cess  = $val->paid_sp_water_cess / $diff;
+                        $demand->due_drain_cess          = $demand->drain_cess      = $val->paid_drain_cess / $diff;
+                        $demand->due_light_cess          = $demand->light_cess      = $val->paid_light_cess / $diff;
+                        $demand->due_major_building      = $demand->major_building  = $val->paid_major_building / $diff;
+                        $demand->due_open_ploat_tax      = $demand->open_ploat_tax  = $val->paid_open_ploat_tax / $diff;
+
+                        $demand->is_arrear = getFY() < $fyear ? true : false;
+                        $demand->paid_status = 1;
+                        $demand->fyear = $fyear;
+                        $demand->created_at = $val->created_at;
+                        $demand->ulb_id = $val->ulb_id;
+                        $demand->save();
+                    }
+                    #===== end =============
+                    #===== tax update =============
+                    $demand->maintanance_amt = $demand->maintanance_amt > 0 ? $demand->maintanance_amt : ($val->paid_maintanance_amt   / $diff);
+                    $demand->aging_amt       = $demand->aging_amt     > 0  ? $demand->aging_amt       : ($val->paid_aging_amt    /    $diff);
+                    $demand->general_tax     = $demand->general_tax   > 0  ? $demand->general_tax     : ($val->paid_general_tax / $diff);
+                    $demand->road_tax        = $demand->road_tax      > 0  ? $demand->road_tax        : ($val->paid_road_tax / $diff);
+                    $demand->firefighting_tax = $demand->firefighting_tax > 0 ? $demand->firefighting_tax : ($val->paid_firefighting_tax / $diff);
+                    $demand->education_tax   = $demand->education_tax > 0  ? $demand->education_tax   : ($val->paid_education_tax / $diff);
+                    $demand->water_tax       = $demand->water_tax     > 0  ? $demand->water_tax       : ($val->paid_water_tax / $diff);
+                    $demand->cleanliness_tax = $demand->cleanliness_tax > 0 ? $demand->cleanliness_tax : ($val->paid_cleanliness_tax / $diff);
+                    $demand->sewarage_tax    = $demand->sewarage_tax  > 0  ? $demand->sewarage_tax    : ($val->paid_sewarage_tax / $diff);
+                    $demand->tree_tax        = $demand->tree_tax      > 0  ? $demand->tree_tax        : ($val->paid_tree_tax / $diff);
+                    $demand->professional_tax = $demand->professional_tax ? $demand->professional_tax : ($val->paid_professional_tax / $diff);
+                    $demand->tax1            = $demand->tax1          > 0  ? $demand->tax1            : ($val->paid_tax1 / $diff);
+                    $demand->tax2            = $demand->tax2          > 0  ? $demand->tax2            : ($val->paid_tax2 / $diff);
+                    $demand->tax3            = $demand->tax3          > 0  ? $demand->tax3            : ($val->paid_tax3 / $diff);
+                    $demand->sp_education_tax = $demand->sp_education_tax > 0 ? $demand->sp_education_tax : ($val->paid_sp_education_tax / $diff);
+                    $demand->water_benefit   = $demand->water_benefit > 0  ? $demand->water_benefit   : ($val->paid_water_benefit / $diff);
+                    $demand->water_bill      = $demand->water_bill    > 0  ? $demand->water_bill      : ($val->paid_water_bill / $diff);
+                    $demand->sp_water_cess   = $demand->sp_water_cess > 0  ? $demand->sp_water_cess   : ($val->paid_sp_water_cess / $diff);
+                    $demand->drain_cess      = $demand->drain_cess    > 0  ? $demand->drain_cess      : ($val->paid_drain_cess / $diff);
+                    $demand->light_cess      = $demand->light_cess    > 0  ? $demand->light_cess      : ($val->paid_light_cess / $diff);
+                    $demand->major_building  = $demand->major_building > 0  ? $demand->major_building  : ($val->paid_major_building / $diff);
+                    $demand->open_ploat_tax  = $demand->open_ploat_tax > 0  ? $demand->open_ploat_tax  : ($val->paid_open_ploat_tax / $diff);
 
                     $demand->balance = $demand->total_tax       = (
-                        $demand->maintanance_amt    +   $demand->aging_amt      +   $demand->general_tax    +   $demand->road_tax + 
+                        $demand->maintanance_amt    +   $demand->aging_amt      +   $demand->general_tax    +   $demand->road_tax +
                         $demand->firefighting_tax   +   $demand->education_tax  +   $demand->water_tax      +   $demand->cleanliness_tax +
-                        $demand->sewarage_tax       +   $demand->tree_tax       +   $demand->professional_tax+  $demand->tax1 +
-                        $demand->tax2               +   $demand->tax3           +   $demand->sp_education_tax+  $demand->water_benefit +
-                        $demand->water_bill         +   $demand->sp_water_cess  +   $demand->drain_cess      +  $demand->light_cess + 
+                        $demand->sewarage_tax       +   $demand->tree_tax       +   $demand->professional_tax +  $demand->tax1 +
+                        $demand->tax2               +   $demand->tax3           +   $demand->sp_education_tax +  $demand->water_benefit +
+                        $demand->water_bill         +   $demand->sp_water_cess  +   $demand->drain_cess      +  $demand->light_cess +
                         $demand->major_building     +   $demand->open_ploat_tax
-                    );                
-            
-                #===== end =============
-                #===== due tax update =============
-                
-                    $demand->due_maintanance_amt = $demand->due_maintanance_amt >0 ? ($demand->due_maintanance_amt - ($val->paid_maintanance_amt  / $diff)) : $demand->due_maintanance_amt;                
-                    $demand->due_aging_amt       = $demand->due_aging_amt       >0 ?( $demand->due_aging_amt       - ($val->paid_aging_amt        / $diff)) : $demand->due_aging_amt;
-                    $demand->due_general_tax     = $demand->due_general_tax     >0 ?( $demand->due_general_tax     - ($val->paid_general_tax      / $diff)) : $demand->due_general_tax;
-                    $demand->due_road_tax        = $demand->due_road_tax        >0 ?( $demand->due_road_tax        - ($val->paid_road_tax         / $diff)) : $demand->due_road_tax;
-                    $demand->due_firefighting_tax= $demand->due_firefighting_tax>0 ?( $demand->due_firefighting_tax- ($val->paid_firefighting_tax  / $diff)): $demand->due_firefighting_tax;
-                    $demand->due_education_tax   = $demand->due_education_tax   >0 ?( $demand->due_education_tax   - ($val->paid_education_tax     / $diff)): $demand->due_education_tax;
-                    $demand->due_water_tax       = $demand->due_water_tax       >0 ?( $demand->due_water_tax       - ($val->paid_water_tax         / $diff)): $demand->due_water_tax;
-                    $demand->due_cleanliness_tax = $demand->due_cleanliness_tax >0 ?( $demand->due_cleanliness_tax - ($val->paid_cleanliness_tax   / $diff)): $demand->due_cleanliness_tax;
-                    $demand->due_sewarage_tax    = $demand->due_sewarage_tax    >0 ?( $demand->due_sewarage_tax    - ($val->paid_sewarage_tax      / $diff)): $demand->due_sewarage_tax;
-                    $demand->due_tree_tax        = $demand->due_tree_tax        >0 ?( $demand->due_tree_tax        - ($val->paid_tree_tax          / $diff)): $demand->due_tree_tax;
-                    $demand->due_professional_tax= $demand->due_professional_tax>0 ?($demand->due_professional_tax- ($val->paid_professional_tax   / $diff)):$demand->due_professional_tax;                
-                    $demand->due_tax1            = $demand->due_tax1            >0 ?( $demand->due_tax1            - ($val->paid_tax1  / $diff))           :	$demand->due_tax1            	;
-                    $demand->due_tax2            = $demand->due_tax2            >0 ?( $demand->due_tax2            - ($val->paid_tax2  / $diff))           :	$demand->due_tax2            	;
-                    $demand->due_tax3            = $demand->due_tax3            >0 ?( $demand->due_tax3            - ($val->paid_tax3  / $diff))           :	$demand->due_tax3            	;
-                    $demand->due_sp_education_tax= $demand->due_sp_education_tax>0 ?($demand->due_sp_education_tax- ($val->paid_sp_education_tax  / $diff)):	$demand->due_sp_education_tax	;
-                    $demand->due_water_benefit   = $demand->due_water_benefit   >0 ?( $demand->due_water_benefit   - ($val->paid_water_benefit  / $diff))  :   $demand->due_water_benefit   	;
-                    $demand->due_water_bill      = $demand->due_water_bill      >0 ?( $demand->due_water_bill      - ($val->paid_water_bill  / $diff))     :	$demand->due_water_bill      	;
-                    $demand->due_sp_water_cess   = $demand->due_sp_water_cess   >0 ?( $demand->due_sp_water_cess   - ($val->paid_sp_water_cess  / $diff))  :	$demand->due_sp_water_cess   	;
-                    $demand->due_drain_cess      = $demand->due_drain_cess      >0 ?( $demand->due_drain_cess      - ($val->paid_drain_cess  / $diff))     :	$demand->due_drain_cess      	;
-                    $demand->due_light_cess      = $demand->due_light_cess      >0 ?( $demand->due_light_cess      - ($val->paid_light_cess  / $diff))     :	$demand->due_light_cess      	;
-                    $demand->due_major_building  = $demand->due_major_building  >0 ?( $demand->due_major_building  - ($val->paid_major_building  / $diff)) :	$demand->due_major_building  	;
-                    $demand->due_open_ploat_tax  = $demand->due_open_ploat_tax  >0 ?( $demand->due_open_ploat_tax  - ($val->paid_open_ploat_tax  / $diff)) :	$demand->due_open_ploat_tax  	;
+                    );
+
+                    #===== end =============
+                    #===== due tax update =============
+
+                    $demand->due_maintanance_amt = $demand->due_maintanance_amt > 0 ? ($demand->due_maintanance_amt - ($val->paid_maintanance_amt  / $diff)) : $demand->due_maintanance_amt;
+                    $demand->due_aging_amt       = $demand->due_aging_amt       > 0 ? ($demand->due_aging_amt       - ($val->paid_aging_amt        / $diff)) : $demand->due_aging_amt;
+                    $demand->due_general_tax     = $demand->due_general_tax     > 0 ? ($demand->due_general_tax     - ($val->paid_general_tax      / $diff)) : $demand->due_general_tax;
+                    $demand->due_road_tax        = $demand->due_road_tax        > 0 ? ($demand->due_road_tax        - ($val->paid_road_tax         / $diff)) : $demand->due_road_tax;
+                    $demand->due_firefighting_tax = $demand->due_firefighting_tax > 0 ? ($demand->due_firefighting_tax - ($val->paid_firefighting_tax  / $diff)) : $demand->due_firefighting_tax;
+                    $demand->due_education_tax   = $demand->due_education_tax   > 0 ? ($demand->due_education_tax   - ($val->paid_education_tax     / $diff)) : $demand->due_education_tax;
+                    $demand->due_water_tax       = $demand->due_water_tax       > 0 ? ($demand->due_water_tax       - ($val->paid_water_tax         / $diff)) : $demand->due_water_tax;
+                    $demand->due_cleanliness_tax = $demand->due_cleanliness_tax > 0 ? ($demand->due_cleanliness_tax - ($val->paid_cleanliness_tax   / $diff)) : $demand->due_cleanliness_tax;
+                    $demand->due_sewarage_tax    = $demand->due_sewarage_tax    > 0 ? ($demand->due_sewarage_tax    - ($val->paid_sewarage_tax      / $diff)) : $demand->due_sewarage_tax;
+                    $demand->due_tree_tax        = $demand->due_tree_tax        > 0 ? ($demand->due_tree_tax        - ($val->paid_tree_tax          / $diff)) : $demand->due_tree_tax;
+                    $demand->due_professional_tax = $demand->due_professional_tax > 0 ? ($demand->due_professional_tax - ($val->paid_professional_tax   / $diff)) : $demand->due_professional_tax;
+                    $demand->due_tax1            = $demand->due_tax1            > 0 ? ($demand->due_tax1            - ($val->paid_tax1  / $diff))           :    $demand->due_tax1;
+                    $demand->due_tax2            = $demand->due_tax2            > 0 ? ($demand->due_tax2            - ($val->paid_tax2  / $diff))           :    $demand->due_tax2;
+                    $demand->due_tax3            = $demand->due_tax3            > 0 ? ($demand->due_tax3            - ($val->paid_tax3  / $diff))           :    $demand->due_tax3;
+                    $demand->due_sp_education_tax = $demand->due_sp_education_tax > 0 ? ($demand->due_sp_education_tax - ($val->paid_sp_education_tax  / $diff)) :    $demand->due_sp_education_tax;
+                    $demand->due_water_benefit   = $demand->due_water_benefit   > 0 ? ($demand->due_water_benefit   - ($val->paid_water_benefit  / $diff))  :   $demand->due_water_benefit;
+                    $demand->due_water_bill      = $demand->due_water_bill      > 0 ? ($demand->due_water_bill      - ($val->paid_water_bill  / $diff))     :    $demand->due_water_bill;
+                    $demand->due_sp_water_cess   = $demand->due_sp_water_cess   > 0 ? ($demand->due_sp_water_cess   - ($val->paid_sp_water_cess  / $diff))  :    $demand->due_sp_water_cess;
+                    $demand->due_drain_cess      = $demand->due_drain_cess      > 0 ? ($demand->due_drain_cess      - ($val->paid_drain_cess  / $diff))     :    $demand->due_drain_cess;
+                    $demand->due_light_cess      = $demand->due_light_cess      > 0 ? ($demand->due_light_cess      - ($val->paid_light_cess  / $diff))     :    $demand->due_light_cess;
+                    $demand->due_major_building  = $demand->due_major_building  > 0 ? ($demand->due_major_building  - ($val->paid_major_building  / $diff)) :    $demand->due_major_building;
+                    $demand->due_open_ploat_tax  = $demand->due_open_ploat_tax  > 0 ? ($demand->due_open_ploat_tax  - ($val->paid_open_ploat_tax  / $diff)) :    $demand->due_open_ploat_tax;
                     $demand->due_balance = $demand->due_total_tax       = (
-                        $demand->due_maintanance_amt    +   $demand->due_aging_amt      +   $demand->due_general_tax    +   $demand->due_road_tax + 
+                        $demand->due_maintanance_amt    +   $demand->due_aging_amt      +   $demand->due_general_tax    +   $demand->due_road_tax +
                         $demand->due_firefighting_tax   +   $demand->due_education_tax  +   $demand->due_water_tax      +   $demand->due_cleanliness_tax +
-                        $demand->due_sewarage_tax       +   $demand->due_tree_tax       +   $demand->due_professional_tax+  $demand->due_tax1 +
-                        $demand->due_tax2               +   $demand->due_tax3           +   $demand->due_sp_education_tax+  $demand->due_water_benefit +
-                        $demand->due_water_bill         +   $demand->due_sp_water_cess  +   $demand->due_drain_cess      +  $demand->due_light_cess + 
+                        $demand->due_sewarage_tax       +   $demand->due_tree_tax       +   $demand->due_professional_tax +  $demand->due_tax1 +
+                        $demand->due_tax2               +   $demand->due_tax3           +   $demand->due_sp_education_tax +  $demand->due_water_benefit +
+                        $demand->due_water_bill         +   $demand->due_sp_water_cess  +   $demand->due_drain_cess      +  $demand->due_light_cess +
                         $demand->due_major_building     +   $demand->due_open_ploat_tax
                     );
-                #===== end =============
+                    #===== end =============
 
-                $demand->update();
-                $collection = new PropTranDtl();
-                #===== inset Collection Dtls =============
-                    $collection->tran_id	        =	$val->tran_id	;
-                    $collection->prop_demand_id	    =	$demand->id	;
-                    $collection->total_demand	    =	$val->tran_demand_amt/ $diff	;
-                    $collection->created_at	        =	$val->created_at	;
-                    $collection->ulb_id	            =	$val->ulb_id	;
-                    $collection->paid_maintanance_amt=	$val->paid_maintanance_amt / $diff	;
-                    $collection->paid_aging_amt	    =	$val->paid_aging_amt/ $diff	;
-                    $collection->paid_general_tax	=	$val->paid_general_tax/ $diff	;
-                    $collection->paid_road_tax	    =	$val->paid_road_tax/ $diff	;
-                    $collection->paid_firefighting_tax=	$val->paid_firefighting_tax/ $diff	;
-                    $collection->paid_education_tax	=	$val->paid_education_tax/ $diff	;
-                    $collection->paid_water_tax	    =	$val->paid_water_tax/ $diff	;
-                    $collection->paid_cleanliness_tax=	$val->paid_cleanliness_tax/ $diff	;
-                    $collection->paid_sewarage_tax	=	$val->paid_sewarage_tax/ $diff	;
-                    $collection->paid_tree_tax	    =	$val->paid_tree_tax/ $diff	;
-                    $collection->paid_professional_tax=	$val->paid_professional_tax/ $diff	;
-                    $collection->paid_total_tax	    =	$val->paid_total_tax/ $diff	;
-                    $collection->paid_balance	    =	$val->paid_balance/ $diff	;
-                    $collection->paid_tax1	        =	$val->paid_tax1/ $diff	;
-                    $collection->paid_tax2	        =	$val->paid_tax2/ $diff	;
-                    $collection->paid_tax3	        =	$val->paid_tax3/ $diff	;
-                    $collection->paid_sp_education_tax=	$val->paid_sp_education_tax/ $diff	;
-                    $collection->paid_water_benefit	=	$val->paid_water_benefit/ $diff	;
-                    $collection->paid_water_bill	=	$val->paid_water_bill/ $diff	;
-                    $collection->paid_sp_water_cess	=	$val->paid_sp_water_cess/ $diff	;
-                    $collection->paid_drain_cess	=	$val->paid_drain_cess/ $diff	;
-                    $collection->paid_light_cess	=	$val->paid_light_cess/ $diff	;
-                    $collection->paid_major_building=	$val->paid_major_building/ $diff	;
-                    $collection->paid_open_ploat_tax=	$val->paid_open_ploat_tax/ $diff	;
-                #===== end =============
-                $collection->save();
-                #===== insert =========
-                DB::enableQueryLog();
-                $insertLog = "insert into old_trans_demand_logs (
+                    $demand->update();
+                    $collection = new PropTranDtl();
+                    #===== inset Collection Dtls =============
+                    $collection->tran_id            =    $val->tran_id;
+                    $collection->prop_demand_id        =    $demand->id;
+                    $collection->total_demand        =    $val->tran_demand_amt / $diff;
+                    $collection->created_at            =    $val->created_at;
+                    $collection->ulb_id                =    $val->ulb_id;
+                    $collection->paid_maintanance_amt =    $val->paid_maintanance_amt / $diff;
+                    $collection->paid_aging_amt        =    $val->paid_aging_amt / $diff;
+                    $collection->paid_general_tax    =    $val->paid_general_tax / $diff;
+                    $collection->paid_road_tax        =    $val->paid_road_tax / $diff;
+                    $collection->paid_firefighting_tax =    $val->paid_firefighting_tax / $diff;
+                    $collection->paid_education_tax    =    $val->paid_education_tax / $diff;
+                    $collection->paid_water_tax        =    $val->paid_water_tax / $diff;
+                    $collection->paid_cleanliness_tax =    $val->paid_cleanliness_tax / $diff;
+                    $collection->paid_sewarage_tax    =    $val->paid_sewarage_tax / $diff;
+                    $collection->paid_tree_tax        =    $val->paid_tree_tax / $diff;
+                    $collection->paid_professional_tax =    $val->paid_professional_tax / $diff;
+                    $collection->paid_total_tax        =    $val->paid_total_tax / $diff;
+                    $collection->paid_balance        =    $val->paid_balance / $diff;
+                    $collection->paid_tax1            =    $val->paid_tax1 / $diff;
+                    $collection->paid_tax2            =    $val->paid_tax2 / $diff;
+                    $collection->paid_tax3            =    $val->paid_tax3 / $diff;
+                    $collection->paid_sp_education_tax =    $val->paid_sp_education_tax / $diff;
+                    $collection->paid_water_benefit    =    $val->paid_water_benefit / $diff;
+                    $collection->paid_water_bill    =    $val->paid_water_bill / $diff;
+                    $collection->paid_sp_water_cess    =    $val->paid_sp_water_cess / $diff;
+                    $collection->paid_drain_cess    =    $val->paid_drain_cess / $diff;
+                    $collection->paid_light_cess    =    $val->paid_light_cess / $diff;
+                    $collection->paid_major_building =    $val->paid_major_building / $diff;
+                    $collection->paid_open_ploat_tax =    $val->paid_open_ploat_tax / $diff;
+                    #===== end =============
+                    $collection->save();
+                    #===== insert =========
+                    DB::enableQueryLog();
+                    $insertLog = "insert into old_trans_demand_logs (
                     tran_id, fyear,creation_type, demand_id, logs 
                 )
-                values(".
-                    $val->tran_id.",".
-                    "'".$demand->fyear."',".
-                    "'".$type."',".
-                    $demand->id.",".
-                    ($logs?"'".$logs."'":null)
-                .");";
-                DB::select($insertLog);
-                // print_Var($collection->toArray());
+                values(" .
+                        $val->tran_id . "," .
+                        "'" . $demand->fyear . "'," .
+                        "'" . $type . "'," .
+                        $demand->id . "," .
+                        ($logs ? "'" . $logs . "'" : null)
+                        . ");";
+                    DB::select($insertLog);
+                    // print_Var($collection->toArray());
+                }
+                $penalty = [
+                    "tran_id" => $val->tran_id,
+                    "head_name" => "Monthly Penalty",
+                    "amount" => $val->penalty,
+                    "is_rebate" => false,
+                    "tran_date" => $val->tran_date,
+                    "prop_id" => $val->property_id,
+                ];
+                PropPenaltyrebate::create($penalty);
+
+                DB::commit();
             }
-            $penalty=[
-                "tran_id"=>$val->tran_id,
-                "head_name"=>"Monthly Penalty",
-                "amount"=>$val->penalty,
-                "is_rebate"=>false,
-                "tran_date"=>$val->tran_date,
-                "prop_id"=>$val->property_id,
-            ];
-            PropPenaltyrebate::create($penalty);
-            
-            DB::commit();  
-        }
-        print_var(DB::select("SELECT count(DISTINCT tran_id) FROM old_trans_demand_logs"));
-        }
-        catch(Exception $e)
-        {
+            print_var(DB::select("SELECT count(DISTINCT tran_id) FROM old_trans_demand_logs"));
+        } catch (Exception $e) {
             DB::rollback();
             return responseMsgs(false, $e->getMessage(), "");
         }

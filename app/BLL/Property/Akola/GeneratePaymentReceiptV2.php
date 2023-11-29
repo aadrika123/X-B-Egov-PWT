@@ -306,7 +306,7 @@ class GeneratePaymentReceiptV2
             "ulbDetails" => $this->_ulbDetails,
             "isArrearReceipt" => $this->_isArrearReceipt,
             "bookNo" => $this->_trans->book_no ?? "",
-            "receiptNo" => isset($this->_trans->book_no) ? explode('-', $this->_trans->book_no)[1] : ""
+            "receiptNo" => isset($this->_trans->book_no) ? (explode('-', $this->_trans->book_no)[1]??"0") : ""
         ];
 
         $this->_GRID['receiptDtls'] = $receiptDtls;

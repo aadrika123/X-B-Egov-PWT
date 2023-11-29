@@ -1364,9 +1364,9 @@ class Report implements IReport
 
             $doorToDoor[] = [
                 "transaction_mode" => "Total Door To Door",
-                "holding_count"    => $totalCollectionDoor,
-                "tran_count"       => $totalHoldingDoor,
-                "amount"           => $totalTranDoor
+                "holding_count"    => $totalHoldingDoor ,
+                "tran_count"       => $totalTranDoor,
+                "amount"           => $totalCollectionDoor,
             ];
             $funal["doorToDoor"] = $doorToDoor;
 

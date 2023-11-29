@@ -34,7 +34,7 @@ use Illuminate\Support\Facades\App;
 /**
  * | Created On - 30-09-2023
  * | Author - Sam kerketta
- * | Status-Open
+ * | Status - Close
  */
 
 class IciciPaymentController extends Controller
@@ -42,7 +42,7 @@ class IciciPaymentController extends Controller
 
     /**
      * | Generation of Referal url for payment for Testing for ICICI payent gateway
-        | Serila No :
+        | Serila No : 01
         | Working
      */
     public function getReferalUrl(Request $req)
@@ -90,7 +90,7 @@ class IciciPaymentController extends Controller
 
     /**
      * | Get Webhook data for icici payament 
-        | Serial No :
+        | Serial No : 02
         | Working
      */
     public function getWebhookData(Request $req)
@@ -106,11 +106,11 @@ class IciciPaymentController extends Controller
             $webhookData        = $getRefUrl->decryptWebhookData($webhoohEncripted);
             $webhookDataInArray = json_decode(json_encode($webhookData), true);
             Storage::disk('public')->put('icici/webhook/' . ("encripted" . $webhookData->TrnId) . '.json', $webhoohEncripted);
-            Storage::disk('public')->put('icici/webhook/' . $webhookData->TrnId . '.json', json_encode($webhookData));
             $refNo = $webhookData->Remarks;
             $refNo = explode('~', $refNo, 2);
             $refNo = $refNo['0'];
             $webhookDataInArray['reqRefNo'] = $refNo;
+            Storage::disk('public')->put('icici/webhook/' . $webhookData->TrnId . "-" . $refNo . '.json', json_encode($webhookData));
 
 
             # Get the payamen request
@@ -187,9 +187,9 @@ class IciciPaymentController extends Controller
         }
     }
 
-
     /**
      * | Collect callback url details for payment
+        | Serial No : 03   
         | Working  
         | Use in case of webhook not used
      */
@@ -259,7 +259,7 @@ class IciciPaymentController extends Controller
     }
 }
 
-            # Call back data 
+            # Call back data v1
             // $reqBody = [
             //     "Response_Code"         : "E000",               // Payment status
             //     "Unique_Ref_Number"     : "2310131666814",      // Tran no
@@ -282,7 +282,7 @@ class IciciPaymentController extends Controller
             // ];
 
 
-            # Webhook Data 
+            # Webhook Data V1
             // $webhook = [
             //     "IcId"          => "378278",
             //     "TrnId"         => "231107168205627",
@@ -332,7 +332,7 @@ class IciciPaymentController extends Controller
             // ]
 
 
-            
+            # Webhook data V2
             // RT: "Tran",
             // IcId: "378278",
             // TrnId: "231124170702576",

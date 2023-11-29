@@ -71,7 +71,6 @@ use Ramsey\Collection\Collection as CollectionCollection;
 use SebastianBergmann\Type\VoidType;
 use Symfony\Contracts\Service\Attribute\Required;
 
-
 class NewConnectionController extends Controller
 {
     use Ward;
@@ -1838,6 +1837,7 @@ class NewConnectionController extends Controller
             $refstring      = strtolower($string);
             $wardId         = $request->wardId;
             $zoneId         = $request->zoneId;
+            
 
             switch ($key) {
                 case ("consumerNo"):                                                                        // Static

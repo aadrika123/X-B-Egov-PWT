@@ -127,7 +127,7 @@ class CitizenHoldingController extends Controller
         $reqData  = $this->_PropIciciPaymentsRequest->where('req_ref_no', $req['reqRefNo'])
             ->where('payment_status', 0)
             ->first();
-
+              
         if (collect($reqData)->isEmpty())
             throw new Exception("No Transaction Found");
 
@@ -139,6 +139,7 @@ class CitizenHoldingController extends Controller
             "id"         => $reqData->prop_id,
             "paymentMode" => "ONLINE",
         ]);
+        
         $data = $mHoldingTaxController->offlinePaymentHoldingV2($newReqs);
 
         $mReqs = [
@@ -169,5 +170,16 @@ class CitizenHoldingController extends Controller
         $this->_PropIciciPaymentsRespone->store($mReqs);
 
         return $data;
+    }
+
+    public function testIcic(Request $req)
+    {
+        try{         
+            $respons=  $this->ICICPaymentResponse($req);
+            return($respons);
+        }
+        catch (Exception $e) {
+            return responseMsgs(false, [$e->getMessage(),$e->getLine(),$e->getFile()], "", "011604", "2.0", "", "POST", $req->deviceId ?? "");
+        }
     }
 }

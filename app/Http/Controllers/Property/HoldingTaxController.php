@@ -594,7 +594,7 @@ class HoldingTaxController extends Controller
             $receipt = $generatePaymentReceipt->_GRID;
             return responseMsgs(true, "Payment Receipt", remove_null($receipt), "011605", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011605", "1.0", "", "POST", $req->deviceId);
+            return responseMsgs(false,$e->getMessage(), "", "011605", "1.0", "", "POST", $req->deviceId);
         }
     }
 
