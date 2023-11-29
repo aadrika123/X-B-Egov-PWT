@@ -881,6 +881,44 @@ class PropProperty extends Model
             ->first();
     }
 
+    public function getBasicDetailsV2($propId)
+    {
+        return DB::table('prop_properties as p')
+            ->select(
+                'p.holding_no as application_no',
+                'p.applicant_name as eng_applicant_name',
+                'p.applicant_marathi as applicant_name ',
+                'p.applicant_marathi',
+                'p.prop_address',
+                'p.ulb_id',
+                'p.property_no',
+                'z.zone_name',
+                'o.owner_name as eng_owner_name',
+                'o.owner_name_marathi as owner_name',
+                'o.owner_name_marathi',
+                'o.guardian_name',
+                'o.guardian_name_marathi',
+                'o.mobile_no',
+                'u.ward_name as ward_no'
+            )
+            // ->leftJoin('prop_owners as o', 'o.property_id', '=', 'p.id')
+            ->leftjoin(DB::raw("(
+                select string_agg(mobile_no::text,',') as mobile_no,
+                        string_agg(owner_name,',') as owner_name,
+                        string_agg(guardian_name,',') as guardian_name,   
+                        string_agg(case when owner_name_marathi <>'' then owner_name_marathi else owner_name end ,',') as owner_name_marathi,
+                        string_agg(case when guardian_name_marathi <>'' then guardian_name_marathi else guardian_name end ,',') as guardian_name_marathi, 
+                        property_id
+                from prop_owners
+                where status  =1 AND property_id = $propId
+                group by property_id
+            )as o"), 'o.property_id', 'p.id')
+            ->leftJoin('ulb_ward_masters as u', 'u.id', '=', 'p.ward_mstr_id')
+            ->join('zone_masters as z', 'z.id', '=', 'p.zone_mstr_id')
+            ->where('p.id', $propId)
+            ->first();
+    }
+
     // get Prpoperty 
     public function getPropert($holdingNo)
     {

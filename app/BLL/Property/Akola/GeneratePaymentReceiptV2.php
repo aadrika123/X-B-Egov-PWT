@@ -94,7 +94,8 @@ class GeneratePaymentReceiptV2
         $this->_tranType = $trans->tran_type;                // Property or SAF 
 
         $tranDtls = $this->_mPropTranDtl->getTranDemandsByTranId($trans->id);
-        $this->_propertyDtls = $this->_mPropProperty->getBasicDetails($trans->property_id);             // Get details from property table
+        // $this->_propertyDtls = $this->_mPropProperty->getBasicDetails($trans->property_id);             // Get details from property table
+        $this->_propertyDtls = $this->_mPropProperty->getBasicDetailsV2($trans->property_id); 
 
         if ($this->_tranType == 'Property') {                                   // Get Property Demands by demand ids
             if (collect($this->_propertyDtls)->isEmpty())
