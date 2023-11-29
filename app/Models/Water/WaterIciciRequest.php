@@ -2,6 +2,7 @@
 
 namespace App\Models\Water;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -19,15 +20,13 @@ class WaterIciciRequest extends Model
         $WaterIciciRequest->payment_from        = $request;
         $WaterIciciRequest->demand_from_upto    = $refDetails->refDemandFrom . "--" . $refDetails->refDemandUpto ?? null;
         $WaterIciciRequest->amount              = round($request->amount);
-        $WaterIciciRequest->due_amount          = $request;
-        $WaterIciciRequest->remarks             = $request;
-        $WaterIciciRequest->ip_address          = $request;
-        $WaterIciciRequest->is_rebate           = $request;
-        $WaterIciciRequest->consumer_charge_id  = $request;
-        $WaterIciciRequest->unique_ref_number   = $request;
-        $WaterIciciRequest->transaction_date    = $request;
-        $WaterIciciRequest->payment_mode        = $request;
-        $WaterIciciRequest->sub_merchant_id     = $request;
+        $WaterIciciRequest->due_amount          = $refDetails->leftDemandAmount;
+        $WaterIciciRequest->remarks             = $request->remarks;
+        $WaterIciciRequest->ip_address          = $request->ip();
+        $WaterIciciRequest->is_rebate           = $refDetails->isRebate ?? null;
+        $WaterIciciRequest->unique_ref_number   = $paymentDetails['req_ref_no'];
+        $WaterIciciRequest->transaction_date    = Carbon::now();
+        $WaterIciciRequest->sub_merchant_id     = null;
         $WaterIciciRequest->reference_no        = $request;
         $WaterIciciRequest->reference_url       = $request;
         $WaterIciciRequest->save();

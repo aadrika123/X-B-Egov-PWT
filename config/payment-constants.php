@@ -78,4 +78,11 @@ return [
         6 => "Permission Denied For This User ",
         7 => "Invalid Data Format",
     ],
+    "ICICI_BASE_URL"=>env("ICICI_BASE_URL",""),
+    "ICICI_RETURN_URL"=>env("ICICI_RETURN_URL",""),
+    "ICICI_CIPHERING"=>env("ICICI_CIPHERING",""),
+    "ICICI_CIPHERING_V2"=>env("ICICI_CIPHERING_V2",""),
+    "ICICI_ID"=>env("ICICI_ID",""),
+    "ICICI_AESKEY"=>env("ICICI_AESKEY",""),
+    "ICICI_MERCHANT_ID"=>env("ICICI_MERCHANT_ID",""),
 ];

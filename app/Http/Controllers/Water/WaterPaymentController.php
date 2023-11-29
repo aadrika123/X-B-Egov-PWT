@@ -800,7 +800,7 @@ class WaterPaymentController extends Controller
         $refadvanceAmount   = $this->checkAdvance($request);
         $totalPaymentAmount = (collect($allCharges)->sum('due_balance_amount')) - $refadvanceAmount['advanceAmount'];
         $totalPaymentAmount = round($totalPaymentAmount);
-        $totalPenalty       = collect($allCharges)->sum('penalty');
+        $totalPenalty       = collect($allCharges)->sum('due_penalty');
         if ($totalPaymentAmount != $refAmount) {
             throw new Exception("amount Not Matched!");
         }
@@ -815,7 +815,7 @@ class WaterPaymentController extends Controller
             "adjustedAmount"    => $refadvanceAmount['advanceAmount'],
             "penaltyAmount"     => $totalPenalty,
             "refDemandFrom"     => $startingDate,
-            "refDemandUpto"     => $endDate,
+            "refDemandUpto"     => $endDate
         ];
     }
 
@@ -851,8 +851,8 @@ class WaterPaymentController extends Controller
         }
 
         # calculation Part
-        $totalPaymentAmount  = round(collect($allCharges)->sum('due_balance_amount'));
-        if ($totalPaymentAmount <= $refAmount) {
+        $totalPaymentAmount = (collect($allCharges)->sum('due_balance_amount'));
+        if (round($totalPaymentAmount) <= $refAmount) {
             throw new Exception("amount should be smaller!");
         }
         $totalPenalty = collect($allCharges)->sum('due_penalty');
@@ -873,6 +873,8 @@ class WaterPaymentController extends Controller
             "adjustedAmount"    => 0,
             "penaltyAmount"     => $totalPenalty,
             "duePaymentAmount"  => $duePaymentAmount,
+            "refDemandFrom"     => $startingDate,
+            "refDemandUpto"     => $endDate,
         ];
     }
 
@@ -1844,12 +1846,16 @@ class WaterPaymentController extends Controller
             $mWaterConsumerDemand   = new WaterConsumerDemand();
             $iciciPaymentController = new IciciPaymentController();
             $mWaterIciciRequest     = new WaterIciciRequest();
-            $refUser                = authUser($request);
+            $refUser                = null;
             $waterModuleId          = Config::get('module-constants.WATER_MODULE_ID');
             $paymentFor             = Config::get('waterConstaint.PAYMENT_FOR');
             $paymentMode            = Config::get('payment-constants.PAYMENT_OFFLINE_MODE');
+            $now                    = Carbon::now();
             $endDate                = Carbon::createFromFormat('Y-m-d',  $request->demandUpto);
             $endDate                = $endDate->toDateString();
+            if ($request->auth) {
+                $refUser = authUser($request);
+            }
 
             # Restrict the online payment maide 
             if ($request->paymentMode != $paymentMode['5']) {
@@ -1864,9 +1870,16 @@ class WaterPaymentController extends Controller
             }
             $startingDate   = Carbon::createFromFormat('Y-m-d', $lastDemand['demand_from']);
             $startingDate   = $startingDate->toDateString();
-            $refDetails     = $this->preOfflinePaymentParams($request, $startingDate, $endDate);
+
+            # Distinguish btw part payment and regular payment
+            if ($request->paymentType != "isPartPayment") {
+                return $refDetails = $this->preOfflinePaymentParams($request, $startingDate, $endDate);
+            } else {
+                $refDetails = $this->prePartPaymentParams($request, $startingDate, $endDate);
+            }
 
             $this->begin();
+
             $myRequest = new Request([
                 'amount'        => round($request->amount),
                 'workflowId'    => 0,                                                                   // Static
@@ -1886,6 +1899,14 @@ class WaterPaymentController extends Controller
             $request->merge([
                 "uniqueNo" => time() . $request->consumerId . rand(1, 999999)
             ]);
+
+            return [
+                "1" => $paymentDetails,
+                "2" => $request->all(),
+                "3" => $refDetails,
+                "4" => $paymentFor['1']
+            ];
+
             $mWaterIciciRequest->savePaymentReq($paymentDetails, $request, $refDetails, $paymentFor['1']);
 
             $this->commit();
@@ -2615,6 +2636,8 @@ class WaterPaymentController extends Controller
     {
         try {
             $user                       = authUser($request);
+            $refUlbId                   = $user->ulb_id;
+            $refUserId                  = $user->Id;
             $midGeneration              = new IdGeneration;
             $mWaterAdjustment           = new WaterAdjustment();
             $mwaterTran                 = new waterTran();
@@ -2642,7 +2665,7 @@ class WaterPaymentController extends Controller
             $endDate        = Carbon::createFromFormat('Y-m-d',  $request->demandUpto);
             $startingDate   = $startingDate->toDateString();
             $endDate        = $endDate->toDateString();
-            if (!$user->ulb_id) {
+            if (!$refUlbId) {
                 throw new Exception("Ulb Not Found!");
             }
 
@@ -2650,14 +2673,14 @@ class WaterPaymentController extends Controller
             $finalCharges = $this->prePartPaymentParams($request, $startingDate, $endDate);
 
             $this->begin();
-            $tranNo = $midGeneration->generateTransactionNo($user->ulb_id);
+            $tranNo = $midGeneration->generateTransactionNo($refUlbId);
             $request->merge([
-                'userId'            => $user->id,
+                'userId'            => $refUserId,
                 'userType'          => $user->user_type,
                 'todayDate'         => $todayDate->format('Y-m-d'),
                 'tranNo'            => $tranNo,
                 'id'                => $request->consumerId,
-                'ulbId'             => $user->ulb_id,
+                'ulbId'             => $refUlbId,
                 'chargeCategory'    => "Demand Collection",                                 // Static
                 'leftDemandAmount'  => $finalCharges['leftDemandAmount'],
                 'adjustedAmount'    => $finalCharges['adjustedAmount'],
@@ -2695,7 +2718,7 @@ class WaterPaymentController extends Controller
 
             foreach ($refConsumercharges as $charges) {
                 $this->saveConsumerPaymentStatus($request, $offlinePaymentModes, $charges, $waterTrans);
-                $mWaterConsumerCollection->saveConsumerCollection($charges, $waterTrans, $user->id, null);
+                $mWaterConsumerCollection->saveConsumerCollection($charges, $waterTrans, $refUserId, null);
             }
             # Adjust the details of the demand 
             $this->adjustPartPayment($popedDemand, $refConsumercharges, $request, $offlinePaymentModes, $waterTrans, $consumercharges);
@@ -2714,7 +2737,7 @@ class WaterPaymentController extends Controller
                 $metaReqs['transaction_id']     = $waterTrans['id'];
                 $metaReqs['relative_path']      = $relativePath;
                 $metaReqs['document']           = $imageName;
-                $metaReqs['uploaded_by']        = $user->id;
+                $metaReqs['uploaded_by']        = $refUserId;
                 $metaReqs['uploaded_by_type']   = $user->user_type;
 
                 // $metaReqs = new Request($metaReqs);

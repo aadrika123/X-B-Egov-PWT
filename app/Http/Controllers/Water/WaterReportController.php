@@ -2122,7 +2122,7 @@ class WaterReportController extends Controller
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         // return $request->all();
         try {
-            $metertype    = null;
+            $metertype      = null;
             $refUser        = authUser($request);
             $ulbId          = $refUser->ulb_id;
             $wardId = null;
@@ -2231,7 +2231,8 @@ class WaterReportController extends Controller
             $count = (collect(DB::connection('pgsql_water')->SELECT("SELECT COUNT(*) AS total
                                 FROM ($rawData) total"))->first());                                           // consumer count by searching format 
             $amount =  (collect(DB::connection('pgsql_water')->SELECT("SELECT  SUM(sum_balance_amount) AS total  
-            FROM ($rawData) total"))->first());                                                        // consumer amount  
+            FROM ($rawData) total"))->first());                                                              // consumer amount  
+
             $total = ($count)->total ?? 0;
             $totalAmount = ($amount)->total ?? 0;
             $lastPage = ceil($total / $perPage);
@@ -2597,6 +2598,170 @@ class WaterReportController extends Controller
             return responseMsgs(true, "", $resultObject, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
+    }
+
+    /**
+     * bulk demand bill 
+     */
+
+    public function waterBulkdemand(colllectionReport $request)
+    {
+        $request->merge(["metaData" => ["pr1.1", 1.1, null, $request->getMethod(), null,]]);
+        $metaData = collect($request->metaData)->all();
+
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        // return $request->all();
+        try {
+            $metertype      = null;
+            $refUser        = authUser($request);
+            $ulbId          = $refUser->ulb_id;
+            $wardId = null;
+            $userId = null;
+            $zoneId = null;
+            $paymentMode = null;
+            $perPage = $request->perPage ? $request->perPage : 5;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $NowDate                    = Carbon::now()->format('Y-m-d');
+            $bilDueDate                 = Carbon::now()->addDays(15)->format('Y-m-d');
+            $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
+            if ($request->fromDate) {
+                $fromDate = $request->fromDate;
+            }
+            if ($request->uptoDate) {
+                $uptoDate = $request->uptoDate;
+            }
+            if ($request->wardId) {
+                $wardId = $request->wardId;
+            }
+
+            if ($request->userId)
+                $userId = $request->userId;
+            else
+                $userId = auth()->user()->id;                   // In Case of any logged in TC User
+
+            if ($request->paymentMode) {
+                $paymentMode = $request->paymentMode;
+            }
+            if ($request->ulbId) {
+                $ulbId = $request->ulbId;
+            }
+            if ($request->zoneId) {
+                $zoneId = $request->zoneId;
+            }
+            if ($request->metertype == 1) {
+                $metertype = 'Meter';
+            }
+            if ($request->metertype == 2) {
+                $metertype = 'Fixed';
+            }
+
+            // DB::connection('pgsql_water')->enableQueryLog();
+
+            $rawData = ("SELECT 
+            water_consumer_demands.*,
+            ulb_ward_masters.ward_name AS ward_no,
+            water_second_consumers.id,
+            'water' as type,
+            water_second_consumers.consumer_no,
+            water_second_consumers.user_type,
+            water_second_consumers.property_no,
+            water_second_consumers.address,
+            water_second_consumers.tab_size,
+            water_second_consumers.zone,
+            water_consumer_owners.applicant_name,
+            water_consumer_owners.guardian_name,
+            water_consumer_owners.mobile_no,
+            water_second_consumers.category,
+            water_second_consumers.folio_no,
+            water_second_consumers.ward_mstr_id,
+            max(water_consumer_initial_meters.initial_reading) as final_reading,
+            min(water_consumer_initial_meters.initial_reading) as initaial_reading,
+            zone_masters.zone_name
+        FROM (
+            SELECT 
+                water_consumer_demands.consumer_id,
+                water_consumer_demands.connection_type,
+                water_consumer_demands.status,
+                min(water_consumer_demands.demand_from) as demand_from ,
+                max(water_consumer_demands.demand_upto) as demand_upto,
+                sum(water_consumer_demands.due_balance_amount) AS sum_amount
+            FROM water_consumer_demands
+            WHERE  
+                water_consumer_demands.status = TRUE
+                AND water_consumer_demands.consumer_id IS NOT NULL
+                AND water_consumer_demands.is_full_paid = false
+            GROUP BY water_consumer_demands.consumer_id, 
+                                water_consumer_demands.connection_type,
+                                water_consumer_demands.status
+        ) water_consumer_demands
+        JOIN water_second_consumers ON water_second_consumers.id = water_consumer_demands.consumer_id
+        LEFT JOIN water_consumer_owners ON water_consumer_owners.consumer_id = water_second_consumers.id
+        LEFT JOIN zone_masters ON zone_masters.id = water_second_consumers.zone_mstr_id
+        LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id = water_second_consumers.ward_mstr_id
+        JOIN water_consumer_initial_meters ON water_consumer_initial_meters.consumer_id = water_second_consumers.id
+        JOIN (
+            SELECT 
+                STRING_AGG(applicant_name, ', ') AS owner_name, 
+                STRING_AGG(water_consumer_owners.mobile_no::TEXT, ', ') AS mobile_no, 
+                water_consumer_owners.consumer_id 
+            FROM water_second_consumers 
+            JOIN water_consumer_demands ON water_consumer_demands.consumer_id = water_second_consumers.id
+            JOIN water_consumer_owners ON water_consumer_owners.consumer_id = water_second_consumers.id
+            GROUP BY water_consumer_owners.consumer_id
+        ) owners ON owners.consumer_id = water_second_consumers.id
+        GROUP BY water_consumer_demands.consumer_id,
+        water_consumer_demands.connection_type,
+        water_consumer_demands.status,
+        water_consumer_demands.demand_from,
+        water_consumer_demands.demand_upto,
+        water_consumer_demands.sum_amount,
+        ulb_ward_masters.ward_name,
+        water_second_consumers.id,
+        water_consumer_owners.applicant_name,
+        water_consumer_owners.guardian_name,
+        water_consumer_owners.mobile_no,
+        water_second_consumers.category,
+        water_second_consumers.folio_no,
+        water_second_consumers.ward_mstr_id,
+        zone_masters.zone_name
+          
+          ");
+
+            // Add conditions
+            if ($wardId) {
+                $rawData .= " AND ulb_ward_masters.id = $wardId";
+            }
+            if ($zoneId) {
+                $rawData .= " AND water_second_consumers.zone_mstr_id = $zoneId";
+            }
+            if ($metertype) {
+                $rawData .= " AND water_consumer_demands.connection_type = '$metertype'";
+            }
+
+            $data = DB::connection('pgsql_water')->select(DB::raw($rawData));
+
+            // $count = (collect(DB::connection('pgsql_water')->SELECT("SELECT COUNT(*) AS total
+            // FROM ($rawData) total"))->first());                                           // consumer count by searching format 
+            // $amount =  (collect(DB::connection('pgsql_water')->SELECT("SELECT  SUM(sum_balance_amount) AS total  
+            // FROM ($rawData) total"))->first());                                                              // consumer amount  
+
+            // $total = ($count)->total ?? 0;
+            // $totalAmount = ($amount)->total ?? 0;
+            $list = [
+                // "current_page" => $page,
+                "data" => $data,
+                'billdate' => $NowDate,
+                'bilDueDate' => $bilDueDate,
+                // "total" => $total,
+                // "totalAmount" => $totalAmount,
+                // "per_page" => $perPage,
+                // "last_page" => 1, // Assuming there is only one page without pagination
+            ];
+
+            return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime = NULL, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
 }

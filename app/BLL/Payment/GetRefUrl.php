@@ -4,6 +4,7 @@ namespace App\BLL\Payment;
 
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 
 /**
@@ -14,6 +15,16 @@ use Illuminate\Support\Facades\Http;
  */
 class GetRefUrl
 {
+    // private static $icid ;
+    // private static $aesKey ;                                              
+    // private static $subMerchantId ;
+    // private static $paymentMode ;
+    // private static $baseUrl ;                       
+    // private static $returnUrl; 
+    // private static $ciphering ;                                                                  
+    // private static $cipheringV2 ;
+    
+
     // private static $icid = 600587;
     // private static $icid = 136082;                                                       // Merchant Id uat
     private static $icid = 378278;                                                          // live
@@ -29,6 +40,18 @@ class GetRefUrl
     public $_tranAmt;
     public $_refNo;
     public $_refUrl;
+
+    // public function __construct()
+    // {
+    //     $this->icid             = Config::get("payment-constants.ICICI_ID");
+    //     $this->aesKey           = Config::get("payment-constants.ICICI_AESKEY");                                              
+    //     $this->subMerchantId    = Config::get("payment-constants.ICICI_MERCHANT_ID"); ;
+    //     $this->paymentMode      = 9;
+    //     $this->baseUrl          = Config::get("payment-constants.ICICI_BASE_URL");                       
+    //     $this->returnUrl        = Config::get("payment-constants.ICICI_RETURN_URL");  
+    //     $this->ciphering        = Config::get("payment-constants.ICICI_CIPHERING");                                                                   
+    //     $this->cipheringV2      = Config::get("payment-constants.ICICI_CIPHERING_V2");
+    // }
 
     /**
      * | Generate Referal Url
@@ -60,7 +83,7 @@ class GetRefUrl
         $this->_refUrl = $encryptUrl;
         return [
             'plainUrl'      => $plainUrl,
-            'encryptUrl'    => $encryptUrl
+            'encryptUrl'    => $encryptUrl   
         ];
     }
 
