@@ -961,4 +961,18 @@ class PostPropPaymentV2
         $data["paidCurrentTaxesBifurcation"] = $this->readPaidTaxes($paidDemandBifurcation);
         return $data;
     }
+
+    public function chakPayentAmount()
+    {
+        if ($this->_REQ->paymentType == 'isPartPayment' && $this->_REQ->paidAmount < $this->_propCalculation->original['data']['payableAmt']) {                    // Adjust Demand on Part Payment
+            $isPartWisePaid = true;                                                                                 // Flag has been kept for showing the partial payment receipt
+            $this->_REQ->merge(['amount' => $this->_REQ->paidAmount]);
+            if ($this->_REQ->paidAmount > $this->_propCalculation->original['data']['arrearPayableAmt'])           // We have to adjust current demand
+                $this->currentDemandAdjust();
+            elseif ($this->_REQ->paidAmount < $this->_propCalculation->original['data']['arrearPayableAmt'] && $this->_REQ->paidAmount > $this->_propCalculation->original['data']['totalInterestPenalty'])           // We have to adjust Arrear demand
+                $this->arrearDemandAdjust();
+            else
+                throw new Exception("Part Payment in Monthly Interest Not Available");
+        }
+    }
 }
