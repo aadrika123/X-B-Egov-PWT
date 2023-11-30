@@ -108,8 +108,8 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         # FOR AKOLA 
         Route::post('consumer/offline-request-payment', 'offlineConPayment');
         Route::post('consumer/part-payment', 'partPayment');                                             //status working
-        Route::post('consumer/online-payment','getReferalUrl');
-        Route::post('consumer/transaction-deactivation','transactionDeactivation');                 
+        Route::post('consumer/online-payment', 'getReferalUrl');
+        Route::post('consumer/transaction-deactivation', 'transactionDeactivation');
         # for deactivation  consumer
         Route::post('admin/consumer/offline-request-payment', 'offlineConReqPayment');
 
@@ -198,8 +198,8 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('consumer/demands/bulk-receipt', 'bulkReceipt');
         Route::post('report/water-collection-report', 'WaterCollectionConsumerReport');
         Route::post('report/ward-wise-demand', 'wardWiseConsumerReport');
-        Route::post('report/billing-summary','billingSummary');
-        Route::post('bill/demand-bill','waterBulkdemand');                                                  // demand bulk view bill
+        Route::post('report/billing-summary', 'billingSummary');
+        Route::post('bill/demand-bill', 'waterBulkdemand');                                                  // demand bulk view bill
     });
 
 
@@ -228,4 +228,7 @@ Route::controller(WaterApplication::class)->group(function () {
 Route::controller(WaterConsumer::class)->group(function () {
     Route::post('consumerChargeCal', 'calConsumerDemand');                                              //18        
     Route::post('sendSms', 'sendSms');
+});
+Route::controller(NewConnectionController::class)->group(function () {
+    Route::post('citizen/consumer-search', 'searchWaterConsumer');                                     // citizen consumer search
 });
