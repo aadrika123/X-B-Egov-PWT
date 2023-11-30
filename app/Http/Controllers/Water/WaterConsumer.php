@@ -289,6 +289,10 @@ class WaterConsumer extends Controller
                         $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType, $userDetails);
                         break;
                 }
+                // $sms = AkolaProperty(["owner_name" => $request['arshad'], "saf_no" => $request['tranNo']], "New Assessment");
+                // if (($sms["status"] !== false)) {
+                //     $respons = SMSAKGOVT(6206998554, $sms["sms"], $sms["temp_id"]);
+                // }
                 $this->commit();
                 return responseMsgs(true, "Demand Generated! for" . " " . $request->consumerId, "", "", "02", ".ms", "POST", "");
             }

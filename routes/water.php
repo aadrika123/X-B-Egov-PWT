@@ -200,6 +200,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('report/ward-wise-demand', 'wardWiseConsumerReport');
         Route::post('report/billing-summary', 'billingSummary');
         Route::post('bill/demand-bill', 'waterBulkdemand');                                                  // demand bulk view bill
+        Route::post('receipt/bulk-receipt', 'bulkReceipt');
     });
 
 
@@ -230,5 +231,13 @@ Route::controller(WaterConsumer::class)->group(function () {
     Route::post('sendSms', 'sendSms');
 });
 Route::controller(NewConnectionController::class)->group(function () {
-    Route::post('citizen/consumer-search', 'searchWaterConsumer');                                     // citizen consumer search
+    Route::post('citizen/consumer-search', 'searchWaterConsumer');                                      // citizen consumer search
+
+});
+Route::controller(WaterConsumer::class)->group(function () {
+    Route::post('consumer/details', 'WaterConsumerDetails');                                 // details of consumer 
+});
+Route::controller(WaterPaymentController::class)->group(function () {
+    Route::post('citizen/icici-payment', 'initiateOnlineDemandPayment');                                     // citizen consumer search
+    // Route::post('')
 });

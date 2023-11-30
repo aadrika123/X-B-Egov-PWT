@@ -343,4 +343,13 @@ class WaterTran extends Model
             ->where('status', 1)
             ->update($updateData);
     }
+    /**
+     * | 
+     */
+    public function tranDtl($userId, $fromDate, $toDate)
+    {
+        return WaterTran::where('status',1)
+            ->whereBetween('tran_date', [$fromDate, $toDate])
+            ->get();
+    }
 }
