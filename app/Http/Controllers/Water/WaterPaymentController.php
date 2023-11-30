@@ -68,6 +68,8 @@ use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\PDF;
 use App\BLL\Payment\GetRefUrl;
 use App\Models\Payment\IciciPaymentReq;
+use App\Models\Payment\IciciPaymentResponse;
+use App\Models\Water\WaterIciciResponse;
 
 /**
  * | ----------------------------------------------------------------------------------
@@ -815,7 +817,8 @@ class WaterPaymentController extends Controller
             "adjustedAmount"    => $refadvanceAmount['advanceAmount'],
             "penaltyAmount"     => $totalPenalty,
             "refDemandFrom"     => $startingDate,
-            "refDemandUpto"     => $endDate
+            "refDemandUpto"     => $endDate,
+            "partPaymentFlag"   => false
         ];
     }
 
@@ -875,6 +878,7 @@ class WaterPaymentController extends Controller
             "duePaymentAmount"  => $duePaymentAmount,
             "refDemandFrom"     => $startingDate,
             "refDemandUpto"     => $endDate,
+            "partPaymentFlag"   => true
         ];
     }
 
@@ -1850,7 +1854,6 @@ class WaterPaymentController extends Controller
             $waterModuleId          = Config::get('module-constants.WATER_MODULE_ID');
             $paymentFor             = Config::get('waterConstaint.PAYMENT_FOR');
             $paymentMode            = Config::get('payment-constants.PAYMENT_OFFLINE_MODE');
-            $now                    = Carbon::now();
             $endDate                = Carbon::createFromFormat('Y-m-d',  $request->demandUpto);
             $endDate                = $endDate->toDateString();
             if ($request->auth) {
@@ -1873,7 +1876,7 @@ class WaterPaymentController extends Controller
 
             # Distinguish btw part payment and regular payment
             if ($request->paymentType != "isPartPayment") {
-                return $refDetails = $this->preOfflinePaymentParams($request, $startingDate, $endDate);
+                $refDetails = $this->preOfflinePaymentParams($request, $startingDate, $endDate);
             } else {
                 $refDetails = $this->prePartPaymentParams($request, $startingDate, $endDate);
             }
@@ -1900,12 +1903,12 @@ class WaterPaymentController extends Controller
                 "uniqueNo" => time() . $request->consumerId . rand(1, 999999)
             ]);
 
-            return [
-                "1" => $paymentDetails,
-                "2" => $request->all(),
-                "3" => $refDetails,
-                "4" => $paymentFor['1']
-            ];
+            // return [
+            //     "1" => $paymentDetails,
+            //     "2" => $request->all(),
+            //     "3" => $refDetails,
+            //     "4" => $paymentFor['1']
+            // ];
 
             $mWaterIciciRequest->savePaymentReq($paymentDetails, $request, $refDetails, $paymentFor['1']);
 
@@ -1928,69 +1931,107 @@ class WaterPaymentController extends Controller
      * | Online Payment for the consumer Demand
      * | Data After the Webhook Payment / Called by the Webhook
      * | @param webhookData
-     * | @param RazorPayRequest
         | Serial No : 11
         | Recheck / Not Working
         | Clear the concept
         | Save the pgId and pgResponseId in trans table 
         | Called function 
      */
-    public function endOnlineDemandPayment($webhookData, $RazorPayRequest)
+    public function endOnlineDemandPayment($webhookData, $iciciPayRequest)
     {
         try {
+
+            [
+                'id',
+                'RT',
+                'IcId',
+                'TrnId',
+                'PayMode',
+                'TrnDate',
+                'SettleDT',
+                'Status',
+                'InitiateDT',
+                'TranAmt',
+                'BaseAmt',
+                'ProcFees',
+                'STax',
+                'M_SGST',
+                'M_CGST',
+                'M_UTGST',
+                'M_STCESS',
+                'M_CTCESS',
+                'M_IGST',
+                'GSTState',
+                'BillingState',
+                'Remarks',
+                'HashVal',
+                'reqRefNo',
+                'gatewayType'
+            ];
+
             # ref var assigning
             $today          = Carbon::now();
-            $refUserId      = $webhookData["userId"];
-            $refUlbId       = $webhookData["ulbId"];
+            $refUserId      = $webhookData["userId"] ?? null;
+            $refUlbId       = $webhookData["ulbId"] ?? 2;                                               // Static
             $mDemands       = (array)null;
 
             # model assigning
             $mWaterTran                 = new WaterTran();
             $mWaterTranDetail           = new WaterTranDetail();
             $mWaterConsumerDemand       = new WaterConsumerDemand();
-            $mWaterRazorPayResponse     = new WaterRazorPayResponse();
+            $mWaterIciciResponse        = new WaterIciciResponse();
             $mWaterConsumerCollection   = new WaterConsumerCollection();
             $mWaterAdjustment           = new WaterAdjustment();
 
             # variable assigning
             $adjustmentFor = Config::get("waterConstaint.ADVANCE_FOR");
-            $consumerDetails = WaterConsumer::find($webhookData["id"]);
+            $consumerDetails = WaterSecondConsumer::find($webhookData["id"]);
             $consumerId = $webhookData["id"];
-            $refDate = explode("--", $RazorPayRequest->demand_from_upto);
+            $refDate = explode("--", $iciciPayRequest->demand_from_upto);
             $startingYear = $refDate[0];
             $endYear = $refDate[1];
+            $randomNo = $this->getRandomNo($consumerId);
 
             # calcullate demand
-            $mDemands = $mWaterConsumerDemand->checkConsumerDemand($consumerId)
+            $mDemands = $mWaterConsumerDemand->getFirstConsumerDemandV2($consumerId)
                 ->where('demand_from', '>=', $startingYear)
                 ->where('demand_upto', '<=', $endYear)
                 ->get();
-            if (!$RazorPayRequest || round($webhookData['amount']) != round($RazorPayRequest['amount'])) {
-                throw new Exception("Payble Amount Missmatch!!!");
+
+            # Destinguish according to partPayment and check amount
+            if ($iciciPayRequest->is_part_payment == true) {
+                if (!$iciciPayRequest || round($webhookData['BaseAmt']) >= round($iciciPayRequest['amount'])) {
+                    throw new Exception("Payble Amount Missmatch!!!");
+                }
+            } else {
+                if (!$iciciPayRequest || round($webhookData['BaseAmt']) != round($iciciPayRequest['amount'])) {
+                    throw new Exception("Payble Amount Missmatch!!!");
+                }
             }
 
-            $this->begin();
-            # save payment data in razorpay response table
-            $paymentResponseId = $mWaterRazorPayResponse->savePaymentResponse($RazorPayRequest, $webhookData);
 
-            # save the razorpay request status as 1
-            $RazorPayRequest->status = 1;                                       // Static
-            $RazorPayRequest->update();
+            $this->begin();
+            # save payment data in water icic response table
+            $paymentResponse = $mWaterIciciResponse->savePaymentResponse($iciciPayRequest, $webhookData);
+
+            # save the icici request status as 1
+            $iciciPayRequest->status = 1;                                                   // Static
+            $iciciPayRequest->update();
 
             # save data in water transaction table 
             $metaRequest = [
                 "id"                => $webhookData["id"],
                 'amount'            => $webhookData['amount'],
-                'chargeCategory'    => $RazorPayRequest->payment_from,
+                'chargeCategory'    => $iciciPayRequest->payment_from,
                 'todayDate'         => $today,
-                'tranNo'            => $webhookData["transactionNo"],
-                'paymentMode'       => "Online",                                // Static
+                'tranNo'            => $randomNo,
+                'paymentMode'       => "Online",                                            // Static
                 'citizenId'         => $refUserId,
-                'userType'          => "Citizen" ?? null,                       // Check here // Static
+                'userType'          => "Citizen" ?? null,                                   // Static
                 'ulbId'             => $refUlbId,
-                'leftDemandAmount'  => $RazorPayRequest->due_amount,
-                'adjustedAmount'    => $RazorPayRequest->adjusted_amount,
-                'pgResponseId'      => $paymentResponseId['razorpayResponseId'],
+                'leftDemandAmount'  => $iciciPayRequest->due_amount ?? 0,
+                'adjustedAmount'    => $iciciPayRequest->adjusted_amount ?? 0,
+                'pgResponseId'      => $paymentResponse['responseId'] ?? 1,                 // ❗❗ Changes after test
                 'pgId'              => $webhookData['gatewayType']
             ];
             $consumer['ward_mstr_id'] = $consumerDetails->ward_mstr_id;
@@ -1999,24 +2040,28 @@ class WaterPaymentController extends Controller
             # adjustment data saving
             $refMetaReq = new Request([
                 "consumerId"    => $webhookData['id'],
-                "amount"        => $RazorPayRequest['adjusted_amount'],
+                "amount"        => $iciciPayRequest['adjusted_amount'],
                 "userId"        => $refUserId,
-                "remarks"       => "online payment",                            // Static
+                "remarks"       => "online payment",                                        // Static
             ]);
-            if ($RazorPayRequest['adjusted_amount'] > 0) {
+            if ($iciciPayRequest['adjusted_amount'] > 0) {
                 $mWaterAdjustment->saveAdjustment($transactionId, $refMetaReq, $adjustmentFor['1']);
             }
             # Save the fine data in the 
-            if ($RazorPayRequest['penalty_amount'] > 0) {
-                $this->savePenaltyDetails($transactionId, $RazorPayRequest['penalty_amount']);
+            if ($iciciPayRequest['penalty_amount'] > 0) {
+                $this->savePenaltyDetails($transactionId, $iciciPayRequest['penalty_amount']);
             }
-            foreach ($mDemands as $demand) {
-                # save Water trans details 
-                $mWaterTranDetail->saveDefaultTrans($demand->amount, $demand->consumer_id, $transactionId['id'], $demand->id, null);
-                $mWaterConsumerCollection->saveConsumerCollection($demand, $transactionId, $refUserId, null);
-                # update the payment status of the demand 
-                $demand->paid_status = 1;                                          // Static
-                $demand->update();
+
+            # Diff Dtw part payment and full payment
+            if ($iciciPayRequest->is_part_payment == true) {
+                foreach ($mDemands as $demand) {
+                    # save Water trans details 
+                    $mWaterTranDetail->saveDefaultTrans($demand->amount, $demand->consumer_id, $transactionId['id'], $demand->id, null);
+                    $mWaterConsumerCollection->saveConsumerCollection($demand, $transactionId, $refUserId, null);
+                    # update the payment status of the demand 
+                    $demand->paid_status = 1;                                          // Static
+                    $demand->update();
+                }
             }
             $this->commit();
             $res['transactionId'] = $transactionId['id'];
@@ -2026,6 +2071,26 @@ class WaterPaymentController extends Controller
             return responseMsg(false, $e->getMessage(), $webhookData);
         }
     }
+
+
+    /**
+     * | Generate Randon no Id
+        | Close
+        | Make this a Helper or in microservice 
+     */
+    protected function getRandomNo(int $consumerId)
+    {
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $randomString = '';
+        for ($i = 0; $i < 10; $i++) {
+            $index = rand(0, strlen($characters) - 1);
+            $randomString .= $characters[$index];
+        }
+        $randNo = (($consumerId . date('dmyhism') . $randomString));
+        $randNo = explode("=", chunk_split($randNo, 30, "="))[0];
+        return $randNo;
+    }
+
 
 
     /**
@@ -2636,8 +2701,8 @@ class WaterPaymentController extends Controller
     {
         try {
             $user                       = authUser($request);
-            $refUlbId                   = $user->ulb_id;
-            $refUserId                  = $user->Id;
+            $refUlbId                   = $user->ulb_id ?? 2;
+            $refUserId                  = $user->id;
             $midGeneration              = new IdGeneration;
             $mWaterAdjustment           = new WaterAdjustment();
             $mwaterTran                 = new waterTran();

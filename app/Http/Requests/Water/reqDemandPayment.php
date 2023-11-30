@@ -48,9 +48,9 @@ class reqDemandPayment extends FormRequest
         # For Part payament 
         if (isset($this['paymentType']) && $this['paymentType'] == "isPartPayment") {
             $rules['deviceId']  = "nullable";
-            if (in_array($this['paymentMode'], $offlinePaymentModes) &&  $this['paymentMode'] != $refPaymentMode['1']) {
-                $rules['document']  = "required|mimes:pdf,jpg,jpeg,png|max:2048";
-            }
+            // if (in_array($this['paymentMode'], $offlinePaymentModes) &&  $this['paymentMode'] != $refPaymentMode['1']) {
+            $rules['document']  = "nullable|mimes:pdf,jpg,jpeg,png|max:2048";
+            // }
         }
 
         $rules['demandUpto']    = 'required|date_format:Y-m-d|';

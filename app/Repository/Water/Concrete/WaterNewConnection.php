@@ -6,6 +6,7 @@ use App\EloquentModels\Common\ModelWard;
 use App\Http\Controllers\Water\NewConnectionController;
 use App\Http\Controllers\Water\WaterPaymentController;
 use App\Models\ActiveCitizen;
+use App\Models\Payment\IciciPaymentReq;
 use App\Models\Payment\WebhookPaymentData;
 use App\Models\UlbMaster;
 use App\Models\User;
@@ -14,6 +15,7 @@ use App\Models\Water\WaterApplicantDoc;
 use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterConsumer;
+use App\Models\Water\WaterIciciRequest;
 use App\Models\Water\WaterParamConnFee;
 use App\Models\Water\WaterParamConnFeeOld;
 use App\Models\Water\WaterParamDocumentType;
@@ -70,9 +72,9 @@ class WaterNewConnection implements IWaterNewConnection
 
     public function __construct()
     {
-        $this->_modelWard = new ModelWard();
-        $this->_parent = new CommonFunction();
-        $this->_dealingAssistent = Config::get('workflow-constants.DEALING_ASSISTENT_WF_ID');
+        $this->_modelWard           = new ModelWard();
+        $this->_parent              = new CommonFunction();
+        $this->_dealingAssistent    = Config::get('workflow-constants.DEALING_ASSISTENT_WF_ID');
         $this->_DB_NAME             = "pgsql_water";
         $this->_DB                  = DB::connection($this->_DB_NAME);
     }
@@ -461,6 +463,32 @@ class WaterNewConnection implements IWaterNewConnection
             return $response;
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $args);
+        }
+    }
+
+    /**
+     * | distribute the icic payment details according to paymet maode 
+        | Serial No :
+        | Under con
+     */
+    public function iciciPayResposne($webhookData)
+    {
+        $mWaterIciciRequest = new WaterIciciRequest();
+        try {
+            $waterRequestData = $mWaterIciciRequest->getReqDataByRefNo($webhookData['reqRefNo'])->where('status', 2)->first();
+            if (!$waterRequestData) {
+                throw new Exception("Request Details Not Found");
+            }
+            switch ($webhookData['payment_from']) {
+                case ("Demand Collection"):
+                    $mWaterPaymentController = new WaterPaymentController();
+                    $paymentResponse = $mWaterPaymentController->endOnlineDemandPayment($webhookData, $waterRequestData);
+                    break;
+                default:
+                    throw new Exception("Invalide Transaction");
+            }
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), $webhookData);
         }
     }
 

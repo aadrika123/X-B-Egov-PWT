@@ -119,6 +119,7 @@ class IciciPaymentController extends Controller
                 throw new Exception("Payment request dont exist for $refNo");
             }
             $webhookDataInArray['id'] = $paymentReqsData->application_id;
+            $webhookDataInArray['gatewayType'] = 2;                                                     // Static for icici
 
             # Save webhook payment data 
             $mReqs = [
@@ -162,7 +163,7 @@ class IciciPaymentController extends Controller
                 switch ($paymentReqsData->module_id) {
                     case ('5'):
                         # For advertisment
-                        $id = 4;                                                                            // Static
+                        $id = 4;                                                                                        // Static
                         $endPoint = $mApiMaster->getApiEndpoint($id);
                         $reqResponse = Http::withHeaders([
                             "api-key" => "eff41ef6-d430-4887-aa55-9fcf46c72c99"
@@ -177,6 +178,8 @@ class IciciPaymentController extends Controller
                         break;
                     case ('2'):
                         # For Waters
+                        $cWaterNewConnection = new WaterNewConnection();
+                        $cWaterNewConnection->iciciPayResposne($webhookDataInArray);
                         break;
                 }
             }
