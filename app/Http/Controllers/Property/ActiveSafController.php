@@ -754,6 +754,7 @@ class ActiveSafController extends Controller
             $mPropActiveSafOwner = new PropActiveSafsOwner();
             $mActiveSafsFloors = new PropActiveSafsFloor();
             $mPropSafMemoDtls = new PropSafMemoDtl();
+            $mPropTransaction = new PropTransaction();
             $memoDtls = array();
             $data = array();
 
@@ -794,7 +795,7 @@ class ActiveSafController extends Controller
             if (collect($getFloorDtls)->isEmpty())
                 $getFloorDtls = $mPropSafsFloors->getFloorsBySafId($data['id']);
             $data['floors'] = $getFloorDtls;
-
+            $data["tranDtl"] = $mPropTransaction->getSafTranList($data['id']);
             $memoDtls = $mPropSafMemoDtls->memoLists($data['id']);
             $data['memoDtls'] = $memoDtls;
             if ($status = ((new \App\Repository\Property\Concrete\SafRepository())->applicationStatus($req->applicationId, true))) {

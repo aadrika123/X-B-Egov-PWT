@@ -442,8 +442,8 @@ class PropTransaction extends Model
     {
         return $data = self::select("prop_transactions.*",
                             DB::raw(
-                                "user.name,
-                                user.mobile,
+                                "users.name,
+                                users.mobile,
                                 prop_cheque_dtls.cheque_date,
                                 prop_cheque_dtls.bank_name,                                
                                 prop_cheque_dtls.branch_name,
