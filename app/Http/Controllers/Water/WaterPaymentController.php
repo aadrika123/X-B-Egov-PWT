@@ -1918,11 +1918,11 @@ class WaterPaymentController extends Controller
 
             $this->commit();
 
-            $returnDetails['name']   = $refUser->user_name;
-            $returnDetails['mobile'] = $refUser->mobile;
-            $returnDetails['email']  = $refUser->email;
-            $returnDetails['userId'] = $refUser->id;
-            $returnDetails['ulbId']  = $refUser->ulb_id;
+            $returnDetails['name']   = $refUser->user_name ?? null;
+            $returnDetails['mobile'] = $refUser->mobile ?? null ;
+            $returnDetails['email']  = $refUser->email ?? null;
+            $returnDetails['userId'] = $refUser->id ?? null;
+            $returnDetails['ulbId']  = $refUser->ulb_id ?? null;
             $returnDetails['refUrl'] = $paymentDetails['encryptUrl'];
             return responseMsgs(true, "", $returnDetails, "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {

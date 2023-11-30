@@ -2693,6 +2693,7 @@ class WaterReportController extends Controller
                 water_meter_reading_docs.file_name,
                 MAX(water_consumer_initial_meters.initial_reading) AS final_reading,
                 MIN(water_consumer_initial_meters.initial_reading) AS initial_reading,
+                MAX(water_consumer_initial_meters.initial_reading) - MIN(water_consumer_initial_meters.initial_reading) AS unit_consumed,
                 zone_masters.zone_name,
                 CONCAT('$docUrl', '/', water_meter_reading_docs.relative_path, '/', water_meter_reading_docs.file_name) AS meterImg
             FROM (
