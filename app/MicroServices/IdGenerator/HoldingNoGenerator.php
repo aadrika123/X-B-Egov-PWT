@@ -4,6 +4,7 @@ namespace App\MicroServices\IdGenerator;
 
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
+use App\Models\Property\PropProperty;
 use App\Models\Property\PropSaf;
 use App\Models\Property\RefPropUsageType;
 use App\Models\UlbWardMaster;
@@ -51,26 +52,35 @@ class HoldingNoGenerator
         {
             return $activeSaf->holding_no;
         }
-        if($this->_activeSafs)
-        $wardDtls = $this->_mUlbWardMstr->getWardById($activeSaf->ward_mstr_id);
-        if (collect($wardDtls)->isEmpty())
-            throw new Exception("Ward Details Not Available");
+        $c=0;
+        while(true)
+        {
+            if($this->_activeSafs)
+            $wardDtls = $this->_mUlbWardMstr->getWardById($activeSaf->ward_mstr_id);
+            if (collect($wardDtls)->isEmpty())
+                throw new Exception("Ward Details Not Available");
 
-        // Params Generation
-        $wardNo = str_pad($wardDtls->ward_name, 3, "0", STR_PAD_LEFT);
-        $roadType = str_pad($activeSaf->road_type_mstr_id, 3, "0", STR_PAD_LEFT);
-        $counter = str_pad($wardDtls->holding_counter, 4, "0", STR_PAD_LEFT);
-        $subHoldingCounter = 0;                     // For New Assessment
+            // Params Generation
+            $wardNo = str_pad($wardDtls->ward_name, 3, "0", STR_PAD_LEFT);
+            $roadType = str_pad($activeSaf->road_type_mstr_id, 3, "0", STR_PAD_LEFT);
+            $counter = str_pad($wardDtls->holding_counter, 4, "0", STR_PAD_LEFT);
+            $subHoldingCounter = 0;                     // For New Assessment
 
-        if (in_array($activeSaf->assessment_type, [$this->_cAssessmentTypes[3], $this->_cAssessmentTypes[4], $this->_cAssessmentTypes[5]]))
-            $subHoldingCounter = $this->countSubHoldings();
+            if (in_array($activeSaf->assessment_type, [$this->_cAssessmentTypes[3], $this->_cAssessmentTypes[4], $this->_cAssessmentTypes[5]]))
+                $subHoldingCounter = $this->countSubHoldings();
 
-        $subHoldingNo = str_pad($subHoldingCounter, 3, "0", STR_PAD_LEFT);
-        $read14Digit = $this->read14Digit();
-        $read15Digit = $this->read15Digit();
-        $holdingNo = $wardNo . $roadType . $counter . $subHoldingNo . $read14Digit . $read15Digit;
-        $wardDtls->holding_counter += 1;  
-        $wardDtls->save();
+            $subHoldingNo = str_pad($subHoldingCounter, 3, "0", STR_PAD_LEFT);
+            $read14Digit = $this->read14Digit();
+            $read15Digit = $this->read15Digit();
+            $holdingNo = $wardNo . $roadType . $counter . $subHoldingNo . $read14Digit . $read15Digit;
+            $wardDtls->holding_counter += 1;  
+            $wardDtls->save();
+            if(!PropProperty::where("holding_no",$holdingNo)->first() || $c>50)
+            {
+                break;
+            }
+            $c+=1;
+        }
         return $holdingNo;
     }
 

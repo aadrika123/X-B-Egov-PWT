@@ -416,8 +416,12 @@ class PropertyController extends Controller
             $updetReq = $rPropProerty->store($req);
             foreach ($req->owner as $val) {
                 $testOwner = $mPropOwners->select("*")->where("id", $val["ownerId"])->where("property_id", $propId)->first();
-                if (!$testOwner) {
+                if (!$testOwner && $val["ownerId"]) {
                     throw new Exception("Invalid Owner Id Pass");
+                }
+                if(!$testOwner)
+                {
+                    $testOwner = new PropOwner ();
                 }
                 $newOwnerArr = $this->generatePropOwnerUpdateRequest($val, $testOwner, true);
                 $newOwnerArr["requestId"] = $updetReq["id"];
@@ -876,7 +880,15 @@ class PropertyController extends Controller
                 $propUpdate = (new PropProperty)->edit($application->prop_id, $propArr);
                 foreach ($owneres as $val) {
                     $ownerArr = $this->updatePropOwner($val);
+                    if($val->owner_id)
                     $ownerUpdate = (new PropOwner)->edit($val->owner_id, $ownerArr);
+                    else{
+                        $ownerArr["property_id"] = $application->prop_id;
+                        $ownerArr["saf_id"] = null;
+                        $ownerArr["user_id"] = $user_id;
+                        $ownerArr["id"] = null;
+                        $ownerUpdate = (new PropOwner)->postOwner((object)$ownerArr);
+                    }
                 }
                 $application->pending_status = 5;
                 $msg =  $application->holding_no . " Updated Successfull";
@@ -898,7 +910,7 @@ class PropertyController extends Controller
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection("pgsql_master")->rollBack();
-            return responseMsg(false, $e->getMessage(), "");
+            return responseMsg(false,$e->getMessage(), "");
         }
     }
 
