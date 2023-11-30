@@ -254,10 +254,10 @@ trait Property
         $propUdateRequest = PropPropertyUpdateRequest::find($UpdateOwnerRequest->request_id);
         if(!$PropOwner)
         {
-            throw new Exception("Owner Not Found");
+            // throw new Exception("Owner Not Found");
         }
         $arr = $this->updatePropOwnerBasic($UpdateOwnerRequest);
-        if($propUdateRequest->is_full_update)
+        if($propUdateRequest->is_full_update || !$PropOwner)
         {
             $arr =array_merge($arr,$this->updatePropOwnerPrimary($UpdateOwnerRequest)); 
         }

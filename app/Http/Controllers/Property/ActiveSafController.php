@@ -2323,7 +2323,8 @@ class ActiveSafController extends Controller
             $mPropChequeDtl = new PropChequeDtl();
             $chequeReqs = [
                 'user_id' => $req['userId'],
-                'prop_id' => $req['id'],
+                'prop_id' => (isset($req["tranType"]) && $req["tranType"]=='Property')?($req['id']??null):null,
+                'saf_id' => $req['saf_id']??null,
                 'transaction_id' => $req['tranId'],
                 'cheque_date' => $req['chequeDate'],
                 'bank_name' => $req['bankName'],
@@ -2349,6 +2350,7 @@ class ActiveSafController extends Controller
             'tran_date' => $req['todayDate'],
             'user_id' => $req['userId'],
             'ulb_id' => $req['ulbId'],
+            'ward_no' => $req['wardNo']??"",
             'cluster_id' => $clusterId
         ];
         $mTempTransaction->tempTransaction($tranReqs);
@@ -3605,4 +3607,135 @@ class ActiveSafController extends Controller
         }
     }
     // ---------end----------------
+
+    /**
+     * ========== Akola Proccess Fee Payment ==============
+     *            Created by: Sandeep Bara
+     *            Date      : 30-11-2023
+     *  
+     */
+    public function proccessFeePayment(ReqPayment $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [ 
+                'paidAmount' => 'required|numeric|min:1'
+            ]
+        );
+        if ($validated->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validated->errors()
+            ]);
+        }
+        
+        try{
+            $user = Auth()->user();
+            $verifyPaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
+            $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
+            $verifyStatus = 1;
+            $saf = PropActiveSaf::find($request->id);
+            if(!$saf)
+            {
+                throw new Exception("Data Not Found");
+            }
+            if($saf->proccess_fee_paid)
+            {
+                throw new Exception("Proccessing Fee Already Pay");
+            }
+
+            $proccessFee = $saf->proccess_fee;
+            if($proccessFee != $request->paidAmount)
+            {
+                throw new Exception("Demand Amount And Paied Amount Missmatched");
+            }
+
+            if (in_array($request->paymentMode, $verifyPaymentModes)) {
+                $verifyStatus = 2;
+            }
+            $request->merge(["verifyStatus"=>$verifyStatus]);
+            
+            $idGeneration = new IdGeneration;
+            $tranNo = $idGeneration->generateTransactionNo($saf->ulb_id);
+            $paymentReceiptNo = $this->generatePaymentReceiptNoSV2($saf);
+            $tranBy = auth()->user()->user_type ??  $request->userType;
+            $request->merge($paymentReceiptNo);
+            $request->merge([
+                "demandAmt"=>$proccessFee,
+                "workflowId"=>$saf->workflow_id,
+                "tranType"=>"Saf",
+                "saf_id"=>$saf->id,
+                "applicationNo"=>$saf->saf_no,
+                "ulbId"   => $saf->ulb_id,
+                "userId"=>$request['userId'] ?? $user->id ,
+                "tranNo"=>$tranNo,
+                "amount"=>$request->paidAmount,
+                'tranBy' => $tranBy,
+                'todayDate' => Carbon::now()->format('Y-m-d'),
+            ]);
+
+            $saf->proccess_fee_paid = 1;
+            $safTrans = new PropTransaction();
+            $safTrans->saf_id = $saf->id;
+            $safTrans->amount = $request['amount'];
+            $safTrans->tran_type = 'Saf Proccess Fee';
+            $safTrans->tran_date = $request['todayDate'];
+            $safTrans->tran_no = $request['tranNo'];
+            $safTrans->payment_mode = $request['paymentMode'];
+            $safTrans->user_id = $request['userId'] ?? $user->id ;
+            $safTrans->ulb_id = $request['ulbId'];
+            $safTrans->demand_amt = $request['demandAmt'];
+            $safTrans->tran_by_type = $request['tranBy'];
+            $safTrans->verify_status = $request['verifyStatus'];
+            $safTrans->book_no = $request['bookNo'] ?? null;
+
+            DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
+            $safTrans->save();
+            $saf->update();
+            if (in_array($request['paymentMode'], $offlinePaymentModes)) {
+                $request->merge(["tranId"=>$safTrans->id]);                
+                $this->postOtherPaymentModes($request);
+            }
+            DB::commit();
+            DB::connection('pgsql_master')->commit();
+            return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $safTrans->tran_no, 'transactionId' => $safTrans->id], "011604", "1.0", responseTime(), "POST", $request->deviceId);
+        }
+        catch(Exception $e)
+        {
+            DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "011604", "1.0", "", "POST", $request->deviceId ?? "");
+        }
+
+    }
+
+    private function generatePaymentReceiptNoSV2($saf): array
+    {
+        $wardDetails = UlbWardMaster::find($saf->ward_mstr_id);
+        if (collect($wardDetails)->isEmpty())
+            throw new Exception("Ward Details Not Available");
+
+        $fyear = getFy();
+        
+        $wardNo = $wardDetails->ward_name;
+        $counter = (new UlbWardMaster)->getTranCounter($wardDetails->id)->counter ?? null;
+        $user = Auth()->user();
+        $mUserType = $user->user_type ?? "";
+        $type = "O";
+        if ($mUserType == "TC") {
+            $type = "T";
+        } elseif ((new \App\Repository\Common\CommonFunction())->checkUsersWithtocken("users")) {
+            $type = "C";
+        }
+        if (!$counter) {
+            throw new Exception("Unable To Find Counter");
+        }
+        return [
+            'bookNo' => substr($fyear, 7, 2) . $type . $wardNo . "-" . $counter,
+            'receiptNo' => $counter,
+            'wardNo' => $wardNo,
+        ];
+    }
 }

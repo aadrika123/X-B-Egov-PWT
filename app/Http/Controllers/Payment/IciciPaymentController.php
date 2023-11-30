@@ -146,7 +146,8 @@ class IciciPaymentController extends Controller
                 "remarks"       => $webhookDataInArray['Remarks']       ?? "",
                 "hash_val"      => $webhookDataInArray['HashVal']       ?? "",
                 "req_ref_no"    => $webhookDataInArray['reqRefNo']      ?? "",
-                "req_ref_id"    => $paymentReqsData->id                 ?? ""
+                "req_ref_id"    => $paymentReqsData->id                 ?? "",
+                "decoded_data"  => json_encode($webhookData)            ?? "",
             ];
             $mIciciPaymentRes->store($mReqs);
 
