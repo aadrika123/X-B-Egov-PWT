@@ -868,7 +868,7 @@ class WaterPaymentController extends Controller
         $allunpaidCharges = $mWaterConsumerDemand->getFirstConsumerDemandV2($consumerId)
             ->get();
 
-        $leftAmount = (collect($allunpaidCharges)->sum('due_balance_amount') - collect($allCharges)->sum('due_balance_amount'));
+        $leftAmount = (collect($allunpaidCharges)->sum('due_balance_amount') - collect($allCharges)->sum('due_balance_amount')) + $duePaymentAmount;
         return [
             "consumer"          => $refConsumer,
             "consumerChages"    => $allCharges->sortBy('demand_upto'),
@@ -2720,7 +2720,7 @@ class WaterPaymentController extends Controller
             }
             # consumer demands 
             $refDemand = $mWaterConsumerDemand->getConsumerDemandV2($request->consumerId);
-            if (!$refDemand) {
+            if (!$refDemand->first()) {
                 throw new Exception('demand not found!');
             }
             if ($refDemand->last()) {
