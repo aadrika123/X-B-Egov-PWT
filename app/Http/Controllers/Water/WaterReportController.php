@@ -16,6 +16,7 @@ use App\Models\Water\WaterConsumerDemand;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Water\WaterSecondConsumer;
 use  App\Http\Requests\Water\colllectionReport;
+use App\Repository\Water\Interfaces\IConsumer;
 
 
 /**
@@ -30,6 +31,18 @@ use  App\Http\Requests\Water\colllectionReport;
 class WaterReportController extends Controller
 {
     use WaterTrait;
+    private $Repository;
+    private $_docUrl;
+    protected $_DB_NAME;
+    protected $_DB;
+
+    public function __construct(IConsumer $Repository)
+    {
+        $this->Repository = $Repository;
+        $this->_DB_NAME = "pgsql_water";
+        $this->_DB = DB::connection($this->_DB_NAME);
+        $this->_docUrl = Config::get("waterConstaint.DOC_URL");
+    }
     /**
      * | Water count of online payment
         | Serial No : 01
@@ -2613,6 +2626,7 @@ class WaterReportController extends Controller
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         // return $request->all();
         try {
+            $docUrl                     = $this->_docUrl;
             $metertype      = null;
             $refUser        = authUser($request);
             $ulbId          = $refUser->ulb_id;
@@ -2659,73 +2673,77 @@ class WaterReportController extends Controller
             // DB::connection('pgsql_water')->enableQueryLog();
 
             $rawData = ("SELECT 
-            water_consumer_demands.*,
-            ulb_ward_masters.ward_name AS ward_no,
-            water_second_consumers.id,
-            'water' AS type,
-            water_second_consumers.consumer_no,
-            water_second_consumers.user_type,
-            water_second_consumers.property_no,
-            water_second_consumers.address,
-            water_second_consumers.tab_size,
-            water_second_consumers.zone,
-            water_consumer_owners.applicant_name,
-            water_consumer_owners.guardian_name,
-            water_consumer_owners.mobile_no,
-            water_second_consumers.category,
-            water_second_consumers.folio_no,
-            water_second_consumers.ward_mstr_id,
-            water_meter_reading_docs.relative_path,
-            MAX(water_consumer_initial_meters.initial_reading) AS final_reading,
-            MIN(water_consumer_initial_meters.initial_reading) AS initial_reading,
-            zone_masters.zone_name
-        FROM (
-            SELECT 
-                wd.consumer_id,
-                wd.connection_type,
-                wd.status,
-                MIN(wd.demand_from) AS demand_from,
-                MAX(wd.demand_upto) AS demand_upto,
-                SUM(wd.due_balance_amount) AS sum_amount,
-                MAX(wd.id) AS demand_id  
-            FROM water_consumer_demands wd
-            WHERE  
-                wd.status = TRUE
-                AND wd.consumer_id IS NOT NULL
-                AND wd.is_full_paid = false
+                water_consumer_demands.*,
+                ulb_ward_masters.ward_name AS ward_no,
+                water_second_consumers.id,
+                'water' AS type,
+                water_second_consumers.consumer_no,
+                water_second_consumers.user_type,
+                water_second_consumers.property_no,
+                water_second_consumers.address,
+                water_second_consumers.tab_size,
+                water_second_consumers.zone,
+                water_consumer_owners.applicant_name,
+                water_consumer_owners.guardian_name,
+                water_consumer_owners.mobile_no,
+                water_second_consumers.category,
+                water_second_consumers.folio_no,
+                water_second_consumers.ward_mstr_id,
+                water_meter_reading_docs.relative_path,
+                water_meter_reading_docs.file_name,
+                MAX(water_consumer_initial_meters.initial_reading) AS final_reading,
+                MIN(water_consumer_initial_meters.initial_reading) AS initial_reading,
+                zone_masters.zone_name,
+                CONCAT('$docUrl', '/', water_meter_reading_docs.relative_path, '/', water_meter_reading_docs.file_name) AS meterImg
+            FROM (
+                SELECT 
+                    wd.consumer_id,
+                    wd.connection_type,
+                    wd.status,
+                    MIN(wd.demand_from) AS demand_from,
+                    MAX(wd.demand_upto) AS demand_upto,
+                    SUM(wd.due_balance_amount) AS sum_amount,
+                    MAX(wd.id) AS demand_id  
+                FROM water_consumer_demands wd
+                WHERE  
+                    wd.status = TRUE
+                    AND wd.consumer_id IS NOT NULL
+                    AND wd.is_full_paid = false
+                GROUP BY 
+                    wd.consumer_id, 
+                    wd.connection_type,
+                    wd.status
+            ) water_consumer_demands
+            JOIN water_second_consumers ON water_second_consumers.id = water_consumer_demands.consumer_id
+            LEFT JOIN water_consumer_owners ON water_consumer_owners.consumer_id = water_second_consumers.id
+            LEFT JOIN zone_masters ON zone_masters.id = water_second_consumers.zone_mstr_id
+            LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id = water_second_consumers.ward_mstr_id
+            LEFT JOIN water_meter_reading_docs ON water_meter_reading_docs.demand_id = water_consumer_demands.demand_id
+            JOIN water_consumer_initial_meters ON water_consumer_initial_meters.consumer_id = water_second_consumers.id
+            WHERE 
+                water_second_consumers.zone_mstr_id = $zoneId
+                AND ($wardId IS NULL OR ulb_ward_masters.id = $wardId)
             GROUP BY 
-                wd.consumer_id, 
-                wd.connection_type,
-                wd.status
-        ) water_consumer_demands
-        JOIN water_second_consumers ON water_second_consumers.id = water_consumer_demands.consumer_id
-        LEFT JOIN water_consumer_owners ON water_consumer_owners.consumer_id = water_second_consumers.id
-        LEFT JOIN zone_masters ON zone_masters.id = water_second_consumers.zone_mstr_id
-        LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id = water_second_consumers.ward_mstr_id
-        LEFT JOIN water_meter_reading_docs ON water_meter_reading_docs.demand_id = water_consumer_demands.demand_id
-        JOIN water_consumer_initial_meters ON water_consumer_initial_meters.consumer_id = water_second_consumers.id
-        where 
-             water_second_consumers.zone_mstr_id = $zoneId
-        AND ($wardId IS NULL OR ulb_ward_masters.id = $wardId)
-        GROUP BY 
-        water_meter_reading_docs.relative_path,
-            water_consumer_demands.demand_id,
-            water_consumer_demands.consumer_id,
-            water_consumer_demands.connection_type,
-            water_consumer_demands.status,
-            water_consumer_demands.demand_from,
-            water_consumer_demands.demand_upto,
-            water_consumer_demands.sum_amount,
-            ulb_ward_masters.ward_name,
-            water_second_consumers.id,
-            water_consumer_owners.applicant_name,
-            water_consumer_owners.guardian_name,
-            water_consumer_owners.mobile_no,
-            water_second_consumers.category,
-            water_second_consumers.folio_no,
-            water_second_consumers.ward_mstr_id,
-            zone_masters.zone_name 
-   ");
+                water_meter_reading_docs.file_name,
+                water_meter_reading_docs.relative_path,
+                water_consumer_demands.demand_id,
+                water_consumer_demands.consumer_id,
+                water_consumer_demands.connection_type,
+                water_consumer_demands.status,
+                water_consumer_demands.demand_from,
+                water_consumer_demands.demand_upto,
+                water_consumer_demands.sum_amount,
+                ulb_ward_masters.ward_name,
+                water_second_consumers.id,
+                water_consumer_owners.applicant_name,
+                water_consumer_owners.guardian_name,
+                water_consumer_owners.mobile_no,
+                water_second_consumers.category,
+                water_second_consumers.folio_no,
+                water_second_consumers.ward_mstr_id,
+                zone_masters.zone_name
+        ");
+        
 
             // Add conditions
             // if ($wardId) {
