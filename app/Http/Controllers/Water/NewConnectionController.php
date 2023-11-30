@@ -1837,17 +1837,17 @@ class NewConnectionController extends Controller
             $refstring      = strtolower($string);
             $wardId         = $request->wardId;
             $zoneId         = $request->zoneId;
-            
+
 
             switch ($key) {
                 case ("consumerNo"):                                                                        // Static
-                    $waterReturnDetails = $mWaterConsumer->getConsumerByItsDetails($request, $refstring, $paramenter,$wardId,$zoneId)->paginate($pages);
+                    $waterReturnDetails = $mWaterConsumer->getConsumerByItsDetails($request, $refstring, $paramenter, $wardId, $zoneId)->paginate($pages);
                     $checkVal = collect($waterReturnDetails)->last();
                     if (!$checkVal || $checkVal == 0)
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
-                case ("propertyNo"):                                                                             // Static
-                    $waterReturnDetails = $mWaterConsumer->getConsumerByItsDetails($request, $refstring, $paramenter,$wardId,$zoneId)->paginate($pages);
+                case ("folioNo"):                                                                             // Static
+                    $waterReturnDetails = $mWaterConsumer->getConsumerByItsDetails($request, $refstring, $paramenter, $wardId, $zoneId)->paginate($pages);
                     $checkVal = collect($waterReturnDetails)->last();
                     if (!$checkVal || $checkVal == 0)
                         throw new Exception("Data according to " . $key . " not Found!");
@@ -1860,7 +1860,7 @@ class NewConnectionController extends Controller
                     break;
                 case ("mobileNo"):
                     $paramenter = strtoupper($paramenter);
-                    $waterReturnDetails = $mWaterConsumer->getConsumerByItsDetails($request, $refstring, $paramenter,$wardId,$zoneId)->paginate($pages);
+                    $waterReturnDetails = $mWaterConsumer->getConsumerByItsDetails($request, $refstring, $paramenter, $wardId, $zoneId)->paginate($pages);
                     if (!$waterReturnDetails)
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;

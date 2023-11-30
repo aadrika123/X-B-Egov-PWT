@@ -112,6 +112,8 @@ class WaterSecondConsumer extends Model
             'water_second_consumers.consumer_no',
             'water_second_consumers.property_no',
             'water_second_consumers.address',
+            'water_second_consumers.folio_no',
+            'zone_masters.zone_name',
             DB::raw("string_agg(wco.applicant_name, ',') as owner_name"),
             DB::raw("string_agg(wco.mobile_no, ',') as mobile_no"),
             DB::raw("string_agg(wco.email, ',') as owner_email"),
@@ -129,6 +131,7 @@ class WaterSecondConsumer extends Model
             )
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
             ->join('water_consumer_owners as wco', 'water_second_consumers.id', '=', 'wco.consumer_id')
+            ->join ('zone_masters','zone_masters.id','water_second_consumers.zone_mstr_id')
             ->where('water_second_consumers.status', 1)
             ->where('wco.status', true)
             ->where('water_second_consumers.' . $key, 'LIKE', '%' . $refNo . '%')
@@ -146,6 +149,7 @@ class WaterSecondConsumer extends Model
                 'water_consumer_demands.consumer_id',
                 'water_second_consumers.id',
                 'ulb_ward_masters.ward_name',
+                'zone_masters.zone_name'
             );
     }
     

@@ -2719,14 +2719,12 @@ class WaterReportController extends Controller
         ulb_ward_masters.ward_name,
         water_second_consumers.id,
         water_consumer_owners.applicant_name,
-        water_consumer_owners.guardian_name,
-        water_consumer_owners.mobile_no,
+		water_consumer_owners.guardian_name,
+		water_consumer_owners.mobile_no,
         water_second_consumers.category,
         water_second_consumers.folio_no,
-        water_second_consumers.ward_mstr_id,
-        zone_masters.zone_name
-          
-          ");
+        water_second_consumers.ward_mstr_id
+   ");
 
             // Add conditions
             if ($wardId) {
@@ -2741,13 +2739,7 @@ class WaterReportController extends Controller
 
             $data = DB::connection('pgsql_water')->select(DB::raw($rawData));
 
-            // $count = (collect(DB::connection('pgsql_water')->SELECT("SELECT COUNT(*) AS total
-            // FROM ($rawData) total"))->first());                                           // consumer count by searching format 
-            // $amount =  (collect(DB::connection('pgsql_water')->SELECT("SELECT  SUM(sum_balance_amount) AS total  
-            // FROM ($rawData) total"))->first());                                                              // consumer amount  
-
-            // $total = ($count)->total ?? 0;
-            // $totalAmount = ($amount)->total ?? 0;
+           
             $list = [
                 // "current_page" => $page,
                 "data" => $data,
