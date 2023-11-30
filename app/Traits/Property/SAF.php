@@ -575,4 +575,46 @@ trait SAF
             ->where('ulb_id', $ulb_id)
             ->first();
     }
+
+     /**
+     * =========== Mutasion ProccessFee ========
+     *          Created By : Sandeep bara
+     *          Date       : 30-11-2023
+     *          
+     */
+    public function readProccessFee($assessmentType,$saleVal=0, $propertyType=0,  $transferType=0, $isLocateOnGovLan = false)
+    {
+        $propertyTypeCon = flipConstants(Config::get("PropertyConstaint.PROPERTY-TYPE"));
+        $transferTypeCon = flipConstants(Config::get("PropertyConstaint.TRANSFER_MODES"));
+        if(is_numeric($assessmentType))
+        {
+            $assessmentType = Config::get("PropertyConstaint.ASSESSMENT-TYPE.".$assessmentType);
+        }
+        $proccessFee = 15000;
+        if($propertyType != $propertyTypeCon["VACANT LAND"] && $transferType != $transferTypeCon["Succession"] && $saleVal <= 1500000 && !$isLocateOnGovLan)
+        {
+            $proccessFee = $saleVal * 0.01;
+        }
+        elseif($propertyType != $propertyTypeCon["VACANT LAND"] && $transferType != $transferTypeCon["Succession"] && $saleVal > 1500000 && !$isLocateOnGovLan)
+        {
+            $proccessFee = 15000;
+        }
+        elseif($propertyType != $propertyTypeCon["VACANT LAND"] && $transferType == $transferTypeCon["Succession"] && !$isLocateOnGovLan)
+        {
+            $proccessFee = 500;
+        }
+        elseif($propertyType != $propertyTypeCon["VACANT LAND"] && !$isLocateOnGovLan)
+        {
+            $proccessFee = 2000;
+        }
+        elseif($propertyType == $propertyTypeCon["VACANT LAND"])
+        {
+            $proccessFee = 2000;
+        }
+        if($assessmentType != "Mutation")
+        {
+            $proccessFee = 0;
+        }
+        return $proccessFee;
+    }
 }

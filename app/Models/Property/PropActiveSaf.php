@@ -101,6 +101,9 @@ class  PropActiveSaf extends Model
             'is_trust' => $req->isTrust ?? false,
             'trust_type' => $req->trustType ?? null,
             'category_id' => $req->category,
+            'sale_value' => ($req->assessmentType=='Mutation')? ($req->saleValue??null):null,
+            'proccess_fee' => ($req->assessmentType=='Mutation') ? ($req->proccessFee??0) : 0,
+            'proccess_fee_paid' => (($req->proccessFee??0)>0 && $req->assessmentType=='Mutation')?0:1,
         ];
         $propActiveSafs = PropActiveSaf::create($reqs);                 // SAF No is Created Using Observer
         return response()->json([

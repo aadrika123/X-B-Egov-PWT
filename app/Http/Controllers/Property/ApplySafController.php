@@ -110,6 +110,7 @@ class ApplySafController extends Controller
             // Derivative Assignments
             $ulbWorkflowId = $this->readAssessUlbWfId($request, $ulb_id);           // (2.1)
             $roadWidthType = $this->readRoadWidthType($request->roadType);          // Read Road Width Type
+            $mutationProccessFee = $this->readProccessFee($request->assessmentType,$request->saleValue,$request->propertyType,$request->transferModeId);
 
             $request->request->add(['road_type_mstr_id' => $roadWidthType]);
 
@@ -139,6 +140,7 @@ class ApplySafController extends Controller
             $metaReqs['finisherRoleId'] = collect($finisherRoleId)['role_id'];
             $metaReqs['holdingType'] = $this->holdingType($request['floor']);
             $request->merge($metaReqs);
+            $request->merge(["proccessFee"=>$mutationProccessFee]);
             $this->_REQUEST = $request;
             $this->mergeAssessedExtraFields();                                          // Merge Extra Fields for Property Reassessment,Mutation,Bifurcation & Amalgamation(2.2)
             // Generate Calculation

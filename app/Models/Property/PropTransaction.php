@@ -437,4 +437,25 @@ class PropTransaction extends Model
             ->where('status', 1)
             ->get();
     }
+
+    public function getSafTranList($safId)
+    {
+        return $data = self::select("prop_transactions.*",
+                            DB::raw(
+                                "user.name,
+                                user.mobile,
+                                prop_cheque_dtls.cheque_date,
+                                prop_cheque_dtls.bank_name,                                
+                                prop_cheque_dtls.branch_name,
+                                prop_cheque_dtls.cheque_no,
+                                CASE WHEN UPPER(prop_transactions.payment_mode) NOT IN ('CASH','ONLINE') AND prop_cheque_dtls.status is not null then prop_cheque_dtls.status else prop_transactions.verify_status END AS cheque_status
+                                "
+                            )
+                        )
+                ->leftJoin("prop_cheque_dtls","prop_cheque_dtls.transaction_id","prop_transactions.id")
+                ->leftJoin("users","users.id","prop_transactions.user_id")
+                ->where("prop_transactions.saf_id",$safId)
+                ->whereIn("prop_transactions.status",[1,2])
+                ->get();
+    }
 }
