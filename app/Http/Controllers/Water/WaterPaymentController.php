@@ -681,6 +681,7 @@ class WaterPaymentController extends Controller
             $mWaterConsumerDemand       = new WaterConsumerDemand();
 
             $offlinePaymentModes    = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
+            $checkOffline           = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
             $offlinePayment         = Config::get('payment-constants.PAYMENT_OFFLINE_MODE_WATER');
             $adjustmentFor          = Config::get("waterConstaint.ADVANCE_FOR");
             $todayDate              = Carbon::now();
@@ -727,7 +728,7 @@ class WaterPaymentController extends Controller
             $waterTrans = $mwaterTran->waterTransaction($request, $wardId);
 
             # Save the Details for the Cheque,DD,neft
-            if (in_array(strtoupper($request['paymentMode']), $offlinePaymentModes)) {
+            if (in_array(strtoupper($request['paymentMode']), $checkOffline)) {
                 $request->merge([
                     'chequeDate'    => $request['chequeDate'],
                     'tranId'        => $waterTrans['id'],
@@ -1806,15 +1807,15 @@ class WaterPaymentController extends Controller
                 "lastMeterReading"      => $lastDemand ?? null,
                 "currentMeterReading"   => $currentDemand ?? null,
                 "paidAmtInWords"        => getIndianCurrency($transactionDetails->amount),
-                "arshad"                => 'testing for sms'
+                "arshad"                => 'testing for sms for akola '
             ];
             # sending pdf of demand rerceipt via whatsapp
             // $this->whatsAppSend($returnValues);
             # send notification 
-            // $sms = AkolaProperty(["owner_name" => $returnValues['arshad'], "saf_no" => $returnValues['transactionNo']], "New Assessment");
-            // if (($sms["status"] !== false)) {
-            //     $respons = SMSAKGOVT(6299068110, $sms["sms"], $sms["temp_id"]);
-            // }
+            $sms = AkolaProperty(["owner_name" => $returnValues['arshad'], "saf_no" => $returnValues['transactionNo']], "New Assessment");
+            if (($sms["status"] !== false)) {
+                $respons = SMSAKGOVT(8102422355, $sms["sms"], $sms["temp_id"]);
+            }
             # watsapp message   
             // Register_message
             // $whatsapp2 = (Whatsapp_Send(
@@ -1879,12 +1880,22 @@ class WaterPaymentController extends Controller
                 $refDetails = $this->preOfflinePaymentParams($request, $startingDate, $endDate);
             } else {
                 $refDetails = $this->prePartPaymentParams($request, $startingDate, $endDate);
+
+                # Get the poped amount
+                $refConsumercharges = collect($refDetails['consumerChages']);
+                $popedDemand = $refConsumercharges->pop();
+                $refAmount = round($request->amount);
+                $remaningAmount = round($refConsumercharges->sum('due_balance_amount'));
+                if ($remaningAmount > $refAmount) {
+                    throw new Exception("please select the month properly for part payament!");
+                }
             }
 
             $this->begin();
 
             $myRequest = new Request([
-                'amount'        => round($request->amount),
+                // 'amount'        => round($request->amount),
+                'amount'        => 1,                                                                   // ❗❗ Changes
                 'workflowId'    => 0,                                                                   // Static
                 'id'            => $request->consumerId,
                 'moduleId'      => $waterModuleId,
@@ -1902,13 +1913,6 @@ class WaterPaymentController extends Controller
             $request->merge([
                 "uniqueNo" => time() . $request->consumerId . rand(1, 999999)
             ]);
-
-            // return [
-            //     "1" => $paymentDetails,
-            //     "2" => $request->all(),
-            //     "3" => $refDetails,
-            //     "4" => $paymentFor['1']
-            // ];
 
             $mWaterIciciRequest->savePaymentReq($paymentDetails, $request, $refDetails, $paymentFor['1']);
 
@@ -1941,33 +1945,33 @@ class WaterPaymentController extends Controller
     {
         try {
 
-            [
-                'id',
-                'RT',
-                'IcId',
-                'TrnId',
-                'PayMode',
-                'TrnDate',
-                'SettleDT',
-                'Status',
-                'InitiateDT',
-                'TranAmt',
-                'BaseAmt',
-                'ProcFees',
-                'STax',
-                'M_SGST',
-                'M_CGST',
-                'M_UTGST',
-                'M_STCESS',
-                'M_CTCESS',
-                'M_IGST',
-                'GSTState',
-                'BillingState',
-                'Remarks',
-                'HashVal',
-                'reqRefNo',
-                'gatewayType'
-            ];
+            // [
+            //     "id",
+            //     "RT",
+            //     "IcId",
+            //     "TrnId",
+            //     "PayMode",
+            //     "TrnDate",
+            //     "SettleDT",
+            //     "Status",
+            //     "InitiateDT",
+            //     "TranAmt",
+            //     "BaseAmt",
+            //     "ProcFees",
+            //     "STax",
+            //     "M_SGST",
+            //     "M_CGST",
+            //     "M_UTGST",
+            //     "M_STCESS",
+            //     "M_CTCESS",
+            //     "M_IGST",
+            //     "GSTState",
+            //     "BillingState",
+            //     "Remarks",
+            //     "HashVal",
+            //     "reqRefNo",
+            //     "gatewayType"
+            // ];
 
             # ref var assigning
             $today          = Carbon::now();
@@ -1984,13 +1988,20 @@ class WaterPaymentController extends Controller
             $mWaterAdjustment           = new WaterAdjustment();
 
             # variable assigning
-            $adjustmentFor = Config::get("waterConstaint.ADVANCE_FOR");
+            $offlinePaymentModes    = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
+            $adjustmentFor          = Config::get("waterConstaint.ADVANCE_FOR");
+            $adjustmentFor          = Config::get("waterConstaint.ADVANCE_FOR");
+
             $consumerDetails = WaterSecondConsumer::find($webhookData["id"]);
             $consumerId = $webhookData["id"];
             $refDate = explode("--", $iciciPayRequest->demand_from_upto);
             $startingYear = $refDate[0];
             $endYear = $refDate[1];
             $randomNo = $this->getRandomNo($consumerId);
+            $refRequestV2 = new Request([
+                "consumerId"    => $consumerId,
+                "paymentMode"   => "ONLINE"
+            ]);
 
             # calcullate demand
             $mDemands = $mWaterConsumerDemand->getFirstConsumerDemandV2($consumerId)
@@ -1999,15 +2010,9 @@ class WaterPaymentController extends Controller
                 ->get();
 
             # Destinguish according to partPayment and check amount
-            if ($iciciPayRequest->is_part_payment == true) {
-                if (!$iciciPayRequest || round($webhookData['BaseAmt']) >= round($iciciPayRequest['amount'])) {
-                    throw new Exception("Payble Amount Missmatch!!!");
-                }
-            } else {
-                if (!$iciciPayRequest || round($webhookData['BaseAmt']) != round($iciciPayRequest['amount'])) {
-                    throw new Exception("Payble Amount Missmatch!!!");
-                }
-            }
+            // if (!$iciciPayRequest || round($webhookData['BaseAmt']) != round($iciciPayRequest['amount'])) {
+            //     throw new Exception("Payble Amount Missmatch!!!");
+            // }
 
 
             $this->begin();
@@ -2021,7 +2026,7 @@ class WaterPaymentController extends Controller
             # save data in water transaction table 
             $metaRequest = [
                 "id"                => $webhookData["id"],
-                'amount'            => $webhookData['amount'],
+                'amount'            => $webhookData['TranAmt'],
                 'chargeCategory'    => $iciciPayRequest->payment_from,
                 'todayDate'         => $today,
                 'tranNo'            => $randomNo,
@@ -2035,6 +2040,9 @@ class WaterPaymentController extends Controller
                 'pgId'              => $webhookData['gatewayType']
             ];
             $consumer['ward_mstr_id'] = $consumerDetails->ward_mstr_id;
+            if ($iciciPayRequest->is_part_payment == 1) {
+                $metaRequest['partPayment'] = "part payment";                               // Static
+            }
             $transactionId = $mWaterTran->waterTransaction($metaRequest, $consumer);
 
             # adjustment data saving
@@ -2054,10 +2062,24 @@ class WaterPaymentController extends Controller
 
             # Diff Dtw part payment and full payment
             if ($iciciPayRequest->is_part_payment == true) {
+                $mDemands           = $mDemands->sortBy('demand_upto');
+                $refConsumercharges = $mDemands;
+                $consumercharges    = $mDemands;
+                $popedDemand        = $refConsumercharges->pop();
+                # payment updation
+                foreach ($refConsumercharges as $charges) {
+                    $this->saveConsumerPaymentStatus($refRequestV2, $offlinePaymentModes, $charges, $transactionId);
+                    $mWaterTranDetail->saveDefaultTrans($charges->amount, $charges->consumer_id, $transactionId['id'], $charges->id, null);
+                    $mWaterConsumerCollection->saveConsumerCollection($charges, $transactionId, $refUserId, null);
+                }
+                # Adjust the details of the demand 
+                $this->adjustOnlinePartPayment($popedDemand, $refConsumercharges, $refRequestV2, $offlinePaymentModes, $transactionId, $consumercharges);
+            } else {
                 foreach ($mDemands as $demand) {
-                    # save Water trans details 
+                    $this->saveConsumerPaymentStatus($refRequestV2, $offlinePaymentModes, $demand, $transactionId);
                     $mWaterTranDetail->saveDefaultTrans($demand->amount, $demand->consumer_id, $transactionId['id'], $demand->id, null);
                     $mWaterConsumerCollection->saveConsumerCollection($demand, $transactionId, $refUserId, null);
+
                     # update the payment status of the demand 
                     $demand->paid_status = 1;                                          // Static
                     $demand->update();
@@ -2860,6 +2882,46 @@ class WaterPaymentController extends Controller
             $refAmount
         );
         $mWaterConsumerCollection->saveConsumerCollection($popedDemand, $waterTrans, $request->auth['id'], $refAmount);
+    }
+
+    /**
+     * | Adjust the demand for part payament 
+        | Serial No :
+        | Uner Con
+     */
+    public function adjustOnlinePartPayment($popedDemand, $refConsumercharges, $request, $offlinePaymentModes, $waterTrans, $consumercharges)
+    {
+        $mWaterConsumerCollection   = new WaterConsumerCollection();
+        $waterTranDetail            = new WaterTranDetail();
+        $mWaterTran                 = new WaterTran();
+        $refAmount                  = round($request->amount);
+
+        if (in_array($request['paymentMode'], $offlinePaymentModes)) {
+            $popedDemand->paid_status = 2;                                       // Update Demand Paid Status // Static
+            $mWaterTran->saveVerifyStatus($waterTrans['id']);
+        } else {
+            $popedDemand->paid_status = 1;                                      // Update Demand Paid Status // Static
+        }
+
+        if (!$refConsumercharges->first()) {
+            $refPaidAmount      = ($consumercharges->sum('due_balance_amount')) - $refAmount;
+            $remaningBalance    = $refPaidAmount;
+        } else {
+            $refPaidAmount      = $consumercharges->sum('due_balance_amount') - $refAmount;
+            $remaningBalance    = $popedDemand->due_balance_amount - $refPaidAmount;
+        }
+        $popedDemand->due_balance_amount = $remaningBalance;
+        $popedDemand->save();                                                   // Save Demand
+
+        # Save transaction details 
+        $waterTranDetail->saveDefaultTrans(
+            $popedDemand->amount ?? $popedDemand->balance_amount,
+            $request->consumerId ?? $request->applicationId,
+            $waterTrans['id'],
+            $popedDemand->id,
+            $refAmount
+        );
+        $mWaterConsumerCollection->saveConsumerCollection($popedDemand, $waterTrans, $request->auth['id'] ?? null, $refAmount);
     }
 
     /**

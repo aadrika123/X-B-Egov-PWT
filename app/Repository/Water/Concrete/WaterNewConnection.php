@@ -447,7 +447,7 @@ class WaterNewConnection implements IWaterNewConnection
                     break;
                 case ("Demand Collection"):
                     $mWaterPaymentController = new WaterPaymentController();
-                    $response = $mWaterPaymentController->endOnlineDemandPayment($args, $RazorPayRequest);
+                    $response = $mWaterPaymentController->endOnlineDemandPaymentV1($args, $RazorPayRequest);
                     break;
                 case ("Ferrule Cleaning Checking"):
                     $mWaterPaymentController = new WaterPaymentController();
@@ -465,6 +465,18 @@ class WaterNewConnection implements IWaterNewConnection
             return responseMsg(false, $e->getMessage(), $args);
         }
     }
+
+
+
+    /**
+     * | Test the icici payment details 
+     */
+    public function testIciciResposnse(Request $request)
+    {
+        $webhook = collect($request->all())->toArray();
+        $this->iciciPayResposne($webhook);
+    }
+
 
     /**
      * | distribute the icic payment details according to paymet maode 
