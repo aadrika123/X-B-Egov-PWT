@@ -1846,7 +1846,8 @@ class NewConnectionController extends Controller
                     if (!$checkVal || $checkVal == 0)
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
-                case ("folioNo"):                                                                             // Static
+                case ("propertyNo"):
+                    $refstring = "folio_no";
                     $waterReturnDetails = $mWaterConsumer->getConsumerByItsDetails($request, $refstring, $paramenter, $wardId, $zoneId)->paginate($pages);
                     $checkVal = collect($waterReturnDetails)->last();
                     if (!$checkVal || $checkVal == 0)

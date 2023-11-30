@@ -2263,7 +2263,7 @@ class WaterConsumer extends Controller
                 'finalReading'      => (int)$finalReading,
                 'initialDate'       => "",
                 'amount'            =>  $roundedSumAmount,
-                "meterImg"          => $docUrl . "/" . $documents->relative_path ."/". $documents->file_name ?? 0
+                "meterImg"          => ($documents ? $docUrl . "/" . $documents->relative_path . "/" . $documents->file_name : 0)
             ];
             $returnValues = collect($demandDetails)->merge($demands);
             return responseMsgs(true, "Consumer Details!", remove_null($returnValues), "", "01", ".ms", "POST", $request->deviceId);

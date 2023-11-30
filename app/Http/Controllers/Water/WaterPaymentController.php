@@ -1806,7 +1806,7 @@ class WaterPaymentController extends Controller
                 "lastMeterReading"      => $lastDemand ?? null,
                 "currentMeterReading"   => $currentDemand ?? null,
                 "paidAmtInWords"        => getIndianCurrency($transactionDetails->amount),
-                "arshad"                => 'arshad'
+                "arshad"                => 'testing for sms'
             ];
             # sending pdf of demand rerceipt via whatsapp
             // $this->whatsAppSend($returnValues);
