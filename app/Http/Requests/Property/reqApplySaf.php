@@ -40,6 +40,7 @@ class reqApplySaf extends FormRequest
             $rules['transferModeId'] = "required";
             $rules['dateOfPurchase'] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
             $rules["isOwnerChanged"] = "required|bool";
+            $rules["saleValue"]      = "required|digits_between:1,9223372036854775807";
         }
         if (isset($this->assessmentType) && $this->assessmentType == 5) {
             $rules['holdingNoLists'] = "required|array";
@@ -95,7 +96,7 @@ class reqApplySaf extends FormRequest
 
                 $rules["floor.*.buildupArea"]       =   "required|numeric|not_in:0";
                 // $rules["floor.*.dateFrom"]          =   "required|date|date_format:Y-m-d|before_or_equal:$mNowDate|after_or_equal:$this->dateOfPurchase";
-                $rules["floor.*.dateFrom"]           = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate".($this->assessmentType==4?"":"|after_or_equal:$this->dateOfPurchase");
+                $rules["floor.*.dateFrom"]           = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate".($this->assessmentType!=1?"":"|after_or_equal:$this->dateOfPurchase");
                 $rules["floor.*.dateUpto"]          =   "nullable|date|date_format:Y-m-d|before_or_equal:$mNowDate|before:$this->dateFrom";
             }
         }
