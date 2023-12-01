@@ -757,6 +757,7 @@ class ActiveSafController extends Controller
             $mPropTransaction = new PropTransaction();
             $memoDtls = array();
             $data = array();
+            $user = Auth()->user();
 
             // Derivative Assignments
             $data = $mPropActiveSaf->getActiveSafDtls()                         // <------- Model function Active SAF Details
@@ -796,6 +797,12 @@ class ActiveSafController extends Controller
                 $getFloorDtls = $mPropSafsFloors->getFloorsBySafId($data['id']);
             $data['floors'] = $getFloorDtls;
             $data["tranDtl"] = $mPropTransaction->getSafTranList($data['id']);
+            $data["userDtl"] = [
+                "user_id"=>$user->id??0,
+                "user_type"=>$user->user_type??"",
+                "ulb_id"=>$user->ulb_id??0,
+                "user_name"=>$user->name??""
+            ];
             $memoDtls = $mPropSafMemoDtls->memoLists($data['id']);
             $data['memoDtls'] = $memoDtls;
             if ($status = ((new \App\Repository\Property\Concrete\SafRepository())->applicationStatus($req->applicationId, true))) {
