@@ -6,6 +6,7 @@ use App\Http\Controllers\Water\WaterConsumer;
 use App\Http\Controllers\Water\WaterConsumerWfController;
 use App\Http\Controllers\Water\WaterPaymentController;
 use App\Http\Controllers\Water\WaterReportController;
+use App\Repository\Water\Concrete\WaterNewConnection;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -244,3 +245,8 @@ Route::controller(WaterPaymentController::class)->group(function () {
     Route::post('citizen/get-payment-history', 'getConsumerPaymentHistory');                                    
     // Route::post('')
 });
+
+Route::controller(WaterNewConnection::class)->group(function () {
+    Route::post('test-icici-respons', 'testIciciResposnse');
+});
+
