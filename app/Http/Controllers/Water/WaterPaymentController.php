@@ -1918,11 +1918,11 @@ class WaterPaymentController extends Controller
 
             $this->commit();
 
-            $returnDetails['name']   = $refUser->user_name ?? null;
-            $returnDetails['mobile'] = $refUser->mobile ?? null ;
-            $returnDetails['email']  = $refUser->email ?? null;
-            $returnDetails['userId'] = $refUser->id ?? null;
-            $returnDetails['ulbId']  = $refUser->ulb_id ?? null;
+            $returnDetails['name']   = $refUser->user_name  ?? null;
+            $returnDetails['mobile'] = $refUser->mobile     ?? null;
+            $returnDetails['email']  = $refUser->email      ?? null;
+            $returnDetails['userId'] = $refUser->id         ?? null;
+            $returnDetails['ulbId']  = $refUser->ulb_id     ?? null;
             $returnDetails['refUrl'] = $paymentDetails['encryptUrl'];
             return responseMsgs(true, "", $returnDetails, "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
@@ -1990,7 +1990,6 @@ class WaterPaymentController extends Controller
             # variable assigning
             $offlinePaymentModes    = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
             $adjustmentFor          = Config::get("waterConstaint.ADVANCE_FOR");
-            $adjustmentFor          = Config::get("waterConstaint.ADVANCE_FOR");
 
             $consumerDetails = WaterSecondConsumer::find($webhookData["id"]);
             $consumerId = $webhookData["id"];
@@ -2000,7 +1999,7 @@ class WaterPaymentController extends Controller
             $randomNo = $this->getRandomNo($consumerId);
             $refRequestV2 = new Request([
                 "consumerId"    => $consumerId,
-                "paymentMode"   => "ONLINE"
+                "paymentMode"   => "ONLINE",
             ]);
 
             # calcullate demand
@@ -2024,7 +2023,7 @@ class WaterPaymentController extends Controller
             $iciciPayRequest->update();
 
             # save data in water transaction table 
-            $metaRequest = [
+            $metaRequest = new Request([
                 "id"                => $webhookData["id"],
                 'amount'            => $webhookData['TranAmt'],
                 'chargeCategory'    => $iciciPayRequest->payment_from,
@@ -2038,12 +2037,12 @@ class WaterPaymentController extends Controller
                 'adjustedAmount'    => $iciciPayRequest->adjusted_amount ?? 0,
                 'pgResponseId'      => $paymentResponse['responseId'] ?? 1,                 // ❗❗ Changes after test
                 'pgId'              => $webhookData['gatewayType']
-            ];
+            ]);
             $consumer['ward_mstr_id'] = $consumerDetails->ward_mstr_id;
             if ($iciciPayRequest->is_part_payment == 1) {
                 $metaRequest['partPayment'] = "part payment";                               // Static
             }
-            $transactionId = $mWaterTran->waterTransaction($metaRequest, $consumer);
+            $transactionId = $mWaterTran->waterTransaction((object)$metaRequest, $consumer);
 
             # adjustment data saving
             $refMetaReq = new Request([
@@ -2061,7 +2060,7 @@ class WaterPaymentController extends Controller
             }
 
             # Diff Dtw part payment and full payment
-            if ($iciciPayRequest->is_part_payment == true) {
+            if ($iciciPayRequest->is_part_payment == 1) {
                 $mDemands           = $mDemands->sortBy('demand_upto');
                 $refConsumercharges = $mDemands;
                 $consumercharges    = $mDemands;
@@ -2069,10 +2068,10 @@ class WaterPaymentController extends Controller
                 # payment updation
                 foreach ($refConsumercharges as $charges) {
                     $this->saveConsumerPaymentStatus($refRequestV2, $offlinePaymentModes, $charges, $transactionId);
-                    $mWaterTranDetail->saveDefaultTrans($charges->amount, $charges->consumer_id, $transactionId['id'], $charges->id, null);
                     $mWaterConsumerCollection->saveConsumerCollection($charges, $transactionId, $refUserId, null);
                 }
                 # Adjust the details of the demand 
+                $refRequestV2['amount'] = $webhookData['BaseAmt'];
                 $this->adjustOnlinePartPayment($popedDemand, $refConsumercharges, $refRequestV2, $offlinePaymentModes, $transactionId, $consumercharges);
             } else {
                 foreach ($mDemands as $demand) {

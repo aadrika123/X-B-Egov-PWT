@@ -475,6 +475,7 @@ class WaterNewConnection implements IWaterNewConnection
     {
         $webhook = collect($request->all())->toArray();
         $this->iciciPayResposne($webhook);
+        return ["test" => true];
     }
 
 
@@ -491,7 +492,7 @@ class WaterNewConnection implements IWaterNewConnection
             if (!$waterRequestData) {
                 throw new Exception("Request Details Not Found");
             }
-            switch ($webhookData['payment_from']) {
+            switch ($waterRequestData->payment_from) {
                 case ("Demand Collection"):
                     $mWaterPaymentController = new WaterPaymentController();
                     $paymentResponse = $mWaterPaymentController->endOnlineDemandPayment($webhookData, $waterRequestData);
