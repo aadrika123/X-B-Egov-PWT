@@ -5248,7 +5248,10 @@ class Report implements IReport
                 "current_page" => $paginator->currentPage(),
                 "last_page" => $paginator->lastPage(),
                 "totalAmount" => $totalAmount,
-                "data" => $paginator->items(),
+                "data" => collect($paginator->items())->map(function ($val){
+                   $val->file =  trim($val->file) ? (Config::get('module-constants.DOC_URL')."/".$val->file) : "";
+                   return $val;
+                }),
                 "total" => $paginator->total(),
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
