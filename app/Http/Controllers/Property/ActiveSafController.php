@@ -796,6 +796,7 @@ class ActiveSafController extends Controller
                 $getFloorDtls = $mPropSafsFloors->getFloorsBySafId($data['id']);
             $data['floors'] = $getFloorDtls;
             $data["tranDtl"] = $mPropTransaction->getSafTranList($data['id']);
+            // $data["userDtl"] = Auth()->user();
             $memoDtls = $mPropSafMemoDtls->memoLists($data['id']);
             $data['memoDtls'] = $memoDtls;
             if ($status = ((new \App\Repository\Property\Concrete\SafRepository())->applicationStatus($req->applicationId, true))) {
