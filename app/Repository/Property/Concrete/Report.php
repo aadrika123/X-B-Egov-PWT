@@ -5119,5 +5119,146 @@ class Report implements IReport
             return responseMsgs(false, $e->getMessage(), []);
         }
     }
+
+    public function tranDeactivatedList(Request $request)
+    {
+        try{
+            $user = Auth()->user();
+            $paymentMode = "";
+            $fromDate = $toDate = Carbon::now()->format("Y-m-d");
+            $wardId = $zoneId = $userId = null;
+            if ($request->fromDate) {
+                $fromDate = $request->fromDate;
+            }
+            if ($request->uptoDate) {
+                $toDate = $request->uptoDate;
+            }
+            if ($request->paymentMode) {
+                if(!is_array($request->paymentMode))
+                {
+                    $paymentMode = Str::upper($request->paymentMode);
+                }
+                elseif(is_array($request->paymentMode[0]))
+                {
+                    foreach($request->paymentMode as $val)
+                    {
+                        $paymentMode .= Str::upper($val["value"]).",";
+                    }
+                    $paymentMode =  trim($paymentMode,",");
+                }
+                else
+                {
+
+                    foreach($request->paymentMode as $val)
+                    {
+                        $paymentMode .= Str::upper($val).",";
+                    }
+                    $paymentMode =  trim($paymentMode,",");
+                }
+            }
+            if ($request->wardId) {
+                $wardId = $request->wardId;
+            }
+            if ($request->zoneId) {
+                $zoneId = $request->zoneId;
+            }
+            if ($request->userId) {
+                $userId = $request->userId;
+            }
+            $data = PropTransaction::select(DB::raw("
+                        prop_transactions.id,prop_transactions.tran_no,
+                        prop_transactions.tran_type,
+                        prop_transactions.tran_date,
+                        prop_transactions.payment_mode,
+                        app.app_no,
+                        ulb_ward_masters.ward_name,
+                        zone_masters.zone_name,
+                        users.name as tran_by_user_name,
+                        prop_transactions.amount,
+                        prop_cheque_dtls.cheque_date,
+                        prop_cheque_dtls.bank_name,
+                        prop_cheque_dtls.branch_name,
+                        prop_cheque_dtls.cheque_no,
+                        prop_transaction_deactivate_dtls.reason,
+                        prop_transaction_deactivate_dtls.file_path,
+                        prop_transaction_deactivate_dtls.deactive_date,
+                        users2.name as tran_deactivated_by
+                    "))
+                    ->join(DB::raw("
+                        (
+                            (
+                                select saf.id as app_id ,saf.saf_no as app_no,prop_transactions.id as tran_id,
+                                    ward_mstr_id,zone_mstr_id
+                                from prop_active_safs saf
+                                join prop_transactions on prop_transactions.saf_id = saf.id
+                                where prop_transactions.tran_date between '$fromDate' and '$toDate'
+                            )
+                            union ALL(
+                                select saf.id as app_id ,saf.saf_no as app_no,prop_transactions.id as tran_id,
+                                    ward_mstr_id,zone_mstr_id
+                                from prop_safs saf
+                                join prop_transactions on prop_transactions.saf_id = saf.id
+                                where prop_transactions.tran_date between  '$fromDate' and '$toDate'
+                            )
+                            union ALL(
+                                select saf.id as app_id ,saf.saf_no as app_no,prop_transactions.id as tran_id,
+                                    ward_mstr_id,zone_mstr_id
+                                from prop_rejected_safs saf
+                                join prop_transactions on prop_transactions.saf_id = saf.id
+                                where prop_transactions.tran_date between '$fromDate' and '$toDate'
+                            )
+                            union ALL(
+                                select saf.id as app_id ,saf.holding_no as app_no,prop_transactions.id as tran_id,
+                                    ward_mstr_id,zone_mstr_id
+                                from prop_properties saf
+                                join prop_transactions on prop_transactions.property_id = saf.id
+                                where prop_transactions.tran_date between '$fromDate' and '$toDate'
+                            )
+                        ) app
+                    "),"app.tran_id","prop_transactions.id")
+                    ->leftjoin("prop_cheque_dtls","prop_cheque_dtls.transaction_id","prop_transactions.id")
+                    ->leftjoin("prop_transaction_deactivate_dtls","prop_transaction_deactivate_dtls.tran_id","prop_transactions.id")
+                    ->leftjoin("users","users.id","prop_transactions.user_id")
+                    ->leftjoin("users AS users2","users2.id","prop_transaction_deactivate_dtls.deactivated_by")
+                    ->leftjoin("ulb_ward_masters","ulb_ward_masters.id","app.ward_mstr_id")
+                    ->leftjoin("zone_masters","zone_masters.id","app.zone_mstr_id")
+                    ->where("prop_transactions.status",0)
+                    ->whereBetween("prop_transactions.tran_date",[$fromDate,$toDate]);
+            if ($wardId) {
+                $data = $data->where("ulb_ward_masters.id", $wardId);
+            }
+            if ($zoneId) {
+                $data = $data->where("zone_masters.id", $zoneId);
+            }
+            if ($userId) {
+                $data = $data->where("prop_transactions.user_id", $userId);
+            }
+            if($paymentMode){
+                
+                $data = $data->whereIN(DB::raw("UPPER(prop_transactions.payment_mode)"),explode(",",$paymentMode));
+            }
+
+            $perPage = $request->perPage ? $request->perPage : 5;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $data2 = $data;
+            $totalAmount = $data2->sum("amount");
+            $paginator = $data->paginate($perPage);
+            
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "totalAmount" => $totalAmount,
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true, "", $list);
+                    
+
+        }
+        catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), []);
+        }
+    }
     
 }

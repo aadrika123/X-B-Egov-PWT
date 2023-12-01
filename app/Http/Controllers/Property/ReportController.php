@@ -2131,4 +2131,30 @@ class ReportController extends Controller
             return responseMsgs(false, $e->getMessage(), []);
         }
     }
+
+    public function tranDeactivatedList(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "fromDate" => "nullable|date|date_format:Y-m-d",
+                "uptoDate" => "nullable|date|date_format:Y-m-d|after_or_equal:" . $request->fromDate,
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "zoneId" => "nullable|digits_between:1,9223372036854775807",
+                "appType" => "nullable|in:PROPERTY,SAF",
+                "userId" => "nullable|digits_between:1,9223372036854775807",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        if ($validated->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validated->errors()
+            ]);
+        }
+        return $this->Repository->tranDeactivatedList($request);
+    }
 }

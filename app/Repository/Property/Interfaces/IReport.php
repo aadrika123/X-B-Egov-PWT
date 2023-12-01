@@ -31,4 +31,5 @@ interface IReport
     public function tcCollectionReport();
     public function paymentModedealyCollectionRptV1(Request $request);
     public function individualDedealyCollectionRptV1(Request $request);
+    public function tranDeactivatedList(Request $request);
 }
