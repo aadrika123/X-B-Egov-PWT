@@ -348,7 +348,19 @@ class WaterTran extends Model
      */
     public function tranDtl($userId, $fromDate, $toDate)
     {
-        return WaterTran::where('status',1)
+        return WaterTran::select(
+            'water_trans.*',
+            'water_consumer_owners.applicant_name as owner_name',
+            'water_consumer_owners.guardian_name',
+            'users.user_name',
+            'users.name'
+        )
+            ->join('water_consumer_demands','water_consumer_demands.consumer_id','water_trans.related_id')
+            ->join('water_second_consumers','water_second_consumers.id','water_trans.related_id')
+            ->join('water_consumer_owners','water_consumer_owners.consumer_id','water_trans.related_id')
+            ->join('users','users.id','water_trans.emp_dtl_id') 
+            ->where('water_trans.emp_dtl_id',$userId)
+            ->where('water_trans.status',1)
             ->whereBetween('tran_date', [$fromDate, $toDate])
             ->get();
     }

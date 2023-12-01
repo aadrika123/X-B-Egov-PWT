@@ -192,14 +192,14 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('report/total-water-consumer', 'totalConsumerType');
         Route::post('report/billing-summary', 'billingSummary');
         Route::post('ward-list', 'WardList');
-        Route::post('report/tc-collection', 'WaterCollectionReport');                                       // tc collection report
-        Route::post('reports/user-wise/coll-summary', 'userWiseCollectionSummary');                        // tc over all report
+        Route::post('report/tc-collection', 'WaterCollectionReport');                                         // tc collection report
+        Route::post('reports/user-wise/coll-summary', 'userWiseCollectionSummary');                           // tc over all report
         Route::post('report/water-demands-reports', 'WaterDemandsReport');
         Route::post('consumer/demands/bulk-receipt', 'bulkReceipt');
         Route::post('report/water-collection-report', 'WaterCollectionConsumerReport');
         Route::post('report/ward-wise-demand', 'wardWiseConsumerReport');
         Route::post('report/billing-summary', 'billingSummary');
-        Route::post('bill/demand-bill', 'waterBulkdemand');                                                  // demand bulk view bill
+        Route::post('bill/demand-bill', 'waterBulkdemand');                                                   // demand bulk view bill
         Route::post('receipt/bulk-receipt', 'bulkReceipt');
     });
 
@@ -235,9 +235,12 @@ Route::controller(NewConnectionController::class)->group(function () {
 
 });
 Route::controller(WaterConsumer::class)->group(function () {
-    Route::post('consumer/details', 'WaterConsumerDetails');                                 // details of consumer 
+    Route::post('consumer/details', 'WaterConsumerDetails');                                        // details of consumer 
+    Route::post('consumer/get-consumer-bill', 'getConsumerDemands');                                // consumer bill
 });
 Route::controller(WaterPaymentController::class)->group(function () {
-    Route::post('citizen/icici-payment', 'initiateOnlineDemandPayment');                                     // citizen consumer search
+    Route::post('citizen/icici-payment', 'initiateOnlineDemandPayment');  
+    Route::post('citizen/demand/generate-payment-receipt', 'generateDemandPaymentReceipt'); 
+    Route::post('citizen/get-payment-history', 'getConsumerPaymentHistory');                                    
     // Route::post('')
 });

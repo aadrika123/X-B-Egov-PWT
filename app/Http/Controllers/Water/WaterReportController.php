@@ -1929,7 +1929,7 @@ class WaterReportController extends Controller
             $uptoDate = $refDate['uptoDate'];
 
             #common function 
-           return $refDate = $this->getFyearDate($previousFinancialYear);
+            return $refDate = $this->getFyearDate($previousFinancialYear);
             $previousFromDate = $refDate['fromDate'];
             $previousUptoDate = $refDate['uptoDate'];
             if ($request->ulbId) {
@@ -2580,25 +2580,34 @@ class WaterReportController extends Controller
             subquery.total_unpaid_demand_of_meter+subquery.total_unpaid_demand_of_fixed AS total_unpaid_amount,
             subquery.meter_paid_bill_count + subquery.fixed_paid_bill_count as total_paid_bills_count,
             subquery.unpaid_meter_count+subquery.unpaid_fixed_count as total_unpaid_bill_count,
-            subquery.ward_name
+            subquery.ward_name,
+            subquery.unpaid_residential_consumer_count,
+            subquery.unpaid_commercial_consumer_count,
+            subquery.unpaid_residential_amount,
+            subquery.unpaid_commercial_amount
         FROM (
             SELECT 
                 SUM(CASE WHEN water_consumer_demands.connection_type='Meter' AND water_consumer_demands.paid_status=0 THEN water_consumer_demands.balance_amount ELSE 0 END) AS total_unpaid_demand_of_meter,
                 SUM(CASE WHEN water_consumer_demands.connection_type='Fixed' AND water_consumer_demands.paid_status=0 THEN water_consumer_demands.balance_amount ELSE 0 END) AS total_unpaid_demand_of_fixed, 
                 SUM(CASE WHEN water_consumer_demands.connection_type='Meter' AND water_consumer_demands.paid_status=1 THEN water_consumer_demands.balance_amount ELSE 0 END) AS paid_meter_amount, 
                 SUM(CASE WHEN water_consumer_demands.connection_type='Fixed' AND water_consumer_demands.paid_status=1 THEN water_consumer_demands.balance_amount ELSE 0 END) AS paid_fixed_amount, 
-                COUNT(DISTINCT CASE WHEN water_consumer_demands.connection_type='Meter' AND water_consumer_demands.paid_status=1 THEN water_consumer_demands.consumer_id END) AS meter_paid_bill_count, 
-                COUNT(DISTINCT CASE WHEN water_consumer_demands.connection_type='Fixed' AND water_consumer_demands.paid_status=1 THEN water_consumer_demands.consumer_id END) AS fixed_paid_bill_count,
-                COUNT(DISTINCT CASE WHEN water_consumer_demands.connection_type='Meter' AND water_consumer_demands.paid_status=0 THEN water_consumer_demands.consumer_id END) AS unpaid_meter_count,
-                COUNT(DISTINCT CASE WHEN water_consumer_demands.connection_type='Fixed' AND water_consumer_demands.paid_status=0 THEN water_consumer_demands.consumer_id END) AS unpaid_fixed_count, 
+                SUM (CASE WHEN water_second_consumers.property_type_id=1  AND water_consumer_demands.paid_status=0 THEN water_consumer_demands.balance_amount ELSE 0 END )AS unpaid_residential_amount,
+                SUM (CASE WHEN water_second_consumers.property_type_id=2 AND water_consumer_demands.paid_status=0 THEN water_consumer_demands.balance_amount ELSE 0 END ) AS unpaid_commercial_amount,
+                COUNT(DISTINCT CASE WHEN water_consumer_demands.connection_type='Meter' AND water_consumer_demands.paid_status=1 THEN water_consumer_demands.consumer_id ELSE 0 END) AS meter_paid_bill_count, 
+                COUNT(DISTINCT CASE WHEN water_consumer_demands.connection_type='Fixed' AND water_consumer_demands.paid_status=1 THEN water_consumer_demands.consumer_id ELSE 0 END) AS fixed_paid_bill_count,
+                COUNT(DISTINCT CASE WHEN water_consumer_demands.connection_type='Meter' AND water_consumer_demands.paid_status=0 THEN water_consumer_demands.consumer_id ELSE 0 END) AS unpaid_meter_count,
+                COUNT(DISTINCT CASE WHEN water_consumer_demands.connection_type='Fixed' AND water_consumer_demands.paid_status=0 THEN water_consumer_demands.consumer_id ELSE 0 END) AS unpaid_fixed_count,
+					 COUNT (DISTINCT CASE WHEN water_second_consumers.property_type_id=1 AND water_consumer_demands.paid_status=0 THEN water_consumer_demands.consumer_id ELSE 0 END ) AS unpaid_residential_consumer_count,
+					 COUNT(DISTINCT CASE WHEN water_second_consumers.property_type_id=2 AND water_consumer_demands.paid_status=0 THEN water_consumer_demands.balance_amount ELSE 0 END ) AS unpaid_commercial_consumer_count,
                 ulb_ward_masters.ward_name
             FROM
                 water_second_consumers
             JOIN water_consumer_demands ON water_consumer_demands.consumer_id = water_second_consumers.id
             LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id = water_second_consumers.ward_mstr_id
             JOIN water_consumer_meters ON water_second_consumers.id = water_consumer_meters.consumer_id
+            JOIN water_property_type_mstrs ON water_property_type_mstrs.id=water_second_consumers.property_type_id
             WHERE 
-                water_consumer_demands.status = TRUE
+               water_consumer_demands.status = TRUE
                 " . ($wardId ? " AND water_second_consumers.ward_mstr_id = $wardId" : "") . "
                 " . ($zoneId ? " AND water_second_consumers.zone_mstr_id = $zoneId" : "") . "
                 " . ($userId ? " AND wt.emp_dtl_id = $userId" : "") . "
@@ -2694,8 +2703,8 @@ class WaterReportController extends Controller
                 MAX(water_consumer_initial_meters.initial_reading) AS final_reading,
                 MIN(water_consumer_initial_meters.initial_reading) AS initial_reading,
                 MAX(water_consumer_initial_meters.initial_reading) - MIN(water_consumer_initial_meters.initial_reading) AS unit_consumed,
-                zone_masters.zone_name,
-                CONCAT('$docUrl', '/', water_meter_reading_docs.relative_path, '/', water_meter_reading_docs.file_name) AS meterImg
+                CONCAT('$docUrl', '/', water_meter_reading_docs.relative_path, '/', water_meter_reading_docs.file_name) AS meterImg,
+                zone_masters.zone_name
             FROM (
                 SELECT 
                     wd.consumer_id,
@@ -2744,7 +2753,7 @@ class WaterReportController extends Controller
                 water_second_consumers.ward_mstr_id,
                 zone_masters.zone_name
         ");
-        
+
 
             // Add conditions
             // if ($wardId) {
@@ -2784,19 +2793,21 @@ class WaterReportController extends Controller
         $req->validate([
             'fromDate' => 'required|date',
             'toDate' => 'required|date',
-            'tranType' => 'nullable|In:Property,Saf',
-            'userId' => 'nullable|numeric',
+            'userId' => 'nullable|',
         ]);
         try {
             $fromDate = $req->fromDate;
             $toDate = $req->toDate;
             $userId = $req->userId;
             $tranType = $req->tranType;
-            $mWaterTran = new waterTran();
+            $mWaterTran = new WaterTran();
             $propReceipts = collect();
             $receipts    = collect();
 
             $transaction = $mWaterTran->tranDtl($userId, $fromDate, $toDate);
+            if (!$transaction) {
+                throw new Exception('tranaction not found!');
+            }
 
 
             return responseMsgs(true, 'Bulk Receipt', remove_null($transaction), '010801', '01', '', 'Post', '');

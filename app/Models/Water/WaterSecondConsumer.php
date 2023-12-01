@@ -110,7 +110,7 @@ class WaterSecondConsumer extends Model
             'water_consumer_demands.consumer_id',
             'water_second_consumers.id AS id',
             'water_second_consumers.consumer_no',
-            'water_second_consumers.property_no',
+            'water_second_consumers.folio_no as property_no',
             'water_second_consumers.address',
             'water_second_consumers.folio_no',
             'zone_masters.zone_name',
