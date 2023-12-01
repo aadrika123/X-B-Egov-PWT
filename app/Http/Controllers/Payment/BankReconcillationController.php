@@ -614,7 +614,7 @@ class BankReconcillationController extends Controller
             DB::connection('pgsql_water')->beginTransaction();
             DB::connection('pgsql_trade')->beginTransaction();
 
-            $imageName = ""; #$req->document ? $relativePath."/".$docUpload->upload($refImageName, $document, $relativePath) : "";
+            $imageName = $req->document ? $relativePath."/".$docUpload->upload($refImageName, $document, $relativePath) : "";
             $deactivationArr = [
                 "tran_id" => $req->id,
                 "deactivated_by" => $user->id,
