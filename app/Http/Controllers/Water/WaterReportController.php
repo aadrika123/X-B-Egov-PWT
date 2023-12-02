@@ -1929,7 +1929,7 @@ class WaterReportController extends Controller
             $uptoDate = $refDate['uptoDate'];
 
             #common function 
-            return $refDate = $this->getFyearDate($previousFinancialYear);
+            $refDate = $this->getFyearDate($previousFinancialYear);
             $previousFromDate = $refDate['fromDate'];
             $previousUptoDate = $refDate['uptoDate'];
             if ($request->ulbId) {
@@ -2686,30 +2686,33 @@ class WaterReportController extends Controller
                 ulb_ward_masters.ward_name AS ward_no,
                 water_second_consumers.id,
                 'water' AS type,
-                water_second_consumers.consumer_no,
-                water_second_consumers.user_type,
-                water_second_consumers.property_no,
+                water_second_consumers.consumer_no as consumerno,
+                water_second_consumers.user_type as usertype,
+                water_second_consumers.property_no as propertyno,
                 water_second_consumers.address,
-                water_second_consumers.tab_size,
+                water_second_consumers.tab_size ,
                 water_second_consumers.zone,
                 water_consumer_owners.applicant_name,
                 water_consumer_owners.guardian_name,
                 water_consumer_owners.mobile_no,
                 water_second_consumers.category,
-                water_second_consumers.folio_no,
+                water_second_consumers.folio_no as foliono,
                 water_second_consumers.ward_mstr_id,
                 water_meter_reading_docs.relative_path,
                 water_meter_reading_docs.file_name,
-                MAX(water_consumer_initial_meters.initial_reading) AS final_reading,
-                MIN(water_consumer_initial_meters.initial_reading) AS initial_reading,
-                MAX(water_consumer_initial_meters.initial_reading) - MIN(water_consumer_initial_meters.initial_reading) AS unit_consumed,
+                MAX(water_consumer_initial_meters.initial_reading) AS finalreading,
+                MIN(water_consumer_initial_meters.initial_reading) AS initialreading,
+                MAX(water_consumer_initial_meters.initial_reading) - MIN(water_consumer_initial_meters.initial_reading) AS unitconsumed,
                 CONCAT('$docUrl', '/', water_meter_reading_docs.relative_path, '/', water_meter_reading_docs.file_name) AS meterImg,
+                CONCAT('$NowDate') AS billdate,
+                CONCAT('$bilDueDate') AS bildueDate, 
                 zone_masters.zone_name
             FROM (
                 SELECT 
                     wd.consumer_id,
                     wd.connection_type,
                     wd.status,
+                    wd.demand_no,
                     MIN(wd.demand_from) AS demand_from,
                     MAX(wd.demand_upto) AS demand_upto,
                     SUM(wd.due_balance_amount) AS sum_amount,
@@ -2722,7 +2725,8 @@ class WaterReportController extends Controller
                 GROUP BY 
                     wd.consumer_id, 
                     wd.connection_type,
-                    wd.status
+                    wd.status, 
+                    wd.demand_no
             ) water_consumer_demands
             JOIN water_second_consumers ON water_second_consumers.id = water_consumer_demands.consumer_id
             LEFT JOIN water_consumer_owners ON water_consumer_owners.consumer_id = water_second_consumers.id
@@ -2732,7 +2736,7 @@ class WaterReportController extends Controller
             JOIN water_consumer_initial_meters ON water_consumer_initial_meters.consumer_id = water_second_consumers.id
             WHERE 
                 water_second_consumers.zone_mstr_id = $zoneId
-                AND ($wardId IS NULL OR ulb_ward_masters.id = $wardId)
+                " . ($wardId ? " AND water_second_consumers.ward_mstr_id = $wardId" : "") . "
             GROUP BY 
                 water_meter_reading_docs.file_name,
                 water_meter_reading_docs.relative_path,
@@ -2743,6 +2747,7 @@ class WaterReportController extends Controller
                 water_consumer_demands.demand_from,
                 water_consumer_demands.demand_upto,
                 water_consumer_demands.sum_amount,
+                water_consumer_demands.demand_no,
                 ulb_ward_masters.ward_name,
                 water_second_consumers.id,
                 water_consumer_owners.applicant_name,
@@ -2753,31 +2758,12 @@ class WaterReportController extends Controller
                 water_second_consumers.ward_mstr_id,
                 zone_masters.zone_name
         ");
-
-
-            // Add conditions
-            // if ($wardId) {
-            //     $rawData .= " AND ulb_ward_masters.id = $wardId";
-            // }
-            // if ($zoneId) {
-            //     $rawData .= " AND water_second_consumers.zone_mstr_id = $zoneId";
-            // }
-            // if ($metertype) {
-            //     $rawData .= " AND water_consumer_demands.connection_type = '$metertype'";
-            // }
-
             $data = DB::connection('pgsql_water')->select(DB::raw($rawData));
 
-
             $list = [
-                // "current_page" => $page,
                 "data" => $data,
                 'billdate' => $NowDate,
                 'bilDueDate' => $bilDueDate,
-                // "total" => $total,
-                // "totalAmount" => $totalAmount,
-                // "per_page" => $perPage,
-                // "last_page" => 1, // Assuming there is only one page without pagination
             ];
 
             return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime = NULL, $action, $deviceId);
@@ -2788,28 +2774,130 @@ class WaterReportController extends Controller
     /**\
      * bulk receipt 
      */
-    public function bulkReceipt(Request $req)
+    public function bulkReceipt(Request $request)
     {
-        $req->validate([
-            'fromDate' => 'required|date',
-            'toDate' => 'required|date',
-            'userId' => 'nullable|',
-        ]);
-        try {
-            $fromDate     = $req->fromDate;
-            $toDate       = $req->toDate;
-            $userId       = $req->userId;
-            $tranType     = $req->tranType;
-            $mWaterTran   = new WaterTran();
-            $propReceipts = collect();
-            $receipts     = collect();
+        $request->merge(["metaData" => ["pr1.1", 1.1, null, $request->getMethod(), null,]]);
+        $metaData = collect($request->metaData)->all();
 
-            $transaction = $mWaterTran->tranDtl($userId, $fromDate, $toDate);
-            if (!$transaction) {
-                throw new Exception('tranaction not found!');
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try {
+            $docUrl                     = $this->_docUrl;
+            $metertype      = null;
+            $refUser        = authUser($request);
+            $ulbId          = $refUser->ulb_id;
+            $wardId = null;
+            $userId = null;
+            $zoneId = null;
+            $paymentMode = null;
+            $perPage = $request->perPage ? $request->perPage : 5;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $NowDate                    = Carbon::now()->format('Y-m-d');
+            $bilDueDate                 = Carbon::now()->addDays(15)->format('Y-m-d');
+            $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
+            if ($request->fromDate) {
+                $fromDate = $request->fromDate;
+            }
+            if ($request->uptoDate) {
+                $uptoDate = $request->uptoDate;
+            }
+            if ($request->wardId) {
+                $wardId = $request->wardId;
             }
 
-            return responseMsgs(true, 'Bulk Receipt', remove_null($transaction), '010801', '01', '', 'Post', '');
+            if ($request->userId)
+                $userId = $request->userId;
+            else
+                $userId = auth()->user()->id;                   // In Case of any logged in TC User
+
+            if ($request->paymentMode) {
+                $paymentMode = $request->paymentMode;
+            }
+            if ($request->ulbId) {
+                $ulbId = $request->ulbId;
+            }
+            if ($request->zoneId) {
+                $zoneId = $request->zoneId;
+            }
+
+            // DB::connection('pgsql_water')->enableQueryLog();
+
+            $rawData = ("SELECT 
+            water_trans.tran_no AS transactionNo,
+            water_trans.tran_date AS transactionDate,
+            water_trans.amount AS totalPaidAmount,
+            water_trans.payment_type,
+            water_trans.payment_mode AS paymentMode,
+            ulb_ward_masters.ward_name AS wardNo,
+            'water' AS TYPE,
+            water_second_consumers.consumer_no AS consumerNo,
+            water_second_consumers.bind_book_no AS bindbookno,
+            water_second_consumers.user_type,
+            water_second_consumers.property_no,
+            water_second_consumers.address,
+            water_second_consumers.tab_size,
+            water_second_consumers.zone,
+            water_consumer_owners.applicant_name AS customerName,
+            water_consumer_owners.guardian_name,
+            water_consumer_owners.mobile_no AS customerMobile,
+            water_second_consumers.category,
+            water_second_consumers.folio_no,
+            water_second_consumers.ward_mstr_id, 
+            MAX(water_consumer_initial_meters.initial_reading) AS finalReading,
+            MIN(water_consumer_initial_meters.initial_reading) AS initialReading,
+            MAX(water_consumer_initial_meters.initial_reading) - MIN(water_consumer_initial_meters.initial_reading) AS unitConsumed,
+            zone_masters.zone_name AS zoneName,
+            users.name AS empName, 
+            MIN(water_consumer_demands.demand_from) AS demand_from,
+            MAX(water_consumer_demands.demand_upto) AS demand_upto,
+            water_trans.due_amount AS dueAmount,
+            ulb_masters.association_with AS association,
+            water_second_consumers.book_no AS bookNo
+        FROM 
+            water_trans
+        JOIN water_second_consumers ON water_second_consumers.id = water_trans.related_id
+        LEFT JOIN water_consumer_owners ON water_consumer_owners.consumer_id = water_trans.related_id
+        LEFT JOIN zone_masters ON zone_masters.id = water_second_consumers.zone_mstr_id
+        LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id = water_second_consumers.ward_mstr_id
+        JOIN water_consumer_initial_meters ON water_consumer_initial_meters.consumer_id = water_trans.related_id
+        JOIN water_consumer_demands ON water_consumer_demands.consumer_id = water_trans.related_id
+        JOIN users ON users.id = water_trans.emp_dtl_id
+        JOIN ulb_masters ON ulb_masters.id=water_trans.ulb_id
+        WHERE 
+             water_trans.emp_dtl_id = $userId
+            AND water_trans.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+        GROUP BY 
+            users.name,
+            water_second_consumers.zone,
+            water_second_consumers.tab_size,
+            water_second_consumers.user_type,
+            water_second_consumers.property_no,
+            water_second_consumers.address,
+            water_trans.id,
+            water_second_consumers.consumer_no,
+            water_consumer_demands.connection_type,
+            water_consumer_demands.status,
+            water_consumer_demands.demand_from,
+            water_consumer_demands.demand_upto,
+            water_trans.amount,
+            ulb_ward_masters.ward_name,
+            water_consumer_owners.applicant_name,
+            water_consumer_owners.guardian_name,
+            water_consumer_owners.mobile_no,
+            water_second_consumers.category,
+            water_second_consumers.folio_no,
+            water_second_consumers.ward_mstr_id,
+            zone_masters.zone_name,
+            water_second_consumers.bind_book_no,
+            ulb_masters.association_with,
+            water_second_consumers.book_no
+        ");
+
+            $data = collect(DB::connection('pgsql_water')->select(DB::raw($rawData)));
+            $data1 = $data->map(function ($value) {
+                $value->paidAmtInWords = getIndianCurrency($value->totalpaidamount);
+                return $value;
+            });
+            return responseMsgs(true, 'Bulk Receipt', remove_null($data1), '010801', '01', '', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
