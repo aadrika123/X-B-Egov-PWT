@@ -131,7 +131,7 @@ class WaterSecondConsumer extends Model
             )
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
             ->join('water_consumer_owners as wco', 'water_second_consumers.id', '=', 'wco.consumer_id')
-            ->join('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
+            ->leftjoin('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
             ->where('water_second_consumers.status', 1)
             ->where('wco.status', true)
             ->where('water_second_consumers.' . $key, 'LIKE', '%' . $refNo . '%')
