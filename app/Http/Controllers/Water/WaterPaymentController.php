@@ -1812,7 +1812,13 @@ class WaterPaymentController extends Controller
             # sending pdf of demand rerceipt via whatsapp
             // $this->whatsAppSend($returnValues);
             # send notification 
-            // $sms = AkolaProperty(["owner_name" => $returnValues['arshad'], "saf_no" => $returnValues['transactionNo']], "New Assessment");
+            // $sms = AkolaProperty(
+            //     [
+            //         "owner_name" => $returnValues['arshad'],
+            //         "saf_no" => $returnValues['transactionNo']
+            //     ],
+            //     "New Assessment"
+            // );
             // if (($sms["status"] !== false)) {
             //     $respons = SMSAKGOVT(7631035473, $sms["sms"], $sms["temp_id"]);
             // }
@@ -2078,12 +2084,7 @@ class WaterPaymentController extends Controller
             } else {
                 foreach ($mDemands as $demand) {
                     $this->saveConsumerPaymentStatus($refRequestV2, $offlinePaymentModes, $demand, $transactionId);
-                    $mWaterTranDetail->saveDefaultTrans($demand->amount, $demand->consumer_id, $transactionId['id'], $demand->id, null);
                     $mWaterConsumerCollection->saveConsumerCollection($demand, $transactionId, $refUserId, null);
-
-                    # update the payment status of the demand 
-                    $demand->paid_status = 1;                                          // Static
-                    $demand->update();
                 }
             }
             // $this->commit();
@@ -2920,7 +2921,7 @@ class WaterPaymentController extends Controller
             $request->consumerId ?? $request->applicationId,
             $waterTrans['id'],
             $popedDemand->id,
-            $refAmount
+            $refPaidAmount
         );
         $mWaterConsumerCollection->saveConsumerCollection($popedDemand, $waterTrans, $request->auth['id'] ?? null, $refAmount);
     }
