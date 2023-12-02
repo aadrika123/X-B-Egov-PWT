@@ -2,12 +2,15 @@
 
 namespace App\BLL\Property\Akola;
 
+use App\Models\Property\PropAdjustment;
+use App\Models\Property\PropAdvance;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropPendingArrear;
 use App\Models\Property\PropProperty;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 /**
  * | Created On-11-10-2023 
@@ -23,6 +26,8 @@ class GetHoldingDuesV2
         $mPropDemand = new PropDemand();
         $mPropProperty = new PropProperty();
         $mPropOwners = new PropOwner();
+        $PropAdvance = new PropAdvance();
+        $PropAdjustment = new PropAdjustment();
         $mUsers = new User();
         $demand = array();
         $mPropPendingArrear = new PropPendingArrear();
@@ -34,7 +39,11 @@ class GetHoldingDuesV2
         $userDtls = $mUsers::find($userId);
 
         // Get Property Details
-        $propBasicDtls = $mPropProperty->getPropBasicDtls($req->propId);
+        $propBasicDtls = $mPropProperty->getPropBasicDtls($req->propId);DB::enableQueryLog();
+        $totalAdvanceAmt = $PropAdvance->getAdvanceAmt($req->propId);
+        $totalAdjustmentAmt = $PropAdjustment->getAdjustmentAmt($req->propId);
+        $remainAdvance = $totalAdvanceAmt->sum("amount") - $totalAdjustmentAmt->sum("amount");
+
         // $arrear = $propBasicDtls->new_arrear;                           // 🔴🔴 Replaced with balance to new arrear
 
         // if ($arrear > 0) {
@@ -125,6 +134,7 @@ class GetHoldingDuesV2
         
         // if($firstOwner->is_armed_force)
         //     // $rebate=
+        $demand['remainAdvance'] = round($remainAdvance??0);
         $demand['arrearPayableAmt'] = round($demand['arrear'] + $demand['arrearMonthlyPenalty']);
         $demand['payableAmt'] = round($grandTaxes['balance'] + $demand['totalInterestPenalty']);
 

@@ -49,4 +49,25 @@ class PropAdvance extends Model
             ->groupBy("a.amount")
             ->first();
     }
+
+    public function getAdvanceAmt($propId)
+    {
+        return self::where("prop_id",$propId)
+               ->where("status",1) 
+               ->get();
+    }
+
+    public function getAdvanceAmtByTrId($tranId)
+    {
+        return self::where("tran_id",$tranId)
+               ->where("status",1) 
+               ->get();
+    }
+
+    public function deactivateAdvanceByTrId($tranId)
+    {
+        return self::where("tran_id",$tranId)->update([
+            "status"=>0
+        ]);
+    }
 }

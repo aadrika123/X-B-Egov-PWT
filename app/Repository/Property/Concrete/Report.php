@@ -4499,7 +4499,9 @@ class Report implements IReport
                 sum(COALESCE(arear_major_building,0)::numeric ) as arear_major_building,
                 sum(COALESCE(arear_open_ploat_tax,0)::numeric ) as arear_open_ploat_tax,
                 sum(COALESCE(rebadet,0)::numeric) as rebadet,
-                sum(COALESCE(penalty,0)::numeric) as penalty
+                sum(COALESCE(penalty,0)::numeric) as penalty,
+				sum(COALESCE(advance_amount,0)::numeric) as advance_amount,
+                sum(COALESCE(adjusted_amount,0)::numeric) as adjusted_amount
             from prop_transactions
             join (
                 select distinct(prop_transactions.id)as tran_id ,
@@ -4626,6 +4628,50 @@ class Report implements IReport
                     " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . "
                 group by prop_transactions.id
             )fine_rebet on fine_rebet.tran_id = prop_transactions.id
+            left join(
+                select distinct(prop_transactions.id)as tran_id ,
+                    sum(prop_advances.amount) as advance_amount
+				from prop_advances
+                join prop_transactions on prop_transactions.id = prop_advances.tran_id
+                join (
+                    select prop_properties.id as pid,prop_properties.ward_mstr_id,prop_properties.zone_mstr_id
+                    from prop_properties
+                    join prop_transactions on prop_transactions.property_id = prop_properties.id
+                    where prop_transactions.tran_date between '$fromDate' and '$toDate'  
+                        and prop_transactions.status in(1,2)
+                    group BY prop_properties.id
+                )props on props.pid = prop_transactions.property_id
+                where prop_transactions.tran_date between '$fromDate' and '$toDate' 
+                    and prop_transactions.status in(1,2)
+                    and prop_advances.status =1 
+                    " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{".$paymentMode."}')::TEXT[])" : "") . "
+                    " . ($wardId ? "AND props.ward_mstr_id = $wardId" : "") . "
+                    " . ($zoneId ? "AND props.zone_mstr_id = $zoneId" : "") . "
+                    " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . "   
+                group by prop_transactions.id
+            )advance on advance.tran_id = prop_transactions.id			
+			left join(
+                select distinct(prop_transactions.id)as tran_id ,
+                    sum(prop_adjustments.amount) as adjusted_amount
+				from prop_adjustments
+                join prop_transactions on prop_transactions.id = prop_adjustments.tran_id
+                join (
+                    select prop_properties.id as pid,prop_properties.ward_mstr_id,prop_properties.zone_mstr_id
+                    from prop_properties
+                    join prop_transactions on prop_transactions.property_id = prop_properties.id
+                    where prop_transactions.tran_date between '$fromDate' and '$toDate' 
+                        and prop_transactions.status in(1,2)
+                    group BY prop_properties.id
+                )props on props.pid = prop_transactions.property_id
+                where prop_transactions.tran_date between '$fromDate' and '$toDate' 
+                    and prop_transactions.status in(1,2)
+                    and prop_adjustments.status =1 
+                    " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{".$paymentMode."}')::TEXT[])" : "") . "
+                    " . ($wardId ? "AND props.ward_mstr_id = $wardId" : "") . "
+                    " . ($zoneId ? "AND props.zone_mstr_id = $zoneId" : "") . "
+                    " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . " 
+                group by prop_transactions.id
+            )adjusted on adjusted.tran_id = prop_transactions.id
             where prop_transactions.tran_date between '$fromDate' and '$toDate' 
                 and prop_transactions.status in(1,2)
                 " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{".$paymentMode."}')::TEXT[])" : "") . "
@@ -4655,6 +4701,7 @@ class Report implements IReport
             $report->light_cess      = round($report->current_light_cess)          +  round($report->arear_light_cess)       ;
             $report->major_building  = round($report->current_major_building)      +  round($report->arear_major_building)   ;
             $report->open_ploat_tax  = round($report->current_open_ploat_tax)      +  round($report->arear_open_ploat_tax)   ;
+            $report->net_advance = round($report->advance_amount)      -  round($report->adjusted_amount)   ;
             
             $data["report"] = collect($report)->map(function ($val, $key) {
                 if ($key == "payment_mode") {
@@ -4668,8 +4715,12 @@ class Report implements IReport
             // $current = $report->c1urrent_total_tax - $rebate;
             $arear = 0;
             $current = 0;
+            $advance = 0;
+            $adjusted = 0;
             $penalty = $data["report"]["penalty"];
             $rebate  = $data["report"]["rebadet"];
+            $advance = $data["report"]["advance_amount"];
+            $adjusted = $data["report"]["adjusted_amount"];
             // $arear = $data["report"]["a1rear_total"] + $penalty;
             // $current = $data["report"]["c1urrent_total"] - $rebate;
             $currentPattern = "/current_/i";
@@ -4682,8 +4733,8 @@ class Report implements IReport
                     $arear += ($val ? $val : 0);
                 }
             };
-            $arear = $arear + $penalty;
-            $current = $current - $rebate;
+            $arear = $arear + $penalty ;
+            $current = $current - $rebate + $advance - $adjusted ;
             $data["total"] = [
                 "arear" => round($arear),
                 "current" => round($current),

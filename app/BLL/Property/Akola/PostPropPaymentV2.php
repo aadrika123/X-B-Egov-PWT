@@ -5,6 +5,8 @@ namespace App\BLL\Property\Akola;
 use App\MicroServices\DocumentUpload;
 use App\MicroServices\IdGeneration;
 use App\Models\Payment\TempTransaction;
+use App\Models\Property\PropAdjustment;
+use App\Models\Property\PropAdvance;
 use App\Models\Property\PropChequeDtl;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropPenaltyrebate;
@@ -52,6 +54,8 @@ class PostPropPaymentV2
     private $_paidCurrentTaxesBifurcation;
     private $_paidArrearTaxesBifurcation;
     private $_fy;
+    private $_PropAdvance ;
+    private $_PropAdjustment;
 
     /**
      * | Required @param Requests(propertyId as id)
@@ -59,6 +63,8 @@ class PostPropPaymentV2
     public function __construct($req)
     {
         $this->_COMMON_FUNCTION = new \App\Repository\Common\CommonFunction();
+        $this->_PropAdvance = new PropAdvance();
+        $this->_PropAdjustment = new PropAdjustment();
         $this->_REQ = $req;
         $this->readGenParams();
     }
@@ -724,18 +730,56 @@ class PostPropPaymentV2
                 throw new Exception("Part Payment in Monthly Interest Not Available");
         }
 
-        if ($this->_REQ->paymentType == 'isPartPayment' && $this->_REQ->paidAmount > $this->_propCalculation->original['data']['payableAmt'])                     // Adjust Demand on Part Payment
+        // Adjust Demand on Part Payment
+        if ($this->_REQ->paymentType == 'isPartPayment' && $this->_REQ->paidAmount > $this->_propCalculation->original['data']['payableAmt']) {
             throw new Exception("Amount should be less then the payable amount");
+
+        }                    
 
         // return (["Full Payment"]);
         
         if(!$this->_REQ->paidAmount){
             $this->_REQ->merge(['paidAmount' => $this->_REQ['amount']]);
         }
+        
 
-        $payableAmount = $this->_REQ->paidAmount - $this->_propCalculation->original['data']["previousInterest"];
+        $addvanceAmt = $this->_propCalculation->original['data']["remainAdvance"]??0; 
+        $adjustAmt = 0;
+        $previousInterest = $this->_propCalculation->original['data']["previousInterest"]??0;
+        $payableAmount = $this->_REQ->paidAmount - $previousInterest ;
+        if($this->_REQ["paymentMode"]!="ONLINE"){
+            $adjustAmt = round($this->_REQ->paidAmount - $addvanceAmt) ;
+            $adjustAmt = $adjustAmt > 0 ? $addvanceAmt : $this->_REQ->paidAmount;   
+            switch($this->_REQ->paymentType){
+                case "isPartPayment" : $payableAmount = $payableAmount + $addvanceAmt;
+                                    $this->_REQ->merge(
+                                        [
+                                            'amount' => $this->_REQ->paidAmount 
+                                        ]
+                                    );
+                                    break;
+                case "isFullPayment" : $payableAmount ;
+                                    $this->_REQ->merge(
+                                        [
+                                            'paidAmount' => ($this->_REQ->paidAmount - $addvanceAmt),
+                                            'amount' => ($this->_REQ->paidAmount - $addvanceAmt)
+                                        ]
+                                    );
+                                    break;
+                case "isArrearPayment" : $payableAmount ;
+                                    $this->_REQ->merge(
+                                        [
+                                            'paidAmount' => ($this->_REQ->paidAmount - $addvanceAmt),
+                                            'amount' => ($this->_REQ->paidAmount - $addvanceAmt)
+                                        ]
+                                    );
+                                    break;
+            }
+        }
+        
         $demands = collect($this->_propCalculation->original['data']["demandList"])->sortBy(["fyear", "id"]);
         $paidPenalty = $this->_propCalculation->original['data']["previousInterest"];
+        $demandAmt = $this->_propCalculation->original['data']["payableAmt"];
         $paidDemands = [];
         foreach ($demands as $key => $val) {
             if ($payableAmount <= 0) {
@@ -746,6 +790,7 @@ class PostPropPaymentV2
             $paidPenalty += $paymentDtl["payableAmountOfPenalty"];
             $paidDemands[] = $paymentDtl;
         }
+        
         $this->_fromFyear = ((collect($paidDemands)->sortBy("fyear"))->first())["fyear"] ?? $this->_fromFyear;
         $this->_uptoFyear = ((collect($paidDemands)->sortBy("fyear"))->last())["fyear"] ?? $this->_uptoFyear;
 
@@ -857,6 +902,38 @@ class PostPropPaymentV2
             ]);
             $this->postOtherPaymentModes($this->_REQ);
         }
+
+        #insert Advance Amount
+        if(round($payableAmount)>0)
+        {
+            $advArr = [
+                "prop_id"=>$this->_propId,
+                "tran_id"=>$propTrans['id'],
+                "amount" =>round($payableAmount),
+                "user_id"=>$this->_REQ['userId'] ?? (auth()->user() ? auth()->user()->id : null),
+                "ulb_id"=>$this->_REQ['ulbId'] ?? (auth()->user() ? auth()->user()->ulbd_id : null),
+                "remarks"=>"Advance Payment",
+            ];
+            $this->_PropAdvance->store($advArr);
+        }
+
+        #insert Adjusted Amount
+        if(round($adjustAmt)>0)
+        {
+            $adjArr = [
+                "prop_id"=>$this->_propId,
+                "tran_id"=>$propTrans['id'],
+                "amount" =>round($adjustAmt),
+                "user_id"=>$this->_REQ['userId'] ?? (auth()->user() ? auth()->user()->id : null),
+                "ulb_id"=>$this->_REQ['ulbId'] ?? (auth()->user() ? auth()->user()->ulbd_id : null),                
+            ];
+            $this->_PropAdjustment->store($adjArr);
+        }
+        
+        $generatePaymentReceipt = new GeneratePaymentReceiptV2;                     // Version 2 Receipt
+        $generatePaymentReceipt->generateReceipt("", $propTrans['id']);
+        $receipt = $generatePaymentReceipt->_GRID;
+        // dd($receipt,$this->_REQ["paidAmount"],$this->_REQ["amount"]);
     }
     /**
      * | demand Adjust
