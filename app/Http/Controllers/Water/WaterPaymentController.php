@@ -1894,8 +1894,8 @@ class WaterPaymentController extends Controller
             $this->begin();
 
             $myRequest = new Request([
-                // 'amount'        => round($request->amount),
-                'amount'        => 1,                                                                   // ❗❗ Changes
+                'amount'        => round($request->amount),
+                // 'amount'        => 1,                                                                   // ❗❗ Changes
                 'workflowId'    => 0,                                                                   // Static
                 'id'            => $request->consumerId,
                 'moduleId'      => $waterModuleId,
@@ -2016,7 +2016,7 @@ class WaterPaymentController extends Controller
 
             $this->begin();
             # save payment data in water icic response table
-            $paymentResponse = $mWaterIciciResponse->savePaymentResponse($iciciPayRequest, $webhookData);
+            $paymentResponse = $mWaterIciciResponse->savePaymentResponse($iciciPayRequest, $webhookData);                           // ❗❗Save the resposne data 
 
             # save the icici request status as 1
             $iciciPayRequest->status = 1;                                                   // Static
@@ -2036,6 +2036,7 @@ class WaterPaymentController extends Controller
                 'leftDemandAmount'  => $iciciPayRequest->due_amount ?? 0,
                 'adjustedAmount'    => $iciciPayRequest->adjusted_amount ?? 0,
                 'pgResponseId'      => $paymentResponse['responseId'] ?? 1,                 // ❗❗ Changes after test
+                // 'pgResponseId'      => $paymentResponse['responseId'];
                 'pgId'              => $webhookData['gatewayType']
             ]);
             $consumer['ward_mstr_id'] = $consumerDetails->ward_mstr_id;
@@ -2062,8 +2063,9 @@ class WaterPaymentController extends Controller
             # Diff Dtw part payment and full payment
             if ($iciciPayRequest->is_part_payment == 1) {
                 $mDemands           = $mDemands->sortBy('demand_upto');
+                $consumercharges    = collect($mDemands);
+                $consumercharges    = clone $consumercharges;
                 $refConsumercharges = $mDemands;
-                $consumercharges    = $mDemands;
                 $popedDemand        = $refConsumercharges->pop();
                 # payment updation
                 foreach ($refConsumercharges as $charges) {
@@ -2084,7 +2086,7 @@ class WaterPaymentController extends Controller
                     $demand->update();
                 }
             }
-            $this->commit();
+            // $this->commit();
             $res['transactionId'] = $transactionId['id'];
             return responseMsg(true, "", $res);
         } catch (Exception $e) {
@@ -2866,7 +2868,7 @@ class WaterPaymentController extends Controller
             $refPaidAmount      = ($consumercharges->sum('due_balance_amount')) - $refAmount;
             $remaningBalance    = $refPaidAmount;
         } else {
-            $refPaidAmount      = $consumercharges->sum('due_balance_amount') - $refAmount;
+            $refPaidAmount      = $refAmount - $refConsumercharges->sum('balance_amount');
             $remaningBalance    = $popedDemand->due_balance_amount - $refPaidAmount;
         }
         $popedDemand->due_balance_amount = $remaningBalance;
@@ -2906,7 +2908,7 @@ class WaterPaymentController extends Controller
             $refPaidAmount      = ($consumercharges->sum('due_balance_amount')) - $refAmount;
             $remaningBalance    = $refPaidAmount;
         } else {
-            $refPaidAmount      = $consumercharges->sum('due_balance_amount') - $refAmount;
+            $refPaidAmount      = $refAmount - $refConsumercharges->sum('balance_amount');
             $remaningBalance    = $popedDemand->due_balance_amount - $refPaidAmount;
         }
         $popedDemand->due_balance_amount = $remaningBalance;

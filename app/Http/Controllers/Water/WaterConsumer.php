@@ -26,6 +26,7 @@ use App\Models\Water\WaterConsumerOwner;
 use App\Models\Water\WaterConsumerCharge;
 use App\Models\Water\WaterConsumerChargeCategory;
 use App\Models\Water\WaterConsumerDemand;
+use App\Models\Water\WaterConsumerDemandRecord;
 use App\Models\Water\WaterConsumerDisconnection;
 use App\Models\Water\WaterConsumerInitialMeter;
 use App\Models\Water\WaterConsumerMeter;
@@ -2365,4 +2366,53 @@ class WaterConsumer extends Controller
             throw new Exception($e->getMessage());
         }
     }
+     /**
+     * update consumer details
+     */
+    public function updateConsumerDemands(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'consumerId'        => 'required|integer',
+                'consumerNo'        => 'nullable|',
+                'amount'            => 'nullable'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $now            = Carbon::now();
+            $user           = authUser($request);
+            $userId         = $user->id;
+            $usertype       = $user->user_type;
+            $consumerId     = $request->consumerId;
+            $consumerNo     = $request->consumerNo;
+
+            $mWaterConsumerDemands       = new WaterConsumerDemand();
+            $mWaterConsumerDemandRecords = new WaterConsumerDemandRecord();
+            $mWaterSecondConsumer        = new WaterSecondConsumer();
+            $consumerDtls=$mWaterConsumerDemands->consumerDemandId($consumerId,)->first();
+            if (!$consumerDtls) {
+                throw new Exception("consumer details not found!");
+            }
+            $consumerDetaills=$mWaterSecondConsumer->getconsuerByConsumerNo($consumerNo);
+            if(!$consumerDetaills){
+                throw new Exception ('Consumer details not found');
+            }
+            $amount=$consumerDtls->amount;
+
+            $this->begin();
+    
+            $mWaterConsumerDemandRecords->editConsumerOwnerDtls($request, $userId);
+            $this->commit();
+            return responseMsgs(true, "update consumer details succesfull!", "", "", "01", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            $this->rollback();
+            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
+        }
+    }
+
+
 }
