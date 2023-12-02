@@ -131,7 +131,7 @@ class WaterSecondConsumer extends Model
             )
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
             ->join('water_consumer_owners as wco', 'water_second_consumers.id', '=', 'wco.consumer_id')
-            ->join ('zone_masters','zone_masters.id','water_second_consumers.zone_mstr_id')
+            ->join('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
             ->where('water_second_consumers.status', 1)
             ->where('wco.status', true)
             ->where('water_second_consumers.' . $key, 'LIKE', '%' . $refNo . '%')
@@ -152,7 +152,7 @@ class WaterSecondConsumer extends Model
                 'zone_masters.zone_name'
             );
     }
-    
+
     /**
      * | get the water consumer detaials by Owner details
      * | @param consumerNo
@@ -300,7 +300,7 @@ class WaterSecondConsumer extends Model
         return WaterSecondConsumer::where('id', $applicationId)
             ->where('status', 1);
     }
-       /**
+    /**
      * | Dectivate the water Consumer 
      * | @param req
      */
@@ -463,5 +463,13 @@ class WaterSecondConsumer extends Model
             ->where('water_approval_application_details.application_no', 'LIKE', '%' . $refVal . '%')
             ->where('water_second_consumers.status', 1);
         // ->where('ulb_ward_masters.status', true);
+    }
+    /**
+     * get consumer by consumer number
+     */
+    public function getconsuerByConsumerNo($consumerNo)
+    {
+        return WaterSecondConsumer::where('consumer_no', $consumerNo)
+            ->where('status', 1);
     }
 }

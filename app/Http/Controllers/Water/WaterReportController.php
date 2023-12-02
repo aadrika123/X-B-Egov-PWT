@@ -2796,19 +2796,18 @@ class WaterReportController extends Controller
             'userId' => 'nullable|',
         ]);
         try {
-            $fromDate = $req->fromDate;
-            $toDate = $req->toDate;
-            $userId = $req->userId;
-            $tranType = $req->tranType;
-            $mWaterTran = new WaterTran();
+            $fromDate     = $req->fromDate;
+            $toDate       = $req->toDate;
+            $userId       = $req->userId;
+            $tranType     = $req->tranType;
+            $mWaterTran   = new WaterTran();
             $propReceipts = collect();
-            $receipts    = collect();
+            $receipts     = collect();
 
             $transaction = $mWaterTran->tranDtl($userId, $fromDate, $toDate);
             if (!$transaction) {
                 throw new Exception('tranaction not found!');
             }
-
 
             return responseMsgs(true, 'Bulk Receipt', remove_null($transaction), '010801', '01', '', 'Post', '');
         } catch (Exception $e) {

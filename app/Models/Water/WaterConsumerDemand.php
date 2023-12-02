@@ -441,4 +441,13 @@ class WaterConsumerDemand extends Model
             );
         // ->get();
     }
+    /**
+     * | Get Payed Consumer Demand
+     * | @param ConsumerId
+     */
+    public function consumerDemandId($demandId)
+    {
+        return WaterConsumerDemand::where('id', $demandId)
+            ->where('paid_status', 1);
+    }
 }
