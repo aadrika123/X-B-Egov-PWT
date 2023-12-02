@@ -170,11 +170,25 @@ class GeneratePaymentReceiptV2
             $overdueDemand = $demandsList->where('fyear', '<>', $currentFyear);
             $this->_overDueDemand = $this->aggregateDemand($overdueDemand);
 
+            $this->_overDueDemand["advancePaidAmount"]    =  0;
+            $this->_overDueDemand["advancePaidAmount"]    = 0;
+            $this->_overDueDemand["netAdvance"] = 0;
+
+            $this->_currentDemand["FinalTax"] =   $this->_currentDemand["FinalTax"] + (($this->_advanceAmt??0) - ($this->_adjustAmt??0) );    
+            $this->_currentDemand["advancePaidAmount"]    =  ($this->_adjustAmt??0) ;
+            $this->_currentDemand["advancePaidAmount"]    =  ($this->_advanceAmt??0) ;
+            $this->_currentDemand["netAdvance"] =  (($this->_advanceAmt??0) - ($this->_adjustAmt??0)) ;
+
             $this->_GRID['overdueDemand'] = $this->_overDueDemand;
             $this->_GRID['currentDemand'] = $this->_currentDemand;
 
             $aggregateDemandList = new Collection([$this->_currentDemand, $this->_overDueDemand]);
-            $this->_GRID['aggregateDemand'] = $this->aggregateDemand($aggregateDemandList);
+            $aggregateDemand = $this->aggregateDemand($aggregateDemandList);
+            $aggregateDemand["FinalTax"] =   $aggregateDemand["FinalTax"] + (($this->_advanceAmt??0) - ($this->_adjustAmt??0) );    
+            $aggregateDemand["advancePaidAmount"]    =  ($this->_adjustAmt??0) ;
+            $aggregateDemand["advancePaidAmount"]    =  ($this->_advanceAmt??0) ;
+            $aggregateDemand["netAdvance"] =  (($this->_advanceAmt??0) - ($this->_adjustAmt??0)) ;
+            $this->_GRID['aggregateDemand'] = $aggregateDemand;
         }
     }
 
@@ -269,8 +283,7 @@ class GeneratePaymentReceiptV2
                 "noticeFee" => roundFigure(0),
                 "FinalTax" => $totalPayableAmt
             ];
-        });
-
+        }); 
         return collect($aggregate);
     }
 
@@ -313,6 +326,7 @@ class GeneratePaymentReceiptV2
             "totalPaidAmount" => $this->_trans->amount,
             "advancePaidAmount" => $this->_advanceAmt,
             "adjustAmount" => $this->_adjustAmt,
+            "netAdvance"=>$this->_advanceAmt - $this->_adjustAmt, 
             "paidAmtInWords" => getIndianCurrency($this->_trans->amount),
             "tcName" => $this->_trans->tc_name,
             "tcMobile" => $this->_trans->tc_mobile,
