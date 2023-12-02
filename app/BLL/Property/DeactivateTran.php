@@ -3,11 +3,14 @@
 namespace App\BLL\Property;
 
 use App\Models\Payment\TempTransaction;
+use App\Models\Property\PropAdjustment;
+use App\Models\Property\PropAdvance;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropTranDtl;
 use App\Models\Property\PropTransaction;
 use Exception;
+use Illuminate\Support\Facades\DB;
 
 /**
  * | Created On - 28/09/2023 
@@ -25,12 +28,16 @@ class DeactivateTran
     private $_transaction;
     private $_tranDtls;
     private $_mTempTrans;
+    private $_PropAdvance ;
+    private $_PropAdjustment;
 
     public function __construct($tranId)
     {
         $this->_tranId = $tranId;
         $this->_mPropTranDtl = new PropTranDtl();
         $this->_mTempTrans = new TempTransaction();
+        $this->_PropAdvance = new PropAdvance();
+        $this->_PropAdjustment = new PropAdjustment();
     }
 
 
@@ -56,6 +63,9 @@ class DeactivateTran
         $this->_transaction->save();
 
         $this->deactivateTempTrans();                       // (1.3) 
+        $this->_PropAdvance->deactivateAdvanceByTrId($this->_transaction->id);
+        $this->_PropAdjustment->deactivateAdjustmentAmtByTrId($this->_transaction->id);
+       
     }
 
 

@@ -2,6 +2,8 @@
 
 namespace App\BLL\Property\Akola;
 
+use App\Models\Property\PropAdjustment;
+use App\Models\Property\PropAdvance;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropPenaltyrebate;
 use App\Models\Property\PropProperty;
@@ -44,6 +46,10 @@ class GeneratePaymentReceiptV2
     private $_mUlbMasters;
     private $_mPropSaf;
     private $_isArrearReceipt = true;
+    private $_mPropAdvance;
+    private $_mPropAdjustment;
+    private $_advanceAmt = 0;
+    private $_adjustAmt = 0;
 
     /**
      * | Initializations of Variables
@@ -57,6 +63,8 @@ class GeneratePaymentReceiptV2
         $this->_mPropDemands = new PropDemand();
         $this->_mPropPenaltyRebates = new PropPenaltyrebate();
         $this->_mPropSaf = new PropSaf();
+        $this->_mPropAdvance = new PropAdvance();
+        $this->_mPropAdjustment = new PropAdjustment();
     }
 
     /**
@@ -92,7 +100,9 @@ class GeneratePaymentReceiptV2
 
         $this->_GRID['transactionNo'] = $trans->tran_no;
         $this->_tranType = $trans->tran_type;                // Property or SAF 
-
+        $this->_advanceAmt = $this->_mPropAdvance->getAdvanceAmtByTrId($this->_trans->id)->sum("amount");
+        $this->_adjustAmt = $this->_mPropAdjustment->getAdjustmentAmtByTrId($this->_trans->id)->sum("amount");
+        
         $tranDtls = $this->_mPropTranDtl->getTranDemandsByTranId($trans->id);
         // $this->_propertyDtls = $this->_mPropProperty->getBasicDetails($trans->property_id);             // Get details from property table
         $this->_propertyDtls = $this->_mPropProperty->getBasicDetailsV2($trans->property_id); 
@@ -160,11 +170,25 @@ class GeneratePaymentReceiptV2
             $overdueDemand = $demandsList->where('fyear', '<>', $currentFyear);
             $this->_overDueDemand = $this->aggregateDemand($overdueDemand);
 
+            $this->_overDueDemand["advancePaidAmount"]    =  0;
+            $this->_overDueDemand["advancePaidAmount"]    = 0;
+            $this->_overDueDemand["netAdvance"] = 0;
+
+            $this->_currentDemand["FinalTax"] =   $this->_currentDemand["FinalTax"] + (($this->_advanceAmt??0) - ($this->_adjustAmt??0) );    
+            $this->_currentDemand["advancePaidAmount"]    =  ($this->_adjustAmt??0) ;
+            $this->_currentDemand["advancePaidAmount"]    =  ($this->_advanceAmt??0) ;
+            $this->_currentDemand["netAdvance"] =  (($this->_advanceAmt??0) - ($this->_adjustAmt??0)) ;
+
             $this->_GRID['overdueDemand'] = $this->_overDueDemand;
             $this->_GRID['currentDemand'] = $this->_currentDemand;
 
             $aggregateDemandList = new Collection([$this->_currentDemand, $this->_overDueDemand]);
-            $this->_GRID['aggregateDemand'] = $this->aggregateDemand($aggregateDemandList);
+            $aggregateDemand = $this->aggregateDemand($aggregateDemandList);
+            $aggregateDemand["FinalTax"] =   $aggregateDemand["FinalTax"] + (($this->_advanceAmt??0) - ($this->_adjustAmt??0) );    
+            $aggregateDemand["advancePaidAmount"]    =  ($this->_adjustAmt??0) ;
+            $aggregateDemand["advancePaidAmount"]    =  ($this->_advanceAmt??0) ;
+            $aggregateDemand["netAdvance"] =  (($this->_advanceAmt??0) - ($this->_adjustAmt??0)) ;
+            $this->_GRID['aggregateDemand'] = $aggregateDemand;
         }
     }
 
@@ -259,8 +283,7 @@ class GeneratePaymentReceiptV2
                 "noticeFee" => roundFigure(0),
                 "FinalTax" => $totalPayableAmt
             ];
-        });
-
+        }); 
         return collect($aggregate);
     }
 
@@ -301,6 +324,9 @@ class GeneratePaymentReceiptV2
                 "keyString" => "Holding Tax"
             ],
             "totalPaidAmount" => $this->_trans->amount,
+            "advancePaidAmount" => $this->_advanceAmt,
+            "adjustAmount" => $this->_adjustAmt,
+            "netAdvance"=>$this->_advanceAmt - $this->_adjustAmt, 
             "paidAmtInWords" => getIndianCurrency($this->_trans->amount),
             "tcName" => $this->_trans->tc_name,
             "tcMobile" => $this->_trans->tc_mobile,
