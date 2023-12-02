@@ -266,15 +266,15 @@ class ActiveSafController extends Controller
     public function editSaf(Request $req)
     {
         $rules = [
-            'id' => 'required|numeric',
-            'owner' => 'array',
+            'id'                        => 'required|numeric',
+            'owner'                     => 'array',
             'owner.*.propOwnerDetailId' => 'required|numeric',
-            'owner.*.ownerName' => 'required',
-            'owner.*.guardianName' => 'required',
-            'owner.*.relation' => 'required',
-            'owner.*.mobileNo' => 'numeric|digits:10',
-            'owner.*.aadhar' => 'numeric|digits:12|nullable',
-            'owner.*.email' => 'email|nullable',
+            'owner.*.ownerName'         => 'required',
+            'owner.*.guardianName'      => 'nullable',
+            'owner.*.relation'          => 'nullable',
+            'owner.*.mobileNo'          => 'numeric|digits:10',
+            'owner.*.aadhar'            => 'numeric|digits:12|nullable',
+            'owner.*.email'             => 'email|nullable',
         ];
         $validated = Validator::make(
             $req->all(),
@@ -282,9 +282,9 @@ class ActiveSafController extends Controller
         );
         if ($validated->fails()) {
             return response()->json([
-                'status' => false,
-                'message' => 'validation error',
-                'errors' => $validated->errors()
+                'status'    => false,
+                'message'   => 'validation error',
+                'errors'    => $validated->errors()
             ]);
         }
         // $req->validate([
@@ -798,10 +798,10 @@ class ActiveSafController extends Controller
             $data['floors'] = $getFloorDtls;
             $data["tranDtl"] = $mPropTransaction->getSafTranList($data['id']);
             $data["userDtl"] = [
-                "user_id"=>$user->id??0,
-                "user_type"=>$user->user_type??"",
-                "ulb_id"=>$user->ulb_id??0,
-                "user_name"=>$user->name??""
+                "user_id" => $user->id ?? 0,
+                "user_type" => $user->user_type ?? "",
+                "ulb_id" => $user->ulb_id ?? 0,
+                "user_name" => $user->name ?? ""
             ];
             $memoDtls = $mPropSafMemoDtls->memoLists($data['id']);
             $data['memoDtls'] = $memoDtls;
@@ -1300,23 +1300,19 @@ class ActiveSafController extends Controller
             $safId = $req->applicationId;
             // Derivative Assignments
             $safDetails = PropActiveSaf::find($req->applicationId);
-            if(!$safDetails){
-                $saf= PropSaf::find($req->applicationId);
-                if(!$saf){
-                    $saf= DB::table("prop_rejected_safs")->where("id",$req->applicationId)->first();
-                    if(!$saf)
+            if (!$safDetails) {
+                $saf = PropSaf::find($req->applicationId);
+                if (!$saf) {
+                    $saf = DB::table("prop_rejected_safs")->where("id", $req->applicationId)->first();
+                    if (!$saf)
                         throw new Exception("data not Found!");
-                    else{
+                    else {
                         throw new Exception("Application is already Rejectd");
                     }
-
                 }
                 throw new Exception("Application is already Approved");
-                
-                
             }
-            if($safDetails->workflow_id==202 )
-            {
+            if ($safDetails->workflow_id == 202) {
                 $controller = new PropertyMutationController();
                 return $controller->approve($req);
             }
@@ -1713,7 +1709,7 @@ class ActiveSafController extends Controller
                 "professionalTaxPerc"   => $correntTax->sum("professionalTaxPerc"),
                 "professionalTax"       => $correntTax->sum("professionalTax"),
                 "totalTax"              => $correntTax->sum("totalTax"),
-                "openPloatTax"          =>$correntTax->sum("openPloatTax"),
+                "openPloatTax"          => $correntTax->sum("openPloatTax"),
                 "plotArea"              => $fullSafDtls["area_of_plot"] ?? "",
                 "plotAreaSQTM"          => sqFtToSqMt($fullSafDtls["area_of_plot"] ?? "0"),
                 "floorsCount"           => ($fullSafDtls["floors"]->count() ?? "0"),
@@ -1745,7 +1741,7 @@ class ActiveSafController extends Controller
                 "professionalTaxPerc"   => $arrearTax->sum("professionalTaxPerc"),
                 "professionalTax"       => $arrearTax->sum("professionalTax"),
                 "totalTax"              => $arrearTax->sum("totalTax"),
-                "openPloatTax"          =>$arrearTax->sum("openPloatTax"),
+                "openPloatTax"          => $arrearTax->sum("openPloatTax"),
                 "plotArea"              => $fullSafDtls["area_of_plot"] ?? "",
                 "plotAreaSQTM"          => sqFtToSqMt($fullSafDtls["area_of_plot"] ?? "0"),
                 "floorsCount"           => ($fullSafDtls["floors"]->count() ?? "0"),
@@ -1781,7 +1777,7 @@ class ActiveSafController extends Controller
                 "agingPerc"         => $floorsTaxes->sum("agingPerc") ?? "0",
                 "agingAmt"          => $floorsTaxes->sum("agingAmt") ?? "0",
                 "taxValue"          => $floorsTaxes->sum("taxValue") ?? "0",
-                "openPloatTax"      =>$floorsTaxes->sum("openPloatTax")??"0",
+                "openPloatTax"      => $floorsTaxes->sum("openPloatTax") ?? "0",
                 "generalTax"        => $floorsTaxes->sum("generalTax") ?? "0",
                 "roadTax"           => $floorsTaxes->sum("roadTax") ?? "0",
                 "firefightingTax"   => $floorsTaxes->sum("firefightingTax") ?? "0",
@@ -1802,8 +1798,8 @@ class ActiveSafController extends Controller
                         $floorsTaxes->sum("professionalTax") + $floorsTaxes->sum("openPloatTax")
                 ),
             ];
-            $residentFloor = $floorsTaxes->whereIN("usageType", [45,25]);
-            $nonResidentFloor = $floorsTaxes->whereNOTIN("usageType", [45,25]);
+            $residentFloor = $floorsTaxes->whereIN("usageType", [45, 25]);
+            $nonResidentFloor = $floorsTaxes->whereNOTIN("usageType", [45, 25]);
             $data["usageTypeTax"] = [
                 "new" => [
                     "residence" => [
@@ -1812,7 +1808,7 @@ class ActiveSafController extends Controller
                             $residentFloor->sum("generalTax") + $residentFloor->sum("roadTax") + $residentFloor->sum("firefightingTax") +
                                 $residentFloor->sum("educationTax") + $residentFloor->sum("waterTax") +
                                 $residentFloor->sum("cleanlinessTax") + $residentFloor->sum("sewerageTax") + $residentFloor->sum("treeTax") +
-                                $residentFloor->sum("stateEducationTax") +  $residentFloor->sum("professionalTax")+
+                                $residentFloor->sum("stateEducationTax") +  $residentFloor->sum("professionalTax") +
                                 $residentFloor->sum("openPloatTax")
                         ),
                     ],
@@ -1822,7 +1818,7 @@ class ActiveSafController extends Controller
                             $nonResidentFloor->sum("generalTax") + $nonResidentFloor->sum("roadTax") +
                                 $nonResidentFloor->sum("firefightingTax") + $nonResidentFloor->sum("educationTax") + $nonResidentFloor->sum("waterTax") +
                                 $nonResidentFloor->sum("cleanlinessTax") + $nonResidentFloor->sum("sewerageTax") + $nonResidentFloor->sum("treeTax") +
-                                $nonResidentFloor->sum("stateEducationTax") +  $nonResidentFloor->sum("professionalTax")+
+                                $nonResidentFloor->sum("stateEducationTax") +  $nonResidentFloor->sum("professionalTax") +
                                 $nonResidentFloor->sum("openPloatTax")
                         ),
                     ]
@@ -1855,7 +1851,7 @@ class ActiveSafController extends Controller
                     "cleanlinessTax"    => $residentFloor->sum("cleanlinessTax") ?? "0",
                     "sewerageTax"       => $residentFloor->sum("sewerageTax") ?? "0",
                     "treeTax"           => $residentFloor->sum("treeTax") ?? "0",
-                    "openPloatTax"      => $residentFloor->sum("openPloatTax")??"0",
+                    "openPloatTax"      => $residentFloor->sum("openPloatTax") ?? "0",
                     "isCommercial"      => ($residentFloor->where("isCommercial", true)->count() > 1 ? true : false) ?? false,
                     "stateEducationTaxPerc" => $residentFloor->sum("stateEducationTaxPerc") ?? "0",
                     "stateEducationTax" => $residentFloor->sum("stateEducationTax") ?? "0",
@@ -1865,7 +1861,7 @@ class ActiveSafController extends Controller
                         $residentFloor->sum("generalTax") + $residentFloor->sum("roadTax") + $residentFloor->sum("firefightingTax") +
                             $residentFloor->sum("educationTax") + $residentFloor->sum("waterTax") + $residentFloor->sum("cleanlinessTax") +
                             $residentFloor->sum("sewerageTax") + $residentFloor->sum("treeTax") + $residentFloor->sum("stateEducationTax") +
-                            $residentFloor->sum("professionalTax")+ $residentFloor->sum("openPloatTax")
+                            $residentFloor->sum("professionalTax") + $residentFloor->sum("openPloatTax")
                     ),
                 ],
                 "nonResidence" => [
@@ -1884,7 +1880,7 @@ class ActiveSafController extends Controller
                     "cleanlinessTax"    => $nonResidentFloor->sum("cleanlinessTax") ?? "0",
                     "sewerageTax"       => $nonResidentFloor->sum("sewerageTax") ?? "0",
                     "treeTax"           => $nonResidentFloor->sum("treeTax") ?? "0",
-                    "openPloatTax"      => $nonResidentFloor->sum("openPloatTax")??"0",
+                    "openPloatTax"      => $nonResidentFloor->sum("openPloatTax") ?? "0",
                     "isCommercial"      => ($nonResidentFloor->where("isCommercial", true)->count() > 1 ? true : false) ?? false,
                     "stateEducationTaxPerc" => $nonResidentFloor->sum("stateEducationTaxPerc") ?? "0",
                     "stateEducationTax" => $nonResidentFloor->sum("stateEducationTax") ?? "0",
@@ -2331,8 +2327,8 @@ class ActiveSafController extends Controller
             $mPropChequeDtl = new PropChequeDtl();
             $chequeReqs = [
                 'user_id' => $req['userId'],
-                'prop_id' => (isset($req["tranType"]) && $req["tranType"]=='Property')?($req['id']??null):null,
-                'saf_id' => $req['saf_id']??null,
+                'prop_id' => (isset($req["tranType"]) && $req["tranType"] == 'Property') ? ($req['id'] ?? null) : null,
+                'saf_id' => $req['saf_id'] ?? null,
                 'transaction_id' => $req['tranId'],
                 'cheque_date' => $req['chequeDate'],
                 'bank_name' => $req['bankName'],
@@ -2358,7 +2354,7 @@ class ActiveSafController extends Controller
             'tran_date' => $req['todayDate'],
             'user_id' => $req['userId'],
             'ulb_id' => $req['ulbId'],
-            'ward_no' => $req['wardNo']??"",
+            'ward_no' => $req['wardNo'] ?? "",
             'cluster_id' => $clusterId
         ];
         $mTempTransaction->tempTransaction($tranReqs);
@@ -3626,7 +3622,7 @@ class ActiveSafController extends Controller
     {
         $validated = Validator::make(
             $request->all(),
-            [ 
+            [
                 'paidAmount' => 'required|numeric|min:1'
             ]
         );
@@ -3637,48 +3633,45 @@ class ActiveSafController extends Controller
                 'errors' => $validated->errors()
             ]);
         }
-        
-        try{
+
+        try {
             $user = Auth()->user();
             $verifyPaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
             $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
             $verifyStatus = 1;
             $saf = PropActiveSaf::find($request->id);
-            if(!$saf)
-            {
+            if (!$saf) {
                 throw new Exception("Data Not Found");
             }
-            if($saf->proccess_fee_paid)
-            {
+            if ($saf->proccess_fee_paid) {
                 throw new Exception("Proccessing Fee Already Pay");
             }
 
             $proccessFee = $saf->proccess_fee;
-            if($proccessFee != $request->paidAmount)
-            {
+            if ($proccessFee != $request->paidAmount) {
                 throw new Exception("Demand Amount And Paied Amount Missmatched");
             }
 
             if (in_array($request->paymentMode, $verifyPaymentModes)) {
                 $verifyStatus = 2;
             }
-            $request->merge(["verifyStatus"=>$verifyStatus]);
-            
+            $request->merge(["verifyStatus" => $verifyStatus]);
+
             $idGeneration = new IdGeneration;
             $tranNo = $idGeneration->generateTransactionNo($saf->ulb_id);
             $paymentReceiptNo = $this->generatePaymentReceiptNoSV2($saf);
             $tranBy = auth()->user()->user_type ??  $request->userType;
             $request->merge($paymentReceiptNo);
             $request->merge([
-                "demandAmt"=>$proccessFee,
-                "workflowId"=>$saf->workflow_id,
-                "tranType"=>"Saf",
-                "saf_id"=>$saf->id,
-                "applicationNo"=>$saf->saf_no,
+                "demandAmt" => $proccessFee,
+                "workflowId" => $saf->workflow_id,
+                "tranType" => "Saf",
+                "saf_id" => $saf->id,
+                "applicationNo" => $saf->saf_no,
                 "ulbId"   => $saf->ulb_id,
-                "userId"=>$request['userId'] ?? $user->id ,
-                "tranNo"=>$tranNo,
-                "amount"=>$request->paidAmount,
+                "userId" => $request['userId'] ?? $user->id,
+                "tranNo" => $tranNo,
+                "amount" => $request->paidAmount,
                 'tranBy' => $tranBy,
                 'todayDate' => Carbon::now()->format('Y-m-d'),
             ]);
@@ -3691,7 +3684,7 @@ class ActiveSafController extends Controller
             $safTrans->tran_date = $request['todayDate'];
             $safTrans->tran_no = $request['tranNo'];
             $safTrans->payment_mode = $request['paymentMode'];
-            $safTrans->user_id = $request['userId'] ?? $user->id ;
+            $safTrans->user_id = $request['userId'] ?? $user->id;
             $safTrans->ulb_id = $request['ulbId'];
             $safTrans->demand_amt = $request['demandAmt'];
             $safTrans->tran_by_type = $request['tranBy'];
@@ -3703,20 +3696,17 @@ class ActiveSafController extends Controller
             $safTrans->save();
             $saf->update();
             if (in_array($request['paymentMode'], $offlinePaymentModes)) {
-                $request->merge(["tranId"=>$safTrans->id]);                
+                $request->merge(["tranId" => $safTrans->id]);
                 $this->postOtherPaymentModes($request);
             }
             DB::commit();
             DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $safTrans->tran_no, 'transactionId' => $safTrans->id], "011604", "1.0", responseTime(), "POST", $request->deviceId);
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
             return responseMsgs(false, $e->getMessage(), "", "011604", "1.0", "", "POST", $request->deviceId ?? "");
         }
-
     }
 
     private function generatePaymentReceiptNoSV2($saf): array
@@ -3726,7 +3716,7 @@ class ActiveSafController extends Controller
             throw new Exception("Ward Details Not Available");
 
         $fyear = getFy();
-        
+
         $wardNo = $wardDetails->ward_name;
         $counter = (new UlbWardMaster)->getTranCounter($wardDetails->id)->counter ?? null;
         $user = Auth()->user();

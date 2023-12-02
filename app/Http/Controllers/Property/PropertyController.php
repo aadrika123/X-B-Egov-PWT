@@ -1252,7 +1252,7 @@ class PropertyController extends Controller
                 'floor_const_code' => $constCode,
                 'total_buildup_area' => $totalBuildupArea,
                 'area_of_plot' => $propDetails->area_of_plot,
-                'primary_owner_name' => $propOwner->owner_name_marathi,
+                'primary_owner_name' => $propOwner->owner_name_marathi ?? null,
                 'applicant_name' => $propDetails->applicant_marathi,
                 'property_from' => $minFloorFromDate,
                 'demands' => $propDemand
