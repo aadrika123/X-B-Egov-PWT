@@ -23,7 +23,7 @@ class PropActiveSafsOwner extends Model
         $reqs = [
             'owner_name' => strtoupper($req->ownerName),
             'guardian_name' => strtoupper($req->guardianName),
-            'relation_type' => $req->relation,
+            'relation_type' => $req->relation ?? "C/O",
             'mobile_no' => $req->mobileNo,
             'aadhar_no' => $req->aadhar,
             'pan_no' => $req->pan,

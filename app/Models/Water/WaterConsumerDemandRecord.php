@@ -11,4 +11,8 @@ class WaterConsumerDemandRecord extends Model
     public $timestamps = false;
     protected $connection = 'pgsql_water';
     
+
+    /**
+     * | Set details 
+     */
 }
