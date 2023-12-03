@@ -2417,8 +2417,13 @@ class WaterConsumer extends Controller
             $approvedWaterOwners->setTable('water_consumer_demand_records');
 
             # Callculation details 
-            $dueAmount = ($demandDetails->due_balance_amount - $request->amount) ?? 0;
-            $balanceAmount = ($demandDetails->balance_amount - $request->amount) ?? 0;
+            $dueAmount = $request->amount;
+            $balanceAmount = $request->amount;
+            if ($demandDetails->due_balance_amount && $demandDetails->due_balance_amount < $request->amount) {
+                if ($demandDetails->paid_status == 1 && $demandDetails->is_full_paid == false) {
+                    $dueAmount = ($request->amount - $demandDetails->due_balance_amount) ?? 0;
+                }
+            }
             if ($dueAmount < 0) {
                 $advanceAmount  = abs($dueAmount);
                 $dueAmount      = 0;

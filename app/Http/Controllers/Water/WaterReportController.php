@@ -2937,12 +2937,12 @@ class WaterReportController extends Controller
             $previousFinancialYear      = getFinancialYear($startOfPreviousYear);
 
             #get financial  year 
-           return $refDate = $this->getFyearDate($currentFyear);
-            $fromDate = $refDate['fromDate'];
-            $uptoDate = $refDate['uptoDate'];
+            $refDate = $this->getFyearDate($currentFyear);
+            $fromDates = $refDate['fromDate'];
+            $uptoDates = $refDate['uptoDate'];
 
             #common function 
-           return  $refDate = $this->getFyearDate($previousFinancialYear);
+            $refDate = $this->getFyearDate($previousFinancialYear);
             $previousFromDate = $refDate['fromDate'];
             $previousUptoDate = $refDate['uptoDate'];
             if ($request->fromDate) {
@@ -2969,7 +2969,6 @@ class WaterReportController extends Controller
             if ($request->zoneId) {
                 $zoneId = $request->zoneId;
             }
-            return $request->all();
 
             $rawData = ("SELECT 
             subquery.arrear_collections,
@@ -2978,8 +2977,9 @@ class WaterReportController extends Controller
             subquery.tran_date
         FROM (
             SELECT 
-                SUM(CASE WHEN water_consumer_demands.demand_upto <= $previousUptoDate AND water_trans.tran_date >= '2022-04-01' AND water_trans.tran_date <= '2023-03-31' THEN water_trans.amount ELSE 0 END) AS arrear_collections, 
-                SUM(CASE WHEN water_consumer_demands.demand_from >= $fromDate AND water_consumer_demands.demand_upto <= $uptoDate AND water_trans.tran_date >= '2023-04-01' AND water_trans.tran_date <= '2024-03-31' THEN water_trans.amount ELSE 0 END) AS current_collections,
+            SUM(CASE WHEN water_consumer_demands.demand_upto <= '$previousUptoDate' AND water_trans.tran_date >= '$fromDate'  AND water_trans.tran_date <= '$uptoDate' THEN water_trans.amount ELSE 0 END) AS arrear_collections, 
+            SUM(CASE WHEN water_consumer_demands.demand_from >= '$fromDates' AND water_consumer_demands.demand_upto <= '$uptoDates' AND water_trans.tran_date >= '$fromDate' AND water_trans.tran_date <= '$uptoDate' THEN water_trans.amount ELSE 0 END) AS current_collections,
+ 
                    water_trans.tran_date
              
              FROM 
@@ -2991,21 +2991,28 @@ class WaterReportController extends Controller
             WHERE 
                 water_consumer_demands.paid_status = 1
                 AND water_trans.status = 1 
-               water_second_consumers.zone_mstr_id = $zoneId
-                " . ($wardId ? " AND water_second_consumers.ward_mstr_id = $wardId" : "") . "
+                " . ($zoneId ? " AND  related_consumers.zone_mstr_id = $zoneId" : "") . "
+                " . ($wardId ? " AND related_consumers.ward_mstr_id = $wardId" : "") . "
                  " . ($userId ? " AND water_trans.emp_dtl_id = $userId" : "") . "
                 GROUP BY 
                 water_trans.tran_date
         ) AS subquery
-        limit 10;
            ");
 
             $data = DB::connection('pgsql_water')->select(DB::raw($rawData));
+            $refData = collect($data);
+
+            $refDetailsV2 = [
+                "array" => $data,
+                "sum_current_coll" => $refData->pluck('current_collections')->sum(),
+                "sum_arrear_coll" => $refData->pluck('arrear_collections')->sum(),
+                "sum_total_coll" => $refData->pluck('total_collections')->sum()
+            ];
             // $data1 = $data->map(function ($value) {
             //     $value->paidAmtInWords = getIndianCurrency($value->totalpaidamount);
             //     return $value;
             // });
-            return responseMsgs(true, 'collection report', remove_null($data), '010801', '01', '', 'Post', '');
+            return responseMsgs(true, 'collection report', remove_null($refDetailsV2), '010801', '01', '', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
