@@ -1906,7 +1906,7 @@ class WaterPaymentController extends Controller
                 'id'            => $request->consumerId,
                 'moduleId'      => $waterModuleId,
                 'ulbId'         => $refDetails['consumer']['ulb_id'],
-                'callbackUrl'   => "https://modernulb.com/water/waterViewPaymentHistory/" . $request->consumerId,
+                'callbackUrl'   => "https://modernulb.com/water/payment-waterstatus/" . $request->consumerId,
                 'auth'          => $refUser
             ]);
 
@@ -2087,7 +2087,7 @@ class WaterPaymentController extends Controller
                     $mWaterConsumerCollection->saveConsumerCollection($demand, $transactionId, $refUserId, null);
                 }
             }
-            // $this->commit();
+            $this->commit();
             $res['transactionId'] = $transactionId['id'];
             return responseMsg(true, "", $res);
         } catch (Exception $e) {
@@ -2817,7 +2817,7 @@ class WaterPaymentController extends Controller
                 $docUpload = new DocUpload;
                 $mWaterPartPaymentDocument = new WaterPartPaymentDocument();
                 $relativePath = "Uploads/Water/Partpayment";
-                $refImageName = "Partpayment";
+                $refImageName = "Partpayment-". time();
                 $refImageName = $request->consumerId . '-' . str_replace(' ', '_', $refImageName);
                 $document     = $request->document;
 
