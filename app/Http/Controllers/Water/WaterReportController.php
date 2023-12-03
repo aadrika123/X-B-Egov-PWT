@@ -2902,4 +2902,112 @@ class WaterReportController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+    /**
+     * date wise collection report
+     */
+    /**\
+     * bulk receipt 
+     */
+    public function dateCollectuionReport(Request $request)
+    {
+        $request->merge(["metaData" => ["pr1.1", 1.1, null, $request->getMethod(), null,]]);
+        $metaData = collect($request->metaData)->all();
+
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try {
+            $docUrl                     = $this->_docUrl;
+            $metertype      = null;
+            $refUser        = authUser($request);
+            $ulbId          = $refUser->ulb_id;
+            $wardId = null;
+            $userId = null;
+            $zoneId = null;
+            $paymentMode = null;
+            $perPage = $request->perPage ? $request->perPage : 5;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $fromDate = $uptoDate       = Carbon::now()->format("Y-m-d");
+            $now                        = Carbon::now();
+            $mWaterConsumerDemand       = new WaterConsumerDemand();
+            $currentDate                = $now->format('Y-m-d');
+            $zoneId = $wardId = null;
+            $currentYear                = collect(explode('-', $request->fiYear))->first() ?? $now->year;
+            $currentFyear               = $request->fiYear ?? getFinancialYear($currentDate);
+            $startOfCurrentYear         = Carbon::createFromDate($currentYear, 4, 1);           // Start date of current financial year
+            $startOfPreviousYear        = $startOfCurrentYear->copy()->subYear();               // Start date of previous financial year
+            $previousFinancialYear      = getFinancialYear($startOfPreviousYear);
+
+            #get financial  year 
+           return $refDate = $this->getFyearDate($currentFyear);
+            $fromDate = $refDate['fromDate'];
+            $uptoDate = $refDate['uptoDate'];
+
+            #common function 
+           return  $refDate = $this->getFyearDate($previousFinancialYear);
+            $previousFromDate = $refDate['fromDate'];
+            $previousUptoDate = $refDate['uptoDate'];
+            if ($request->fromDate) {
+                $fromDate = $request->fromDate;
+            }
+            if ($request->uptoDate) {
+                $uptoDate = $request->uptoDate;
+            }
+            if ($request->wardId) {
+                $wardId = $request->wardId;
+            }
+
+            if ($request->userId)
+                $userId = $request->userId;
+            else
+                $userId = auth()->user()->id;                   // In Case of any logged in TC User
+
+            if ($request->paymentMode) {
+                $paymentMode = $request->paymentMode;
+            }
+            if ($request->ulbId) {
+                $ulbId = $request->ulbId;
+            }
+            if ($request->zoneId) {
+                $zoneId = $request->zoneId;
+            }
+            return $request->all();
+
+            $rawData = ("SELECT 
+            subquery.arrear_collections,
+            subquery.current_collections,
+            COALESCE(subquery.arrear_collections, 0) + COALESCE(subquery.current_collections, 0) AS total_collections, 
+            subquery.tran_date
+        FROM (
+            SELECT 
+                SUM(CASE WHEN water_consumer_demands.demand_upto <= $previousUptoDate AND water_trans.tran_date >= '2022-04-01' AND water_trans.tran_date <= '2023-03-31' THEN water_trans.amount ELSE 0 END) AS arrear_collections, 
+                SUM(CASE WHEN water_consumer_demands.demand_from >= $fromDate AND water_consumer_demands.demand_upto <= $uptoDate AND water_trans.tran_date >= '2023-04-01' AND water_trans.tran_date <= '2024-03-31' THEN water_trans.amount ELSE 0 END) AS current_collections,
+                   water_trans.tran_date
+             
+             FROM 
+                water_trans
+            JOIN water_consumer_demands ON water_consumer_demands.consumer_id = water_trans.related_id
+           LEFT  JOIN users ON users.id = water_trans.emp_dtl_id
+            LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id = water_trans.ward_id
+            LEFT JOIN water_second_consumers AS related_consumers ON related_consumers.id = water_trans.related_id
+            WHERE 
+                water_consumer_demands.paid_status = 1
+                AND water_trans.status = 1 
+               water_second_consumers.zone_mstr_id = $zoneId
+                " . ($wardId ? " AND water_second_consumers.ward_mstr_id = $wardId" : "") . "
+                 " . ($userId ? " AND water_trans.emp_dtl_id = $userId" : "") . "
+                GROUP BY 
+                water_trans.tran_date
+        ) AS subquery
+        limit 10;
+           ");
+
+            $data = DB::connection('pgsql_water')->select(DB::raw($rawData));
+            // $data1 = $data->map(function ($value) {
+            //     $value->paidAmtInWords = getIndianCurrency($value->totalpaidamount);
+            //     return $value;
+            // });
+            return responseMsgs(true, 'collection report', remove_null($data), '010801', '01', '', 'Post', '');
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
 }
