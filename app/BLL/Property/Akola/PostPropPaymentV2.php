@@ -732,7 +732,7 @@ class PostPropPaymentV2
 
         // Adjust Demand on Part Payment
         if ($this->_REQ->paymentType == 'isPartPayment' && $this->_REQ->paidAmount > $this->_propCalculation->original['data']['payableAmt']) {
-            throw new Exception("Amount should be less then the payable amount");
+            // throw new Exception("Amount should be less then the payable amount");
 
         }                    
 
