@@ -204,6 +204,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('bill/demand-bill', 'waterBulkdemand');                                                   // demand bulk view bill
         Route::post('receipt/bulk-receipt', 'bulkReceipt');
         Route::post('report/date-wise-collection','dateCollectuionReport');
+        Route::post('report/tc-collection-report','tcCollectionReport');
     });
 
 

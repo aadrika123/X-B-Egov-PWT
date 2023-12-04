@@ -1473,7 +1473,7 @@ class WaterPaymentController extends Controller
         $mTempTransaction   = new TempTransaction();
         $mPropChequeDtl     = new WaterChequeDtl();
 
-        if ($req['paymentMode'] != $cash) {
+        if (strtoupper($req['paymentMode']) != $cash) {
             if ($req->chargeCategory == "Demand Collection") {
                 $chequeReqs = [
                     'user_id'           => $req['userId'],
@@ -2816,7 +2816,7 @@ class WaterPaymentController extends Controller
                 $docUpload = new DocUpload;
                 $mWaterPartPaymentDocument = new WaterPartPaymentDocument();
                 $relativePath = "Uploads/Water/Partpayment";
-                $refImageName = "Partpayment-". time();
+                $refImageName = "Partpayment-" . time();
                 $refImageName = $request->consumerId . '-' . str_replace(' ', '_', $refImageName);
                 $document     = $request->document;
 

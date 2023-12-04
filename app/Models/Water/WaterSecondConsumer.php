@@ -93,7 +93,7 @@ class WaterSecondConsumer extends Model
      * | @var 
      * | @return 
      */
-    public function getConsumerByItsDetails($req, $key, $refNo, $wardId, $zoneId)
+    public function getConsumerByItsDetails($req, $key, $refNo, $wardId, $zoneId,$zone)
     {
         return WaterSecondConsumer::select([
             'water_consumer_demands.id AS demand_id',
@@ -140,6 +140,9 @@ class WaterSecondConsumer extends Model
             })
             ->when($zoneId, function ($query) use ($zoneId) {
                 return $query->where('water_second_consumers.zone_mstr_id', $zoneId);
+            })
+            ->when($zone, function ($query) use ($zone) {
+                return $query->where('water_second_consumers.zone',$zone);
             })
             ->groupBy(
                 'water_consumer_demands.id',

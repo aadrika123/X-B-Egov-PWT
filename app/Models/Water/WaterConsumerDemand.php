@@ -451,4 +451,25 @@ class WaterConsumerDemand extends Model
             ->where('is_full_paid', 0)
             ->where('status', '<>', 0);
     }
+    /**
+     * get tc detail 
+     */
+    public function tcReport($date, $userId)
+    {
+        return WaterConsumerDemand::select(
+            'water_consumer_demands.*',
+            'users.user_name as tcName',
+            'users.name as empName',
+            'water_consumer_owners.applicant_name as ownerName'
+
+        )
+            ->join('users', 'users.id', 'water_consumer_demands.emp_details_id')
+            ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_consumer_demands.consumer_id')
+            ->join('water_second_consumers','water_second_consumers.id','water_consumer_demands.consumer_id')
+            ->where('water_consumer_demands.generation_date', $date)
+            ->where('water_consumer_demands.emp_details_id', $userId)
+            ->orderBy('water_consumer_demands.emp_details_id','DESC')
+            ->count('water_consumer_demands.id')
+            ->get();
+    }
 }
