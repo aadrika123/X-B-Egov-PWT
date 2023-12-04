@@ -146,7 +146,7 @@ class ApplySafController extends Controller
             // Generate Calculation
             if(!$request->no_calculater)
             $taxCalculator->calculateTax();
-            if(($taxCalculator->_oldUnpayedAmount??0)>0)
+            if(($taxCalculator->_oldUnpayedAmount??0)>0 && $request->assessmentType==3 )
             {
                 throw new Exception("Old Demand Amount Of ".$taxCalculator->_oldUnpayedAmount." Not Cleard");
             }
