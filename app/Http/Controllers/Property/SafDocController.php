@@ -461,6 +461,7 @@ class SafDocController extends Controller
                 continue;
             }
             $explodeDocs = explode(',', $item);
+            $type = $explodeDocs[0]??"O";
             array_shift($explodeDocs);
             foreach ($explodeDocs as $explodeDoc) {
                 $changeStatus = 0;
@@ -469,7 +470,7 @@ class SafDocController extends Controller
                     break;
                 }
             }
-            if ($changeStatus == 0) {
+            if ($changeStatus == 0 && $type =="R") {                
                 $flag = 0;
                 break;
             }
@@ -489,6 +490,7 @@ class SafDocController extends Controller
 
             foreach ($item['docs'] as $doc) {
                 $explodeDocs = explode(',', $doc);
+                $type = $explodeDocs[0]??"O";
                 array_shift($explodeDocs);
                 foreach ($explodeDocs as $explodeDoc) {
                     $changeStatusV1 = 0;
@@ -497,7 +499,7 @@ class SafDocController extends Controller
                         break;
                     }
                 }
-                if ($changeStatusV1 == 0) {
+                if ($changeStatusV1 == 0 && $type =="R") {
                     $ownerFlags = 0;
                     break;
                 }
