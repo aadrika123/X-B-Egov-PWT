@@ -1901,12 +1901,12 @@ class WaterPaymentController extends Controller
 
             $myRequest = new Request([
                 'amount'        => round($request->amount),
-                // 'amount'        => 1,                                                                   // ❗❗ Changes
-                'workflowId'    => 0,                                                                   // Static
+                // 'amount'        => 1,                                                                                           // ❗❗ Changes
+                'workflowId'    => 0,                                                                                           // Static
                 'id'            => $request->consumerId,
                 'moduleId'      => $waterModuleId,
                 'ulbId'         => $refDetails['consumer']['ulb_id'],
-                'callbackUrl'   => "https://modernulb.com/water/payment-waterstatus/" . $request->consumerId,
+                'callbackUrl'   => "https://modernulb.com/water/payment-waterstatus/" . $request->consumerId,                   // Static
                 'auth'          => $refUser
             ]);
 

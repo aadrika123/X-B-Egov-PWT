@@ -183,6 +183,6 @@ class WorkflowTrack extends Model
             ->where('ref_table_id_value', $req['refTableIdValue'])
             ->where('receiver_role_id', $req['receiverRoleId'])
             ->where('status', true)
-            ->firstOrFail();
+            ->first();
     }
 }

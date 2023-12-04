@@ -128,6 +128,8 @@ class PropActiveSafsFloor extends Model
         $floor->date_upto = $req['dateUpto'] ?? null;
         $floor->prop_floor_details_id = $req['propFloorDetailId'] ?? null;
         $floor->user_id = $userId;
+        $floor->no_of_rooms = $req['noOfRooms'] ?? null;
+        $floor->no_of_toilets = $req['noOfToilet'] ?? null;
         $floor->save();
     }
 
