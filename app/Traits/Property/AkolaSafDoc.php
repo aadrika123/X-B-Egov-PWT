@@ -72,6 +72,12 @@ use Illuminate\Support\Facades\Config;
                 $uploadedDoc = $uploadedDocs->where('doc_code', $docName)
                     ->where('owner_dtl_id', $ownerId)
                     ->first();
+                if(!$uploadedDoc)
+                {
+                    $uploadedDoc = $uploadedDocs->where('doc_code', $item)
+                    ->where('owner_dtl_id', $ownerId)
+                    ->first();
+                }
                 if ($uploadedDoc) {
                     $response = [
                         "uploadedDocId" => $uploadedDoc->id ?? "",

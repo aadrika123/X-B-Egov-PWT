@@ -36,6 +36,7 @@ class TaxCalculator
     private $_residentialUsageType;
     private $_newForm;
     public $_oldUnpayedAmount;
+    private $_LESS_PERSENTAGE_APPLY_WARD_IDS;
 
     /**
      * | Initialization of global variables
@@ -47,6 +48,7 @@ class TaxCalculator
         $this->_mRefPropConsTypes = new RefPropConstructionType();
         $this->_agingPercs = Config::get('PropertyConstaint.AGING_PERC');
         $this->_residentialUsageType = Config::get('akola-property-constant.RESIDENTIAL_USAGE_TYPE');
+        $this->_LESS_PERSENTAGE_APPLY_WARD_IDS = Config::get('akola-property-constant.LESS_PERSENTAGE_APPLY_WARD_IDS');
     }
 
     /**
@@ -260,7 +262,7 @@ class TaxCalculator
 
             $alv = roundFigure($this->_calculatorParams['areaOfPlot'] * $rate);
             $maintance10Perc = 0;#roundFigure(($alv * $this->_maintancePerc) / 100);
-            $valueAfterMaintanance = roundFigure($alv - $maintance10Perc);
+            $valueAfterMaintanance = roundFigure($alv - ($alv*0.1)); # 10% minuse on ALV
             $aging = 0;#roundFigure(($valueAfterMaintanance * $agingPerc) / 100);
             $taxValue = roundFigure($valueAfterMaintanance - $aging);
 
@@ -443,6 +445,33 @@ class TaxCalculator
         // Act Of Limitations end
         while ($this->_calculationDateFrom <= $currentFyearEndDate) {
             $annualTaxes = collect($this->_floorsTaxes)->where('dateFrom', '<=', $this->_calculationDateFrom);
+            // dd($this->_REQUEST->propertyType,$this->_REQUEST["ward"],$this->_REQUEST->all());
+            if($this->_REQUEST->propertyType == 4 && in_array($this->_REQUEST["ward"],$this->_LESS_PERSENTAGE_APPLY_WARD_IDS) && getFy($this->_calculationDateFrom)<='2021-2023'){
+                               
+                $annualTaxes = $annualTaxes->map(function($vals){                    
+                    $prcent = Config::get('akola-property-constant.LESS_PERSENTAGE_APPLY_FYEARS.'.getFy($this->_calculationDateFrom));
+                    if($prcent)
+                    {
+                        $vals["agingAmt"] = $vals["agingAmt"] * $prcent;
+                        $vals["taxValue"] = $vals["taxValue"] * $prcent;
+                        $vals["generalTax"] = $vals["generalTax"] * $prcent;
+                        $vals["roadTax"] = $vals["roadTax"] * $prcent;
+                        $vals["firefightingTax"] = $vals["firefightingTax"] * $prcent;
+                        $vals["educationTax"] = $vals["educationTax"] * $prcent;
+
+
+                        $vals["waterTax"] = $vals["waterTax"] * $prcent;
+                        $vals["cleanlinessTax"] = $vals["cleanlinessTax"] * $prcent;
+                        $vals["sewerageTax"] = $vals["sewerageTax"] * $prcent;
+                        $vals["treeTax"] = $vals["treeTax"] * $prcent;
+                        $vals["openPloatTax"] = $vals["openPloatTax"] * $prcent;
+                        $vals["stateEducationTax"] = $vals["stateEducationTax"] * $prcent;
+                        $vals["professionalTax"] = $vals["professionalTax"] * $prcent;
+                    }
+                    return $vals;
+                });
+            }
+            // dd($this->_LESS_PERSENTAGE_APPLY_WARD_IDS,$this->_floorsTaxes,$annualTaxes,$this->_calculationDateFrom,$currentFyearEndDate,$this->_REQUEST->all(),$this->_REQUEST["propertyType"]);
             $fyear = getFY($this->_calculationDateFrom);
             if(!$annualTaxes->isEmpty())
             {

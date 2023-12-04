@@ -952,6 +952,11 @@ class ActiveSafController extends Controller
             DB::connection('pgsql_master')->beginTransaction();
             if ($request->action == 'forward') {
                 $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id);
+                if($saf->doc_upload_status==0 && $senderRoleId == $wfLevels['BO'])
+                {
+                    $docUploadStatus = (new SafDocController())->checkFullDocUpload($saf->id);
+                    $saf->doc_upload_status = $docUploadStatus ? 1 : $saf->doc_upload_status;
+                }
                 $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $userId);          // Check Post Next level condition
 
                 $geotagExist = $saf->is_field_verified == true;

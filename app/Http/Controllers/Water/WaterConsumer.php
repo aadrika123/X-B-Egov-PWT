@@ -2366,8 +2366,9 @@ class WaterConsumer extends Controller
             throw new Exception($e->getMessage());
         }
     }
-     /**
+    /**
      * update consumer details
+        | Clear the concept of meter reding then save the meter reading
      */
     public function updateConsumerDemands(Request $request)
     {
@@ -2375,8 +2376,11 @@ class WaterConsumer extends Controller
             $request->all(),
             [
                 'consumerId'        => 'required|integer',
-                'consumerNo'        => 'nullable|',
-                'amount'            => 'nullable'
+                'demandId'          => 'required|',
+                'amount'            => 'required|min:1',
+                'meterNo'           => 'nullable',
+                'meterReading'      => 'nullable',
+                'document'          => 'required|mimes:pdf,jpg,jpeg,png|',
             ]
         );
         if ($validated->fails())
@@ -2388,31 +2392,88 @@ class WaterConsumer extends Controller
             $userId         = $user->id;
             $usertype       = $user->user_type;
             $consumerId     = $request->consumerId;
-            $consumerNo     = $request->consumerNo;
+            $demandId       = $request->demandId;
+            $fullPaid       = false;
+            $advanceAmount  = 0;                                                                        // Static
 
-            $mWaterConsumerDemands       = new WaterConsumerDemand();
-            $mWaterConsumerDemandRecords = new WaterConsumerDemandRecord();
-            $mWaterSecondConsumer        = new WaterSecondConsumer();
-            $consumerDtls=$mWaterConsumerDemands->consumerDemandId($consumerId,)->first();
-            if (!$consumerDtls) {
+            $mWaterConsumerDemand       = new WaterConsumerDemand();
+            $mWaterConsumerMeter        = new WaterConsumerMeter();
+            $mWaterSecondConsumer       = new WaterSecondConsumer();
+            $mWaterConsumerInitialMeter = new WaterConsumerInitialMeter();
+            $docUpload                  = new DocUpload;
+
+            # Check the params for demand updation
+            $consumerDetaills = $mWaterSecondConsumer->getConsumerDetails($consumerId)->first();
+            if (!$consumerDetaills) {
+                throw new Exception('Consumer details not found');
+            }
+            $demandDetails = $mWaterConsumerDemand->consumerDemandId($demandId)->first();
+            if (!$demandDetails) {
                 throw new Exception("consumer details not found!");
             }
-            $consumerDetaills=$mWaterSecondConsumer->getconsuerByConsumerNo($consumerNo);
-            if(!$consumerDetaills){
-                throw new Exception ('Consumer details not found');
-            }
-            $amount=$consumerDtls->amount;
 
             $this->begin();
-    
-            $mWaterConsumerDemandRecords->editConsumerOwnerDtls($request, $userId);
+            $approvedWaterOwners = $demandDetails->replicate();
+            $approvedWaterOwners->setTable('water_consumer_demand_records');
+
+            # Callculation details 
+            $dueAmount = $request->amount;
+            $balanceAmount = $request->amount;
+            if ($demandDetails->due_balance_amount && $demandDetails->due_balance_amount < $request->amount) {
+                if ($demandDetails->paid_status == 1 && $demandDetails->is_full_paid == false) {
+                    $dueAmount = ($request->amount - $demandDetails->due_balance_amount) ?? 0;
+                }
+            }
+            if ($dueAmount < 0) {
+                $advanceAmount  = abs($dueAmount);
+                $dueAmount      = 0;
+                $fullPaid       = true;
+            }
+
+            $updateReq = [
+                "due_balance_amount"    => $dueAmount,
+                "is_full_paid"          => $fullPaid,
+                "balance_amount"        => $balanceAmount
+            ];
+            $mWaterConsumerDemand->updateDemand($updateReq, $demandId);
+
+            if ($request->meterNo) {
+                $meterReq = [
+                    "meter_no" => $request->meterNo
+                ];
+                $mWaterConsumerMeter->updateMeterDetails($consumerId, $meterReq);
+            }
+
+            # Save Document 
+            if (isset($_FILES['document'])) {
+                $relativePath = "Uploads/Water/DemandUpdation";
+                $refImageName = "DemandUpdation";
+                $refImageName = $request->consumerId . '-' . str_replace(' ', '_', $refImageName);
+                $document     = $request->document;
+                $imageName    = $docUpload->upload($refImageName, $document, $relativePath);
+            }
+
+            # Save the consumer replicate details 
+            $approvedWaterOwners->emp_dtl_id        = $userId;
+            $approvedWaterOwners->user_type         = $usertype;
+            $approvedWaterOwners->reltive_path      = $relativePath;
+            $approvedWaterOwners->documet           = $imageName;
+            $approvedWaterOwners->advance_amount    = $advanceAmount;
+            $approvedWaterOwners->new_amount        = $request->amount;
+            $approvedWaterOwners->new_reading       = $request->meterReading;
+            $approvedWaterOwners->save();
+
+            # Save Details in advance table
+            $initialReq = [
+                "initial_reading" => $request->meterReading,
+            ];
+            $mWaterConsumerInitialMeter->updateInitialMeter($consumerId, $initialReq);
+
             $this->commit();
-            return responseMsgs(true, "update consumer details succesfull!", "", "", "01", ".ms", "POST", $request->deviceId);
+            return responseMsgs(true, "Update Consumer Demand Succesfull!", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             $this->rollback();
             return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
         }
     }
-
-
 }

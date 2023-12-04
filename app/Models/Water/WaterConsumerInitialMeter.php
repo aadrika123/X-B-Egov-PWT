@@ -9,6 +9,7 @@ class WaterConsumerInitialMeter extends Model
 {
     use HasFactory;
     protected $connection = 'pgsql_water';
+    protected $guarded = [];
 
     /**
      * | Get the Meter Reading and the meter details by consumer no
@@ -69,5 +70,16 @@ class WaterConsumerInitialMeter extends Model
             ->orderByDesc('id')
             ->limit(2)
             ->get();
+    }
+
+    /**
+     * | Update consumer initial meter details 
+     */
+    public function updateInitialMeter($consumerId, $updateDetails)
+    {
+        WaterConsumerInitialMeter::where('consumer_id', $consumerId)
+            ->orderByDesc('id')
+            ->first()
+            ->update($updateDetails);
     }
 }

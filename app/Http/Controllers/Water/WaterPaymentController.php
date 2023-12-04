@@ -1901,12 +1901,12 @@ class WaterPaymentController extends Controller
 
             $myRequest = new Request([
                 'amount'        => round($request->amount),
-                // 'amount'        => 1,                                                                   // ❗❗ Changes
-                'workflowId'    => 0,                                                                   // Static
+                // 'amount'        => 1,                                                                                           // ❗❗ Changes
+                'workflowId'    => 0,                                                                                           // Static
                 'id'            => $request->consumerId,
                 'moduleId'      => $waterModuleId,
                 'ulbId'         => $refDetails['consumer']['ulb_id'],
-                'callbackUrl'   => "https://modernulb.com/water/waterViewPaymentHistory/" . $request->consumerId,
+                'callbackUrl'   => "https://modernulb.com/water/payment-waterstatus/" . $request->consumerId,                   // Static
                 'auth'          => $refUser
             ]);
 
@@ -1987,7 +1987,6 @@ class WaterPaymentController extends Controller
 
             # model assigning
             $mWaterTran                 = new WaterTran();
-            $mWaterTranDetail           = new WaterTranDetail();
             $mWaterConsumerDemand       = new WaterConsumerDemand();
             $mWaterIciciResponse        = new WaterIciciResponse();
             $mWaterConsumerCollection   = new WaterConsumerCollection();
@@ -2087,7 +2086,7 @@ class WaterPaymentController extends Controller
                     $mWaterConsumerCollection->saveConsumerCollection($demand, $transactionId, $refUserId, null);
                 }
             }
-            // $this->commit();
+            $this->commit();
             $res['transactionId'] = $transactionId['id'];
             return responseMsg(true, "", $res);
         } catch (Exception $e) {
@@ -2817,7 +2816,7 @@ class WaterPaymentController extends Controller
                 $docUpload = new DocUpload;
                 $mWaterPartPaymentDocument = new WaterPartPaymentDocument();
                 $relativePath = "Uploads/Water/Partpayment";
-                $refImageName = "Partpayment";
+                $refImageName = "Partpayment-". time();
                 $refImageName = $request->consumerId . '-' . str_replace(' ', '_', $refImageName);
                 $document     = $request->document;
 
