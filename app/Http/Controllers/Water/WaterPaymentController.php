@@ -1987,7 +1987,6 @@ class WaterPaymentController extends Controller
 
             # model assigning
             $mWaterTran                 = new WaterTran();
-            $mWaterTranDetail           = new WaterTranDetail();
             $mWaterConsumerDemand       = new WaterConsumerDemand();
             $mWaterIciciResponse        = new WaterIciciResponse();
             $mWaterConsumerCollection   = new WaterConsumerCollection();

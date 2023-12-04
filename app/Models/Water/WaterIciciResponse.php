@@ -15,5 +15,12 @@ class WaterIciciResponse extends Model
      */
     public function savePaymentResponse($iciciPayRequest, $webhookData)
     {
+        $jasonRequest = json_encode($iciciPayRequest);
+        $jasonWebhook = json_encode($webhookData);
+        $mWaterIciciResponse = new WaterIciciResponse();
+        $mWaterIciciResponse->request_id = $webhookData['reqRefNo'];
+        $mWaterIciciResponse->jason_first = $jasonRequest;
+        $mWaterIciciResponse->jason_second = $jasonWebhook;
+        $mWaterIciciResponse->save();
     }
 }
