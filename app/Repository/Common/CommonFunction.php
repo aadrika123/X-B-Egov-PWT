@@ -308,4 +308,19 @@ class CommonFunction implements ICommonFunction
         }
         return true;
     }
+
+    public function getReactionActionTakenRole($user_id, int $ulb_id, int $work_flow_id,$action="doc_verify")
+    {
+        $roles = ((collect($this->getWorkFlowRoles($user_id, $ulb_id, $work_flow_id))->sortBy("serial_no"))->values());
+        switch($action)
+        {
+            case "doc_verify": $roles = $roles->where("can_verify_document",true);
+                                break;
+            case "doc_upload": $roles = $roles->where("can_upload_document",true);
+                                break;
+            case "can_edit": $roles = $roles->where("can_edit",true);
+                                break;
+        }
+        return($roles);
+    }
 }
