@@ -1560,4 +1560,78 @@ class PropertyController extends Controller
             return responseMsgs(false, $e->getMessage(), "");
         }
     }
+
+    /**
+     * =====================📝 update Worng Tax Generated Of Vacand Land 📝==========================
+     * ||                       created By : sandeep Bara
+     * ||                       Date       : 05-12-2023
+     * ||                       purpus     : Worng Demand Genrated Of Open Land in Ward id (10,11,2,3,16,17,18,28,29,49,39,40,41)
+     * ||
+     * ||==============================================================================================
+     */
+    public function TaxCorrection(Request $request)
+    {
+        try{
+            $sql = "
+            select prop_safs.id,prop_safs.saf_no,
+                prop_properties.id as prop_id,
+                prop_properties.holding_no
+            from prop_safs
+            join prop_properties on prop_properties.saf_id = prop_safs.id
+            left join (
+                select distinct property_id
+                from tax_currectins
+                where status =1
+            )tax_currectins on tax_currectins.property_id = prop_properties.id
+            where workflow_id in(1,2,3)
+                and tax_currectins.property_id is null
+            and prop_properties.prop_type_mstr_id = 4
+            and prop_properties.ward_mstr_id in(10,11,2,3,16,17,18,28,29,49,39,40,41)
+            limit 2;
+            ";
+            $property = DB::select($sql);
+            $new = new Request();
+            $new->merge($request->all());
+            $controller = App::makeWith(ActiveSafController::class,["iSafRepository",iSafRepository::class]);
+            foreach($property as $val)
+            {
+                DB::beginTransaction();
+                $safDtls = PropSaf::find($val->id);
+                $calculateSafTaxById = new \App\BLL\Property\Akola\CalculateSafTaxById($safDtls);
+                $demand = $calculateSafTaxById->_GRID;                
+                foreach($demand["fyearWiseTaxes"] as $cdemand)
+                {
+                    $oldDemands = PropDemand::where("fyear",$cdemand["fyear"])
+                                ->where("property_id",$val->prop_id)
+                                ->where("paid_status",0)
+                                ->first();
+                    $insertSql = "insert into tax_currectins( property_id, demand_id, logs, user_id)
+                        values(".
+                            $val->prop_id.",".
+                            ($oldDemands->id??'null').",".
+                            "'".json_encode($oldDemands??'null')."',".
+                            (Auth()->user()->id??0)
+                        .") ";
+                    DB::select($insertSql);
+                    if($oldDemands)
+                    {
+                        $oldDemands->tree_tax = $cdemand["treeTax"];
+                        $oldDemands->total_tax = $cdemand["totalTax"];
+                        $oldDemands->balance = $cdemand["totalTax"];
+                        $oldDemands->sp_education_tax = $cdemand["stateEducationTax"];
+                        $oldDemands->open_ploat_tax = $cdemand["openPloatTax"];
+                        $oldDemands->due_open_ploat_tax = $cdemand["openPloatTax"];
+                        $oldDemands->save();
+                    }
+                    // dd($demand["fyearWiseTaxes"],$oldDemands,$insertSql,$cdemand,$val);
+                }
+                DB::commit();
+            }
+        }
+        catch(Exception $e)
+        {
+            DB::rollback();
+            return responseMsgs(false, [$e->getMessage(),$e->getFile(),$e->getLine()], "");
+        }
+    }
 }

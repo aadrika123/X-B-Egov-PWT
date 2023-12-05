@@ -961,7 +961,7 @@ class ActiveSafController extends Controller
 
                 $geotagExist = $saf->is_field_verified == true;
 
-                if ($geotagExist && $saf->current_role == $wfLevels['DA'])
+                if (!$geotagExist && $saf->current_role == $wfLevels['DA'])
                     $forwardBackwardIds->forward_role_id = $wfLevels['UTC'];
 
                 if ($saf->is_bt_da == true) {

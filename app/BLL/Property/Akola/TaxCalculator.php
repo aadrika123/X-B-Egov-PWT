@@ -465,8 +465,8 @@ class TaxCalculator
                         $vals["sewerageTax"] = $vals["sewerageTax"] * $prcent;
                         $vals["treeTax"] = $vals["treeTax"] * $prcent;
                         $vals["openPloatTax"] = $vals["openPloatTax"] * $prcent;
-                        $vals["stateEducationTax"] = $vals["stateEducationTax"] * $prcent;
-                        $vals["professionalTax"] = $vals["professionalTax"] * $prcent;
+                        // $vals["stateEducationTax"] = $vals["stateEducationTax"] * $prcent;
+                        // $vals["professionalTax"] = $vals["professionalTax"] * $prcent;
                     }
                     return $vals;
                 });

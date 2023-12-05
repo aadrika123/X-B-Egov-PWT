@@ -64,9 +64,9 @@ if (!function_exists('SMSJHGOVT')) {
 if (!function_exists('send_sms')) {
     function send_sms($mobile, $message, $templateid)
     {
-        $res = SMSAKGOVT("6206998554", $message, $templateid);
-        print_var($message);
-        $res = SMSJHGOVT($mobile, $message, $templateid);
+        $res = SMSAKGOVT("7050180186", $message, $templateid);
+        // print_var($message);
+        // $res = SMSJHGOVT($mobile, $message, $templateid);
         return $res;
     }
 }
@@ -635,7 +635,7 @@ if (!function_exists('SMSAKGOVT')) {
             foreach ($data as $key => $value) {
                 $fields .= $key . '=' . ($value) . '&';
             }
-            $url = $url . (rtrim($fields, '&'));
+            $url = $url . (rtrim($fields, '&'));dd($url);
             $result = Http::post($url);
             $responseBody = json_decode($result->getBody(), true);
             if (isset($responseBody["Status"]) && strtoupper($responseBody["Status"]) == 'OK') {
