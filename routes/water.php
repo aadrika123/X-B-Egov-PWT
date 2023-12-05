@@ -205,6 +205,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('receipt/bulk-receipt', 'bulkReceipt');
         Route::post('report/date-wise-collection','dateCollectuionReport');
         Route::post('report/tc-collection-report','tcCollectionReport');
+        Route::post('report/tc-visit-records','tcvisitRecords');
     });
 
 
