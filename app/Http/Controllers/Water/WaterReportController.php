@@ -3237,7 +3237,8 @@ class WaterReportController extends Controller
               subquery.transactiondate,
               subquery.user_name,
               subquery.payment_type,
-              subquery.paymentstatus
+              subquery.paymentstatus,
+              subquery.applicant_name
               
      FROM (
          SELECT 
@@ -3255,12 +3256,13 @@ class WaterReportController extends Controller
                 users.user_name,
                 users.name,
                 water_trans.payment_type,
-                water_trans.payment_mode AS paymentstatus
+                water_trans.payment_mode AS paymentstatus,
+                water_consumer_owners.applicant_name 
           
         FROM water_trans 
         LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id=water_trans.ward_id
         LEFT JOIN water_second_consumers ON water_second_consumers.id=water_trans.related_id
-        left JOIN water_consumer_owners ON water_consumer_owners.consumer_id=water_trans.id
+        left JOIN water_consumer_owners ON water_consumer_owners.consumer_id=water_trans.related_id
         left JOIN water_consumer_demands ON water_consumer_demands.consumer_id=water_trans.related_id
         left Join zone_masters on zone_masters.id= water_second_consumers.zone_mstr_id
         LEFT JOIN users ON users.id=water_trans.emp_dtl_id
@@ -3271,6 +3273,7 @@ class WaterReportController extends Controller
                     " . ($zoneId ? " AND  water_second_consumers.zone_mstr_id = $zoneId" : "") . "
                     " . ($wardId ? " AND water_second_consumers.ward_mstr_id = $wardId" : "") . "
                     " . ($userId ? " AND water_trans.emp_dtl_id = $userId" : "") . "
+                    " . ($paymentMode ? " AND water_trans.payment_mode = '$paymentMode'" : "") . "
             AND water_consumer_demands.paid_status=1
         GROUP BY 
                 water_trans.id,
@@ -3279,7 +3282,9 @@ class WaterReportController extends Controller
                     zone_masters.zone_name,
                     water_second_consumers.address,
                     users.user_name,
-                    users.name
+                    users.name,
+                    water_consumer_owners.applicant_name,
+                    water_trans.payment_type
      ) AS subquery");
             $data = DB::connection('pgsql_water')->select(DB::raw($data));
             $refData = collect($data);

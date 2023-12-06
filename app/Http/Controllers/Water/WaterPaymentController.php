@@ -1661,6 +1661,7 @@ class WaterPaymentController extends Controller
         }
 
         try {
+            $chequeStatus           = null;
             $refTranId              = $req->tranId;
             $refTransactionNo       = $req->transactionNo;
             $mWaterConsumerDemand   = new WaterConsumerDemand();
@@ -1693,7 +1694,7 @@ class WaterPaymentController extends Controller
             if (!in_array($transactionDetails['payment_mode'], [$mPaymentModes['1'], $mPaymentModes['5']])) {
                 $chequeDetails = $mWaterChequeDtl->getChequeDtlsByTransId($transactionDetails['id'])->first();
                 if ($chequeDetails->status == 2) {
-                    $returnValues['chequeStatus'] = 'provisional Receipt';
+                    $chequeStatus= 'Note:This is Your Provisional Receipt';
                 }
             }
             # Application Deatils
@@ -1807,7 +1808,8 @@ class WaterPaymentController extends Controller
                 "lastMeterReading"      => $lastDemand ?? null,
                 "currentMeterReading"   => $currentDemand ?? null,
                 "paidAmtInWords"        => getIndianCurrency($transactionDetails->amount),
-                "arshad"                => 'testing for sms for akola '
+                "chequeStatus"          => $chequeStatus
+                // "arshad"                => 'testing for sms for akola '
             ];
             # sending pdf of demand rerceipt via whatsapp
             // $this->whatsAppSend($returnValues);
