@@ -3300,7 +3300,7 @@ class WaterReportController extends Controller
     }
 
     /**
-     * tc visit report
+     * tc visit report for demand generation 
      */
     public function tcvisitRecords(colllectionReport $request)
     {
@@ -3371,63 +3371,78 @@ class WaterReportController extends Controller
             }
 
             // DB::enableQueryLog();
-            $data = ("SELECT 
-                subquery.user_name,
-                subquery.applicant_name AS ownername,
-                subquery.due_balance_amount,
-                subquery.consumer_no,
-                subquery.total_records,
-                subquery.consumer_id,
-                subquery.address,
-                subquery.mobile_no,
-                subquery.zone_name,
-                subquery.ward_no,
-                subquery.initial_reading,
-                subquery.arrear_demand
-            FROM (
-                SELECT DISTINCT
-                    sum(case when water_consumer_demands.generation_date <='$previousUptoDate' THEN water_consumer_demands.due_balance_amount else 0 end) as arrear_demand ,
-                    SUM(water_consumer_demands.due_balance_amount) AS due_balance_amount,
-                    COUNT(water_consumer_demands.emp_details_id) AS total_records,
-                    users.user_name,
-                    water_consumer_owners.applicant_name,
-                    water_second_consumers.consumer_no,
-                    water_consumer_demands.consumer_id,
-                    water_second_consumers.address,
-                    water_second_consumers.mobile_no,
-                    ulb_ward_masters.ward_name AS ward_no,
-                    zone_masters.zone_name,
-                    water_consumer_initial_meters.initial_reading
-                FROM water_consumer_demands 
-                JOIN water_consumer_owners ON water_consumer_owners.consumer_id = water_consumer_demands.consumer_id
-                JOIN users ON users.id = water_consumer_demands.emp_details_id
-                JOIN water_second_consumers ON water_second_consumers.id = water_consumer_demands.consumer_id
-                left JOIN zone_masters ON zone_masters.id=water_second_consumers.zone_mstr_id
-                left JOIN ulb_ward_masters ON ulb_ward_masters.id=water_second_consumers.ward_mstr_id
-                LEFT JOIN water_consumer_initial_meters ON water_consumer_initial_meters.consumer_id=water_consumer_demands.consumer_id
-                WHERE 
-                    water_consumer_demands.generation_date between '$fromDate' and '$uptoDate'
-                    " . ($zoneId ? " AND  water_second_consumers.zone_mstr_id = $zoneId" : "") . "
-                    " . ($wardId ? " AND water_second_consumers.ward_mstr_id = $wardId" : "") . "
-                    " . ($userId ? " AND water_consumer_demands.emp_details_id = $userId" : "") . "
-                    AND water_consumer_demands.status = 'true'
-                GROUP BY
-                    water_consumer_demands.emp_details_id, 
-                    users.user_name,
-                    water_consumer_owners.applicant_name,
-                    water_second_consumers.consumer_no,
-                    water_consumer_demands.consumer_id,
-                    water_second_consumers.address,
-                    water_second_consumers.mobile_no,
-                    zone_masters.zone_name,
-                    ulb_ward_masters.ward_name,
-                    water_consumer_initial_meters.initial_reading
-            ) AS subquery");
-
-
+            $data = ("select 
+            final_data.*,readings.initial_reading,readings.final_reading,
+            (COALESCE(readings.final_reading,0) - COALESCE(readings.initial_reading,0)) as consumpsun_unit
+            from (
+                SELECT 
+                    subquery.user_name,
+                    subquery.applicant_name AS ownername,
+                    subquery.due_balance_amount,
+                    subquery.consumer_no,
+                    subquery.total_records,
+                    subquery.consumer_id,
+                    subquery.address,
+                    subquery.mobile_no,
+                    subquery.zone_name,
+                    subquery.ward_no,
+                    demand_from,demand_upto,
+                    current_demand,
+                    arrear_demands,
+                    (COALESCE(current_demand,0) - COALESCE(arrear_demands,0)) as total_demands
+                FROM (
+                        SELECT DISTINCT
+                        sum(case when water_consumer_demands.generation_date>='$previousUptoDate' then water_consumer_demands.due_balance_amount else 0 end) as current_demand,
+                        sum (case when water_consumer_demands.generation_date<='$previousUptoDate' then water_consumer_demands.due_balance_amount else 0 end ) as arrear_demands,
+                        SUM(water_consumer_demands.due_balance_amount) AS due_balance_amount,
+                        min(demand_from) as demand_from, max(demand_upto)as demand_upto,
+                        COUNT(water_consumer_demands.emp_details_id) AS total_records,
+                        users.user_name,
+                        water_consumer_owners.applicant_name,
+                        water_second_consumers.consumer_no,
+                        water_consumer_demands.consumer_id,
+                        water_second_consumers.address,
+                        water_second_consumers.mobile_no,
+                        ulb_ward_masters.ward_name AS ward_no,
+                        zone_masters.zone_name
+                    FROM water_consumer_demands 
+                    JOIN water_consumer_owners ON water_consumer_owners.consumer_id = water_consumer_demands.consumer_id
+                    JOIN users ON users.id = water_consumer_demands.emp_details_id
+                    JOIN water_second_consumers ON water_second_consumers.id = water_consumer_demands.consumer_id
+                    left JOIN zone_masters ON zone_masters.id=water_second_consumers.zone_mstr_id
+                    left JOIN ulb_ward_masters ON ulb_ward_masters.id=water_second_consumers.ward_mstr_id
+                    WHERE 
+                         water_consumer_demands.generation_date between '$fromDate' and '$uptoDate'
+                        " . ($zoneId ? " AND  water_second_consumers.zone_mstr_id = $zoneId" : "") . "
+                        " . ($wardId ? " AND water_second_consumers.ward_mstr_id = $wardId" : "") . "
+                        " . ($userId ? " AND water_consumer_demands.emp_details_id = $userId" : "") . "
+                        AND water_consumer_demands.status = 'true' 
+                    GROUP BY water_consumer_demands.consumer_id,
+                        water_consumer_demands.emp_details_id, 
+                        users.user_name,
+                        water_consumer_owners.applicant_name,
+                        water_second_consumers.consumer_no,
+                        water_consumer_demands.consumer_id,
+                        water_second_consumers.address,
+                        water_second_consumers.mobile_no,
+                        zone_masters.zone_name,
+                        ulb_ward_masters.ward_name
+                    ) AS subquery
+                ) final_data
+                left join (
+                    select water_consumer_demands.consumer_id,
+                        min(initial_reading) as initial_reading ,
+                        max(final_reading) as final_reading	
+                    from water_consumer_taxes 
+                    join water_consumer_demands on water_consumer_demands.consumer_tax_id = water_consumer_taxes.id
+                    WHERE 
+                        water_consumer_demands.emp_details_id = $userId
+                        AND water_consumer_demands.generation_date between '$fromDate' and '$uptoDate'
+                        AND water_consumer_demands.status = 'true'
+                group by water_consumer_demands.consumer_id
+            )readings on readings.consumer_id = final_data.consumer_id");
             $data = DB::connection('pgsql_water')->select(DB::raw($data));
             $refData = collect($data);
-
             $refDetailsV2 = [
                 "array" => $data,
                 "sum_current_coll" => $refData->pluck('current_collections')->sum(),
