@@ -87,6 +87,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use App\MicroServices\IdGenerator\HoldingNoGenerator;
 use App\Models\Property\RefPropCategory;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 
 class ActiveSafController extends Controller
@@ -1391,10 +1392,13 @@ class ActiveSafController extends Controller
                 'receiverRoleId' => $senderRoleId
             ];
             $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
-            $previousWorkflowTrack->update([
-                'forward_date' => $this->_todayDate->format('Y-m-d'),
-                'forward_time' => $this->_todayDate->format('H:i:s')
-            ]);
+            if($previousWorkflowTrack){
+                $previousWorkflowTrack->update([
+                    'forward_date' => $this->_todayDate->format('Y-m-d'),
+                    'forward_time' => $this->_todayDate->format('H:i:s')
+                ]);
+
+            }
 
             $responseFields = [
                 'holdingNo' => $holdingNo,
@@ -2745,6 +2749,97 @@ class ActiveSafController extends Controller
             DB::commit();
             return responseMsgs(true, "Geo Tagging Done Successfully", "", "010119", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * ======================upload the Naksha===================
+     * ||                   created By : sandeep Bara
+     * ||                   Date       : 06-12-2023
+     * ||                   
+     */
+    public function uploadNaksha(Request $req)
+    {
+        try{            
+            $extention = ($req->document)instanceof UploadedFile ? $req->document->getClientOriginalExtension():"";
+            $rules=[
+                "applicationId" => "required|numeric",
+                "document" => "required|mimes:pdf,jpeg,png,jpg".(strtolower($extention) == 'pdf' ? 'max:10240' : 'max:1024'),
+                
+            ];
+            $validated = Validator::make(
+                $req->all(),
+                $rules
+            );
+            if ($validated->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $validated->errors()
+                ]);
+            }
+            $req->merge([
+                "directionType"=>"naksha",
+                "safId"=>$req->applicationId,
+                "imagePath"=>$req->document,
+            ]);
+
+            $docUpload = new DocUpload;
+            $geoTagging = new PropSafGeotagUpload();
+            $relativePath = Config::get('PropertyConstaint.GEOTAGGING_RELATIVE_PATH');
+            $safDtls = PropActiveSaf::find($req->safId);
+            if(!$safDtls)
+            {
+                $safDtls = PropSaf::find($req->safId);
+            }
+            if(!$safDtls)
+            {
+                throw new Exception("Data Not Found");
+            }
+            
+            $images = $req->imagePath;
+            $directionTypes = $req->directionType;
+            $longitude = $req->longitude;
+            $latitude = $req->latitude;
+
+            $user = Auth()->user();
+            $userId = $user->id??0;
+            $req->merge(["applicationId" => $safDtls->id, "action" => "forward", "receiverRoleId" => $workflowIds[0]["forward_role_id"] ?? "", "comment" => $req->comment ?? "Geo Taging Done"]);
+
+            $refImageName = 'saf-geotagging-' . $directionTypes . '-' . $req->safId;
+            $docExistReqs = new Request([
+                'safId' => $req->safId,
+                'directionType' => $directionTypes
+            ]);
+            $imageName = $docUpload->upload($refImageName, $images, $relativePath);         // <------- Get uploaded image name and move the image in folder
+            $isDocExist = $geoTagging->getGeoTagBySafIdDirectionType($docExistReqs);
+
+            $docReqs = [
+                'saf_id' => $req->safId,
+                'image_path' => $imageName,
+                'direction_type' => $directionTypes,
+                'longitude' => $longitude,
+                'latitude' => $latitude,
+                'relative_path' => $relativePath,
+                'user_id' => $userId
+            ];
+            DB::beginTransaction();
+            $sms = "Naksha Uploaded Successfully";
+            if ($isDocExist){
+                $sms =  "Naksha Update Successfully";
+                $geoTagging->edit($isDocExist, $docReqs);
+            }
+            else
+            {
+                $geoTagging->store($docReqs);
+            }
+            DB::commit();
+            return responseMsgs(true, $sms, "", "010119.1", "1.0", responseTime(), "POST", $req->deviceId);
+        }
+        catch(Exception $e)
+        {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
