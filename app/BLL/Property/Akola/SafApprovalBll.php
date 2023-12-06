@@ -193,14 +193,14 @@ class SafApprovalBll
         $calculatedTaxes = $this->_calculateTaxByUlb->_GRID;
         $firstDemand = $calculatedTaxes['fyearWiseTaxes']->first();
         // Fam No Generation
-        $famFyear = $firstDemand['fyear'];
+        $famFyear = $firstDemand['fyear']??getFY();
         $famNo = $propIdGenerator->generateMemoNo("FAM", $this->_activeSaf->ward_mstr_id, $famFyear);
         $this->_famNo = $famNo;
         $memoReq = [
             "saf_id" => $this->_activeSaf->id,
             "from_fyear" => $famFyear,
-            "alv" => $firstDemand['alv'],
-            "annual_tax" => $firstDemand['totalTax'],
+            "alv" => $firstDemand['alv']??($calculatedTaxes[0]["floorsTaxes"]["alv"]??0),
+            "annual_tax" => $firstDemand['totalTax']??($calculatedTaxes["grandTaxes"]["totalTax"]??0),
             "user_id" => auth()->user()->id,
             "memo_no" => $famNo,
             "memo_type" => "FAM",

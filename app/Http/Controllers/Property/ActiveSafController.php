@@ -1392,10 +1392,13 @@ class ActiveSafController extends Controller
                 'receiverRoleId' => $senderRoleId
             ];
             $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
-            $previousWorkflowTrack->update([
-                'forward_date' => $this->_todayDate->format('Y-m-d'),
-                'forward_time' => $this->_todayDate->format('H:i:s')
-            ]);
+            if($previousWorkflowTrack){
+                $previousWorkflowTrack->update([
+                    'forward_date' => $this->_todayDate->format('Y-m-d'),
+                    'forward_time' => $this->_todayDate->format('H:i:s')
+                ]);
+
+            }
 
             $responseFields = [
                 'holdingNo' => $holdingNo,

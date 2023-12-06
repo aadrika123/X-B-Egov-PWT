@@ -88,8 +88,10 @@ class TaxCalculator
             $mPropOwners = new PropOwner();
             $priProperty = PropProperty::find($this->_REQUEST->previousHoldingId);
             // $floors = $mPropFloors->getPropFloors($priProperty->id);
-            $unPaidDemand = $priProperty->PropDueDemands()->get();
-            $this->_oldUnpayedAmount = collect($unPaidDemand)->sum("due_total_tax")??0;
+            if($priProperty){
+                $unPaidDemand = $priProperty->PropDueDemands()->get();
+                $this->_oldUnpayedAmount = collect($unPaidDemand)->sum("due_total_tax")??0;
+            }
             if($this->_oldUnpayedAmount>0)
             {
                 // throw new Exception("Old Demand Not Cleard");

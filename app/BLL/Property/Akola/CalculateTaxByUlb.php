@@ -69,6 +69,7 @@ class CalculateTaxByUlb extends TaxCalculator
             "areaOfPlot" => $this->_propVerifications->area_of_plot,
             "category" => $this->_propVerifications->category_id,
             "dateOfPurchase" => $this->_safs->land_occupation_date,
+            "previousHoldingId" => $this->_safs->previous_holding_id??0,
             "applyDate" => $this->_safs->application_date??null,
             "assessmentType" =>(flipConstants(Config::get("PropertyConstaint.ASSESSMENT-TYPE"))[$this->_safs->assessment_type]??''),
             "floor" => [],
