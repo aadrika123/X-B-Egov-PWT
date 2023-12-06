@@ -1693,7 +1693,7 @@ class WaterPaymentController extends Controller
             if (!in_array($transactionDetails['payment_mode'], [$mPaymentModes['1'], $mPaymentModes['5']])) {
                 $chequeDetails = $mWaterChequeDtl->getChequeDtlsByTransId($transactionDetails['id'])->first();
                 if ($chequeDetails->status == 2) {
-                    $returnValues['chequeStatus'] = 'Provitinal Receipt';
+                    $returnValues['chequeStatus'] = 'provisional Receipt';
                 }
             }
             # Application Deatils
@@ -1812,16 +1812,16 @@ class WaterPaymentController extends Controller
             # sending pdf of demand rerceipt via whatsapp
             // $this->whatsAppSend($returnValues);
             # send notification 
-            $sms = AkolaProperty(
-                [
-                    "owner_name" => $returnValues['arshad'],
-                    "saf_no" => $returnValues['transactionNo']
-                ],
-                "New Assessment"
-            );
-            if (($sms["status"] !== false)) {
-                $respons = SMSAKGOVT(7319867430, $sms["sms"], $sms["temp_id"]);
-            }
+            // $sms = AkolaProperty(
+            //     [
+            //         "owner_name" => $returnValues['arshad'],
+            //         "saf_no" => $returnValues['transactionNo']
+            //     ],
+            //     "New Assessment"
+            // );
+            // if (($sms["status"] !== false)) {
+            //     $respons = SMSAKGOVT(7319867430, $sms["sms"], $sms["temp_id"]);
+            // }
             # watsapp message   
             // Register_message
             // $whatsapp2 = (Whatsapp_Send(
