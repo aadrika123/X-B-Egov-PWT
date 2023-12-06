@@ -415,13 +415,14 @@ class PropertyController extends Controller
             DB::beginTransaction();
             $updetReq = $rPropProerty->store($req);
             foreach ($req->owner as $val) {
-                $testOwner = $mPropOwners->select("*")->where("id", $val["ownerId"])->where("property_id", $propId)->first();
-                if (!$testOwner && $val["ownerId"]) {
+                $testOwner = $mPropOwners->select("*")->where("id", ($val["ownerId"]??0))->where("property_id", $propId)->first();
+                if (!$testOwner && ($val["ownerId"]??0)) {
                     throw new Exception("Invalid Owner Id Pass");
                 }
                 if(!$testOwner)
                 {
                     $testOwner = new PropOwner ();
+                    $testOwner->property_id = $propId;
                 }
                 $newOwnerArr = $this->generatePropOwnerUpdateRequest($val, $testOwner, true);
                 $newOwnerArr["requestId"] = $updetReq["id"];
@@ -881,7 +882,7 @@ class PropertyController extends Controller
                 foreach ($owneres as $val) {
                     $ownerArr = $this->updatePropOwner($val);
                     if($val->owner_id)
-                    $ownerUpdate = (new PropOwner)->edit($val->owner_id, $ownerArr);
+                        $ownerUpdate = (new PropOwner)->edit($val->owner_id, $ownerArr);
                     else{
                         $ownerArr["property_id"] = $application->prop_id;
                         $ownerArr["saf_id"] = null;

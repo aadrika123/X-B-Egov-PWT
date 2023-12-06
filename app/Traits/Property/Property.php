@@ -723,7 +723,7 @@ trait Property
                     "key"=>"DOB",
                     "values" => ($ownerLog->dob ?? "") == ($val->dob ?? ""),
                     "according_verification" => $val->dob ?Carbon::parse($val->dob)->format("d-m-Y"): null,
-                    "according_application" => $ownerLog->dob ?Carbon::parse($ownerLog->dob)->format("d-m-Y"): null ,
+                    "according_application" => ($ownerLog->dob??false) ?Carbon::parse($ownerLog->dob)->format("d-m-Y"): null ,
                 ],
                 [
                     "key"=>"is armed force",
