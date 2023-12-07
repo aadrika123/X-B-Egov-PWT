@@ -2890,8 +2890,6 @@ class WaterReportController extends Controller
                 water_second_consumers.folio_no,
                 water_second_consumers.ward_mstr_id,
                 zone_masters.zone_name
-
-                limit 10;
         ");
        
             $data = DB::connection('pgsql_water')->select(DB::raw($rawData));
@@ -3234,7 +3232,7 @@ class WaterReportController extends Controller
               subquery.consumer_no,
               subquery.ward_name,
               subquery.zone_name,
-              subquery.total_amount,
+              subquery.amount,
               subquery.address,
               subquery.transactiondate,
               subquery.user_name,
@@ -3249,7 +3247,7 @@ class WaterReportController extends Controller
                 water_trans.tran_date,
                 water_trans.tran_no,
                 water_second_consumers.consumer_no,water_trans.payment_mode,
-                water_trans.amount as total_amount,
+                water_trans.amount,
                 ulb_ward_masters.ward_name,
                 zone_masters.zone_name,
                 water_second_consumers.address,

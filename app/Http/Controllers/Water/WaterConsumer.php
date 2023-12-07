@@ -2381,6 +2381,8 @@ class WaterConsumer extends Controller
                 'meterNo'           => 'nullable',
                 'meterReading'      => 'nullable',
                 'document'          => 'required|mimes:pdf,jpg,jpeg,png|',
+                'demandFrom'        => 'nullable|date',
+                'demandUpto'        => 'nullable|date'
             ]
         );
         if ($validated->fails())
@@ -2393,6 +2395,8 @@ class WaterConsumer extends Controller
             $usertype       = $user->user_type;
             $consumerId     = $request->consumerId;
             $demandId       = $request->demandId;
+            $refdemandFrom  = $request->demandFrom;
+            $refdemandUpto    = $request->demandUpto;
             $fullPaid       = false;
             $advanceAmount  = 0;                                                                        // Static
 
@@ -2433,7 +2437,9 @@ class WaterConsumer extends Controller
             $updateReq = [
                 "due_balance_amount"    => $dueAmount,
                 "is_full_paid"          => $fullPaid,
-                "balance_amount"        => $balanceAmount
+                "balance_amount"        => $balanceAmount,
+                "demand_from"           => $refdemandFrom,
+                "demand_upto"           => $refdemandUpto
             ];
             $mWaterConsumerDemand->updateDemand($updateReq, $demandId);
 

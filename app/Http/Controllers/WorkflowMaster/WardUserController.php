@@ -113,8 +113,8 @@ class WardUserController extends Controller
             'wardId' => 'nullable',
         ]);
         try {
-
-            $user = authUser($req);
+            
+            $user = Auth()->user();
             $userId =  $user->id;
             $ulbId  =  $req->ulbId ?? $user->ulb_id;
             $mWfRoleusermap = new WfRoleusermap();
@@ -133,7 +133,6 @@ class WardUserController extends Controller
                     ->where('wf_role_id', $tc)
                     ->get();
             }
-
             $tcList =  $mWfRoleusermap->getTcList($ulbId)
                 ->whereIn('wf_role_id', $tcIds)
                 ->get();
