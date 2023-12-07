@@ -1548,7 +1548,9 @@ class ActiveSafController extends Controller
             $senderRoleId = $saf->current_role;
 
             if ($saf->doc_verify_status == true)
-                throw new Exception("Verification Done You Cannot Back to Citizen");
+            {
+                // throw new Exception("Verification Done You Cannot Back to Citizen");
+            }
 
             // Check capability for back to citizen
             $getDocReqs = [
