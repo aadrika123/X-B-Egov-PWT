@@ -114,7 +114,7 @@ class WardUserController extends Controller
         ]);
         try {
 
-            $user = authUser();
+            $user = authUser($req);
             $userId =  $user->id;
             $ulbId  =  $req->ulbId ?? $user->ulb_id;
             $mWfRoleusermap = new WfRoleusermap();

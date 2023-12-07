@@ -2890,7 +2890,10 @@ class WaterReportController extends Controller
                 water_second_consumers.folio_no,
                 water_second_consumers.ward_mstr_id,
                 zone_masters.zone_name
+
+                limit 10;
         ");
+       
             $data = DB::connection('pgsql_water')->select(DB::raw($rawData));
 
             $list = [
@@ -3229,7 +3232,6 @@ class WaterReportController extends Controller
               subquery.current_collections,
               COALESCE(subquery.arrear_collections, 0) + COALESCE(subquery.current_collections, 0) AS total_collections,
               subquery.consumer_no,
-              subquery.amount,
               subquery.ward_name,
               subquery.zone_name,
               subquery.total_amount,
@@ -3244,11 +3246,10 @@ class WaterReportController extends Controller
          SELECT 
              SUM(CASE WHEN water_consumer_demands.demand_upto <= '$previousUptoDate' THEN water_trans.amount ELSE 0 END) AS arrear_collections, 
              SUM(CASE WHEN water_consumer_demands.demand_from >=  '$fromDates'   AND water_trans.tran_date <= '$uptoDates' THEN water_trans.amount ELSE 0 END) AS current_collections,
-             SUM (CASE WHEN  water_trans.tran_date between '$fromDate' and '$uptoDate' THEN water_trans.amount ELSE 0 END ) AS total_amount,
                 water_trans.tran_date,
                 water_trans.tran_no,
                 water_second_consumers.consumer_no,water_trans.payment_mode,
-                water_trans.amount,
+                water_trans.amount as total_amount,
                 ulb_ward_masters.ward_name,
                 zone_masters.zone_name,
                 water_second_consumers.address,
@@ -3378,12 +3379,13 @@ class WaterReportController extends Controller
             // DB::enableQueryLog();
             $data = ("select 
             final_data.*,readings.initial_reading,readings.final_reading,
-            (COALESCE(readings.final_reading,0) - COALESCE(readings.initial_reading,0)) as consumpsun_unit
+            (COALESCE(readings.final_reading,0) - COALESCE(readings.initial_reading,0)) as consumpsun_unit,  
+             readings. created_on
             from (
                 SELECT 
                     subquery.user_name,
                     subquery.applicant_name AS ownername,
-                    subquery.due_balance_amount,
+                    ROUND(subquery.due_balance_amount) as due_balance_amount,
                     subquery.consumer_no,
                     subquery.total_records,
                     subquery.consumer_id,
@@ -3392,9 +3394,9 @@ class WaterReportController extends Controller
                     subquery.zone_name,
                     subquery.ward_no,
                     demand_from,demand_upto,
-                    current_demand,
-                    arrear_demands,
-                    (COALESCE(current_demand,0) - COALESCE(arrear_demands,0)) as total_demands
+                    round(current_demand),
+                    round(arrear_demands),
+                    round((COALESCE(current_demand,0) - COALESCE(arrear_demands,0))) as total_demands
                 FROM (
                         SELECT DISTINCT
                         sum(case when water_consumer_demands.generation_date>='$previousUptoDate' then water_consumer_demands.due_balance_amount else 0 end) as current_demand,
@@ -3417,11 +3419,11 @@ class WaterReportController extends Controller
                     left JOIN zone_masters ON zone_masters.id=water_second_consumers.zone_mstr_id
                     left JOIN ulb_ward_masters ON ulb_ward_masters.id=water_second_consumers.ward_mstr_id
                     WHERE 
-                         water_consumer_demands.generation_date between '$fromDate' and '$uptoDate'
-                        " . ($zoneId ? " AND  water_second_consumers.zone_mstr_id = $zoneId" : "") . "
-                        " . ($wardId ? " AND water_second_consumers.ward_mstr_id = $wardId" : "") . "
-                        " . ($userId ? " AND water_consumer_demands.emp_details_id = $userId" : "") . "
-                        AND water_consumer_demands.status = 'true' 
+                    water_consumer_demands.generation_date BETWEEN '$fromDate' AND '$uptoDate'
+                    " . ($zoneId ? " AND water_second_consumers.zone_mstr_id = $zoneId" : "") . "
+                    " . ($wardId ? " AND water_second_consumers.ward_mstr_id = $wardId" : "") . "
+                    " . ($userId ? " AND water_consumer_demands.emp_details_id = $userId" : "") . "
+                    AND water_consumer_demands.status = 'true'                 
                     GROUP BY water_consumer_demands.consumer_id,
                         water_consumer_demands.emp_details_id, 
                         users.user_name,
@@ -3436,15 +3438,17 @@ class WaterReportController extends Controller
                 ) final_data
                 left join (
                     select water_consumer_demands.consumer_id,
+                        created_on,
                         min(initial_reading) as initial_reading ,
                         max(final_reading) as final_reading	
                     from water_consumer_taxes 
                     join water_consumer_demands on water_consumer_demands.consumer_tax_id = water_consumer_taxes.id
                     WHERE 
-                        water_consumer_demands.emp_details_id = $userId
-                        AND water_consumer_demands.generation_date between '$fromDate' and '$uptoDate'
-                        AND water_consumer_demands.status = 'true'
-                group by water_consumer_demands.consumer_id
+                    water_consumer_demands.generation_date BETWEEN '$fromDate' AND '$uptoDate'
+                    " . ($userId ? " AND water_consumer_demands.emp_details_id = $userId" : "") . "
+                    AND water_consumer_demands.status = 'true' 
+                
+                group by water_consumer_demands.consumer_id,created_on
             )readings on readings.consumer_id = final_data.consumer_id");
             $data = DB::connection('pgsql_water')->select(DB::raw($data));
             $refData = collect($data);
