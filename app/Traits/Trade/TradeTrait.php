@@ -295,6 +295,7 @@ trait TradeTrait
         switch ($applicationTypeId) {
             case $flip['NEW LICENSE']:
                 $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PHOTO")->requirements;
+                $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "New_Licences_Owneres")->requirements;
                 break;
             default :  $documentList = collect([]);
         }
