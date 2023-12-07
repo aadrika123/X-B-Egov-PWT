@@ -3723,11 +3723,11 @@ class ActiveSafController extends Controller
      */
     public function proccessFeePayment(ReqPayment $request)
     {
+        $rules = $this->getMutationFeeReqRules($request);
+        $rules["paidAmount"] = 'required|numeric|min:1';
         $validated = Validator::make(
             $request->all(),
-            [
-                'paidAmount' => 'required|numeric|min:1'
-            ]
+            $rules
         );
         if ($validated->fails()) {
             return response()->json([
@@ -3736,20 +3736,28 @@ class ActiveSafController extends Controller
                 'errors' => $validated->errors()
             ]);
         }
-
+        
         try {
             $user = Auth()->user();
             $verifyPaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
             $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
             $verifyStatus = 1;
             $saf = PropActiveSaf::find($request->id);
+            if(!$saf){
+                $saf = PropSaf::find($request->id);
+            }
             if (!$saf) {
                 throw new Exception("Data Not Found");
             }
             if ($saf->proccess_fee_paid) {
                 throw new Exception("Proccessing Fee Already Pay");
             }
-
+            $newSaleValue = $saf->proccess_fee;
+            $proccessFeePayment =$this->getProccessFeePayment($request);
+            if($proccessFeePayment->original["status"]){
+                $newSaleValue = $proccessFeePayment->original["data"]["proccess_fee"];
+            }
+            // dd(json_encode($newSaleValue));
             $proccessFee = $saf->proccess_fee;
             if ($proccessFee != $request->paidAmount) {
                 throw new Exception("Demand Amount And Paied Amount Missmatched");
@@ -3810,6 +3818,71 @@ class ActiveSafController extends Controller
             DB::connection('pgsql_master')->rollBack();
             return responseMsgs(false, $e->getMessage(), "", "011604", "1.0", "", "POST", $request->deviceId ?? "");
         }
+    }
+
+    public function getProccessFeePayment(Request $request)
+    {
+        try{
+            $rules = $this->getMutationFeeReqRules($request);
+            $rules['id'] = "required|digits_between:1,9223372036854775807";
+            
+            
+            $validated = Validator::make(
+                $request->all(),
+                $rules
+            );
+            if ($validated->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $validated->errors()
+                ]);
+            }
+            $saf = PropActiveSaf::find($request->id);
+            if(!$saf){
+                $saf = PropSaf::find($request->id);
+            }
+            if (!$saf) {
+                throw new Exception("Data Not Found");
+            }
+            $request->merge(
+                [
+                    "assessmentType"=>$saf->assessment_type,
+                    "propertyType"=>$saf->prop_type_mstr_id,
+                    "transferModeId"=>$saf->transfer_mode_mstr_id,
+                ]
+            );
+            $saleVaues = 0;
+            if(is_array($request->saleValue))
+            {
+                foreach($request->saleValue as $val)
+                {
+                    $saleVal = $val["value"];
+                    $saleVaues += $this->readProccessFee($request->assessmentType,$saleVal,$request->propertyType,$request->transferModeId);
+                }
+            }
+            else{
+                $saleVaues = $this->readProccessFee($request->assessmentType,$request->saleValue,$request->propertyType,$request->transferModeId);
+            }
+            $data["proccess_fee"] = $saleVaues;
+            return responseMsgs(true, "ProccessFee Fetched", $data, "011604", "1.0", responseTime(), "POST", $request->deviceId);
+            
+        }catch (Exception $e) {
+            
+            return responseMsgs(false, $e->getMessage(), "", "011604.1", "1.0", "", "POST", $request->deviceId ?? "");
+        }
+    }
+
+    private function getMutationFeeReqRules(Request $request )
+    {
+        $rules = [
+            'saleValue' => 'required|'.(is_array($request->saleValue)?"array":"digits_between:1,9223372036854775807"),
+        ];
+        if(is_array($request->saleValue))
+        {
+            $rules["saleValue.*.value"] = "required|digits_between:1,9223372036854775807";
+        }
+        return  $rules;
     }
 
     private function generatePaymentReceiptNoSV2($saf): array

@@ -8,8 +8,11 @@ use App\MicroServices\IdGenerator\PropIdGenerator;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
+use App\Models\Property\PropAssessmentHistory;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropFloor;
+use App\Models\Property\PropOwner;
+use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafMemoDtl;
 use App\Models\Property\PropSafVerification;
 use App\Models\Property\PropSafVerificationDtl;
@@ -129,6 +132,10 @@ class SafApprovalBll
      */
     public function replicateProp()
     {
+        if(!in_array($this->_activeSaf->assessment_type,['New Assessment','Mutation'])) #update Old Property According to New Data
+        {
+            return $this->updateOldHolding();
+        }
         // Self Assessed Saf Prop Properties and Floors
         $propProperties = $this->_toBeProperties->replicate();
         $propProperties->setTable('prop_properties');
@@ -178,6 +185,118 @@ class SafApprovalBll
             $approvedOwners = $ownerDetail->replicate();
             $approvedOwners->setTable('prop_owners');
             $approvedOwners->property_id = $propProperties->id;
+            $approvedOwners->save();
+        }
+        if(in_array($this->_activeSaf->assessment_type,['Mutation']))
+        {
+            $propProperties = PropProperty::find($this->_activeSaf->previous_holding_id);        
+            if(!$propProperties)
+            {
+                throw new Exception("Old Property Not Found");
+            }
+            $propProperties->update(["status"=>0]);
+        }
+        
+    }
+
+    /**
+     * | Update Old Property
+     */
+    public function updateOldHolding()
+    { 
+        
+        $propProperties = PropProperty::find($this->_activeSaf->previous_holding_id);        
+        if(!$propProperties)
+        {
+            throw new Exception("Old Property Not Found");
+        }
+        $oldFloor = PropFloor::where("property_id",$propProperties->id)->get();
+        $oldOwners = PropOwner::where("property_id",$propProperties->id)->get();
+        $history = new PropAssessmentHistory();
+        $history->property_id = $propProperties->id;
+        $history->assessment_type = $this->_activeSaf->assessment_type;
+        $history->saf_id = $this->_activeSaf->id;
+        $history->prop_log = json_encode($propProperties->toArray(), JSON_UNESCAPED_UNICODE);
+        $history->owner_log = json_encode($oldOwners->toArray(), JSON_UNESCAPED_UNICODE);            
+        $history->floar_log = json_encode($oldFloor->toArray(), JSON_UNESCAPED_UNICODE);
+        $history->user_id = Auth()->user() ? Auth()->user()->id : 0;
+        $history->save();
+        
+        $propProperties->update($this->_toBeProperties->toArray());
+        $propProperties->saf_id = $this->_activeSaf->id;
+        // $propProperties->holding_no = $this->_activeSaf->holding_no;
+        $propProperties->new_holding_no = $this->_activeSaf->holding_no;
+        $propProperties->update();
+        
+        $this->_replicatedPropId = $propProperties->id;
+        // ✅Replication of Verified Saf Details by Ulb TC
+        $propProperties->prop_type_mstr_id = $this->_verifiedPropDetails[0]->prop_type_id;
+        $propProperties->area_of_plot = $this->_verifiedPropDetails[0]->area_of_plot;
+        $propProperties->ward_mstr_id = $this->_verifiedPropDetails[0]->ward_id;
+        $propProperties->is_mobile_tower = $this->_verifiedPropDetails[0]->has_mobile_tower;
+        $propProperties->tower_area = $this->_verifiedPropDetails[0]->tower_area;
+        $propProperties->tower_installation_date = $this->_verifiedPropDetails[0]->tower_installation_date;
+        $propProperties->is_hoarding_board = $this->_verifiedPropDetails[0]->has_hoarding;
+        $propProperties->hoarding_area = $this->_verifiedPropDetails[0]->hoarding_area;
+        $propProperties->hoarding_installation_date = $this->_verifiedPropDetails[0]->hoarding_installation_date;
+        $propProperties->is_petrol_pump = $this->_verifiedPropDetails[0]->is_petrol_pump;
+        $propProperties->under_ground_area = $this->_verifiedPropDetails[0]->underground_area;
+        $propProperties->petrol_pump_completion_date = $this->_verifiedPropDetails[0]->petrol_pump_completion_date;
+        $propProperties->is_water_harvesting = $this->_verifiedPropDetails[0]->has_water_harvesting;
+        $propProperties->update();
+        foreach($oldFloor as $f)
+        {
+            $f->update(["status"=>0]);
+        }
+        
+        if($this->_verifiedFloors)
+        {
+            foreach ($this->_verifiedFloors as $floorDetail) 
+            {
+                $floorReq = [
+                    "property_id" => $this->_replicatedPropId,
+                    "saf_id" => $this->_safId,
+                    "floor_mstr_id" => $floorDetail->floor_mstr_id,
+                    "usage_type_mstr_id" => $floorDetail->usage_type_id,
+                    "const_type_mstr_id" => $floorDetail->construction_type_id,
+                    "occupancy_type_mstr_id" => $floorDetail->occupancy_type_id,
+                    "builtup_area" => $floorDetail->builtup_area,
+                    "date_from" => $floorDetail->date_from,
+                    "date_upto" => $floorDetail->date_to,
+                    "carpet_area" => $floorDetail->carpet_area,
+                    "user_id" => $floorDetail->user_id,
+                    "saf_floor_id" => $floorDetail->saf_floor_id                        
+                ];
+                $safFloor = PropActiveSafsFloor::find($floorDetail->saf_floor_id);                    
+                $oldPFloorUpdate = PropFloor::find($safFloor->prop_floor_details_id?$safFloor->prop_floor_details_id:0);
+                if($oldPFloorUpdate)
+                {
+                    $floorReq["status"]=1;
+                    $oldPFloorUpdate->update($floorReq);
+                }
+                else{
+                    $this->_mPropFloors->create($floorReq);
+                }
+            }            
+        }        
+
+        // Prop Owners replication
+        foreach($oldOwners as $w)
+        {
+            $w->update(["status"=>0]);
+        }         
+        foreach ($this->_ownerDetails as $ownerDetail) {
+            $approvedOwners = $ownerDetail->replicate();
+            $oldPOwnersUpdate = PropOwner::find($ownerDetail->prop_owner_id?$ownerDetail->prop_owner_id:0);                                
+            if($oldPOwnersUpdate)
+            {
+                $oldPOwnersUpdate->update($approvedOwners->toArray());
+                $approvedOwners = $oldPOwnersUpdate;
+            }
+            else{
+                $approvedOwners->setTable('prop_owners');
+            }
+            $approvedOwners->property_id = $this->_replicatedPropId;
             $approvedOwners->save();
         }
     }

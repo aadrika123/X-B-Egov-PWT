@@ -101,6 +101,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('saf/offline-saf-payment', 'offlinePaymentSaf');                                        // SAF Payment(15)
 
     Route::post('saf/offline-saf-payment/proccess-fee', 'proccessFeePayment');
+    Route::post('saf/offline-saf-get/proccess-fee', 'getProccessFeePayment');
 
     Route::post('saf/upload-naksha', 'uploadNaksha');  
   });
