@@ -925,6 +925,7 @@ class ActiveSafController extends Controller
             $userId = authUser($request)->id;
             $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
             $saf = PropActiveSaf::findOrFail($request->applicationId);
+            $saf2 = PropActiveSaf::findOrFail($request->applicationId);
             $mWfMstr = new WfWorkflow();
             $track = new WorkflowTrack();
             $mWfWorkflows = new WfWorkflow();
@@ -962,14 +963,26 @@ class ActiveSafController extends Controller
 
                 $geotagExist = $saf->is_field_verified == true;
 
+                if($saf->prop_type_mstr_id==4 && $saf->current_role== $wfLevels['TC'] )#only for Vacant Land
+                {
+                    $saf->is_agency_verified = true;
+                    $saf->update();
+                    $forwardBackwardIds->forward_role_id = $wfLevels['DA'];
+                }
                 if (!$geotagExist && $saf->current_role == $wfLevels['DA'])
+                {
                     $forwardBackwardIds->forward_role_id = $wfLevels['UTC'];
+                    if($saf->prop_type_mstr_id==4)
+                    {
+                        $forwardBackwardIds->forward_role_id = $wfLevels['TC'];
+                    }
+                }
 
                 if ($saf->is_bt_da == true) {
                     $forwardBackwardIds->forward_role_id = $wfLevels['SI'];
                     $saf->is_bt_da = false;
                 }
-
+                
                 $saf->current_role = $forwardBackwardIds->forward_role_id;
                 $saf->last_role_id =  $forwardBackwardIds->forward_role_id;                     // Update Last Role Id
                 $saf->parked = false;
@@ -984,6 +997,10 @@ class ActiveSafController extends Controller
                 if ($request->isBtd == true) {
                     $saf->is_bt_da = true;
                     $forwardBackwardIds->backward_role_id = $wfLevels['DA'];
+                }
+                if($saf->prop_type_mstr_id==4 && $saf->current_role== $wfLevels['DA'])#only for Vacant Land
+                {
+                    $forwardBackwardIds->forward_role_id = $wfLevels['TC'];
                 }
 
                 $saf->current_role = $forwardBackwardIds->backward_role_id;
@@ -1045,7 +1062,7 @@ class ActiveSafController extends Controller
                 break;
 
             case $wfLevels['TC']:
-                if ($saf->is_agency_verified == false)
+                if ($saf->is_agency_verified == false && $saf->prop_type_mstr_id!=4)
                     throw new Exception("Agency Verification Not Done");
                 if ($saf->is_geo_tagged == false)
                     throw new Exception("Geo Tagging Not Done");

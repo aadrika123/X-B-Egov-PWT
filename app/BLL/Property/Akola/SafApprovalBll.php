@@ -102,7 +102,10 @@ class SafApprovalBll
         $this->_floorDetails = $this->_mPropActiveSafFloor->getQSafFloorsBySafId($this->_safId);
         $this->_verifiedPropDetails = $this->_mPropSafVerifications->getVerifications($this->_safId);
         $this->_toBeProperties = $this->_mPropActiveSaf->toBePropertyBySafId($this->_safId);
-
+        if(collect($this->_verifiedPropDetails)->isEmpty())
+        {
+            $this->_verifiedPropDetails = $this->_mPropSafVerifications->getVerifications2($this->_safId);
+        }
         if (collect($this->_verifiedPropDetails)->isEmpty())
             throw new Exception("Ulb Verification Details not Found");
 

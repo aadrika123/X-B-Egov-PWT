@@ -112,4 +112,10 @@ class PropSafVerification extends Model
         $query = "SELECT * FROM prop_saf_verifications WHERE saf_id=$safId AND ulb_verification=TRUE ORDER BY id DESC LIMIT 1";
         return DB::select($query);
     }
+
+    public function getVerifications2($safId)
+    {
+        $query = "SELECT * FROM prop_saf_verifications WHERE saf_id=$safId AND ulb_verification!=TRUE ORDER BY id DESC LIMIT 1";
+        return DB::select($query);
+    }
 }
