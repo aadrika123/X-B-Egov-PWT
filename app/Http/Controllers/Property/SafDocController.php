@@ -382,7 +382,7 @@ class SafDocController extends Controller
 
             $senderRoleId = $senderRoleDtls->wf_role_id;
             #secondry Document Verification
-            if($safDtls->doc_verify_status)
+            if($safDtls->doc_verify_status && ($senderRoleId != $wfLevel['DA']))
             {
                 return $this->seconderyDocverify($req);
             }
@@ -483,7 +483,7 @@ class SafDocController extends Controller
            
             if(count($sameWorkRoles)<=1 || !$userRole || $userRole->role_id == ($sameWorkRoles->first())["id"] || !$userRole->can_verify_document)
             {
-                throw new Exception("Forbidan For Take Action");
+                // throw new Exception("Forbidan For Take Action");
                 
             }
             
