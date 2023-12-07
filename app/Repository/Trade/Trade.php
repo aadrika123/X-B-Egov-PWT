@@ -799,9 +799,9 @@ class Trade implements ITrade
             }
 
             #-----------valication-------------------                            
-            if (!in_array($mUserType, $this->_TRADE_CONSTAINT["CANE-CUTE-PAYMENT"])) {
-                throw new Exception("You Are Not Authorized For Payment Cut");
-            }
+            // if (!in_array($mUserType, $this->_TRADE_CONSTAINT["CANE-CUTE-PAYMENT"])) {
+            //     throw new Exception("You Are Not Authorized For Payment Cut");
+            // }
             // $refLecenceData = ActiveTradeLicence::find($request->licenceId);
             $refLecenceData = TradeLicence::find($request->licenceId);
             $licenceId = $request->licenceId;
