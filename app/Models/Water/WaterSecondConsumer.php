@@ -99,18 +99,17 @@ class WaterSecondConsumer extends Model
             'water_consumer_demands.id AS demand_id',
             DB::raw("
                 CASE
-                    WHEN water_consumer_demands.paid_status = 1 THEN 'Paid'
-                    WHEN water_consumer_demands.paid_status = 0 THEN 'Unpaid'
+                    WHEN water_consumer_demands.is_full_paid = true THEN 'Paid'
+                    WHEN water_consumer_demands.is_full_paid = false THEN 'Unpaid'
                     ELSE 'unknown'
                 END AS payment_status
             "),
             'water_consumer_demands.paid_status',
-            'water_consumer_demands.balance_amount',
-            'water_consumer_demands.amount',
             'water_consumer_demands.consumer_id',
             'water_second_consumers.id AS id',
             'water_second_consumers.consumer_no',
             'water_second_consumers.folio_no as property_no',
+            DB::raw("ROUND(water_consumer_demands.due_balance_amount, 2) as balance_amount"), 
             'water_second_consumers.address',
             'water_second_consumers.folio_no',
             'zone_masters.zone_name',
@@ -120,7 +119,7 @@ class WaterSecondConsumer extends Model
             DB::raw("ulb_ward_masters.ward_name AS ward_mstr_id"),
         ])
             ->leftJoin(
-                DB::raw("(SELECT DISTINCT ON (consumer_id) id,balance_amount,amount,consumer_id,paid_status
+                DB::raw("(SELECT DISTINCT ON (consumer_id) id,balance_amount,amount,consumer_id,paid_status,due_balance_amount,is_full_paid
                             FROM water_consumer_demands AS wcd
                             WHERE status = true
                             ORDER BY consumer_id,id DESC) AS water_consumer_demands
@@ -152,7 +151,9 @@ class WaterSecondConsumer extends Model
                 'water_consumer_demands.consumer_id',
                 'water_second_consumers.id',
                 'ulb_ward_masters.ward_name',
-                'zone_masters.zone_name'
+                'zone_masters.zone_name',
+                'water_consumer_demands.due_balance_amount',
+                'water_consumer_demands.is_full_paid'
             );
     }
 
