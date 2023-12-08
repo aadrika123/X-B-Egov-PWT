@@ -2248,13 +2248,15 @@ class WaterConsumer extends Controller
             $NowDate                    = Carbon::now()->format('Y-m-d');
             $bilDueDate                 = Carbon::now()->addDays(15)->format('Y-m-d');
             $ConsumerId                 = $request->consumerId;
+            // $this->_DB->enableQueryLog();
             $demandDetails              = $mWaterDemands->getDemandBydemandIds($ConsumerId); // get demands detai
             if (!$demandDetails) {
                 throw new Exception('demands not found ');
             }
-            $allDemandGenerated = $mWaterDemands->getConsumerDemand($ConsumerId);           // get all demands of consumer generated 
+            // return([$this->_DB->getQueryLog(),$demandDetails]);
+            $allDemandGenerated = $mWaterDemands->getConsumerDemandV3($ConsumerId);           // get all demands of consumer generated 
             # sum of amount
-            $sumAmount = collect($allDemandGenerated)->sum('amount');
+            $sumAmount = collect($allDemandGenerated)->sum('due_balance_amount');
             $roundedSumAmount = round($sumAmount);
             $ConsumerInitial = $mWaterConsumerInitialMeter->calculateUnitsConsumed($ConsumerId);  # unit consumed
             $finalReading = $ConsumerInitial->first()->initial_reading;
@@ -2267,7 +2269,7 @@ class WaterConsumer extends Controller
                 'initialReading'    => (int)$initialReading,
                 'finalReading'      => (int)$finalReading,
                 'initialDate'       => "",
-                'amount'            =>  $roundedSumAmount,
+                'amountDuePaid'     =>  $roundedSumAmount,
                 "meterImg"          => ($documents ? $docUrl . "/" . $documents->relative_path . "/" . $documents->file_name : 0)
             ];
             $returnValues = collect($demandDetails)->merge($demands);
@@ -2381,6 +2383,8 @@ class WaterConsumer extends Controller
                 'meterNo'           => 'nullable',
                 'meterReading'      => 'nullable',
                 'document'          => 'required|mimes:pdf,jpg,jpeg,png|',
+                'demandFrom'        => 'nullable|date',
+                'demandUpto'        => 'nullable|date'
             ]
         );
         if ($validated->fails())
@@ -2393,6 +2397,8 @@ class WaterConsumer extends Controller
             $usertype       = $user->user_type;
             $consumerId     = $request->consumerId;
             $demandId       = $request->demandId;
+            $refdemandFrom  = $request->demandFrom;
+            $refdemandUpto    = $request->demandUpto;
             $fullPaid       = false;
             $advanceAmount  = 0;                                                                        // Static
 
@@ -2433,7 +2439,9 @@ class WaterConsumer extends Controller
             $updateReq = [
                 "due_balance_amount"    => $dueAmount,
                 "is_full_paid"          => $fullPaid,
-                "balance_amount"        => $balanceAmount
+                "balance_amount"        => $balanceAmount,
+                "demand_from"           => $refdemandFrom,
+                "demand_upto"           => $refdemandUpto
             ];
             $mWaterConsumerDemand->updateDemand($updateReq, $demandId);
 

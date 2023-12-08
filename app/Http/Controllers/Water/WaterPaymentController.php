@@ -2734,7 +2734,7 @@ class WaterPaymentController extends Controller
             $mWaterConsumerCollection   = new WaterConsumerCollection();
             $mWaterConsumerDemand       = new WaterConsumerDemand();
 
-            $offlinePaymentModes    = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
+            $offlinePaymentModes    = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
             $offlinePayment         = Config::get('payment-constants.PAYMENT_OFFLINE_MODE_WATER');
             $adjustmentFor          = Config::get("waterConstaint.ADVANCE_FOR");
             $todayDate              = Carbon::now();
