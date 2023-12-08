@@ -423,6 +423,7 @@ return [
     // Relative GeoTagging Path of Geo Tagging
     "GEOTAGGING_RELATIVE_PATH" => "Uploads/Property/GeoTagging",
     "SAF_RELATIVE_PATH"        => "Uploads/Property/Saf",
+    "PROCCESS_RELATIVE_PATH"   => "Uploads/Property/PROCESS_FEE",
     "OBJECTION_RELATIVE_PATH"  => "Uploads/Property/Objection",
     "CONCESSION_RELATIVE_PATH" => "Uploads/Property/Concession",
     "HARVESTING_RELATIVE_PATH" => "Uploads/Property/Harvesting",

@@ -4985,7 +4985,9 @@ class Report implements IReport
                 (COALESCE(arear_major_building,0)::numeric ) as arear_major_building,
                 (COALESCE(arear_open_ploat_tax,0)::numeric ) as arear_open_ploat_tax,
                 (COALESCE(rebate,0)::numeric) as rebate,
-                (COALESCE(penalty,0)::numeric) as penalty
+                (COALESCE(penalty,0)::numeric) as penalty,
+				(COALESCE(advance_amount,0)::numeric) as advance_amount,
+                (COALESCE(adjusted_amount,0)::numeric) as adjusted_amount
             from prop_transactions
             join prop_properties on prop_properties.id = prop_transactions.property_id 
             join (
@@ -5113,6 +5115,50 @@ class Report implements IReport
                     " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . "
                 group by prop_transactions.id
             )fine_rebet on fine_rebet.tran_id = prop_transactions.id
+            left join(
+                select distinct(prop_transactions.id)as tran_id ,
+                    sum(prop_advances.amount) as advance_amount
+				from prop_advances
+                join prop_transactions on prop_transactions.id = prop_advances.tran_id
+                join (
+                    select prop_properties.id as pid,prop_properties.ward_mstr_id,prop_properties.zone_mstr_id
+                    from prop_properties
+                    join prop_transactions on prop_transactions.property_id = prop_properties.id
+                    where prop_transactions.tran_date between '$fromDate' and '$toDate'  
+                        and prop_transactions.status in(1,2)
+                    group BY prop_properties.id
+                )props on props.pid = prop_transactions.property_id
+                where prop_transactions.tran_date between '$fromDate' and '$toDate' 
+                    and prop_transactions.status in(1,2)
+                    and prop_advances.status =1 
+                    " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{".$paymentMode."}')::TEXT[])" : "") . "
+                    " . ($wardId ? "AND props.ward_mstr_id = $wardId" : "") . "
+                    " . ($zoneId ? "AND props.zone_mstr_id = $zoneId" : "") . "
+                    " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . "   
+                group by prop_transactions.id
+            )advance on advance.tran_id = prop_transactions.id			
+			left join(
+                select distinct(prop_transactions.id)as tran_id ,
+                    sum(prop_adjustments.amount) as adjusted_amount
+				from prop_adjustments
+                join prop_transactions on prop_transactions.id = prop_adjustments.tran_id
+                join (
+                    select prop_properties.id as pid,prop_properties.ward_mstr_id,prop_properties.zone_mstr_id
+                    from prop_properties
+                    join prop_transactions on prop_transactions.property_id = prop_properties.id
+                    where prop_transactions.tran_date between '$fromDate' and '$toDate' 
+                        and prop_transactions.status in(1,2)
+                    group BY prop_properties.id
+                )props on props.pid = prop_transactions.property_id
+                where prop_transactions.tran_date between '$fromDate' and '$toDate' 
+                    and prop_transactions.status in(1,2)
+                    and prop_adjustments.status =1 
+                    " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{".$paymentMode."}')::TEXT[])" : "") . "
+                    " . ($wardId ? "AND props.ward_mstr_id = $wardId" : "") . "
+                    " . ($zoneId ? "AND props.zone_mstr_id = $zoneId" : "") . "
+                    " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . " 
+                group by prop_transactions.id
+            )adjusted on adjusted.tran_id = prop_transactions.id
             left join prop_cheque_dtls on prop_cheque_dtls.transaction_id = prop_transactions.id
             left join(
                 select string_agg(case when trim(owner_name_marathi) is null then owner_name else owner_name_marathi end,',')owner_name,
@@ -5145,12 +5191,63 @@ class Report implements IReport
             $data["data"] = $report->map(function($val){
                 $val->generalTaxException =0;
                 $val->payableAfterDeduction = $val->c1urrent_total_tax;
-                $val->advanceAmt =0;
-                $val->noticeFee =0;
+                $val->advanceAmt =$val->advance_amount;
+                $val->adjustAmt =$val->adjusted_amount;
                 $val->noticeFee =0;
                 $val->FinalTax = $val->c1urrent_total_tax;
                 $val->receiptNo = isset($val->book_no) ? explode('-', $val->book_no)[1] : "";
                 $val->receiptNo = isset($val->book_no) ? explode('-', $val->book_no)[1] : "";
+                $json[] = [
+                    "fyear"               => $val->from_fyear,
+                    "total"               => $val->a1rear_total_tax,
+                    "generalTaxException" =>  $val->generalTaxException ,
+                    "noticeFee"           => $val->noticeFee,
+                    "maintanance_amt"     =>  $val->arear_maintanance_amt,
+                    "aging_amt"           =>  $val->arear_aging_amt,
+                    "general_tax"         =>  $val->arear_general_tax,
+                    "road_tax"            =>  $val->arear_road_tax,
+                    "firefighting_tax"    =>  $val->arear_firefighting_tax,
+                    "education_tax"       =>  $val->arear_education_tax,
+                    "water_tax"           =>  $val->arear_water_tax,
+                    "cleanliness_tax"     =>  $val->arear_cleanliness_tax,
+                    "sewarage_tax"        =>  $val->arear_sewarage_tax,
+                    "tree_tax"            =>  $val->arear_tree_tax,
+                    "professional_tax"    =>  $val->arear_professional_tax,
+                    "adjust_amt"          =>  $val->arear_adjust_amt,
+                    "tax1"                =>  $val->arear_tax1,
+                    "tax2"                =>  $val->arear_tax2,
+                    "tax3"                =>  $val->arear_tax3,
+                    "penalty"             =>  $val->penalty,
+                    "rebate"              =>  0,
+                    "advance"             =>  0,
+                    "adjustment"          => $val->adjusted_amount,
+                ];
+                $json[] = [
+                    "fyear"               => $val->to_fyear,
+                    "total"               => $val->c1urrent_total,
+                    "generalTaxException" =>  $val->generalTaxException ,
+                    "noticeFee"           => $val->noticeFee,
+                    "maintanance_amt"     => $val->current_maintanance_amt,
+                    "aging_amt"           => $val->current_aging_amt,
+                    "general_tax"         => $val->current_general_tax,
+                    "road_tax"            => $val->current_road_tax,
+                    "firefighting_tax"    => $val->current_firefighting_tax,
+                    "education_tax"       => $val->current_education_tax,
+                    "water_tax"           => $val->current_water_tax,
+                    "cleanliness_tax"     => $val->current_cleanliness_tax,
+                    "sewarage_tax"        => $val->current_sewarage_tax,
+                    "tree_tax"            => $val->current_tree_tax,
+                    "professional_tax"    => $val->current_professional_tax,
+                    "adjust_amt"          => $val->current_adjust_amt,
+                    "tax1"                => $val->current_tax1,
+                    "tax2"                => $val->current_tax2,
+                    "tax3"                => $val->current_tax3,
+                    "penalty"             => 0,
+                    "rebate"              => $val->rebate,
+                    "advance"             => $val->advance_amount,
+                    "adjustment"          => 0,
+                ];
+                $val->json = ($json);
                 return $val;
             });            
             $data["headers"] = [

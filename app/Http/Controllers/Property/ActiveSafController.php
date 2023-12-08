@@ -3744,6 +3744,8 @@ class ActiveSafController extends Controller
     {
         $rules = $this->getMutationFeeReqRules($request);
         $rules["paidAmount"] = 'required|numeric|min:1';
+        $rules["saleValue.*.owner"] = sizeOf($request->saleValue)>1?'required':"nullable";
+        $rules["saleValue.*.deed"] = sizeOf($request->saleValue)>1?'required|mimes:pdf,jpeg,png,jpg':"nullable";
         $validated = Validator::make(
             $request->all(),
             $rules
@@ -3776,12 +3778,23 @@ class ActiveSafController extends Controller
             if($proccessFeePayment->original["status"]){
                 $newSaleValue = $proccessFeePayment->original["data"]["proccess_fee"];
             }
-            // dd(json_encode($newSaleValue));
+            
             $proccessFee = $saf->proccess_fee;
             if ($proccessFee != $request->paidAmount) {
                 throw new Exception("Demand Amount And Paied Amount Missmatched");
             }
-
+            $deedArr = [];
+            $docUpload = new DocUpload;
+            $relativePath = Config::get('PropertyConstaint.PROCCESS_RELATIVE_PATH');
+            $propModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+            foreach($request->saleValue as $key=>$deedDoc){
+                $deedArr[$key] = $deedDoc;
+                $document = $deedDoc["deed"];
+                $refImageName =  $saf->id."-".$key+1;
+                unset($deedArr[$key]["deed"]);
+                $deedArr[$key]["upload"]= $document ? ($relativePath."/".$docUpload->upload($refImageName, $document, $relativePath)) :"";
+            }
+            $request->merge(["saleValueNew"=>$deedArr]);
             if (in_array($request->paymentMode, $verifyPaymentModes)) {
                 $verifyStatus = 2;
             }
@@ -3799,7 +3812,7 @@ class ActiveSafController extends Controller
                 "saf_id" => $saf->id,
                 "applicationNo" => $saf->saf_no,
                 "ulbId"   => $saf->ulb_id,
-                "userId" => $request['userId'] ?? $user->id,
+                "userId" => $request['userId'] ?? ($user->id??0),
                 "tranNo" => $tranNo,
                 "amount" => $request->paidAmount,
                 'tranBy' => $tranBy,
@@ -3807,6 +3820,7 @@ class ActiveSafController extends Controller
             ]);
 
             $saf->proccess_fee_paid = 1;
+            $saf->deed_json = preg_replace('/\//','',json_encode($request->saleValueNew,JSON_UNESCAPED_UNICODE));
             $safTrans = new PropTransaction();
             $safTrans->saf_id = $saf->id;
             $safTrans->amount = $request['amount'];
@@ -3895,12 +3909,10 @@ class ActiveSafController extends Controller
     private function getMutationFeeReqRules(Request $request )
     {
         $rules = [
-            'saleValue' => 'required|'.(is_array($request->saleValue)?"array":"digits_between:1,9223372036854775807"),
+            'saleValue' => 'required|array',
+            "saleValue.*.value"=>"required|digits_between:1,9223372036854775807",
+            
         ];
-        if(is_array($request->saleValue))
-        {
-            $rules["saleValue.*.value"] = "required|digits_between:1,9223372036854775807";
-        }
         return  $rules;
     }
 
