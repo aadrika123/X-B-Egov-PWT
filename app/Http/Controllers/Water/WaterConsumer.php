@@ -2249,7 +2249,7 @@ class WaterConsumer extends Controller
             $bilDueDate                 = Carbon::now()->addDays(15)->format('Y-m-d');
             $ConsumerId                 = $request->consumerId;
             // $this->_DB->enableQueryLog();
-           return $demandDetails              = $mWaterDemands->getDemandBydemandIds($ConsumerId); // get demands detai
+            $demandDetails              = $mWaterDemands->getDemandBydemandIds($ConsumerId); // get demands detai
             if (!$demandDetails) {
                 throw new Exception('demands not found ');
             }
