@@ -1694,7 +1694,7 @@ class WaterPaymentController extends Controller
             if (!in_array($transactionDetails['payment_mode'], [$mPaymentModes['1'], $mPaymentModes['5']])) {
                 $chequeDetails = $mWaterChequeDtl->getChequeDtlsByTransId($transactionDetails['id'])->first();
                 if ($chequeDetails->status == 2) {
-                    $chequeStatus= 'Note:This is Your Provisional Receipt';
+                    $chequeStatus = 'Note:This is Your Provisional Receipt';
                 }
             }
             # Application Deatils
@@ -2725,9 +2725,16 @@ class WaterPaymentController extends Controller
     public function partPayment(reqDemandPayment $request)
     {
         try {
-            $user                       = authUser($request);
-            $refUlbId                   = $user->ulb_id ?? 2;
-            $refUserId                  = $user->id;
+            $refUlbId                   = 2;
+            $refUserId                  = null;
+            $userType                   = "Citizen";
+            if ($request->auth) {
+                $user                   = authUser($request);
+                $refUlbId               = $user->ulb_id;
+                $refUserId              = $user->id;
+                $userType               = $user->user_type;
+            }
+
             $midGeneration              = new IdGeneration;
             $mWaterAdjustment           = new WaterAdjustment();
             $mwaterTran                 = new waterTran();
@@ -2766,7 +2773,7 @@ class WaterPaymentController extends Controller
             $tranNo = $midGeneration->generateTransactionNo($refUlbId);
             $request->merge([
                 'userId'            => $refUserId,
-                'userType'          => $user->user_type,
+                'userType'          => $userType,
                 'todayDate'         => $todayDate->format('Y-m-d'),
                 'tranNo'            => $tranNo,
                 'id'                => $request->consumerId,
@@ -2828,7 +2835,8 @@ class WaterPaymentController extends Controller
                 $metaReqs['relative_path']      = $relativePath;
                 $metaReqs['document']           = $imageName;
                 $metaReqs['uploaded_by']        = $refUserId;
-                $metaReqs['uploaded_by_type']   = $user->user_type;
+                $metaReqs['uploaded_by_type']   = $userType;
+
 
                 // $metaReqs = new Request($metaReqs);
                 $mWaterPartPaymentDocument->postDocuments($metaReqs);
@@ -2853,13 +2861,14 @@ class WaterPaymentController extends Controller
         $mWaterConsumerCollection   = new WaterConsumerCollection();
         $waterTranDetail            = new WaterTranDetail();
         $mWaterTran                 = new WaterTran();
+        $offlinePaymentModesV2      = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
         $refAmount                  = round($request->amount);
         $remaningAmount             = round($refConsumercharges->sum('due_balance_amount'));
         if ($remaningAmount > $refAmount) {
             throw new Exception("please select the month properly for part payament!");
         }
 
-        if (in_array($request['paymentMode'], $offlinePaymentModes)) {
+        if (in_array($request['paymentMode'], $offlinePaymentModesV2)) {
             $popedDemand->paid_status = 2;                                       // Update Demand Paid Status // Static
             $mWaterTran->saveVerifyStatus($waterTrans['id']);
         } else {
@@ -2884,7 +2893,7 @@ class WaterPaymentController extends Controller
             $popedDemand->id,
             $refAmount
         );
-        $mWaterConsumerCollection->saveConsumerCollection($popedDemand, $waterTrans, $request->auth['id'], $refAmount);
+        $mWaterConsumerCollection->saveConsumerCollection($popedDemand, $waterTrans, $request->auth['id'] ?? null, $refAmount);
     }
 
     /**

@@ -46,9 +46,9 @@ class TempTransaction extends Model
 
     public function transactionDtl($date, $ulbId)
     {
-        return TempTransaction::select('temp_transactions.*','users.*','ulb_ward_masters.id as ward_id','ulb_ward_masters.zone as zone_id')
+        return TempTransaction::select('temp_transactions.*', 'users.*', 'ulb_ward_masters.id as ward_id', 'ulb_ward_masters.zone as zone_id')
             ->leftjoin('users', 'users.id', 'temp_transactions.user_id')
-            ->leftjoin("ulb_ward_masters","ulb_ward_masters.ward_name","temp_transactions.ward_no")
+            ->leftjoin("ulb_ward_masters", "ulb_ward_masters.ward_name", "temp_transactions.ward_no")
             ->where('tran_date', $date)
             ->where('temp_transactions.status', 1)
             ->where('temp_transactions.ulb_id', $ulbId)
