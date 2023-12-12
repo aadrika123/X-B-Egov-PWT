@@ -35,11 +35,12 @@ class GetHoldingDuesV2
         $demandList = collect();
         $calculate2PercPenalty = new Calculate2PercPenalty;
         $fy = getFY();
-        $userId = auth()->user()->id??0;
+        $userId = auth()->user()->id ?? 0;
         $userDtls = $mUsers::find($userId);
 
         // Get Property Details
-        $propBasicDtls = $mPropProperty->getPropBasicDtls($req->propId);DB::enableQueryLog();
+        $propBasicDtls = $mPropProperty->getPropBasicDtls($req->propId);
+        DB::enableQueryLog();
         $totalAdvanceAmt = $PropAdvance->getAdvanceAmt($req->propId);
         $totalAdjustmentAmt = $PropAdjustment->getAdjustmentAmt($req->propId);
         $remainAdvance = $totalAdvanceAmt->sum("amount") - $totalAdjustmentAmt->sum("amount");
@@ -86,7 +87,7 @@ class GetHoldingDuesV2
             $demandList = $demandList->where('fyear', '<', $fy)->values();
 
         foreach ($demandList as $list) {
-            $calculate2PercPenalty->calculatePenalty($list,$propBasicDtls->prop_type_mstr_id);
+            $calculate2PercPenalty->calculatePenalty($list, $propBasicDtls->prop_type_mstr_id);
         }
 
         $demandList = collect($demandList)->sortBy('fyear')->values();
@@ -131,10 +132,10 @@ class GetHoldingDuesV2
         // Read Rebate ❗❗❗ Rebate is pending
         $firstOwner = $mPropOwners->firstOwner($req->propId);
         $owners = $mPropOwners->getOwnersByPropId($req->propId);
-        
+
         // if($firstOwner->is_armed_force)
         //     // $rebate=
-        $demand['remainAdvance'] = round($remainAdvance??0);
+        $demand['remainAdvance'] = round($remainAdvance ?? 0);
         $demand['arrearPayableAmt'] = round($demand['arrear'] + $demand['arrearMonthlyPenalty']);
         $demand['payableAmt'] = round($grandTaxes['balance'] + $demand['totalInterestPenalty']);
 
@@ -164,8 +165,8 @@ class GetHoldingDuesV2
             'user_id',
             'applicant_name',
             'property_no',
-            "property_type",
-            
+            "plot_no",
+            "area_of_plot",
         ]);
         $basicDtls['moduleId'] = 1;
         $basicDtls['workflowId'] = 0;
@@ -173,8 +174,8 @@ class GetHoldingDuesV2
         $basicDtls["ownership_type"] = $ownershipType;
         $basicDtls["demand_receipt_date"] = Carbon::now()->format('d-m-Y');
         $basicDtls["tc_name"] = $userDtls->name ?? null;
-        $basicDtls["owner_name"] = $owners->implode("owner_name",",")??($firstOwner->owner_name ?? null);
-        $basicDtls["owner_name_marathi"] = $owners->implode("owner_name_marathi",",")??$firstOwner->owner_name_marathi ?? null;
+        $basicDtls["owner_name"] = $owners->implode("owner_name", ",") ?? ($firstOwner->owner_name ?? null);
+        $basicDtls["owner_name_marathi"] = $owners->implode("owner_name_marathi", ",") ?? $firstOwner->owner_name_marathi ?? null;
 
         $demand['basicDetails'] = $basicDtls;
 
