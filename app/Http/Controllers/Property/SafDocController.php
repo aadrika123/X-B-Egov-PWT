@@ -136,7 +136,7 @@ class SafDocController extends Controller
                         "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
                         "docPath" =>  $uploadedDoc->doc_path ?? "",
                         // "verifyStatus" => $refSafs->payment_status == 1 ? ($uploadedDoc->verify_status ?? "") : 0,
-                        "verifyStatus" =>  ($uploadedDoc->verify_status ?? 0),
+                        "verifyStatus" => ($uploadedDoc->verify_status ?? 0),
                         "remarks" => $uploadedDoc->remarks ?? "",
                     ];
                     $documents->push($response);
@@ -147,7 +147,7 @@ class SafDocController extends Controller
             $reqDoc['docName'] = $docName;
 
             // Check back to citizen status
-            $uploadedDocument = $documents->sortByDesc('uploadedDocId')->first();            
+            $uploadedDocument = $documents->sortByDesc('uploadedDocId')->first();
             if (collect($uploadedDocument)->isNotEmpty() && $uploadedDocument['verifyStatus'] == 2) {
                 $reqDoc['btcStatus'] = true;
             } else
@@ -179,9 +179,9 @@ class SafDocController extends Controller
     public function docUpload(Request $req)
     {
         $extention = $req->document->getClientOriginalExtension();
-        $rules=[
+        $rules = [
             "applicationId" => "required|numeric",
-            "document" => "required|mimes:pdf,jpeg,png,jpg".(strtolower($extention) == 'pdf' ? 'max:10240' : 'max:1024'),
+            "document" => "required|mimes:pdf,jpeg,png,jpg" . (strtolower($extention) == 'pdf' ? 'max:10240' : 'max:1024'),
             "docCode" => "required",
             "docCategory" => "required|string",
             "ownerId" => "nullable|numeric"
@@ -197,7 +197,7 @@ class SafDocController extends Controller
                 'errors' => $validated->errors()
             ]);
         }
-        
+
         $req->validate([
             "applicationId" => "required|numeric",
             "document" => "required|mimes:pdf,jpeg,png,jpg",
@@ -286,7 +286,7 @@ class SafDocController extends Controller
         ]);
         try {
             $refUser = Auth()->user();
-            $refUserId = $refUser->id??0;
+            $refUserId = $refUser->id ?? 0;
             $mWfActiveDocument = new WfActiveDocument();
             $mActiveSafs = new PropActiveSaf();
             $mPropSaf = new PropSaf();
@@ -300,28 +300,25 @@ class SafDocController extends Controller
                 throw new Exception("Application Not Found for this application Id");
 
             $workflowId = $safDetails->workflow_id;
-            $documents = $mWfActiveDocument->getDocsByAppId($req->applicationId, $workflowId, $moduleId);
+            $documents = $mWfActiveDocument->getDocByRefIds($req->applicationId, $workflowId, $moduleId);
             $refUlbId = $safDetails->ulb_id;
             $userRole = $mCOMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $workflowId);
-            $sameWorkRoles = $mCOMMON_FUNCTION->getReactionActionTakenRole($refUserId, $refUlbId, $workflowId,"doc_verify");            
-            $documents = $documents->map(function($val)use($sameWorkRoles,$userRole){
-                    $seconderyData = (new SecondaryDocVerification())->SeconderyWfActiveDocumentById($val->id);
-                    $val->verify_status_secondery = $seconderyData ? $seconderyData->verify_status : 0 ;
-                    $val->remarks_secondery = $seconderyData ? $seconderyData->remarks :  "";
-                    if(count($sameWorkRoles)>1 && $userRole && $userRole->role_id != ($sameWorkRoles->first())["id"] && $userRole->can_verify_document)
-                    {
-                        $val->verify_status = $seconderyData ? $val->verify_status_secondery : $val->verify_status ;
-                        $val->remarks = $seconderyData ? $val->remarks_secondery : $val->remarks;
+            $sameWorkRoles = $mCOMMON_FUNCTION->getReactionActionTakenRole($refUserId, $refUlbId, $workflowId, "doc_verify");
+            $documents = $documents->map(function ($val) use ($sameWorkRoles, $userRole) {
+                $seconderyData = (new SecondaryDocVerification())->SeconderyWfActiveDocumentById($val->id);
+                $val->verify_status_secondery = $seconderyData ? $seconderyData->verify_status : 0;
+                $val->remarks_secondery = $seconderyData ? $seconderyData->remarks :  "";
+                if (count($sameWorkRoles) > 1 && $userRole && $userRole->role_id != ($sameWorkRoles->first())["id"] && $userRole->can_verify_document) {
+                    $val->verify_status = $seconderyData ? $val->verify_status_secondery : $val->verify_status;
+                    $val->remarks = $seconderyData ? $val->remarks_secondery : $val->remarks;
+                }
+                if ($val->doc_code  == 'PHOTOGRAPH') {
+                    $val->verify_status = 1;
+                    $val->remarks = "";
+                }
+                return $val;
+            });
 
-                    }
-                    if($val->doc_code  == 'PHOTOGRAPH')
-                    {
-                        $val->verify_status = 1 ;
-                        $val->remarks = "";
-                    }
-                    return $val;
-                });
-            
             return responseMsgs(true, ["docVerifyStatus" => $safDetails->doc_verify_status], remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
@@ -382,8 +379,7 @@ class SafDocController extends Controller
 
             $senderRoleId = $senderRoleDtls->wf_role_id;
             #secondry Document Verification
-            if($safDtls->doc_verify_status && ($senderRoleId != $wfLevel['DA']))
-            {
+            if ($safDtls->doc_verify_status && ($senderRoleId != $wfLevel['DA'])) {
                 return $this->seconderyDocverify($req);
             }
             if ($senderRoleId != $wfLevel['DA'])                                // Authorization for Dealing Assistant Only
@@ -443,7 +439,7 @@ class SafDocController extends Controller
 
     private function seconderyDocverify(Request $req)
     {
-        try{
+        try {
 
             $mWfDocument = new WfActiveDocument();
             $mActiveSafs = new PropActiveSaf();
@@ -451,23 +447,20 @@ class SafDocController extends Controller
             $mSecondaryDocVerification = new SecondaryDocVerification();
             $wfDocId = $req->id;
             $user = Auth()->user();
-            $refUserId = $user->id??0;
+            $refUserId = $user->id ?? 0;
             $applicationId = $req->applicationId;
             $activeDocument = $mWfDocument::findOrFail($wfDocId);
             $safDtls = $mActiveSafs->getSafNo($applicationId);
-            if (!$safDtls || collect($safDtls)->isEmpty())
-            {
+            if (!$safDtls || collect($safDtls)->isEmpty()) {
                 throw new Exception("Saf Details Not Found");
             }
             # trust verification in case of trust upload
             if ($req->docStatus == "Verified") {
                 $status = 1;
-                
             }
             # For Rejection Doc Upload Status and Verify Status will disabled
             if ($req->docStatus == "Rejected") {
                 $status = 2;
-                
             }
             $refUlbId = $safDtls->ulb_id;
             $workflowId = $safDtls->workflow_id;
@@ -476,26 +469,24 @@ class SafDocController extends Controller
                 'remarks' => $req->docRemarks,
                 'verify_status' => $status,
                 'action_taken_by' => $refUserId,
-                'role_id' => $userRole->role_id??0,
+                'role_id' => $userRole->role_id ?? 0,
             ];
-            
-            $sameWorkRoles = $mCOMMON_FUNCTION->getReactionActionTakenRole($refUserId, $refUlbId, $workflowId,"doc_verify");
-           
-            if(count($sameWorkRoles)<=1 || !$userRole || $userRole->role_id == ($sameWorkRoles->first())["id"] || !$userRole->can_verify_document)
-            {
+
+            $sameWorkRoles = $mCOMMON_FUNCTION->getReactionActionTakenRole($refUserId, $refUlbId, $workflowId, "doc_verify");
+
+            if (count($sameWorkRoles) <= 1 || !$userRole || $userRole->role_id == ($sameWorkRoles->first())["id"] || !$userRole->can_verify_document) {
                 // throw new Exception("Forbidan For Take Action");
-                
+
             }
-            
+
             DB::beginTransaction();
-            $mSecondaryDocVerification->docVerifyReject($wfDocId,$reqs); 
+            $mSecondaryDocVerification->docVerifyReject($wfDocId, $reqs);
             DB::commit();
             return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }
-        
     }
 
     /**
@@ -544,15 +535,15 @@ class SafDocController extends Controller
             return $collectUploadDocList->push($item['doc_code']);
         });
         $mPropDocs = collect($docList['propDocs']);
-        
+
         // Property List Documents
         $flag = 1;
         foreach ($mPropDocs as $item) {
-            if(!$item){
+            if (!$item) {
                 continue;
             }
             $explodeDocs = explode(',', $item);
-            $type = $explodeDocs[0]??"O";
+            $type = $explodeDocs[0] ?? "O";
             array_shift($explodeDocs);
             foreach ($explodeDocs as $explodeDoc) {
                 $changeStatus = 0;
@@ -561,7 +552,7 @@ class SafDocController extends Controller
                     break;
                 }
             }
-            if ($changeStatus == 0 && $type =="R") {                
+            if ($changeStatus == 0 && $type == "R") {
                 $flag = 0;
                 break;
             }
@@ -581,7 +572,7 @@ class SafDocController extends Controller
 
             foreach ($item['docs'] as $doc) {
                 $explodeDocs = explode(',', $doc);
-                $type = $explodeDocs[0]??"O";
+                $type = $explodeDocs[0] ?? "O";
                 array_shift($explodeDocs);
                 foreach ($explodeDocs as $explodeDoc) {
                     $changeStatusV1 = 0;
@@ -590,7 +581,7 @@ class SafDocController extends Controller
                         break;
                     }
                 }
-                if ($changeStatusV1 == 0 && $type =="R") {
+                if ($changeStatusV1 == 0 && $type == "R") {
                     $ownerFlags = 0;
                     break;
                 }
