@@ -892,6 +892,9 @@ class PropProperty extends Model
                 'p.prop_address',
                 'p.ulb_id',
                 'p.property_no',
+                'p.plot_no',
+                'p.area_of_plot',
+
                 'z.zone_name',
                 'o.owner_name as eng_owner_name',
                 'o.owner_name_marathi as owner_name',

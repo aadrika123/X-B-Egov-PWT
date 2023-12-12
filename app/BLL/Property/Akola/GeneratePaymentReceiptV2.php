@@ -333,6 +333,9 @@ class GeneratePaymentReceiptV2
             "ulbDetails" => $this->_ulbDetails,
             "isArrearReceipt" => $this->_isArrearReceipt,
             "bookNo" => $this->_trans->book_no ?? "",
+            "plot_no"=>$this->_propertyDtls->plot_no,
+            "area_of_plot"=>$this->_propertyDtls->area_of_plot,
+
             "receiptNo" => isset($this->_trans->book_no) ? (explode('-', $this->_trans->book_no)[1]??"0") : ""
         ];
 
