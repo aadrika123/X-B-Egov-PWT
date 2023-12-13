@@ -958,6 +958,13 @@ class ActiveSafController extends Controller
                 {
                     $docUploadStatus = (new SafDocController())->checkFullDocUpload($saf->id);
                     $saf->doc_upload_status = $docUploadStatus ? 1 : $saf->doc_upload_status;
+                    $saf->update();
+                }
+                if($saf->doc_verify_status==0 && $senderRoleId == $wfLevels['DA'])
+                {
+                    $docUploadStatus = (new SafDocController())->ifFullDocVerified($saf->id);
+                    $saf->doc_verify_status = $docUploadStatus ? 1 : $saf->doc_verify_status;
+                    $saf->update();
                 }
                 $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $userId);          // Check Post Next level condition
 
@@ -3744,8 +3751,8 @@ class ActiveSafController extends Controller
     {
         $rules = $this->getMutationFeeReqRules($request);
         $rules["paidAmount"] = 'required|numeric|min:1';
-        $rules["saleValue.*.owner"] = sizeOf($request->saleValue)>1?'required':"nullable";
-        $rules["saleValue.*.deed"] = sizeOf($request->saleValue)>1?'required|mimes:pdf,jpeg,png,jpg':"nullable";
+        $rules["saleValue.*.owner"] = is_array($request->saleValue) && sizeOf($request->saleValue)>1?'required':"nullable";
+        $rules["saleValue.*.deed"] = is_array($request->saleValue) && sizeOf($request->saleValue)>1?'required|mimes:pdf,jpeg,png,jpg':"nullable";
         $validated = Validator::make(
             $request->all(),
             $rules
