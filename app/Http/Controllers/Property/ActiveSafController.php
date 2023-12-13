@@ -3850,8 +3850,8 @@ class ActiveSafController extends Controller
                 $request->merge(["tranId" => $safTrans->id]);
                 $this->postOtherPaymentModes($request);
             }
-            // DB::commit();
-            // DB::connection('pgsql_master')->commit();
+            DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $safTrans->tran_no, 'transactionId' => $safTrans->id], "011604", "1.0", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
