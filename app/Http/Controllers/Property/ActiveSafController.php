@@ -3786,7 +3786,7 @@ class ActiveSafController extends Controller
                 $newSaleValue = $proccessFeePayment->original["data"]["proccess_fee"];
             }
             
-            $proccessFee = $saf->proccess_fee;
+            $proccessFee = $newSaleValue;
             if ($proccessFee != $request->paidAmount) {
                 throw new Exception("Demand Amount And Paied Amount Missmatched");
             }
@@ -3850,8 +3850,8 @@ class ActiveSafController extends Controller
                 $request->merge(["tranId" => $safTrans->id]);
                 $this->postOtherPaymentModes($request);
             }
-            DB::commit();
-            DB::connection('pgsql_master')->commit();
+            // DB::commit();
+            // DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $safTrans->tran_no, 'transactionId' => $safTrans->id], "011604", "1.0", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
