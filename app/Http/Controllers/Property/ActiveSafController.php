@@ -3913,6 +3913,92 @@ class ActiveSafController extends Controller
         }
     }
 
+    public function proccessFeePaymentRecipte(Request $request)
+    {
+        $rules['tranId'] = "required|digits_between:1,9223372036854775807";        
+        $validated = Validator::make(
+            $request->all(),
+            $rules
+        );
+        if ($validated->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validated->errors()
+            ]);
+        }
+        try{
+            $trans = (new PropTransaction())->getPropByTranId($request->tranId);
+            if (collect($trans)->isEmpty())
+            {
+                throw new Exception("Transaction Not Available for this Transaction No");          
+            }
+            if($trans->tran_type!=="Saf Proccess Fee")
+            {
+                throw new Exception("Invalid Transection");
+            } 
+                             
+            $saf = (new PropSaf())->getBasicDetailsV2($trans->saf_id);                       // Get Details from saf table
+            if (collect($saf)->isEmpty()){
+                throw new Exception("Saf Details not available");
+            }
+            $ulbDetails = (new UlbMaster())->getUlbDetails($saf->ulb_id);
+                       
+            $data["transactionNo"] = $trans->tran_no;
+            $data["receiptDtls"] = [
+                "departmentSection" => Config::get('PropertyConstaint.DEPARTMENT_SECTION'),
+                "accountDescription" => Config::get('PropertyConstaint.ACCOUNT_DESCRIPTION'),
+                "transactionDate" => Carbon::parse($trans->tran_date)->format('d-m-Y'),
+                "transactionNo" => $trans->tran_no,
+                "transactionTime" => $trans->created_at->format('g:i A'),
+                "chequeStatus" => $trans->cheque_status??1, 
+                "verifyStatus" => $trans->verify_status,                     // (0-Not Verified,1-Verified,2-Under Verification,3-Bounce)
+                "applicationNo" => $saf->application_no??"",
+                "customerName" => $saf->applicant_marathi ?? "", 
+                "ownerName" => $saf->owner_name_marathi ?? "", 
+                "guardianName" => trim($saf->guardian_name??"") ? $saf->guardian_name : $saf->guardian_name_marathi??"",
+                "mobileNo" => $saf->mobile_no??"",
+                "address" => $saf->prop_address??"",
+                "zone_name" => $saf->zone_name??"",
+                "paidFrom" => $trans->from_fyear,
+                "paidUpto" => $trans->to_fyear,
+                "paymentMode" => $trans->payment_mode,
+                "bankName" => $trans->bank_name,
+                "branchName" => $trans->branch_name,
+                "chequeNo" => $trans->cheque_no,
+                "chequeDate" => ymdToDmyDate($trans->cheque_date),
+                "demandAmount" => $trans->demand_amt,
+                "arrearSettled" => $trans->arrear_settled_amt,
+                "ulbId" => $saf->ulb_id??"",
+                "wardNo" => $saf->ward_no??"",
+                "propertyNo" => $saf->property_no ?? "",
+                "towards" => $trans->tran_type,
+                "description" => [
+                    "keyString" => "Holding Tax"
+                ],
+                "totalPaidAmount" => $trans->amount,
+                "advancePaidAmount" => 0,
+                "adjustAmount" => 0,
+                "netAdvance"=>0, 
+                "paidAmtInWords" => getIndianCurrency($trans->amount),
+                "tcName" => $trans->tc_name,
+                "tcMobile" => $trans->tc_mobile,
+                "ulbDetails" => $ulbDetails,
+                "isArrearReceipt" => false,
+                "bookNo" => $trans->book_no ?? "",
+                "plot_no"=>$saf->plot_no??"",
+                "area_of_plot"=>$saf->area_of_plot,
+
+                "receiptNo" => isset($trans->book_no) ? (explode('-', $trans->book_no)[1]??"0") : ""
+            ];
+            return responseMsgs(true, "Payment Receipt", remove_null($data), "011604.2", "1.0", "", "POST", $request->deviceId ?? ""); 
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false, $e->getMessage(), "", "011604.2", "1.0", "", "POST", $request->deviceId ?? ""); 
+        }
+    }
+
     private function getMutationFeeReqRules(Request $request )
     {
         $rules = [

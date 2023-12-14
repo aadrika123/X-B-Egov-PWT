@@ -99,7 +99,7 @@ class GeneratePaymentReceiptV2
             throw new Exception("Transaction Not Available for this Transaction No");
 
         $this->_GRID['transactionNo'] = $trans->tran_no;
-        $this->_tranType = $trans->tran_type;                // Property or SAF 
+        $this->_tranType = $trans->tran_type;                // Property or SAF       
         $this->_advanceAmt = $this->_mPropAdvance->getAdvanceAmtByTrId($this->_trans->id)->sum("amount");
         $this->_adjustAmt = $this->_mPropAdjustment->getAdjustmentAmtByTrId($this->_trans->id)->sum("amount");
         
@@ -300,13 +300,13 @@ class GeneratePaymentReceiptV2
             "transactionTime" => $this->_trans->created_at->format('g:i A'),
             "chequeStatus" => $this->_trans->cheque_status??1, 
             "verifyStatus" => $this->_trans->verify_status,                     // (0-Not Verified,1-Verified,2-Under Verification,3-Bounce)
-            "applicationNo" => $this->_propertyDtls->application_no,
+            "applicationNo" => $this->_propertyDtls->application_no??"",
             "customerName" => $this->_propertyDtls->applicant_marathi ?? "", //trim($this->_propertyDtls->applicant_name) ? $this->_propertyDtls->applicant_name : $this->_propertyDtls->applicant_marathi,
             "ownerName" => $this->_propertyDtls->owner_name_marathi ?? "", //trim($this->_propertyDtls->owner_name) ? $this->_propertyDtls->owner_name : $this->_propertyDtls->owner_name_marathi,
-            "guardianName" => trim($this->_propertyDtls->guardian_name) ? $this->_propertyDtls->guardian_name : $this->_propertyDtls->guardian_name_marathi,
-            "mobileNo" => $this->_propertyDtls->mobile_no,
-            "address" => $this->_propertyDtls->prop_address,
-            "zone_name" => $this->_propertyDtls->zone_name,
+            "guardianName" => trim($this->_propertyDtls->guardian_name??"") ? $this->_propertyDtls->guardian_name : $this->_propertyDtls->guardian_name_marathi??"",
+            "mobileNo" => $this->_propertyDtls->mobile_no??"",
+            "address" => $this->_propertyDtls->prop_address??"",
+            "zone_name" => $this->_propertyDtls->zone_name??"",
             "paidFrom" => $this->_trans->from_fyear,
             "paidUpto" => $this->_trans->to_fyear,
             "paymentMode" => $this->_trans->payment_mode,
@@ -316,8 +316,8 @@ class GeneratePaymentReceiptV2
             "chequeDate" => ymdToDmyDate($this->_trans->cheque_date),
             "demandAmount" => $this->_trans->demand_amt,
             "arrearSettled" => $this->_trans->arrear_settled_amt,
-            "ulbId" => $this->_propertyDtls->ulb_id,
-            "wardNo" => $this->_propertyDtls->ward_no,
+            "ulbId" => $this->_propertyDtls->ulb_id??"",
+            "wardNo" => $this->_propertyDtls->ward_no??"",
             "propertyNo" => $this->_propertyDtls->property_no ?? "",
             "towards" => $this->_mTowards,
             "description" => [
@@ -333,8 +333,8 @@ class GeneratePaymentReceiptV2
             "ulbDetails" => $this->_ulbDetails,
             "isArrearReceipt" => $this->_isArrearReceipt,
             "bookNo" => $this->_trans->book_no ?? "",
-            "plot_no"=>$this->_propertyDtls->plot_no,
-            "area_of_plot"=>$this->_propertyDtls->area_of_plot,
+            "plot_no"=>$this->_propertyDtls->plot_no??"",
+            "area_of_plot"=>$this->_propertyDtls->area_of_plot??"",
 
             "receiptNo" => isset($this->_trans->book_no) ? (explode('-', $this->_trans->book_no)[1]??"0") : ""
         ];

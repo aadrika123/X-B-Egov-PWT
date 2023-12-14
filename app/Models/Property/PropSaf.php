@@ -252,4 +252,102 @@ class PropSaf extends Model
             ->orderBy('o.id')
             ->first();
     }
+
+    public function getBasicDetailsV2($safId)
+    {
+        $select = [
+            'p.holding_no as holding_no',
+            'p.previous_holding_id',
+            'p.prop_address',
+            'p.ulb_id',
+            'o.owner_name',
+            'o.guardian_name',
+            'o.mobile_no',
+            'u.ward_name as ward_no',
+
+            'p.saf_no as application_no',
+            'p.applicant_name as eng_applicant_name',
+            'p.applicant_name as applicant_marathi',
+            
+            'p.plot_no',
+            'p.area_of_plot',
+
+            'z.zone_name',
+            'o.owner_name as owner_name',
+            'o.owner_name_marathi',
+            'o.guardian_name',
+            'o.guardian_name_marathi',
+            'o.mobile_no',
+            'u.ward_name as ward_no'
+        ];
+        $data=  DB::table('prop_safs as p')
+            ->select(
+                $select 
+                
+            )
+            // ->leftJoin('prop_safs_owners as o', 'o.saf_id', '=', 'p.id')
+            ->leftjoin(DB::raw("(
+                select string_agg(mobile_no::text,',') as mobile_no,
+                        string_agg(owner_name,',') as owner_name,
+                        string_agg(guardian_name,',') as guardian_name,   
+                        string_agg(case when owner_name_marathi <>'' then owner_name_marathi else owner_name end ,',') as owner_name_marathi,
+                        string_agg(case when guardian_name_marathi <>'' then guardian_name_marathi else guardian_name end ,',') as guardian_name_marathi, 
+                        saf_id
+                from prop_safs_owners
+                where status  =1 AND saf_id = $safId
+                group by saf_id
+            )as o"), 'o.saf_id', 'p.id')
+            ->leftJoin('ulb_ward_masters as u', 'u.id', '=', 'p.ulb_id')
+            ->join('zone_masters as z', 'z.id', '=', 'p.zone_mstr_id')
+            ->where('p.id', $safId)
+            ->first();
+            if(!$data)
+            {
+                $data=  DB::table('prop_active_safs as p')
+                ->select(
+                    $select 
+                )
+                // ->leftJoin('prop_safs_owners as o', 'o.saf_id', '=', 'p.id')
+                ->leftjoin(DB::raw("(
+                    select string_agg(mobile_no::text,',') as mobile_no,
+                            string_agg(owner_name,',') as owner_name,
+                            string_agg(guardian_name,',') as guardian_name,   
+                            string_agg(case when owner_name_marathi <>'' then owner_name_marathi else owner_name end ,',') as owner_name_marathi,
+                            string_agg(case when guardian_name_marathi <>'' then guardian_name_marathi else guardian_name end ,',') as guardian_name_marathi, 
+                            saf_id
+                    from prop_active_safs_owners
+                    where status  =1 AND saf_id = $safId
+                    group by saf_id
+                )as o"), 'o.saf_id', 'p.id')
+                ->leftJoin('ulb_ward_masters as u', 'u.id', '=', 'p.ulb_id')
+                ->join('zone_masters as z', 'z.id', '=', 'p.zone_mstr_id')
+                ->where('p.id', $safId)
+                ->first();
+            }
+            
+            if(!$data)
+            {
+                $data=  DB::table('prop_rejected_safs as p')
+                ->select(
+                    $select 
+                )
+                // ->leftJoin('prop_safs_owners as o', 'o.saf_id', '=', 'p.id')
+                ->leftjoin(DB::raw("(
+                    select string_agg(mobile_no::text,',') as mobile_no,
+                            string_agg(owner_name,',') as owner_name,
+                            string_agg(guardian_name,',') as guardian_name,   
+                            string_agg(case when owner_name_marathi <>'' then owner_name_marathi else owner_name end ,',') as owner_name_marathi,
+                            string_agg(case when guardian_name_marathi <>'' then guardian_name_marathi else guardian_name end ,',') as guardian_name_marathi, 
+                            saf_id
+                    from prop_rejected_safs_owners
+                    where status  =1 AND saf_id = $safId
+                    group by saf_id
+                )as o"), 'o.saf_id', 'p.id')
+                ->leftJoin('ulb_ward_masters as u', 'u.id', '=', 'p.ulb_id')
+                ->join('zone_masters as z', 'z.id', '=', 'p.zone_mstr_id')
+                ->where('p.id', $safId)
+                ->first();
+            }
+        return $data;
+    }
 }
