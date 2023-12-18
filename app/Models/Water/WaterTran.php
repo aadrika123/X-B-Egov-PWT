@@ -239,6 +239,7 @@ class WaterTran extends Model
     {
         return WaterTran::where('tran_date', $currentDate)
             ->where('user_type', $userType)
+            ->whereIn('status', [1,2])
             ->where('payment_mode', '!=', $rfTransMode)
             ->get();
     }

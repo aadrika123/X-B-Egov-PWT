@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Property;
 
+use App\BLL\Payment\PineLabPayment;
 use App\BLL\Property\Akola\GetHoldingDuesV2;
 use App\BLL\Property\Akola\PostPropPaymentV2;
 use App\Repository\Property\Interfaces\iSafRepository;
@@ -10,6 +11,9 @@ use App\Http\Controllers\Payment\IciciPaymentController;
 use App\Http\Requests\Property\ReqPayment;
 use App\Models\Property\PropIciciPaymentsRequest;
 use App\Models\Property\PropIciciPaymentsResponse;
+use App\Models\Property\PropPinelabPaymentsRequest;
+use App\Models\Property\PropPinelabPaymentsResponse;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
@@ -26,6 +30,9 @@ class CitizenHoldingController extends Controller
     private $_PropIciciPaymentsRequest;
     private $_PropIciciPaymentsRespone;
     protected $_safRepo;
+    protected $_PropPinelabPaymentsRequest ;
+    protected $_PropPinelabPaymentsResponse ;
+    protected $_PineLabPayment ;
 
     public function __construct(iSafRepository $safRepo)
     {
@@ -35,6 +42,9 @@ class CitizenHoldingController extends Controller
         $this->_callbackUrl = Config::get("payment-constants.PROPERTY_FRONT_URL");
         $this->_PropIciciPaymentsRequest = new PropIciciPaymentsRequest();
         $this->_PropIciciPaymentsRespone = new PropIciciPaymentsResponse();
+        $this->_PropPinelabPaymentsRequest = new PropPinelabPaymentsRequest();
+        $this->_PropPinelabPaymentsResponse = new PropPinelabPaymentsResponse();
+        $this->_PineLabPayment =  new PineLabPayment;
     }
 
     public function getHoldingDues(Request $request)
@@ -195,6 +205,159 @@ class CitizenHoldingController extends Controller
         }
         catch (Exception $e) {
             return responseMsgs(false, [$e->getMessage(),$e->getLine(),$e->getFile()], "", "011604", "2.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    public function pinLabInitPement(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'propId' => 'required|integer',
+                'paymentType' => 'required|In:isFullPayment,isArrearPayment,isPartPayment',
+                'paidAmount' => 'nullable|required_if:paymentType,==,isPartPayment|integer',
+                'paymentMode' => 'required|string'
+            ]
+        );
+
+        if ($validated->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validated->errors()
+            ]);
+        }
+        try{
+            $user = Auth()->user();
+            $billRefNo = null;
+
+            if ($request->paymentType == 'isFullPayment')
+            {
+                $request->merge(['isArrear' => false]);
+            }
+            elseif ($request->paymentType == 'isArrearPayment')
+            {
+                $request->merge(['isArrear' => true]);
+            }
+            else{
+                $request->merge(['isArrear' => false]);
+            }
+            $demandsResponse = $this->getHoldingDues($request);
+            if (!$demandsResponse->original["status"]) {
+                return $demandsResponse;
+            }
+            $demand = (object)$demandsResponse->original["data"];
+            
+            if ($demand["payableAmt"]<=0) {
+                throw new Exception("Deamnd Amount is 0 ");
+            }
+
+            $payableAmt = $demand["payableAmt"];
+            $arrear = $demand["arrear"];
+            if ($request->paymentType != "isPartPayment") {
+                $request->merge(["paidAmount" => $request->paymentType == "isFullPayment" ? $payableAmt : $arrear]);
+            }
+
+            $newReqs = new ReqPayment($request->all());
+            $newReqs->merge([
+                "id"         => $request->propId,
+            ]);
+            $postPropPayment = new PostPropPaymentV2($newReqs);
+            $postPropPayment->_propCalculation = $demandsResponse;
+            $postPropPayment->chakPayentAmount();
+            $OneMinLate = Carbon::now()->addMinutes("-1")->format("Y-m-d H:i:s");            
+            $chack = $this->_PropPinelabPaymentsRequest::where("prop_id",$request->propId)
+                    ->where("created_at",">=",$OneMinLate)
+                    ->OrderBy("id","DESC")
+                    ->first();           
+            if($chack)
+            {
+                throw new Exception("Please Try After ".(60- Carbon::now()->diffInSeconds(Carbon::parse($chack->created_at)))." Seconds");
+            }
+            $pineLabParams = (object)[
+                "workflowId"    => $demand["basicDetails"]["workflowId"],
+                "amount"        => $request->paidAmount,
+                "moduleId"      => $demand["basicDetails"]["moduleId"],
+                "applicationId" =>$request->propId,
+                "paymentType" => "Property"
+            ];
+            $billRefNo = $this->_PineLabPayment->initiatePayment($pineLabParams);
+            $request->merge([
+                "resRefNo" => $billRefNo
+            ]);
+            $request->merge([
+                "amount" => $request->paidAmount,
+                "id"    => $request->propId,
+                "ulbId" => $demand["basicDetails"]["ulb_id"],
+                "demandList" => $demand["demandList"],
+                "fromFyear" => collect($demand['demandList'])->first()['fyear'],
+                "toFyear" => collect($demand['demandList'])->last()['fyear'],
+                "demandAmt" => $demand['grandTaxes']['balance'],
+                "arrearSettled" => $demand['arrear'],
+                "workflowId" => $demand["basicDetails"]["workflowId"],
+                "moduleId" => $demand["basicDetails"]["moduleId"],
+                "userId" => $user->id,
+                "tranType"=>"Property",
+            ]);
+            
+            $respons["propId"] = $request->propId;
+            $respons["paidAmount"] = $request->paidAmount;
+            $respons["resRefNo"] = $request->resRefNo;
+
+            DB::beginTransaction();
+            $respons["requestId"] = $this->_PropPinelabPaymentsRequest->store($request);            
+            DB::commit();
+
+            $respons = collect($respons)->only(
+                [
+                    "resRefNo",
+                    "propId",
+                    "paidAmount",
+                    "requestId",
+                ]
+            );
+            return responseMsgs(true, "request Initiated", $respons, "phc1.1", "1.0", "", "POST", $request->deviceId ?? "");
+        }
+        catch(Exception $e)
+        {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "1", "1.0", "", "", $request->deviceId ?? "");
+        }
+    }
+
+    public function pinLabResponse(Request $request)
+    {
+        $mHoldingTaxController = new HoldingTaxController($this->_safRepo);
+        $validated = Validator::make(
+            $request->all(),
+            [                
+                'reqRefNo' => 'required|string'
+            ]
+        );
+
+        if ($validated->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validated->errors()
+            ]);
+        }
+        try{
+            $reqData  = $this->_PropIciciPaymentsRequest->where('bill_ref_no', $request->reqRefNo)
+                        ->where('payment_status', 0)
+                        ->orderBy("id","DESC")
+                        ->first();              
+            if (collect($reqData)->isEmpty())
+            {
+                throw new Exception("No Transaction Found");
+            }
+
+            
+        }
+        catch(Exception $e)
+        {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "1", "1.0", "", "", $request->deviceId ?? "");
         }
     }
 }
