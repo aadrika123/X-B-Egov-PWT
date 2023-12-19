@@ -81,7 +81,7 @@ class CitizenHoldingController extends Controller
                 throw new Exception("Deamnd Amount is 0 ");
             }
             $payableAmt = $demand["payableAmt"];
-            $arrear = $demand["arrear"];
+            $arrear = $demand["arrear"]+($demand["arrearMonthlyPenalty"]??0);
             if ($request->paymentType != "isPartPayment") {
                 $request->merge(["paidAmount" => $request->paymentType == "isFullPayment" ? $payableAmt : $arrear]);
             }
@@ -253,7 +253,7 @@ class CitizenHoldingController extends Controller
             }
 
             $payableAmt = $demand["payableAmt"];
-            $arrear = $demand["arrear"];
+            $arrear = round($demand["arrear"]+($demand["arrearMonthlyPenalty"]??0));
             if ($request->paymentType != "isPartPayment") {
                 $request->merge(["paidAmount" => $request->paymentType == "isFullPayment" ? $payableAmt : $arrear]);
             }
@@ -330,8 +330,11 @@ class CitizenHoldingController extends Controller
         $mHoldingTaxController = new HoldingTaxController($this->_safRepo);
         $validated = Validator::make(
             $request->all(),
-            [                
-                'reqRefNo' => 'required|string'
+            [       
+                "paidAmount" =>"required|numeric" ,       
+                'Detail.BillingRefNo' => 'required|string',
+                'Response.ResponseMsg' => 'required|string',
+                'Response.ResponseCode' => 'required',
             ]
         );
 
@@ -343,7 +346,9 @@ class CitizenHoldingController extends Controller
             ]);
         }
         try{
-            $reqData  = $this->_PropIciciPaymentsRequest->where('bill_ref_no', $request->reqRefNo)
+            $responStatusArr = $request->Response;
+            $reqRefNo = $request->Detail["BillingRefNo"];            
+            $reqData  = $this->_PropPinelabPaymentsRequest->where('bill_ref_no', $reqRefNo)
                         ->where('payment_status', 0)
                         ->orderBy("id","DESC")
                         ->first();              
@@ -351,12 +356,48 @@ class CitizenHoldingController extends Controller
             {
                 throw new Exception("No Transaction Found");
             }
+            
+            if($reqData->payable_amount != $request->paidAmount)
+            {
+                throw new Exception("payble Amount Missmatch");
+            }
+            $newReqs = new ReqPayment([
+                "paymentType" => $reqData->payment_type,
+                "paidAmount" => $reqData->payable_amount,
+                "id"         => $reqData->prop_id,
+                "paymentMode" => $reqData->payment_mode,
+            ]);
+            $responsData = [                
+                "requestId"  => $reqData->id,
+                "reqRefNo"     => $reqRefNo,
+                "safId"        => $reqData->saf_id ,
+                "propId"        => $reqData->prop_id ,
+                "paymentMode"   => $reqData->payment_mode,
+                "responseCode" => $responStatusArr["ResponseCode"],
+                "responseSms"   => $responStatusArr["ResponseMsg"],
+                "paidAmount"   => $request['paidAmount'],
+                "requst"      => $request->all(),
+                "userId"       => Auth()->user()?Auth()->user()->id:"",
+                "ipAddress"        => $request->ipAddress,
+            ];
+            if(in_array($responStatusArr["ResponseCode"],[0]))
+            { 
+                $data = $mHoldingTaxController->offlinePaymentHoldingV2($newReqs);
+                if($data->original['status'])
+                {
+                    $reqData->update(['payment_status' => 1]);
+                    $responsData["tranId"]=$data->original['data']['transactionId'] ?? null;
+                    $responsData = (object) $responsData;
+                    $this->_PropPinelabPaymentsResponse->store($responsData);
+                }
+                return $data;
+            }
+            throw new Exception("Payment Is Failed");
 
             
         }
         catch(Exception $e)
         {
-            DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "1", "1.0", "", "", $request->deviceId ?? "");
         }
     }

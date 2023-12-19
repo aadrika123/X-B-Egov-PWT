@@ -4503,7 +4503,7 @@ class Report implements IReport
 				sum(COALESCE(advance_amount,0)::numeric) as advance_amount,
                 sum(COALESCE(adjusted_amount,0)::numeric) as adjusted_amount
             from prop_transactions
-            join (
+            left join (
                 select distinct(prop_transactions.id)as tran_id ,
                     sum(COALESCE(prop_tran_dtls.paid_total_tax,0)::numeric) as total_demand,					
                     sum(COALESCE(prop_tran_dtls.paid_total_tax,0)::numeric) as total_tax,

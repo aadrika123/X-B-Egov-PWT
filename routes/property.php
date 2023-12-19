@@ -367,6 +367,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
 
     #========created by Sandeep===================
     Route::post('v1/init-pine-lab-payment', 'pinLabInitPement');                        // (16) For React And Posh Machine Pine Lab Get Reference No
+    Route::post('v1/response-pine-lab-payment', 'pinLabResponse');                        // (16) For React And Posh Machine Pine Lab Payment And Update data Throw Reference No
   });
 
   /**
