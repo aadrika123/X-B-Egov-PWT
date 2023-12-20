@@ -969,6 +969,27 @@ class ActiveSafController extends Controller
                 $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $userId);          // Check Post Next level condition
 
                 $geotagExist = $saf->is_field_verified == true;
+                if(!$geotagExist){
+                    $propSafVerification = new PropSafVerification();
+                    if ($saf->prop_type_mstr_id != 4)
+                    {
+                        $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);          // Get fields Verified Saf with all Floor Details
+
+                    }
+                    else{
+                        $fieldVerifiedSaf = $propSafVerification->getVerifications($safId);
+                        if(collect($fieldVerifiedSaf)->isEmpty())
+                        {
+                            $fieldVerifiedSaf = $propSafVerification->getVerifications2($safId);
+                        }
+                    }
+                    if(collect($fieldVerifiedSaf)->isNotEmpty()){
+                        $saf->is_geo_tagged = true;
+                        $saf->is_field_verified = true;
+                        $saf->update();
+                    }
+
+                }
                 if(!$geotagExist && $saf->prop_type_mstr_id==4)
                 {
                     $geotagExist = $saf->is_geo_tagged;
