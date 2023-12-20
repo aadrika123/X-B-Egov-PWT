@@ -51,6 +51,7 @@ return [
         "ATC"               =>  "TC",
         "SECTION INCHARGE"  =>  "SI",
         "SI"                =>  "SI",
+        "ASSISTANT TAX SUPRITENDENT" =>  "SI",
         "SECTION HEAD"      =>  "SH",
         "SH"                =>  "SH",
         "TAX DAROGA"        =>  "TD",
