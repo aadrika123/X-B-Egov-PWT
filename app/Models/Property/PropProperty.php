@@ -691,7 +691,10 @@ class PropProperty extends Model
                     property_id,
                     status
                     FROM prop_demands
-                WHERE fyear='2023-2024' AND status=1) as d"
+                WHERE fyear='".getFY()."' 
+                    AND status=1
+                    AND due_total_tax >0
+                ) as d"
             ), function ($join) {
                 $join->on("d.property_id", "=", "prop_properties.id");
             })
@@ -702,7 +705,82 @@ class PropProperty extends Model
                     property_id,
                     status
                     FROM prop_demands
-                WHERE fyear<'2023-2024' AND status=1) as pd"
+                WHERE fyear<'".getFY()."' 
+                    AND status=1
+                    AND due_total_tax >0
+                ) as pd"
+            ), function ($join) {
+                $join->on("pd.property_id", "=", "prop_properties.id");
+            });
+    }
+
+    public function searchPropertyV2($ulbId)
+    {
+        return PropProperty::select(
+                'prop_properties.id',
+                'prop_properties.ulb_id',
+                'prop_properties.holding_no',
+                'zone_name',
+                'latitude',
+                'longitude',
+                'prop_properties.new_holding_no',
+                'prop_properties.pt_no',
+                'prop_properties.khata_no',
+                'prop_properties.plot_no',
+                'prop_properties.property_no',
+                'ward_name',
+                'prop_address',
+                'prop_properties.status as active_status',
+                'o.mobile_no',
+                'o.owner_name',
+                DB::raw("
+                    CASE WHEN TRIM(o.owner_name)<>'' THEN o.owner_name ELSE o.owner_name_marathi END AS owner_name,
+                    CASE WHEN COALESCE(d.due_total_tax,0)>0 then 2 else 1  END AS paid_status
+                    "),
+            )
+            ->join('zone_masters', 'zone_masters.id', 'prop_properties.zone_mstr_id')
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
+            ->leftjoin(DB::raw("(select latitude, longitude,  prop_saf_geotag_uploads.saf_id
+                                from prop_saf_geotag_uploads 
+                                JOIN prop_properties ON prop_properties.saf_id = prop_saf_geotag_uploads.saf_id 
+                                where direction_type ILIKE('%front%')                               
+                                GROUP BY prop_saf_geotag_uploads.saf_id,latitude, longitude
+                           ) as geotag"), function ($join) {
+                $join->on("geotag.saf_id", "=", "prop_properties.saf_id");
+            })
+            ->leftjoin(DB::raw("(
+                select string_agg(mobile_no::text,',') as mobile_no,
+                        string_agg(owner_name,',') as owner_name,
+                        string_agg(case when owner_name_marathi <>'' then owner_name_marathi else owner_name end ,',') as owner_name_marathi,
+                        property_id
+                from prop_owners
+                where status  =1 
+                group by property_id
+            )as o"), 'o.property_id', 'prop_properties.id')
+            ->leftJoin(DB::raw(
+                "(
+                    SELECT property_id, 
+                        SUM(due_total_tax) AS due_total_tax			  
+                    FROM prop_demands   
+                    WHERE due_total_tax >0
+                        AND status=1
+                        AND((paid_status = 1 AND is_full_paid =false) OR (paid_status = 0 AND is_full_paid =true))
+                    GROUP BY property_id
+                ) AS d"
+            ), function ($join) {
+                $join->on("d.property_id", "=", "prop_properties.id");
+            })
+            ->leftJoin(DB::raw(
+                "(SELECT 
+                    paid_status,
+                    fyear,
+                    property_id,
+                    status
+                    FROM prop_demands
+                WHERE fyear<'".getFY()."' 
+                    AND status=1
+                    AND due_total_tax >0
+                ) as pd"
             ), function ($join) {
                 $join->on("pd.property_id", "=", "prop_properties.id");
             });
