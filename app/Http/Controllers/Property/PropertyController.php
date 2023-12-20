@@ -31,6 +31,7 @@ use App\Models\WorkflowTrack;
 use App\Pipelines\SearchHolding;
 use App\Pipelines\SearchPtn;
 use App\Repository\Common\CommonFunction;
+use App\Repository\Property\Interfaces\iSafRepository;
 use App\Traits\Property\Property;
 use App\Traits\Property\SAF;
 use Carbon\Carbon;
@@ -885,6 +886,7 @@ class PropertyController extends Controller
                         $ownerUpdate = (new PropOwner)->edit($val->owner_id, $ownerArr);
                     else{
                         $ownerArr["property_id"] = $application->prop_id;
+                        $ownerArr["status"] = 1;
                         $ownerArr["saf_id"] = null;
                         $ownerArr["user_id"] = $user_id;
                         $ownerArr["id"] = null;
