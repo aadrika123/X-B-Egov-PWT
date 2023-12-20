@@ -2253,7 +2253,7 @@ class WaterConsumer extends Controller
             if (!$demandDetails) {
                 throw new Exception('demands not found ');
             }
-            // return([$this->_DB->getQueryLog(),$demandDetails]);
+           
             $allDemandGenerated = $mWaterDemands->getConsumerDemandV3($ConsumerId);           // get all demands of consumer generated 
             # sum of amount
             $sumAmount = collect($allDemandGenerated)->sum('due_balance_amount');
@@ -2269,7 +2269,7 @@ class WaterConsumer extends Controller
                 'initialReading'    => (int)$initialReading,
                 'finalReading'      => (int)$finalReading,
                 'initialDate'       => "",
-                'amountDuePaid'     =>  $roundedSumAmount,
+                'due_balance_amount'=>  $roundedSumAmount,
                 "meterImg"          => ($documents ? $docUrl . "/" . $documents->relative_path . "/" . $documents->file_name : 0)
             ];
             $returnValues = collect($demandDetails)->merge($demands);
