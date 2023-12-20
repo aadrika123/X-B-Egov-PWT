@@ -485,7 +485,7 @@ class ReportController extends Controller
 
     public function propSafCollectionTc(Request $request)
     {
-        $request->merge(["userJoin"=>"JOIN"]);
+        $request->merge(["userJoin" => "JOIN"]);
         return $this->propSafCollection($request);
     }
 
@@ -1294,7 +1294,8 @@ class ReportController extends Controller
      */
     public function data(Request $request)
     {
-        // return  SMSAKGOVT(8797770238, "hello", "123");
+
+
         $sql = "SELECT 
                         total_assessment.*, 
                         applied_safs.*, 
@@ -1369,7 +1370,7 @@ class ReportController extends Controller
                       WHERE 
                         status = 1 AND ulb_id=2
                         AND application_date BETWEEN '2023-04-01' 			--Parameterise this
-                        AND '2024-03-31' 									--Parameterise this
+                        AND '2024-03-31' 									--Parameterise this  get fy from curreent date and get date range from current date
                       UNION ALL 
                       SELECT 
                         SUM(
@@ -1875,7 +1876,7 @@ class ReportController extends Controller
                        SELECT * FROM current_payments,lastyear_payments,jsk_collections
                 ) AS payment_modes";
         $data = DB::select($sql);
-        return  $data = $data[0];
+        return $data = $data[0];
         $mMplYearlyReport = new MplYearlyReport();
         $currentFy = getFY();
 
@@ -1976,6 +1977,8 @@ class ReportController extends Controller
 
         $mMplYearlyReport->where('fyear', $currentFy)
             ->update($updateReqs);
+
+        // dd("ok");
     }
 
     public function AprovedRejectList(Request $request)
