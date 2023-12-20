@@ -46,6 +46,7 @@ class CalculateSafTaxById extends TaxCalculator
             "areaOfPlot" => $this->_safDtls->area_of_plot,
             "category" => $this->_safDtls->category_id,
             "dateOfPurchase" => $this->_safDtls->land_occupation_date,
+            "previousHoldingId" => $this->_safDtls->previous_holding_id??0,
             "applyDate" => $this->_safDtls->application_date??null,
             "ward" => $this->_safDtls->ward_mstr_id??null,
             "zone" => $this->_safDtls->zone_mstr_id??null,
