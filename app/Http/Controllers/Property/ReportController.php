@@ -1004,8 +1004,10 @@ class ReportController extends Controller
 
             $data['Demand']['prev_year']             = round(($prevYearData->demand_for_this_year ?? 0) / 10000000, 2); #_in cr
             $data['Demand']['current_year']          = round(($currentYearData->demand_for_this_year ?? 0) / 10000000, 2); #_in cr
+            $data['Demand']['arrear']          = round(($currentYearData->demand_outstanding_this_year ?? 0) / 10000000, 2);             #_in cr
             $data['Collection']['prev_year']         = round(($prevYearData->demand_coll_this_year ?? 0) / 10000000, 2); #_in cr
             $data['Collection']['current_year']      = round(($currentYearData->demand_coll_this_year ?? 0) / 10000000, 2); #_in cr
+            $data['Collection']['arrear']      = round(($currentYearData->demand_outstanding_coll_this_year ?? 0) / 10000000, 2);
             $data['Balance']['prev_year']            = round(($prevYearData->demand_balance_this_year ?? 0)  / 10000000, 2); #_in cr
             $data['Balance']['current_year']         = round(($currentYearData->demand_balance_this_year ?? 0) / 10000000, 2); #_in cr
             $data['Total Payment From HH']['prev_year']    = $prevYearData->demand_coll_from_this_year_prop_count ?? 0;
@@ -1294,8 +1296,7 @@ class ReportController extends Controller
      */
     public function data(Request $request)
     {
-
-
+        $todayDate = Carbon::now();
         $sql = "SELECT 
                         total_assessment.*, 
                         applied_safs.*, 
@@ -1876,7 +1877,7 @@ class ReportController extends Controller
                        SELECT * FROM current_payments,lastyear_payments,jsk_collections
                 ) AS payment_modes";
         $data = DB::select($sql);
-        return $data = $data[0];
+        $data = $data[0];
         $mMplYearlyReport = new MplYearlyReport();
         $currentFy = getFY();
 
@@ -1973,10 +1974,16 @@ class ReportController extends Controller
             // "assessed_property_this_year_achievement" => $data->lastyear_dd_payment,
             // "assessed_property_this_year_achievement" => $data->lastyear_neft_payment,
             // "assessed_property_this_year_achievement" => $data->lastyear_online_payment,
+            "date" => $todayDate,
+            "fyear" => "2023-2024",
+            "ulb_id" => "2",
+            "ulb_name" => "Akola Municipal Corporation",
         ];
 
-        $mMplYearlyReport->where('fyear', $currentFy)
-            ->update($updateReqs);
+        // $mMplYearlyReport->where('fyear', $currentFy)
+        //     ->update($updateReqs);
+        // $updateReqs->push(["fyear" => "2023-2024"]);
+        $mMplYearlyReport->create($updateReqs);
 
         // dd("ok");
     }

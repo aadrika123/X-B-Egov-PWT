@@ -9,4 +9,5 @@ class MplYearlyReport extends Model
 {
     use HasFactory;
     protected $connection = 'pgsql_reports';
+    protected $guarded = [];
 }
