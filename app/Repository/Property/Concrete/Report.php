@@ -4503,7 +4503,7 @@ class Report implements IReport
 				sum(COALESCE(advance_amount,0)::numeric) as advance_amount,
                 sum(COALESCE(adjusted_amount,0)::numeric) as adjusted_amount
             from prop_transactions
-            join (
+            left join (
                 select distinct(prop_transactions.id)as tran_id ,
                     sum(COALESCE(prop_tran_dtls.paid_total_tax,0)::numeric) as total_demand,					
                     sum(COALESCE(prop_tran_dtls.paid_total_tax,0)::numeric) as total_tax,
@@ -5199,7 +5199,7 @@ class Report implements IReport
                 $val->receiptNo = isset($val->book_no) ? explode('-', $val->book_no)[1] : "";
                 $json[] = [
                     "fyear"               => $val->from_fyear,
-                    "total"               => $val->a1rear_total_tax,
+                    "total"               => ($val->a1rear_total_tax + $val->penalty - $val->adjusted_amount),
                     "generalTaxException" =>  $val->generalTaxException ,
                     "noticeFee"           => $val->noticeFee,
                     "maintanance_amt"     =>  $val->arear_maintanance_amt,
@@ -5224,7 +5224,7 @@ class Report implements IReport
                 ];
                 $json[] = [
                     "fyear"               => $val->to_fyear,
-                    "total"               => $val->c1urrent_total,
+                    "total"               => ($val->c1urrent_total - $val->rebate + $val->advance_amount),//$val->c1urrent_total,
                     "generalTaxException" =>  $val->generalTaxException ,
                     "noticeFee"           => $val->noticeFee,
                     "maintanance_amt"     => $val->current_maintanance_amt,

@@ -1380,8 +1380,13 @@ class ActiveSafController extends Controller
 
             if ($safDetails->prop_type_mstr_id != 4)
                 $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);          // Get fields Verified Saf with all Floor Details
-            else
+            else{
                 $fieldVerifiedSaf = $propSafVerification->getVerifications($safId);
+                if(collect($fieldVerifiedSaf)->isEmpty())
+                {
+                    $fieldVerifiedSaf = $propSafVerification->getVerifications2($safId);
+                }
+            }
             if (collect($fieldVerifiedSaf)->isEmpty())
                 throw new Exception("Site Verification not Exist");
 
@@ -2656,14 +2661,20 @@ class ActiveSafController extends Controller
             DB::beginTransaction();
             switch ($roleId) {
                 case $taxCollectorRole:                                                                  // In Case of Agency TAX Collector
-                    $req->agencyVerification = true;
-                    $req->ulbVerification = false;
+                    // $req->agencyVerification = true;
+                    // $req->ulbVerification = false;
+                    $req->merge(["agencyVerification"=>true,
+                                "ulbVerification"=>false
+                    ]);
                     $msg = "Site Successfully Verified";
                     $propActiveSaf->verifyAgencyFieldStatus($req->safId);                                         // Enable Fields Verify Status
                     break;
                 case $ulbTaxCollectorRole:                                                                // In Case of Ulb Tax Collector
-                    $req->agencyVerification = false;
-                    $req->ulbVerification = true;
+                    // $req->agencyVerification = false;
+                    // $req->ulbVerification = true;
+                    $req->merge(["agencyVerification"=>false,
+                                "ulbVerification"=>true
+                    ]);
                     $msg = "Site Successfully Verified";
                     $propActiveSaf->verifyFieldStatus($req->safId);                                         // Enable Fields Verify Status
                     break;

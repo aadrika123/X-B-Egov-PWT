@@ -87,6 +87,8 @@ class SafApprovalBll
 
         $this->replicateSaf();                  // ()
 
+        $this->transerMutationDemands();
+
         $this->generatTaxAccUlTc();
 
     }
@@ -189,15 +191,6 @@ class SafApprovalBll
             $approvedOwners->setTable('prop_owners');
             $approvedOwners->property_id = $propProperties->id;
             $approvedOwners->save();
-        }
-        if(in_array($this->_activeSaf->assessment_type,['Mutation']))
-        {
-            $propProperties = PropProperty::find($this->_activeSaf->previous_holding_id);        
-            if(!$propProperties)
-            {
-                throw new Exception("Old Property Not Found");
-            }
-            $propProperties->update(["status"=>0]);
         }
         
     }
@@ -437,5 +430,93 @@ class SafApprovalBll
             $demand->store($arr);
             
         }
+    }
+
+    public function transerMutationDemands()
+    {
+        if(in_array($this->_activeSaf->assessment_type,['Mutation'])) #update Old Property According to New Data
+        {
+            $propProperties = PropProperty::find($this->_activeSaf->previous_holding_id);        
+            if(!$propProperties)
+            {
+                throw new Exception("Old Property Not Found");
+            }
+            $propProperties->update(["status"=>0]);
+            $dueDemands = PropDemand::where("property_id",$propProperties->id)
+                ->where("status",1)
+                ->where("due_total_tax",">",0)
+                ->OrderBy("fyear","ASC")
+                ->get();
+            foreach($dueDemands as $val){
+                $lagaciDimand = new PropDemand();
+                $this->MutationDemands($val , $lagaciDimand);
+                $lagaciDimand->property_id = $this->_replicatedPropId;
+                $lagaciDimand->save();
+                
+            }
+        }
+        
+    }
+
+    private function MutationDemands(PropDemand $demand,PropDemand $newDemand)
+    {
+        // $newDemand->
+        $newDemand->alv             = $demand->due_alv ;
+        $newDemand->maintanance_amt = $demand->due_maintanance_amt ;
+        $newDemand->aging_amt       = $demand->due_aging_amt ;
+        $newDemand->general_tax     = $demand->due_general_tax ;
+        $newDemand->road_tax        = $demand->due_road_tax ;
+        $newDemand->firefighting_tax = $demand->due_firefighting_tax ;
+        $newDemand->education_tax   = $demand->due_education_tax ;
+        $newDemand->water_tax       = $demand->due_water_tax ;
+        $newDemand->cleanliness_tax = $demand->due_cleanliness_tax ;
+        $newDemand->sewarage_tax    = $demand->due_sewarage_tax ;
+        $newDemand->tree_tax        = $demand->due_tree_tax ;
+        $newDemand->professional_tax = $demand->due_professional_tax ;
+        $newDemand->total_tax       = $demand->due_total_tax ;
+        $newDemand->balance         = $demand->due_balance ;
+        $newDemand->fyear           = $demand->fyear ;
+        $newDemand->adjust_type     = $demand->adjust_type ;
+        $newDemand->adjust_amt      = $demand->adjust_amt ;
+        $newDemand->user_id         = Auth()->user()->id??$demand->user_id ;
+        $newDemand->ulb_id          = $demand->ulb_id ;
+        $newDemand->tax1            = $demand->due_tax1 ;
+        $newDemand->tax2            = $demand->due_tax2 ;
+        $newDemand->tax3            = $demand->due_tax3 ;
+        $newDemand->sp_education_tax = $demand->due_sp_education_tax ;
+        $newDemand->water_benefit   = $demand->due_water_benefit ;
+        $newDemand->water_bill      = $demand->due_water_bill ;
+        $newDemand->sp_water_cess   = $demand->due_sp_water_cess ;
+        $newDemand->drain_cess      = $demand->due_drain_cess ;
+        $newDemand->light_cess      = $demand->due_light_cess ;
+        $newDemand->major_building  = $demand->due_major_building ;
+
+        $newDemand->due_alv             = $demand->due_alv ;
+        $newDemand->due_maintanance_amt = $demand->due_maintanance_amt ;
+        $newDemand->due_aging_amt       = $demand->due_aging_amt ;
+        $newDemand->due_general_tax     = $demand->due_general_tax ;
+        $newDemand->due_road_tax        = $demand->due_road_tax ;
+        $newDemand->due_firefighting_tax = $demand->due_firefighting_tax ;
+        $newDemand->due_education_tax   = $demand->due_education_tax ;
+        $newDemand->due_water_tax       = $demand->due_water_tax ;
+        $newDemand->due_cleanliness_tax = $demand->due_cleanliness_tax ;
+        $newDemand->due_sewarage_tax    = $demand->due_sewarage_tax ;
+        $newDemand->due_tree_tax        = $demand->due_tree_tax ;
+        $newDemand->due_professional_tax = $demand->due_professional_tax ;
+        $newDemand->due_total_tax       = $demand->due_total_tax ;
+        $newDemand->due_balance         = $demand->due_balance ;
+        $newDemand->due_adjust_amt      = $demand->due_adjust_amt ;
+        $newDemand->due_tax1            = $demand->due_tax1 ;
+        $newDemand->due_tax2            = $demand->due_tax2 ;
+        $newDemand->due_tax3            = $demand->due_tax3 ;
+        $newDemand->due_sp_education_tax = $demand->due_sp_education_tax ;
+        $newDemand->due_water_benefit   = $demand->due_water_benefit ;
+        $newDemand->due_water_bill      = $demand->due_water_bill ;
+        $newDemand->due_sp_water_cess   = $demand->due_sp_water_cess ;
+        $newDemand->due_drain_cess      = $demand->due_drain_cess ;
+        $newDemand->due_light_cess      = $demand->due_light_cess ;
+        $newDemand->due_major_building  = $demand->due_major_building ;
+        $newDemand->open_ploat_tax      = $demand->open_ploat_tax ;
+        $newDemand->due_open_ploat_tax  = $demand->due_open_ploat_tax ;
     }
 }

@@ -1846,14 +1846,14 @@ class NewConnectionController extends Controller
 
             switch ($key) {
                 case ("consumerNo"):                                                                        // Static
-                    $waterReturnDetails = $mWaterConsumer->getConsumerByItsDetails($request, $refstring, $paramenter, $wardId, $zoneId, $zone)->paginate($pages);
+                    $waterReturnDetails = $mWaterConsumer->getConsumerByItsDetailsV2($request, $refstring, $paramenter, $wardId, $zoneId, $zone)->paginate($pages);
                     $checkVal = collect($waterReturnDetails)->last();
                     if (!$checkVal || $checkVal == 0)
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("propertyNo"):
                     $refstring = "folio_no";
-                    $waterReturnDetails = $mWaterConsumer->getConsumerByItsDetails($request, $refstring, $paramenter, $wardId, $zoneId, $zone)->paginate($pages);
+                    $waterReturnDetails = $mWaterConsumer->getConsumerByItsDetailsV2($request, $refstring, $paramenter, $wardId, $zoneId, $zone)->paginate($pages);
                     $checkVal = collect($waterReturnDetails)->last();
                     if (!$checkVal || $checkVal == 0)
                         throw new Exception("Data according to " . $key . " not Found!");
@@ -1866,7 +1866,7 @@ class NewConnectionController extends Controller
                     break;
                 case ("mobileNo"):
                     $paramenter = strtoupper($paramenter);
-                    $waterReturnDetails = $mWaterConsumer->getConsumerByItsDetails($request, $refstring, $paramenter, $wardId, $zoneId, $zone)->paginate($pages);
+                    $waterReturnDetails = $mWaterConsumer->getConsumerByItsDetailsV2($request, $refstring, $paramenter, $wardId, $zoneId, $zone)->paginate($pages);
                     if (!$waterReturnDetails)
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;

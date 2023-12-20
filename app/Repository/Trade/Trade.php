@@ -3169,7 +3169,7 @@ class Trade implements ITrade
     public function licenceCertificate($id) # unauthorised  function
     {
         try {
-
+            $docUrl = Config::get('module-constants.DOC_URL');
             $data = (array)null;
             $data['licenceCertificate'] = config('app.url') . "/api/trade/license-certificate/" . $id;
             $select= [
@@ -3190,6 +3190,7 @@ class Trade implements ITrade
                 "owner.owner_name",
                 "owner.guardian_name",
                 "owner.mobile",
+                "owner.licensee_id",
                 "owner_additionl.additionl_owner_name",
                 "owner_additionl.additionl_guardian_name",
                 "owner_additionl.additionl_mobile",
@@ -3392,7 +3393,25 @@ class Trade implements ITrade
             $transaction->rate = number_format(($transaction->paid_amount - $pen), 2);
             $transaction->delay_fee = number_format($delay_fee, 2);
             $transaction->denial_fee = number_format($denial_fee, 2);
-            $transaction->paid_amount_in_words = getIndianCurrency($transaction->paid_amount);
+            $transaction->paid_amount_in_words = getIndianCurrency($transaction->paid_amount);            
+            $oldLicense = TradeRenewal::whereIn("id",explode(",",$application->parent_ids?$application->parent_ids:$application->id))
+                            ->where("application_type_id",1)
+                            ->first();
+            if(!$oldLicense)
+            {
+                $oldLicense=$application;
+            }
+            $oldOwnersId = TradeOwner::where("temp_id",$oldLicense->id)
+                            ->where("is_active",true)
+                            ->orderby("id","ASC")
+                            ->first();
+            $owner_doc = WfActiveDocument::where("active_id",$application->id)
+                        ->where("workflow_id",$application->workflow_id)
+                        ->where("owner_dtl_id",$application->licensee_id)
+                        ->where("doc_code","Owner Image")
+                        ->where("status","<>",0)
+                        ->first();
+            $application->owner_image = $owner_doc ? ( $docUrl."/".$owner_doc->relative_path."/".$owner_doc->document) : "";            
             $data = [
                 "application" => $application,
                 "transaction" => $transaction,
@@ -3865,8 +3884,8 @@ class Trade implements ITrade
                 "trade_param_ownership_types.ownership_type",
                 DB::raw("ulb_ward_masters.ward_name AS ward_no, new_ward.ward_name as new_ward_no, zone_masters.zone_name ")
             )
-            ->join("trade_param_application_types", "trade_param_application_types.id", "trade_licences.application_type_id")
-            ->join("zone_masters", "zone_masters.id", "trade_licences.zone_id")
+            ->leftjoin("trade_param_application_types", "trade_param_application_types.id", "trade_licences.application_type_id")
+            ->leftjoin("zone_masters", "zone_masters.id", "trade_licences.zone_id")
             ->leftjoin("ulb_ward_masters", function ($join) {
                 $join->on("ulb_ward_masters.id", "=", "trade_licences.ward_id");
             })
