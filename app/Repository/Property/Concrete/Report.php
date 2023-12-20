@@ -5199,7 +5199,7 @@ class Report implements IReport
                 $val->receiptNo = isset($val->book_no) ? explode('-', $val->book_no)[1] : "";
                 $json[] = [
                     "fyear"               => $val->from_fyear,
-                    "total"               => $val->a1rear_total_tax,
+                    "total"               => ($val->a1rear_total_tax + $val->penalty - $val->adjusted_amount),
                     "generalTaxException" =>  $val->generalTaxException ,
                     "noticeFee"           => $val->noticeFee,
                     "maintanance_amt"     =>  $val->arear_maintanance_amt,
@@ -5224,7 +5224,7 @@ class Report implements IReport
                 ];
                 $json[] = [
                     "fyear"               => $val->to_fyear,
-                    "total"               => $val->c1urrent_total,
+                    "total"               => ($val->c1urrent_total - $val->rebate + $val->advance_amount),//$val->c1urrent_total,
                     "generalTaxException" =>  $val->generalTaxException ,
                     "noticeFee"           => $val->noticeFee,
                     "maintanance_amt"     => $val->current_maintanance_amt,
