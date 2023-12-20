@@ -1005,11 +1005,11 @@ class ReportController extends Controller
             $data['Demand']['prev_year']             = round(($prevYearData->demand_for_this_year ?? 0) / 10000000, 2); #_in cr
             $data['Demand']['current_year']          = round(($currentYearData->demand_for_this_year ?? 0) / 10000000, 2); #_in cr
             // $data['Demand']['arrear']          = round(($currentYearData->demand_outstanding_this_year ?? 0) / 10000000, 2);             #_in cr
-            $data['Collection Against Current Demand']      = round(($currentYearData->collection_against_current_demand ?? 0) / 10000000, 2);             #_in cr
+            $data['Collection_Against_Current_Demand']      = round(($currentYearData->collection_against_current_demand ?? 0) / 10000000, 2);             #_in cr
             $data['Collection']['prev_year']         = round(($prevYearData->demand_coll_this_year ?? 0) / 10000000, 2); #_in cr
             $data['Collection']['current_year']      = round(($currentYearData->demand_coll_this_year ?? 0) / 10000000, 2); #_in cr
             // $data['Collection']['arrear']      = round(($currentYearData->demand_outstanding_coll_this_year ?? 0) / 10000000, 2);
-            $data['Collection Against Arrear Demand']      = round(($currentYearData->collection_againt_arrear_demand ?? 0) / 10000000, 2);
+            $data['Collection_Against_Arrear_Demand']      = round(($currentYearData->collection_againt_arrear_demand ?? 0) / 10000000, 2);
             $data['Balance']['prev_year']            = round(($prevYearData->demand_balance_this_year ?? 0)  / 10000000, 2); #_in cr
             $data['Balance']['current_year']         = round(($currentYearData->demand_balance_this_year ?? 0) / 10000000, 2); #_in cr
             $data['Total Payment From HH']['prev_year']    = $prevYearData->demand_coll_from_this_year_prop_count ?? 0;
