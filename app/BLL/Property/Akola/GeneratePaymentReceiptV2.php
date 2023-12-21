@@ -211,7 +211,10 @@ class GeneratePaymentReceiptV2
             $aggregateDemand["advancePaidAmount"]    =  ($this->_adjustAmt??0) ;
             $aggregateDemand["advancePaidAmount"]    =  ($this->_advanceAmt??0) ;
             $aggregateDemand["netAdvance"] =  (($this->_advanceAmt??0) - ($this->_adjustAmt??0)) ;
-            $this->_GRID['aggregateDemand'] = $aggregateDemand;
+            $this->_GRID['aggregateDemand'] = $aggregateDemand;   
+            $from =   explode('-',$this->_trans->from_fyear);
+            $to = explode('-',$this->_trans->to_fyear);       
+            $this->_GRID['duration'] = ($from[0]??$from) ."-04-01 to ".($to[1]??($to[0]??$to))."-03-31";
         }
     }
 
