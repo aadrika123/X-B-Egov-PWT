@@ -614,6 +614,9 @@ class ActiveSafController extends Controller
             $mWorkflowTracks = new WorkflowTrack();
             $mCustomDetails = new CustomDetail();
             $forwardBackward = new WorkflowMap;
+            $mVerification = new PropSafVerification();
+            $verificationDtl = collect();
+            $mVerificationDtls = new PropSafVerificationDtl();
             $mRefTable = Config::get('PropertyConstaint.SAF_REF_TABLE');
             // Saf Details
             $data = array();
@@ -652,6 +655,13 @@ class ActiveSafController extends Controller
             } else
                 $data->current_role_name2 = $data->current_role_name;
 
+            $safVerification = $mVerification->getLastVerification($data->id);
+            if($safVerification)
+            {
+                $data->old_ward_no = $safVerification->ward_name ? $safVerification->ward_name : $data->old_ward_no;
+                $data->category= $safVerification->category ? $safVerification->category : $data->category;
+                $verificationDtl = $mVerificationDtls->getVerificationDtls($safVerification->id);
+            }
             // Basic Details
             $basicDetails = $this->generateBasicDetails($data);      // Trait function to get Basic Details
             $basicElement = [
@@ -695,8 +705,14 @@ class ActiveSafController extends Controller
                 'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
                 'tableData' => $ownerDetails
             ];
-            // Floor Details
-            $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data->id);      // Model Function to Get Floor Details
+            // Floor Details            
+            $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data->id)->map(function($val)use($verificationDtl){
+                $new = $verificationDtl->where("saf_floor_id",$val->id)->first();
+                $val->floor_name = $new?$new->floor_name:$val->floor_name ;
+                $val->usage_type = $new?$new->usage_type:$val->usage_type ;
+                $val->occupancy_type = $new?$new->occupancy_type:$val->occupancy_type ;
+                $val->construction_type = $new?$new->construction_type:$val->construction_type ;
+            });      // Model Function to Get Floor Details
             $floorDetails = $this->generateFloorDetails($getFloorDtls);
             $floorElement = [
                 'headerTitle' => 'Floor Details',
@@ -756,6 +772,9 @@ class ActiveSafController extends Controller
             $mActiveSafsFloors = new PropActiveSafsFloor();
             $mPropSafMemoDtls = new PropSafMemoDtl();
             $mPropTransaction = new PropTransaction();
+            $mVerification = new PropSafVerification();
+            $verificationDtl = collect();
+            $mVerificationDtls = new PropSafVerificationDtl();
             $memoDtls = array();
             $data = array();
             $user = Auth()->user();
@@ -777,6 +796,14 @@ class ActiveSafController extends Controller
                 throw new Exception("Application Not Found");
 
             $data->current_role_name = 'Approved By ' . $data->current_role_name;
+            $safVerification = $mVerification->getLastVerification($data->id);
+            if($safVerification)
+            {
+                $data->old_ward_no = $safVerification->ward_name ? $safVerification->ward_name : $data->old_ward_no;
+                $data->category= $safVerification->category ? $safVerification->category : $data->category;
+                $verificationDtl = $mVerificationDtls->getVerificationDtls($safVerification->id);
+            }
+            // $data->
             if ($data->payment_status == 0) {
                 $data->current_role_name = null;
                 $data->current_role_name2 = "Payment is Pending";
@@ -796,7 +823,13 @@ class ActiveSafController extends Controller
             $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data['id']);      // Model Function to Get Floor Details
             if (collect($getFloorDtls)->isEmpty())
                 $getFloorDtls = $mPropSafsFloors->getFloorsBySafId($data['id']);
-            $data['floors'] = $getFloorDtls;
+            $data['floors'] = $getFloorDtls->map(function($val)use($verificationDtl){
+                $new = $verificationDtl->where("saf_floor_id",$val->id)->first();
+                $val->floor_name = $new?$new->floor_name:$val->floor_name ;
+                $val->usage_type = $new?$new->usage_type:$val->usage_type ;
+                $val->occupancy_type = $new?$new->occupancy_type:$val->occupancy_type ;
+                $val->construction_type = $new?$new->construction_type:$val->construction_type ;
+            });
             $data["tranDtl"] = $mPropTransaction->getSafTranList($data['id']);
             $data["userDtl"] = [
                 "user_id" => $user->id ?? 0,

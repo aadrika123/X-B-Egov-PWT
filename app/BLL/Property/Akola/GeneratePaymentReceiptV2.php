@@ -207,7 +207,7 @@ class GeneratePaymentReceiptV2
 
             $aggregateDemandList = new Collection([$this->_currentDemand, $this->_overDueDemand]);
             $aggregateDemand = $this->aggregateDemand($aggregateDemandList);
-            $aggregateDemand["FinalTax"] =   $aggregateDemand["FinalTax"] + (($this->_advanceAmt??0) - ($this->_adjustAmt??0) );    
+            $aggregateDemand["FinalTax"] =   round($aggregateDemand["FinalTax"] + (($this->_advanceAmt??0) - ($this->_adjustAmt??0) ));    
             $aggregateDemand["advancePaidAmount"]    =  ($this->_adjustAmt??0) ;
             $aggregateDemand["advancePaidAmount"]    =  ($this->_advanceAmt??0) ;
             $aggregateDemand["netAdvance"] =  (($this->_advanceAmt??0) - ($this->_adjustAmt??0)) ;
