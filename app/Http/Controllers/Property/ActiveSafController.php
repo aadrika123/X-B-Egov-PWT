@@ -2946,6 +2946,105 @@ class ActiveSafController extends Controller
     }
 
     /**
+     * ===================== property no entery by da(lipik)==========================================
+     * ||                   created By : sandeep Bara
+     * ||                   Date       : 22-12-2023
+     */
+
+    public function chequePropertyNo(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "applicationId"=>"required|digits_between:1,9223372036854775807",
+                "wardId"       =>"required|digits_between:1,9223372036854775807",
+                "propertyNo"   =>"required|required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\.,-_ \s]+$/",
+            ]
+        );
+        if ($validated->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validated->errors()
+            ]);
+        }
+        try{
+            $saf = PropActiveSaf::find($request->applicationId);
+            if(!$saf)
+            {
+                throw new Exception("Data Not Find");
+            }
+            $test = PropActiveSaf::where("ward_mstr_id",$request->wardId)
+                    ->where("property_no",$request->propertyNo)
+                    ->where("id","<>",$request->applicationId)
+                    ->count("id");
+            if(!$test)
+            {
+                $test = DB::table("prop_rejected_safs")
+                    ->where("ward_mstr_id",$request->wardId)
+                    ->where("property_no",$request->propertyNo)
+                    ->count("id");
+            }
+            if(!$test && !in_array($saf->assessment_type,['Reassessment','Mutation']))
+            {
+                $test = DB::table("prop_properties")
+                    ->where("ward_mstr_id",$request->wardId)
+                    ->where("property_no",$request->propertyNo)
+                    ->count("id");
+            }
+            if($test)
+            {
+                throw new Exception("This Property No. Is Already Occuppied Throw Another Property");
+            }
+            return responseMsg(true, "Note Alloted To Another Property", $request->propertyNo);
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+    public function updatePropertyNo(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "applicationId"=>"required|digits_between:1,9223372036854775807",
+                "wardId"       =>"required|digits_between:1,9223372036854775807",
+                "propertyNo"   =>"required|required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\.,-_ \s]+$/",
+            ]
+        );
+        if ($validated->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validated->errors()
+            ]);
+        }
+        try{
+            $saf = PropActiveSaf::find($request->applicationId);
+            if(!$saf)
+            {
+                throw new Exception("Data Not Find");
+            }
+            $check = $this->chequePropertyNo($request);
+            if(!$check->original["statsus"])
+            {
+                return $check;
+            }
+            DB::beginTransaction();
+            $saf->property_no = $request->propertyNo;
+            $saf->save();
+            DB::commit();
+            return responseMsg(true, "property no assigned", "");
+        }
+        catch(Exception $e)
+        {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
      * | Get The Verification done by Agency Tc
      */
     public function getTcVerifications(Request $req)
