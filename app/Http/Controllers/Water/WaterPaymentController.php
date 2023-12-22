@@ -1682,7 +1682,7 @@ class WaterPaymentController extends Controller
             $mPaymentModes      = $this->_paymentModes;
 
             # transaction Deatils
-            $transactionDetails = $mWaterTran->getTransactionByTransactionNoV2($refTransactionNo, $refTranId)
+           return  $transactionDetails = $mWaterTran->getTransactionByTransactionNoV2($refTransactionNo, $refTranId)
                 ->where('tran_type', $mTranType['1'])
                 ->first();
 
@@ -1805,24 +1805,24 @@ class WaterPaymentController extends Controller
                 // "fixedPaidUpto"         => ($fixedUpto) ? (Carbon::createFromFormat('Y-m-d',  $fixedUpto)->endOfMonth()) : null,
                 "lastMeterReadingDate"    => $fromDate ?? null,
                 "currentMeterReadingDate" => $uptoDate ?? null,
-                "lastMeterReading"      => $lastDemand ?? null,
-                "currentMeterReading"   => $currentDemand ?? null,
-                "paidAmtInWords"        => getIndianCurrency($transactionDetails->amount),
-                "chequeStatus"          => $chequeStatus
-                // "arshad"                => 'testing for sms for akola '
+                "lastMeterReading"        => $lastDemand ?? null,
+                "currentMeterReading"     => $currentDemand ?? null,
+                "paidAmtInWords"          => getIndianCurrency($transactionDetails->amount),
+                "chequeStatus"            => $chequeStatus,
+                "test"                    => 'testing for sms for akola ',
+                "ownerName"               => 'test'
             ];
             # sending pdf of demand rerceipt via whatsapp
             // $this->whatsAppSend($returnValues);
-            # send notification 
             // $sms = AkolaProperty(
             //     [
-            //         "owner_name" => $returnValues['arshad'],
-            //         "saf_no" => $returnValues['transactionNo']
-            //     ],
-            //     "New Assessment"
+            //         "owner_name" => $returnValues['customerName'],
+            //         "saf_no"     => $returnValues['transactionNo']
+            //     ], 
+            //     'New Assessment'
             // );
             // if (($sms["status"] !== false)) {
-            //     $respons = SMSAKGOVT(7319867430, $sms["sms"], $sms["temp_id"]);
+            //     $respons = SMSAKGOVT(6206998554, $sms["sms"], $sms["temp_id"]);
             // }
             # watsapp message   
             // Register_message
@@ -1830,10 +1830,11 @@ class WaterPaymentController extends Controller
             //     6206998554,
             //     "trn_2_var",
             //     [
-            //         "conten_type" => "text",
+            //         "content_type" => "text",
             //         [
-            //             // $owner[0]["ownerName"],
+            //              $returnValues["customerName"],
             //             $returnValues['transactionNo'],
+            //             $returnValues['consumerNo'],
             //         ]
             //     ]
             // ));

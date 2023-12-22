@@ -630,12 +630,12 @@ if (!function_exists('SMSAKGOVT')) {
                 "EntityID" => trim($entityID),
                 "TemplateID" => $templateid,
             );
-
+            
             $fields = '';
             foreach ($data as $key => $value) {
                 $fields .= $key . '=' . ($value) . '&';
             }
-            $url = $url . (rtrim($fields, '&'));dd($url);
+            $url = $url . (rtrim($fields, '&'));
             $result = Http::post($url);
             $responseBody = json_decode($result->getBody(), true);
             if (isset($responseBody["Status"]) && strtoupper($responseBody["Status"]) == 'OK') {
@@ -644,6 +644,7 @@ if (!function_exists('SMSAKGOVT')) {
                 $response = ['response' => false, 'status' => 'failure', 'msg' => $responseBody["Response"]["Message"] ?? ""];
             }
 
+           
             return $response;
         } else {
             if ($templateid == NULL)
