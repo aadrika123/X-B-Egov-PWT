@@ -49,8 +49,8 @@ class Report implements IReport
 
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         try {
-            $refUser        = authUser($request);
-            $ulbId          = $refUser->ulb_id;
+            // $refUser        = authUser($request);
+            // $ulbId          = $refUser->ulb_id;
             $userJoin = "LEFTJOIN";
             $wardId = $zoneId = $userId =  $paymentMode = null;
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
@@ -83,7 +83,7 @@ class Report implements IReport
                 $ulbId = $request->ulbId;
             }
 
-            // DB::enableQueryLog();
+            DB::enableQueryLog();
             $data = PropTransaction::SELECT(
                 DB::raw("
                             ulb_ward_masters.ward_name AS ward_no,
@@ -188,7 +188,7 @@ class Report implements IReport
             }
 
             $paginator = $data->paginate($perPage);
-
+            dd(DB::getQueryLog($paginator));
             // $items = $paginator->items();
             // $total = $paginator->total();
             // $numberOfPages = ceil($total / $perPage);
@@ -454,7 +454,7 @@ class Report implements IReport
             $perPage = $request->perPage ? $request->perPage : 5;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
-            
+
             $list = [
                 "current_page" => $paginator->currentPage(),
                 "last_page" => $paginator->lastPage(),
@@ -682,8 +682,8 @@ class Report implements IReport
             }
             $perPage = $request->perPage ? $request->perPage : 10;
             $paginator = $data->paginate($perPage);
-            
-            $list = [                
+
+            $list = [
                 "current_page" => $paginator->currentPage(),
                 "last_page" => $paginator->lastPage(),
                 "data" => $paginator->items(),
@@ -868,7 +868,7 @@ class Report implements IReport
                 $joins = "leftjoin";
             }
 
-           
+
             $data = PropActiveSaf::SELECT(
                 DB::RAW(
                     "count(prop_active_safs.id),
@@ -956,7 +956,7 @@ class Report implements IReport
 
             $mWardIds = $mWardPermission->implode("ward_id", ",");
             $mWardIds = explode(',', ($mWardIds ? $mWardIds : "0"));
-            
+
             $data = UlbWardMaster::SELECT(
                 DB::RAW(" DISTINCT(ward_name) as ward_no, COUNT(prop_active_safs.id) AS total")
             )
@@ -1147,7 +1147,7 @@ class Report implements IReport
                     join prop_properties on prop_properties.id = prop_transactions.property_id
                     where prop_transactions.tran_date between '$fromDate' and '$uptoDate'
                     )prop_transactions
-                    "), function ($join) use ($fromDate, $uptoDate, $userId, $ulbId,$wardId,$zoneId) {
+                    "), function ($join) use ($fromDate, $uptoDate, $userId, $ulbId, $wardId, $zoneId) {
                     $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)"), "=", DB::RAW("UPPER(payment_modes.mode) "))
                         ->WHERENOTNULL("prop_transactions.property_id")
                         ->WHEREIN("prop_transactions.status", [1, 2])
@@ -1188,7 +1188,7 @@ class Report implements IReport
                     join prop_properties on prop_properties.id = prop_transactions.property_id
                     where prop_transactions.tran_date between '$fromDate' and '$uptoDate'
                     )prop_transactions
-                    "), function ($join) use ($fromDate, $uptoDate, $userId, $ulbId,$wardId,$zoneId) {
+                    "), function ($join) use ($fromDate, $uptoDate, $userId, $ulbId, $wardId, $zoneId) {
                     $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)"), "=", DB::RAW("UPPER(payment_modes.mode) "))
                         ->WHERENOTNULL("prop_transactions.property_id")
                         ->WHERENOTIN("prop_transactions.status", [1, 2])
@@ -1246,7 +1246,7 @@ class Report implements IReport
                                             ORDER BY wf_roleusermaps.user_id
                                      ) collecter on prop_transactions.user_id  = collecter.role_user_id
                                      join prop_properties on prop_properties.id = prop_transactions.property_id
-                                ) prop_transactions"), function ($join) use ($fromDate, $uptoDate, $userId, $ulbId,$wardId,$zoneId) {
+                                ) prop_transactions"), function ($join) use ($fromDate, $uptoDate, $userId, $ulbId, $wardId, $zoneId) {
                     $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)"), "=", DB::RAW("UPPER(payment_modes.mode)"))
                         ->WHERENOTNULL("prop_transactions.property_id")
                         ->WHEREIN("prop_transactions.status", [1, 2])
@@ -1304,7 +1304,7 @@ class Report implements IReport
                                                 ORDER BY wf_roleusermaps.user_id
                                         ) collecter on prop_transactions.user_id  = collecter.role_user_id
                                         join prop_properties on prop_properties.id = prop_transactions.property_id
-                                    ) prop_transactions"), function ($join) use ($fromDate, $uptoDate, $userId, $ulbId,$wardId,$zoneId) {
+                                    ) prop_transactions"), function ($join) use ($fromDate, $uptoDate, $userId, $ulbId, $wardId, $zoneId) {
                     $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)"), "=", DB::RAW("UPPER(payment_modes.mode)"))
                         ->WHERENOTNULL("prop_transactions.property_id")
                         ->WHEREIN("prop_transactions.status", [1, 2])
@@ -1314,7 +1314,8 @@ class Report implements IReport
                     }
                     if ($ulbId) {
                         $sub = $sub->WHERE("prop_transactions.ulb_id", $ulbId);
-                    }if ($wardId) {
+                    }
+                    if ($wardId) {
                         $sub = $sub->WHERE("prop_transactions.ward_mstr_id", $wardId);
                     }
                     if ($zoneId) {
@@ -1371,7 +1372,7 @@ class Report implements IReport
 
             $doorToDoor[] = [
                 "transaction_mode" => "Total Door To Door",
-                "holding_count"    => $totalHoldingDoor ,
+                "holding_count"    => $totalHoldingDoor,
                 "tran_count"       => $totalTranDoor,
                 "amount"           => $totalCollectionDoor,
             ];
@@ -1683,7 +1684,7 @@ class Report implements IReport
             if ($paymentMode) {
                 $assestmentType = $assestmentType->where(DB::raw("upper(prop_transactions.payment_mode)"), $paymentMode);
             }
-            
+
             $collection = $collection->get();
             $refund     = $refund->get();
             $doorToDoor = $doorToDoor->get();
@@ -2290,7 +2291,7 @@ class Report implements IReport
             $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
-            $zoneId=$wardId = null;
+            $zoneId = $wardId = null;
             $fiYear = getFY();
             if ($request->fiYear) {
                 $fiYear = $request->fiYear;
@@ -2477,13 +2478,13 @@ class Report implements IReport
             $data['dcb'] = collect($dcb)->sortBy(function ($item) {
                 // Extract the numeric part from the "ward_name"
                 preg_match('/\d+/', $item->ward_name, $matches);
-                return (int) ($matches[0]??"");
+                return (int) ($matches[0] ?? "");
             })->values();
 
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $data, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, [$e->getMessage(),$e->getFile(),$e->getLine()], $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+            return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
 
@@ -2649,7 +2650,7 @@ class Report implements IReport
             }
             $perPage = $request->perPage ? $request->perPage : 10;
             $paginator = $data->paginate($perPage);
-            
+
             $list = [
                 "current_page" => $paginator->currentPage(),
                 "last_page" => $paginator->lastPage(),
@@ -2736,7 +2737,7 @@ class Report implements IReport
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
-            
+
             $list = [
                 "current_page" => $paginator->currentPage(),
                 "last_page" => $paginator->lastPage(),
@@ -2761,7 +2762,7 @@ class Report implements IReport
         $perPage = $request->perPage ? $request->perPage : 10;
         $page = $request->page && $request->page > 0 ? $request->page : 1;
         $limit = $perPage;
-        $offset =  $request->page && $request->page > 0 ? ($request->page -1 * $perPage) : 0;
+        $offset =  $request->page && $request->page > 0 ? ($request->page - 1 * $perPage) : 0;
         $wardMstrId = NULL;
         $ulbId = authUser($request)->ulb_id;
 
@@ -2852,7 +2853,7 @@ class Report implements IReport
         $perPage = $request->perPage ? $request->perPage : 10;
         $page = $request->page && $request->page > 0 ? $request->page : 1;
         $limit = $perPage;
-        $offset =  $request->page && $request->page > 0 ? ($request->page -1 * $perPage) : 0;
+        $offset =  $request->page && $request->page > 0 ? ($request->page - 1 * $perPage) : 0;
         $wardMstrId = NULL;
         $ulbId = authUser($request)->ulb_id;
 
@@ -2928,7 +2929,7 @@ class Report implements IReport
         $perPage = $request->perPage ? $request->perPage : 10;
         $page = $request->page && $request->page > 0 ? $request->page : 1;
         $limit = $perPage;
-        $offset =  $request->page && $request->page > 0 ? ($request->page -1 * $perPage) : 0;
+        $offset =  $request->page && $request->page > 0 ? ($request->page - 1 * $perPage) : 0;
         $wardMstrId = NULL;
         $ulbId = authUser($request)->ulb_id;
 
@@ -3010,7 +3011,7 @@ class Report implements IReport
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $limit = $perPage;
-            $offset =  $request->page && $request->page > 0 ? ($request->page -1 * $perPage) : 0;
+            $offset =  $request->page && $request->page > 0 ? ($request->page - 1 * $perPage) : 0;
             $wardMstrId = NULL;
             $ulbId = authUser($request)->ulb_id;
 
@@ -3110,7 +3111,7 @@ class Report implements IReport
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $limit = $perPage;
-            $offset =  $request->page && $request->page > 0 ? (($request->page -1) * $perPage) : 0;
+            $offset =  $request->page && $request->page > 0 ? (($request->page - 1) * $perPage) : 0;
             $wardMstrId = NULL;
             $ulbId = authUser($request)->ulb_id;
             $fiYear = $request->fiYear;
@@ -3216,7 +3217,7 @@ class Report implements IReport
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $limit = $perPage;
-            $offset =  $request->page && $request->page > 0 ? (($request->page -1) * $perPage) : 0;
+            $offset =  $request->page && $request->page > 0 ? (($request->page - 1) * $perPage) : 0;
             $zoneId = $wardMstrId = NULL;
             $ulbId = authUser($request)->ulb_id;
             $fiYear = $request->fiYear;
@@ -3243,9 +3244,9 @@ class Report implements IReport
                                 SUM (prop_demands.total_tax) AS total_tax,
                                 SUM(prop_demands.balance)AS balance_amount,
                                 SUM(prop_demands.total_tax - prop_demands.balance)AS paid_amount,
-                                SUM(CASE WHEN prop_demands.fyear ='".getFy()."' THEN 0 
-                                        WHEN prop_demands.fyear !='".getFy()."' AND prop_demands.is_old IS true THEN prop_demands.balance *3*0.02 
-                                        WHEN prop_demands.fyear !='".getFy()."' AND prop_demands.is_old IS false THEN prop_demands.balance *12*0.02 
+                                SUM(CASE WHEN prop_demands.fyear ='" . getFy() . "' THEN 0 
+                                        WHEN prop_demands.fyear !='" . getFy() . "' AND prop_demands.is_old IS true THEN prop_demands.balance *3*0.02 
+                                        WHEN prop_demands.fyear !='" . getFy() . "' AND prop_demands.is_old IS false THEN prop_demands.balance *12*0.02 
                                     end )as monthly_penalty,
                                 SUM(prive_penalty.arrear_interest) AS arrear_interest ,
                                 MIN(fyear) as from_year,
@@ -3449,7 +3450,7 @@ class Report implements IReport
         $page = $request->page && $request->page > 0 ? $request->page : 1;
         $limit = $perPage;
         $currentPage = $request->page ?? 1;
-        $offset =  $request->page && $request->page > 0 ? ($request->page -1 * $perPage) : 0;
+        $offset =  $request->page && $request->page > 0 ? ($request->page - 1 * $perPage) : 0;
         $rebatePenalList = collect(Config::get('PropertyConstaint.REBATE_PENAL_MASTERS'));
 
         $onePercPenalty  =  $rebatePenalList->where('key', 'onePercPenalty')->first()['value'];
@@ -4015,16 +4016,14 @@ class Report implements IReport
                 $toDate = $request->uptoDate;
             }
             if ($request->paymentMode) {
-                if(!is_array($request->paymentMode))
+                if (!is_array($request->paymentMode))
                     $paymentMode = Str::upper($request->paymentMode);
-                else
-                {
+                else {
 
-                    foreach($request->paymentMode as $val)
-                    {
-                        $paymentMode .= Str::upper($val).",";
+                    foreach ($request->paymentMode as $val) {
+                        $paymentMode .= Str::upper($val) . ",";
                     }
-                    $paymentMode =  trim($paymentMode,",");
+                    $paymentMode =  trim($paymentMode, ",");
                 }
             }
             if ($request->wardId) {
@@ -4212,7 +4211,7 @@ class Report implements IReport
                     and prop_transactions.status in(1,2)
                     and prop_demands.status =1 
                     and prop_tran_dtls.status =1 
-                    " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{".$paymentMode."}')::TEXT[])" : "") . "
+                    " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
                     " . ($wardId ? "AND props.ward_mstr_id = $wardId" : "") . "
                     " . ($zoneId ? "AND props.zone_mstr_id = $zoneId" : "") . "
                     " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . "
@@ -4236,7 +4235,7 @@ class Report implements IReport
                 where prop_transactions.tran_date between '$fromDate' and '$toDate' 
                     and prop_transactions.status in(1,2)
                     and prop_penaltyrebates.status =1 
-                    " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{".$paymentMode."}')::TEXT[])" : "") . "
+                    " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
                     " . ($wardId ? "AND props.ward_mstr_id = $wardId" : "") . "
                     " . ($zoneId ? "AND props.zone_mstr_id = $zoneId" : "") . "
                     " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . "
@@ -4244,7 +4243,7 @@ class Report implements IReport
             )fine_rebet on fine_rebet.tran_id = prop_transactions.id
             where prop_transactions.tran_date between '$fromDate' and '$toDate' 
                 and prop_transactions.status in(1,2)
-                " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{".$paymentMode."}')::TEXT[])" : "") . "
+                " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
             ";
 
             $report = DB::select($query);
@@ -4284,7 +4283,7 @@ class Report implements IReport
                 "tcName" => $userId ? User::find($userId)->name ?? "" : "All",
                 "WardName" => $wardId ? ulbWardMaster::find($wardId)->ward_name ?? "" : "All",
                 "zoneName" => $zoneId ? (new ZoneMaster)->createZoneName($zoneId) ?? "" : "East/West/North/South",
-                "paymentMode" => $paymentMode ? str::replace(",","/",$paymentMode) : "All",
+                "paymentMode" => $paymentMode ? str::replace(",", "/", $paymentMode) : "All",
                 "printDate" => Carbon::now()->format('d-m-Y H:i:s A'),
                 "printedBy" => $user->name ?? "",
             ];
@@ -4308,26 +4307,19 @@ class Report implements IReport
                 $toDate = $request->uptoDate;
             }
             if ($request->paymentMode) {
-                if(!is_array($request->paymentMode))
-                {
+                if (!is_array($request->paymentMode)) {
                     $paymentMode = Str::upper($request->paymentMode);
-                }
-                elseif(is_array($request->paymentMode[0]))
-                {
-                    foreach($request->paymentMode as $val)
-                    {
-                        $paymentMode .= Str::upper($val["value"]).",";
+                } elseif (is_array($request->paymentMode[0])) {
+                    foreach ($request->paymentMode as $val) {
+                        $paymentMode .= Str::upper($val["value"]) . ",";
                     }
-                    $paymentMode =  trim($paymentMode,",");
-                }
-                else
-                {
+                    $paymentMode =  trim($paymentMode, ",");
+                } else {
 
-                    foreach($request->paymentMode as $val)
-                    {
-                        $paymentMode .= Str::upper($val).",";
+                    foreach ($request->paymentMode as $val) {
+                        $paymentMode .= Str::upper($val) . ",";
                     }
-                    $paymentMode =  trim($paymentMode,",");
+                    $paymentMode =  trim($paymentMode, ",");
                 }
             }
             if ($request->wardId) {
@@ -4598,7 +4590,7 @@ class Report implements IReport
                     and prop_transactions.status in(1,2)
                     and prop_demands.status =1 
                     and prop_tran_dtls.status =1 
-                    " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{".$paymentMode."}')::TEXT[])" : "") . "
+                    " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
                     " . ($wardId ? "AND props.ward_mstr_id = $wardId" : "") . "
                     " . ($zoneId ? "AND props.zone_mstr_id = $zoneId" : "") . "
                     " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . "
@@ -4622,7 +4614,7 @@ class Report implements IReport
                 where prop_transactions.tran_date between '$fromDate' and '$toDate' 
                     and prop_transactions.status in(1,2)
                     and prop_penaltyrebates.status =1 
-                    " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{".$paymentMode."}')::TEXT[])" : "") . "
+                    " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
                     " . ($wardId ? "AND props.ward_mstr_id = $wardId" : "") . "
                     " . ($zoneId ? "AND props.zone_mstr_id = $zoneId" : "") . "
                     " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . "
@@ -4644,7 +4636,7 @@ class Report implements IReport
                 where prop_transactions.tran_date between '$fromDate' and '$toDate' 
                     and prop_transactions.status in(1,2)
                     and prop_advances.status =1 
-                    " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{".$paymentMode."}')::TEXT[])" : "") . "
+                    " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
                     " . ($wardId ? "AND props.ward_mstr_id = $wardId" : "") . "
                     " . ($zoneId ? "AND props.zone_mstr_id = $zoneId" : "") . "
                     " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . "   
@@ -4666,7 +4658,7 @@ class Report implements IReport
                 where prop_transactions.tran_date between '$fromDate' and '$toDate' 
                     and prop_transactions.status in(1,2)
                     and prop_adjustments.status =1 
-                    " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{".$paymentMode."}')::TEXT[])" : "") . "
+                    " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
                     " . ($wardId ? "AND props.ward_mstr_id = $wardId" : "") . "
                     " . ($zoneId ? "AND props.zone_mstr_id = $zoneId" : "") . "
                     " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . " 
@@ -4674,7 +4666,7 @@ class Report implements IReport
             )adjusted on adjusted.tran_id = prop_transactions.id
             where prop_transactions.tran_date between '$fromDate' and '$toDate' 
                 and prop_transactions.status in(1,2)
-                " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{".$paymentMode."}')::TEXT[])" : "") . "
+                " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
             ";
 
             $report = DB::select($query);
@@ -4683,26 +4675,26 @@ class Report implements IReport
             $report->aging_amt       = round($report->current_aging_amt)           +  round($report->arear_aging_amt);
             $report->general_tax     = round($report->current_general_tax)         +  round($report->arear_general_tax);
             $report->road_tax        = round($report->current_road_tax)            +  round($report->arear_road_tax);
-            $report->firefighting_tax= round($report->current_firefighting_tax)    +  round($report->arear_firefighting_tax);
+            $report->firefighting_tax = round($report->current_firefighting_tax)    +  round($report->arear_firefighting_tax);
             $report->education_tax   = round($report->current_education_tax)       +  round($report->arear_education_tax);
-            $report->water_tax       = round($report->current_water_tax)           +  round($report->arear_water_tax) ;
+            $report->water_tax       = round($report->current_water_tax)           +  round($report->arear_water_tax);
             $report->cleanliness_tax = round($report->current_cleanliness_tax)     +  round($report->arear_cleanliness_tax);
-            $report->sewarage_tax    = round($report->current_sewarage_tax)        +  round($report->arear_sewarage_tax)    ;
-            $report->tree_tax        = round($report->current_tree_tax)            +  round($report->arear_tree_tax)    ;
-            $report->professional_tax= round($report->current_professional_tax)    +  round($report->arear_professional_tax);
-            $report->tax1            = round($report->current_tax1)                +  round($report->arear_tax1)       ;
-            $report->tax2            = round($report->current_tax2)                +  round($report->arear_tax2)       ;
-            $report->tax3            = round($report->current_tax3)                +  round($report->arear_tax3)       ;
-            $report->sp_education_tax= round($report->current_sp_education_tax)    +  round($report->arear_sp_education_tax);
-            $report->water_benefit   = round($report->current_water_benefit)       +  round($report->arear_water_benefit)    ;
-            $report->water_bill      = round($report->current_water_bill)          +  round($report->arear_water_bill)       ;
-            $report->sp_water_cess   = round($report->current_sp_water_cess)       +  round($report->arear_sp_water_cess)    ;
-            $report->drain_cess      = round($report->current_drain_cess)          +  round($report->arear_drain_cess)       ;
-            $report->light_cess      = round($report->current_light_cess)          +  round($report->arear_light_cess)       ;
-            $report->major_building  = round($report->current_major_building)      +  round($report->arear_major_building)   ;
-            $report->open_ploat_tax  = round($report->current_open_ploat_tax)      +  round($report->arear_open_ploat_tax)   ;
-            $report->net_advance = round($report->advance_amount)      -  round($report->adjusted_amount)   ;
-            
+            $report->sewarage_tax    = round($report->current_sewarage_tax)        +  round($report->arear_sewarage_tax);
+            $report->tree_tax        = round($report->current_tree_tax)            +  round($report->arear_tree_tax);
+            $report->professional_tax = round($report->current_professional_tax)    +  round($report->arear_professional_tax);
+            $report->tax1            = round($report->current_tax1)                +  round($report->arear_tax1);
+            $report->tax2            = round($report->current_tax2)                +  round($report->arear_tax2);
+            $report->tax3            = round($report->current_tax3)                +  round($report->arear_tax3);
+            $report->sp_education_tax = round($report->current_sp_education_tax)    +  round($report->arear_sp_education_tax);
+            $report->water_benefit   = round($report->current_water_benefit)       +  round($report->arear_water_benefit);
+            $report->water_bill      = round($report->current_water_bill)          +  round($report->arear_water_bill);
+            $report->sp_water_cess   = round($report->current_sp_water_cess)       +  round($report->arear_sp_water_cess);
+            $report->drain_cess      = round($report->current_drain_cess)          +  round($report->arear_drain_cess);
+            $report->light_cess      = round($report->current_light_cess)          +  round($report->arear_light_cess);
+            $report->major_building  = round($report->current_major_building)      +  round($report->arear_major_building);
+            $report->open_ploat_tax  = round($report->current_open_ploat_tax)      +  round($report->arear_open_ploat_tax);
+            $report->net_advance = round($report->advance_amount)      -  round($report->adjusted_amount);
+
             $data["report"] = collect($report)->map(function ($val, $key) {
                 if ($key == "payment_mode") {
                     return $val;
@@ -4733,8 +4725,8 @@ class Report implements IReport
                     $arear += ($val ? $val : 0);
                 }
             };
-            $arear = $arear + $penalty ;
-            $current = $current - $rebate + $advance - $adjusted ;
+            $arear = $arear + $penalty;
+            $current = $current - $rebate + $advance - $adjusted;
             $data["total"] = [
                 "arear" => round($arear),
                 "current" => round($current),
@@ -4748,7 +4740,7 @@ class Report implements IReport
                 "tcName" => $userId ? User::find($userId)->name ?? "" : "All",
                 "WardName" => $wardId ? ulbWardMaster::find($wardId)->ward_name ?? "" : "All",
                 "zoneName" => $zoneId ? (new ZoneMaster)->createZoneName($zoneId) ?? "" : "East/West/North/South",
-                "paymentMode" => $paymentMode ? str::replace(",","/",$paymentMode) : "All",
+                "paymentMode" => $paymentMode ? str::replace(",", "/", $paymentMode) : "All",
                 "printDate" => Carbon::now()->format('d-m-Y H:i:s A'),
                 "printedBy" => $user->name ?? "",
             ];
@@ -4757,7 +4749,7 @@ class Report implements IReport
             return responseMsgs(false, $e->getMessage(), []);
         }
     }
-    
+
     public function individualDedealyCollectionRptV1(Request $request)
     {
         try {
@@ -4772,26 +4764,19 @@ class Report implements IReport
                 $toDate = $request->uptoDate;
             }
             if ($request->paymentMode) {
-                if(!is_array($request->paymentMode))
-                {
+                if (!is_array($request->paymentMode)) {
                     $paymentMode = Str::upper($request->paymentMode);
-                }
-                elseif(is_array($request->paymentMode[0]))
-                {
-                    foreach($request->paymentMode as $val)
-                    {
-                        $paymentMode .= Str::upper($val["value"]).",";
+                } elseif (is_array($request->paymentMode[0])) {
+                    foreach ($request->paymentMode as $val) {
+                        $paymentMode .= Str::upper($val["value"]) . ",";
                     }
-                    $paymentMode =  trim($paymentMode,",");
-                }
-                else
-                {
+                    $paymentMode =  trim($paymentMode, ",");
+                } else {
 
-                    foreach($request->paymentMode as $val)
-                    {
-                        $paymentMode .= Str::upper($val).",";
+                    foreach ($request->paymentMode as $val) {
+                        $paymentMode .= Str::upper($val) . ",";
                     }
-                    $paymentMode =  trim($paymentMode,",");
+                    $paymentMode =  trim($paymentMode, ",");
                 }
             }
             if ($request->wardId) {
@@ -5085,7 +5070,7 @@ class Report implements IReport
                     and prop_transactions.status in(1,2)
                     and prop_demands.status =1 
                     and prop_tran_dtls.status =1 
-                    " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{".$paymentMode."}')::TEXT[])" : "") . "
+                    " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
                     " . ($wardId ? "AND props.ward_mstr_id = $wardId" : "") . "
                     " . ($zoneId ? "AND props.zone_mstr_id = $zoneId" : "") . "
                     " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . "
@@ -5109,7 +5094,7 @@ class Report implements IReport
                 where prop_transactions.tran_date between '$fromDate' and '$toDate' 
                     and prop_transactions.status in(1,2)
                     and prop_penaltyrebates.status =1 
-                    " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{".$paymentMode."}')::TEXT[])" : "") . "
+                    " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
                     " . ($wardId ? "AND props.ward_mstr_id = $wardId" : "") . "
                     " . ($zoneId ? "AND props.zone_mstr_id = $zoneId" : "") . "
                     " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . "
@@ -5131,7 +5116,7 @@ class Report implements IReport
                 where prop_transactions.tran_date between '$fromDate' and '$toDate' 
                     and prop_transactions.status in(1,2)
                     and prop_advances.status =1 
-                    " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{".$paymentMode."}')::TEXT[])" : "") . "
+                    " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
                     " . ($wardId ? "AND props.ward_mstr_id = $wardId" : "") . "
                     " . ($zoneId ? "AND props.zone_mstr_id = $zoneId" : "") . "
                     " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . "   
@@ -5153,7 +5138,7 @@ class Report implements IReport
                 where prop_transactions.tran_date between '$fromDate' and '$toDate' 
                     and prop_transactions.status in(1,2)
                     and prop_adjustments.status =1 
-                    " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{".$paymentMode."}')::TEXT[])" : "") . "
+                    " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
                     " . ($wardId ? "AND props.ward_mstr_id = $wardId" : "") . "
                     " . ($zoneId ? "AND props.zone_mstr_id = $zoneId" : "") . "
                     " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . " 
@@ -5172,7 +5157,7 @@ class Report implements IReport
                 where  prop_transactions.tran_date between '$fromDate' and '$toDate' 
                     and prop_transactions.status in(1,2)
                     and prop_owners.status =1
-                    " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{".$paymentMode."}')::TEXT[])" : "") . "                    
+                    " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "                    
                     " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . "
                 group by prop_transactions.id
             
@@ -5182,25 +5167,25 @@ class Report implements IReport
             left join zone_masters on zone_masters.id = prop_properties.zone_mstr_id
             where prop_transactions.tran_date between '$fromDate' and '$toDate' 
                 and prop_transactions.status in(1,2)
-                " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{".$paymentMode."}')::TEXT[])" : "") . "
+                " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
             ";
 
             $report = DB::select($query);
             $report = collect($report);
-            
-            $data["data"] = $report->map(function($val){
-                $val->generalTaxException =0;
+
+            $data["data"] = $report->map(function ($val) {
+                $val->generalTaxException = 0;
                 $val->payableAfterDeduction = $val->c1urrent_total_tax;
-                $val->advanceAmt =$val->advance_amount;
-                $val->adjustAmt =$val->adjusted_amount;
-                $val->noticeFee =0;
+                $val->advanceAmt = $val->advance_amount;
+                $val->adjustAmt = $val->adjusted_amount;
+                $val->noticeFee = 0;
                 $val->FinalTax = $val->c1urrent_total_tax;
                 $val->receiptNo = isset($val->book_no) ? explode('-', $val->book_no)[1] : "";
                 $val->receiptNo = isset($val->book_no) ? explode('-', $val->book_no)[1] : "";
                 $json[] = [
                     "fyear"               => $val->from_fyear,
                     "total"               => ($val->a1rear_total_tax + $val->penalty - $val->adjusted_amount),
-                    "generalTaxException" =>  $val->generalTaxException ,
+                    "generalTaxException" =>  $val->generalTaxException,
                     "noticeFee"           => $val->noticeFee,
                     "maintanance_amt"     =>  $val->arear_maintanance_amt,
                     "aging_amt"           =>  $val->arear_aging_amt,
@@ -5224,8 +5209,8 @@ class Report implements IReport
                 ];
                 $json[] = [
                     "fyear"               => $val->to_fyear,
-                    "total"               => ($val->c1urrent_total - $val->rebate + $val->advance_amount),//$val->c1urrent_total,
-                    "generalTaxException" =>  $val->generalTaxException ,
+                    "total"               => ($val->c1urrent_total - $val->rebate + $val->advance_amount), //$val->c1urrent_total,
+                    "generalTaxException" =>  $val->generalTaxException,
                     "noticeFee"           => $val->noticeFee,
                     "maintanance_amt"     => $val->current_maintanance_amt,
                     "aging_amt"           => $val->current_aging_amt,
@@ -5249,7 +5234,7 @@ class Report implements IReport
                 ];
                 $val->json = ($json);
                 return $val;
-            });            
+            });
             $data["headers"] = [
                 "fromDate" => Carbon::parse($fromDate)->format('d-m-Y'),
                 "uptoDate" => Carbon::parse($toDate)->format('d-m-Y'),
@@ -5258,7 +5243,7 @@ class Report implements IReport
                 "tcName" => $userId ? User::find($userId)->name ?? "" : "All",
                 "WardName" => $wardId ? ulbWardMaster::find($wardId)->ward_name ?? "" : "All",
                 "zoneName" => $zoneId ? (new ZoneMaster)->createZoneName($zoneId) ?? "" : "East/West/North/South",
-                "paymentMode" => $paymentMode ? str::replace(",","/",$paymentMode) : "All",
+                "paymentMode" => $paymentMode ? str::replace(",", "/", $paymentMode) : "All",
                 "printDate" => Carbon::now()->format('d-m-Y H:i:s A'),
                 "printedBy" => $user->name ?? "",
             ];
@@ -5270,7 +5255,7 @@ class Report implements IReport
 
     public function tranDeactivatedList(Request $request)
     {
-        try{
+        try {
             $user = Auth()->user();
             $paymentMode = "";
             $fromDate = $toDate = Carbon::now()->format("Y-m-d");
@@ -5282,26 +5267,19 @@ class Report implements IReport
                 $toDate = $request->uptoDate;
             }
             if ($request->paymentMode) {
-                if(!is_array($request->paymentMode))
-                {
+                if (!is_array($request->paymentMode)) {
                     $paymentMode = Str::upper($request->paymentMode);
-                }
-                elseif(is_array($request->paymentMode[0]))
-                {
-                    foreach($request->paymentMode as $val)
-                    {
-                        $paymentMode .= Str::upper($val["value"]).",";
+                } elseif (is_array($request->paymentMode[0])) {
+                    foreach ($request->paymentMode as $val) {
+                        $paymentMode .= Str::upper($val["value"]) . ",";
                     }
-                    $paymentMode =  trim($paymentMode,",");
-                }
-                else
-                {
+                    $paymentMode =  trim($paymentMode, ",");
+                } else {
 
-                    foreach($request->paymentMode as $val)
-                    {
-                        $paymentMode .= Str::upper($val).",";
+                    foreach ($request->paymentMode as $val) {
+                        $paymentMode .= Str::upper($val) . ",";
                     }
-                    $paymentMode =  trim($paymentMode,",");
+                    $paymentMode =  trim($paymentMode, ",");
                 }
             }
             if ($request->wardId) {
@@ -5332,7 +5310,7 @@ class Report implements IReport
                         prop_transaction_deactivate_dtls.deactive_date,
                         users2.name as tran_deactivated_by
                     "))
-                    ->join(DB::raw("
+                ->join(DB::raw("
                         (
                             (
                                 select saf.id as app_id ,saf.saf_no as app_no,prop_transactions.id as tran_id,
@@ -5363,15 +5341,15 @@ class Report implements IReport
                                 where prop_transactions.tran_date between '$fromDate' and '$toDate'
                             )
                         ) app
-                    "),"app.tran_id","prop_transactions.id")
-                    ->leftjoin("prop_cheque_dtls","prop_cheque_dtls.transaction_id","prop_transactions.id")
-                    ->leftjoin("prop_transaction_deactivate_dtls","prop_transaction_deactivate_dtls.tran_id","prop_transactions.id")
-                    ->leftjoin("users","users.id","prop_transactions.user_id")
-                    ->leftjoin("users AS users2","users2.id","prop_transaction_deactivate_dtls.deactivated_by")
-                    ->leftjoin("ulb_ward_masters","ulb_ward_masters.id","app.ward_mstr_id")
-                    ->leftjoin("zone_masters","zone_masters.id","app.zone_mstr_id")
-                    ->where("prop_transactions.status",0)
-                    ->whereBetween("prop_transactions.tran_date",[$fromDate,$toDate]);
+                    "), "app.tran_id", "prop_transactions.id")
+                ->leftjoin("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "prop_transactions.id")
+                ->leftjoin("prop_transaction_deactivate_dtls", "prop_transaction_deactivate_dtls.tran_id", "prop_transactions.id")
+                ->leftjoin("users", "users.id", "prop_transactions.user_id")
+                ->leftjoin("users AS users2", "users2.id", "prop_transaction_deactivate_dtls.deactivated_by")
+                ->leftjoin("ulb_ward_masters", "ulb_ward_masters.id", "app.ward_mstr_id")
+                ->leftjoin("zone_masters", "zone_masters.id", "app.zone_mstr_id")
+                ->where("prop_transactions.status", 0)
+                ->whereBetween("prop_transactions.tran_date", [$fromDate, $toDate]);
             if ($wardId) {
                 $data = $data->where("ulb_ward_masters.id", $wardId);
             }
@@ -5381,9 +5359,9 @@ class Report implements IReport
             if ($userId) {
                 $data = $data->where("prop_transactions.user_id", $userId);
             }
-            if($paymentMode){
-                
-                $data = $data->whereIN(DB::raw("UPPER(prop_transactions.payment_mode)"),explode(",",$paymentMode));
+            if ($paymentMode) {
+
+                $data = $data->whereIN(DB::raw("UPPER(prop_transactions.payment_mode)"), explode(",", $paymentMode));
             }
 
             $perPage = $request->perPage ? $request->perPage : 5;
@@ -5391,25 +5369,21 @@ class Report implements IReport
             $data2 = $data;
             $totalAmount = $data2->sum("amount");
             $paginator = $data->paginate($perPage);
-            
+
             $list = [
                 "current_page" => $paginator->currentPage(),
                 "last_page" => $paginator->lastPage(),
                 "totalAmount" => $totalAmount,
-                "data" => collect($paginator->items())->map(function ($val){
-                   $val->file =  trim($val->file) ? (Config::get('module-constants.DOC_URL')."/".$val->file) : "";
-                   return $val;
+                "data" => collect($paginator->items())->map(function ($val) {
+                    $val->file =  trim($val->file) ? (Config::get('module-constants.DOC_URL') . "/" . $val->file) : "";
+                    return $val;
                 }),
                 "total" => $paginator->total(),
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $list);
-                    
-
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), []);
         }
     }
-    
 }

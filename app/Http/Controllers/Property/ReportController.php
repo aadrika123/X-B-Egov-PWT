@@ -1296,9 +1296,13 @@ class ReportController extends Controller
     /**
      * | Inserting Data in report table for live dashboard
      */
-    public function data(Request $request)
+    public function liveDashboardUpdate()
     {
         $todayDate = Carbon::now();
+        $currentFy = getFY();
+        $currentfyStartDate = $todayDate->startOfYear()->addMonths(3)->format("Y-m-d");
+        $currentfyEndDate   = $todayDate->startOfYear()->addYears(1)->addMonths(3)->addDay(-1)->format("Y-m-d");
+        echo $currentFy;
         $sql = "SELECT 
                         total_assessment.*, 
                         applied_safs.*, 
@@ -1331,8 +1335,8 @@ class ReportController extends Controller
                         prop_active_safs 
                       WHERE 
                         status = 1 AND ulb_id=2						-- Parameterise This
-                        AND application_date BETWEEN '2023-04-01' 	-- Parameterise This
-                        AND '2024-03-31' 							-- Parameterise this
+                        AND application_date BETWEEN '$currentfyStartDate' 	-- Parameterise This
+                        AND '$currentfyEndDate' 							-- Parameterise this
                       UNION ALL 
                       SELECT 
                         id 
@@ -1340,8 +1344,8 @@ class ReportController extends Controller
                         prop_safs 
                       WHERE 
                         status = 1  AND ulb_id=2
-                        AND application_date BETWEEN '2023-04-01' 	-- Parameterise this
-                        AND '2024-03-31' 								-- Parameterise this
+                        AND application_date BETWEEN '$currentfyStartDate' 	-- Parameterise this
+                        AND '$currentfyEndDate' 								-- Parameterise this
                       UNION ALL 
                       SELECT 
                         id 
@@ -1349,8 +1353,8 @@ class ReportController extends Controller
                         prop_rejected_safs 
                       WHERE 
                         status = 1 AND ulb_id=2
-                        AND application_date BETWEEN '2023-04-01' 	-- Parameterise this
-                        AND '2024-03-31'								-- Parameterise this
+                        AND application_date BETWEEN '$currentfyStartDate' 	-- Parameterise this
+                        AND '$currentfyEndDate'								-- Parameterise this
                     ) AS a
                 ) AS total_assessment, 
                 (
@@ -1372,8 +1376,8 @@ class ReportController extends Controller
                         prop_active_safs 
                       WHERE 
                         status = 1 AND ulb_id=2
-                        AND application_date BETWEEN '2023-04-01' 			--Parameterise this
-                        AND '2024-03-31' 									--Parameterise this  get fy from curreent date and get date range from current date
+                        AND application_date BETWEEN '$currentfyStartDate' 			--Parameterise this
+                        AND '$currentfyEndDate' 									--Parameterise this  get fy from curreent date and get date range from current date
                       UNION ALL 
                       SELECT 
                         SUM(
@@ -1388,8 +1392,8 @@ class ReportController extends Controller
                         prop_safs 
                       WHERE 
                         status = 1 AND ulb_id=2
-                        AND application_date BETWEEN '2023-04-01' 			--Parameterise this
-                        AND '2024-03-31' 									--Parameterise this
+                        AND application_date BETWEEN '$currentfyStartDate' 			--Parameterise this
+                        AND '$currentfyEndDate' 									--Parameterise this
                       UNION ALL 
                       SELECT 
                         SUM(
@@ -1404,8 +1408,8 @@ class ReportController extends Controller
                         prop_rejected_safs 
                       WHERE 
                         status = 1 AND ulb_id=2
-                        AND application_date BETWEEN '2023-04-01' 			--Parameterise this
-                        AND '2024-03-31'									--Parameterise this
+                        AND application_date BETWEEN '$currentfyStartDate' 			--Parameterise this
+                        AND '$currentfyEndDate'									--Parameterise this
                     ) AS a
                 ) AS applied_safs, 
                 (
@@ -1597,13 +1601,13 @@ class ReportController extends Controller
                             
                                  FROM prop_demands d
                                    JOIN prop_properties p ON p.id=d.property_id
-                              WHERE d.fyear='2023-2024'
+                              WHERE d.fyear='$currentFy'
                               AND d.status=1 AND d.paid_status=0 AND p.status=1 AND p.ulb_id=2
                           ) AS outstandings,
                           (
                               SELECT SUM(balance) AS recoverable_demand_currentyr
                                      FROM prop_demands
-                              WHERE status=1 AND fyear='2023-2024' AND ulb_id=2      					-- Parameterise This
+                              WHERE status=1 AND fyear='$currentFy' AND ulb_id=2      					-- Parameterise This
                           ) AS payment_done
                 ) AS outstanding_current_yr,
                 (
@@ -1618,11 +1622,11 @@ class ReportController extends Controller
                                    CASE WHEN tran_date BETWEEN '2022-04-01' AND '2023-03-31' THEN SUM(amount) END AS lastyr_pmt_amt,      -- Parameterize this for last yr fyear range date	
                                    CASE WHEN tran_date BETWEEN '2022-04-01' AND '2023-03-31' THEN COUNT(id) END AS lastyr_pmt_cnt,		-- Parameterize this for last yr fyear range date
                             
-                                   CASE WHEN tran_date BETWEEN '2023-04-01' AND '2024-03-31' THEN SUM(amount) END AS currentyr_pmt_amt,	-- Parameterize this for current yr fyear range date
-                                   CASE WHEN tran_date BETWEEN '2023-04-01' AND '2024-03-31' THEN COUNT(id) END AS currentyr_pmt_cnt      -- Parameterize this for current yr fyear range date
+                                   CASE WHEN tran_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate' THEN SUM(amount) END AS currentyr_pmt_amt,	-- Parameterize this for current yr fyear range date
+                                   CASE WHEN tran_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate' THEN COUNT(id) END AS currentyr_pmt_cnt      -- Parameterize this for current yr fyear range date
                             
                               FROM prop_transactions
-                              WHERE tran_date BETWEEN '2022-04-01' AND '2024-03-31' AND status=1	AND ulb_id=2			-- Parameterize this for last two yrs fyear range date
+                              WHERE tran_date BETWEEN '2022-04-01' AND '$currentfyEndDate' AND status=1	AND ulb_id=2			-- Parameterize this for last two yrs fyear range date
                               GROUP BY tran_date
                           ) AS payments
                 ) AS payments,
@@ -1640,12 +1644,12 @@ class ReportController extends Controller
                                 
                                           COALESCE(CASE WHEN application_date BETWEEN '2022-04-01' AND '2023-03-31'		-- Parameterize this for last yr fyear range date
                                                    THEN count(id) END,0)AS last_yr_mutation_count,
-                                          COALESCE(CASE WHEN application_date BETWEEN '2023-04-01' AND '2024-03-31'		-- Parameterize this for current fyear range date
+                                          COALESCE(CASE WHEN application_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate'		-- Parameterize this for current fyear range date
                                                    THEN count(id) END,0) AS current_yr_mutation_count
                                 
                                           FROM prop_active_safs
                                           WHERE assessment_type='Mutation' AND status=1
-                                          AND application_date BETWEEN '2022-04-01' AND '2024-03-31' AND ulb_id=2
+                                          AND application_date BETWEEN '2022-04-01' AND '$currentfyEndDate' AND ulb_id=2
                                       GROUP BY application_date
                                 
                                       UNION ALL 
@@ -1654,12 +1658,12 @@ class ReportController extends Controller
                                 
                                           COALESCE(CASE WHEN application_date BETWEEN '2022-04-01' AND '2023-03-31'         -- Parameterize this for last yr fyear range date
                                                   THEN count(id) END,0)AS last_yr_mutation_count,
-                                          COALESCE(CASE WHEN application_date BETWEEN '2023-04-01' AND '2024-03-31'		   -- Parameterize this for current fyear range date
+                                          COALESCE(CASE WHEN application_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate'		   -- Parameterize this for current fyear range date
                                                    THEN count(id) END,0) AS current_yr_mutation_count
                                 
                                           FROM prop_safs
                                           WHERE assessment_type='Mutation' AND status=1
-                                          AND application_date BETWEEN '2022-04-01' AND '2024-03-31' AND ulb_id=2
+                                          AND application_date BETWEEN '2022-04-01' AND '$currentfyEndDate' AND ulb_id=2
                                       GROUP BY application_date
                                 
                                       UNION ALL
@@ -1668,12 +1672,12 @@ class ReportController extends Controller
                                 
                                           COALESCE(CASE WHEN application_date BETWEEN '2022-04-01' AND '2023-03-31'		-- Parameterize this for last yr fyear range date
                                                    THEN count(id) END,0)AS last_yr_mutation_count,
-                                          COALESCE(CASE WHEN application_date BETWEEN '2023-04-01' AND '2024-03-31'		-- Parameterize this for current fyear range date
+                                          COALESCE(CASE WHEN application_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate'		-- Parameterize this for current fyear range date
                                                    THEN count(id) END,0) AS current_yr_mutation_count
                                 
                                           FROM prop_rejected_safs
                                           WHERE assessment_type='Mutation' AND status=1
-                                          AND application_date BETWEEN '2022-04-01' AND '2024-03-31' AND ulb_id=2			-- Parameterize this for last two fyear range date
+                                          AND application_date BETWEEN '2022-04-01' AND '$currentfyEndDate' AND ulb_id=2			-- Parameterize this for last two fyear range date
                                       GROUP BY application_date
                               )  AS mutations
                 ) AS mutations,
@@ -1705,7 +1709,7 @@ class ReportController extends Controller
                                   FROM prop_transactions t
                                   JOIN prop_properties p ON p.id=t.property_id
                                   JOIN ulb_ward_masters u ON u.id=p.ward_mstr_id
-                                  WHERE t.tran_date BETWEEN '2023-04-01' AND '2024-03-31'							-- Parameterize this for current fyear range date
+                                  WHERE t.tran_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate'							-- Parameterize this for current fyear range date
                                   AND p.ulb_id=2
                                   GROUP BY p.ward_mstr_id,u.ward_name
                                   ORDER BY collection_count DESC 
@@ -1742,7 +1746,7 @@ class ReportController extends Controller
                                                    ward_mstr_id
 
                                               FROM prop_active_safs
-                                              WHERE application_date BETWEEN '2023-04-01' AND '2024-03-31'       -- Parameterize this for current fyear range date
+                                              WHERE application_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate'       -- Parameterize this for current fyear range date
                                               AND ulb_id=2
                                               GROUP BY ward_mstr_id
 
@@ -1754,7 +1758,7 @@ class ReportController extends Controller
                                                    ward_mstr_id
 
                                               FROM prop_safs
-                                              WHERE application_date BETWEEN '2023-04-01' AND '2024-03-31'     -- Parameterize this for current fyear range date
+                                              WHERE application_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate'     -- Parameterize this for current fyear range date
                                               AND ulb_id=2
                                               GROUP BY ward_mstr_id
 
@@ -1765,7 +1769,7 @@ class ReportController extends Controller
                                                    ward_mstr_id
 
                                               FROM prop_rejected_safs
-                                              WHERE application_date BETWEEN '2023-04-01' AND '2024-03-31'   -- Parameterize this for current fyear range date
+                                              WHERE application_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate'   -- Parameterize this for current fyear range date
                                               AND ulb_id=2
                                               GROUP BY ward_mstr_id
                                            ) AS top_areas_safs
@@ -1812,7 +1816,7 @@ class ReportController extends Controller
                                                SUM(CASE WHEN paid_status=0 THEN balance ELSE 0 END) AS unpaid_amt
 
                                           FROM prop_demands
-                                          WHERE fyear='2023-2024'								-- Parameterize this for current fyear range date
+                                          WHERE fyear='$currentFy'								-- Parameterize this for current fyear range date
                                           AND status=1 AND ulb_id=2
                                           GROUP BY property_id
                                           ORDER BY property_id
@@ -1845,7 +1849,7 @@ class ReportController extends Controller
                                    SUM(CASE WHEN UPPER(payment_mode)='ONLINE' THEN 1 ELSE 0 END) AS current_online_counts
 
                            FROM prop_transactions
-                           WHERE tran_date BETWEEN '2023-04-01' AND '2024-03-31'					-- Parameterize this for current fyear range date
+                           WHERE tran_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate'					-- Parameterize this for current fyear range date
                            AND status=1 AND ulb_id=2
                        ),
                        lastyear_payments AS (
@@ -1867,19 +1871,19 @@ class ReportController extends Controller
                            SELECT 
                              COALESCE(SUM(CASE WHEN (t.tran_date BETWEEN '2022-04-01' AND '2023-03-31') THEN t.amount ELSE 0 END),0) AS prev_year_jskcollection,    -- Parameterize this for Past fyear range date
                              COALESCE(SUM(CASE WHEN (t.tran_date BETWEEN '2022-04-01' AND '2023-03-31') THEN 1 ELSE 0 END),0) AS prev_year_jskcount,                -- Parameterize this for Past fyear range date
-                             COALESCE(SUM(CASE WHEN (t.tran_date BETWEEN '2023-04-01' AND '2024-03-31') THEN t.amount ELSE 0 END),0) AS current_year_jskcollection, -- Parameterize this for current fyear range date
-                             COALESCE(SUM(CASE WHEN (t.tran_date BETWEEN '2023-04-01' AND '2024-03-31') THEN 1 ELSE 0 END),0) AS current_year_jskcount			  -- Parameterize this for current fyear range date
+                             COALESCE(SUM(CASE WHEN (t.tran_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate') THEN t.amount ELSE 0 END),0) AS current_year_jskcollection, -- Parameterize this for current fyear range date
+                             COALESCE(SUM(CASE WHEN (t.tran_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate') THEN 1 ELSE 0 END),0) AS current_year_jskcount			  -- Parameterize this for current fyear range date
 
                           FROM prop_transactions t
                           JOIN users u ON u.id=t.user_id   
                           WHERE UPPER(u.user_type)='JSK' AND u.suspended=false  AND t.status=1
-                          AND t.tran_date BETWEEN '2022-04-01' AND '2024-03-31'  AND t.ulb_id=2	-- Parameterize this for last two fyears
+                          AND t.tran_date BETWEEN '2022-04-01' AND '$currentfyEndDate'  AND t.ulb_id=2	-- Parameterize this for last two fyears
                   )
 
                        SELECT * FROM current_payments,lastyear_payments,jsk_collections
                 ) AS payment_modes";
         $data = DB::select($sql);
-        $data = $data[0];
+        return  $data = $data[0];
         $mMplYearlyReport = new MplYearlyReport();
         $currentFy = getFY();
 
@@ -1976,18 +1980,19 @@ class ReportController extends Controller
             // "assessed_property_this_year_achievement" => $data->lastyear_dd_payment,
             // "assessed_property_this_year_achievement" => $data->lastyear_neft_payment,
             // "assessed_property_this_year_achievement" => $data->lastyear_online_payment,
-            "date" => $todayDate,
-            "fyear" => "2023-2024",
-            "ulb_id" => "2",
-            "ulb_name" => "Akola Municipal Corporation",
+            // "date" => $todayDate,
+            // "fyear" => "$currentFy",
+            // "ulb_id" => "2",
+            // "ulb_name" => "Akola Municipal Corporation",
         ];
 
-        // $mMplYearlyReport->where('fyear', $currentFy)
-        //     ->update($updateReqs);
-        // $updateReqs->push(["fyear" => "2023-2024"]);
-        $mMplYearlyReport->create($updateReqs);
+        $mMplYearlyReport->where('fyear', $currentFy)
+            ->update($updateReqs);
 
-        // dd("ok");
+        // $updateReqs->push(["fyear" => "$currentFy"]);
+        // $mMplYearlyReport->create($updateReqs);
+
+        dd("ok");
     }
 
     public function AprovedRejectList(Request $request)
