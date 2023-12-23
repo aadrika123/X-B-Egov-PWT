@@ -459,7 +459,7 @@ class SafApprovalBll
         
     }
 
-    private function MutationDemands(PropDemand $demand,PropDemand $newDemand)
+    public function MutationDemands(PropDemand $demand,PropDemand $newDemand)
     {
         // $newDemand->
         $newDemand->alv             = $demand->due_alv ;
