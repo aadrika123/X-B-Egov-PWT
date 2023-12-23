@@ -92,13 +92,18 @@ class WaterTran extends Model
             'users.name as tcName',
             'users.mobile',
             'water_second_consumers.zone_mstr_id',
-            'zone_masters.zone_name' // Add this line to retrieve zone_name
+            'zone_masters.zone_name' ,// Add this line to retrieve zone_name
+            'consumer_bills.paid_amt',
+            'consumer_bills.payment_date'
         )
             ->leftJoin('water_tran_details', 'water_tran_details.tran_id', 'water_trans.id')
             ->join('water_second_consumers', 'water_second_consumers.id', 'water_trans.related_id')
             ->leftjoin('users', 'users.id', 'water_trans.emp_dtl_id')
             ->leftJoin('zone_masters', 'zone_masters.id', '=', 'water_second_consumers.zone_mstr_id') // Join zone_masters
+            ->leftjoin('consumer_bills','consumer_bills.consumer_id','water_trans.related_id')
+            ->orderby('consumer_bills.id','Desc')
             ->where('water_trans.status', 1);
+
 
         if ($transactionNo !== null) {
             $query->where('water_trans.tran_no', $transactionNo);

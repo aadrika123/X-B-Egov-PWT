@@ -106,7 +106,12 @@ class ApplySafController extends Controller
             $metaReqs = array();
             $saf = new PropActiveSaf();
             $mOwner = new PropActiveSafsOwner();
+            $prop   = new PropProperty();
             $taxCalculator = new TaxCalculator($request);
+            if($prop = PropProperty::find($request->previousHoldingId))
+            {
+                $request->merge(["propertyNo"=>$prop->property_no??null]);
+            }
             // Derivative Assignments
             $ulbWorkflowId = $this->readAssessUlbWfId($request, $ulb_id);           // (2.1)
             $roadWidthType = $this->readRoadWidthType($request->roadType);          // Read Road Width Type
@@ -148,7 +153,7 @@ class ApplySafController extends Controller
             $taxCalculator->calculateTax();
             if(($taxCalculator->_oldUnpayedAmount??0)>0 && $request->assessmentType==3 )
             {
-                throw new Exception("Old Demand Amount Of ".$taxCalculator->_oldUnpayedAmount." Not Cleard");
+                // throw new Exception("Old Demand Amount Of ".$taxCalculator->_oldUnpayedAmount." Not Cleard");
             }
             DB::beginTransaction();
             $createSaf = $saf->store($request);                                         // Store SAF Using Model function 

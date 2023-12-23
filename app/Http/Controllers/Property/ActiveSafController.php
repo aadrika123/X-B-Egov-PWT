@@ -614,6 +614,9 @@ class ActiveSafController extends Controller
             $mWorkflowTracks = new WorkflowTrack();
             $mCustomDetails = new CustomDetail();
             $forwardBackward = new WorkflowMap;
+            $mVerification = new PropSafVerification();
+            $verificationDtl = collect();
+            $mVerificationDtls = new PropSafVerificationDtl();
             $mRefTable = Config::get('PropertyConstaint.SAF_REF_TABLE');
             // Saf Details
             $data = array();
@@ -652,6 +655,13 @@ class ActiveSafController extends Controller
             } else
                 $data->current_role_name2 = $data->current_role_name;
 
+            $safVerification = $mVerification->getLastVerification($data->id);
+            if($safVerification)
+            {
+                $data->old_ward_no = $safVerification->ward_name ? $safVerification->ward_name : $data->old_ward_no;
+                $data->category= $safVerification->category ? $safVerification->category : $data->category;
+                $verificationDtl = $mVerificationDtls->getVerificationDtls($safVerification->id);
+            }
             // Basic Details
             $basicDetails = $this->generateBasicDetails($data);      // Trait function to get Basic Details
             $basicElement = [
@@ -695,8 +705,14 @@ class ActiveSafController extends Controller
                 'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
                 'tableData' => $ownerDetails
             ];
-            // Floor Details
-            $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data->id);      // Model Function to Get Floor Details
+            // Floor Details            
+            $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data->id)->map(function($val)use($verificationDtl){
+                $new = $verificationDtl->where("saf_floor_id",$val->id)->first();
+                $val->floor_name = $new?$new->floor_name:$val->floor_name ;
+                $val->usage_type = $new?$new->usage_type:$val->usage_type ;
+                $val->occupancy_type = $new?$new->occupancy_type:$val->occupancy_type ;
+                $val->construction_type = $new?$new->construction_type:$val->construction_type ;
+            });      // Model Function to Get Floor Details
             $floorDetails = $this->generateFloorDetails($getFloorDtls);
             $floorElement = [
                 'headerTitle' => 'Floor Details',
@@ -756,6 +772,9 @@ class ActiveSafController extends Controller
             $mActiveSafsFloors = new PropActiveSafsFloor();
             $mPropSafMemoDtls = new PropSafMemoDtl();
             $mPropTransaction = new PropTransaction();
+            $mVerification = new PropSafVerification();
+            $verificationDtl = collect();
+            $mVerificationDtls = new PropSafVerificationDtl();
             $memoDtls = array();
             $data = array();
             $user = Auth()->user();
@@ -777,6 +796,14 @@ class ActiveSafController extends Controller
                 throw new Exception("Application Not Found");
 
             $data->current_role_name = 'Approved By ' . $data->current_role_name;
+            $safVerification = $mVerification->getLastVerification($data->id);
+            if($safVerification)
+            {
+                $data->old_ward_no = $safVerification->ward_name ? $safVerification->ward_name : $data->old_ward_no;
+                $data->category= $safVerification->category ? $safVerification->category : $data->category;
+                $verificationDtl = $mVerificationDtls->getVerificationDtls($safVerification->id);
+            }
+            // $data->
             if ($data->payment_status == 0) {
                 $data->current_role_name = null;
                 $data->current_role_name2 = "Payment is Pending";
@@ -796,7 +823,13 @@ class ActiveSafController extends Controller
             $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data['id']);      // Model Function to Get Floor Details
             if (collect($getFloorDtls)->isEmpty())
                 $getFloorDtls = $mPropSafsFloors->getFloorsBySafId($data['id']);
-            $data['floors'] = $getFloorDtls;
+            $data['floors'] = $getFloorDtls->map(function($val)use($verificationDtl){
+                $new = $verificationDtl->where("saf_floor_id",$val->id)->first();
+                $val->floor_name = $new?$new->floor_name:$val->floor_name ;
+                $val->usage_type = $new?$new->usage_type:$val->usage_type ;
+                $val->occupancy_type = $new?$new->occupancy_type:$val->occupancy_type ;
+                $val->construction_type = $new?$new->construction_type:$val->construction_type ;
+            });
             $data["tranDtl"] = $mPropTransaction->getSafTranList($data['id']);
             $data["userDtl"] = [
                 "user_id" => $user->id ?? 0,
@@ -914,23 +947,29 @@ class ActiveSafController extends Controller
      */
     public function postNextLevel(Request $request)
     {
-        $request->validate([
-            'applicationId' => 'required|integer',
-            'receiverRoleId' => 'nullable|integer',
-            'action' => 'required|In:forward,backward'
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'applicationId' => 'required|integer',
+                'receiverRoleId' => 'nullable|integer',
+                'action' => 'required|In:forward,backward'
+            ]
+        );
+        if ($validated->fails()) {
+            return validationError($validated);
+        }        
 
         try {
             // Variable Assigments
             $userId = authUser($request)->id;
             $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
             $saf = PropActiveSaf::findOrFail($request->applicationId);
-            $saf2 = PropActiveSaf::findOrFail($request->applicationId);
             $mWfMstr = new WfWorkflow();
             $track = new WorkflowTrack();
             $mWfWorkflows = new WfWorkflow();
             $mWfRoleMaps = new WfWorkflowrolemap();
             $mPropSafGeotagUpload = new PropSafGeotagUpload();
+            $propSafVerification = new PropSafVerification();
             $samHoldingDtls = array();
             $safId = $saf->id;
 
@@ -958,26 +997,35 @@ class ActiveSafController extends Controller
                 {
                     $docUploadStatus = (new SafDocController())->checkFullDocUpload($saf->id);
                     $saf->doc_upload_status = $docUploadStatus ? 1 : $saf->doc_upload_status;
-                    $saf->update();
                 }
                 if($saf->doc_verify_status==0 && $senderRoleId == $wfLevels['DA'])
                 {
                     $docUploadStatus = (new SafDocController())->ifFullDocVerified($saf->id);
                     $saf->doc_verify_status = $docUploadStatus ? 1 : $saf->doc_verify_status;
-                    $saf->update();
                 }
+                $gioTag = $mPropSafGeotagUpload->getGeoTags($saf->id);
+                $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);
+                if ($saf->prop_type_mstr_id == 4 && collect($fieldVerifiedSaf)->isEmpty())
+                {
+                    $fieldVerifiedSaf = $propSafVerification->getVerifications($safId);
+                    if(collect($fieldVerifiedSaf)->isEmpty())
+                    {
+                        $fieldVerifiedSaf = $propSafVerification->getVerifications2($safId);
+                    }
+
+                }
+                if(collect($fieldVerifiedSaf)->isNotEmpty()){
+                    $saf->is_field_verified = true;                    
+                }
+                if(!$gioTag->isEmpty())
+                {
+                    $saf->is_geo_tagged = true;
+                }
+                $saf->update();
+
                 $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $userId);          // Check Post Next level condition
 
                 $geotagExist = $saf->is_field_verified == true;
-                if(!$geotagExist && $saf->prop_type_mstr_id==4)
-                {
-                    $geotagExist = $saf->is_geo_tagged;
-                }
-                if($geotagExist && $saf->prop_type_mstr_id==4 && !$saf->is_field_verified)
-                {
-                    $saf->is_field_verified = true;
-                    $saf->update();
-                }
 
                 if($saf->prop_type_mstr_id==4 && $saf->current_role== $wfLevels['TC'] )#only for Vacant Land
                 {
@@ -1016,7 +1064,7 @@ class ActiveSafController extends Controller
                 }
                 if($saf->prop_type_mstr_id==4 && $saf->current_role== $wfLevels['DA'])#only for Vacant Land
                 {
-                    $forwardBackwardIds->forward_role_id = $wfLevels['TC'];
+                    $forwardBackwardIds->backward_role_id = $wfLevels['TC'];
                 }
 
                 $saf->current_role = $forwardBackwardIds->backward_role_id;
@@ -2883,6 +2931,105 @@ class ActiveSafController extends Controller
             }
             DB::commit();
             return responseMsgs(true, $sms, "", "010119.1", "1.0", responseTime(), "POST", $req->deviceId);
+        }
+        catch(Exception $e)
+        {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * ===================== property no entery by da(lipik)==========================================
+     * ||                   created By : sandeep Bara
+     * ||                   Date       : 22-12-2023
+     */
+
+    public function chequePropertyNo(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "applicationId"=>"required|digits_between:1,9223372036854775807",
+                "wardId"       =>"required|digits_between:1,9223372036854775807",
+                "propertyNo"   =>"required|required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\.,-_ \s]+$/",
+            ]
+        );
+        if ($validated->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validated->errors()
+            ]);
+        }
+        try{
+            $saf = PropActiveSaf::find($request->applicationId);
+            if(!$saf)
+            {
+                throw new Exception("Data Not Find");
+            }
+            $test = PropActiveSaf::where("ward_mstr_id",$request->wardId)
+                    ->where("property_no",$request->propertyNo)
+                    ->where("id","<>",$request->applicationId)
+                    ->count("id");
+            if(!$test)
+            {
+                $test = DB::table("prop_rejected_safs")
+                    ->where("ward_mstr_id",$request->wardId)
+                    ->where("property_no",$request->propertyNo)
+                    ->count("id");
+            }
+            if(!$test && !in_array($saf->assessment_type,['Reassessment','Mutation']))
+            {
+                $test = DB::table("prop_properties")
+                    ->where("ward_mstr_id",$request->wardId)
+                    ->where("property_no",$request->propertyNo)
+                    ->count("id");
+            }
+            if($test)
+            {
+                throw new Exception("Already Exists");
+            }
+            return responseMsg(true, "Available", $request->propertyNo);
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+    public function updatePropertyNo(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "applicationId"=>"required|digits_between:1,9223372036854775807",
+                "wardId"       =>"required|digits_between:1,9223372036854775807",
+                "propertyNo"   =>"required|required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\.,-_ \s]+$/",
+            ]
+        );
+        if ($validated->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validated->errors()
+            ]);
+        }
+        try{
+            $saf = PropActiveSaf::find($request->applicationId);
+            if(!$saf)
+            {
+                throw new Exception("Data Not Find");
+            }
+            $check = $this->chequePropertyNo($request);
+            if(!$check->original["statsus"])
+            {
+                return $check;
+            }
+            DB::beginTransaction();
+            $saf->property_no = $request->propertyNo;
+            $saf->save();
+            DB::commit();
+            return responseMsg(true, "property no assigned", "");
         }
         catch(Exception $e)
         {

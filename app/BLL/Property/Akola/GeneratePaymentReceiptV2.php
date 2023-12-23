@@ -207,11 +207,11 @@ class GeneratePaymentReceiptV2
 
             $aggregateDemandList = new Collection([$this->_currentDemand, $this->_overDueDemand]);
             $aggregateDemand = $this->aggregateDemand($aggregateDemandList);
-            $aggregateDemand["FinalTax"] =   $aggregateDemand["FinalTax"] + (($this->_advanceAmt??0) - ($this->_adjustAmt??0) );    
+            $aggregateDemand["FinalTax"] =   round($aggregateDemand["FinalTax"] + (($this->_advanceAmt??0) - ($this->_adjustAmt??0) ));    
             $aggregateDemand["advancePaidAmount"]    =  ($this->_adjustAmt??0) ;
             $aggregateDemand["advancePaidAmount"]    =  ($this->_advanceAmt??0) ;
             $aggregateDemand["netAdvance"] =  (($this->_advanceAmt??0) - ($this->_adjustAmt??0)) ;
-            $this->_GRID['aggregateDemand'] = $aggregateDemand;
+            $this->_GRID['aggregateDemand'] = $aggregateDemand;   
         }
     }
 
@@ -315,6 +315,14 @@ class GeneratePaymentReceiptV2
      */
     public function addPropDtls()
     {
+        $from =   explode('-',$this->_trans->from_fyear)[0];
+        $to = explode('-',$this->_trans->to_fyear); 
+        $to = $to[1]??($to[0]);        
+        $duration = "April-01-".($from) ." to "."March-31-".($to);
+        if($from==$to)
+        {
+            $duration = "April-01-".($from-1) ." to "."March-31-".($to);
+        }
         $receiptDtls = [
             "departmentSection" => $this->_mDepartmentSection,
             "accountDescription" => $this->_mAccDescription,
@@ -359,7 +367,8 @@ class GeneratePaymentReceiptV2
             "plot_no"=>$this->_propertyDtls->plot_no??"",
             "area_of_plot"=>$this->_propertyDtls->area_of_plot??"",
 
-            "receiptNo" => isset($this->_trans->book_no) ? (explode('-', $this->_trans->book_no)[1]??"0") : ""
+            "receiptNo" => isset($this->_trans->book_no) ? (explode('-', $this->_trans->book_no)[1]??"0") : "",                  
+           'duration' => ($duration) ,
         ];
 
         $this->_GRID['receiptDtls'] = $receiptDtls;

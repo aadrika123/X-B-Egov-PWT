@@ -104,6 +104,7 @@ class  PropActiveSaf extends Model
             'sale_value' => ($req->assessmentType=='Mutation')? ($req->saleValue??null):null,
             'proccess_fee' => ($req->assessmentType=='Mutation') ? ($req->proccessFee??0) : 0,
             'proccess_fee_paid' => (($req->proccessFee??0)>0 && $req->assessmentType=='Mutation')?0:1,
+            "property_no" => ($req->propertyNo??null),
         ];
         $propActiveSafs = PropActiveSaf::create($reqs);                 // SAF No is Created Using Observer
         return response()->json([

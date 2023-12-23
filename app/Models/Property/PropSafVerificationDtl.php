@@ -75,4 +75,18 @@ class PropSafVerificationDtl extends Model
     {
         return PropSafVerificationDtl::create($req);
     }
+
+    public function getVerificationDtls($verificationId)
+    {
+        return self::select("prop_saf_verification_dtls.*","ref_prop_floors.floor_name","ref_prop_usage_types.usage_type",
+                    "ref_prop_construction_types.construction_type","ref_prop_occupancy_types.occupancy_type"
+                )
+            ->join("ref_prop_floors","ref_prop_floors.id","prop_saf_verification_dtls.floor_mstr_id")
+            ->join("ref_prop_usage_types","ref_prop_usage_types.id","prop_saf_verification_dtls.usage_type_id")
+            ->join("ref_prop_construction_types","ref_prop_construction_types.id","prop_saf_verification_dtls.construction_type_id")
+            ->join("ref_prop_occupancy_types","ref_prop_occupancy_types.id","prop_saf_verification_dtls.occupancy_type_id")
+            ->where("prop_saf_verification_dtls.status",1)
+            ->where("prop_saf_verification_dtls.verification_id",$verificationId)
+            ->get();
+    }
 }
