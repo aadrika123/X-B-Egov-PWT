@@ -147,6 +147,7 @@ class SafApprovalBll
         $propProperties->saf_id = $this->_activeSaf->id;
         $propProperties->holding_no = $this->_activeSaf->holding_no;
         $propProperties->new_holding_no = $this->_activeSaf->holding_no;
+        $propProperties->property_no = $this->_activeSaf->property_no;
         $propProperties->save();
 
         $this->_replicatedPropId = $propProperties->id;

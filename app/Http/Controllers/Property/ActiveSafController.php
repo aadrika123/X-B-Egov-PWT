@@ -947,23 +947,29 @@ class ActiveSafController extends Controller
      */
     public function postNextLevel(Request $request)
     {
-        $request->validate([
-            'applicationId' => 'required|integer',
-            'receiverRoleId' => 'nullable|integer',
-            'action' => 'required|In:forward,backward'
-        ]);
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'applicationId' => 'required|integer',
+                'receiverRoleId' => 'nullable|integer',
+                'action' => 'required|In:forward,backward'
+            ]
+        );
+        if ($validated->fails()) {
+            return validationError($validated);
+        }        
 
         try {
             // Variable Assigments
             $userId = authUser($request)->id;
             $wfLevels = Config::get('PropertyConstaint.SAF-LABEL');
             $saf = PropActiveSaf::findOrFail($request->applicationId);
-            $saf2 = PropActiveSaf::findOrFail($request->applicationId);
             $mWfMstr = new WfWorkflow();
             $track = new WorkflowTrack();
             $mWfWorkflows = new WfWorkflow();
             $mWfRoleMaps = new WfWorkflowrolemap();
             $mPropSafGeotagUpload = new PropSafGeotagUpload();
+            $propSafVerification = new PropSafVerification();
             $samHoldingDtls = array();
             $safId = $saf->id;
 
@@ -991,47 +997,35 @@ class ActiveSafController extends Controller
                 {
                     $docUploadStatus = (new SafDocController())->checkFullDocUpload($saf->id);
                     $saf->doc_upload_status = $docUploadStatus ? 1 : $saf->doc_upload_status;
-                    $saf->update();
                 }
                 if($saf->doc_verify_status==0 && $senderRoleId == $wfLevels['DA'])
                 {
                     $docUploadStatus = (new SafDocController())->ifFullDocVerified($saf->id);
                     $saf->doc_verify_status = $docUploadStatus ? 1 : $saf->doc_verify_status;
-                    $saf->update();
                 }
+                $gioTag = $mPropSafGeotagUpload->getGeoTags($saf->id);
+                $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);
+                if ($saf->prop_type_mstr_id == 4 && collect($fieldVerifiedSaf)->isEmpty())
+                {
+                    $fieldVerifiedSaf = $propSafVerification->getVerifications($safId);
+                    if(collect($fieldVerifiedSaf)->isEmpty())
+                    {
+                        $fieldVerifiedSaf = $propSafVerification->getVerifications2($safId);
+                    }
+
+                }
+                if(collect($fieldVerifiedSaf)->isNotEmpty()){
+                    $saf->is_field_verified = true;                    
+                }
+                if(!$gioTag->isEmpty())
+                {
+                    $saf->is_geo_tagged = true;
+                }
+                $saf->update();
+
                 $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $userId);          // Check Post Next level condition
 
                 $geotagExist = $saf->is_field_verified == true;
-                if(!$geotagExist){
-                    $propSafVerification = new PropSafVerification();
-                    if ($saf->prop_type_mstr_id != 4)
-                    {
-                        $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);          // Get fields Verified Saf with all Floor Details
-
-                    }
-                    else{
-                        $fieldVerifiedSaf = $propSafVerification->getVerifications($safId);
-                        if(collect($fieldVerifiedSaf)->isEmpty())
-                        {
-                            $fieldVerifiedSaf = $propSafVerification->getVerifications2($safId);
-                        }
-                    }
-                    if(collect($fieldVerifiedSaf)->isNotEmpty()){
-                        $saf->is_geo_tagged = true;
-                        $saf->is_field_verified = true;
-                        $saf->update();
-                    }
-
-                }
-                if(!$geotagExist && $saf->prop_type_mstr_id==4)
-                {
-                    $geotagExist = $saf->is_geo_tagged;
-                }
-                if($geotagExist && $saf->prop_type_mstr_id==4 && !$saf->is_field_verified)
-                {
-                    $saf->is_field_verified = true;
-                    $saf->update();
-                }
 
                 if($saf->prop_type_mstr_id==4 && $saf->current_role== $wfLevels['TC'] )#only for Vacant Land
                 {
@@ -1070,7 +1064,7 @@ class ActiveSafController extends Controller
                 }
                 if($saf->prop_type_mstr_id==4 && $saf->current_role== $wfLevels['DA'])#only for Vacant Land
                 {
-                    $forwardBackwardIds->forward_role_id = $wfLevels['TC'];
+                    $forwardBackwardIds->backward_role_id = $wfLevels['TC'];
                 }
 
                 $saf->current_role = $forwardBackwardIds->backward_role_id;
@@ -2994,9 +2988,9 @@ class ActiveSafController extends Controller
             }
             if($test)
             {
-                throw new Exception("This Property No. Is Already Occuppied Throw Another Property");
+                throw new Exception("Already Exists");
             }
-            return responseMsg(true, "Note Alloted To Another Property", $request->propertyNo);
+            return responseMsg(true, "Available", $request->propertyNo);
         }
         catch(Exception $e)
         {

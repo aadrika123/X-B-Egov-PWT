@@ -17,7 +17,7 @@ class AkolaTradeParamItemType extends Model
     }
     public static function List($all=false)
     {
-        return self::select("id","trade_item","trade_code")
+        return self::select("id","trade_item","trade_item_marathi","trade_code")
                 ->where("status",1)
                 // ->where("id","<>",187)
                 ->orderBy("id","ASC")
