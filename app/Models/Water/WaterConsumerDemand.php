@@ -31,28 +31,36 @@ class WaterConsumerDemand extends Model
      * | @param ConsumerId
      */
     public function getDemandBydemandIds($consumerId)
-    {
-        return WaterConsumerDemand::select(
-            'water_consumer_demands.id AS ref_demand_id',
-            'water_consumer_demands.*',
-            'water_second_consumers.*',
-            'water_consumer_owners.applicant_name',
-            'water_consumer_initial_meters.initial_reading',
-            'users.user_name',
-            DB::raw("ROUND(water_consumer_demands.due_balance_amount, 2) as due_balance_amount"), 
+{
+    return WaterConsumerDemand::select(
+        'water_consumer_demands.id AS ref_demand_id',
+        'water_consumer_demands.*',
+        'water_second_consumers.*',
+        'water_consumer_owners.applicant_name',
+        'water_consumer_initial_meters.initial_reading',
+        'users.user_name',
+        DB::raw("ROUND(water_consumer_demands.due_balance_amount, 2) as due_balance_amount"),
+        'min_demand_from.demand_from as demand_from',
+        'max_demand_upto.demand_upto as demand_upto'
+    )
+        ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_consumer_demands.consumer_id')
+        ->leftjoin('water_consumer_initial_meters', 'water_consumer_initial_meters.consumer_id', 'water_consumer_demands.consumer_id')
+        ->join('water_second_consumers', 'water_second_consumers.id', '=', 'water_consumer_demands.consumer_id')
+        ->leftjoin('users', 'users.id', '=', 'water_consumer_demands.emp_details_id')
+        ->leftjoin(
+            DB::raw('(SELECT consumer_id, MIN(demand_from) as demand_from FROM water_consumer_demands GROUP BY consumer_id) as min_demand_from'),
+            'min_demand_from.consumer_id', '=', 'water_consumer_demands.consumer_id'
         )
-            ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_consumer_demands.consumer_id')
-            ->leftjoin('water_consumer_initial_meters', 'water_consumer_initial_meters.consumer_id', 'water_consumer_demands.consumer_id')
-            ->join('water_second_consumers', 'water_second_consumers.id', '=', 'water_consumer_demands.consumer_id')
-            ->leftjoin('users','users.id','=','water_consumer_demands.emp_details_id') 
-           
-            // ->where('water_consumer_demands.paid_status', 0)
-            ->where('water_consumer_demands.is_full_paid',false)
-            ->where('water_consumer_demands.consumer_id', $consumerId)
-            ->orderByDesc('water_consumer_demands.generation_date')
-            ->first();
-    }
-
+        ->leftjoin(
+            DB::raw('(SELECT consumer_id, MAX(demand_upto) as demand_upto FROM water_consumer_demands GROUP BY consumer_id) as max_demand_upto'),
+            'max_demand_upto.consumer_id', '=', 'water_consumer_demands.consumer_id'
+        )
+        // ->where('water_consumer_demands.paid_status', 0)
+        ->where('water_consumer_demands.is_full_paid', false)
+        ->where('water_consumer_demands.consumer_id', $consumerId)
+        ->orderByDesc('water_consumer_demands.generation_date')
+        ->first();
+}
 
     /**
      * | Get Demand According to consumerId and payment status false 
