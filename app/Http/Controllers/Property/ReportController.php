@@ -877,7 +877,8 @@ class ReportController extends Controller
             $data['Ownership']['total_ownership'] = $currentYearData->total_property ?? 0;
             $data['Ownership']['owned_property']  = $currentYearData->owned_property ?? 0;
             $data['Ownership']['rented_property'] = $currentYearData->rented_property ?? 0;
-            $data['Ownership']['vacant_property'] = $currentYearData->vacant_property ?? 0;
+            $data['Ownership']['mixed_property']  = $currentYearData->mixed_property ?? 0;
+            // $data['Ownership']['vacant_property'] = $currentYearData->vacant_property ?? 0;
 
             #_Unpaid Properties
             $data['Unpaid Properties']["previous"]['count_not_paid_3yrs']  = $prevYearData->count_not_paid_3yrs ?? 0;

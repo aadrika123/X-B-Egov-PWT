@@ -364,7 +364,7 @@ class ActiveSafControllerV2 extends Controller
 
             switch ($key) {
                 case ("holdingNo"):
-                    $data = $mPropProperty->searchProperty($ulbId)
+                    $data = $mPropProperty->searchPropertyV2($ulbId)
                         ->where(function ($where) use ($parameter) {
                             $where->ORwhere('prop_properties.holding_no', 'LIKE', '%' . strtoupper($parameter) . '%')
                                 ->orWhere('prop_properties.new_holding_no', 'LIKE', '%' . strtoupper($parameter) . '%');
@@ -372,12 +372,12 @@ class ActiveSafControllerV2 extends Controller
                     break;
 
                 case ("ptn"):
-                    $data = $mPropProperty->searchProperty($ulbId)
+                    $data = $mPropProperty->searchPropertyV2($ulbId)
                         ->where('prop_properties.property_no', 'LIKE', '%' . $parameter . '%');
                     break;
 
                 case ("ownerName"):
-                    $data = $mPropProperty->searchProperty($ulbId)
+                    $data = $mPropProperty->searchPropertyV2($ulbId)
                             ->where(function($where)use($parameter){
                                 $where->where('o.owner_name', 'ILIKE', '%' . strtoupper($parameter) . '%')
                                 ->orwhere('o.owner_name_marathi', 'ILIKE', '%' . strtoupper($parameter) . '%');
@@ -386,56 +386,56 @@ class ActiveSafControllerV2 extends Controller
                     break;
 
                 case ("address"):
-                    $data = $mPropProperty->searchProperty($ulbId)
+                    $data = $mPropProperty->searchPropertyV2($ulbId)
                         ->where('prop_properties.prop_address', 'ILIKE', '%' . strtoupper($parameter) . '%');
                     break;
 
                 case ("mobileNo"):
-                    $data = $mPropProperty->searchProperty($ulbId)
+                    $data = $mPropProperty->searchPropertyV2($ulbId)
                         ->where('o.mobile_no', 'LIKE', '%' . $parameter . '%');
                     break;
 
                 case ("khataNo"):
                     if ($request->khataNo)
-                        $data = $mPropProperty->searchProperty($ulbId)
+                        $data = $mPropProperty->searchPropertyV2($ulbId)
                             ->where('prop_properties.khata_no', $request->khataNo);
 
                     if ($request->plotNo)
-                        $data = $mPropProperty->searchProperty($ulbId)
+                        $data = $mPropProperty->searchPropertyV2($ulbId)
                             ->where('prop_properties.plot_no',  $request->plotNo);
 
                     if ($request->maujaName)
-                        $data = $mPropProperty->searchProperty($ulbId)
+                        $data = $mPropProperty->searchPropertyV2($ulbId)
                             ->where('prop_properties.village_mauja_name',  $request->maujaName);
 
                     if ($request->khataNo && $request->plotNo)
-                        $data = $mPropProperty->searchProperty($ulbId)
+                        $data = $mPropProperty->searchPropertyV2($ulbId)
                             ->where('prop_properties.khata_no',  $request->khataNo)
                             ->where('prop_properties.plot_no',  $request->plotNo);
 
                     if ($request->khataNo && $request->maujaName)
-                        $data = $mPropProperty->searchProperty($ulbId)
+                        $data = $mPropProperty->searchPropertyV2($ulbId)
                             ->where('prop_properties.khata_no',  $request->khataNo)
                             ->where('prop_properties.village_mauja_name',  $request->maujaName);
 
                     if ($request->plotNo && $request->maujaName)
-                        $data = $mPropProperty->searchProperty($ulbId)
+                        $data = $mPropProperty->searchPropertyV2($ulbId)
                             ->where('prop_properties.plot_no',  $request->plotNo)
                             ->where('prop_properties.village_mauja_name',  $request->maujaName);
 
                     if ($request->khataNo && $request->plotNo && $request->maujaName)
-                        $data = $mPropProperty->searchProperty($ulbId)
+                        $data = $mPropProperty->searchPropertyV2($ulbId)
                             ->where('prop_properties.khata_no',  $request->khataNo)
                             ->where('prop_properties.plot_no',  $request->plotNo)
                             ->where('prop_properties.village_mauja_name',  $request->maujaName);
                     break;
 
                 case ("propertyNo"):
-                    $data = $mPropProperty->searchProperty($ulbId)
+                    $data = $mPropProperty->searchPropertyV2($ulbId)
                         ->where('prop_properties.property_no', 'LIKE', '%' . $parameter . '%');
                     break;
                 default:
-                    $data = $mPropProperty->searchProperty($ulbId);
+                    $data = $mPropProperty->searchPropertyV2($ulbId);
             }
 
             if ($request->zoneId) {
@@ -453,10 +453,11 @@ class ActiveSafControllerV2 extends Controller
                 if ($key == 'ptn') {
                     $paginator =
                         $data
-                        ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude', 'zone_name', 'd.paid_status', 'o.owner_name','o.owner_name_marathi', 'o.mobile_no')
+                        // ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude', 'zone_name', 'd.paid_status', 'o.owner_name','o.owner_name_marathi', 'o.mobile_no')
                         ->paginate($perPage);
                 } else {
-                    $paginator = $data->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude', 'zone_name', 'd.paid_status', 'o.owner_name','o.owner_name_marathi', 'o.mobile_no')
+                    $paginator = $data
+                        // ->groupby('prop_properties.id', 'ulb_ward_masters.ward_name', 'latitude', 'longitude', 'zone_name', 'd.paid_status', 'o.owner_name','o.owner_name_marathi', 'o.mobile_no')
                         ->paginate($perPage);
                 }
             }
