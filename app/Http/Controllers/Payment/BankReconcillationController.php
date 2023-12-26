@@ -36,6 +36,7 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+// use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Predis\Response\Status;
@@ -59,9 +60,12 @@ class BankReconcillationController extends Controller
                 'toDate' => 'required',
                 'moduleId' => 'required'
             ]);
-
             if ($validator->fails()) {
-                return response()->json(['status' => False, 'msg' => $validator()->errors()]);
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $validator->errors()
+                ]);                
             }
             $ulbId = authUser($request)->ulb_id;
             $moduleId = $request->moduleId;
@@ -78,7 +82,10 @@ class BankReconcillationController extends Controller
 
             if ($moduleId == $propertyModuleId) {
                 $chequeTranDtl  = $mPropTransaction->chequeTranDtl($ulbId);
-
+                if($request->verificationType!="bounce")
+                {
+                    $chequeTranDtl = $chequeTranDtl->where("prop_transactions.status",1);
+                }                
                 if ($request->chequeNo) {
                     $data =  $chequeTranDtl
                         ->where('cheque_no', $request->chequeNo)
