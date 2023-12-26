@@ -2328,7 +2328,7 @@ class WaterReportController extends Controller
         FROM (
             SELECT 
                 COUNT(water_consumer_demands.id)as demand_count,
-                SUM(balance_amount) as sum_balance_amount,
+                SUM(due_balance_amount) as sum_balance_amount,
                 water_consumer_demands.consumer_id,
                 water_consumer_demands.connection_type,
                 water_consumer_demands.status,
@@ -2891,7 +2891,7 @@ class WaterReportController extends Controller
                 water_second_consumers.ward_mstr_id,
                 zone_masters.zone_name
         ");
-       
+
             $data = DB::connection('pgsql_water')->select(DB::raw($rawData));
 
             $list = [
@@ -3446,7 +3446,7 @@ class WaterReportController extends Controller
     //                 water_consumer_demands.generation_date BETWEEN '$fromDate' AND '$uptoDate'
     //                 " . ($userId ? " AND water_consumer_demands.emp_details_id = $userId" : "") . "
     //                 AND water_consumer_demands.status = 'true' 
-                
+
     //             group by water_consumer_demands.consumer_id,created_on
     //         )readings on readings.consumer_id = final_data.consumer_id");
     //         $data = DB::connection('pgsql_water')->select(DB::raw($data));
@@ -3548,9 +3548,15 @@ class WaterReportController extends Controller
                           water_second_consumers.address,
                           water_second_consumers.meter_no,
                           water_second_consumers.mobile_no,
-                          water_consumer_demands.current_demand,water_consumer_demands.arrear_demands,
-                          water_consumer_demands.due_balance_amount,water_consumer_demands.demand_from,water_consumer_demands.demand_upto,
-                          water_consumer_demands.total_records,water_consumer_demands.emp_details_id,water_consumer_demands.total_emp,
+                          round(water_consumer_demands.current_demand) as current_demand,
+                          round(water_consumer_demands.arrear_demands) as arrear_demand,
+                          round(water_consumer_demands.due_balance_amount) as due_balance_amount,
+                          water_consumer_demands.demand_from,
+                          water_consumer_demands.demand_upto,
+                          water_consumer_demands.total_records,
+                          water_consumer_demands.total_visit,
+                          water_consumer_demands.emp_details_id,
+                          water_consumer_demands.total_emp,
                           water_consumer_demands.user_name,
                           water_consumer_owners.applicant_name,         
                           ulb_ward_masters.ward_name AS ward_no,
@@ -3565,6 +3571,7 @@ class WaterReportController extends Controller
                          MAX(demand_upto) AS demand_upto,
                          COUNT(water_consumer_demands.emp_details_id) AS total_records,
                          COUNT(distinct(water_consumer_demands.emp_details_id)) AS total_emp,
+                         COUNT(distinct(water_consumer_demands.consumer_id)) as total_visit,
                          string_agg(distinct(water_consumer_demands.emp_details_id)::text,', ')as emp_details_id,
                         string_agg(distinct(users.user_name),', ')as user_name,
                          water_consumer_demands.consumer_id
@@ -3606,24 +3613,28 @@ class WaterReportController extends Controller
                ) AS readings ON readings.consumer_id = final_data.consumer_id
              ");
 
-              $data = DB::connection('pgsql_water')->select($rawData . " limit $limit offset $offset");
+            $data = DB::connection('pgsql_water')->select($rawData . " limit $limit offset $offset");
 
-              $count = (collect(DB::connection('pgsql_water')->SELECT("SELECT COUNT(*)AS total, SUM(due_balance_amount) AS total_amount FROM ($rawData) total"))->first());
-              $total = ($count)->total ?? 0;
+            $count = (collect(DB::connection('pgsql_water')->SELECT("SELECT COUNT(*) AS total
+              FROM ($rawData) total"))->first());
 
-              $lastPage = ceil($total / $perPage);
+            $count = (collect(DB::connection('pgsql_water')->SELECT("SELECT COUNT(*)AS total, SUM(due_balance_amount) AS total_amount FROM ($rawData) total"))->first());
+            $total = ($count)->total ?? 0;
+
+            $lastPage = ceil($total / $perPage);
 
             $refData = collect($data);
             $refDetailsV2 = [
                 "data" => $data,
                 "sum_current_coll" => $refData->pluck('current_collections')->sum(),
                 "sum_arrear_coll" => $refData->pluck('arrear_demand')->sum(),
-                "sum_total_coll" => $refData->pluck('total_collections')->sum(),
-                "totalAmount"   =>  round($refData->pluck('due_balance_amount')->sum()),
-                "currentDate"  => $currentDate,
-                "current_page" => $page,
-                "per_page" => $perPage,
-                "last_page" => $lastPage
+                "sum_total_coll"  => $refData->pluck('total_collections')->sum(),
+                "totalAmount"     =>  round($refData->pluck('due_balance_amount')->sum()),
+                "currentDate"     => $currentDate,
+                "current_page"    => $page,
+                "per_page"        => $perPage,
+                "last_page"       => $lastPage,
+                "total"           => $total
             ];
             $queryRunTime = (collect(DB::connection('pgsql_water'))->sum("time"));
             return responseMsgs(true, "visit Report", $refDetailsV2, $apiId, $version, $queryRunTime, $action, $deviceId);
@@ -3743,6 +3754,9 @@ class WaterReportController extends Controller
                   left JOIN users ON users.id = water_consumer_demands.emp_details_id
                   WHERE water_consumer_demands.status =true 
                   AND water_consumer_demands.generation_date BETWEEN '$fromDate' AND '$uptoDate'
+                  " . ($zoneId ? " AND water_second_consumers.zone_mstr_id = $zoneId" : "") . "
+                  " . ($wardId ? " AND water_second_consumers.ward_mstr_id = $wardId" : "") . "
+                  " . ($userId ? " AND water_consumer_demands.emp_details_id = $userId" : "") . "
                   GROUP BY consumer_id	      
               )water_consumer_demands ON water_second_consumers.id = water_consumer_demands.consumer_id	
     -- 		   left JOIN users ON users.id = ANY(STRING_TO_ARRAY(water_consumer_demands.emp_details_id,',')::bigint[])
@@ -3770,22 +3784,20 @@ class WaterReportController extends Controller
                GROUP BY water_consumer_demands.consumer_id, created_on
                ) AS readings ON readings.consumer_id = final_data.consumer_id
              ");
-              $data = DB::connection('pgsql_water')->select(DB::raw($rawData));
-              $refData = collect($data);
-               $refDetailsV2 = [
-              "array" => $data,
-              "sum_current_coll" => $refData->pluck('current_collections')->sum(),
-              "sum_arrear_coll" => $refData->pluck('arrear_demand')->sum(),
-              "sum_total_coll" => $refData->pluck('total_collections')->sum(),
-              "totalAmount"   =>  round($refData->pluck('due_balance_amount')->sum()),
-              "currentDate"  => $currentDate
-          ];
+            $data = DB::connection('pgsql_water')->select(DB::raw($rawData));
+            $refData = collect($data);
+            $refDetailsV2 = [
+                "array" => $data,
+                "sum_current_coll" => $refData->pluck('current_collections')->sum(),
+                "sum_arrear_coll" => $refData->pluck('arrear_demand')->sum(),
+                "sum_total_coll" => $refData->pluck('total_collections')->sum(),
+                "totalAmount"   =>  round($refData->pluck('due_balance_amount')->sum()),
+                "currentDate"  => $currentDate
+            ];
             $queryRunTime = (collect(DB::connection('pgsql_water'))->sum("time"));
             return responseMsgs(true, "visit Report", $refDetailsV2, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
-
-
 }
