@@ -1682,7 +1682,7 @@ class WaterPaymentController extends Controller
             $mPaymentModes      = $this->_paymentModes;
 
             # transaction Deatils
-           return  $transactionDetails = $mWaterTran->getTransactionByTransactionNoV2($refTransactionNo, $refTranId)
+             $transactionDetails = $mWaterTran->getTransactionByTransactionNoV2($refTransactionNo, $refTranId)
                 ->where('tran_type', $mTranType['1'])
                 ->first();
 
