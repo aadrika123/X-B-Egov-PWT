@@ -3546,6 +3546,7 @@ class WaterReportController extends Controller
                           SELECT water_second_consumers.id as consumer_id,
                           water_second_consumers.consumer_no,
                           water_second_consumers.address,
+                          water_second_consumers.meter_no,
                           water_second_consumers.mobile_no,
                           water_consumer_demands.current_demand,water_consumer_demands.arrear_demands,
                           water_consumer_demands.due_balance_amount,water_consumer_demands.demand_from,water_consumer_demands.demand_upto,
@@ -3571,6 +3572,9 @@ class WaterReportController extends Controller
                   left JOIN users ON users.id = water_consumer_demands.emp_details_id
                   WHERE water_consumer_demands.status =true 
                   AND water_consumer_demands.generation_date BETWEEN '$fromDate' AND '$uptoDate'
+                  " . ($zoneId ? " AND water_second_consumers.zone_mstr_id = $zoneId" : "") . "
+                  " . ($wardId ? " AND water_second_consumers.ward_mstr_id = $wardId" : "") . "
+                  " . ($userId ? " AND water_consumer_demands.emp_details_id = $userId" : "") . "
                   GROUP BY consumer_id	      
               )water_consumer_demands ON water_second_consumers.id = water_consumer_demands.consumer_id	
     -- 		   left JOIN users ON users.id = ANY(STRING_TO_ARRAY(water_consumer_demands.emp_details_id,',')::bigint[])
@@ -3593,6 +3597,9 @@ class WaterReportController extends Controller
                JOIN water_consumer_demands ON water_consumer_demands.consumer_tax_id = water_consumer_taxes.id
                WHERE 
                water_consumer_demands.generation_date BETWEEN '$fromDate' AND '$uptoDate'
+               " . ($zoneId ? " AND water_second_consumers.zone_mstr_id = $zoneId" : "") . "
+               " . ($wardId ? " AND water_second_consumers.ward_mstr_id = $wardId" : "") . "
+               " . ($userId ? " AND water_consumer_demands.emp_details_id = $userId" : "") . "
                AND water_consumer_demands.status = TRUE 
                " . ($userId ? " AND water_consumer_demands.emp_details_id = $userId" : "") . "
                GROUP BY water_consumer_demands.consumer_id, created_on
@@ -3608,7 +3615,7 @@ class WaterReportController extends Controller
 
             $refData = collect($data);
             $refDetailsV2 = [
-                "array" => $data,
+                "data" => $data,
                 "sum_current_coll" => $refData->pluck('current_collections')->sum(),
                 "sum_arrear_coll" => $refData->pluck('arrear_demand')->sum(),
                 "sum_total_coll" => $refData->pluck('total_collections')->sum(),
@@ -3713,7 +3720,7 @@ class WaterReportController extends Controller
                           water_consumer_demands.demand_from,
                           water_consumer_demands.demand_upto,
                           water_consumer_demands.total_records,
-                          water_consumer_demands.emp_details_id
+                          water_consumer_demands.emp_details_id,
                           water_consumer_demands.total_emp,
                           water_consumer_demands.user_name,
                           water_consumer_owners.applicant_name,         
