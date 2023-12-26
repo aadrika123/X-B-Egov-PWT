@@ -187,8 +187,7 @@ class Report implements IReport
                 return responseMsgs(true, "", remove_null($list), $apiId, $version, $queryRunTime, $action, $deviceId);
             }
 
-            $paginator = $data->paginate($perPage);
-            dd(DB::getQueryLog($paginator));
+            $paginator = $data->paginate($perPage);            
             // $items = $paginator->items();
             // $total = $paginator->total();
             // $numberOfPages = ceil($total / $perPage);

@@ -6,6 +6,7 @@ use App\Models\Ward\WardUser;
 use App\Models\Workflows\WfMaster;
 use App\Models\Workflows\WfWardUser;
 use App\Models\Workflows\WfRole;
+use App\Models\Workflows\WfRoleusermap;
 use App\Traits\Auth;
 use Exception;
 use Illuminate\Support\Facades\Config;
@@ -322,5 +323,27 @@ class CommonFunction implements ICommonFunction
                                 break;
         }
         return($roles);
+    }
+
+    public function getUserAllRoles()
+    {
+        $user = Auth()->user();
+        $constaint = Config::get("TradeConstant.USER-TYPE-SHORT-NAME");
+        return WfRoleusermap::select(
+            DB::raw(
+                "distinct wf_roles.id as role_id, 
+                wf_roles.role_name,user_id"
+                )
+            )
+            ->join("wf_roles","wf_roles.id","wf_roleusermaps.wf_role_id")
+            ->where("wf_roleusermaps.user_id",$user->id??0)
+            ->where("wf_roles.is_suspended",FALSE)
+            ->where("wf_roleusermaps.is_suspended",FALSE)
+            ->get()
+            ->map(function($val) use($constaint){
+                $val->sort_name = $constaint[strtoupper($val->role_name)]??"";
+                return $val;
+            });
+            
     }
 }

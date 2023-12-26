@@ -45,6 +45,7 @@ use App\Models\UlbMaster;
 use App\Models\User;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
+use App\Repository\Common\CommonFunction;
 use App\Repository\Property\Interfaces\iSafRepository;
 use App\Traits\Payment\Razorpay;
 use App\Traits\Property\SAF;
@@ -69,6 +70,7 @@ class HoldingTaxController extends Controller
     protected $_paramRentalRate;
     protected $_refParamRentalRate;
     protected $_carbon;
+    protected $_COMMONFUNCTION;
     /**
      * | Created On-19/01/2023 
      * | Created By-Anshu Kumar
@@ -80,6 +82,7 @@ class HoldingTaxController extends Controller
     {
         $this->_safRepo = $safRepo;
         $this->_carbon = Carbon::now();
+        $this->_COMMONFUNCTION = new CommonFunction();
     }
     /**
      * | Generate Holding Demand(1)
@@ -146,9 +149,13 @@ class HoldingTaxController extends Controller
         }
 
         try {
+            $user = Auth()->user();
+            $usertype = $this->_COMMONFUNCTION->getUserAllRoles();
+            $testRole = collect($usertype)->whereIn("sort_name",Config::get("TradeConstant.CANE-CUTE-PAYMENT"));
             // $getHoldingDues = new GetHoldingDues;
             $getHoldingDues = new GetHoldingDuesV2;
             $demand = $getHoldingDues->getDues($req);
+            $demand["can_take_payment"] = collect($testRole)->isNotEmpty() ? true: false;
             return responseMsgs(true, "Demand Details", remove_null($demand), "011602", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), ['basicDetails' => $basicDtls ?? []], "011602", "1.0", "", "POST", $req->deviceId ?? "");
