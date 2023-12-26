@@ -67,16 +67,18 @@ return [
         "SENIOUR LIPIK"     =>  "SRLP",
         "SENIOR LIPIK"    =>  "SRLP",
         "SRLP"              =>  "SRLP",
-        "TAX SUPERITENDENT"  =>  "TS",
+        "TAX SUPERITENDENT"  =>  "TS", #EO
         "TS"                =>  "TS",
         "DEPUTY MUNICIPAL COMMISSIONER"=>"DMC",
         "DMC"               => "DMC",
+        "FIELD ENGINEER"    => "FE", #TC
+        "FE"                => "FE" #TC
 
     ],
     
     "CANE-NO-HAVE-WARD"=>["ONLINE", "JSK","BO" ,"PM","SUPER ADMIN", "TL"],
-    "CANE-APPLY-APPLICATION"=>["ONLINE", "JSK", "SRLP","UTC", "TC", "SUPER ADMIN", "TL"],
-    "CANE-CUTE-PAYMENT"=>["JSK", "SRLP","UTC", "TC", "SUPER ADMIN", "TL"],
+    "CANE-APPLY-APPLICATION"=>["ONLINE", "JSK", "SRLP","UTC", "FE","TC", "SUPER ADMIN", "TL"],
+    "CANE-CUTE-PAYMENT"=>["JSK", "SRLP","UTC","FE", "TC", "SUPER ADMIN", "TL"],
     "VERIFICATION-STATUS"=>
     [
         "PENDING"   => 0,
