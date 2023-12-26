@@ -206,6 +206,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('report/date-wise-collection','dateCollectuionReport');
         Route::post('report/tc-collection-report','tcCollectionReport');
         Route::post('report/tc-visit-records','tcvisitRecords');
+        Route::post('report/tc-visit','tcvisitRecordsv2');
     });
 
 

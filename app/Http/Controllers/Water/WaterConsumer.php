@@ -383,10 +383,18 @@ class WaterConsumer extends Controller
 
         $lastDemand = $mWaterConsumerDemand->akolaCheckConsumerDemand($refConsumerId)->first();
         if ($lastDemand) {
-            $refDemandUpto = Carbon::parse($lastDemand->demand_upto);
+
+            // here we check the demand from date is present then do this or that
+            if (!$lastDemand->demand_upto) {
+                $startDate  = Carbon::parse($lastDemand->generation_date);
+            } else {
+                $refDemandUpto = Carbon::parse($lastDemand->demand_upto);
+            } 
+
             if ($refDemandUpto > $today) {
                 throw new Exception("the demand is generated till" . "" . $lastDemand->demand_upto);
             }
+
             $startDate  = Carbon::parse($refDemandUpto);
             $uptoMonth  = $startDate;
             $todayMonth = $today;
@@ -405,9 +413,6 @@ class WaterConsumer extends Controller
             //     throw new Exception("there should be a difference of 4  month!");
             // }
         }
-
-
-
         # write the code to check the first meter reading exist and the other 
     }
 
@@ -2253,7 +2258,7 @@ class WaterConsumer extends Controller
             if (!$demandDetails) {
                 throw new Exception('demands not found ');
             }
-           
+
             $allDemandGenerated = $mWaterDemands->getConsumerDemandV3($ConsumerId);           // get all demands of consumer generated 
             # sum of amount
             $sumAmount = collect($allDemandGenerated)->sum('due_balance_amount');
@@ -2269,7 +2274,7 @@ class WaterConsumer extends Controller
                 'initialReading'    => (int)$initialReading,
                 'finalReading'      => (int)$finalReading,
                 'initialDate'       => "",
-                'due_balance_amount'=>  $roundedSumAmount,
+                'due_balance_amount' =>  $roundedSumAmount,
                 "meterImg"          => ($documents ? $docUrl . "/" . $documents->relative_path . "/" . $documents->file_name : 0)
             ];
             $returnValues = collect($demandDetails)->merge($demands);

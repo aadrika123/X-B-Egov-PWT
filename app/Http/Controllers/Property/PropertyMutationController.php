@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Property;
 
+use App\BLL\Property\Akola\SafApprovalBll;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Http\Requests\Property\reqApplySaf;
@@ -11,6 +12,7 @@ use App\Models\Property\PropActiveApp;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
+use App\Models\Property\PropDemand;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSaf;
 use App\Models\WorkflowTrack;
@@ -154,6 +156,7 @@ class PropertyMutationController extends Controller
             $msg = "Application Rejected Successfully";
             $userId = authUser($request)->id;
             $track = new WorkflowTrack();
+            $safApprovalBll = new SafApprovalBll();
             $newSafData = PropActiveSaf::find($request->applicationId);
             if (!$newSafData) {
                 throw new Exception("Data Not Found");
@@ -183,7 +186,20 @@ class PropertyMutationController extends Controller
                 $propProperties->new_holding_no = $newSafData->holding_no; 
                 $propProperties->property_no = $oldProp->property_no;
                 $propProperties = PropProperty::create($propProperties->toArray());
-    
+                #======transfer Lagaci Demands Transfer=====================
+                $dueDemands = PropDemand::where("property_id",$oldProp->id)
+                    ->where("status",1)
+                    ->where("due_total_tax",">",0)
+                    ->OrderBy("fyear","ASC")
+                    ->get();
+                foreach($dueDemands as $val){
+                    $lagaciDemand = new PropDemand();
+                    $safApprovalBll->MutationDemands($val , $lagaciDemand);
+                    $lagaciDemand->property_id = $propProperties->id;
+                    $lagaciDemand->save();
+                    
+                }
+                #======End transfer Lagaci Demands Transfer=====================
                 
                 $oldProp->status =0;
                 $oldProp->update();
