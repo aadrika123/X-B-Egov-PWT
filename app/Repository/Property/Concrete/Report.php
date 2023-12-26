@@ -49,8 +49,8 @@ class Report implements IReport
 
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         try {
-            // $refUser        = authUser($request);
-            // $ulbId          = $refUser->ulb_id;
+            $refUser        = authUser($request);
+            $ulbId          = $refUser->ulb_id;
             $userJoin = "LEFTJOIN";
             $wardId = $zoneId = $userId =  $paymentMode = null;
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
