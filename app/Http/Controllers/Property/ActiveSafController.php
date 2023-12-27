@@ -712,6 +712,7 @@ class ActiveSafController extends Controller
                 $val->usage_type = $new?$new->usage_type:$val->usage_type ;
                 $val->occupancy_type = $new?$new->occupancy_type:$val->occupancy_type ;
                 $val->construction_type = $new?$new->construction_type:$val->construction_type ;
+                return $val;
             });      // Model Function to Get Floor Details
             $floorDetails = $this->generateFloorDetails($getFloorDtls);
             $floorElement = [
@@ -829,6 +830,7 @@ class ActiveSafController extends Controller
                 $val->usage_type = $new?$new->usage_type:$val->usage_type ;
                 $val->occupancy_type = $new?$new->occupancy_type:$val->occupancy_type ;
                 $val->construction_type = $new?$new->construction_type:$val->construction_type ;
+                return $val;
             });
             $data["tranDtl"] = $mPropTransaction->getSafTranList($data['id']);
             $data["userDtl"] = [
