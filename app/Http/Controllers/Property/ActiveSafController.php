@@ -4095,6 +4095,9 @@ class ActiveSafController extends Controller
             ]);
         }
         try{
+            $mVerification = new PropSafVerification();
+            $verificationDtl = collect();
+            $mVerificationDtls = new PropSafVerificationDtl();
             $trans = (new PropTransaction())->getPropByTranId($request->tranId);
             if (collect($trans)->isEmpty())
             {
@@ -4108,6 +4111,13 @@ class ActiveSafController extends Controller
             $saf = (new PropSaf())->getBasicDetailsV2($trans->saf_id);                       // Get Details from saf table
             if (collect($saf)->isEmpty()){
                 throw new Exception("Saf Details not available");
+            }
+            $safVerification = $mVerification->getLastVerification($saf->id);
+            if($safVerification)
+            {
+                $saf->ward_no = $safVerification->ward_name ? $safVerification->ward_name : $saf->ward_no;
+                // $saf->category= $safVerification->category ? $safVerification->category : $saf->category;
+                // $verificationDtl = $mVerificationDtls->getVerificationDtls($safVerification->id);
             }
             $ulbDetails = (new UlbMaster())->getUlbDetails($saf->ulb_id);
                        

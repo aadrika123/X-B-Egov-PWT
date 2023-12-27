@@ -256,6 +256,7 @@ class PropSaf extends Model
     public function getBasicDetailsV2($safId)
     {
         $select = [
+            'p.id as id',
             'p.holding_no as holding_no',
             'p.previous_holding_id',
             'p.prop_address',
@@ -298,7 +299,7 @@ class PropSaf extends Model
                 where status  =1 AND saf_id = $safId
                 group by saf_id
             )as o"), 'o.saf_id', 'p.id')
-            ->leftJoin('ulb_ward_masters as u', 'u.id', '=', 'p.ulb_id')
+            ->leftJoin('ulb_ward_masters as u', 'u.id', '=', 'p.ward_mstr_id')
             ->join('zone_masters as z', 'z.id', '=', 'p.zone_mstr_id')
             ->where('p.id', $safId)
             ->first();
