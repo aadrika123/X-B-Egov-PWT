@@ -1229,7 +1229,7 @@ class Report implements IReport
                                      FROM prop_transactions
                                      JOIN (
                                         
-                                            SELECT wf_roleusermaps.user_id as role_user_id
+                                            SELECT DISTINCT wf_roleusermaps.user_id as role_user_id
                                             FROM wf_roles
                                             JOIN wf_roleusermaps ON wf_roleusermaps.wf_role_id = wf_roles.id 
                                                 AND wf_roleusermaps.is_suspended = FALSE
@@ -1240,7 +1240,7 @@ class Report implements IReport
                                             WHERE wf_roles.is_suspended = FALSE 
                                                 AND wf_workflows.ulb_id = 2
                                                 AND wf_roles.id not in (8,108)
-                                                AND wf_workflows.id in (3,4,5)
+                                                --AND wf_workflows.id in (3,4,5)
                                             GROUP BY wf_roleusermaps.user_id
                                             ORDER BY wf_roleusermaps.user_id
                                      ) collecter on prop_transactions.user_id  = collecter.role_user_id
@@ -1287,7 +1287,7 @@ class Report implements IReport
                                         FROM prop_transactions
                                         JOIN (
                                             
-                                                SELECT wf_roleusermaps.user_id as role_user_id
+                                                SELECT DISTINCT wf_roleusermaps.user_id as role_user_id
                                                 FROM wf_roles
                                                 JOIN wf_roleusermaps ON wf_roleusermaps.wf_role_id = wf_roles.id 
                                                     AND wf_roleusermaps.is_suspended = FALSE
@@ -1298,7 +1298,7 @@ class Report implements IReport
                                                 WHERE wf_roles.is_suspended = FALSE 
                                                     AND wf_workflows.ulb_id = 2
                                                     AND wf_roles.id in (8,108)
-                                                    AND wf_workflows.id in (3,4,5)
+                                                    --AND wf_workflows.id in (3,4,5)
                                                 GROUP BY wf_roleusermaps.user_id
                                                 ORDER BY wf_roleusermaps.user_id
                                         ) collecter on prop_transactions.user_id  = collecter.role_user_id
@@ -1505,7 +1505,7 @@ class Report implements IReport
                                             WHERE wf_roles.is_suspended = FALSE 
                                                 AND wf_workflows.ulb_id = 2
                                                 AND wf_roles.id not in (8,108)
-                                                AND wf_workflows.id in (3,4,5)
+                                                --AND wf_workflows.id in (3,4,5)
                                             GROUP BY wf_roleusermaps.user_id
                                             ORDER BY wf_roleusermaps.user_id
                                      ) collecter on prop_transactions.user_id  = collecter.role_user_id
@@ -1555,7 +1555,7 @@ class Report implements IReport
                                                 WHERE wf_roles.is_suspended = FALSE 
                                                     AND wf_workflows.ulb_id = 2
                                                     AND wf_roles.id in (8,108)
-                                                    AND wf_workflows.id in (3,4,5)
+                                                    --AND wf_workflows.id in (3,4,5)
                                                 GROUP BY wf_roleusermaps.user_id
                                                 ORDER BY wf_roleusermaps.user_id
                                         ) collecter on prop_transactions.user_id  = collecter.role_user_id

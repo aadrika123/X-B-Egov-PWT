@@ -270,6 +270,7 @@ class PropSaf extends Model
             'p.applicant_name as applicant_marathi',
             
             'p.plot_no',
+            'p.property_no',
             'p.area_of_plot',
 
             'z.zone_name',
