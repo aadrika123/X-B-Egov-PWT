@@ -100,6 +100,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('saf/static-saf-dtls', 'getStaticSafDetails');                                          // (27) Static SAf Details
     Route::post('saf/offline-saf-payment', 'offlinePaymentSaf');                                        // SAF Payment(15)
 
+    Route::post('saf/proccess-fee/pending-list', 'getPendingProccessFeePtmLs');
     Route::post('saf/offline-saf-payment/proccess-fee', 'proccessFeePayment');
     Route::post('saf/offline-saf-get/proccess-fee', 'getProccessFeePayment');
     Route::post('saf/proccess-fee/recipte', 'ProccessFeePaymentRecipte')->withoutMiddleware(['request_logger', 'expireBearerToken', 'auth_maker']);
