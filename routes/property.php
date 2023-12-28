@@ -524,6 +524,22 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('reports/arrove-reject-lst', 'AprovedRejectList');
     Route::post('reports/tran-deactived-list', 'tranDeactivatedList');
     Route::post('live-dashboard-update', 'liveDashboardUpdate');
+
+    /**
+     * #==========created by Prity Pandey==========================     
+     */
+    Route::post('report/saf-applied-details', 'safAppliedtypeDetails');
+    Route::post('report/construction-type-details', 'constructionTypeSummery');
+    Route::post('report/usage-type-details', 'usageTypeSummery');
+    Route::post('report/property-type-summery', 'propertyTypeSummary');
+    Route::post('report/property-type-report', 'propertyTypeReport');
+    Route::post('report/saf-report', 'safReport');
+    Route::post('report/saf-collection-report', 'safCollectionReport');
+    Route::post('report/gb-saf-collection-report', 'gbSafCollectionReport');
+    Route::post('report/saf-applied-report', 'safAppliedReport');
+    Route::post('report/gb-saf-applied-report', 'gbSafAppliedReport');
+    Route::post('report/saf-applied-types-details-report', 'safAppliedTypesDetailsReport');
+    Route::post('report/saf-demand-collection-report', 'safDemandCollectionReport');
   });
 
   /**

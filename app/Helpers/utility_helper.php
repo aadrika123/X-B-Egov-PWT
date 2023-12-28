@@ -355,6 +355,17 @@ if (!function_exists('getFY')) {
     }
 }
 
+if(!function_exists("FyearFromUptoDate"))
+{
+    function FyearFromUptoDate($fyear=null)
+    {
+        if(!$fyear)
+            $fyear = getFY();
+        list($fromYear,$uptoYear)=explode("-",$fyear);
+        return[$fromYear."-04-01",$uptoYear."-03-31"];
+    }
+}
+
 if (!function_exists('eloquentItteration')) {
     function eloquentItteration($a, $model)
     {
