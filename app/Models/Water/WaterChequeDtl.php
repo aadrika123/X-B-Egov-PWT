@@ -35,7 +35,7 @@ class WaterChequeDtl extends Model
     /**
      * | Save the cheque details 
      */
-    public function postChequeDtl($req)
+    public function postChequeDtl($req) 
     {
         $mPropChequeDtl = new WaterChequeDtl();
         $mPropChequeDtl->consumer_id        =  $req['consumer_id'] ?? null;

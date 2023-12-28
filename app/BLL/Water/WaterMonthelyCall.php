@@ -251,7 +251,7 @@ class WaterMonthelyCall
                         $refCallMonthAmount = 0;
                     }
                     $amount = $refCallMonthAmount + $this->_consumerCharges->amount;
-                    if ($amount < 0) {
+                    if ($amount < 0) { 
                         $amount = 0;
                     }
                     return [
