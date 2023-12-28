@@ -849,7 +849,7 @@ class ActiveSafController extends Controller
             }
             $usertype = $this->_COMMONFUNCTION->getUserAllRoles();
             $testRole = collect($usertype)->whereIn("sort_name",Config::get("TradeConstant.CANE-CUTE-PAYMENT"));
-            $data["can_take_payment"] = (collect($testRole)->isNotEmpty() && $data["proccess_fee_paid"]??1==0) ? true: false;
+            $data["can_take_payment"] = (collect($testRole)->isNotEmpty() && ($data["proccess_fee_paid"]??1)==0) ? true: false;
             return responseMsgs(true, "Saf Dtls", remove_null($data), "010127", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(true, $e->getMessage(), [], "010127", "1.0", "", "POST", $req->deviceId ?? "");
