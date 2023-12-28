@@ -833,12 +833,20 @@ class TradeApplication extends Controller
     #please not use custome request
     public function approveReject(Request $req)
     {
-        try {
-            $req->validate([
+        try { 
+            $validator = Validator::make($req->all(), [
                 "applicationId" => "required",
                 "status" => "required",
                 "comment" => $req->status == 0 ? "required" : "nullable",
             ]);
+        
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $validator->errors()
+                ], 200);
+            }
             if (!$this->_COMMON_FUNCTION->checkUsersWithtocken("users")) {
                 throw new Exception("Citizen Not Allowed");
             }

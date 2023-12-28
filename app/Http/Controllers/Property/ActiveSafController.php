@@ -87,6 +87,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use App\MicroServices\IdGenerator\HoldingNoGenerator;
 use App\Models\Property\RefPropCategory;
+use App\Repository\Common\CommonFunction;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
 
@@ -127,11 +128,13 @@ class ActiveSafController extends Controller
     // Initializing function for Repository
     protected $saf_repository;
     public $_replicatedPropId;
+    protected $_COMMONFUNCTION;
     public function __construct(iSafRepository $saf_repository)
     {
         $this->Repository = $saf_repository;
         $this->_todayDate = Carbon::now();
         $this->_moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+        $this->_COMMONFUNCTION = new CommonFunction();
     }
 
     /**
@@ -844,6 +847,9 @@ class ActiveSafController extends Controller
             if ($status = ((new \App\Repository\Property\Concrete\SafRepository())->applicationStatus($req->applicationId, true))) {
                 $data["current_role_name2"] = $status;
             }
+            $usertype = $this->_COMMONFUNCTION->getUserAllRoles();
+            $testRole = collect($usertype)->whereIn("sort_name",Config::get("TradeConstant.CANE-CUTE-PAYMENT"));
+            $data["can_take_payment"] = (collect($testRole)->isNotEmpty() && ($data["proccess_fee_paid"]??1)==0) ? true: false;
             return responseMsgs(true, "Saf Dtls", remove_null($data), "010127", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(true, $e->getMessage(), [], "010127", "1.0", "", "POST", $req->deviceId ?? "");
@@ -3916,6 +3922,88 @@ class ActiveSafController extends Controller
      *            Date      : 30-11-2023
      *  
      */
+
+    public function getPendingProccessFeePtmLs(Request $request)
+    {
+        try{
+            
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $select = [
+                "p.payment_status", 
+                "p.doc_upload_status", 
+                "p.saf_no", 
+                "p.id", 
+                "p.workflow_id", 
+                "p.ward_mstr_id", 
+                "p.is_agency_verified", 
+                "p.is_field_verified",
+                "p.is_geo_tagged", 
+                "ward.ward_name as ward_no",
+                "p.prop_type_mstr_id", 
+                "p.appartment_name", 
+                "o.owner_name as owner_name", 
+                "o.mobile_no as mobile_no", 
+                "rpt.property_type", 
+                "p.assessment_type as assessment", 
+                DB::raw("TO_CHAR(p.application_date, 'DD-MM-YYYY') as apply_date"), 
+                "p.parked", 
+                "p.prop_address", 
+                "p.applicant_name", 
+                "p.citizen_id"
+            ];
+            $data = DB::table("prop_safs as p")
+                    ->select($select)
+                    ->join("ref_prop_types as rpt","rpt.id","p.prop_type_mstr_id")
+                    ->leftJoin(DB::raw("
+                        (
+                            select prop_safs_owners.saf_id, 
+                                    string_agg(prop_safs_owners.owner_name,', ') as owner_name ,
+                                    string_agg(prop_safs_owners.guardian_name,', ') as guardian_name,
+                                    string_agg(prop_safs_owners.mobile_no::text,', ') as mobile_no
+                            from prop_safs_owners
+                            join prop_safs on prop_safs.id = prop_safs_owners.saf_id
+                            where prop_safs_owners.status =1 and prop_safs.proccess_fee_paid = 0 and prop_safs.proccess_fee>0
+                            group by prop_safs_owners.saf_id
+                        )o
+                    "),"o.saf_id","p.id")                    
+                    ->leftJoin("ulb_ward_masters as ward","ward.id","p.ward_mstr_id")
+                    ->where("p.proccess_fee_paid",0)
+                    ->where("p.proccess_fee",">",0);
+            switch($request->searchBy)
+            {
+                case "applicationNo": $data = $data->where("p.saf_no",$request->value);
+                                     break;  
+                case "ptn"          : $data = $data->where("p.ptn",$request->value);
+                                     break;
+                case "holding"      : $data = $data->where("p.holding",$request->value);
+                                     break;
+                case "name"         : $data = $data->where("o.owner_name","ILIKE","%".$request->value."%");
+                                     break;
+                case "mobileNo"     : $data = $data->where("o.mobile_no","ILIKE","%".$request->value."%");
+                                    break;
+            }
+            switch($request->filteredBy)
+            {
+                case "gbsaf" : $data = $data->where("p.is_gb_saf",true);
+                                break;  
+                default      :   $data = $data->where("p.is_gb_saf",false);  
+            }            
+
+            $paginator = $data->paginate($perPage);  
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),                
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+                
+            ];
+            return responseMsgs(true, "Data Fetched", $list, "011604", "1.0.1", "", "POST", $request->deviceId ?? "");
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false, $e->getMessage(), "", "011604", "1.0.1", "", "POST", $request->deviceId ?? "");
+        }
+    }
     public function proccessFeePayment(ReqPayment $request)
     {
         $rules = $this->getMutationFeeReqRules($request);
@@ -3948,6 +4036,10 @@ class ActiveSafController extends Controller
             }
             if ($saf->proccess_fee_paid) {
                 throw new Exception("Proccessing Fee Already Pay");
+            }
+            if($saf->getTable()=="prop_active_safs")
+            {
+                throw new Exception("Please Wait For Approval");
             }
             $newSaleValue = $saf->proccess_fee;
             $proccessFeePayment =$this->getProccessFeePayment($request);
