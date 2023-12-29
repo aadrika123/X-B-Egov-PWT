@@ -864,6 +864,7 @@ class ReportController extends Controller
             $data['Prop Categories']['gbsaf']             = $currentYearData->total_prop_gbsaf ?? 0;
             $data['Prop Categories']['mix']               = $currentYearData->total_prop_mixe ?? 0;
             $data['Prop Categories']['vacand']            = $currentYearData->total_prop_vacand ?? 0;
+            $data['Prop Categories']['religious']         = $currentYearData->total_prop_religious ?? 0;
 
             #_payment_status
             $data['PaymentStatus']['both_paid']            = $currentYearData->current_arear_demand_clear_prop_count ?? 0;
@@ -1297,7 +1298,7 @@ class ReportController extends Controller
     /**
      * | Inserting Data in report table for live dashboard
      */
-    public function liveDashboardUpdate()
+    public function liveDashboardUpdate2()
     {
         $todayDate = Carbon::now();
         $currentFy = getFY();
@@ -1682,6 +1683,589 @@ class ReportController extends Controller
                                       GROUP BY application_date
                               )  AS mutations
                 ) AS mutations,
+                (
+                   -- Top Areas Property Transactions
+                    SELECT (string_to_array(string_agg(top_wards_collections.ward_name::TEXT,','),','))[1] AS top_transaction_first_ward_no,
+                           (string_to_array(string_agg(top_wards_collections.ward_name::TEXT,','),','))[2] AS top_transaction_sec_ward_no,
+                           (string_to_array(string_agg(top_wards_collections.ward_name::TEXT,','),','))[3] AS top_transaction_third_ward_no,
+                           (string_to_array(string_agg(top_wards_collections.ward_name::TEXT,','),','))[4] AS top_transaction_forth_ward_no,
+                           (string_to_array(string_agg(top_wards_collections.ward_name::TEXT,','),','))[5] AS top_transaction_fifth_ward_no,
+                           (string_to_array(string_agg(top_wards_collections.collection_count::TEXT,','),','))[1] AS top_transaction_first_ward_count,
+                           (string_to_array(string_agg(top_wards_collections.collection_count::TEXT,','),','))[2] AS top_transaction_sec_ward_count,
+                           (string_to_array(string_agg(top_wards_collections.collection_count::TEXT,','),','))[3] AS top_transaction_third_ward_count,
+                           (string_to_array(string_agg(top_wards_collections.collection_count::TEXT,','),','))[4] AS top_transaction_forth_ward_count,
+                           (string_to_array(string_agg(top_wards_collections.collection_count::TEXT,','),','))[5] AS top_transaction_fifth_ward_count,
+                           (string_to_array(string_agg(top_wards_collections.collected_amt::TEXT,','),','))[1] AS top_transaction_first_ward_amt,
+                           (string_to_array(string_agg(top_wards_collections.collected_amt::TEXT,','),','))[2] AS top_transaction_sec_ward_amt,
+                           (string_to_array(string_agg(top_wards_collections.collected_amt::TEXT,','),','))[3] AS top_transaction_third_ward_amt,
+                           (string_to_array(string_agg(top_wards_collections.collected_amt::TEXT,','),','))[4] AS top_transaction_forth_ward_amt,
+                           (string_to_array(string_agg(top_wards_collections.collected_amt::TEXT,','),','))[5] AS top_transaction_fifth_ward_amt
+                
+                          FROM (
+                              SELECT 
+                                      p.ward_mstr_id,
+                                      SUM(t.amount) AS collected_amt,
+                                      COUNT(t.id) AS collection_count,
+                                      u.ward_name
+                        
+                                  FROM prop_transactions t
+                                  JOIN prop_properties p ON p.id=t.property_id
+                                  JOIN ulb_ward_masters u ON u.id=p.ward_mstr_id
+                                  WHERE t.tran_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate'							-- Parameterize this for current fyear range date
+                                  AND p.ulb_id=2
+                                  GROUP BY p.ward_mstr_id,u.ward_name
+                                  ORDER BY collection_count DESC 
+                              LIMIT 5
+                          ) AS top_wards_collections
+                ) AS top_wards_collections,
+                (
+                   -- Top Area Safs
+                    SELECT 
+                      (string_to_array(string_agg(top_area_safs.ward_name::TEXT,','),','))[1] AS top_saf_first_ward_no,
+                      (string_to_array(string_agg(top_area_safs.ward_name::TEXT,','),','))[2] AS top_saf_sec_ward_no,
+                      (string_to_array(string_agg(top_area_safs.ward_name::TEXT,','),','))[3] AS top_saf_third_ward_no,
+                      (string_to_array(string_agg(top_area_safs.ward_name::TEXT,','),','))[4] AS top_saf_forth_ward_no,
+                      (string_to_array(string_agg(top_area_safs.ward_name::TEXT,','),','))[5] AS top_saf_fifth_ward_no,
+                      (string_to_array(string_agg(top_area_safs.application_count::TEXT,','),','))[1] AS top_saf_first_ward_count,
+                      (string_to_array(string_agg(top_area_safs.application_count::TEXT,','),','))[2] AS top_saf_sec_ward_count,
+                      (string_to_array(string_agg(top_area_safs.application_count::TEXT,','),','))[3] AS top_saf_third_ward_count,
+                      (string_to_array(string_agg(top_area_safs.application_count::TEXT,','),','))[4] AS top_saf_forth_ward_count,
+                      (string_to_array(string_agg(top_area_safs.application_count::TEXT,','),','))[5] AS top_saf_fifth_ward_count
+
+                      FROM 
+
+                              (
+                                  SELECT 
+                                      top_areas_safs.ward_mstr_id,
+                                      SUM(top_areas_safs.application_count) AS application_count,
+                                      u.ward_name 
+                            
+                                      FROM 
+
+                                           (
+                                               SELECT 
+                                                   COUNT(id) AS application_count,
+                                                   ward_mstr_id
+
+                                              FROM prop_active_safs
+                                              WHERE application_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate'       -- Parameterize this for current fyear range date
+                                              AND ulb_id=2
+                                              GROUP BY ward_mstr_id
+
+                                                  UNION ALL 
+
+
+                                          SELECT 
+                                                   COUNT(id) AS application_count,
+                                                   ward_mstr_id
+
+                                              FROM prop_safs
+                                              WHERE application_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate'     -- Parameterize this for current fyear range date
+                                              AND ulb_id=2
+                                              GROUP BY ward_mstr_id
+
+                                                  UNION ALL 
+
+                                          SELECT 
+                                                   COUNT(id) AS application_count,
+                                                   ward_mstr_id
+
+                                              FROM prop_rejected_safs
+                                              WHERE application_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate'   -- Parameterize this for current fyear range date
+                                              AND ulb_id=2
+                                              GROUP BY ward_mstr_id
+                                           ) AS top_areas_safs
+
+                                          JOIN ulb_ward_masters u ON u.id=top_areas_safs.ward_mstr_id
+                                          GROUP BY top_areas_safs.ward_mstr_id,u.ward_name 
+                                          ORDER BY application_count DESC 
+                                          LIMIT 5
+                              ) AS top_area_safs
+                ) AS top_area_safs,
+                (
+                 -- AreaWise Defaulters
+                    SELECT 
+                      (string_to_array(string_agg(a.ward_name::TEXT,','),','))[1] AS defaulter_first_ward_no,
+                      (string_to_array(string_agg(a.ward_name::TEXT,','),','))[2] AS defaulter_sec_ward_no,
+                      (string_to_array(string_agg(a.ward_name::TEXT,','),','))[3] AS defaulter_third_ward_no,
+                      (string_to_array(string_agg(a.ward_name::TEXT,','),','))[4] AS defaulter_forth_ward_no,
+                      (string_to_array(string_agg(a.ward_name::TEXT,','),','))[5] AS defaulter_fifth_ward_no,
+                      (string_to_array(string_agg(a.defaulter_property_cnt::TEXT,','),','))[1] AS defaulter_first_ward_prop_cnt,
+                      (string_to_array(string_agg(a.defaulter_property_cnt::TEXT,','),','))[2] AS defaulter_sec_ward_prop_cnt,
+                      (string_to_array(string_agg(a.defaulter_property_cnt::TEXT,','),','))[3] AS defaulter_third_ward_prop_cnt,
+                      (string_to_array(string_agg(a.defaulter_property_cnt::TEXT,','),','))[4] AS defaulter_forth_ward_prop_cnt,
+                      (string_to_array(string_agg(a.defaulter_property_cnt::TEXT,','),','))[5] AS defaulter_fifth_ward_prop_cnt,
+                      (string_to_array(string_agg(a.unpaid_amount::TEXT,','),','))[1] AS defaulter_first_unpaid_amount,
+                      (string_to_array(string_agg(a.unpaid_amount::TEXT,','),','))[2] AS defaulter_sec_unpaid_amount,
+                      (string_to_array(string_agg(a.unpaid_amount::TEXT,','),','))[3] AS defaulter_third_unpaid_amount,
+                      (string_to_array(string_agg(a.unpaid_amount::TEXT,','),','))[4] AS defaulter_forth_unpaid_amount,
+                      (string_to_array(string_agg(a.unpaid_amount::TEXT,','),','))[5] AS defaulter_fifth_unpaid_amount
+
+                      FROM 
+                          (
+                              SELECT 
+                                  COUNT(a.property_id) AS defaulter_property_cnt,
+                                  w.ward_name,
+                                  SUM(a.unpaid_amt) AS unpaid_amount
+
+                                  FROM 
+                                      (
+                                          SELECT
+                                               property_id,
+                                               COUNT(id) AS demand_cnt,
+                                               SUM(CASE WHEN paid_status=1 THEN 1 ELSE 0 END) AS paid_count,
+                                               SUM(CASE WHEN paid_status=0 THEN 1 ELSE 0 END) AS unpaid_count,
+                                               SUM(CASE WHEN paid_status=0 THEN balance ELSE 0 END) AS unpaid_amt
+
+                                          FROM prop_demands
+                                          WHERE fyear='$currentFy'								-- Parameterize this for current fyear range date
+                                          AND status=1 AND ulb_id=2
+                                          GROUP BY property_id
+                                          ORDER BY property_id
+                                  ) a 
+                                  JOIN prop_properties p ON p.id=a.property_id
+                                  JOIN ulb_ward_masters w ON w.id=p.ward_mstr_id
+                                    
+                                  WHERE a.demand_cnt=a.unpaid_count
+                                  AND p.status=1
+                                    
+                                  GROUP BY w.ward_name 
+                                    
+                                  ORDER BY defaulter_property_cnt DESC 
+                                  LIMIT 5
+                          ) a 
+                ) AS area_wise_defaulter,
+                (	
+                  -- Online Payments	
+                  WITH 
+                     current_payments AS (
+                          SELECT 
+
+                                   SUM(CASE WHEN UPPER(payment_mode)='CASH' THEN amount ELSE 0 END) AS current_cash_payment,
+                                   SUM(CASE WHEN UPPER(payment_mode)='CHEQUE' THEN amount ELSE 0 END) AS current_cheque_payment,
+                                   SUM(CASE WHEN UPPER(payment_mode)='DD' THEN amount ELSE 0 END) AS current_dd_payment,
+                                   SUM(CASE WHEN UPPER(payment_mode)='CARD PAYMENT' THEN amount ELSE 0 END) AS current_card_payment,
+                                   SUM(CASE WHEN UPPER(payment_mode)='NEFT' THEN amount ELSE 0 END) AS current_neft_payment,
+                                   SUM(CASE WHEN UPPER(payment_mode)='RTGS' THEN amount ELSE 0 END) AS current_rtgs_payment,
+                                   SUM(CASE WHEN UPPER(payment_mode)='ONLINE' THEN amount ELSE 0 END) AS current_online_payment,
+                                   SUM(CASE WHEN UPPER(payment_mode)='ONLINE' THEN 1 ELSE 0 END) AS current_online_counts
+
+                           FROM prop_transactions
+                           WHERE tran_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate'					-- Parameterize this for current fyear range date
+                           AND status=1 AND ulb_id=2
+                       ),
+                       lastyear_payments AS (
+                           SELECT 
+
+                                   SUM(CASE WHEN UPPER(payment_mode)='CASH' THEN amount ELSE 0 END) AS lastyear_cash_payment,
+                                   SUM(CASE WHEN UPPER(payment_mode)='CHEQUE' THEN amount ELSE 0 END) AS lastyear_cheque_payment,
+                                   SUM(CASE WHEN UPPER(payment_mode)='DD' THEN amount ELSE 0 END) AS lastyear_dd_payment,
+                                   SUM(CASE WHEN UPPER(payment_mode)='NEFT' THEN amount ELSE 0 END) AS lastyear_neft_payment,
+                                   SUM(CASE WHEN UPPER(payment_mode)='ONLINE' THEN amount ELSE 0 END) AS lastyear_online_payment,
+                                   SUM(CASE WHEN UPPER(payment_mode)='ONLINE' THEN 1 ELSE 0 END) AS current_online_counts
+
+                           FROM prop_transactions
+                           WHERE tran_date BETWEEN '2022-04-01' AND '2023-03-31'				-- Parameterize this for Past fyear range date
+                           AND status=1 AND ulb_id=2
+                       ),
+                    jsk_collections AS (													    -- Jsk Collections
+
+                           SELECT 
+                             COALESCE(SUM(CASE WHEN (t.tran_date BETWEEN '2022-04-01' AND '2023-03-31') THEN t.amount ELSE 0 END),0) AS prev_year_jskcollection,    -- Parameterize this for Past fyear range date
+                             COALESCE(SUM(CASE WHEN (t.tran_date BETWEEN '2022-04-01' AND '2023-03-31') THEN 1 ELSE 0 END),0) AS prev_year_jskcount,                -- Parameterize this for Past fyear range date
+                             COALESCE(SUM(CASE WHEN (t.tran_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate') THEN t.amount ELSE 0 END),0) AS current_year_jskcollection, -- Parameterize this for current fyear range date
+                             COALESCE(SUM(CASE WHEN (t.tran_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate') THEN 1 ELSE 0 END),0) AS current_year_jskcount			  -- Parameterize this for current fyear range date
+
+                          FROM prop_transactions t
+                          JOIN users u ON u.id=t.user_id   
+                          WHERE UPPER(u.user_type)='JSK' AND u.suspended=false  AND t.status=1
+                          AND t.tran_date BETWEEN '2022-04-01' AND '$currentfyEndDate'  AND t.ulb_id=2	-- Parameterize this for last two fyears
+                  )
+
+                       SELECT * FROM current_payments,lastyear_payments,jsk_collections
+                ) AS payment_modes";
+        $data = DB::select($sql);
+        return  $data = $data[0];
+        $mMplYearlyReport = new MplYearlyReport();
+        $currentFy = getFY();
+
+        $updateReqs = [
+            "total_assessment" => $data->total_assessed_props,
+            "total_assessed_residential" => $data->applied_res_safs,
+            "total_assessed_commercial" => $data->applied_comm_safs,
+            "total_assessed_industrial" => $data->applied_industries_safs,
+            "total_assessed_gbsaf" => $data->applied_gb_safs,
+            "total_prop_vacand" => $data->total_vacant_land,
+            "total_prop_residential" => $data->total_owned_props,
+            "total_prop_mixe" => $data->total_mixed_owned_props,
+
+            "total_property" => $data->total_props,
+            "vacant_property" => $data->total_vacant_land,
+            "owned_property" => $data->total_owned_props,
+            "count_not_paid_3yrs" => $data->pending_cnt_3yrs,
+            "amount_not_paid_3yrs" => $data->amt_not_paid_3yrs,
+            "count_not_paid_2yrs" => $data->pending_cnt_2yrs,
+            "amount_not_paid_2yrs" => $data->amt_not_paid_2yrs,
+            "count_not_paid_1yrs" => $data->pending_cnt_1yrs,
+            "amount_not_paid_1yrs" => $data->amt_not_paid_1yrs,
+            // "assessed_property_this_year_achievement" => $data->outstanding_amt_lastyear,
+            // "assessed_property_this_year_achievement" => $data->outstanding_cnt_lastyear,
+            // "assessed_property_this_year_achievement" => $data->recoverable_demand_lastyear,
+            "demand_outstanding_this_year" => $data->outstanding_amt_curryear,
+            "demand_outstanding_from_this_year_prop_count" => $data->outstanding_cnt_curryear,
+            "demand_outstanding_coll_this_year" => $data->recoverable_demand_currentyr,
+
+            "last_year_payment_amount" => $data->lastyr_pmt_amt,
+            "last_year_payment_count" => $data->lastyr_pmt_cnt,
+            "this_year_payment_count" => $data->currentyr_pmt_cnt,
+            "this_year_payment_amount" => $data->currentyr_pmt_amt,
+            "mutation_this_year_count" => $data->current_yr_mutation_count,
+            // "assessed_property_this_year_achievement" => $data->last_yr_mutation_count,
+
+            // "assessed_property_this_year_achievement" => $data->top_transaction_first_ward_no,
+            // "assessed_property_this_year_achievement" => $data->top_transaction_sec_ward_no,
+            // "assessed_property_this_year_achievement" => $data->top_transaction_third_ward_no,
+            // "assessed_property_this_year_achievement" => $data->top_transaction_forth_ward_no,
+            // "assessed_property_this_year_achievement" => $data->top_transaction_fifth_ward_no,
+            "top_area_property_transaction_ward1_count" => $data->top_transaction_first_ward_count,
+            "top_area_property_transaction_ward2_count" => $data->top_transaction_sec_ward_count,
+            "top_area_property_transaction_ward3_count" => $data->top_transaction_third_ward_count,
+            "top_area_property_transaction_ward4_count" => $data->top_transaction_forth_ward_count,
+            "top_area_property_transaction_ward5_count" => $data->top_transaction_fifth_ward_count,
+            // "assessed_property_this_year_achievement" => $data->top_transaction_first_ward_amt,
+            // "assessed_property_this_year_achievement" => $data->top_transaction_sec_ward_amt,
+            // "assessed_property_this_year_achievement" => $data->top_transaction_third_ward_amt,
+            // "assessed_property_this_year_achievement" => $data->top_transaction_forth_ward_amt,
+            // "assessed_property_this_year_achievement" => $data->top_transaction_fifth_ward_amt,
+
+            "top_area_saf_ward1_name" => $data->top_saf_first_ward_no,
+            "top_area_saf_ward2_name" => $data->top_saf_sec_ward_no,
+            "top_area_saf_ward3_name" => $data->top_saf_third_ward_no,
+            "top_area_saf_ward4_name" => $data->top_saf_forth_ward_no,
+            "top_area_saf_ward5_name" => $data->top_saf_fifth_ward_no,
+            "top_area_saf_ward1_count" => $data->top_saf_first_ward_count,
+            "top_area_saf_ward2_count" => $data->top_saf_sec_ward_count,
+            "top_area_saf_ward3_count" => $data->top_saf_third_ward_count,
+            "top_area_saf_ward4_count" => $data->top_saf_forth_ward_count,
+            "top_area_saf_ward5_count" => $data->top_saf_fifth_ward_count,
+
+            "top_defaulter_ward1_name" => $data->defaulter_first_ward_no,
+            "top_defaulter_ward2_name" => $data->defaulter_sec_ward_no,
+            "top_defaulter_ward3_name" => $data->defaulter_third_ward_no,
+            "top_defaulter_ward4_name" => $data->defaulter_forth_ward_no,
+            "top_defaulter_ward5_name" => $data->defaulter_fifth_ward_no,
+            "top_defaulter_ward1_count" => $data->defaulter_first_ward_prop_cnt,
+            "top_defaulter_ward2_count" => $data->defaulter_sec_ward_prop_cnt,
+            "top_defaulter_ward3_count" => $data->defaulter_third_ward_prop_cnt,
+            "top_defaulter_ward4_count" => $data->defaulter_forth_ward_prop_cnt,
+            "top_defaulter_ward5_count" => $data->defaulter_fifth_ward_prop_cnt,
+            "top_defaulter_ward1_amount" => $data->defaulter_first_unpaid_amount,
+            "top_defaulter_ward2_amount" => $data->defaulter_sec_unpaid_amount,
+            "top_defaulter_ward3_amount" => $data->defaulter_third_unpaid_amount,
+            "top_defaulter_ward4_amount" => $data->defaulter_forth_unpaid_amount,
+            "top_defaulter_ward5_amount" => $data->defaulter_fifth_unpaid_amount,
+
+            "current_year_cash_collection" => $data->current_cash_payment,
+            "current_year_cheque_collection" => $data->current_cheque_payment,
+            "current_year_dd_collection"   => $data->current_dd_payment,
+            "current_year_card_collection" => $data->current_card_payment,
+            "current_year_neft_collection" => $data->current_neft_payment,
+            "current_year_rtgs_collection" => $data->current_rtgs_payment,
+            // "assessed_property_this_year_achievement" => $data->current_online_payment,
+            // "assessed_property_this_year_achievement" => $data->current_online_counts,
+            // "assessed_property_this_year_achievement" => $data->prev_year_jskcollection,
+            // "assessed_property_this_year_achievement" => $data->prev_year_jskcount,
+            // "assessed_property_this_year_achievement" => $data->current_year_jskcollection,
+            // "assessed_property_this_year_achievement" => $data->current_year_jskcount,
+            // "assessed_property_this_year_achievement" => $data->lastyear_cash_payment,
+            // "assessed_property_this_year_achievement" => $data->lastyear_cheque_payment,
+            // "assessed_property_this_year_achievement" => $data->lastyear_dd_payment,
+            // "assessed_property_this_year_achievement" => $data->lastyear_neft_payment,
+            // "assessed_property_this_year_achievement" => $data->lastyear_online_payment,
+            // "date" => $todayDate,
+            // "fyear" => "$currentFy",
+            // "ulb_id" => "2",
+            // "ulb_name" => "Akola Municipal Corporation",
+        ];
+
+        $mMplYearlyReport->where('fyear', $currentFy)
+            ->update($updateReqs);
+
+        // $updateReqs->push(["fyear" => "$currentFy"]);
+        // $mMplYearlyReport->create($updateReqs);
+
+        dd("ok");
+    }
+
+    public function liveDashboardUpdate()
+    {
+        $todayDate = Carbon::now();
+        $currentFy = getFY();
+        $currentfyStartDate = $todayDate->startOfYear()->addMonths(3)->format("Y-m-d");
+        $currentfyEndDate   = $todayDate->startOfYear()->addYears(1)->addMonths(3)->addDay(-1)->format("Y-m-d");
+        echo $currentFy;
+        $sql = "SELECT 
+                        total_assessment.*, 
+                        applied_safs.*, 
+                        applied_industries_safs.*, 
+                        applied_gb_safs.*, 
+                        total_props.*, 
+                        total_vacant_land.*, 
+                        total_occupancy_props.*,
+                        --pnding_3yrs.*,
+                        --pnding_2yrs.*,
+                        --pnding_1yrs.*,
+                        --outstandings_last_yr.*,
+                        --outstanding_current_yr.*,
+                        --mutations.*,
+                        payments.*,
+                        top_wards_collections.*,
+                        top_area_safs.*,
+                        area_wise_defaulter.*,
+                        payment_modes.*
+        
+                FROM 
+                    (
+                  SELECT 
+                    COUNT(a.*) AS total_assessed_props 
+                  FROM 
+                    (
+                      SELECT 
+                        id 
+                      FROM 
+                        prop_active_safs 
+                      WHERE 
+                        status = 1 AND ulb_id=2						-- Parameterise This
+                        AND application_date BETWEEN '$currentfyStartDate' 	-- Parameterise This
+                        AND '$currentfyEndDate' 							-- Parameterise this
+                      UNION ALL 
+                      SELECT 
+                        id 
+                      FROM 
+                        prop_safs 
+                      WHERE 
+                        status = 1  AND ulb_id=2
+                        AND application_date BETWEEN '$currentfyStartDate' 	-- Parameterise this
+                        AND '$currentfyEndDate' 								-- Parameterise this
+                      UNION ALL 
+                      SELECT 
+                        id 
+                      FROM 
+                        prop_rejected_safs 
+                      WHERE 
+                        status = 1 AND ulb_id=2
+                        AND application_date BETWEEN '$currentfyStartDate' 	-- Parameterise this
+                        AND '$currentfyEndDate'								-- Parameterise this
+                    ) AS a
+                ) AS total_assessment, 
+                (
+                  SELECT 
+                    SUM(a.applied_comm_safs) AS applied_comm_safs, 
+                    SUM(a.applied_res_safs) AS applied_res_safs 
+                  FROM 
+                    (
+                      SELECT 
+                        SUM(
+                          CASE WHEN holding_type IN (
+                            'PURE_COMMERCIAL', 'MIX_COMMERCIAL'
+                          ) THEN 1 ELSE 0 END
+                        ) AS applied_comm_safs, 
+                        SUM(
+                          CASE WHEN holding_type = 'PURE_RESIDENTIAL' THEN 1 ELSE 0 END
+                        ) AS applied_res_safs 
+                      FROM 
+                        prop_active_safs 
+                      WHERE 
+                        status = 1 AND ulb_id=2
+                        AND application_date BETWEEN '$currentfyStartDate' 			--Parameterise this
+                        AND '$currentfyEndDate' 									--Parameterise this  get fy from curreent date and get date range from current date
+                      UNION ALL 
+                      SELECT 
+                        SUM(
+                          CASE WHEN holding_type IN (
+                            'PURE_COMMERCIAL', 'MIX_COMMERCIAL'
+                          ) THEN 1 ELSE 0 END
+                        ) AS applied_comm_safs, 
+                        SUM(
+                          CASE WHEN holding_type = 'PURE_RESIDENTIAL' THEN 1 ELSE 0 END
+                        ) AS applied_res_safs 
+                      FROM 
+                        prop_safs 
+                      WHERE 
+                        status = 1 AND ulb_id=2
+                        AND application_date BETWEEN '$currentfyStartDate' 			--Parameterise this
+                        AND '$currentfyEndDate' 									--Parameterise this
+                      UNION ALL 
+                      SELECT 
+                        SUM(
+                          CASE WHEN holding_type IN (
+                            'PURE_COMMERCIAL', 'MIX_COMMERCIAL'
+                          ) THEN 1 ELSE 0 END
+                        ) AS applied_comm_safs, 
+                        SUM(
+                          CASE WHEN holding_type = 'PURE_RESIDENTIAL' THEN 1 ELSE 0 END
+                        ) AS applied_res_safs 
+                      FROM 
+                        prop_rejected_safs 
+                      WHERE 
+                        status = 1 AND ulb_id=2
+                        AND application_date BETWEEN '$currentfyStartDate' 			--Parameterise this
+                        AND '$currentfyEndDate'									--Parameterise this
+                    ) AS a
+                ) AS applied_safs, 
+                (
+                  SELECT 
+                    SUM(a.count) AS applied_industries_safs 
+                  FROM 
+                    (
+                      SELECT 
+                        COUNT(DISTINCT s.id) 
+                      FROM 
+                        prop_active_safs s 
+                        JOIN prop_active_safs_floors f ON f.saf_id = s.id 
+                      WHERE 
+                        f.usage_type_mstr_id = 6 						--Parameterise this
+                        AND f.status = 1 
+                        AND s.status = 1 
+                        AND s.ulb_id=2
+                      UNION ALL 
+                      SELECT 
+                        COUNT(DISTINCT s.id) 
+                      FROM 
+                        prop_safs s 
+                        JOIN prop_safs_floors f ON f.saf_id = s.id 
+                      WHERE 
+                        f.usage_type_mstr_id = 6 						--Parameterise this
+                        AND f.status = 1 
+                        AND s.status = 1 
+                        AND s.ulb_id=2
+                      UNION ALL 
+                      SELECT 
+                        COUNT(DISTINCT s.id) 
+                      FROM 
+                        prop_rejected_safs s 
+                        JOIN prop_rejected_safs_floors f ON f.saf_id = s.id 
+                      WHERE 
+                        f.usage_type_mstr_id = 6 						-- Parameterise this
+                        AND f.status = 1 
+                        AND s.status = 1
+                        AND s.ulb_id=2
+                    ) AS a
+                ) AS applied_industries_safs, 
+                (
+                  SELECT 
+                    SUM(a.id) AS applied_gb_safs 
+                  FROM 
+                    (
+                      SELECT 
+                        COUNT(id) AS id 
+                      FROM 
+                        prop_active_safs 
+                      WHERE 
+                        is_gb_saf = TRUE 
+                        AND status = 1 AND ulb_id=2
+                      UNION ALL 
+                      SELECT 
+                        COUNT(id) AS id 
+                      FROM 
+                        prop_safs 
+                      WHERE 
+                        is_gb_saf = TRUE 
+                        AND status = 1 AND ulb_id=2
+                      UNION ALL 
+                      SELECT 
+                        COUNT(id) AS id 
+                      FROM 
+                        prop_rejected_safs 
+                      WHERE 
+                        is_gb_saf = TRUE 
+                        AND status = 1 AND ulb_id=2
+                    ) AS a
+                ) AS applied_gb_safs, 
+                (
+                  SELECT 
+                    COUNT(id) AS total_props 
+                  FROM 
+                    prop_properties 
+                  WHERE 
+                    status = 1 AND ulb_id=2
+                ) AS total_props, 
+                (
+                  SELECT 
+                    COUNT(id) AS total_vacant_land 
+                  FROM 
+                    prop_properties p 
+                  WHERE 
+                    p.prop_type_mstr_id = 4 
+                    AND status = 1 AND ulb_id=2
+                ) AS total_vacant_land, 
+                (
+                  SELECT 
+                    SUM(
+                      CASE WHEN nature = 'owned' THEN 1 ELSE 0 END
+                    )+ d.total_owned_props AS total_owned_props, 
+                    SUM(
+                      CASE WHEN nature = 'rented' THEN 1 ELSE 0 END
+                    ) AS total_owned_props, 
+                    SUM(
+                      CASE WHEN nature = 'mixed' THEN 1 ELSE 0 END
+                    ) AS total_mixed_owned_props 
+                  FROM 
+                    (
+                      SELECT 
+                        a.*, 
+                        CASE WHEN a.cnt = a.owned THEN 'owned' WHEN a.cnt = a.rented THEN 'rented' ELSE 'mixed' END AS nature 
+                      FROM 
+                        (
+                          SELECT 
+                            property_id, 
+                            COUNT(prop_floors.id) AS cnt, 
+                            SUM(
+                              CASE WHEN occupancy_type_mstr_id = 1 THEN 1 ELSE 0 END
+                            ) AS owned, 
+                            SUM(
+                              CASE WHEN occupancy_type_mstr_id = 2 THEN 1 ELSE 0 END
+                            ) AS rented 
+                          FROM 
+                            prop_floors 
+                          JOIN prop_properties ON prop_properties.id=prop_floors.property_id
+                          WHERE prop_properties.status=1 AND prop_properties.ulb_id=2
+                          GROUP BY 
+                            property_id
+                        ) AS a
+                    ) AS b, 
+                    (
+                      SELECT 
+                        COUNT(id) AS total_owned_props 
+                      FROM 
+                        prop_properties 
+                      WHERE 
+                        prop_type_mstr_id = 4 
+                        AND status = 1 AND ulb_id=2
+                    ) AS d 
+                  GROUP BY 
+                    d.total_owned_props
+                ) AS total_occupancy_props,
+                (
+                   -- Payment Details
+                    SELECT SUM(payments.lastyr_pmt_amt) AS lastyr_pmt_amt,
+                       SUM(payments.lastyr_pmt_cnt) AS lastyr_pmt_cnt,
+                       SUM(payments.currentyr_pmt_amt) AS currentyr_pmt_amt,
+                       SUM(payments.currentyr_pmt_cnt) AS currentyr_pmt_cnt
+                          FROM 
+                              (
+                                  SELECT 
+                                   CASE WHEN tran_date BETWEEN '2022-04-01' AND '2023-03-31' THEN SUM(amount) END AS lastyr_pmt_amt,      -- Parameterize this for last yr fyear range date	
+                                   CASE WHEN tran_date BETWEEN '2022-04-01' AND '2023-03-31' THEN COUNT(id) END AS lastyr_pmt_cnt,		-- Parameterize this for last yr fyear range date
+                            
+                                   CASE WHEN tran_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate' THEN SUM(amount) END AS currentyr_pmt_amt,	-- Parameterize this for current yr fyear range date
+                                   CASE WHEN tran_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate' THEN COUNT(id) END AS currentyr_pmt_cnt      -- Parameterize this for current yr fyear range date
+                            
+                              FROM prop_transactions
+                              WHERE tran_date BETWEEN '2022-04-01' AND '$currentfyEndDate' AND status=1	AND ulb_id=2			-- Parameterize this for last two yrs fyear range date
+                              GROUP BY tran_date
+                          ) AS payments
+                ) AS payments,
                 (
                    -- Top Areas Property Transactions
                     SELECT (string_to_array(string_agg(top_wards_collections.ward_name::TEXT,','),','))[1] AS top_transaction_first_ward_no,
