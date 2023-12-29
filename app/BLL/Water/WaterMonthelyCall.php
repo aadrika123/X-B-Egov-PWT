@@ -246,8 +246,12 @@ class WaterMonthelyCall
                 use ($dalyUnitConsumed) {
                     $lastDateOfMonth = Carbon::parse($values)->endOfMonth();
                     $noOfDays = $lastDateOfMonth->day;
-                    $amount = ($this->_consumerFeeUnits->unit_fee * (($noOfDays * $dalyUnitConsumed) - 10)) + $this->_consumerCharges->amount;                        // Static the free amount per month
-                    if ($amount < 0) {
+                    $refCallMonthAmount = ($this->_consumerFeeUnits->unit_fee * (($noOfDays * $dalyUnitConsumed) - 10));                         // Static the free amount per month
+                    if ($refCallMonthAmount < 0) {
+                        $refCallMonthAmount = 0;
+                    }
+                    $amount = $refCallMonthAmount + $this->_consumerCharges->amount;
+                    if ($amount < 0) { 
                         $amount = 0;
                     }
                     return [

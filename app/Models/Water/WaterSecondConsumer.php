@@ -93,7 +93,7 @@ class WaterSecondConsumer extends Model
      * | @var 
      * | @return 
      */
-    public function getConsumerByItsDetails($req, $key, $refNo, $wardId, $zoneId,$zone)
+    public function getConsumerByItsDetails($req, $key, $refNo, $wardId, $zoneId, $zone)
     {
         return WaterSecondConsumer::select([
             'water_consumer_demands.id AS demand_id',
@@ -109,7 +109,7 @@ class WaterSecondConsumer extends Model
             'water_second_consumers.id AS id',
             'water_second_consumers.consumer_no',
             'water_second_consumers.folio_no as property_no',
-            DB::raw("ROUND(water_consumer_demands.due_balance_amount, 2) as balance_amount"), 
+            DB::raw("ROUND(water_consumer_demands.due_balance_amount, 2) as balance_amount"),
             'water_second_consumers.address',
             'water_second_consumers.folio_no',
             'zone_masters.zone_name',
@@ -141,7 +141,7 @@ class WaterSecondConsumer extends Model
                 return $query->where('water_second_consumers.zone_mstr_id', $zoneId);
             })
             ->when($zone, function ($query) use ($zone) {
-                return $query->where('water_second_consumers.zone',$zone);
+                return $query->where('water_second_consumers.zone', $zone);
             })
             ->groupBy(
                 'water_consumer_demands.id',
@@ -157,18 +157,20 @@ class WaterSecondConsumer extends Model
             );
     }
 
-    public function getConsumerByItsDetailsV2($req, $key, $refNo, $wardId, $zoneId,$zone)
+    public function getConsumerByItsDetailsV2($req, $key, $refNo, $wardId, $zoneId, $zone)
     {
-        return WaterSecondConsumer::select([            
+        return WaterSecondConsumer::select([
             DB::raw("
             water_consumer_demands.id AS demand_id,
-            water_consumer_demands.paid_status,
-            water_consumer_demands.consumer_id,
             CASE
-                WHEN water_consumer_demands.is_full_paid = true THEN 'Paid'
-                WHEN water_consumer_demands.is_full_paid = false THEN 'Unpaid'
-                ELSE 'unknown'
-            END AS payment_status,
+                   WHEN water_consumer_demands.due_balance_amount <=0  THEN true
+                   else false
+                   END AS paid_status,
+            CASE
+                   WHEN water_consumer_demands.due_balance_amount >0  THEN 'Unpaid'
+                   else 'Paid'
+                END AS payment_status,
+            water_consumer_demands.consumer_id,
             ROUND(water_consumer_demands.due_balance_amount, 2) as balance_amount,
             water_second_consumers.id AS id,
             water_second_consumers.consumer_no,
@@ -178,18 +180,19 @@ class WaterSecondConsumer extends Model
             zone_masters.zone_name,
             wco.applicant_name as owner_name,
             wco.mobile_no as mobile_no               
-            "),            
-           
+            "),
+
         ])
             ->leftJoin(
                 DB::raw("(
-                            SELECT consumer_id,paid_status,is_full_paid,
+                            SELECT consumer_id,
                                 string_agg(wcd.id::text,', ') as id,
-                                sum(balance_amount) as balance_amount ,sum(amount) amount,	
+                                sum(balance_amount) as balance_amount ,
+                                sum(amount) amount,	
                                 sum(due_balance_amount) as due_balance_amount
                             FROM water_consumer_demands AS wcd
-                            WHERE status = true
-                            group by consumer_id,paid_status,is_full_paid
+                            WHERE status = true and  balance_amount >0 
+                            group by consumer_id
                             ORDER BY consumer_id
                         ) AS water_consumer_demands
                 "),
@@ -206,7 +209,7 @@ class WaterSecondConsumer extends Model
                     from water_consumer_owners wco
                     where status = true
                     group by consumer_id
-                ) as wco"),'water_second_consumers.id', '=', 'wco.consumer_id')
+                ) as wco"), 'water_second_consumers.id', '=', 'wco.consumer_id')
             ->leftjoin('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
             ->where('water_second_consumers.status', 1)
             ->where('water_second_consumers.' . $key, 'LIKE', '%' . $refNo . '%')
@@ -217,7 +220,7 @@ class WaterSecondConsumer extends Model
                 return $query->where('water_second_consumers.zone_mstr_id', $zoneId);
             })
             ->when($zone, function ($query) use ($zone) {
-                return $query->where('water_second_consumers.zone',$zone);
+                return $query->where('water_second_consumers.zone', $zone);
             });
     }
 

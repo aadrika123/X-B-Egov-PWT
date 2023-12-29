@@ -2759,4 +2759,1218 @@ class ReportController extends Controller
         }
         return $this->Repository->tranDeactivatedList($request);
     }
+/*
+
+     #====================================================
+     
+     public function safAppliedtypeDetails(Request $request)
+     {
+         $validator = Validator::make($request->all(), [
+             "fromDate" => "nullable|date|date_format:Y-m-d",
+             "uptoDate" => "nullable|date|date_format:Y-m-d",
+             'zoneId' => "nullable",
+             'wardId' => "nullable",
+             'propertyType' => "nullable",
+             'constructionType' => "nullable",
+             'usageType' => "nullable",
+         ]);
+     
+         if ($validator->fails()) {
+             return response()->json([
+                 'status' => false,
+                 'message' => 'validation error',
+                 'errors' => $validator->errors()
+             ], 200);
+         }
+     
+         try {
+             $fromDate = $uptoDate = Carbon::now()->format('Y-m-d');
+             $wardId = $zoneId = $userId = null;
+     
+             if ($request->fromDate) {
+                 $fromDate = $request->fromDate;
+             }
+     
+             if ($request->uptoDate) {
+                 $uptoDate = $request->uptoDate;
+             }
+     
+             if ($request->zoneId) {
+                 $zoneId = $request->zoneId;
+             }
+     
+             if ($request->wardId) {
+                 $wardId = $request->wardId;
+             }
+     
+             $perPage = $request->perPage ? $request->perPage : 10;
+             $page = $request->page && $request->page > 0 ? $request->page : 1;
+             $limit = $perPage;
+             $offset = $request->page && $request->page > 1 ? ($request->page * $perPage) : 0;
+     
+             $query = "
+                 SELECT 
+                     prop_safs.saf_no,
+                     prop_safs.id AS Saf_id,
+                     zone_masters.zone_name,
+                     ulb_ward_masters.ward_name,
+                     prop_safs.prop_address,
+                     prop_safs.holding_no,
+                     prop_transactions.amount,
+                     prop_transactions.payment_mode,
+                     prop_safs.assessment_type,
+                     owner.owner_name,
+                     owner.mobile_no
+                 FROM prop_transactions
+                 JOIN (
+                     (
+                         SELECT
+                             prop_safs.saf_no,
+                             prop_safs.id,
+                             prop_safs.prop_address,
+                             prop_safs.assessment_type,
+                             prop_safs.holding_no,
+                             prop_safs.ward_mstr_id,
+                             prop_safs.zone_mstr_id
+                         FROM prop_active_safs as prop_safs
+                         JOIN prop_transactions ON prop_transactions.saf_id = prop_safs.id
+                     )	
+                     UNION
+                     (
+                         SELECT
+                             prop_safs.saf_no,
+                             prop_safs.id,
+                             prop_safs.prop_address,
+                             prop_safs.assessment_type,
+                             prop_safs.holding_no,
+                             prop_safs.ward_mstr_id,
+                             prop_safs.zone_mstr_id
+                         FROM prop_rejected_safs as prop_safs
+                         JOIN prop_transactions ON prop_transactions.saf_id = prop_safs.id
+                     )
+                     UNION
+                     (
+                         SELECT
+                             prop_safs.saf_no,
+                             prop_safs.id,
+                             prop_safs.prop_address,
+                             prop_safs.assessment_type,
+                             prop_safs.holding_no,
+                             prop_safs.ward_mstr_id,
+                             prop_safs.zone_mstr_id
+                         FROM prop_safs as prop_safs
+                         JOIN prop_transactions ON prop_transactions.saf_id = prop_safs.id
+                     )
+                 ) prop_safs ON prop_safs.id = prop_transactions.saf_id
+                 JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_safs.ward_mstr_id
+                 JOIN zone_masters ON zone_masters.id = prop_safs.zone_mstr_id
+                 LEFT JOIN (
+                     (
+                         SELECT
+                             prop_owners.saf_id,
+                             STRING_AGG(prop_owners.owner_name, ',') AS owner_name,
+                             STRING_AGG(CAST(prop_owners.mobile_no AS TEXT), ',') AS mobile_no       
+                         FROM prop_active_safs_owners as prop_owners
+                         JOIN prop_transactions ON prop_transactions.saf_id = prop_owners.saf_id
+                         WHERE prop_owners.status = 1
+                         GROUP BY prop_owners.saf_id
+                     )
+                     UNION
+                     (
+                         SELECT
+                             prop_owners.saf_id,
+                             STRING_AGG(prop_owners.owner_name, ',') AS owner_name,
+                             STRING_AGG(CAST(prop_owners.mobile_no AS TEXT), ',') AS mobile_no       
+                         FROM prop_rejected_safs_owners as prop_owners
+                         JOIN prop_transactions ON prop_transactions.saf_id = prop_owners.saf_id
+                         WHERE prop_owners.status = 1
+                         GROUP BY prop_owners.saf_id
+                     )
+                     UNION
+                     (
+                         SELECT
+                             prop_owners.saf_id,
+                             STRING_AGG(prop_owners.owner_name, ',') AS owner_name,
+                             STRING_AGG(CAST(prop_owners.mobile_no AS TEXT), ',') AS mobile_no       
+                         FROM prop_safs_owners as prop_owners
+                         JOIN prop_transactions ON prop_transactions.saf_id = prop_owners.saf_id
+                         WHERE prop_owners.status = 1
+                         GROUP BY prop_owners.saf_id
+                     )
+                 ) AS owner ON owner.saf_id = prop_safs.id";
+     
+             if ($wardId) {
+                 $query .= " WHERE prop_safs.ward_mstr_id = $wardId";
+             }
+     
+             if ($zoneId) {
+                 $query .= " AND prop_safs.zone_mstr_id = $zoneId";
+             }
+     
+             if ($request->propertyType) {
+                 $propertyType = $request->propertyType;
+                 $query .= " AND prop_safs.property_type = '$propertyType'";
+             }
+     
+             if ($request->constructionType) {
+                 $constructionType = $request->constructionType;
+                 $query .= " AND prop_safs.construction_type = '$constructionType'";
+             }
+     
+             if ($request->usageType) {
+                 $usageType = $request->usageType;
+                 $query .= " AND prop_safs.usage_type = '$usageType'";
+             }
+     
+             $count = $query;
+             $query .= " LIMIT $limit OFFSET $offset ";
+     
+             $data = DB::table(DB::raw("($query) AS prop"))->get();
+     
+             $items = $data;
+             $total = (collect(DB::select("SELECT COUNT(*) AS total FROM ($count) aggregate_table"))->first())->total ?? 0;
+             $lastPage = ceil($total / $perPage);
+             $list = [
+                 "current_page" => $page,
+                 "data" => $data,
+                 "total" => $total,
+                 "per_page" => $perPage,
+                 "last_page" => $lastPage
+             ];
+     
+             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+             return responseMsg(true, "Transaction details List", $list, "010501", "1.0", "", "POST", $request->deviceId ?? "");
+         } catch (Exception $e) {
+             return responseMsg(false, $e->getMessage(), $request->all());
+         }
+     }
+ 
+     public function constructionTypeSummery(Request $request)
+     {
+         try {
+             $result = DB::table('prop_properties')
+                 ->join('prop_floors', 'prop_floors.property_id', '=', 'prop_properties.id')
+                 ->join('ref_prop_construction_types', 'ref_prop_construction_types.id', '=', 'prop_floors.const_type_mstr_id')
+                 ->where('prop_properties.prop_type_mstr_id', '!=', 4)
+                 ->groupBy('ref_prop_construction_types.construction_type')
+                 ->select(
+                     'ref_prop_construction_types.construction_type AS construction_type',
+                     DB::raw('COUNT(DISTINCT prop_properties.id) AS Total')
+                 )
+                 ->get();
+ 
+                 return responseMsg(true, "Construction type detail reports", $result, "010501", "1.0", "", "POST", "");
+             } catch (Exception $e) {
+                 return responseMsg(false, $e->getMessage(),"");
+             }
+     }
+ 
+     public function usageTypeSummery(Request $request)
+     {
+         try {
+                 $result = DB::table('prop_properties')
+                 ->join('prop_floors', 'prop_floors.property_id', '=', 'prop_properties.id')
+                 ->join('ref_prop_usage_types', 'ref_prop_usage_types.id', '=', 'prop_floors.usage_type_mstr_id')
+                 ->where('prop_properties.prop_type_mstr_id', '!=', 4)
+                 ->groupBy('ref_prop_usage_types.usage_type')
+                 ->select(
+                     'ref_prop_usage_types.usage_type AS usage_type',
+                     DB::raw('COUNT(DISTINCT prop_properties.id) AS Total')
+                 )
+                 ->get();
+ 
+                 return responseMsg(true, "Usage type detail reports", $result, "010501", "1.0", "", "POST", "");
+             } catch (Exception $e) {
+                 return responseMsg(false, $e->getMessage(),"");
+             }
+     }
+ 
+     public function propertyTypeSummary(Request $request)
+     {
+         try {
+             $query = "
+                 SELECT
+                     ref_prop_types.property_type AS \"Property Type\",
+                     COUNT(DISTINCT prop_properties.id) AS \"Total\"
+                 FROM
+                     prop_properties
+                 JOIN ref_prop_types ON ref_prop_types.id = prop_properties.prop_type_mstr_id
+                 GROUP BY
+                     ref_prop_types.property_type
+             ";
+     
+             $data = DB::table(DB::raw("($query) AS prop"))->get();
+     
+             return responseMsg(true, "Property type summary report", $data, "010501", "1.0", "", "POST", "");
+         } catch (Exception $e) {
+             return responseMsg(false, $e->getMessage(), "");
+         }
+     }
+ 
+     public function propertyTypeReport(Request $request)
+     {
+         try {
+             $validator = Validator::make($request->all(), [
+                 
+                 "constructionType" => "nullable|array",
+                 "usageType" => "nullable|array",
+                 "propertyType" => "nullable|int",
+                 "wardNo" => "nullable|string",
+                 "zone" => "nullable|string",
+                 "holdingNo"=>"nullable",
+                 "ownerName"=>"nullable|string",
+                 "mobileNo"=>"nullable",
+                 "property_no"=>"nullable"
+             ]);
+     
+             if ($validator->fails()) {
+                 return response()->json([
+                     'status' => false,
+                     'message' => 'Validation error',
+                     'errors' => $validator->errors()
+                 ], 200);
+             }
+             
+            
+             $constructionType = $request->constructionType;
+             $usageType = $request->usageType;
+             $propertyType = $request->propertyType;
+             $wardNo = $request->wardNo;
+             $zone = $request->zone;
+             $holdingNo = $request->holdingNo;
+             $ownerName = $request->ownerName;
+             $mobileNo = $request->mobileNo;
+             $property_no = $request->property_no;
+ 
+             $perPage = $request->perPage ? $request->perPage : 10;
+             $page = $request->page && $request->page > 0 ? $request->page : 1;
+             $limit = $perPage;
+             $offset =  $request->page && $request->page > 1 ? ($request->page * $perPage) : 0;
+ 
+ 
+             $query = "
+                 SELECT
+                     prop_properties.property_no,
+                     prop_properties.holding_no,
+                     zone_masters.zone_name,
+                     ulb_ward_masters.ward_name,
+                     prop_properties.prop_address,
+                     ref_prop_types.property_type,
+                     floors.total_floors,
+                     floors.construction_type_ids,
+                     floors.usage_type_ids,
+                     floors.construction_type,
+                     floors.usage_type,
+                     owner.owner_name,
+                     owner.mobile_no
+                 FROM prop_properties
+                 JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
+                 JOIN zone_masters ON zone_masters.id = prop_properties.zone_mstr_id
+                 LEFT JOIN ref_prop_types ON ref_prop_types.id = prop_properties.prop_type_mstr_id
+                 LEFT JOIN (
+                     SELECT
+                         prop_owners.property_id,
+                         STRING_AGG(prop_owners.owner_name, ',') AS owner_name,
+                         STRING_AGG(CAST(prop_owners.mobile_no AS TEXT), ',') AS mobile_no
+                     FROM prop_owners
+                     WHERE prop_owners.status = 1
+                     GROUP BY prop_owners.property_id
+                 ) AS owner ON owner.property_id = prop_properties.id
+                 LEFT JOIN (
+                     SELECT
+                         prop_floors.property_id,
+                         Count(prop_floors.id) as total_floors,
+                         STRING_AGG(ref_prop_construction_types.construction_type, ', ') as construction_type,
+                         STRING_AGG(ref_prop_construction_types.id::text, ', ') as construction_type_ids,
+                         STRING_AGG(ref_prop_usage_types.usage_type, ', ') as usage_type,
+                         STRING_AGG(ref_prop_usage_types.id::text, ', ') as usage_type_ids
+                     FROM prop_floors 
+                     JOIN ref_prop_construction_types ON ref_prop_construction_types.id = prop_floors.const_type_mstr_id
+                     JOIN ref_prop_usage_types ON ref_prop_usage_types.id = prop_floors.usage_type_mstr_id
+                     GROUP BY prop_floors.property_id
+                 ) floors ON floors.property_id = prop_properties.id
+             ";
+             // dd($query);
+            
+             
+                     
+             $conditions = [];
+     
+     
+             if ($constructionType) {
+                 $conditions[] = "$constructionType[0] = ANY(STRING_TO_ARRAY(floors.construction_type_ids, ',')::INT[])";
+             }
+     
+             if ($usageType) {
+                 $conditions[] = "$usageType[0] =ANY(STRING_TO_ARRAY(floors.usage_type_ids, ',')::INT[])";
+             }
+     
+             if ($propertyType) {
+                 $conditions[] = "ref_prop_types.id = $propertyType";
+             }
+     
+             if ($wardNo) {
+                 $conditions[] = "ulb_ward_masters.ward_name = '$wardNo'";
+             }
+     
+             if ($zone) {
+                 $conditions[] = "zone_masters.zone_name = '$zone'";
+             }
+             if ($holdingNo) {
+                 $conditions[] = "prop_properties.holding_no = '$holdingNo'";
+             }
+             if ($ownerName) {
+                 $conditions[] = "owner.owner_name = '$ownerName'";
+             }
+             if ($mobileNo) {
+                 $conditions[] = "owner.mobile_no = '$mobileNo'";
+             }
+             if ($property_no) {
+                 $conditions[] = " prop_properties.property_no = '$property_no'";
+             }
+ 
+             
+             // $count = $query;
+ 
+             if (!empty($conditions)) {
+                 $query .= " WHERE " . implode(" AND ", $conditions);
+             }
+             $count = $query;
+             $query .= " LIMIT $limit OFFSET $offset "; 
+     
+            
+     
+             $data = DB::table(DB::raw("($query) AS prop"))->get();
+             $items = $data;
+             $total = (collect(DB::SELECT("SELECT COUNT(*) AS total FROM ($count) aggrigate_table"))->first())->total ?? 0;
+             $lastPage = ceil($total / $perPage);
+             $list = [                
+                 "current_page" => $page,
+                 "data" => $data,
+                 "total" => $total,
+                 "per_page" => $perPage,
+                 "last_page" => $lastPage 
+             ];
+             return responseMsg(true, "Property type report", $list, "010501", "1.0", "", "POST", "");
+         } catch (Exception $e) {
+             return responseMsg(false, $e->getMessage(), "");
+         }
+             
+     }
+ 
+ 
+     public function safReport(Request $request)
+     {
+         try {
+             $validator = Validator::make($request->all(), [
+                 "zoneId" => "nullable",
+                 "wardId" => "nullable",
+             ]);
+ 
+             if ($validator->fails()) {
+                 return response()->json([
+                     'status' => false,
+                     'message' => 'Validation error',
+                     'errors' => $validator->errors()
+                 ], 200);
+             }
+ 
+             $zoneId = $request->zoneId;
+             $wardId = $request->wardNo;
+ 
+             $query = "
+                 SELECT
+                     assessment_type AS \"SAF Type\",
+                     COUNT(id) AS \"Total Transaction\",
+                     SUM(amount) AS \"Total Amount\"
+                 FROM (
+                     SELECT
+                         safs.assessment_type,
+                         transactions.id,
+                         transactions.amount,
+                         zone_masters.zone_name,
+                         ulb_ward_masters.ward_name
+                     FROM
+                         prop_active_safs safs
+                     LEFT JOIN
+                         prop_transactions transactions ON transactions.saf_id = safs.id
+                     JOIN ulb_ward_masters ON ulb_ward_masters.id = safs.ward_mstr_id
+                     JOIN zone_masters ON zone_masters.id = safs.zone_mstr_id
+                     WHERE 
+                     " . ($zoneId ? "AND safs.zone_mstr_id = $zoneId " : "") . "
+                     " . ($wardId ? "AND safs.ward_mstr_id = $wardId " : "") . "
+                     
+                     UNION 
+                     
+                     SELECT
+                         safs.assessment_type,
+                         transactions.id,
+                         transactions.amount,
+                         zone_masters.zone_name,
+                         ulb_ward_masters.ward_name
+                     FROM
+                         prop_rejected_safs safs
+                     LEFT JOIN
+                         prop_transactions transactions ON transactions.saf_id = safs.id
+                     JOIN ulb_ward_masters ON ulb_ward_masters.id = safs.ward_mstr_id
+                     JOIN zone_masters ON zone_masters.id = safs.zone_mstr_id
+                     WHERE 
+                     " . ($zoneId ? "AND safs.zone_mstr_id = $zoneId " : "") . "
+                     " . ($wardId ? "AND safs.ward_mstr_id = $wardId " : "") . "
+                     UNION 
+                     
+                     SELECT
+                         safs.assessment_type,
+                         transactions.id,
+                         transactions.amount,
+                         zone_masters.zone_name,
+                         ulb_ward_masters.ward_name
+                     FROM
+                         prop_safs safs
+                     LEFT JOIN
+                         prop_transactions transactions ON transactions.saf_id = safs.id
+                     JOIN ulb_ward_masters ON ulb_ward_masters.id = safs.ward_mstr_id
+                     JOIN zone_masters ON zone_masters.id = safs.zone_mstr_id
+                     WHERE 
+                     " . ($zoneId ? "AND safs.zone_mstr_id = $zoneId " : "") . "
+                     " . ($wardId ? "AND safs.ward_mstr_id = $wardId " : "") . "
+                 ) AS combined_data
+                 GROUP BY
+                     assessment_type;
+             ";
+ 
+ 
+             $data = DB::select($query);
+             return responseMsg(true, "Saf report", $data, "010501", "1.0", "", "POST", "");
+         } catch (Exception $e) {
+             return responseMsg(false, $e->getMessage(), "");
+         }
+ 
+     }
+ 
+     public function safCollectionReport(Request $request)
+     {
+         $validator = Validator::make($request->all(), [
+             "fromDate" => "nullable|date|date_format:Y-m-d",
+             "uptoDate" => "nullable|date|date_format:Y-m-d",
+             'zoneId' => "nullable",
+             'wardId' => "nullable",
+ 
+         ]);
+         if ($validator->fails()) {
+             return response()->json([
+                 'status' => false,
+                 'message' => 'validation error',
+                 'errors' => $validator->errors()
+             ], 200);
+         }
+         try{
+             $fromDate = $uptoDate = Carbon::now()->format('Y-m-d');
+             $wardId = $zoneId = $userId = null;
+             if ($request->fromDate ) {
+                 $fromDate = $request->fromDate;
+             }
+             if ($request->uptoDate) {
+                 $uptoDate = $request->uptoDate;
+             }
+     
+             if ($request->zoneId) {
+                 
+                 $zoneId = $request->zoneId;
+             }
+     
+             if ($request->wardId) {
+                
+                 $wardId = $request->wardId;
+             }
+             $query = "
+                     WITH assessment_types AS (
+                         (
+                             SELECT DISTINCT (assessment_type) AS assessment_type
+                             FROM prop_active_safs safs
+                         )
+                         UNION
+                         (
+                             SELECT DISTINCT (assessment_type) AS assessment_type
+                             FROM prop_rejected_safs safs
+                         )
+                         UNION
+                         (
+                             SELECT DISTINCT (assessment_type) AS assessment_type
+                             FROM prop_safs safs
+                         )
+                     ),
+                     safs AS (
+                         (
+                             SELECT
+                                 safs.assessment_type,
+                                 safs.id,
+                                 safs.ward_mstr_id,
+                                 safs.zone_mstr_id,
+                                 transactions.id AS tran_id
+                             FROM prop_active_safs safs
+                             JOIN prop_transactions transactions ON transactions.saf_id = safs.id
+                             WHERE
+                                 safs.is_gb_saf != TRUE
+                                 AND transactions.status IN (1, 2)
+                                 AND safs.status = 1
+                                 AND transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                                 " . ($zoneId ? "AND safs.zone_mstr_id = $zoneId " : "") . "
+                                 " . ($wardId ? "AND safs.ward_mstr_id = $wardId " : "") . "
+                         )
+                         UNION
+                         (
+                             SELECT
+                                 safs.assessment_type,
+                                 safs.id,
+                                 safs.ward_mstr_id,
+                                 safs.zone_mstr_id,
+                                 transactions.id AS tran_id
+                             FROM prop_rejected_safs safs
+                             JOIN prop_transactions transactions ON transactions.saf_id = safs.id
+                             WHERE
+                                 safs.is_gb_saf != TRUE
+                                 AND transactions.status IN (1, 2)
+                                 AND safs.status = 1
+                                 AND transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                                 " . ($zoneId ? "AND safs.zone_mstr_id = $zoneId " : "") . "
+                                 " . ($wardId ? "AND safs.ward_mstr_id = $wardId " : "") . "
+                         )
+                         UNION
+                         (
+                             SELECT
+                                 safs.assessment_type,
+                                 safs.id,
+                                 safs.ward_mstr_id,
+                                 safs.zone_mstr_id,
+                                 transactions.id AS tran_id
+                             FROM prop_safs safs
+                             JOIN prop_transactions transactions ON transactions.saf_id = safs.id
+                             WHERE
+                                 safs.is_gb_saf != TRUE
+                                 AND transactions.status IN (1, 2)
+                                 AND safs.status = 1
+                                 AND transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                                 " . ($zoneId ? "AND safs.zone_mstr_id = $zoneId " : "") . "
+                                 " . ($wardId ? "AND safs.ward_mstr_id = $wardId " : "") . "
+                         )
+                     ),
+                     fine_rebate AS (
+                         SELECT
+                             SUM(CASE WHEN prop_penaltyrebates.is_rebate = TRUE THEN prop_penaltyrebates.amount ELSE 0 END) AS rebate,
+                             SUM(CASE WHEN prop_penaltyrebates.is_rebate != TRUE THEN prop_penaltyrebates.amount ELSE 0 END) AS penalty,
+                             tran_id
+                         FROM prop_penaltyrebates
+                         JOIN prop_transactions transactions ON transactions.id = prop_penaltyrebates.tran_id
+                         GROUP BY prop_penaltyrebates.tran_id
+                     )
+                 
+                     SELECT
+                         assessment_types.assessment_type AS saf_type,
+                         COUNT(DISTINCT safs.id) AS total_application,
+                         COUNT(transactions.id) AS total_bill_cute,
+                         SUM(COALESCE(transactions.amount, 0)) AS amount,
+                         SUM(COALESCE(rebate, 0)) AS rebate,
+                         SUM(COALESCE(penalty, 0)) AS penalty,
+                         (SUM(COALESCE(transactions.amount, 0)) - SUM(COALESCE(rebate, 0))) AS total_demand
+                     FROM assessment_types
+                     LEFT JOIN safs ON safs.assessment_type = assessment_types.assessment_type
+                     LEFT JOIN prop_transactions transactions ON safs.tran_id = transactions.id
+                         AND transactions.status IN (1, 2)
+                         AND transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                     LEFT JOIN fine_rebate ON fine_rebate.tran_id = transactions.id
+                     GROUP BY assessment_types.assessment_type
+                 ";
+                 
+             $data = DB::select($query);
+             return responseMsg(true, "Saf collection report", $data, "010501", "1.0", "", "POST", "");
+         }
+         catch (Exception $e) {
+             return responseMsg(false, $e->getMessage(), "");
+         }
+     }
+ 
+     public function gbSafCollectionReport(Request $request)
+     {
+         $validator = Validator::make($request->all(), [
+             "fromDate" => "nullable|date|date_format:Y-m-d",
+             "uptoDate" => "nullable|date|date_format:Y-m-d",
+             'zoneId' => "nullable",
+             'wardId' => "nullable",
+ 
+         ]);
+         if ($validator->fails()) {
+             return response()->json([
+                 'status' => false,
+                 'message' => 'validation error',
+                 'errors' => $validator->errors()
+             ], 200);
+         }
+         try{
+             $fromDate = $uptoDate = Carbon::now()->format('Y-m-d');
+             $wardId = $zoneId = $userId = null;
+             if ($request->fromDate ) {
+                 $fromDate = $request->fromDate;
+             }
+             if ($request->uptoDate) {
+                 $uptoDate = $request->uptoDate;
+             }
+     
+             if ($request->zoneId) {
+                 
+                 $zoneId = $request->zoneId;
+             }
+     
+             if ($request->wardId) {
+                
+                 $wardId = $request->wardId;
+             }
+             $query = "
+                     WITH assessment_types AS (
+                         (
+                             SELECT DISTINCT (assessment_type) AS assessment_type
+                             FROM prop_active_safs safs
+                         )
+                         UNION
+                         (
+                             SELECT DISTINCT (assessment_type) AS assessment_type
+                             FROM prop_rejected_safs safs
+                         )
+                         UNION
+                         (
+                             SELECT DISTINCT (assessment_type) AS assessment_type
+                             FROM prop_safs safs
+                         )
+                     ),
+                     safs AS (
+                         (
+                             SELECT
+                                 safs.assessment_type,
+                                 safs.id,
+                                 safs.ward_mstr_id,
+                                 safs.zone_mstr_id,
+                                 transactions.id AS tran_id
+                             FROM prop_active_safs safs
+                             JOIN prop_transactions transactions ON transactions.saf_id = safs.id
+                             WHERE
+                                 safs.is_gb_saf = TRUE
+                                 AND transactions.status IN (1, 2)
+                                 AND safs.status = 1
+                                 AND transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                                 " . ($zoneId ? "AND safs.zone_mstr_id = $zoneId " : "") . "
+                                 " . ($wardId ? "AND safs.ward_mstr_id = $wardId " : "") . "
+                         )
+                         UNION
+                         (
+                             SELECT
+                                 safs.assessment_type,
+                                 safs.id,
+                                 safs.ward_mstr_id,
+                                 safs.zone_mstr_id,
+                                 transactions.id AS tran_id
+                             FROM prop_rejected_safs safs
+                             JOIN prop_transactions transactions ON transactions.saf_id = safs.id
+                             WHERE
+                                 safs.is_gb_saf = TRUE
+                                 AND transactions.status IN (1, 2)
+                                 AND safs.status = 1
+                                 AND transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                                 " . ($zoneId ? "AND safs.zone_mstr_id = $zoneId " : "") . "
+                                 " . ($wardId ? "AND safs.ward_mstr_id = $wardId " : "") . "
+                         )
+                         UNION
+                         (
+                             SELECT
+                                 safs.assessment_type,
+                                 safs.id,
+                                 safs.ward_mstr_id,
+                                 safs.zone_mstr_id,
+                                 transactions.id AS tran_id
+                             FROM prop_safs safs
+                             JOIN prop_transactions transactions ON transactions.saf_id = safs.id
+                             WHERE
+                                 safs.is_gb_saf = TRUE
+                                 AND transactions.status IN (1, 2)
+                                 AND safs.status = 1
+                                 AND transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                                 " . ($zoneId ? "AND safs.zone_mstr_id = $zoneId " : "") . "
+                                 " . ($wardId ? "AND safs.ward_mstr_id = $wardId " : "") . "
+                         )
+                     ),
+                     fine_rebate AS (
+                         SELECT
+                             SUM(CASE WHEN prop_penaltyrebates.is_rebate = TRUE THEN prop_penaltyrebates.amount ELSE 0 END) AS rebate,
+                             SUM(CASE WHEN prop_penaltyrebates.is_rebate != TRUE THEN prop_penaltyrebates.amount ELSE 0 END) AS penalty,
+                             tran_id
+                         FROM prop_penaltyrebates
+                         JOIN prop_transactions transactions ON transactions.id = prop_penaltyrebates.tran_id
+                         GROUP BY prop_penaltyrebates.tran_id
+                     )
+                 
+                     SELECT
+                         assessment_types.assessment_type AS saf_type,
+                         COUNT(DISTINCT safs.id) AS total_application,
+                         COUNT(transactions.id) AS total_bill_cute,
+                         SUM(COALESCE(transactions.amount, 0)) AS amount,
+                         SUM(COALESCE(rebate, 0)) AS rebate,
+                         SUM(COALESCE(penalty, 0)) AS penalty,
+                         (SUM(COALESCE(transactions.amount, 0)) - SUM(COALESCE(rebate, 0))) AS total_demand
+                     FROM assessment_types
+                     LEFT JOIN safs ON safs.assessment_type = assessment_types.assessment_type
+                     LEFT JOIN prop_transactions transactions ON safs.tran_id = transactions.id
+                         AND transactions.status IN (1, 2)
+                         AND transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                     LEFT JOIN fine_rebate ON fine_rebate.tran_id = transactions.id
+                     GROUP BY assessment_types.assessment_type
+                 ";
+                 
+             $data = DB::select($query);
+             return responseMsg(true, "Saf collection report", $data, "010501", "1.0", "", "POST", "");
+         }
+         catch (Exception $e) {
+             return responseMsg(false, $e->getMessage(), "");
+         }
+     }
+ 
+     public function safAppliedReport(Request $request)
+     {
+         try {
+             $validator = Validator::make($request->all(), [
+                 'fromDate' => 'required|date',
+                 'toDate' => 'required|date',
+                 'zoneId' => "nullable",
+                 'wardId' => "nullable",
+             ]);
+     
+             if ($validator->fails()) {
+                 return response()->json([ 
+                     'status' => false,
+                     'message' => 'Validation error',
+                     'errors' => $validator->errors()
+                 ], 200);
+             }
+             // $request->validate([
+             //     'fromDate' => 'required|date',
+             //     'toDate' => 'required|date',
+             //     'zoneId' => "nullable",
+             //     'wardId' => "nullable",
+             // ]);
+ 
+        
+             $fromDate = $request->fromDate;
+             $toDate = $request->toDate;
+             $zoneId = $request->zoneId;
+             $wardId = $request->wardId;
+           
+             $query = "
+                 WITH assessment_types AS (
+                     (
+                         SELECT DISTINCT (assessment_type) AS assessment_type
+                         FROM prop_active_safs safs
+                     )
+                     UNION
+                     (
+                         SELECT DISTINCT (assessment_type) AS assessment_type
+                         FROM prop_rejected_safs safs
+                     )
+                     UNION
+                     (
+                         SELECT DISTINCT (assessment_type) AS assessment_type
+                         FROM prop_safs safs
+                     )
+                 ),
+                 safs AS (
+                     (
+                         SELECT
+                             safs.assessment_type,
+                             safs.id,
+                             safs.ward_mstr_id,
+                             safs.zone_mstr_id,
+                             transactions.id AS tran_id
+                         FROM prop_active_safs safs
+                         JOIN prop_transactions transactions ON transactions.saf_id = safs.id
+                         WHERE
+                             safs.is_gb_saf != TRUE
+                             AND transactions.status IN (1, 2)
+                             AND safs.status = 1
+                             AND transactions.tran_date BETWEEN '$fromDate' AND '$toDate'
+                             " . ($zoneId ? "AND safs.zone_mstr_id = $zoneId " : "") . "
+                             " . ($wardId ? "AND safs.ward_mstr_id = $wardId " : "") . "
+                     )
+                     UNION
+                     (
+                         SELECT
+                             safs.assessment_type,
+                             safs.id,
+                             safs.ward_mstr_id,
+                             safs.zone_mstr_id,
+                             transactions.id AS tran_id
+                         FROM prop_rejected_safs safs
+                         JOIN prop_transactions transactions ON transactions.saf_id = safs.id
+                         WHERE
+                             safs.is_gb_saf != TRUE
+                             AND transactions.status IN (1, 2)
+                             AND safs.status = 1
+                             AND transactions.tran_date BETWEEN '$fromDate' AND '$toDate'
+                             " . ($zoneId ? "AND safs.zone_mstr_id = $zoneId " : "") . "
+                             " . ($wardId ? "AND safs.ward_mstr_id = $wardId " : "") . "
+                     )
+                     UNION
+                     (
+                         SELECT
+                             safs.assessment_type,
+                             safs.id,
+                             safs.ward_mstr_id,
+                             safs.zone_mstr_id,
+                             transactions.id AS tran_id
+                         FROM prop_safs safs
+                         JOIN prop_transactions transactions ON transactions.saf_id = safs.id
+                         WHERE
+                             safs.is_gb_saf != TRUE
+                             AND transactions.status IN (1, 2)
+                             AND safs.status = 1
+                             AND transactions.tran_date BETWEEN '$fromDate' AND '$toDate'
+                             " . ($zoneId ? "AND safs.zone_mstr_id = $zoneId " : "") . "
+                             " . ($wardId ? "AND safs.ward_mstr_id = $wardId " : "") . "
+                     )
+                 ),
+                 fine_rebate AS (
+                     SELECT
+                         SUM(CASE WHEN prop_penaltyrebates.is_rebate = TRUE THEN prop_penaltyrebates.amount ELSE 0 END) AS rebate,
+                         SUM(CASE WHEN prop_penaltyrebates.is_rebate != TRUE THEN prop_penaltyrebates.amount ELSE 0 END) AS penalty,
+                         tran_id
+                     FROM prop_penaltyrebates
+                     JOIN prop_transactions transactions ON transactions.id = prop_penaltyrebates.tran_id
+                     GROUP BY prop_penaltyrebates.tran_id
+                 )
+                 
+                 SELECT
+                     assessment_types.assessment_type AS saf_type,
+                     COUNT(DISTINCT safs.id) AS total_application,
+                     COUNT(transactions.id) AS total_bill_cute,
+                     SUM(COALESCE(transactions.amount, 0)) AS amount,
+                     SUM(COALESCE(rebate, 0)) AS rebate,
+                     SUM(COALESCE(penalty, 0)) AS penalty,
+                     (SUM(COALESCE(transactions.amount, 0)) - SUM(COALESCE(rebate, 0))) AS total_demand
+                 FROM assessment_types
+                 LEFT JOIN safs ON safs.assessment_type = assessment_types.assessment_type
+                 LEFT JOIN prop_transactions transactions ON safs.tran_id = transactions.id
+                     AND transactions.status IN (1, 2)
+                     AND transactions.tran_date BETWEEN '$fromDate' AND '$toDate'
+                 LEFT JOIN fine_rebate ON fine_rebate.tran_id = transactions.id
+                 GROUP BY assessment_types.assessment_type;
+             ";
+ 
+         
+             $data = DB::select($query);
+             return responseMsg(true, "Saf applied report", $data, "010501", "1.0", "", "POST", "");
+         }
+         catch (Exception $e) {
+             return responseMsg(false, $e->getMessage(), "");
+         }
+     }
+ 
+     public function gbSafAppliedReport(Request $request)
+     {
+         try {            
+             $validator = Validator::make($request->all(), [
+                 'fromDate' => 'required|date',
+                 'toDate' => 'required|date',
+                 'zoneId' => "nullable",
+                 'wardId' => "nullable",
+             ]);
+     
+             if ($validator->fails()) {
+                 return response()->json([
+                     'status' => false,
+                     'message' => 'Validation error',
+                     'errors' => $validator->errors()
+                 ], 200);
+             }
+ 
+        
+             $fromDate = $request->fromDate;
+             $toDate = $request->toDate;
+             $zoneId = $request->zoneId;
+             $wardId = $request->wardId;
+           
+             $query = "
+                 WITH assessment_types AS (
+                     (
+                         SELECT DISTINCT (assessment_type) AS assessment_type
+                         FROM prop_active_safs safs
+                     )
+                     UNION
+                     (
+                         SELECT DISTINCT (assessment_type) AS assessment_type
+                         FROM prop_rejected_safs safs
+                     )
+                     UNION
+                     (
+                         SELECT DISTINCT (assessment_type) AS assessment_type
+                         FROM prop_safs safs
+                     )
+                 ),
+                 safs AS (
+                     (
+                         SELECT
+                             safs.assessment_type,
+                             safs.id,
+                             safs.ward_mstr_id,
+                             safs.zone_mstr_id,
+                             transactions.id AS tran_id
+                         FROM prop_active_safs safs
+                         JOIN prop_transactions transactions ON transactions.saf_id = safs.id
+                         WHERE
+                             safs.is_gb_saf = TRUE
+                             AND transactions.status IN (1, 2)
+                             AND safs.status = 1
+                             AND transactions.tran_date BETWEEN '$fromDate' AND '$toDate'
+                             " . ($zoneId ? "AND safs.zone_mstr_id = $zoneId " : "") . "
+                             " . ($wardId ? "AND safs.ward_mstr_id = $wardId " : "") . "
+                     )
+                     UNION
+                     (
+                         SELECT
+                             safs.assessment_type,
+                             safs.id,
+                             safs.ward_mstr_id,
+                             safs.zone_mstr_id,
+                             transactions.id AS tran_id
+                         FROM prop_rejected_safs safs
+                         JOIN prop_transactions transactions ON transactions.saf_id = safs.id
+                         WHERE
+                             safs.is_gb_saf = TRUE
+                             AND transactions.status IN (1, 2)
+                             AND safs.status = 1
+                             AND transactions.tran_date BETWEEN '$fromDate' AND '$toDate'
+                             " . ($zoneId ? "AND safs.zone_mstr_id = $zoneId " : "") . "
+                             " . ($wardId ? "AND safs.ward_mstr_id = $wardId " : "") . "
+                     )
+                     UNION
+                     (
+                         SELECT
+                             safs.assessment_type,
+                             safs.id,
+                             safs.ward_mstr_id,
+                             safs.zone_mstr_id,
+                             transactions.id AS tran_id
+                         FROM prop_safs safs
+                         JOIN prop_transactions transactions ON transactions.saf_id = safs.id
+                         WHERE
+                             safs.is_gb_saf = TRUE
+                             AND transactions.status IN (1, 2)
+                             AND safs.status = 1
+                             AND transactions.tran_date BETWEEN '$fromDate' AND '$toDate'
+                             " . ($zoneId ? "AND safs.zone_mstr_id = $zoneId " : "") . "
+                             " . ($wardId ? "AND safs.ward_mstr_id = $wardId " : "") . "
+                     )
+                 ),
+                 fine_rebate AS (
+                     SELECT
+                         SUM(CASE WHEN prop_penaltyrebates.is_rebate = TRUE THEN prop_penaltyrebates.amount ELSE 0 END) AS rebate,
+                         SUM(CASE WHEN prop_penaltyrebates.is_rebate != TRUE THEN prop_penaltyrebates.amount ELSE 0 END) AS penalty,
+                         tran_id
+                     FROM prop_penaltyrebates
+                     JOIN prop_transactions transactions ON transactions.id = prop_penaltyrebates.tran_id
+                     GROUP BY prop_penaltyrebates.tran_id
+                 )
+                 
+                 SELECT
+                     assessment_types.assessment_type AS saf_type,
+                     COUNT(DISTINCT safs.id) AS total_application,
+                     COUNT(transactions.id) AS total_bill_cute,
+                     SUM(COALESCE(transactions.amount, 0)) AS amount,
+                     SUM(COALESCE(rebate, 0)) AS rebate,
+                     SUM(COALESCE(penalty, 0)) AS penalty,
+                     (SUM(COALESCE(transactions.amount, 0)) - SUM(COALESCE(rebate, 0))) AS total_demand
+                 FROM assessment_types
+                 LEFT JOIN safs ON safs.assessment_type = assessment_types.assessment_type
+                 LEFT JOIN prop_transactions transactions ON safs.tran_id = transactions.id
+                     AND transactions.status IN (1, 2)
+                     AND transactions.tran_date BETWEEN '$fromDate' AND '$toDate'
+                 LEFT JOIN fine_rebate ON fine_rebate.tran_id = transactions.id
+                 GROUP BY assessment_types.assessment_type;
+             ";
+ 
+         
+             $data = DB::select($query);
+             return responseMsg(true, "Saf applied report", $data, "010501", "1.0", "", "POST", "");
+         }
+         catch (Exception $e) {
+             return responseMsg(false, $e->getMessage(), "");
+         }
+     }
+ 
+     public function safAppliedTypesDetailsReport(Request $request)
+     {
+         try{
+ 
+            $query = "
+                        SELECT 
+                    prop_safs.saf_no,
+                    prop_safs.id AS Saf_id,
+                    zone_masters.zone_name,
+                    ulb_ward_masters.ward_name,
+                    prop_safs.prop_address,
+                    prop_safs.holding_no,
+                    prop_transactions.amount,
+                    prop_transactions.payment_mode,
+                    prop_safs.assessment_type,
+                
+                    owner.owner_name,
+                    owner.mobile_no
+                FROM prop_transactions
+                join (
+                    (
+                        select prop_safs.saf_no,prop_safs.id,prop_safs.prop_address,prop_safs.assessment_type,prop_safs.holding_no,
+                            prop_safs.ward_mstr_id,prop_safs.zone_mstr_id
+                        from prop_active_safs as prop_safs
+                        join prop_transactions on prop_transactions.saf_id = prop_safs.id
+                    )	
+                    union(
+                        select prop_safs.saf_no,prop_safs.id,prop_safs.prop_address,prop_safs.assessment_type,prop_safs.holding_no,
+                            prop_safs.ward_mstr_id,prop_safs.zone_mstr_id
+                        from prop_rejected_safs as prop_safs
+                        join prop_transactions on prop_transactions.saf_id = prop_safs.id
+                    )
+                    union(
+                        select prop_safs.saf_no,prop_safs.id,prop_safs.prop_address,prop_safs.assessment_type,prop_safs.holding_no,
+                            prop_safs.ward_mstr_id,prop_safs.zone_mstr_id
+                        from prop_safs as prop_safs
+                        join prop_transactions on prop_transactions.saf_id = prop_safs.id
+                    )
+                )prop_safs on prop_safs.id = prop_transactions.saf_id
+                JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_safs.ward_mstr_id
+                JOIN zone_masters ON zone_masters.id = prop_safs.zone_mstr_id
+                --JOIN prop_active_safs ON prop_active_safs.holding_no = prop_safs.holding_no
+                --JOIN prop_transactions ON prop_transactions.saf_id = prop_safs.id 
+    
+                LEFT JOIN (
+                    (
+                        SELECT
+                            prop_owners.saf_id,
+                            STRING_AGG(prop_owners.owner_name, ',') AS owner_name,
+                            STRING_AGG(CAST(prop_owners.mobile_no AS TEXT), ',') AS mobile_no       
+                        FROM prop_active_safs_owners as  prop_owners
+                        join prop_transactions on prop_transactions.saf_id = prop_owners.saf_id
+                        WHERE prop_owners.status = 1
+                        GROUP BY prop_owners.saf_id
+                    )
+                    union(
+                        SELECT
+                            prop_owners.saf_id,
+                            STRING_AGG(prop_owners.owner_name, ',') AS owner_name,
+                            STRING_AGG(CAST(prop_owners.mobile_no AS TEXT), ',') AS mobile_no       
+                        FROM prop_rejected_safs_owners as  prop_owners
+                        join prop_transactions on prop_transactions.saf_id = prop_owners.saf_id
+                        WHERE prop_owners.status = 1
+                        GROUP BY prop_owners.saf_id
+                    )
+                    union(
+                        SELECT
+                            prop_owners.saf_id,
+                            STRING_AGG(prop_owners.owner_name, ',') AS owner_name,
+                            STRING_AGG(CAST(prop_owners.mobile_no AS TEXT), ',') AS mobile_no       
+                        FROM prop_safs_owners as  prop_owners
+                        join prop_transactions on prop_transactions.saf_id = prop_owners.saf_id
+                        WHERE prop_owners.status = 1
+                        GROUP BY prop_owners.saf_id
+                    )
+                ) AS owner ON owner.saf_id = prop_safs.id;
+    
+            ";
+            $data = DB::select($query);
+            return responseMsg(true, "Saf applied report", $data, "010501", "1.0", "", "POST", "");
+        }
+        catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+     }
+ 
+     public function safDemandCollectionReport(Request $request)
+     {
+         try{
+ 
+            $query = "
+                        SELECT 
+                    prop_safs.saf_no,
+                    prop_safs.id AS Saf_id,
+                    zone_masters.zone_name,
+                    ulb_ward_masters.ward_name,
+                    prop_safs.prop_address,
+                    prop_safs.holding_no,
+                    prop_transactions.amount,
+                    prop_safs.assessment_type,
+                
+                    owner.owner_name,
+                    owner.mobile_no
+                FROM prop_transactions
+                join (
+                    (
+                        select prop_safs.saf_no,prop_safs.id,prop_safs.prop_address,prop_safs.assessment_type,prop_safs.holding_no,
+                            prop_safs.ward_mstr_id,prop_safs.zone_mstr_id
+                        from prop_active_safs as prop_safs
+                        join prop_transactions on prop_transactions.saf_id = prop_safs.id
+                    )	
+                    union(
+                        select prop_safs.saf_no,prop_safs.id,prop_safs.prop_address,prop_safs.assessment_type,prop_safs.holding_no,
+                            prop_safs.ward_mstr_id,prop_safs.zone_mstr_id
+                        from prop_rejected_safs as prop_safs
+                        join prop_transactions on prop_transactions.saf_id = prop_safs.id
+                    )
+                    union(
+                        select prop_safs.saf_no,prop_safs.id,prop_safs.prop_address,prop_safs.assessment_type,prop_safs.holding_no,
+                            prop_safs.ward_mstr_id,prop_safs.zone_mstr_id
+                        from prop_safs as prop_safs
+                        join prop_transactions on prop_transactions.saf_id = prop_safs.id
+                    )
+                )prop_safs on prop_safs.id = prop_transactions.saf_id
+                JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_safs.ward_mstr_id
+                JOIN zone_masters ON zone_masters.id = prop_safs.zone_mstr_id
+                --JOIN prop_active_safs ON prop_active_safs.holding_no = prop_safs.holding_no
+                --JOIN prop_transactions ON prop_transactions.saf_id = prop_safs.id 
+    
+                LEFT JOIN (
+                    (
+                        SELECT
+                            prop_owners.saf_id,
+                            STRING_AGG(prop_owners.owner_name, ',') AS owner_name,
+                            STRING_AGG(CAST(prop_owners.mobile_no AS TEXT), ',') AS mobile_no       
+                        FROM prop_active_safs_owners as  prop_owners
+                        join prop_transactions on prop_transactions.saf_id = prop_owners.saf_id
+                        WHERE prop_owners.status = 1
+                        GROUP BY prop_owners.saf_id
+                    )
+                    union(
+                        SELECT
+                            prop_owners.saf_id,
+                            STRING_AGG(prop_owners.owner_name, ',') AS owner_name,
+                            STRING_AGG(CAST(prop_owners.mobile_no AS TEXT), ',') AS mobile_no       
+                        FROM prop_rejected_safs_owners as  prop_owners
+                        join prop_transactions on prop_transactions.saf_id = prop_owners.saf_id
+                        WHERE prop_owners.status = 1
+                        GROUP BY prop_owners.saf_id
+                    )
+                    union(
+                        SELECT
+                            prop_owners.saf_id,
+                            STRING_AGG(prop_owners.owner_name, ',') AS owner_name,
+                            STRING_AGG(CAST(prop_owners.mobile_no AS TEXT), ',') AS mobile_no       
+                        FROM prop_safs_owners as  prop_owners
+                        join prop_transactions on prop_transactions.saf_id = prop_owners.saf_id
+                        WHERE prop_owners.status = 1
+                        GROUP BY prop_owners.saf_id
+                    )
+                ) AS owner ON owner.saf_id = prop_safs.id;
+    
+            ";
+            $data = DB::select($query);
+            return responseMsg(true, "Saf applied report", $data, "010501", "1.0", "", "POST", "");
+        }
+        catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+     }
+     #======================================================*/
 }

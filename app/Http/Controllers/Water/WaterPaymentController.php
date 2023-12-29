@@ -864,7 +864,6 @@ class WaterPaymentController extends Controller
         if ($duePaymentAmount < 0) {
             $duePaymentAmount = 0;
         }
-
         # checking the advance amount 
         $allunpaidCharges = $mWaterConsumerDemand->getFirstConsumerDemandV2($consumerId)
             ->get();
@@ -3287,6 +3286,33 @@ class WaterPaymentController extends Controller
 
             return responseMsgs(true, "payment initiated successfully!", $request->all(), "", "01", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
+
+    #cheque details update
+    public function chequeUpdetails(Request $request){
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "bankName" => "required|",
+                "branchName" => "required|",
+                "chequeDate" => "required|",
+                "chequeNo" => "required|",
+                "chequeclearDate" => "required|",
+                "documents" => "required|",
+                "remarks" => "required|",
+
+            ]
+        );
+        if ($validated->fails()) {
+            return validationError($validated);
+        }
+        try{
+
+        }
+
+        catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
     }

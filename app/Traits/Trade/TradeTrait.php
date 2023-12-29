@@ -327,9 +327,12 @@ trait TradeTrait
                     ->where("id", $refLicenc->ward_id)
                     ->first();
                 $ward_no = $ward_no['ward_name'];
-                $license_no = $short_ulb_name . $ward_no . date("mdY") . $refLicenc->id;
-                $valid_from = $refLicenc->application_date;
-                $valid_upto = date("Y-m-d", strtotime("+$licence_for_years years", strtotime("-1 days",strtotime($refLicenc->application_date))));
+                $license_no = $short_ulb_name . $ward_no .  $refLicenc->id;
+                // $valid_from = $refLicenc->application_date;
+                // $valid_upto = date("Y-m-d", strtotime("+$licence_for_years years", strtotime("-1 days",strtotime($refLicenc->application_date))));
+                list($valid_from,$valid_upto) = FyearFromUptoDate();
+                // $valid_from = getFY();
+                // $valid_upto = date("Y-m-d", strtotime("+$licence_for_years years", strtotime("-1 days",strtotime($refLicenc->application_date))));
             }
             # 2 RENEWAL
             if ($refLicenc->application_type_id == 2) 
@@ -350,6 +353,7 @@ trait TradeTrait
                     $priv_m_d = date('m-d', strtotime($valid_from));
                     $date = date('Y', strtotime($valid_from)) . '-' . $priv_m_d;
                     $licence_for_years2 = $licence_for_years + $year_diff;
+                    list($valid_from,$valid_upto) = FyearFromUptoDate();
                     $valid_upto = date('Y-m-d', strtotime("-1 days",strtotime($date . "+" . $licence_for_years2 . " years")));
                     $data['valid_upto'] = $valid_upto;
                     $this->addReniwalLicense($prive_licence);
@@ -372,6 +376,7 @@ trait TradeTrait
                 else
                     $valid_upto = $oneYear_validity;
                 $valid_from = date('Y-m-d');
+                list($valid_from,$valid_upto) = FyearFromUptoDate();
                 $this->addReniwalLicense($prive_licence);
             }
 
@@ -528,6 +533,7 @@ trait TradeTrait
             $valid_from = $prive_licence->valid_from??"";
             $valid_upto = $prive_licence->valid_upto??"";
         }
+        list($valid_from,$valid_upto) = FyearFromUptoDate();
         if(!$refLicenc->valid_from)
             $refLicenc->valid_from = $valid_from?date("d-m-Y",strtotime($valid_from)):"";
         if(!$refLicenc->valid_upto)
