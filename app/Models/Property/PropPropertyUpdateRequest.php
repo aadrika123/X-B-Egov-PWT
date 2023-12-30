@@ -158,4 +158,9 @@ class PropPropertyUpdateRequest extends Model
     {
         return $this->hasMany(PropOwnerUpdateRequest::class,"request_id","id")->where("prop_owner_update_requests.status",1);
     }
+
+    public function getFloorsUpdateReq()
+    {
+        return $this->hasMany(PropFloorsUpdateRequest::class,"request_id","id")->where("prop_floors_update_requests.status",1);
+    }
 }

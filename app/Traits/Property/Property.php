@@ -4,6 +4,7 @@ namespace App\Traits\Property;
 
 use App\Http\Controllers\Property\ActiveSafController;
 use App\Models\Property\PropFloor;
+use App\Models\Property\PropFloorsUpdateRequest;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropOwnerUpdateRequest;
 use App\Models\Property\PropProperty;
@@ -150,6 +151,38 @@ trait Property
         return $arr;
     }
 
+    public function generatePropFloarUpdateRequest(array $request,PropFloor $floors,bool $fullEdit=false)
+    {
+        $request=(object) $request;
+        $arr=[];
+        if($fullEdit)
+        {
+            if ($request->usageType == 1)
+                $carpetArea =  ($request->buildupArea ?? $floors->builtup_area) * 0.70;
+            else
+                $carpetArea =  ($request->buildupArea ?? $floors->builtup_area) * 0.80;
+            $arr=[
+                "propId"=>$floors->property_id,
+                "logs"=>json_encode($floors->toArray(),JSON_UNESCAPED_UNICODE),
+                "floorId"=>$floors->id,
+                "propFloorDetailId"=>$request->propFloorDetailId ?? $floors->prop_floor_details_id,
+                "floorNo"=>$request->floorNo ?? $floors->floor_mstr_id,
+                "usageType"=>$request->usageType ?? $floors->usage_type_mstr_id,
+                "constructionType"=>$request->constructionType ?? $floors->const_type_mstr_id,
+                "occupancyType"=>$request->occupancyType ?? $floors->occupancy_type_mstr_id,
+                "buildupArea"=>$request->buildupArea ?? $floors->builtup_area,
+                "dateFrom"=>$request->dateFrom ?? $floors->date_from,
+                "dateUpto"=>$request->dateUpto ?? $floors->date_upto,
+                "carpetArea" => $carpetArea,
+                "noOfRooms" => $request->noOfRooms ?? $floors->no_of_rooms,
+                "noOfToilet" => $request->noOfToilet ?? $floors->no_of_toilets,
+
+            ];
+
+        }
+        return $arr;
+    }
+
     public function updateProperty(PropPropertyUpdateRequest $UpdateRequest)
     {
         $prop = PropProperty::find($UpdateRequest->prop_id);
@@ -221,7 +254,7 @@ trait Property
             "tower_area" => $UpdateRequest->tower_area,
             "tower_installation_date"=> $UpdateRequest->tower_installation_date,
 
-            "isHoardingBoard" =>  $UpdateRequest->is_hoarding_board,
+            "is_hoarding_board" =>  $UpdateRequest->is_hoarding_board,
             "hoarding_area" => $UpdateRequest->hoarding_area,
             "hoarding_installation_date"=> $UpdateRequest->hoarding_installation_date,
             
@@ -287,6 +320,24 @@ trait Property
             "is_armed_force" =>  $UpdateRequest->is_armed_force,
             "is_specially_abled" =>   $UpdateRequest->is_specially_abled,
             ];
+    }
+
+    public function updatePropFloorPrimary(PropFloorsUpdateRequest $UpdateRequest)
+    {
+        return $arr= [
+            "property_id" => $UpdateRequest->property_id,  
+            "saf_id" => $UpdateRequest->saf_id, 
+            "floor_mstr_id" => $UpdateRequest->floor_mstr_id,
+            "usage_type_mstr_id" => $UpdateRequest->usage_type_mstr_id, 
+            "const_type_mstr_id" => $UpdateRequest->const_type_mstr_id, 
+            "occupancy_type_mstr_id" => $UpdateRequest->occupancy_type_mstr_id,
+            "builtup_area" => $UpdateRequest->builtup_area,
+            "date_from" =>$UpdateRequest->date_from,
+            "date_upto" => $UpdateRequest->date_upto,
+            "carpet_area" => $UpdateRequest->carpet_area,
+            "no_of_rooms" => $UpdateRequest->no_of_rooms,
+            "no_of_toilets" => $UpdateRequest->no_of_toilets,
+        ];
     }
 
     public function PropUpdateCom(PropPropertyUpdateRequest $application)
@@ -740,6 +791,112 @@ trait Property
             ];
         }
         return $ownerCom;
+    }
+
+    public function FloorUpdateCom(PropPropertyUpdateRequest $application)
+    {
+        $floorCom = [];
+        $floors = $application->getFloorsUpdateReq()->get(); 
+        $controller = App::makeWith(ActiveSafController::class,["iSafRepository"=>app(\App\Repository\Property\Interfaces\iSafRepository::class)]);
+        $response = $controller->masterSaf(new Request);
+        if(!$response->original["status"]) 
+        {
+            throw new Exception("Master Data Not Found");
+        }       
+        $data = $response->original["data"];
+        $categories = $data["categories"];        
+        $categoriesIds = collect($categories)->implode("id",",");
+
+        $construction_type = $data["construction_type"];
+        $construction_typeIds = collect($construction_type)->implode("id",",");
+        
+        $floor_type = $data["floor_type"];
+        $floor_typeIds = collect($floor_type)->implode("id",",");
+        
+        $occupancy_type = $data["occupancy_type"];
+        $occupancy_typeIds = collect($occupancy_type)->implode("id",",");
+        
+        $ownership_types = $data["ownership_types"];
+        $ownership_typesIds = collect($ownership_types)->implode("id",",");
+        
+        $property_type = $data["property_type"];
+        $property_typeIds = collect($property_type)->implode("id",",");
+        
+        $transfer_mode = $data["transfer_mode"];
+        $transfer_modeIds = collect($transfer_mode)->implode("id",",");
+        
+        $usage_type = $data["usage_type"];
+        $usage_typeIds = collect($usage_type)->implode("id",",");
+
+        $ward_master = $data["ward_master"];
+        $ward_masterIds = collect($ward_master)->implode("id",",");        
+        
+        
+
+        $zone = $data["zone"];
+        $zoneIds = collect($zone)->implode("id",",");
+        foreach($floors as $key=>$val)
+        {
+            $floorsLog = json_decode($val->logs);
+            $floorCom[]["values"]=[
+                [
+                    "key"=>"Floor No",
+                    "values" => ($floorsLog->floor_mstr_id ?? "") == ($val->floor_mstr_id ?? ""),
+                    "according_verification" => ((collect($floor_type)->where("id",$val->floor_mstr_id ?? "")->first())->floor_name??""),
+                    "according_application" => ((collect($floor_type)->where("id",$floorsLog->floor_mstr_id ?? "")->first())->floor_name??""),
+                ],
+                [
+                    "key"=>"usage Type",
+                    "values" => ($floorsLog->usage_type_mstr_id ?? "") == ($val->usage_type_mstr_id ?? ""),
+                    "according_verification" => ((collect($usage_type)->where("id",$val->usage_type_mstr_id ?? "")->first())->usage_type??""),
+                    "according_application" => ((collect($usage_type)->where("id",$floorsLog->usage_type_mstr_id ?? "")->first())->usage_type??""),
+                ],
+                [
+                    "key"=>"construction Type",
+                    "values" => ($floorsLog->const_type_mstr_id ?? "") == ($val->const_type_mstr_id ?? ""),
+                    "according_verification" => ((collect($construction_type)->where("id",$val->const_type_mstr_id ?? "")->first())->construction_type??""),
+                    "according_application" => ((collect($construction_type)->where("id",$floorsLog->const_type_mstr_id ?? "")->first())->construction_type??""),
+                ],
+                [
+                    "key"=>"occupancy Type",
+                    "values" => ($floorsLog->occupancy_type_mstr_id ?? "") == ($val->occupancy_type_mstr_id ?? ""),
+                    "according_verification" => ((collect($occupancy_type)->where("id",$val->occupancy_type_mstr_id ?? "")->first())->occupancy_type??""),
+                    "according_application" => ((collect($occupancy_type)->where("id",$floorsLog->occupancy_type_mstr_id ?? "")->first())->occupancy_type??""),
+                ],
+                [
+                    "key"=>"builtup area",
+                    "values" => ($floorsLog->builtup_area ?? "") == ($val->builtup_area ?? ""),
+                    "according_verification" => $val->builtup_area ? $val->builtup_area : null,
+                    "according_application" => $floorsLog->builtup_area ? $floorsLog->builtup_area : null,
+                ],
+                [
+                    "key"=>"date from",
+                    "values" => ($floorsLog->date_from ?? "") == ($val->date_from ?? ""),
+                    "according_verification" => $val->date_from ? Carbon::parse($val->date_from)->format("d-m-Y"): null,
+                    "according_application" => $floorsLog->date_from ? Carbon::parse($floorsLog->date_from)->format("d-m-Y"): null,
+                ],
+                [
+                    "key"=>"date upto",
+                    "values" => ($floorsLog->date_upto ?? "") == ($val->date_upto ?? ""),
+                    "according_verification" => $val->date_upto ? Carbon::parse($val->date_upto)->format("d-m-Y"): null,
+                    "according_application" => $floorsLog->date_upto ? Carbon::parse($floorsLog->date_upto)->format("d-m-Y"): null,
+                ],
+                [
+                    "key"=>"no. of rooms",
+                    "values" => ($floorsLog->no_of_rooms ?? "") == ($val->no_of_rooms ?? ""),
+                    "according_verification" => $val->no_of_rooms ? $val->no_of_rooms: null,
+                    "according_application" => $floorsLog->no_of_rooms ? $floorsLog->no_of_rooms: null,
+                ],
+                [
+                    "key"=>"no. of toilets",
+                    "values" => ($floorsLog->no_of_toilets ?? "") == ($val->no_of_toilets ?? ""),
+                    "according_verification" => $val->no_of_toilets ? $val->no_of_toilets: null,
+                    "according_application" => $floorsLog->no_of_toilets ? $floorsLog->no_of_toilets: null,
+                ],
+                
+            ];
+        }
+        return $floorCom;
     }
 
     public function generatePropFloar(Request $request,PropFloor $floors)
