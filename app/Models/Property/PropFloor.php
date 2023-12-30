@@ -156,6 +156,15 @@ class PropFloor extends Model
     }
 
     /**
+     * | Independent Edit
+     */
+    public function edit($floorId, $req)
+    {
+        $property = PropFloor::findOrFail($floorId);
+        return $property->update($req);
+    }
+
+    /**
      * | Add new Floor
      */
     public function postFloor($req)

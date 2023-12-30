@@ -7,6 +7,7 @@ use App\Models\ActiveCitizen;
 use App\Models\OtpMaster;
 use App\Models\OtpRequest;
 use App\Models\User;
+use Carbon\Carbon;
 use Seshac\Otp\Otp;
 use Exception;
 use Illuminate\Http\Request;
@@ -106,5 +107,15 @@ class ThirdPartyController extends Controller
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", "");
         }
+    }
+
+    /**
+     * | Generate Random OTP 
+     */
+    public function generateOtp()
+    {
+        $otp = str_pad(Carbon::createFromDate()->milli . random_int(100, 999),6,0);
+        // $otp = 123123;
+        return $otp;
     }
 }
