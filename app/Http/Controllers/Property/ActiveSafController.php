@@ -1438,11 +1438,12 @@ class ActiveSafController extends Controller
                 $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);          // Get fields Verified Saf with all Floor Details
             else{
                 $fieldVerifiedSaf = $propSafVerification->getVerifications($safId);
-                if(collect($fieldVerifiedSaf)->isEmpty())
-                {
-                    $fieldVerifiedSaf = $propSafVerification->getVerifications2($safId);
-                }
             }
+            if(collect($fieldVerifiedSaf)->isEmpty())
+            {
+                $fieldVerifiedSaf = $propSafVerification->getVerifications2($safId);
+            }
+            
             if (collect($fieldVerifiedSaf)->isEmpty())
                 throw new Exception("Site Verification not Exist");
 
