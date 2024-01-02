@@ -342,25 +342,23 @@ class PropertyController extends Controller
             "owner.*.ownerNameMarathi"  => "required|string",
             "owner.*.mobileNo"          => "nullable|digits:10|regex:/[0-9]{10}/",
             "owner.*.aadhar"            => "digits:12|regex:/[0-9]{12}/|nullable",
-            "owner.*.pan"               => "string|nullable",            
+            "owner.*.pan"               => "string|nullable",
         ];
-        if($req->isFullUpdate )
-        {
-            $rules["propertyType"] ="required|integer" ;
-            $rules["areaOfPlot"] ="required|numeric" ;
-            $rules["category"] ="required|integer" ;
-            $rules["dateOfPurchase"] ="required|date|date_format:Y-m-d|before_or_equal:$todayDate" ;
-            $rules["propertyType"] ="required|integer" ;
+        if ($req->isFullUpdate) {
+            $rules["propertyType"] = "required|integer";
+            $rules["areaOfPlot"] = "required|numeric";
+            $rules["category"] = "required|integer";
+            $rules["dateOfPurchase"] = "required|date|date_format:Y-m-d|before_or_equal:$todayDate";
+            $rules["propertyType"] = "required|integer";
         }
-        if($req->has('propertyType') && $req->propertyType!=4)
-        {
-            $rules["floor"] ="required|array" ;
+        if ($req->has('propertyType') && $req->propertyType != 4) {
+            $rules["floor"] = "required|array";
             $rules["floor.*.floorId"] = "nullable|digits_between:1,9223372036854775807";
-            $rules["floor.*.floorNo"] ="required|integer" ;
-            $rules["floor.*.constructionType"] ="required|integer" ;
-            $rules["floor.*.usageType"] ="required|integer" ;
-            $rules["floor.*.buildupArea"] ="required|numeric" ;
-            $rules["floor.*.dateFrom"] ="required|date|date_format:Y-m-d|before_or_equal:$req->todayDate".($req->assessmentType==3?"":"|after_or_equal:$req->dateOfPurchase") ;
+            $rules["floor.*.floorNo"] = "required|integer";
+            $rules["floor.*.constructionType"] = "required|integer";
+            $rules["floor.*.usageType"] = "required|integer";
+            $rules["floor.*.buildupArea"] = "required|numeric";
+            $rules["floor.*.dateFrom"] = "required|date|date_format:Y-m-d|before_or_equal:$req->todayDate" . ($req->assessmentType == 3 ? "" : "|after_or_equal:$req->dateOfPurchase");
         }
         $validated = Validator::make(
             $req->all(),
@@ -413,7 +411,7 @@ class PropertyController extends Controller
             $document       = $req->document;
             $refImageName   = $req->propertyId . "-" . (strtotime(Carbon::now()->format('Y-m-dH:s:i')));
             $imageName      = $docUpload->upload($refImageName, $document, $relativePath);
-            
+
             $roadWidthType = $this->readRoadWidthType($req->roadType);
 
             $metaReqs["supportingDocument"] = ($relativePath . "/" . $imageName);
@@ -425,11 +423,10 @@ class PropertyController extends Controller
             $metaReqs['userId']             = $refUserId;
             $metaReqs['pendingStatus']      = 1;
             $req->merge($metaReqs);
-            if(!$req->has('isFullUpdate'))
-            {
+            if (!$req->has('isFullUpdate')) {
                 $req->merge(["isFullUpdate" => false]);
             }
-            
+
             $propRequest = $this->generatePropUpdateRequest($req, $prop, $req->isFullUpdate);
             $propRequest["dateOfPurchase"] = $req->landOccupationDate;
             $req->merge($propRequest);
@@ -437,13 +434,12 @@ class PropertyController extends Controller
             DB::beginTransaction();
             $updetReq = $rPropProerty->store($req);
             foreach ($req->owner as $val) {
-                $testOwner = $mPropOwners->select("*")->where("id", ($val["ownerId"]??0))->where("property_id", $propId)->first();
-                if (!$testOwner && ($val["ownerId"]??0)) {
+                $testOwner = $mPropOwners->select("*")->where("id", ($val["ownerId"] ?? 0))->where("property_id", $propId)->first();
+                if (!$testOwner && ($val["ownerId"] ?? 0)) {
                     throw new Exception("Invalid Owner Id Pass");
                 }
-                if(!$testOwner)
-                {
-                    $testOwner = new PropOwner ();
+                if (!$testOwner) {
+                    $testOwner = new PropOwner();
                     $testOwner->property_id = $propId;
                 }
                 $newOwnerArr = $this->generatePropOwnerUpdateRequest($val, $testOwner, true);
@@ -451,17 +447,14 @@ class PropertyController extends Controller
                 $newOwnerArr["userId"] = $refUlbId;
                 $rPropOwners->store($newOwnerArr);
             }
-            if($req->isFullUpdate && $req->propertyType!=4)
-            {
-                foreach ($req->floor as $val) 
-                {
-                    $testFloor = $mPropFloors->select("*")->where("id", ($val["floorId"]??0))->where("property_id", $propId)->first();
-                    if (!$testFloor && ($val["floorId"]??0)) {
+            if ($req->isFullUpdate && $req->propertyType != 4) {
+                foreach ($req->floor as $val) {
+                    $testFloor = $mPropFloors->select("*")->where("id", ($val["floorId"] ?? 0))->where("property_id", $propId)->first();
+                    if (!$testFloor && ($val["floorId"] ?? 0)) {
                         throw new Exception("Invalid Owner Id Pass");
                     }
-                    if(!$testFloor)
-                    {
-                        $testFloor = new PropFloor ();
+                    if (!$testFloor) {
+                        $testFloor = new PropFloor();
                         $testFloor->property_id = $propId;
                     }
                     $newFloorArr = $this->generatePropFloarUpdateRequest($val, $testFloor, true);
@@ -924,9 +917,9 @@ class PropertyController extends Controller
                 $propUpdate = (new PropProperty)->edit($application->prop_id, $propArr);
                 foreach ($owneres as $val) {
                     $ownerArr = $this->updatePropOwner($val);
-                    if($val->owner_id)
+                    if ($val->owner_id)
                         $ownerUpdate = (new PropOwner)->edit($val->owner_id, $ownerArr);
-                    else{
+                    else {
                         $ownerArr["property_id"] = $application->prop_id;
                         $ownerArr["status"] = 1;
                         $ownerArr["saf_id"] = null;
@@ -935,14 +928,12 @@ class PropertyController extends Controller
                         $ownerUpdate = (new PropOwner)->postOwner((object)$ownerArr);
                     }
                 }
-                if($application->is_full_update)
-                {
-                    foreach($floors as $val)
-                    {
+                if ($application->is_full_update) {
+                    foreach ($floors as $val) {
                         $floorArr = $this->updatePropFloorPrimary($val);
-                        if($val->floor_id)
+                        if ($val->floor_id)
                             $floorUpdate = (new PropFloor())->edit($val->floor_id, $floorArr);
-                        else{
+                        else {
                             $floorArr["property_id"] = $application->prop_id;
                             $floorArr["status"] = 1;
                             $floorArr["saf_id"] = null;
@@ -968,14 +959,14 @@ class PropertyController extends Controller
             $application->approval_date = Carbon::now()->format('Y-m-d');
             $application->approved_by = $user_id;
             $application->update();
-            
+
             DB::commit();
             DB::connection("pgsql_master")->commit();
             return responseMsgs(true, $msg, "", '010811', '01', '474ms-573', 'Post', '');
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection("pgsql_master")->rollBack();
-            return responseMsg(false,$e->getMessage(), "");
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 
@@ -1636,7 +1627,7 @@ class PropertyController extends Controller
      */
     public function TaxCorrection(Request $request)
     {
-        try{
+        try {
             $sql = "
             select prop_safs.id,prop_safs.saf_no,
                 prop_properties.id as prop_id,
@@ -1657,29 +1648,26 @@ class PropertyController extends Controller
             $property = DB::select($sql);
             $new = new Request();
             $new->merge($request->all());
-            $controller = App::makeWith(ActiveSafController::class,["iSafRepository",iSafRepository::class]);
-            foreach($property as $val)
-            {
+            $controller = App::makeWith(ActiveSafController::class, ["iSafRepository", iSafRepository::class]);
+            foreach ($property as $val) {
                 DB::beginTransaction();
                 $safDtls = PropSaf::find($val->id);
                 $calculateSafTaxById = new \App\BLL\Property\Akola\CalculateSafTaxById($safDtls);
-                $demand = $calculateSafTaxById->_GRID;                
-                foreach($demand["fyearWiseTaxes"] as $cdemand)
-                {
-                    $oldDemands = PropDemand::where("fyear",$cdemand["fyear"])
-                                ->where("property_id",$val->prop_id)
-                                ->where("paid_status",0)
-                                ->first();
+                $demand = $calculateSafTaxById->_GRID;
+                foreach ($demand["fyearWiseTaxes"] as $cdemand) {
+                    $oldDemands = PropDemand::where("fyear", $cdemand["fyear"])
+                        ->where("property_id", $val->prop_id)
+                        ->where("paid_status", 0)
+                        ->first();
                     $insertSql = "insert into tax_currectins( property_id, demand_id, logs, user_id)
-                        values(".
-                            $val->prop_id.",".
-                            ($oldDemands->id??'null').",".
-                            "'".json_encode($oldDemands??'null')."',".
-                            (Auth()->user()->id??0)
-                        .") ";
+                        values(" .
+                        $val->prop_id . "," .
+                        ($oldDemands->id ?? 'null') . "," .
+                        "'" . json_encode($oldDemands ?? 'null') . "'," .
+                        (Auth()->user()->id ?? 0)
+                        . ") ";
                     DB::select($insertSql);
-                    if($oldDemands)
-                    {
+                    if ($oldDemands) {
                         $oldDemands->tree_tax = $cdemand["treeTax"];
                         $oldDemands->total_tax = $cdemand["totalTax"];
                         $oldDemands->balance = $cdemand["totalTax"];
@@ -1692,11 +1680,43 @@ class PropertyController extends Controller
                 }
                 DB::commit();
             }
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             DB::rollback();
-            return responseMsgs(false, [$e->getMessage(),$e->getFile(),$e->getLine()], "");
+            return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "");
+        }
+    }
+
+    /**
+     * | Update Mobile18
+     */
+    public function updateMobile(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                "propertyId" => "required|integer",
+                "ownerId"    => "required|integer",
+                "mobileNo"   => "required|digits:10|regex:/[0-9]{10}/",
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $ownerDetails = PropOwner::where('id', $req->ownerId)
+                ->where('property_id', $req->propertyId)
+                ->first();
+
+            if (!$ownerDetails)
+                throw new Exception("No Data Found Against this Owner");
+
+            $ownerDetails->old_mobile_no = $ownerDetails->mobile_no;
+            $ownerDetails->mobile_no = $req->mobileNo;
+            $ownerDetails->save();
+
+            return responseMsgs(true, "Mobile No Updated", [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
 }

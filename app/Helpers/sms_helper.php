@@ -64,9 +64,8 @@ if (!function_exists('SMSJHGOVT')) {
 if (!function_exists('send_sms')) {
     function send_sms($mobile, $message, $templateid)
     {
-        if(Config::get("sms-constants.sms_test"))
-        {
-            $mobile = "7050180186";
+        if (Config::get("sms-constants.sms_test")) {
+            $mobile = "8797770238";
         }
         $res = SMSAKGOVT($mobile, $message, $templateid);
         // print_var($message);
@@ -634,7 +633,7 @@ if (!function_exists('SMSAKGOVT')) {
                 "EntityID" => trim($entityID),
                 "TemplateID" => $templateid,
             );
-            
+
             $fields = '';
             foreach ($data as $key => $value) {
                 $fields .= $key . '=' . ($value) . '&';
@@ -648,7 +647,7 @@ if (!function_exists('SMSAKGOVT')) {
                 $response = ['response' => false, 'status' => 'failure', 'msg' => $responseBody["Response"]["Message"] ?? ""];
             }
 
-           
+
             return $response;
         } else {
             if ($templateid == NULL)
@@ -680,17 +679,17 @@ if (!function_exists("AkolaProperty")) {
                     'status' => false
                 );
             }
-        } elseif (strtoupper($sms_for) == strtoupper('Re Assessment')) {
+        } elseif (strtoupper($sms_for) == strtoupper('Reassessment')) {
             try {
                 //Dear {#var#}, your application Ref. No. {#var#} for re-assessment of Property No. {#var#} has been received. For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES 
-                $sms = "Dear " . $data["owner_name"] . ", your application Ref. No. " . $data["saf_no"] . " for re-assessment of Property No. " . $data["holding_no"] . " has been received. For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
+                $sms = "Dear " . $data["owner_name"] . ", your application Ref. No. " . $data["saf_no"] . " for " . $data["assessment_type"] . " of Property No. " . $data["holding_no"] . " has been received. For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
                 $temp_id = "1707169564187295411";
                 return array("sms" => $sms, "temp_id" => $temp_id, 'status' => true);
             } catch (Exception $e) {
                 return array(
                     "sms_formate" => "Dear {#var#}, your application Ref. No. {#var#} for re-assessment of Property No. {#var#} has been received. For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES ",
                     "discriuption" => "1. 2 para required 
-                        2. 1st para array('owner_name'=>'','saf_no'=>'','holding_no'=>'') sizeof 3  
+                        2. 1st para array('owner_name'=>'','saf_no'=>'','assessment_type'=>'','holding_no'=>'') sizeof 4  
                         3. 2nd para sms for ",
                     "error" => $e->getMessage(),
                     'status' => false
