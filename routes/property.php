@@ -405,6 +405,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('v1/holding-copy', 'getHoldingCopy');                         // 04
     Route::post('v1/old-tran_inserty', 'Entery');
     Route::post('v1/old-open_ploat_tax_currect', 'TaxCorrection');
+    Route::post('update-mobile', 'updateMobile');
   });
 
   /**
