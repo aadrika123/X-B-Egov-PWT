@@ -187,7 +187,7 @@ class Report implements IReport
                 return responseMsgs(true, "", remove_null($list), $apiId, $version, $queryRunTime, $action, $deviceId);
             }
 
-            $paginator = $data->paginate($perPage);            
+            $paginator = $data->paginate($perPage);
             // $items = $paginator->items();
             // $total = $paginator->total();
             // $numberOfPages = ceil($total / $perPage);
@@ -1149,7 +1149,7 @@ class Report implements IReport
                     "), function ($join) use ($fromDate, $uptoDate, $userId, $ulbId, $wardId, $zoneId) {
                     $sub = $join->on(DB::RAW("UPPER(prop_transactions.payment_mode)"), "=", DB::RAW("UPPER(payment_modes.mode) "))
                         ->WHERENOTNULL("prop_transactions.property_id")
-                        ->WHEREIN("prop_transactions.status", [1, 2])
+                        // ->WHEREIN("prop_transactions.status", [1, 2])
                         ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
                     if ($userId) {
                         $sub = $sub->WHERE("prop_transactions.user_id", $userId);
@@ -1298,7 +1298,7 @@ class Report implements IReport
                                                 WHERE wf_roles.is_suspended = FALSE 
                                                     AND wf_workflows.ulb_id = 2
                                                     AND wf_roles.id in (8,108)
-                                                    --AND wf_workflows.id in (3,4,5)
+                                                   -- AND wf_workflows.id in (3,4,5)
                                                 GROUP BY wf_roleusermaps.user_id
                                                 ORDER BY wf_roleusermaps.user_id
                                         ) collecter on prop_transactions.user_id  = collecter.role_user_id
@@ -1384,10 +1384,11 @@ class Report implements IReport
                 "amount"           => $totalTranJsk
             ];
             $funal["jsk"] = $jsk;
+            // $funal["query"] = DB::getQueryLog();
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $funal, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+            return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
 
