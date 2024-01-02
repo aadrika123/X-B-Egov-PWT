@@ -901,9 +901,13 @@ class WaterPaymentController extends Controller
         if (in_array($request['paymentMode'], $offlinePaymentModes)) {
             $charges->paid_status           = 2;                                        // Update Demand Paid Status // Static
             $charges->due_balance_amount    = 0;
+            $charges->arrear_demand         = 0;
+            $charges->current_demand        = 0;
             $mWaterTran->saveVerifyStatus($waterTrans['id']);
         } else {
             $charges->due_balance_amount    = 0;
+            $charges->arrear_demand         = 0;
+            $charges->current_demand        = 0;
             $charges->paid_status           = 1;                                        // Update Demand Paid Status // Static
             $charges->is_full_paid          = true;
         }
@@ -1681,7 +1685,7 @@ class WaterPaymentController extends Controller
             $mPaymentModes      = $this->_paymentModes;
 
             # transaction Deatils
-             $transactionDetails = $mWaterTran->getTransactionByTransactionNoV2($refTransactionNo, $refTranId)
+            $transactionDetails = $mWaterTran->getTransactionByTransactionNoV2($refTransactionNo, $refTranId)
                 ->where('tran_type', $mTranType['1'])
                 ->first();
 
@@ -2864,10 +2868,12 @@ class WaterPaymentController extends Controller
         $offlinePaymentModesV2      = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
         $refAmount                  = round($request->amount);
         $remaningAmount             = round($refConsumercharges->sum('due_balance_amount'));
+        $toatalArrearDemand         = round($consumercharges->sum('arrear_demand'));
+        $totalCurrentDemand         = round($consumercharges->sum('current_demand'));
+        $leftArrearAmount           = 0;
         if ($remaningAmount > $refAmount) {
             throw new Exception("please select the month properly for part payament!");
         }
-
         if (in_array($request['paymentMode'], $offlinePaymentModesV2)) {
             $popedDemand->paid_status = 2;                                       // Update Demand Paid Status // Static
             $mWaterTran->saveVerifyStatus($waterTrans['id']);
@@ -2875,14 +2881,17 @@ class WaterPaymentController extends Controller
             $popedDemand->paid_status = 1;                                      // Update Demand Paid Status // Static
         }
 
-        if (!$refConsumercharges->first()) {
-            $refPaidAmount      = ($consumercharges->sum('due_balance_amount')) - $refAmount;
-            $remaningBalance    = $refPaidAmount;
+        if ($refAmount <= $toatalArrearDemand) {
+            $leftArrearAmount = $toatalArrearDemand - $refAmount;
+            $popedDemand->current_demand     = $totalCurrentDemand;
         } else {
-            $refPaidAmount      = $refAmount - $refConsumercharges->sum('balance_amount');
-            $remaningBalance    = $popedDemand->due_balance_amount - $refPaidAmount;
+            $leftAmount  = $refAmount - $toatalArrearDemand;
+            $leftCurrentAmount = $totalCurrentDemand - $leftAmount;
+            $popedDemand->current_demand    = $leftCurrentAmount;
         }
-        $popedDemand->due_balance_amount = $remaningBalance;
+        $popedDemand->arrear_demand      = $leftArrearAmount;
+        $totalleftDemand = $popedDemand->arrear_demand + $popedDemand->current_demand;
+        $popedDemand->due_balance_amount = $totalleftDemand;
         $popedDemand->save();                                                   // Save Demand
 
         # Save transaction details 
@@ -2895,6 +2904,7 @@ class WaterPaymentController extends Controller
         );
         $mWaterConsumerCollection->saveConsumerCollection($popedDemand, $waterTrans, $request->auth['id'] ?? null, $refAmount);
     }
+
 
     /**
      * | Adjust the demand for part payament 
@@ -3291,7 +3301,8 @@ class WaterPaymentController extends Controller
     }
 
     #cheque details update
-    public function chequeUpdetails(Request $request){
+    public function chequeUpdetails(Request $request)
+    {
         $validated = Validator::make(
             $request->all(),
             [
@@ -3308,11 +3319,8 @@ class WaterPaymentController extends Controller
         if ($validated->fails()) {
             return validationError($validated);
         }
-        try{
-
-        }
-
-        catch (Exception $e) {
+        try {
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
     }

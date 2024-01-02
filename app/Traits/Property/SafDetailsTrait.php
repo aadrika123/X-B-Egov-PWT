@@ -16,7 +16,7 @@ trait SafDetailsTrait
     {
         return new Collection([
             ['displayString' => 'Ward No', 'key' => 'wardNo', 'value' => $data->old_ward_no, 'canBtc' => 'true', 'canEdit' => 'true'],
-            ['displayString' => 'New Ward No', 'key' => 'newWardNo', 'value' => $data->new_ward_no, 'canBtc' => 'true', 'canEdit' => 'true'],
+            // ['displayString' => 'New Ward No', 'key' => 'newWardNo', 'value' => $data->new_ward_no, 'canBtc' => 'true', 'canEdit' => 'true'],
             ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $data->ownership_type, 'canBtc' => 'true', 'canEdit' => 'true'],
             ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $data->property_type, 'canBtc' => 'true', 'canEdit' => 'true'],
             ['displayString' => 'Zone', 'key' => 'zone', 'value' => ($data->zone_mstr_id == 1) ? 'Zone 1' : 'Zone 2', 'canBtc' => 'true', 'canEdit' => 'false'],
@@ -128,7 +128,7 @@ trait SafDetailsTrait
     public function generateCardDetails($req, $ownerDetails)
     {
         $owners = collect($ownerDetails)->implode('owner_name', ',');
-        return new Collection([
+        $data = new Collection([
             ['displayString' => 'Ward No', 'key' => 'wardNo', 'value' => $req->old_ward_no],
             ['displayString' => 'SAF No.', 'key' => 'safNo', 'value' => $req->saf_no],
             ['displayString' => 'Owners', 'key' => 'ownerName', 'value' => $owners],
@@ -140,6 +140,13 @@ trait SafDetailsTrait
             ['displayString' => 'Is-Water-Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
             ['displayString' => 'Is-Hoarding-Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No']
         ]);
+        if(trim($req->propery_no))
+        {
+            $data->push(
+                ['displayString' => 'Property No', 'key' => 'properyNo', 'value' => $req->propery_no]
+            );
+        }
+        return $data;
     }
 
     /**

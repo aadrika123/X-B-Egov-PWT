@@ -760,10 +760,9 @@ class PropProperty extends Model
             ->leftJoin(DB::raw(
                 "(
                     SELECT property_id, 
-                        SUM(due_total_tax) AS due_total_tax			  
+                        SUM( case when paid_status = 1 then due_total_tax else total_tax end) AS due_total_tax 		  
                     FROM prop_demands   
-                    WHERE due_total_tax >0
-                        AND status=1
+                    WHERE status=1
                         AND((paid_status = 1 AND is_full_paid =false) OR (paid_status = 0 AND is_full_paid =true))
                     GROUP BY property_id
                 ) AS d"
