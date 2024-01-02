@@ -55,7 +55,7 @@ class ThirdPartyController extends Controller
                 $userDetails = ActiveCitizen::where('mobile', $request->mobileNo)
                     ->first();
                 if (!$userDetails) {
-                    throw new Exception("Pleas check your mobile.no!");
+                    throw new Exception("Please check your mobile.no!");
                 }
             }
             $generateOtp = $refIdGeneration->generateOtp();
@@ -114,7 +114,7 @@ class ThirdPartyController extends Controller
      */
     public function generateOtp()
     {
-        $otp = str_pad(Carbon::createFromDate()->milli . random_int(100, 999),6,0);
+        $otp = str_pad(Carbon::createFromDate()->milli . random_int(100, 999), 6, 0);
         // $otp = 123123;
         return $otp;
     }
