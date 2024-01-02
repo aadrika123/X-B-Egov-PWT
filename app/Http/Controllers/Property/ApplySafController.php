@@ -28,6 +28,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * | Created On-16-03-2023 
@@ -181,7 +182,7 @@ class ApplySafController extends Controller
             $this->sendToWorkflow($createSaf, $user_id);
             DB::commit();
 
-            $sms = AkolaProperty(["owner_name" => $ownerDetail[0]['ownerName'], "saf_no" => $safNo, "assessment_type" => $request->assessmentType, "holding_no" => $request->propertyNo ?? ""], ($request->assessmentType == "New Assessment" ? "New Assessment" : "Reassessment"));
+            $sms = AkolaProperty(["owner_name" => Str::limit(trim($ownerDetail[0]['ownerName']), 30), "saf_no" => $safNo, "assessment_type" => $request->assessmentType, "holding_no" => $request->propertyNo ?? ""], ($request->assessmentType == "New Assessment" ? "New Assessment" : "Reassessment"));
             if (($sms["status"] !== false)) {
                 $respons = SMSAKGOVT(8797770238, $sms["sms"], $sms["temp_id"]);
             }

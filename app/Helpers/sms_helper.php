@@ -682,12 +682,12 @@ if (!function_exists("AkolaProperty")) {
         } elseif (strtoupper($sms_for) == strtoupper('Reassessment')) {
             try {
                 //Dear {#var#}, your application Ref. No. {#var#} for re-assessment of Property No. {#var#} has been received. For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES 
-                $sms = "Dear " . $data["owner_name"] . ", your application Ref. No. " . $data["saf_no"] . " for " . $data["assessment_type"] . " of Property No. " . $data["holding_no"] . " has been received. For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
-                $temp_id = "1707169564187295411";
+                $sms = "Dear " . $data["owner_name"] . ", your application Ref. No. " . $data["saf_no"] . " for " . $data["assessment_type"] . " of Property No. " . $data["holding_no"] . " has been received. For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES.";
+                $temp_id = "1707170419357418151";
                 return array("sms" => $sms, "temp_id" => $temp_id, 'status' => true);
             } catch (Exception $e) {
                 return array(
-                    "sms_formate" => "Dear {#var#}, your application Ref. No. {#var#} for re-assessment of Property No. {#var#} has been received. For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES ",
+                    "sms_formate" => "Dear {#var#}, your application Ref. No. {#var#} for re-assessment of Property No. {#var#} has been received. For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES.",
                     "discriuption" => "1. 2 para required 
                         2. 1st para array('owner_name'=>'','saf_no'=>'','assessment_type'=>'','holding_no'=>'') sizeof 4  
                         3. 2nd para sms for ",
