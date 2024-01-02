@@ -140,10 +140,10 @@ trait SafDetailsTrait
             ['displayString' => 'Is-Water-Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
             ['displayString' => 'Is-Hoarding-Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No']
         ]);
-        if(trim($req->propery_no))
+        if(trim($req->property_no))
         {
             $data->push(
-                ['displayString' => 'Property No', 'key' => 'properyNo', 'value' => $req->propery_no]
+                ['displayString' => 'Property No', 'key' => 'properyNo', 'value' => $req->property_no]
             );
         }
         return $data;
