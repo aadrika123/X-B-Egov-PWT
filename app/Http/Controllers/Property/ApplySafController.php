@@ -137,11 +137,11 @@ class ApplySafController extends Controller
             $metaReqs['userId'] = $user_id;
             $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)['role_id'];
 
-            if ($userType == $this->_citizenUserType) {
-                $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)['forward_role_id'];         // Send to DA in Case of Citizen
-                $metaReqs['userId'] = null;
-                $metaReqs['citizenId'] = $user_id;
-            }
+            // if ($userType == $this->_citizenUserType) {
+            //     $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)['forward_role_id'];         // Send to DA in Case of Citizen
+            //     $metaReqs['userId'] = null;
+            //     $metaReqs['citizenId'] = $user_id;
+            // }
             $metaReqs['finisherRoleId'] = collect($finisherRoleId)['role_id'];
             $metaReqs['holdingType'] = $this->holdingType($request['floor']);
             $request->merge($metaReqs);
