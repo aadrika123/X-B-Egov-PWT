@@ -366,8 +366,8 @@ class ActiveSafControllerV2 extends Controller
                 case ("holdingNo"):
                     $data = $mPropProperty->searchPropertyV2($ulbId)
                         ->where(function ($where) use ($parameter) {
-                            $where->ORwhere('prop_properties.holding_no', 'LIKE', '%' . strtoupper($parameter) . '%')
-                                ->orWhere('prop_properties.new_holding_no', 'LIKE', '%' . strtoupper($parameter) . '%');
+                            $where->ORwhere('prop_properties.holding_no', 'LIKE',  strtoupper($parameter) )
+                                ->orWhere('prop_properties.new_holding_no', 'LIKE', strtoupper($parameter) );
                         });
                     break;
 
@@ -432,7 +432,7 @@ class ActiveSafControllerV2 extends Controller
 
                 case ("propertyNo"):
                     $data = $mPropProperty->searchPropertyV2($ulbId)
-                        ->where('prop_properties.property_no', 'LIKE', '%' . $parameter . '%');
+                        ->where('prop_properties.property_no', 'LIKE',  $parameter );
                     break;
                 default:
                     $data = $mPropProperty->searchPropertyV2($ulbId);

@@ -2012,6 +2012,7 @@ class ReportController extends Controller
                         total_props.*, 
                         total_vacant_land.*, 
                         total_occupancy_props.*,
+                        property_use_type.*,
                         --pnding_3yrs.*,
                         --pnding_2yrs.*,
                         --pnding_1yrs.*,
@@ -2203,10 +2204,10 @@ class ReportController extends Controller
                   SELECT 
                     SUM(
                       CASE WHEN nature = 'owned' THEN 1 ELSE 0 END
-                    )+ d.total_owned_props AS total_owned_props, 
+                    ) AS total_owned_props, 
                     SUM(
                       CASE WHEN nature = 'rented' THEN 1 ELSE 0 END
-                    ) AS total_owned_props, 
+                    ) AS total_rented_props, 
                     SUM(
                       CASE WHEN nature = 'mixed' THEN 1 ELSE 0 END
                     ) AS total_mixed_owned_props 
@@ -2246,6 +2247,65 @@ class ReportController extends Controller
                   GROUP BY 
                     d.total_owned_props
                 ) AS total_occupancy_props,
+ 
+                (
+                    SELECT 
+                        SUM(
+                        CASE WHEN nature = 'residential' THEN 1 ELSE 0 END
+                        ) AS total_residential_props, 
+                        SUM(
+                        CASE WHEN nature = 'commercial' THEN 1 ELSE 0 END
+                        ) AS total_commercial_props,
+                        SUM(
+                        CASE WHEN nature = 'govt' THEN 1 ELSE 0 END
+                        ) AS total_govt_props ,
+                        SUM(
+                        CASE WHEN nature = 'industrial' THEN 1 ELSE 0 END
+                        ) AS total_industrial_props ,
+                        SUM(
+                        CASE WHEN nature = 'religious' THEN 1 ELSE 0 END
+                        ) AS total_religious_props ,
+                        SUM(
+                        CASE WHEN nature = 'mixed_commercial' THEN 1 ELSE 0 END
+                        ) AS total_mixed_commercial_props 
+                    FROM 
+                        (
+                                SELECT 
+                                    a.*, 
+                                    CASE WHEN a.cnt = a.residential THEN 'residential' WHEN a.cnt = a.commercial THEN 'commercial' 
+                                            WHEN a.cnt = a.govt THEN 'govt' WHEN a.cnt = a.industrial THEN 'industrial' WHEN a.cnt = a.religious THEN 'religious'
+                                        ELSE 'mixed_commercial' END AS nature 
+                                FROM 
+                                    (
+                                            SELECT 
+                                                property_id, 
+                                                COUNT(prop_floors.id) AS cnt, 
+                                                SUM(
+                                                CASE WHEN usage_type_mstr_id in (45) THEN 1 ELSE 0 END
+                                                ) AS residential, 
+                                                SUM(
+                                                CASE WHEN usage_type_mstr_id IN (3,4,5,9,12,16,19,20,34,36,37,38,39,42,43,46,47,48,49,50,51,52) THEN 1 ELSE 0 END
+                                                ) AS commercial ,
+
+                                                SUM(
+                                                CASE WHEN usage_type_mstr_id in (53,54,55,56,57,40,17) THEN 1 ELSE 0 END
+                                                ) AS govt ,
+                                                SUM(
+                                                CASE WHEN usage_type_mstr_id in (35,6) THEN 1 ELSE 0 END
+                                                ) AS industrial,
+                                                SUM(
+                                                CASE WHEN usage_type_mstr_id = 44 THEN 1 ELSE 0 END
+                                                ) AS religious
+                                        
+                                            FROM 
+                                                prop_floors 
+                                            JOIN prop_properties ON prop_properties.id=prop_floors.property_id
+                                            WHERE prop_properties.status=1 AND prop_properties.ulb_id=2 and prop_type_mstr_id <> 4 AND prop_type_mstr_id is not null
+                                            GROUP BY 
+                                                property_id
+                                    ) AS a
+                        ) AS b
+                ) as property_use_type,
                 (
                    -- Payment Details
                     SELECT SUM(payments.lastyr_pmt_amt) AS lastyr_pmt_amt,
@@ -2474,26 +2534,34 @@ class ReportController extends Controller
 
         $updateReqs = [
             "total_assessment" => $data->total_assessed_props,
-            "total_assessed_residential" => $data->applied_res_safs,
-            "total_assessed_commercial" => $data->applied_comm_safs,
-            "total_assessed_industrial" => $data->applied_industries_safs,
-            "total_assessed_gbsaf" => $data->applied_gb_safs,
             "total_prop_vacand" => $data->total_vacant_land,
-            "total_prop_residential" => $data->total_owned_props,
-            "total_prop_mixe" => $data->total_mixed_owned_props,
-
+            "total_prop_residential" => $data->total_residential_props,
+            "total_prop_commercial"  => $data->total_commercial_props,
+            "total_prop_industrial" => $data->total_industrial_props,
+            "total_prop_gbsaf" => $data->total_govt_props,
+            "total_prop_mixe" => $data->total_mixed_commercial_props,
+            "total_prop_religious" => $data->total_religious_props,
             "total_property" => $data->total_props,
             "vacant_property" => $data->total_vacant_land,
             "owned_property" => $data->total_owned_props,
+            "rented_property" => $data->total_rented_props,
+            "mixed_property" => $data->total_mixed_owned_props,
+            "current_year_cash_collection" => $data->current_cash_payment,
+            "current_year_card_collection" => $data->current_card_payment,
+            "current_year_dd_collection"   => $data->current_dd_payment,
+            "current_year_cheque_collection" => $data->current_cheque_payment,
+            "current_year_neft_collection" => $data->current_neft_payment,
+            "current_year_rtgs_collection" => $data->current_rtgs_payment,
+            "current_year_upi_collection" => $data->current_online_payment,
+
+
+
             "count_not_paid_3yrs" => $data->pending_cnt_3yrs,
             "amount_not_paid_3yrs" => $data->amt_not_paid_3yrs,
             "count_not_paid_2yrs" => $data->pending_cnt_2yrs,
             "amount_not_paid_2yrs" => $data->amt_not_paid_2yrs,
             "count_not_paid_1yrs" => $data->pending_cnt_1yrs,
             "amount_not_paid_1yrs" => $data->amt_not_paid_1yrs,
-            // "assessed_property_this_year_achievement" => $data->outstanding_amt_lastyear,
-            // "assessed_property_this_year_achievement" => $data->outstanding_cnt_lastyear,
-            // "assessed_property_this_year_achievement" => $data->recoverable_demand_lastyear,
             "demand_outstanding_this_year" => $data->outstanding_amt_curryear,
             "demand_outstanding_from_this_year_prop_count" => $data->outstanding_cnt_curryear,
             "demand_outstanding_coll_this_year" => $data->recoverable_demand_currentyr,
@@ -2503,6 +2571,10 @@ class ReportController extends Controller
             "this_year_payment_count" => $data->currentyr_pmt_cnt,
             "this_year_payment_amount" => $data->currentyr_pmt_amt,
             "mutation_this_year_count" => $data->current_yr_mutation_count,
+            // "assessed_property_this_year_achievement" => $data->outstanding_amt_lastyear,
+            // "assessed_property_this_year_achievement" => $data->outstanding_cnt_lastyear,
+            // "assessed_property_this_year_achievement" => $data->recoverable_demand_lastyear,
+
             // "assessed_property_this_year_achievement" => $data->last_yr_mutation_count,
 
             // "assessed_property_this_year_achievement" => $data->top_transaction_first_ward_no,
@@ -2548,12 +2620,10 @@ class ReportController extends Controller
             "top_defaulter_ward4_amount" => $data->defaulter_forth_unpaid_amount,
             "top_defaulter_ward5_amount" => $data->defaulter_fifth_unpaid_amount,
 
-            "current_year_cash_collection" => $data->current_cash_payment,
-            "current_year_cheque_collection" => $data->current_cheque_payment,
-            "current_year_dd_collection"   => $data->current_dd_payment,
-            "current_year_card_collection" => $data->current_card_payment,
-            "current_year_neft_collection" => $data->current_neft_payment,
-            "current_year_rtgs_collection" => $data->current_rtgs_payment,
+            // "total_assessed_residential" => $data->applied_res_safs,
+            // "total_assessed_commercial" => $data->applied_comm_safs,
+            // "total_assessed_industrial" => $data->applied_industries_safs,
+            // "total_assessed_gbsaf" => $data->applied_gb_safs,
             // "assessed_property_this_year_achievement" => $data->current_online_payment,
             // "assessed_property_this_year_achievement" => $data->current_online_counts,
             // "assessed_property_this_year_achievement" => $data->prev_year_jskcollection,
@@ -2759,7 +2829,7 @@ class ReportController extends Controller
         }
         return $this->Repository->tranDeactivatedList($request);
     }
-/*
+    /*
 
      #====================================================
      
