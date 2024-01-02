@@ -2785,13 +2785,13 @@ class ActiveSafController extends Controller
             $req->all(),
             [
                 "safId" => "required|numeric",
-                "imagePath" => "required|array|min:3|max:3",
+                "imagePath" => "required|array|min:3|max:4",
                 "imagePath.*" => "required|image|mimes:jpeg,jpg,png,gif",
-                "directionType" => "required|array|min:3|max:3",
+                "directionType" => "required|array|min:3|max:4",
                 "directionType.*" => "required|In:Left,Right,Front,waterHarvesting",
-                "longitude" => "required|array|min:3|max:3",
+                "longitude" => "required|array|min:3|max:4",
                 "longitude.*" => "required|numeric",
-                "latitude" => "required|array|min:3|max:3",
+                "latitude" => "required|array|min:3|max:4",
                 "latitude.*" => "required|numeric"
             ]
         );
