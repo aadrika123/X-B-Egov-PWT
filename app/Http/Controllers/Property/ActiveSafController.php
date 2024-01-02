@@ -2788,7 +2788,7 @@ class ActiveSafController extends Controller
                 "imagePath" => "required|array|min:3|max:3",
                 "imagePath.*" => "required|image|mimes:jpeg,jpg,png,gif",
                 "directionType" => "required|array|min:3|max:3",
-                "directionType.*" => "required|In:Left,Right,Front",
+                "directionType.*" => "required|In:Left,Right,Front,waterHarvesting",
                 "longitude" => "required|array|min:3|max:3",
                 "longitude.*" => "required|numeric",
                 "latitude" => "required|array|min:3|max:3",
