@@ -403,22 +403,22 @@ Route::group(['middleware' => ['json.response', 'auth:sanctum', 'request_logger'
  * | Status: Open
  */
 
-Route::controller(UlbMasterController::class)->group(function () {
+// Route::controller(UlbMasterController::class)->group(function () {
 
-    Route::post('list-ulbmaster', 'listulbmaster');
-    Route::post('store-ulbmaster', 'storeUlbMaster');
-    Route::post('view-ulbmaster', 'showUlbMaster');
-    Route::post('edit-ulbmaster', 'updateUlbMaster');
-    Route::post('deactivate-ulbmaster', 'deactivateUlbMaster');
-});
+//     Route::post('list-ulbmaster', 'listulbmaster');
+//     Route::post('store-ulbmaster', 'storeUlbMaster');
+//     Route::post('view-ulbmaster', 'showUlbMaster');
+//     Route::post('edit-ulbmaster', 'updateUlbMaster');
+//     Route::post('deactivate-ulbmaster', 'deactivateUlbMaster');
+// });
 
-Route::controller(WardListController::class)->group(function () {
+// Route::controller(WardListController::class)->group(function () {
 
-    Route::post('store-wardlist', 'storeUlbWardMaster');
-    Route::post('view-wardlist', 'showUlbWardMaster');
-    Route::post('edit-wardlist', 'updateUlbWardMaster');
-    Route::post('update-wardlist', 'deactivateUlbWardMaster');
-});
+//     Route::post('store-wardlist', 'storeUlbWardMaster');
+//     Route::post('view-wardlist', 'showUlbWardMaster');
+//     Route::post('edit-wardlist', 'updateUlbWardMaster');
+//     Route::post('update-wardlist', 'deactivateUlbWardMaster');
+// });
 
 
 Route::controller(ReferenceController::class)->group(function () {

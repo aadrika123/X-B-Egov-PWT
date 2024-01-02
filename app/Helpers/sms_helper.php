@@ -64,7 +64,11 @@ if (!function_exists('SMSJHGOVT')) {
 if (!function_exists('send_sms')) {
     function send_sms($mobile, $message, $templateid)
     {
-        $res = SMSAKGOVT("7050180186", $message, $templateid);
+        if(Config::get("sms-constants.sms_test"))
+        {
+            $mobile = "7050180186";
+        }
+        $res = SMSAKGOVT($mobile, $message, $templateid);
         // print_var($message);
         // $res = SMSJHGOVT($mobile, $message, $templateid);
         return $res;
