@@ -36,7 +36,7 @@ class ThirdPartyController extends Controller
             $request->all(),
             [
                 'mobileNo' => "required|digits:10|regex:/[0-9]{10}/", #exists:active_citizens,mobile|
-                'type' => "nullable|in:Register,Forgot,Attach Holding",
+                'type' => "nullable|in:Register,Forgot,Attach Holding,Update Mobile",
             ]
         );
         if ($validated->fails())
@@ -79,38 +79,38 @@ class ThirdPartyController extends Controller
         | Serial No : 02
         | Working
      */
-    public function verifyOtp(Request $request)
-    {
-        $validated = Validator::make(
-            $request->all(),
-            [
-                'otp' => "required|digits:6",
-                'mobileNo' => "required|digits:10|regex:/[0-9]{10}/|exists:otp_requests,mobile_no"
-            ]
-        );
-        if ($validated->fails())
-            return validationError($validated);
-        try {
-            # model
-            $mOtpMaster     = new OtpRequest();
-            $mActiveCitizen = new ActiveCitizen();
+    // public function verifyOtp(Request $request)
+    // {
+    //     $validated = Validator::make(
+    //         $request->all(),
+    //         [
+    //             'otp' => "required|digits:6",
+    //             'mobileNo' => "required|digits:10|regex:/[0-9]{10}/|exists:otp_requests,mobile_no"
+    //         ]
+    //     );
+    //     if ($validated->fails())
+    //         return validationError($validated);
+    //     try {
+    //         # model
+    //         $mOtpMaster     = new OtpRequest();
+    //         $mActiveCitizen = new ActiveCitizen();
 
-            # logi 
-            DB::beginTransaction();
-            $checkOtp = $mOtpMaster->checkOtp($request);
-            if (!$checkOtp) {
-                $msg = "OTP not match!";
-                return responseMsgs(false, $msg, "", "", "01", ".ms", "POST", "");
-            }
-            $token = $mActiveCitizen->changeToken($request);
-            $checkOtp->delete();
-            DB::commit();
-            return responseMsgs(true, "OTP Validated!", remove_null($token), "", "01", ".ms", "POST", "");
-        } catch (Exception $e) {
-            DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", "");
-        }
-    }
+    //         # logi 
+    //         DB::beginTransaction();
+    //         $checkOtp = $mOtpMaster->checkOtp($request);
+    //         if (!$checkOtp) {
+    //             $msg = "OTP not match!";
+    //             return responseMsgs(false, $msg, "", "", "01", ".ms", "POST", "");
+    //         }
+    //         $token = $mActiveCitizen->changeToken($request);
+    //         $checkOtp->delete();
+    //         DB::commit();
+    //         return responseMsgs(true, "OTP Validated!", remove_null($token), "", "01", ".ms", "POST", "");
+    //     } catch (Exception $e) {
+    //         DB::rollBack();
+    //         return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", "");
+    //     }
+    // }
 
     /**
      * | Generate Random OTP 
