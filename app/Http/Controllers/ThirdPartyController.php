@@ -63,7 +63,7 @@ class ThirdPartyController extends Controller
             $otpType     = $request->type == "Forgot" ? "Forgot Password" : $request->type;
             $sms         = "OTP for " . $otpType . " at Akola Municipal Corporation's portal is " . $generateOtp . ". This OTP is valid for 10 minutes.";
 
-            $response = SMSAKGOVT($mobileNo, $sms, 1707170367857263583);
+            $response = send_sms($mobileNo, $sms, 1707170367857263583);
             $mOtpRequest->saveOtp($request, $generateOtp);
 
             return responseMsgs(true, "OTP send to your mobile No!", $generateOtp, "", "01", ".ms", "POST", "");
