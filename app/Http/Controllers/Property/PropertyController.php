@@ -61,6 +61,13 @@ class PropertyController extends Controller
      */
     public function caretakerOtp(Request $req)
     {
+        $validated = Validator::make(
+            $req->all(),
+            ["holdingNo" => "required"]
+        );
+        if ($validated->fails()) {
+            return validationError($validated);
+        }
         try {
             $mPropOwner = new PropOwner();
             $ThirdPartyController = new ThirdPartyController();
@@ -73,7 +80,7 @@ class PropertyController extends Controller
                 ->send(PropProperty::query()->where('status', 1))
                 ->through([
                     SearchHolding::class,
-                    SearchPtn::class
+                    // SearchPtn::class
                 ])
                 ->thenReturn()
                 ->first();
@@ -85,10 +92,15 @@ class PropertyController extends Controller
             if (!$firstOwner)
                 throw new Exception('Owner Not Found');
             $ownerMobile = $firstOwner->mobileNo;
+            if ($ownerMobile == "NA" || strlen($ownerMobile) < 10)
+                throw new Exception('Mobile No. Does Not Exist or Invalid');
 
             $myRequest = new \Illuminate\Http\Request();
             $myRequest->setMethod('POST');
-            $myRequest->request->add(['mobileNo' => $ownerMobile]);
+            $myRequest->request->add([
+                'mobileNo' => $ownerMobile,
+                'type'     => "Attach Holding",
+            ]);
             $response = $ThirdPartyController->sendOtp($myRequest);
 
             $response = collect($response)->toArray();
