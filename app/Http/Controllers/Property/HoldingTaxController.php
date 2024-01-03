@@ -18,6 +18,7 @@ use App\BLL\Property\YearlyDemandGeneration;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\ThirdPartyController;
 use App\Http\Requests\Property\ReqPayment;
 use App\MicroServices\DocUpload;
 use App\MicroServices\IdGeneration;
@@ -58,6 +59,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class HoldingTaxController extends Controller
 {
@@ -151,14 +153,13 @@ class HoldingTaxController extends Controller
         try {
             $user = Auth()->user();
             $usertype = $this->_COMMONFUNCTION->getUserAllRoles();
-            $testRole = collect($usertype)->whereIn("sort_name",Config::get("TradeConstant.CANE-CUTE-PAYMENT"));
+            $testRole = collect($usertype)->whereIn("sort_name", Config::get("TradeConstant.CANE-CUTE-PAYMENT"));
             // $getHoldingDues = new GetHoldingDues;
             $getHoldingDues = new GetHoldingDuesV2;
             $demand = $getHoldingDues->getDues($req);
-            $demand["can_take_payment"] = collect($testRole)->isNotEmpty() ? true: false;
-            if($this->_COMMONFUNCTION->checkUsersWithtocken("active_citizens"))
-            {
-                $data["can_take_payment"] =  $demand["payableAmt"] >0 ? true : false;
+            $demand["can_take_payment"] = collect($testRole)->isNotEmpty() ? true : false;
+            if ($this->_COMMONFUNCTION->checkUsersWithtocken("active_citizens")) {
+                $data["can_take_payment"] =  $demand["payableAmt"] > 0 ? true : false;
             }
             return responseMsgs(true, "Demand Details", remove_null($demand), "011602", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
@@ -445,7 +446,8 @@ class HoldingTaxController extends Controller
                 'errors' => $validated->errors()
             ], 401);
         }
-
+        $mPropOwner = new PropOwner();
+        $ThirdPartyController = new ThirdPartyController();
         $postPropPayment = new PostPropPaymentV2($req);
 
         if ($req->paymentType == 'isFullPayment')
@@ -468,6 +470,22 @@ class HoldingTaxController extends Controller
             $postPropPayment->_propCalculation = $propCalculation;
             // Transaction is beginning in Prop Payment Class
             $postPropPayment->postPayment();
+
+            // sendsms
+            // $propertyNo     = $propCalculation->original['data']['basicDetails']['property_no'];
+            // $ownerName      = Str::limit(trim($propCalculation->original['data']['basicDetails']['owner_name']), 30);
+            // $payableAmount  = $propCalculation->original['data']['payableAmt'];
+
+            // $propOwners = $mPropOwner->getOwnerByPropId($req['id']);
+            // $firstOwner = collect($propOwners)->first();
+            // if ($firstOwner) {
+            //     $ownerMobile = $firstOwner->mobileNo;
+            //     if (strlen($ownerMobile) == 10) {
+            //         $sms      = "Thank you " . $ownerName . " for making payment of Rs." . $payableAmount . " against Property No. " . $propertyNo . ". For more details visit www.amcakola.in /call us at:8069493299 SWATI INDUSTRIES";
+            //         $response = send_sms($ownerMobile, $sms, 1707169564199604962);
+            //     }
+            // }
+
             DB::commit();
             return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $postPropPayment->_tranNo, 'transactionId' => $postPropPayment->_tranId], "011604", "2.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -605,7 +623,7 @@ class HoldingTaxController extends Controller
             $receipt = $generatePaymentReceipt->_GRID;
             return responseMsgs(true, "Payment Receipt", remove_null($receipt), "011605", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false,$e->getMessage(), "", "011605", "1.0", "", "POST", $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), "", "011605", "1.0", "", "POST", $req->deviceId);
         }
     }
 
