@@ -2841,7 +2841,8 @@ class WaterReportController extends Controller
                 subquery.arrear_demands,
                 subquery.current_demands,
                 subquery.demand_from,
-                subquery.demand_upto
+                subquery.demand_upto,
+                subquery.total_amount
             FROM (
                 SELECT 
                     wd.consumer_id,
@@ -2870,6 +2871,7 @@ class WaterReportController extends Controller
             LEFT JOIN (
             SELECT 
                 consumer_id, MIN(demand_from) AS demand_from,MAX(demand_upto) AS demand_upto,
+                sum(water_consumer_demands.due_balance_amount) as total_amount,
                 SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.arrear_demand ELSE 0 END) AS arrear_demands,
                 SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.current_demand ELSE 0 END) AS current_demands,
                 SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NOT NULL THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS generate_amount
@@ -2879,6 +2881,7 @@ class WaterReportController extends Controller
             WHERE 
                 water_second_consumers.zone_mstr_id = $zoneId
                 " . ($wardId ? " AND water_second_consumers.ward_mstr_id = $wardId" : "") . "
+                " .($metertype ? " AND water_consumer_demands.connection_type='$metertype'" :"")."
             GROUP BY 
                 water_meter_reading_docs.file_name,
                 water_meter_reading_docs.relative_path,
@@ -2901,9 +2904,8 @@ class WaterReportController extends Controller
                 subquery.arrear_demands,
                 subquery.current_demands,
                 subquery.demand_from,
-                subquery.demand_upto
-                LIMIT 100
-                
+                subquery.demand_upto,
+                subquery.total_amount                
         ");
             $data = DB::connection('pgsql_water')->select(DB::raw($rawData));
             $list = [
