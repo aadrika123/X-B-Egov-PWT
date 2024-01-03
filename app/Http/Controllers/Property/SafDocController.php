@@ -12,10 +12,12 @@ use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWorkflow;
 use App\Repository\Common\CommonFunction;
+use App\Repository\Property\Interfaces\iSafRepository;
 use App\Traits\Property\AkolaSafDoc;
 use App\Traits\Property\SafDoc;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config as FacadesConfig;
 use Illuminate\Support\Facades\DB;
@@ -323,6 +325,147 @@ class SafDocController extends Controller
             return responseMsgs(true, ["docVerifyStatus" => $safDetails->doc_verify_status], remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+     * get uploaded naksha
+     */
+    public function getUploadDocumentNaksha(Request $req)
+    {
+        $req->validate([
+            'applicationId' => 'required|numeric'
+        ]);
+        try{ 
+            $safController = App::makeWith(ActiveSafController::class,["iSafRepository",iSafRepository::class]); 
+            $safDetailsResponce = $safController->getStaticSafDetails($req); 
+            if(!$safDetailsResponce->original["status"])
+            {
+                return $safDetailsResponce;
+            }   
+            $saf = $safDetailsResponce->original["data"]->all();
+            $response = $this->getUploadDocuments($req);
+            if(!$response->original["status"])
+            {
+                return $response;
+            }
+            $map = collect($response->original["data"])->where("doc_category","Layout sanction Map")->first();
+            $saf["naksha"] = $map;
+            return responseMsgs(true, "date fetched", $saf, "010202", "1.1", "", "POST", $req->deviceId ?? "");
+        }
+        catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010202", "1.1", "", "POST", $req->deviceId ?? "");
+        }
+
+    }
+
+    public function nakshaVerifyReject(Request $req)
+    {
+        {
+            $req->validate([
+                'id' => 'required|digits_between:1,9223372036854775807',
+                'applicationId' => 'required|digits_between:1,9223372036854775807',
+                'docRemarks' =>  $req->docStatus == "Rejected" ? 'required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/' : "nullable",
+                'docStatus' => 'required|in:Verified,Rejected'
+            ]);
+    
+            try {
+                // Variable Assignments
+                $mWfDocument = new WfActiveDocument();
+                $mActiveSafs = new PropActiveSaf();
+                $mWfRoleusermap = new WfRoleusermap();
+                $mSecondaryDocVerification = new SecondaryDocVerification();
+                $wfDocId = $req->id;
+                $userId = authUser($req)->id;
+                $applicationId = $req->applicationId;
+                $wfLevel = FacadesConfig::get('PropertyConstaint.SAF-LABEL');
+                $trustDocCode = FacadesConfig::get('PropertyConstaint.TRUST_DOC_CODE');
+                // Derivative Assigments
+                $activeDocument = $mWfDocument::findOrFail($wfDocId);
+                $safDtls = $mActiveSafs->getSafNo($applicationId);
+                $safReq = new Request([
+                    'userId' => $userId,
+                    'workflowId' => $safDtls->workflow_id
+                ]);
+                $senderRoleDtls = $mWfRoleusermap->getRoleByUserWfId($safReq);
+                if (!$senderRoleDtls || collect($senderRoleDtls)->isEmpty())
+                    throw new Exception("Role Not Available");
+    
+                $senderRoleId = $senderRoleDtls->wf_role_id;                
+                if ($senderRoleId != $wfLevel['UTC'])                                // Authorization for Dealing Assistant Only
+                    throw new Exception("You are not Authorized");
+    
+                if (!$safDtls || collect($safDtls)->isEmpty())
+                    throw new Exception("Saf Details Not Found");
+    
+                $ifFullDocVerified = $this->ifFullDocVerified($applicationId);       // (Current Object Derivative Function 4.1)
+                // if ($ifFullDocVerified == 1)
+                //     throw new Exception("Document Fully Verified");
+    
+                DB::beginTransaction();
+                if ($req->docStatus == "Verified") {
+                    $status = 1;
+                    // trust verification in case of trust upload
+                    if ($activeDocument->doc_code == $trustDocCode)
+                        $safDtls->is_trust_verified = true;
+                }
+                if ($req->docStatus == "Rejected") {
+                    $status = 2;
+                    // For Rejection Doc Upload Status and Verify Status will disabled
+                    $safDtls->doc_upload_status = 0;
+                    $safDtls->doc_verify_status = 0;
+    
+                    if ($activeDocument->doc_code == $trustDocCode)
+                        $safDtls->is_trust_verified = false;
+    
+                    $safDtls->save();
+                }
+    
+                $reqs = [
+                    'remarks' => $req->docRemarks,
+                    'verify_status' => $status,
+                    'action_taken_by' => $userId
+                ];
+                $mWfDocument->docVerifyReject($wfDocId, $reqs);
+                if ($req->docStatus == 'Verified')
+                    $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId, $req->docStatus);
+                else
+                    $ifFullDocVerifiedV1 = 0;                                       // In Case of Rejection the Document Verification Status will always remain false
+    
+                // dd($ifFullDocVerifiedV1);
+                if ($ifFullDocVerifiedV1 == 1) {                                     // If The Document Fully Verified Update Verify Status
+                    $safDtls->doc_verify_status = 1;
+                    $safDtls->save();
+                }
+                #=====secondery Document Verification Entery=======
+                $seconderyId = $mSecondaryDocVerification->insertSecondryDoc($wfDocId);
+                $seconderyDoc = SecondaryDocVerification::find($seconderyId);
+                $seconderyDoc->verify_status = $status??1;
+                $seconderyDoc->save();
+                DB::commit();
+                return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+            } catch (Exception $e) {
+                DB::rollBack();
+                return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+            }
+        }
+    }
+
+    public function nakshaAreaOfPloteUpdate(Request $req)
+    {
+        $req->validate([
+            'applicationId' => 'required|numeric'
+        ]);
+        try{
+            $mActiveSafs = new PropActiveSaf();
+            $refSafs = $mActiveSafs->getSafNo($req->applicationId);                      // Get Saf Details
+            if (!$refSafs){
+                throw new Exception("Application Not Found for this id");
+            }
+        }
+        catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }
     }
 

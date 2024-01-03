@@ -87,8 +87,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use App\MicroServices\IdGenerator\HoldingNoGenerator;
 use App\Models\Property\RefPropCategory;
+use App\Models\Workflows\WfMaster;
+use App\Models\Workflows\WfRole;
 use App\Repository\Common\CommonFunction;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Http;
 
 class ActiveSafController extends Controller
@@ -1117,6 +1120,95 @@ class ActiveSafController extends Controller
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
             return responseMsg(false, $e->getMessage(), "", "010109", "1.0", "", "POST", $request->deviceId);
+        }
+    }
+
+    public function sendToLevel(Request $request)
+    {     
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'applicationId'    => 'required|digits_between:1,9223372036854775807',
+            ]
+        );
+        if ($validated->fails()) {
+            return validationError($validated);
+        } 
+           
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id ;
+            $refUlbId       = $refUser->ulb_id ?? 0;
+            $track = new WorkflowTrack();
+            $safDocController = App::makeWith(SafDocController::class);
+            $saf = PropActiveSaf::find($request->applicationId);
+            if(!$saf)
+            {
+                throw new Exception("Data Not Found!!!");
+            }
+            $wfMasters = WfWorkflow::find($saf->workflow_id);
+            if(!$wfMasters)
+            {
+                throw new Exception("Workflow Not Find");
+            }
+            
+            $refWorkflowId  = $wfMasters->wf_master_id;
+            if(!$refUlbId)
+            {
+                $refUlbId = $saf->ulb_id;
+            }
+            $request->merge(["ulb_id"=>$refUlbId]);
+            $refWorkflows   = $this->_COMMONFUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
+            $allRolse     = collect($this->_COMMONFUNCTION->getAllRoles($refUserId, $refUlbId, $refWorkflowId, 0, true));
+
+            $docUploadStatus = $safDocController->checkFullDocUpload($request->applicationId);
+            if (!$docUploadStatus) {  
+                throw new Exception("All Document Are Not Uploded");
+            }
+
+            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs['workflowId'] = $saf->workflow_id;
+            $metaReqs['refTableDotId'] = Config::get('PropertyConstaint.SAF_REF_TABLE');
+            $metaReqs['refTableIdValue'] = $saf->id;
+            $metaReqs['citizenId'] = $refUserId;
+            $metaReqs['ulb_id'] = $refUlbId;
+            $metaReqs['trackDate'] = Carbon::now()->format('Y-m-d H:i:s');
+            $metaReqs['forwardDate'] = Carbon::now()->format('Y-m-d');
+            $metaReqs['forwardTime'] = Carbon::now()->format('H:i:s');
+            $metaReqs['senderRoleId'] = $refWorkflows['initiator']['id'];
+            $metaReqs["receiverRoleId"] = $refWorkflows['initiator']['forward_role_id'];
+            $metaReqs['verificationStatus'] = 1;
+            $metaReqs['comment'] = "Citizen Send For Verification";
+            $request->merge($metaReqs);
+            
+            $receiverRole = array_values(objToArray($allRolse->where("id", $request->receiverRoleId)))[0] ?? [];
+            $sms ="";
+            DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
+            $track->saveTrack($request);
+
+            if (!$saf->current_role) 
+            {
+                $saf->current_role = $refWorkflows['initiator']['forward_role_id'];
+                $saf->last_role_id = $refWorkflows['initiator']['forward_role_id'];
+                $saf->doc_upload_status = 1;
+                $saf->update(); 
+                $sms ="Application Forwarded To ".($receiverRole["role_name"] ?? "");
+            }
+            elseif($saf->parked){
+                $role = WfRole::find($saf->current_role);
+                $saf->parked = false;
+                $saf->doc_upload_status = 1;
+                $saf->update(); 
+                $sms ="Application Forwarded To ".($role->role_name ?? "");
+            }
+            DB::commit();
+            DB::connection('pgsql_master')->commit();
+            return responseMsg(true,$sms,"",);
+        }catch (Exception $e) {
+            DB::rollback();
+            DB::connection('pgsql_master')->rollback();
+            return responseMsg(false,[$e->getMessage(),$e->getFile(),$e->getLine()],"",);
         }
     }
 
