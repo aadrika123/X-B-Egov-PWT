@@ -708,7 +708,7 @@ class WaterPaymentController extends Controller
                 throw new Exception("Ulb Not Found!");
             }
             $finalCharges = $this->preOfflinePaymentParams($request, $startingDate, $endDate);
-
+            
             $this->begin();
             $tranNo = $midGeneration->generateTransactionNo($user->ulb_id);
             $request->merge([
