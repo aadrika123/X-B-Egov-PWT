@@ -18,21 +18,22 @@ class OtpRequest extends Model
      */
     public function saveOtp($request, $generateOtp)
     {
-        $refData = OtpRequest::where('mobile_no', $request->mobileNo)
-            ->first();
-        if ($refData) {
-            $refData->otp_time  = Carbon::now();
-            $refData->otp       = $generateOtp;
-            $refData->hit_count = $refData->hit_count + 1;
-            $refData->update();
-        } else {
-            $mOtpMaster = new OtpRequest();
-            $mOtpMaster->mobile_no  = $request->mobileNo;
-            $mOtpMaster->otp        = $generateOtp;
-            $mOtpMaster->otp_time   = Carbon::now();
-            $mOtpMaster->hit_count  = 1;
-            $mOtpMaster->save();
-        }
+        // $refData = OtpRequest::where('mobile_no', $request->mobileNo)
+        //     ->first();
+        // if ($refData) {
+        //     $refData->otp_time  = Carbon::now();
+        //     $refData->otp       = $generateOtp;
+        //     $refData->hit_count = $refData->hit_count + 1;
+        //     $refData->update();
+        // } else {
+        $mOtpMaster = new OtpRequest();
+        $mOtpMaster->mobile_no  = $request->mobileNo;
+        $mOtpMaster->otp        = $generateOtp;
+        $mOtpMaster->otp_time   = Carbon::now();
+        $mOtpMaster->otp_type   = $request->type;
+        $mOtpMaster->hit_count  = 1;
+        $mOtpMaster->save();
+        // }
     }
 
     /**
