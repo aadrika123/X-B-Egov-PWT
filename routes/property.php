@@ -119,6 +119,8 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('saf/get-uploaded-documents', 'getUploadDocuments');                                    // View Uploaded Documents for SAF (02)
     Route::post('saf/get-doc-list', 'getDocList');                                                      // Get Document Lists(03)
     Route::post('saf/doc-verify-reject', 'docVerifyReject');                                            // Verify or Reject Saf Documents(04)
+    Route::post('saf/get-uploaded-documents-naksha', 'getUploadDocumentNaksha'); 
+    Route::post('saf/naksha-verify-reject', 'nakshaVerifyReject'); 
   });
 
   /**
