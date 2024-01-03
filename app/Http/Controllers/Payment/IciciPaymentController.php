@@ -202,8 +202,7 @@ class IciciPaymentController extends Controller
         try {
             # Save the callback data
             $mIciciPaymentReq = new IciciPaymentReq();
-            Storage::disk('public')->put('icici/callback/' . $req->Unique_Ref_Number . '.json', json_encode($req->all()));
-
+            Storage::disk('public')->put('icici/callback/' . $req->Unique_Ref_Number . '.json', json_encode($req->all()));          
             # Check if the payament is success 
             if ($req->Response_Code == "E000") {
                 # Check the transaction initials
@@ -257,6 +256,71 @@ class IciciPaymentController extends Controller
         } catch (Exception $e) {
             $erroData = [
                 "redirectUrl" => "https://modernulb.com/citizen"
+            ];
+            return view('icic_payment_erro', $erroData);
+        }
+    }
+
+    public function getCallbackDetialV1(Request $req)
+    {
+        try {
+            # Save the callback data
+            $mIciciPaymentReq = new IciciPaymentReq();
+            Storage::disk('public')->put('icici/callback/' . $req->Unique_Ref_Number . '.json', json_encode($req->all())); 
+            $redirectUrl  = Config::get("payment-constants.FRONT_URL");  dd(json_encode($req->all()));     
+            # Check if the payament is success 
+            if ($req->Response_Code == "E000") {
+                # Check the transaction initials
+                $paymentReqsData = $mIciciPaymentReq->findByReqRefNoV2($req->ReferenceNo);
+                if (!$paymentReqsData) {
+                    # Redirect to the error page
+                    $erroData = [
+                        "redirectUrl" => $redirectUrl."/citizen"
+                    ];
+                    return view('icic_payment_erro', $erroData);
+                }
+                # Redirect to the desired url for sucess
+                switch ($req) {
+                        # For property
+                    case ($paymentReqsData->module_id == 1):
+                        $refData = [
+                            "callBack"          => $paymentReqsData->call_back_url . "/" . $paymentReqsData->application_id,
+                            "UniqueRefNumber"   => $req->Unique_Ref_Number ?? "",
+                            "PaymentMode"       => $req->Payment_Mode ?? ""
+                        ];
+                        break;
+
+                    default:
+                        $refData = [
+                            "callBack"          => $paymentReqsData->call_back_url,
+                            "UniqueRefNumber"   => $req->Unique_Ref_Number ?? "",
+                            "PaymentMode"       => $req->Payment_Mode ?? ""
+                        ];
+                        break;
+                }
+                return view('icici_payment_call_back', $refData);
+            } else {
+                $paymentReqsData = $mIciciPaymentReq->findByReqRefNoV2($req->Unique_Ref_Number);
+                # Module specific distribution
+                switch ($req) {
+                    case (!$paymentReqsData):
+                        $erroData = [
+                            "redirectUrl" => $redirectUrl."/citizen"
+                        ];
+                        break;
+                        # For water 
+                    case ($paymentReqsData->module_id == 2):
+                        $redirectUrl = Config::get("payment-constants.WATER_FAIL_URL");
+                        $erroData = [
+                            "redirectUrl" => $redirectUrl . $paymentReqsData->application_id
+                        ];
+                        break;
+                } 
+                return view('icic_payment_erro', $erroData);
+            }
+        } catch (Exception $e) {            
+            $erroData = [
+                "redirectUrl" => $redirectUrl."/citizen"
             ];
             return view('icic_payment_erro', $erroData);
         }

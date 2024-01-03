@@ -7,6 +7,7 @@
  */
 return [
     "ULB_LOGO_URL" =>  env("ulb_logo_url", "http://localhost/"),
+    "FRONT_URL"     => env("FRONT_URL", "https://modernulb.com") ,
     "PROPERTY_FRONT_URL" => (env("FRONT_URL", "https://modernulb.com") . "/citizen/property/payment-status"),
     "WATER_FAIL_URL"    => (env("FRONT_URL","https://modernulb.com") . "/water/water-demand-payment/"),
     'PAYMENT_MODE' => [
@@ -78,11 +79,11 @@ return [
         6 => "Permission Denied For This User ",
         7 => "Invalid Data Format",
     ],
-    "ICICI_BASE_URL"=>env("ICICI_BASE_URL",""),
-    "ICICI_RETURN_URL"=>env("ICICI_RETURN_URL",""),
-    "ICICI_CIPHERING"=>env("ICICI_CIPHERING",""),
-    "ICICI_CIPHERING_V2"=>env("ICICI_CIPHERING_V2",""),
-    "ICICI_ID"=>env("ICICI_ID",""),
-    "ICICI_AESKEY"=>env("ICICI_AESKEY",""),
-    "ICICI_MERCHANT_ID"=>env("ICICI_MERCHANT_ID",""),
+    "ICICI_BASE_URL"=>env("ICICI_BASE_URL","https://eazypay.icicibank.com"),
+    "ICICI_RETURN_URL"=>env("ICICI_RETURN_URL","https://egov.modernulb.com/api/payment/v1/collect-callback-data"),
+    "ICICI_CIPHERING"=>env("ICICI_CIPHERING","aes-128-ecb"),
+    "ICICI_CIPHERING_V2"=>env("ICICI_CIPHERING_V2","AES-128-ECB"),
+    "ICICI_ID"=>env("ICICI_ID","378278"),
+    "ICICI_AESKEY"=>env("ICICI_AESKEY","3705200682705002"),
+    "ICICI_MERCHANT_ID"=>env("ICICI_MERCHANT_ID","45"),
 ];
