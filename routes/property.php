@@ -85,6 +85,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('saf/escalate/inbox/{key?}', 'specialInbox');                                            // Saf workflow Inbox and Inbox By search key(7)
     Route::post('saf/independent-comment', 'commentIndependent');                                       // Independent Comment for SAF Application(8)
     Route::post('saf/post/level', 'postNextLevel');                                                     // Forward or Backward Application(9)
+    Route::post('application/send-to-officer', 'sendToLevel');                                          # CITIZEN SEND TO LEVEL(9.1)
     Route::post('saf/approvalrejection', 'approvalRejectionSaf');                                       // Approval Rejection SAF Application(10)
     Route::post('saf/back-to-citizen', 'backToCitizen');                                                // Saf Application Back To Citizen(11)
     Route::post('saf/get-prop-byholding', 'getPropByHoldingNo');                                        // get Property (search) by ward no and holding no(12)

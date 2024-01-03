@@ -453,7 +453,20 @@ class SafDocController extends Controller
 
     public function nakshaAreaOfPloteUpdate(Request $req)
     {
-        
+        $req->validate([
+            'applicationId' => 'required|numeric'
+        ]);
+        try{
+            $mActiveSafs = new PropActiveSaf();
+            $refSafs = $mActiveSafs->getSafNo($req->applicationId);                      // Get Saf Details
+            if (!$refSafs){
+                throw new Exception("Application Not Found for this id");
+            }
+        }
+        catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+        }
     }
 
     /**
