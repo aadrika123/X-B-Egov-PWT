@@ -28,6 +28,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * | Created On-16-03-2023 
@@ -108,14 +109,13 @@ class ApplySafController extends Controller
             $mOwner = new PropActiveSafsOwner();
             $prop   = new PropProperty();
             $taxCalculator = new TaxCalculator($request);
-            if($prop = PropProperty::find($request->previousHoldingId))
-            {
-                $request->merge(["propertyNo"=>$prop->property_no??null]);
+            if ($prop = PropProperty::find($request->previousHoldingId)) {
+                $request->merge(["propertyNo" => $prop->property_no ?? null]);
             }
             // Derivative Assignments
             $ulbWorkflowId = $this->readAssessUlbWfId($request, $ulb_id);           // (2.1)
             $roadWidthType = $this->readRoadWidthType($request->roadType);          // Read Road Width Type
-            $mutationProccessFee = $this->readProccessFee($request->assessmentType,$request->saleValue,$request->propertyType,$request->transferModeId);
+            $mutationProccessFee = $this->readProccessFee($request->assessmentType, $request->saleValue, $request->propertyType, $request->transferModeId);
 
             $request->request->add(['road_type_mstr_id' => $roadWidthType]);
 
@@ -137,22 +137,21 @@ class ApplySafController extends Controller
             $metaReqs['userId'] = $user_id;
             $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)['role_id'];
 
-            if ($userType == $this->_citizenUserType) {
-                $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)['forward_role_id'];         // Send to DA in Case of Citizen
-                $metaReqs['userId'] = null;
-                $metaReqs['citizenId'] = $user_id;
-            }
+            // if ($userType == $this->_citizenUserType) {
+            //     $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)['forward_role_id'];         // Send to DA in Case of Citizen
+            //     $metaReqs['userId'] = null;
+            //     $metaReqs['citizenId'] = $user_id;
+            // }
             $metaReqs['finisherRoleId'] = collect($finisherRoleId)['role_id'];
             $metaReqs['holdingType'] = $this->holdingType($request['floor']);
             $request->merge($metaReqs);
-            $request->merge(["proccessFee"=>$mutationProccessFee]);
+            $request->merge(["proccessFee" => $mutationProccessFee]);
             $this->_REQUEST = $request;
             $this->mergeAssessedExtraFields();                                          // Merge Extra Fields for Property Reassessment,Mutation,Bifurcation & Amalgamation(2.2)
             // Generate Calculation
-            if(!$request->no_calculater)
-            $taxCalculator->calculateTax();
-            if(($taxCalculator->_oldUnpayedAmount??0)>0 && $request->assessmentType==3 )
-            {
+            if (!$request->no_calculater)
+                $taxCalculator->calculateTax();
+            if (($taxCalculator->_oldUnpayedAmount ?? 0) > 0 && $request->assessmentType == 3) {
                 // throw new Exception("Old Demand Amount Of ".$taxCalculator->_oldUnpayedAmount." Not Cleard");
             }
             DB::beginTransaction();
@@ -183,13 +182,17 @@ class ApplySafController extends Controller
             $this->sendToWorkflow($createSaf, $user_id);
             DB::commit();
 
+            $sms = AkolaProperty(["owner_name" => Str::limit(trim($ownerDetail[0]['ownerName']), 30), "saf_no" => $safNo, "assessment_type" => $request->assessmentType, "holding_no" => $request->propertyNo ?? ""], ($request->assessmentType == "New Assessment" ? "New Assessment" : "Reassessment"));
+            if (($sms["status"] !== false)) {
+                $respons = SMSAKGOVT(8797770238, $sms["sms"], $sms["temp_id"]);
+            }
+
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
                 "safNo" => $safNo,
                 "applyDate" => ymdToDmyDate($mApplyDate),
                 "safId" => $safId,
-                "calculatedTaxes" => (!$request->no_calculater ? $taxCalculator->_GRID: []),
+                "calculatedTaxes" => (!$request->no_calculater ? $taxCalculator->_GRID : []),
             ], "010102", "1.0", "1s", "POST", $request->deviceId);
-            
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "010102", "1.0", "1s", "POST", $request->deviceId);

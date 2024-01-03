@@ -156,6 +156,10 @@ class HoldingTaxController extends Controller
             $getHoldingDues = new GetHoldingDuesV2;
             $demand = $getHoldingDues->getDues($req);
             $demand["can_take_payment"] = collect($testRole)->isNotEmpty() ? true: false;
+            if($this->_COMMONFUNCTION->checkUsersWithtocken("active_citizens"))
+            {
+                $data["can_take_payment"] =  $demand["payableAmt"] >0 ? true : false;
+            }
             return responseMsgs(true, "Demand Details", remove_null($demand), "011602", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), ['basicDetails' => $basicDtls ?? []], "011602", "1.0", "", "POST", $req->deviceId ?? "");

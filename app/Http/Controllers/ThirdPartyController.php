@@ -36,7 +36,7 @@ class ThirdPartyController extends Controller
             $request->all(),
             [
                 'mobileNo' => "required|digits:10|regex:/[0-9]{10}/", #exists:active_citizens,mobile|
-                'type' => "nullable|in:Register,Forgot",
+                'type' => "nullable|in:Register,Forgot,Attach Holding",
             ]
         );
         if ($validated->fails())
@@ -44,6 +44,7 @@ class ThirdPartyController extends Controller
         try {
             $refIdGeneration = new IdGeneration();
             $mOtpRequest = new OtpRequest();
+            $mobileNo    =  $request->mobileNo;
             if ($request->type == "Register") {
                 $userDetails = ActiveCitizen::where('mobile', $request->mobileNo)
                     ->first();
@@ -55,16 +56,18 @@ class ThirdPartyController extends Controller
                 $userDetails = ActiveCitizen::where('mobile', $request->mobileNo)
                     ->first();
                 if (!$userDetails) {
-                    throw new Exception("Pleas check your mobile.no!");
+                    throw new Exception("Please Check Your Mobile No!");
                 }
             }
-            $generateOtp = $refIdGeneration->generateOtp();
-            DB::beginTransaction();
+            $generateOtp = $this->generateOtp();
+            $otpType     = $request->type == "Forgot" ? "Forgot Password" : $request->type;
+            $sms         = "OTP for " . $otpType . " at Akola Municipal Corporation's portal is " . $generateOtp . ". This OTP is valid for 10 minutes.";
+
+            $response = send_sms($mobileNo, $sms, 1707170367857263583);
             $mOtpRequest->saveOtp($request, $generateOtp);
-            DB::commit();
+
             return responseMsgs(true, "OTP send to your mobile No!", $generateOtp, "", "01", ".ms", "POST", "");
         } catch (Exception $e) {
-            DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "0101", "01", ".ms", "POST", "");
         }
     }
@@ -114,7 +117,7 @@ class ThirdPartyController extends Controller
      */
     public function generateOtp()
     {
-        $otp = str_pad(Carbon::createFromDate()->milli . random_int(100, 999),6,0);
+        $otp = str_pad(Carbon::createFromDate()->milli . random_int(100, 999), 6, 0);
         // $otp = 123123;
         return $otp;
     }
