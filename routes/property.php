@@ -122,6 +122,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('saf/doc-verify-reject', 'docVerifyReject');                                            // Verify or Reject Saf Documents(04)
     Route::post('saf/get-uploaded-documents-naksha', 'getUploadDocumentNaksha'); 
     Route::post('saf/naksha-verify-reject', 'nakshaVerifyReject'); 
+    Route::post("saf/naksha-check","nakshaAreaOfPloteUpdate");
   });
 
   /**

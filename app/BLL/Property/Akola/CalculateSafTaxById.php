@@ -51,6 +51,8 @@ class CalculateSafTaxById extends TaxCalculator
             "ward" => $this->_safDtls->ward_mstr_id??null,
             "zone" => $this->_safDtls->zone_mstr_id??null,
             "assessmentType" =>(flipConstants(Config::get("PropertyConstaint.ASSESSMENT-TYPE"))[$this->_safDtls->assessment_type]??''),
+            "nakshaAreaOfPlot" => $this->_safDtls->naksha_area_of_plot,
+            "isAllowDoubleTax" => $this->_safDtls->is_allow_double_tax,
             "floor" => [],
             "owner" => []
         ];

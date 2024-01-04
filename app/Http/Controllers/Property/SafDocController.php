@@ -349,8 +349,12 @@ class SafDocController extends Controller
             {
                 return $response;
             }
-            $map = collect($response->original["data"])->where("doc_category","Layout sanction Map")->first();
-            $saf["is_naksh_uploaded"] = $map? true: false;
+            $map = collect($response->original["data"])->where("doc_category","Layout sanction Map")->first();            
+            if($map)
+            {
+                $map["ext"] = strtolower(collect(explode(".",$map["doc_path"]))->last());
+            }
+            $saf["is_naksha_uploaded"] = $map? true: false;
             $saf["naksha"] = $map;
             return responseMsgs(true, "date fetched", $saf, "010202", "1.1", "", "POST", $req->deviceId ?? "");
         }
@@ -458,12 +462,16 @@ class SafDocController extends Controller
             $req->all(),
             [
                 'applicationId' => 'required|numeric',
-                "IsDouble"=>"required|boll",
-                "areaOfPlot"=>"nullable|numeric",
+                "IsDouble"=>"required|boolean",
+                "areaOfPlot"=>"nullable|required_if:IsDouble,in,1,true|numeric|min:0",
             ]
         );
         if ($validated->fails()) {
-            return validationError($validated);
+            return response()->json([
+                'status'    => false,
+                'message'   => 'validation error',
+                'errors'    => $validated->errors()
+            ]);
         } 
         try{
             $mActiveSafs = new PropActiveSaf();
