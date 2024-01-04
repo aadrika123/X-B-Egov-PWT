@@ -1036,7 +1036,7 @@ class ActiveSafController extends Controller
                 {
                     $saf->is_geo_tagged = true;
                 }
-                if(!$saf->is_agency_verified && $saf->prop_type_mstr_id!=4 && $saf->current_role == $wfLevels['UTC'])
+                if(!$saf->is_agency_verified && $saf->prop_type_mstr_id!=4 && $saf->current_role == $wfLevels['UTC']) #make option UTC Verification
                 {
                     $saf->is_agency_verified = true;
                 }
