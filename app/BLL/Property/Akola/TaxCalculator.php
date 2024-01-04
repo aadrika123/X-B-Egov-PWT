@@ -177,18 +177,18 @@ class TaxCalculator
                     + $waterTax + $cleanlinessTax + $sewerageTax
                     + $treeTax + $stateTaxes['educationTax'] + $stateTaxes['professionalTax'] 
                     + ($openPloatTax??0));
-                if($this->_REQUEST->nakshaAreaOfPlot)
-                {
-                    $diffArrea = ($this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot)>0 ? $this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot :0;
-                }
+                // if($this->_REQUEST->nakshaAreaOfPlot)
+                // {
+                //     $diffArrea = ($this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot)>0 ? $this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot :0;
+                // }
 
-                if($this->_REQUEST->isAllowDoubleTax)
-                {
-                    $tax1 = $doubleTax1;
-                }
-                elseif($diffArrea>0){
-                    $tax1 = ($diffArrea / ($this->_REQUEST->areaOfPlot>0?$this->_REQUEST->areaOfPlot:1));
-                }
+                // if($this->_REQUEST->isAllowDoubleTax)
+                // {
+                //     $tax1 = $doubleTax1;
+                // }
+                // elseif($diffArrea>0){
+                //     $tax1 = ($diffArrea / ($this->_REQUEST->areaOfPlot>0?$this->_REQUEST->areaOfPlot:1));
+                // }
                 $this->_floorsTaxes[$key] = [
                     'usageType' => $item->usageType,
                     'constructionType' => $item->constructionType??"",
