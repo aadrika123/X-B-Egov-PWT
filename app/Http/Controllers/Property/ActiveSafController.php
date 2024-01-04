@@ -662,10 +662,9 @@ class ActiveSafController extends Controller
                 $data->current_role_name2 = $data->current_role_name;
 
             $safVerification = $mVerification->getLastVerification($data->id);
-            if($safVerification)
-            {
+            if ($safVerification) {
                 $data->old_ward_no = $safVerification->ward_name ? $safVerification->ward_name : $data->old_ward_no;
-                $data->category= $safVerification->category ? $safVerification->category : $data->category;
+                $data->category = $safVerification->category ? $safVerification->category : $data->category;
                 $verificationDtl = $mVerificationDtls->getVerificationDtls($safVerification->id);
             }
             // Basic Details
@@ -712,12 +711,12 @@ class ActiveSafController extends Controller
                 'tableData' => $ownerDetails
             ];
             // Floor Details            
-            $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data->id)->map(function($val)use($verificationDtl){
-                $new = $verificationDtl->where("saf_floor_id",$val->id)->first();
-                $val->floor_name = $new?$new->floor_name:$val->floor_name ;
-                $val->usage_type = $new?$new->usage_type:$val->usage_type ;
-                $val->occupancy_type = $new?$new->occupancy_type:$val->occupancy_type ;
-                $val->construction_type = $new?$new->construction_type:$val->construction_type ;
+            $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data->id)->map(function ($val) use ($verificationDtl) {
+                $new = $verificationDtl->where("saf_floor_id", $val->id)->first();
+                $val->floor_name = $new ? $new->floor_name : $val->floor_name;
+                $val->usage_type = $new ? $new->usage_type : $val->usage_type;
+                $val->occupancy_type = $new ? $new->occupancy_type : $val->occupancy_type;
+                $val->construction_type = $new ? $new->construction_type : $val->construction_type;
                 return $val;
             });      // Model Function to Get Floor Details
             $floorDetails = $this->generateFloorDetails($getFloorDtls);
@@ -804,10 +803,9 @@ class ActiveSafController extends Controller
 
             $data->current_role_name = 'Approved By ' . $data->current_role_name;
             $safVerification = $mVerification->getLastVerification($data->id);
-            if($safVerification)
-            {
+            if ($safVerification) {
                 $data->old_ward_no = $safVerification->ward_name ? $safVerification->ward_name : $data->old_ward_no;
-                $data->category= $safVerification->category ? $safVerification->category : $data->category;
+                $data->category = $safVerification->category ? $safVerification->category : $data->category;
                 $verificationDtl = $mVerificationDtls->getVerificationDtls($safVerification->id);
             }
             // $data->
@@ -830,12 +828,12 @@ class ActiveSafController extends Controller
             $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data['id']);      // Model Function to Get Floor Details
             if (collect($getFloorDtls)->isEmpty())
                 $getFloorDtls = $mPropSafsFloors->getFloorsBySafId($data['id']);
-            $data['floors'] = $getFloorDtls->map(function($val)use($verificationDtl){
-                $new = $verificationDtl->where("saf_floor_id",$val->id)->first();
-                $val->floor_name = $new?$new->floor_name:$val->floor_name ;
-                $val->usage_type = $new?$new->usage_type:$val->usage_type ;
-                $val->occupancy_type = $new?$new->occupancy_type:$val->occupancy_type ;
-                $val->construction_type = $new?$new->construction_type:$val->construction_type ;
+            $data['floors'] = $getFloorDtls->map(function ($val) use ($verificationDtl) {
+                $new = $verificationDtl->where("saf_floor_id", $val->id)->first();
+                $val->floor_name = $new ? $new->floor_name : $val->floor_name;
+                $val->usage_type = $new ? $new->usage_type : $val->usage_type;
+                $val->occupancy_type = $new ? $new->occupancy_type : $val->occupancy_type;
+                $val->construction_type = $new ? $new->construction_type : $val->construction_type;
                 return $val;
             });
             $data["tranDtl"] = $mPropTransaction->getSafTranList($data['id']);
@@ -851,11 +849,10 @@ class ActiveSafController extends Controller
                 $data["current_role_name2"] = $status;
             }
             $usertype = $this->_COMMONFUNCTION->getUserAllRoles();
-            $testRole = collect($usertype)->whereIn("sort_name",Config::get("TradeConstant.CANE-CUTE-PAYMENT"));
-            $data["can_take_payment"] = (collect($testRole)->isNotEmpty() && ($data["proccess_fee_paid"]??1)==0) ? true: false;
-            if($this->_COMMONFUNCTION->checkUsersWithtocken("active_citizens"))
-            {
-                $data["can_take_payment"] = (($data["proccess_fee_paid"]??1)==0) ? true: false;
+            $testRole = collect($usertype)->whereIn("sort_name", Config::get("TradeConstant.CANE-CUTE-PAYMENT"));
+            $data["can_take_payment"] = (collect($testRole)->isNotEmpty() && ($data["proccess_fee_paid"] ?? 1) == 0) ? true : false;
+            if ($this->_COMMONFUNCTION->checkUsersWithtocken("active_citizens")) {
+                $data["can_take_payment"] = (($data["proccess_fee_paid"] ?? 1) == 0) ? true : false;
             }
             return responseMsgs(true, "Saf Dtls", remove_null($data), "010127", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
@@ -972,7 +969,7 @@ class ActiveSafController extends Controller
         );
         if ($validated->fails()) {
             return validationError($validated);
-        }        
+        }
 
         try {
             // Variable Assigments
@@ -1008,32 +1005,26 @@ class ActiveSafController extends Controller
             DB::connection('pgsql_master')->beginTransaction();
             if ($request->action == 'forward') {
                 $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id);
-                if($saf->doc_upload_status==0 && $senderRoleId == $wfLevels['BO'])
-                {
+                if ($saf->doc_upload_status == 0 && $senderRoleId == $wfLevels['BO']) {
                     $docUploadStatus = (new SafDocController())->checkFullDocUpload($saf->id);
                     $saf->doc_upload_status = $docUploadStatus ? 1 : $saf->doc_upload_status;
                 }
-                if($saf->doc_verify_status==0 && $senderRoleId == $wfLevels['DA'])
-                {
+                if ($saf->doc_verify_status == 0 && $senderRoleId == $wfLevels['DA']) {
                     $docUploadStatus = (new SafDocController())->ifFullDocVerified($saf->id);
                     $saf->doc_verify_status = $docUploadStatus ? 1 : $saf->doc_verify_status;
                 }
                 $gioTag = $mPropSafGeotagUpload->getGeoTags($saf->id);
                 $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);
-                if ($saf->prop_type_mstr_id == 4 && collect($fieldVerifiedSaf)->isEmpty())
-                {
+                if ($saf->prop_type_mstr_id == 4 && collect($fieldVerifiedSaf)->isEmpty()) {
                     $fieldVerifiedSaf = $propSafVerification->getVerifications($safId);
-                    if(collect($fieldVerifiedSaf)->isEmpty())
-                    {
+                    if (collect($fieldVerifiedSaf)->isEmpty()) {
                         $fieldVerifiedSaf = $propSafVerification->getVerifications2($safId);
                     }
-
                 }
-                if(collect($fieldVerifiedSaf)->isNotEmpty()){
-                    $saf->is_field_verified = true;                    
+                if (collect($fieldVerifiedSaf)->isNotEmpty()) {
+                    $saf->is_field_verified = true;
                 }
-                if(!$gioTag->isEmpty())
-                {
+                if (!$gioTag->isEmpty()) {
                     $saf->is_geo_tagged = true;
                 }
                 $saf->update();
@@ -1042,17 +1033,15 @@ class ActiveSafController extends Controller
 
                 $geotagExist = $saf->is_field_verified == true;
 
-                if($saf->prop_type_mstr_id==4 && $saf->current_role== $wfLevels['TC'] )#only for Vacant Land
+                if ($saf->prop_type_mstr_id == 4 && $saf->current_role == $wfLevels['TC']) #only for Vacant Land
                 {
                     $saf->is_agency_verified = true;
                     $saf->update();
                     $forwardBackwardIds->forward_role_id = $wfLevels['DA'];
                 }
-                if (!$geotagExist && $saf->current_role == $wfLevels['DA'])
-                {
+                if (!$geotagExist && $saf->current_role == $wfLevels['DA']) {
                     $forwardBackwardIds->forward_role_id = $wfLevels['UTC'];
-                    if($saf->prop_type_mstr_id==4)
-                    {
+                    if ($saf->prop_type_mstr_id == 4) {
                         $forwardBackwardIds->forward_role_id = $wfLevels['TC'];
                     }
                 }
@@ -1061,7 +1050,7 @@ class ActiveSafController extends Controller
                     $forwardBackwardIds->forward_role_id = $wfLevels['SI'];
                     $saf->is_bt_da = false;
                 }
-                
+
                 $saf->current_role = $forwardBackwardIds->forward_role_id;
                 $saf->last_role_id =  $forwardBackwardIds->forward_role_id;                     // Update Last Role Id
                 $saf->parked = false;
@@ -1077,7 +1066,7 @@ class ActiveSafController extends Controller
                     $saf->is_bt_da = true;
                     $forwardBackwardIds->backward_role_id = $wfLevels['DA'];
                 }
-                if($saf->prop_type_mstr_id==4 && $saf->current_role== $wfLevels['DA'])#only for Vacant Land
+                if ($saf->prop_type_mstr_id == 4 && $saf->current_role == $wfLevels['DA']) #only for Vacant Land
                 {
                     $forwardBackwardIds->backward_role_id = $wfLevels['TC'];
                 }
@@ -1106,8 +1095,7 @@ class ActiveSafController extends Controller
                 'receiverRoleId' => $senderRoleId
             ];
             $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
-            if($previousWorkflowTrack)
-            {
+            if ($previousWorkflowTrack) {
                 $previousWorkflowTrack->update([
                     'forward_date' => $this->_todayDate->format('Y-m-d'),
                     'forward_time' => $this->_todayDate->format('H:i:s')
@@ -1124,7 +1112,7 @@ class ActiveSafController extends Controller
     }
 
     public function sendToLevel(Request $request)
-    {     
+    {
         $validated = Validator::make(
             $request->all(),
             [
@@ -1133,36 +1121,33 @@ class ActiveSafController extends Controller
         );
         if ($validated->fails()) {
             return validationError($validated);
-        } 
-           
-        try{
+        }
+
+        try {
             $refUser        = Auth()->user();
-            $refUserId      = $refUser->id ;
+            $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id ?? 0;
             $track = new WorkflowTrack();
             $safDocController = App::makeWith(SafDocController::class);
             $saf = PropActiveSaf::find($request->applicationId);
-            if(!$saf)
-            {
+            if (!$saf) {
                 throw new Exception("Data Not Found!!!");
             }
             $wfMasters = WfWorkflow::find($saf->workflow_id);
-            if(!$wfMasters)
-            {
+            if (!$wfMasters) {
                 throw new Exception("Workflow Not Find");
             }
-            
+
             $refWorkflowId  = $wfMasters->wf_master_id;
-            if(!$refUlbId)
-            {
+            if (!$refUlbId) {
                 $refUlbId = $saf->ulb_id;
             }
-            $request->merge(["ulb_id"=>$refUlbId]);
+            $request->merge(["ulb_id" => $refUlbId]);
             $refWorkflows   = $this->_COMMONFUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
             $allRolse     = collect($this->_COMMONFUNCTION->getAllRoles($refUserId, $refUlbId, $refWorkflowId, 0, true));
 
             $docUploadStatus = $safDocController->checkFullDocUpload($request->applicationId);
-            if (!$docUploadStatus) {  
+            if (!$docUploadStatus) {
                 throw new Exception("All Document Are Not Uploded");
             }
 
@@ -1180,35 +1165,33 @@ class ActiveSafController extends Controller
             $metaReqs['verificationStatus'] = 1;
             $metaReqs['comment'] = "Citizen Send For Verification";
             $request->merge($metaReqs);
-            
+
             $receiverRole = array_values(objToArray($allRolse->where("id", $request->receiverRoleId)))[0] ?? [];
-            $sms ="";
+            $sms = "";
             DB::beginTransaction();
             DB::connection('pgsql_master')->beginTransaction();
             $track->saveTrack($request);
 
-            if (!$saf->current_role) 
-            {
+            if (!$saf->current_role) {
                 $saf->current_role = $refWorkflows['initiator']['forward_role_id'];
                 $saf->last_role_id = $refWorkflows['initiator']['forward_role_id'];
                 $saf->doc_upload_status = 1;
-                $saf->update(); 
-                $sms ="Application Forwarded To ".($receiverRole["role_name"] ?? "");
-            }
-            elseif($saf->parked){
+                $saf->update();
+                $sms = "Application Forwarded To " . ($receiverRole["role_name"] ?? "");
+            } elseif ($saf->parked) {
                 $role = WfRole::find($saf->current_role);
                 $saf->parked = false;
                 $saf->doc_upload_status = 1;
-                $saf->update(); 
-                $sms ="Application Forwarded To ".($role->role_name ?? "");
+                $saf->update();
+                $sms = "Application Forwarded To " . ($role->role_name ?? "");
             }
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsg(true,$sms,"",);
-        }catch (Exception $e) {
+            return responseMsg(true, $sms, "",);
+        } catch (Exception $e) {
             DB::rollback();
             DB::connection('pgsql_master')->rollback();
-            return responseMsg(false,[$e->getMessage(),$e->getFile(),$e->getLine()],"",);
+            return responseMsg(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "",);
         }
     }
 
@@ -1230,7 +1213,7 @@ class ActiveSafController extends Controller
                 break;
 
             case $wfLevels['TC']:
-                if ($saf->is_agency_verified == false && $saf->prop_type_mstr_id!=4)
+                if ($saf->is_agency_verified == false && $saf->prop_type_mstr_id != 4)
                     throw new Exception("Agency Verification Not Done");
                 if ($saf->is_geo_tagged == false)
                     throw new Exception("Geo Tagging Not Done");
@@ -1532,14 +1515,13 @@ class ActiveSafController extends Controller
 
             if ($safDetails->prop_type_mstr_id != 4)
                 $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);          // Get fields Verified Saf with all Floor Details
-            else{
+            else {
                 $fieldVerifiedSaf = $propSafVerification->getVerifications($safId);
             }
-            if(collect($fieldVerifiedSaf)->isEmpty())
-            {
+            if (collect($fieldVerifiedSaf)->isEmpty()) {
                 $fieldVerifiedSaf = $propSafVerification->getVerifications2($safId);
             }
-            
+
             if (collect($fieldVerifiedSaf)->isEmpty())
                 throw new Exception("Site Verification not Exist");
 
@@ -1556,6 +1538,17 @@ class ActiveSafController extends Controller
                 $ptNo = $safApprovalBll->_ptNo;
                 $famNo = $safApprovalBll->_famNo;
                 $famId = $safApprovalBll->_famId;
+
+                $mobileNo = $ownerDetails->mobile_no;
+                $ownerName = $ownerDetails->owner_name;
+                $applicationNo = $activeSaf->saf_no;
+
+                #_sms
+                // if (strlen($mobileNo) == 10) {
+                //     // $sms      = "Dear " . $ownerName . ", your application Ref No. " . $applicationNo . " has been returned by AMC due to incomplete Documents/Information for the Property having Holding No. " . $holdingNo . ". For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
+                //     $sms      = "Dear " . $ownerName . ", congratulations, your application Ref No. " . $applicationNo . " has been approved. Your Property ID is: " . $holdingNo . ". Please pay Rs. " . 1000 . ".  against Property Tax. For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
+                //     $response = send_sms($mobileNo, $sms, 1707169564208638633);
+                // }
             }
 
             // Rejection
@@ -1563,6 +1556,17 @@ class ActiveSafController extends Controller
                 $this->finalRejectionSafReplica($activeSaf, $ownerDetails, $floorDetails);
                 $msg = "Application Rejected Successfully";
                 $metaReqs['verificationStatus'] = 0;
+
+                $mobileNo = $ownerDetails->mobile_no;
+                $ownerName = $ownerDetails->owner_name;
+                $applicationNo = $activeSaf->saf_no;
+                $holdingNo = $activeSaf->holding_no;
+
+                #_sms
+                // if (strlen($mobileNo) == 10) {
+                //     $sms      = "Dear " . $ownerName . ", your application Ref No. " . $applicationNo . " has been returned by AMC due to incomplete Documents/Information for the Property having Holding No. " . $holdingNo . ". For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
+                //     $response = send_sms($mobileNo, $sms, 1707169564208638633);
+                // }
             }
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $safDetails->workflow_id;
@@ -1583,12 +1587,11 @@ class ActiveSafController extends Controller
                 'receiverRoleId' => $senderRoleId
             ];
             $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
-            if($previousWorkflowTrack){
+            if ($previousWorkflowTrack) {
                 $previousWorkflowTrack->update([
                     'forward_date' => $this->_todayDate->format('Y-m-d'),
                     'forward_time' => $this->_todayDate->format('H:i:s')
                 ]);
-
             }
 
             $responseFields = [
@@ -1721,8 +1724,7 @@ class ActiveSafController extends Controller
             $mWfActiveDocument = new WfActiveDocument();
             $senderRoleId = $saf->current_role;
 
-            if ($saf->doc_verify_status == true)
-            {
+            if ($saf->doc_verify_status == true) {
                 // throw new Exception("Verification Done You Cannot Back to Citizen");
             }
 
@@ -1761,6 +1763,24 @@ class ActiveSafController extends Controller
 
             DB::commit();
             DB::connection('pgsql_master')->commit();
+
+            $activeSafOwner = PropActiveSafsOwner::where('saf_id', $saf->id)
+                ->orderBy('id')
+                ->first();
+
+            if ($activeSafOwner) {
+                $mobileNo = $activeSafOwner->mobile_no;
+                $ownerName = $activeSafOwner->owner_name;
+                $applicationNo = $saf->saf_no;
+                $holdingNo = $saf->holding_no;
+
+                #_sms
+                if (strlen($mobileNo) == 10) {
+                    $sms      = "Dear " . $ownerName . ", your application Ref No. " . $applicationNo . " has been returned by AMC due to incomplete Documents/Information for the Property having Holding No. " . $holdingNo . ". For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
+                    $response = send_sms($mobileNo, $sms, 1707169564208638633);
+                }
+            }
+
             return responseMsgs(true, "Successfully Done", "", "010111", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
@@ -2816,8 +2836,9 @@ class ActiveSafController extends Controller
                 case $taxCollectorRole:                                                                  // In Case of Agency TAX Collector
                     // $req->agencyVerification = true;
                     // $req->ulbVerification = false;
-                    $req->merge(["agencyVerification"=>true,
-                                "ulbVerification"=>false
+                    $req->merge([
+                        "agencyVerification" => true,
+                        "ulbVerification" => false
                     ]);
                     $msg = "Site Successfully Verified";
                     $propActiveSaf->verifyAgencyFieldStatus($req->safId);                                         // Enable Fields Verify Status
@@ -2825,8 +2846,9 @@ class ActiveSafController extends Controller
                 case $ulbTaxCollectorRole:                                                                // In Case of Ulb Tax Collector
                     // $req->agencyVerification = false;
                     // $req->ulbVerification = true;
-                    $req->merge(["agencyVerification"=>false,
-                                "ulbVerification"=>true
+                    $req->merge([
+                        "agencyVerification" => false,
+                        "ulbVerification" => true
                     ]);
                     $msg = "Site Successfully Verified";
                     $propActiveSaf->verifyFieldStatus($req->safId);                                         // Enable Fields Verify Status
@@ -2961,12 +2983,12 @@ class ActiveSafController extends Controller
      */
     public function uploadNaksha(Request $req)
     {
-        try{            
-            $extention = ($req->document)instanceof UploadedFile ? $req->document->getClientOriginalExtension():"";
-            $rules=[
+        try {
+            $extention = ($req->document) instanceof UploadedFile ? $req->document->getClientOriginalExtension() : "";
+            $rules = [
                 "applicationId" => "required|numeric",
-                "document" => "required|mimes:pdf,jpeg,png,jpg".(strtolower($extention) == 'pdf' ? 'max:10240' : 'max:1024'),
-                
+                "document" => "required|mimes:pdf,jpeg,png,jpg" . (strtolower($extention) == 'pdf' ? 'max:10240' : 'max:1024'),
+
             ];
             $validated = Validator::make(
                 $req->all(),
@@ -2980,31 +3002,29 @@ class ActiveSafController extends Controller
                 ]);
             }
             $req->merge([
-                "directionType"=>"naksha",
-                "safId"=>$req->applicationId,
-                "imagePath"=>$req->document,
+                "directionType" => "naksha",
+                "safId" => $req->applicationId,
+                "imagePath" => $req->document,
             ]);
 
             $docUpload = new DocUpload;
             $geoTagging = new PropSafGeotagUpload();
             $relativePath = Config::get('PropertyConstaint.GEOTAGGING_RELATIVE_PATH');
             $safDtls = PropActiveSaf::find($req->safId);
-            if(!$safDtls)
-            {
+            if (!$safDtls) {
                 $safDtls = PropSaf::find($req->safId);
             }
-            if(!$safDtls)
-            {
+            if (!$safDtls) {
                 throw new Exception("Data Not Found");
             }
-            
+
             $images = $req->imagePath;
             $directionTypes = $req->directionType;
             $longitude = $req->longitude;
             $latitude = $req->latitude;
 
             $user = Auth()->user();
-            $userId = $user->id??0;
+            $userId = $user->id ?? 0;
             $req->merge(["applicationId" => $safDtls->id, "action" => "forward", "receiverRoleId" => $workflowIds[0]["forward_role_id"] ?? "", "comment" => $req->comment ?? "Geo Taging Done"]);
 
             $refImageName = 'saf-geotagging-' . $directionTypes . '-' . $req->safId;
@@ -3026,19 +3046,15 @@ class ActiveSafController extends Controller
             ];
             DB::beginTransaction();
             $sms = "Naksha Uploaded Successfully";
-            if ($isDocExist){
+            if ($isDocExist) {
                 $sms =  "Naksha Update Successfully";
                 $geoTagging->edit($isDocExist, $docReqs);
-            }
-            else
-            {
+            } else {
                 $geoTagging->store($docReqs);
             }
             DB::commit();
             return responseMsgs(true, $sms, "", "010119.1", "1.0", responseTime(), "POST", $req->deviceId);
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -3055,9 +3071,9 @@ class ActiveSafController extends Controller
         $validated = Validator::make(
             $request->all(),
             [
-                "applicationId"=>"required|digits_between:1,9223372036854775807",
-                "wardId"       =>"required|digits_between:1,9223372036854775807",
-                "propertyNo"   =>"required|required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\.,-_ \s]+$/",
+                "applicationId" => "required|digits_between:1,9223372036854775807",
+                "wardId"       => "required|digits_between:1,9223372036854775807",
+                "propertyNo"   => "required|required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\.,-_ \s]+$/",
             ]
         );
         if ($validated->fails()) {
@@ -3067,38 +3083,32 @@ class ActiveSafController extends Controller
                 'errors' => $validated->errors()
             ]);
         }
-        try{
+        try {
             $saf = PropActiveSaf::find($request->applicationId);
-            if(!$saf)
-            {
+            if (!$saf) {
                 throw new Exception("Data Not Find");
             }
-            $test = PropActiveSaf::where("ward_mstr_id",$request->wardId)
-                    ->where("property_no",$request->propertyNo)
-                    ->where("id","<>",$request->applicationId)
-                    ->count("id");
-            if(!$test)
-            {
+            $test = PropActiveSaf::where("ward_mstr_id", $request->wardId)
+                ->where("property_no", $request->propertyNo)
+                ->where("id", "<>", $request->applicationId)
+                ->count("id");
+            if (!$test) {
                 $test = DB::table("prop_rejected_safs")
-                    ->where("ward_mstr_id",$request->wardId)
-                    ->where("property_no",$request->propertyNo)
+                    ->where("ward_mstr_id", $request->wardId)
+                    ->where("property_no", $request->propertyNo)
                     ->count("id");
             }
-            if(!$test && !in_array($saf->assessment_type,['Reassessment','Mutation']))
-            {
+            if (!$test && !in_array($saf->assessment_type, ['Reassessment', 'Mutation'])) {
                 $test = DB::table("prop_properties")
-                    ->where("ward_mstr_id",$request->wardId)
-                    ->where("property_no",$request->propertyNo)
+                    ->where("ward_mstr_id", $request->wardId)
+                    ->where("property_no", $request->propertyNo)
                     ->count("id");
             }
-            if($test)
-            {
+            if ($test) {
                 throw new Exception("Already Exists");
             }
             return responseMsg(true, "Available", $request->propertyNo);
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -3107,9 +3117,9 @@ class ActiveSafController extends Controller
         $validated = Validator::make(
             $request->all(),
             [
-                "applicationId"=>"required|digits_between:1,9223372036854775807",
-                "wardId"       =>"required|digits_between:1,9223372036854775807",
-                "propertyNo"   =>"required|required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\.,-_ \s]+$/",
+                "applicationId" => "required|digits_between:1,9223372036854775807",
+                "wardId"       => "required|digits_between:1,9223372036854775807",
+                "propertyNo"   => "required|required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\.,-_ \s]+$/",
             ]
         );
         if ($validated->fails()) {
@@ -3119,15 +3129,13 @@ class ActiveSafController extends Controller
                 'errors' => $validated->errors()
             ]);
         }
-        try{
+        try {
             $saf = PropActiveSaf::find($request->applicationId);
-            if(!$saf)
-            {
+            if (!$saf) {
                 throw new Exception("Data Not Find");
             }
             $check = $this->chequePropertyNo($request);
-            if(!$check->original["statsus"])
-            {
+            if (!$check->original["statsus"]) {
                 return $check;
             }
             DB::beginTransaction();
@@ -3135,9 +3143,7 @@ class ActiveSafController extends Controller
             $saf->save();
             DB::commit();
             return responseMsg(true, "property no assigned", "");
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
@@ -4022,36 +4028,36 @@ class ActiveSafController extends Controller
 
     public function getPendingProccessFeePtmLs(Request $request)
     {
-        try{
-            
+        try {
+
             $perPage = $request->perPage ? $request->perPage : 10;
             $select = [
-                "p.payment_status", 
-                "p.doc_upload_status", 
-                "p.saf_no", 
-                "p.id", 
-                "p.workflow_id", 
-                "p.ward_mstr_id", 
-                "p.is_agency_verified", 
+                "p.payment_status",
+                "p.doc_upload_status",
+                "p.saf_no",
+                "p.id",
+                "p.workflow_id",
+                "p.ward_mstr_id",
+                "p.is_agency_verified",
                 "p.is_field_verified",
-                "p.is_geo_tagged", 
+                "p.is_geo_tagged",
                 "ward.ward_name as ward_no",
-                "p.prop_type_mstr_id", 
-                "p.appartment_name", 
-                "o.owner_name as owner_name", 
-                "o.mobile_no as mobile_no", 
-                "rpt.property_type", 
-                "p.assessment_type as assessment", 
-                DB::raw("TO_CHAR(p.application_date, 'DD-MM-YYYY') as apply_date"), 
-                "p.parked", 
-                "p.prop_address", 
-                "p.applicant_name", 
+                "p.prop_type_mstr_id",
+                "p.appartment_name",
+                "o.owner_name as owner_name",
+                "o.mobile_no as mobile_no",
+                "rpt.property_type",
+                "p.assessment_type as assessment",
+                DB::raw("TO_CHAR(p.application_date, 'DD-MM-YYYY') as apply_date"),
+                "p.parked",
+                "p.prop_address",
+                "p.applicant_name",
                 "p.citizen_id"
             ];
             $data = DB::table("prop_safs as p")
-                    ->select($select)
-                    ->join("ref_prop_types as rpt","rpt.id","p.prop_type_mstr_id")
-                    ->leftJoin(DB::raw("
+                ->select($select)
+                ->join("ref_prop_types as rpt", "rpt.id", "p.prop_type_mstr_id")
+                ->leftJoin(DB::raw("
                         (
                             select prop_safs_owners.saf_id, 
                                     string_agg(prop_safs_owners.owner_name,', ') as owner_name ,
@@ -4062,42 +4068,45 @@ class ActiveSafController extends Controller
                             where prop_safs_owners.status =1 and prop_safs.proccess_fee_paid = 0 and prop_safs.proccess_fee>0
                             group by prop_safs_owners.saf_id
                         )o
-                    "),"o.saf_id","p.id")                    
-                    ->leftJoin("ulb_ward_masters as ward","ward.id","p.ward_mstr_id")
-                    ->where("p.proccess_fee_paid",0)
-                    ->where("p.proccess_fee",">",0);
-            switch($request->searchBy)
-            {
-                case "applicationNo": $data = $data->where("p.saf_no",$request->value);
-                                     break;  
-                case "ptn"          : $data = $data->where("p.ptn",$request->value);
-                                     break;
-                case "holding"      : $data = $data->where("p.holding",$request->value);
-                                     break;
-                case "name"         : $data = $data->where("o.owner_name","ILIKE","%".$request->value."%");
-                                     break;
-                case "mobileNo"     : $data = $data->where("o.mobile_no","ILIKE","%".$request->value."%");
-                                    break;
+                    "), "o.saf_id", "p.id")
+                ->leftJoin("ulb_ward_masters as ward", "ward.id", "p.ward_mstr_id")
+                ->where("p.proccess_fee_paid", 0)
+                ->where("p.proccess_fee", ">", 0);
+            switch ($request->searchBy) {
+                case "applicationNo":
+                    $data = $data->where("p.saf_no", $request->value);
+                    break;
+                case "ptn":
+                    $data = $data->where("p.ptn", $request->value);
+                    break;
+                case "holding":
+                    $data = $data->where("p.holding", $request->value);
+                    break;
+                case "name":
+                    $data = $data->where("o.owner_name", "ILIKE", "%" . $request->value . "%");
+                    break;
+                case "mobileNo":
+                    $data = $data->where("o.mobile_no", "ILIKE", "%" . $request->value . "%");
+                    break;
             }
-            switch($request->filteredBy)
-            {
-                case "gbsaf" : $data = $data->where("p.is_gb_saf",true);
-                                break;  
-                default      :   $data = $data->where("p.is_gb_saf",false);  
-            }            
+            switch ($request->filteredBy) {
+                case "gbsaf":
+                    $data = $data->where("p.is_gb_saf", true);
+                    break;
+                default:
+                    $data = $data->where("p.is_gb_saf", false);
+            }
 
-            $paginator = $data->paginate($perPage);  
+            $paginator = $data->paginate($perPage);
             $list = [
                 "current_page" => $paginator->currentPage(),
-                "last_page" => $paginator->lastPage(),                
+                "last_page" => $paginator->lastPage(),
                 "data" => $paginator->items(),
                 "total" => $paginator->total(),
-                
+
             ];
             return responseMsgs(true, "Data Fetched", $list, "011604", "1.0.1", "", "POST", $request->deviceId ?? "");
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011604", "1.0.1", "", "POST", $request->deviceId ?? "");
         }
     }
@@ -4105,8 +4114,8 @@ class ActiveSafController extends Controller
     {
         $rules = $this->getMutationFeeReqRules($request);
         $rules["paidAmount"] = 'required|numeric|min:1';
-        $rules["saleValue.*.owner"] = is_array($request->saleValue) && sizeOf($request->saleValue)>1?'required':"nullable";
-        $rules["saleValue.*.deed"] = is_array($request->saleValue) && sizeOf($request->saleValue)>1?'required|mimes:pdf,jpeg,png,jpg':"nullable";
+        $rules["saleValue.*.owner"] = is_array($request->saleValue) && sizeOf($request->saleValue) > 1 ? 'required' : "nullable";
+        $rules["saleValue.*.deed"] = is_array($request->saleValue) && sizeOf($request->saleValue) > 1 ? 'required|mimes:pdf,jpeg,png,jpg' : "nullable";
         $validated = Validator::make(
             $request->all(),
             $rules
@@ -4118,14 +4127,14 @@ class ActiveSafController extends Controller
                 'errors' => $validated->errors()
             ]);
         }
-        
+
         try {
             $user = Auth()->user();
             $verifyPaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
             $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
             $verifyStatus = 1;
             $saf = PropActiveSaf::find($request->id);
-            if(!$saf){
+            if (!$saf) {
                 $saf = PropSaf::find($request->id);
             }
             if (!$saf) {
@@ -4134,16 +4143,15 @@ class ActiveSafController extends Controller
             if ($saf->proccess_fee_paid) {
                 throw new Exception("Proccessing Fee Already Pay");
             }
-            if($saf->getTable()=="prop_active_safs")
-            {
+            if ($saf->getTable() == "prop_active_safs") {
                 throw new Exception("Please Wait For Approval");
             }
             $newSaleValue = $saf->proccess_fee;
-            $proccessFeePayment =$this->getProccessFeePayment($request);
-            if($proccessFeePayment->original["status"]){
+            $proccessFeePayment = $this->getProccessFeePayment($request);
+            if ($proccessFeePayment->original["status"]) {
                 $newSaleValue = $proccessFeePayment->original["data"]["proccess_fee"];
             }
-            
+
             $proccessFee = $newSaleValue;
             if ($proccessFee != $request->paidAmount) {
                 throw new Exception("Demand Amount And Paied Amount Missmatched");
@@ -4152,14 +4160,14 @@ class ActiveSafController extends Controller
             $docUpload = new DocUpload;
             $relativePath = Config::get('PropertyConstaint.PROCCESS_RELATIVE_PATH');
             $propModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
-            foreach($request->saleValue as $key=>$deedDoc){
+            foreach ($request->saleValue as $key => $deedDoc) {
                 $deedArr[$key] = $deedDoc;
                 $document = $deedDoc["deed"];
-                $refImageName =  $saf->id."-".$key+1;
+                $refImageName =  $saf->id . "-" . $key + 1;
                 unset($deedArr[$key]["deed"]);
-                $deedArr[$key]["upload"]= $document ? ($relativePath."/".$docUpload->upload($refImageName, $document, $relativePath)) :"";
+                $deedArr[$key]["upload"] = $document ? ($relativePath . "/" . $docUpload->upload($refImageName, $document, $relativePath)) : "";
             }
-            $request->merge(["saleValueNew"=>$deedArr]);
+            $request->merge(["saleValueNew" => $deedArr]);
             if (in_array($request->paymentMode, $verifyPaymentModes)) {
                 $verifyStatus = 2;
             }
@@ -4177,7 +4185,7 @@ class ActiveSafController extends Controller
                 "saf_id" => $saf->id,
                 "applicationNo" => $saf->saf_no,
                 "ulbId"   => $saf->ulb_id,
-                "userId" => $request['userId'] ?? ($user->id??0),
+                "userId" => $request['userId'] ?? ($user->id ?? 0),
                 "tranNo" => $tranNo,
                 "amount" => $request->paidAmount,
                 'tranBy' => $tranBy,
@@ -4185,7 +4193,7 @@ class ActiveSafController extends Controller
             ]);
 
             $saf->proccess_fee_paid = 1;
-            $saf->deed_json = preg_replace('/\//','',json_encode($request->saleValueNew,JSON_UNESCAPED_UNICODE));
+            $saf->deed_json = preg_replace('/\//', '', json_encode($request->saleValueNew, JSON_UNESCAPED_UNICODE));
             $safTrans = new PropTransaction();
             $safTrans->saf_id = $saf->id;
             $safTrans->amount = $request['amount'];
@@ -4220,11 +4228,11 @@ class ActiveSafController extends Controller
 
     public function getProccessFeePayment(Request $request)
     {
-        try{
+        try {
             $rules = $this->getMutationFeeReqRules($request);
             $rules['id'] = "required|digits_between:1,9223372036854775807";
-            
-            
+
+
             $validated = Validator::make(
                 $request->all(),
                 $rules
@@ -4237,7 +4245,7 @@ class ActiveSafController extends Controller
                 ]);
             }
             $saf = PropActiveSaf::find($request->id);
-            if(!$saf){
+            if (!$saf) {
                 $saf = PropSaf::find($request->id);
             }
             if (!$saf) {
@@ -4245,35 +4253,31 @@ class ActiveSafController extends Controller
             }
             $request->merge(
                 [
-                    "assessmentType"=>$saf->assessment_type,
-                    "propertyType"=>$saf->prop_type_mstr_id,
-                    "transferModeId"=>$saf->transfer_mode_mstr_id,
+                    "assessmentType" => $saf->assessment_type,
+                    "propertyType" => $saf->prop_type_mstr_id,
+                    "transferModeId" => $saf->transfer_mode_mstr_id,
                 ]
             );
             $saleVaues = 0;
-            if(is_array($request->saleValue))
-            {
-                foreach($request->saleValue as $val)
-                {
+            if (is_array($request->saleValue)) {
+                foreach ($request->saleValue as $val) {
                     $saleVal = $val["value"];
-                    $saleVaues += $this->readProccessFee($request->assessmentType,$saleVal,$request->propertyType,$request->transferModeId);
+                    $saleVaues += $this->readProccessFee($request->assessmentType, $saleVal, $request->propertyType, $request->transferModeId);
                 }
-            }
-            else{
-                $saleVaues = $this->readProccessFee($request->assessmentType,$request->saleValue,$request->propertyType,$request->transferModeId);
+            } else {
+                $saleVaues = $this->readProccessFee($request->assessmentType, $request->saleValue, $request->propertyType, $request->transferModeId);
             }
             $data["proccess_fee"] = $saleVaues;
             return responseMsgs(true, "ProccessFee Fetched", $data, "011604", "1.0", responseTime(), "POST", $request->deviceId);
-            
-        }catch (Exception $e) {
-            
+        } catch (Exception $e) {
+
             return responseMsgs(false, $e->getMessage(), "", "011604.1", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }
 
     public function proccessFeePaymentRecipte(Request $request)
     {
-        $rules['tranId'] = "required|digits_between:1,9223372036854775807";        
+        $rules['tranId'] = "required|digits_between:1,9223372036854775807";
         $validated = Validator::make(
             $request->all(),
             $rules
@@ -4285,33 +4289,30 @@ class ActiveSafController extends Controller
                 'errors' => $validated->errors()
             ]);
         }
-        try{
+        try {
             $mVerification = new PropSafVerification();
             $verificationDtl = collect();
             $mVerificationDtls = new PropSafVerificationDtl();
             $trans = (new PropTransaction())->getPropByTranId($request->tranId);
-            if (collect($trans)->isEmpty())
-            {
-                throw new Exception("Transaction Not Available for this Transaction No");          
+            if (collect($trans)->isEmpty()) {
+                throw new Exception("Transaction Not Available for this Transaction No");
             }
-            if($trans->tran_type!=="Saf Proccess Fee")
-            {
+            if ($trans->tran_type !== "Saf Proccess Fee") {
                 throw new Exception("Invalid Transection");
-            } 
-                             
+            }
+
             $saf = (new PropSaf())->getBasicDetailsV2($trans->saf_id);                       // Get Details from saf table
-            if (collect($saf)->isEmpty()){
+            if (collect($saf)->isEmpty()) {
                 throw new Exception("Saf Details not available");
             }
             $safVerification = $mVerification->getLastVerification($saf->id);
-            if($safVerification)
-            {
+            if ($safVerification) {
                 $saf->ward_no = $safVerification->ward_name ? $safVerification->ward_name : $saf->ward_no;
                 // $saf->category= $safVerification->category ? $safVerification->category : $saf->category;
                 // $verificationDtl = $mVerificationDtls->getVerificationDtls($safVerification->id);
             }
             $ulbDetails = (new UlbMaster())->getUlbDetails($saf->ulb_id);
-                       
+
             $data["transactionNo"] = $trans->tran_no;
             $data["receiptDtls"] = [
                 "departmentSection" => Config::get('PropertyConstaint.DEPARTMENT_SECTION'),
@@ -4319,15 +4320,15 @@ class ActiveSafController extends Controller
                 "transactionDate" => Carbon::parse($trans->tran_date)->format('d-m-Y'),
                 "transactionNo" => $trans->tran_no,
                 "transactionTime" => $trans->created_at->format('g:i A'),
-                "chequeStatus" => $trans->cheque_status??1, 
+                "chequeStatus" => $trans->cheque_status ?? 1,
                 "verifyStatus" => $trans->verify_status,                     // (0-Not Verified,1-Verified,2-Under Verification,3-Bounce)
-                "applicationNo" => $saf->application_no??"",
-                "customerName" => $saf->applicant_marathi ?? "", 
-                "ownerName" => $saf->owner_name_marathi ?? "", 
-                "guardianName" => trim($saf->guardian_name??"") ? $saf->guardian_name : $saf->guardian_name_marathi??"",
-                "mobileNo" => $saf->mobile_no??"",
-                "address" => $saf->prop_address??"",
-                "zone_name" => $saf->zone_name??"",
+                "applicationNo" => $saf->application_no ?? "",
+                "customerName" => $saf->applicant_marathi ?? "",
+                "ownerName" => $saf->owner_name_marathi ?? "",
+                "guardianName" => trim($saf->guardian_name ?? "") ? $saf->guardian_name : $saf->guardian_name_marathi ?? "",
+                "mobileNo" => $saf->mobile_no ?? "",
+                "address" => $saf->prop_address ?? "",
+                "zone_name" => $saf->zone_name ?? "",
                 "paidFrom" => $trans->from_fyear,
                 "paidUpto" => $trans->to_fyear,
                 "paymentMode" => $trans->payment_mode,
@@ -4337,8 +4338,8 @@ class ActiveSafController extends Controller
                 "chequeDate" => ymdToDmyDate($trans->cheque_date),
                 "demandAmount" => $trans->demand_amt,
                 "arrearSettled" => $trans->arrear_settled_amt,
-                "ulbId" => $saf->ulb_id??"",
-                "wardNo" => $saf->ward_no??"",
+                "ulbId" => $saf->ulb_id ?? "",
+                "wardNo" => $saf->ward_no ?? "",
                 "propertyNo" => $saf->property_no ?? "",
                 "towards" => $trans->tran_type,
                 "description" => [
@@ -4347,32 +4348,30 @@ class ActiveSafController extends Controller
                 "totalPaidAmount" => $trans->amount,
                 "advancePaidAmount" => 0,
                 "adjustAmount" => 0,
-                "netAdvance"=>0, 
+                "netAdvance" => 0,
                 "paidAmtInWords" => getIndianCurrency($trans->amount),
                 "tcName" => $trans->tc_name,
                 "tcMobile" => $trans->tc_mobile,
                 "ulbDetails" => $ulbDetails,
                 "isArrearReceipt" => false,
                 "bookNo" => $trans->book_no ?? "",
-                "plot_no"=>$saf->plot_no??"",
-                "area_of_plot"=>$saf->area_of_plot,
+                "plot_no" => $saf->plot_no ?? "",
+                "area_of_plot" => $saf->area_of_plot,
 
-                "receiptNo" => isset($trans->book_no) ? (explode('-', $trans->book_no)[1]??"0") : ""
+                "receiptNo" => isset($trans->book_no) ? (explode('-', $trans->book_no)[1] ?? "0") : ""
             ];
-            return responseMsgs(true, "Payment Receipt", remove_null($data), "011604.2", "1.0", "", "POST", $request->deviceId ?? ""); 
-        }
-        catch(Exception $e)
-        {
-            return responseMsgs(false, $e->getMessage(), "", "011604.2", "1.0", "", "POST", $request->deviceId ?? ""); 
+            return responseMsgs(true, "Payment Receipt", remove_null($data), "011604.2", "1.0", "", "POST", $request->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011604.2", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }
 
-    private function getMutationFeeReqRules(Request $request )
+    private function getMutationFeeReqRules(Request $request)
     {
         $rules = [
             'saleValue' => 'required|array',
-            "saleValue.*.value"=>"required|digits_between:1,9223372036854775807",
-            
+            "saleValue.*.value" => "required|digits_between:1,9223372036854775807",
+
         ];
         return  $rules;
     }

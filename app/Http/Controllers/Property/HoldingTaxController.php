@@ -470,23 +470,23 @@ class HoldingTaxController extends Controller
             $postPropPayment->_propCalculation = $propCalculation;
             // Transaction is beginning in Prop Payment Class
             $postPropPayment->postPayment();
+            DB::commit();
 
             // sendsms
-            // $propertyNo     = $propCalculation->original['data']['basicDetails']['property_no'];
-            // $ownerName      = Str::limit(trim($propCalculation->original['data']['basicDetails']['owner_name']), 30);
-            // $payableAmount  = $propCalculation->original['data']['payableAmt'];
+            $propertyNo     = $propCalculation->original['data']['basicDetails']['property_no'];
+            $ownerName      = Str::limit(trim($propCalculation->original['data']['basicDetails']['owner_name']), 30);
+            $payableAmount  = $propCalculation->original['data']['payableAmt'];
 
-            // $propOwners = $mPropOwner->getOwnerByPropId($req['id']);
-            // $firstOwner = collect($propOwners)->first();
-            // if ($firstOwner) {
-            //     $ownerMobile = $firstOwner->mobileNo;
-            //     if (strlen($ownerMobile) == 10) {
-            //         $sms      = "Thank you " . $ownerName . " for making payment of Rs." . $payableAmount . " against Property No. " . $propertyNo . ". For more details visit www.amcakola.in /call us at:8069493299 SWATI INDUSTRIES";
-            //         $response = send_sms($ownerMobile, $sms, 1707169564199604962);
-            //     }
-            // }
+            $propOwners = $mPropOwner->getOwnerByPropId($req['id']);
+            $firstOwner = collect($propOwners)->first();
+            if ($firstOwner) {
+                $ownerMobile = $firstOwner->mobileNo;
+                if (strlen($ownerMobile) == 10) {
+                    $sms      = "Thank you " . $ownerName . " for making payment of Rs. " . $payableAmount . " against Property No. " . $propertyNo . ". For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
+                    $response = send_sms($ownerMobile, $sms, 1707169564199604962);
+                }
+            }
 
-            DB::commit();
             return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $postPropPayment->_tranNo, 'transactionId' => $postPropPayment->_tranId], "011604", "2.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
