@@ -1187,7 +1187,7 @@ class ActiveSafController extends Controller
             DB::connection('pgsql_master')->beginTransaction();
             $track->saveTrack($request);
 
-            if (!$saf->current_role) 
+            if (!$saf->current_role ||($saf->current_role==$refWorkflows['initiator']['id'])) 
             {
                 $saf->current_role = $refWorkflows['initiator']['forward_role_id'];
                 $saf->last_role_id = $refWorkflows['initiator']['forward_role_id'];
