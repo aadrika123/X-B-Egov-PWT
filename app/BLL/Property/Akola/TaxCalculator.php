@@ -420,6 +420,10 @@ class TaxCalculator
     public function generateFyearWiseTaxes()
     {
         $currentFyearEndDate = Carbon::now()->endOfYear()->addMonths(3)->format('Y-m-d');
+        list($From,$upto) =  explode("-",getFY());
+        if($upto){
+            $currentFyearEndDate = ($upto."-03-31");
+        }
         $fyearWiseTaxes = collect();
         // Act Of limitation
         $yearDiffs = Carbon::parse($this->_calculationDateFrom)->diffInYears(Carbon::now());                // year differences

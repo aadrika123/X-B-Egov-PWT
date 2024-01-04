@@ -1208,7 +1208,7 @@ class ActiveSafController extends Controller
         }catch (Exception $e) {
             DB::rollback();
             DB::connection('pgsql_master')->rollback();
-            return responseMsg(false,[$e->getMessage(),$e->getFile(),$e->getLine()],"",);
+            return responseMsg(false,$e->getMessage(),"",);
         }
     }
 
