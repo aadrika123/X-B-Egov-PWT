@@ -1038,8 +1038,8 @@ class ActiveSafController extends Controller
                 }
                 if(!$saf->is_agency_verified && $saf->prop_type_mstr_id!=4 && $saf->current_role == $wfLevels['UTC']) #make option UTC Verification
                 {
-                    $saf->is_agency_verified = true;
-                }
+                    $saf->is_field_verified = true;
+                }                
                 $saf->update();
 
                 $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $userId);          // Check Post Next level condition
@@ -1119,7 +1119,7 @@ class ActiveSafController extends Controller
             }
             DB::commit();
             DB::connection('pgsql_master')->commit();
-            return responseMsgs(true, "Successfully Forwarded The Application!!", $samHoldingDtls, "010109", "1.0", "", "POST", $request->deviceId);
+            return responseMsgs(true, "Successfully ".$request->action." The Application!!", $samHoldingDtls, "010109", "1.0", "", "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
