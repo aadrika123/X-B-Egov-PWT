@@ -350,6 +350,7 @@ class SafDocController extends Controller
                 return $response;
             }
             $map = collect($response->original["data"])->where("doc_category","Layout sanction Map")->first();
+            $saf["is_naksh_uploaded"] = $map? true: false;
             $saf["naksha"] = $map;
             return responseMsgs(true, "date fetched", $saf, "010202", "1.1", "", "POST", $req->deviceId ?? "");
         }
