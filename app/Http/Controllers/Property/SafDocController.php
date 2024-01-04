@@ -463,7 +463,7 @@ class SafDocController extends Controller
             [
                 'applicationId' => 'required|numeric',
                 "IsDouble"=>"required|boolean",
-                "areaOfPlot"=>"nullable|required_if:IsDouble,in,1,true|numeric|min:0",
+                "areaOfPlot"=>"nullable|required_if:IsDouble,in,0,false|numeric|min:0",
             ]
         );
         if ($validated->fails()) {
