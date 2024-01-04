@@ -1036,6 +1036,10 @@ class ActiveSafController extends Controller
                 {
                     $saf->is_geo_tagged = true;
                 }
+                if(!$saf->is_agency_verified && $saf->prop_type_mstr_id!=4 && $saf->current_role == $wfLevels['UTC'])
+                {
+                    $saf->is_agency_verified = true;
+                }
                 $saf->update();
 
                 $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $userId);          // Check Post Next level condition
