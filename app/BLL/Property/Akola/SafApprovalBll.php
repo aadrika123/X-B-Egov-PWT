@@ -404,6 +404,8 @@ class SafApprovalBll
                 "ulb_id"        =>$ulbId??$user->ulb_id,
 
                 "balance"=>$val["totalTax"],
+                "due_total_tax"=>$val["totalTax"],
+                "due_balance"=>$val["totalTax"],
                 "due_alv" =>$val["alv"],
                 "due_maintanance_amt"=> $val["maintananceTax"]??0,
                 "due_aging_amt"     =>$val["agingAmt"]??0,

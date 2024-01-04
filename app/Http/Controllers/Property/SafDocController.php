@@ -349,7 +349,12 @@ class SafDocController extends Controller
             {
                 return $response;
             }
-            $map = collect($response->original["data"])->where("doc_category","Layout sanction Map")->first();
+            $map = collect($response->original["data"])->where("doc_category","Layout sanction Map")->first();            
+            if($map)
+            {
+                $map["ext"] = strtolower(collect(explode(".",$map["doc_path"]))->last());
+            }
+            $saf["is_naksha_uploaded"] = $map? true: false;
             $saf["naksha"] = $map;
             return responseMsgs(true, "date fetched", $saf, "010202", "1.1", "", "POST", $req->deviceId ?? "");
         }
@@ -452,16 +457,34 @@ class SafDocController extends Controller
     }
 
     public function nakshaAreaOfPloteUpdate(Request $req)
-    {
-        $req->validate([
-            'applicationId' => 'required|numeric'
-        ]);
+    { 
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'applicationId' => 'required|numeric',
+                "IsDouble"=>"required|boolean",
+                "areaOfPlot"=>"nullable|required_if:IsDouble,in,0,false|numeric|min:0",
+            ]
+        );
+        if ($validated->fails()) {
+            return response()->json([
+                'status'    => false,
+                'message'   => 'validation error',
+                'errors'    => $validated->errors()
+            ]);
+        } 
         try{
             $mActiveSafs = new PropActiveSaf();
             $refSafs = $mActiveSafs->getSafNo($req->applicationId);                      // Get Saf Details
             if (!$refSafs){
                 throw new Exception("Application Not Found for this id");
             }
+            $diffArea = ($req->areaOfPlot - $refSafs->area_of_plot) > 0 ? ($req->areaOfPlot - $refSafs->area_of_plot) : 0;
+            $sms = $req->IsDouble ? "Double Taxation Apply" : ("100 % Penalty Apply On " ($diffArea));
+            $refSafs->is_allow_double_tax = $req->IsDouble;
+            $refSafs->naksha_area_of_plot = $req->areaOfPlot;
+            $refSafs->update();
+            return responseMsgs(true, $sms, "", "010204", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }
         catch (Exception $e) {
             DB::rollBack();
