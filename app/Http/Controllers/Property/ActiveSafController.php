@@ -697,6 +697,7 @@ class ActiveSafController extends Controller
             $fullDetailsData['application_no'] = $data->saf_no;
             $fullDetailsData['apply_date'] = $data->application_date;
             $fullDetailsData['ward_mstr_id'] = $data->ward_mstr_id;
+            $fullDetailsData['property_no'] = (!$data->property_no) ? true :false ;
 
             $fullDetailsData['doc_verify_status'] = $data->doc_verify_status;
             $fullDetailsData['doc_upload_status'] = $data->doc_upload_status;
