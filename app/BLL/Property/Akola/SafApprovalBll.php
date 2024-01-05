@@ -57,7 +57,7 @@ class SafApprovalBll
     public $_ptNo;
     public $_famNo;
     public $_famId;
-
+    protected $_SkipFiledWorkWfMstrId=[];
     // Initializations
     public function __construct()
     {
@@ -67,6 +67,10 @@ class SafApprovalBll
         $this->_mPropSafVerifications = new PropSafVerification();
         $this->_mPropSafVerificationDtls = new PropSafVerificationDtl();
         $this->_mPropFloors = new PropFloor();
+        $wfContent = Config::get('workflow-constants');
+        $this->_SkipFiledWorkWfMstrId = [
+            $wfContent["SAF_MUTATION_ID"],
+        ];
     }
 
     /**
@@ -108,10 +112,42 @@ class SafApprovalBll
         {
             $this->_verifiedPropDetails = $this->_mPropSafVerifications->getVerifications2($this->_safId);
         }
-        if (collect($this->_verifiedPropDetails)->isEmpty())
+        if (collect($this->_verifiedPropDetails)->isEmpty() && (!in_array($this->_activeSaf->workflow_id,$this->_SkipFiledWorkWfMstrId)))
             throw new Exception("Ulb Verification Details not Found");
+        if(collect($this->_verifiedPropDetails)->isEmpty())
+        {
+            $this->_verifiedPropDetails[] = (object)[
+                "id"=> 0 ,
+                "saf_id"=> $this->_activeSaf->id,
+                "agency_verification"=> $this->_activeSaf->is_agency_verified  ,
+                "ulb_verification"=> $this->_activeSaf->is_field_verified  ,
+                "prop_type_id"=> $this->_activeSaf->prop_type_mstr_id ,
+                "area_of_plot"=> $this->_activeSaf->area_of_plot ,
+                "verified_by"=> null ,
+                "ward_id"=> $this->_activeSaf->ward_mstr_id ,
+                "has_mobile_tower"=> $this->_activeSaf->is_mobile_tower ,
+                "tower_area"=> $this->_activeSaf->tower_area ,
+                "tower_installation_date"=> $this->_activeSaf->tower_installation_date ,
+                "has_hoarding"=> $this->_activeSaf->is_hoarding_board ,
+                "hoarding_area"=> $this->_activeSaf->hoarding_area ,
+                "hoarding_installation_date"=> $this->_activeSaf->hoarding_installation_date ,
+                "is_petrol_pump"=> $this->_activeSaf->is_petrol_pump ,
+                "underground_area"=> $this->_activeSaf->under_ground_area ,
+                "petrol_pump_completion_date"=> $this->_activeSaf->petrol_pump_completion_date ,
+                "has_water_harvesting"=> $this->_activeSaf->is_water_harvesting ,
+                "created_at"=> $this->_activeSaf->created_at ,
+                "updated_at"=> $this->_activeSaf->updated_at ,
+                "status"=> $this->_activeSaf->status ,
+                "user_id"=> 0 ,
+                "ulb_id"=> $this->_activeSaf->ulb_id ,
+                "category_id"=> $this->_activeSaf->category_id ,
+            ];
+            $this->_verifiedFloors = $this->_mPropActiveSafFloor->getSafFloorsAsFieldVrfDtl($this->_safId);
+        }
+        else{
 
-        $this->_verifiedFloors = $this->_mPropSafVerificationDtls->getVerificationDetails($this->_verifiedPropDetails[0]->id);
+            $this->_verifiedFloors = $this->_mPropSafVerificationDtls->getVerificationDetails($this->_verifiedPropDetails[0]->id);
+        }
     }
 
     /**
@@ -197,7 +233,7 @@ class SafApprovalBll
     }
 
     /**
-     * | Update Old Property
+     * | Update Old Property Apply On Reassessment
      */
     public function updateOldHolding()
     { 
@@ -304,7 +340,7 @@ class SafApprovalBll
     public function famGeneration()
     {
         // Tax Calculation
-        $this->_calculateTaxByUlb = new CalculateTaxByUlb($this->_verifiedPropDetails[0]->id);
+        $this->_calculateTaxByUlb = $this->_verifiedPropDetails[0]->id ? new CalculateTaxByUlb($this->_verifiedPropDetails[0]->id) : new CalculateSafTaxById($this->_activeSaf); 
         $propIdGenerator = new PropIdGenerator;
         $calculatedTaxes = $this->_calculateTaxByUlb->_GRID;
         $firstDemand = $calculatedTaxes['fyearWiseTaxes']->first();
