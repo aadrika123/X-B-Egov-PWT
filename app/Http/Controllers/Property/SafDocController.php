@@ -481,7 +481,7 @@ class SafDocController extends Controller
                 throw new Exception("Application Not Found for this id");
             }
             $diffArea = ($req->areaOfPlot - $refSafs->area_of_plot) > 0 ? ($req->areaOfPlot - $refSafs->area_of_plot) : 0;
-            $sms = $req->IsDouble ? "Double Taxation Apply" : ("100 % Penalty Apply On " ($diffArea));
+            $sms = $req->IsDouble ? "Double Taxation Apply" : ("100 % Penalty Apply On " .($diffArea));
             $refSafs->is_allow_double_tax = $req->IsDouble;
             $refSafs->naksha_area_of_plot = $req->areaOfPlot;
             $refSafs->update();

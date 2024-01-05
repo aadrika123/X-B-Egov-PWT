@@ -23,6 +23,34 @@ class PropActiveSafsFloor extends Model
             ->get();
     }
 
+    public function getSafFloorsAsFieldVrfDtl($safId)
+    {
+        return self::select(DB::raw("
+                        prop_active_safs_floors.id,
+                        0 as verification_id,
+                        prop_active_safs_floors.saf_id as saf_id,
+                        prop_active_safs_floors.id as saf_floor_id,
+                        prop_active_safs_floors.floor_mstr_id as floor_mstr_id,	 	
+                        prop_active_safs_floors.usage_type_mstr_id	as usage_type_id, 	
+                        prop_active_safs_floors.const_type_mstr_id as 	 construction_type_id, 	 	
+                        prop_active_safs_floors.occupancy_type_mstr_id	as occupancy_type_id,	
+                        prop_active_safs_floors.builtup_area as builtup_area, 	 	
+                        prop_active_safs_floors.date_from as date_from,	 	
+                        prop_active_safs_floors.date_upto as date_to,	 	
+                        prop_active_safs_floors.status,		
+                        prop_active_safs_floors.carpet_area	as carpet_area, 
+                        0 as verified_by,	 	
+                        prop_active_safs_floors.created_at,	 	
+                        prop_active_safs_floors.updated_at,	 	
+                        prop_active_safs_floors.user_id	, 
+                        prop_active_safs.ulb_id ,	
+                        prop_active_safs_floors.no_of_rooms	, 	
+                        prop_active_safs_floors.no_of_toilets
+                "))
+                ->join("prop_active_safs","prop_active_safs.id","prop_active_safs_floors.saf_id")
+               ->where("prop_active_safs_floors.saf_id",$safId)->get();
+    }
+
     /**
      * | Get Saf Floor Details by SAF id
      */
