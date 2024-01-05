@@ -44,7 +44,6 @@ class SafDocController extends Controller
         ]);
 
         try {
-            $wfLevels = FacadesConfig::get('PropertyConstaint.SAF-LABEL');
             $mActiveSafs = new PropActiveSaf();
             $safsOwners = new PropActiveSafsOwner();
             $refSafs = $mActiveSafs->getSafNo($req->applicationId);                      // Get Saf Details
@@ -62,7 +61,7 @@ class SafDocController extends Controller
             $totalDocLists['docVerifyStatus'] = $refSafs->doc_verify_status;
             $totalDocLists['paymentStatus'] = $refSafs->payment_status;
             $totalDocLists['isCitizen'] = ($refSafs->citizen_id == null) ? false : true; 
-            $totalDocLists['citizenCanSendOfficer'] = (($refSafs->doc_upload_status && $refSafs->initiator_role_id == $wfLevels['BO']) || $refSafs->parked) ? true  : false;
+            $totalDocLists['citizenCanSendOfficer'] = (($refSafs->doc_upload_status && $refSafs->initiator_role_id == $refSafs->current_role) || $refSafs->parked) ? true  : false;
 
             return responseMsgs(true, "", remove_null($totalDocLists), "010203", "", "", 'POST', "");
         } catch (Exception $e) {
