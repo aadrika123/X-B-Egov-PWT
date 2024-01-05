@@ -1549,9 +1549,8 @@ class ActiveSafController extends Controller
 
                 #_sms
                 // if (strlen($mobileNo) == 10) {
-                //     // $sms      = "Dear " . $ownerName . ", your application Ref No. " . $applicationNo . " has been returned by AMC due to incomplete Documents/Information for the Property having Holding No. " . $holdingNo . ". For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
-                //     $sms      = "Dear " . $ownerName . ", congratulations, your application Ref No. " . $applicationNo . " has been approved. Your Property ID is: " . $holdingNo . ". Please pay Rs. " . 1000 . ".  against Property Tax. For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
-                //     $response = send_sms($mobileNo, $sms, 1707169564208638633);
+                //     $sms      = "Dear " . $ownerName . ", congratulations, your application Ref No. " . $applicationNo . " has been approved. Your Property ID is: " . $holdingNo . ". Please pay Rs. " . 500 . ".against Property Tax. For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
+                //     $response = send_sms($mobileNo, $sms, 1707169564214439001);
                 // }
             }
 

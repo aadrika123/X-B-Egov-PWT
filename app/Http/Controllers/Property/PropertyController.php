@@ -104,7 +104,7 @@ class PropertyController extends Controller
             $response = $ThirdPartyController->sendOtp($myRequest);
 
             $response = collect($response)->toArray();
-            $data['otp'] = $response['original']['data'];
+            // $data['otp'] = $response['original']['data'];
             $data['mobileNo'] = $ownerMobile;
 
             return responseMsgs(true, "OTP send successfully", $data, '010801', '01', '623ms', 'Post', '');
