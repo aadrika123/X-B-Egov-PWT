@@ -44,7 +44,8 @@ class WaterConsumerDemand extends Model
             'max_demand_upto.demand_upto as demand_upto',
             'subquery.generate_amount',
             'subquery.arrear_demands',
-            'subquery.current_demands'
+            'subquery.current_demands',
+            'subquery.generation_dates'
         )
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_consumer_demands.consumer_id')
             ->leftjoin('water_consumer_initial_meters', 'water_consumer_initial_meters.consumer_id', 'water_consumer_demands.consumer_id')
@@ -52,7 +53,7 @@ class WaterConsumerDemand extends Model
             ->leftjoin('users', 'users.id', '=', 'water_consumer_demands.emp_details_id')
             ->leftjoin(
                 DB::raw('(SELECT 
-                consumer_id,
+                consumer_id,max(generation_date) as generation_dates,
                 SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.arrear_demand ELSE 0 END) AS arrear_demands,
                 SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.current_demand ELSE 0 END) AS current_demands,
                 SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NOT NULL THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS generate_amount
