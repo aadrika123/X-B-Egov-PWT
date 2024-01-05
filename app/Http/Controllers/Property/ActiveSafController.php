@@ -1550,15 +1550,17 @@ class ActiveSafController extends Controller
                 $famNo = $safApprovalBll->_famNo;
                 $famId = $safApprovalBll->_famId;
 
-                $mobileNo = $ownerDetails->mobile_no;
-                $ownerName = $ownerDetails->owner_name;
+                $mobileNo = $ownerDetails[0]['mobile_no'];
+                $ownerName = $ownerDetails[0]['owner_name'];
                 $applicationNo = $activeSaf->saf_no;
 
                 #_sms
                 // if (strlen($mobileNo) == 10) {
-                //     // $sms      = "Dear " . $ownerName . ", your application Ref No. " . $applicationNo . " has been returned by AMC due to incomplete Documents/Information for the Property having Holding No. " . $holdingNo . ". For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
-                //     $sms      = "Dear " . $ownerName . ", congratulations, your application Ref No. " . $applicationNo . " has been approved. Your Property ID is: " . $holdingNo . ". Please pay Rs. " . 1000 . ".  against Property Tax. For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
-                //     $response = send_sms($mobileNo, $sms, 1707169564208638633);
+                //     $newReqs = new Request(["propId" => $safApprovalBll->_replicatedPropId]);
+                //     $holdingTaxController = App::makeWith(HoldingTaxController::class, ["iSafRepository", iSafRepository::class]);
+                //     $holdingDues = $holdingTaxController->getHoldingDues($newReqs);
+                //     $sms      = "Dear " . $ownerName . ", congratulations, your application Ref No. " . $applicationNo . " has been approved. Your Property ID is: " . $holdingNo . ". Please pay Rs. " . 500 . ".against Property Tax. For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
+                //     $response = send_sms($mobileNo, $sms, 1707169564214439001);
                 // }
             }
 
@@ -1568,16 +1570,16 @@ class ActiveSafController extends Controller
                 $msg = "Application Rejected Successfully";
                 $metaReqs['verificationStatus'] = 0;
 
-                $mobileNo = $ownerDetails->mobile_no;
-                $ownerName = $ownerDetails->owner_name;
+                $mobileNo = $ownerDetails[0]['mobile_no'];
+                $ownerName = $ownerDetails[0]['owner_name'];
                 $applicationNo = $activeSaf->saf_no;
                 $holdingNo = $activeSaf->holding_no;
 
                 #_sms
-                // if (strlen($mobileNo) == 10) {
-                //     $sms      = "Dear " . $ownerName . ", your application Ref No. " . $applicationNo . " has been returned by AMC due to incomplete Documents/Information for the Property having Holding No. " . $holdingNo . ". For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
-                //     $response = send_sms($mobileNo, $sms, 1707169564208638633);
-                // }
+                if (strlen($mobileNo) == 10) {
+                    $sms      = "Dear " . $ownerName . ", your application Ref No. " . $applicationNo . " has been returned by AMC due to incomplete Documents/Information for the Property having Holding No. " . $holdingNo . ". For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
+                    $response = send_sms($mobileNo, $sms, 1707169564208638633);
+                }
             }
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $safDetails->workflow_id;
@@ -1612,6 +1614,7 @@ class ActiveSafController extends Controller
                 'famId' => $famId,
                 'propId' => $safApprovalBll->_replicatedPropId
             ];
+            dd();
             DB::commit();
             DB::connection('pgsql_master')->commit();
             return responseMsgs(true, $msg, $responseFields, "010110", "1.0", responseTime(), "POST", $req->deviceId);
