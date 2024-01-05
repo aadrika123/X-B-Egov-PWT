@@ -1553,7 +1553,8 @@ class ActiveSafController extends Controller
                 //     $newReqs = new Request(["propId" => $safApprovalBll->_replicatedPropId]);
                 //     $holdingTaxController = App::makeWith(HoldingTaxController::class, ["iSafRepository", iSafRepository::class]);
                 //     $holdingDues = $holdingTaxController->getHoldingDues($newReqs);
-                //     $sms      = "Dear " . $ownerName . ", congratulations, your application Ref No. " . $applicationNo . " has been approved. Your Property ID is: " . $holdingNo . ". Please pay Rs. " . 500 . ".against Property Tax. For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
+                //     $currentDemand = $holdingDues->original['data']['currentDemand'];
+                //     $sms      = "Dear " . $ownerName . ", congratulations, your application Ref No. " . $applicationNo . " has been approved. Your Property ID is: " . $holdingNo . ". Please pay Rs. " . $currentDemand . ".against Property Tax. For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
                 //     $response = send_sms($mobileNo, $sms, 1707169564214439001);
                 // }
             }
