@@ -246,19 +246,19 @@ class PropertyMutationController extends Controller
                 $famId = 0;
                 $propId = $propProperties->id;
 
-                // $mobileNo = $new_saf_owners[0]['mobile_no'];
-                // $ownerName = $new_saf_owners[0]['owner_name'];
-                // $applicationNo = $newSafData->saf_no;
+                $mobileNo = $new_saf_owners[0]['mobile_no'];
+                $ownerName = $new_saf_owners[0]['owner_name'];
+                $applicationNo = $newSafData->saf_no;
 
-                // #_sms in case of approval
-                // if (strlen($mobileNo) == 10) {
-                //     $newReqs = new Request(["propId" => $safApprovalBll->_replicatedPropId]);
-                //     $holdingTaxController = App::makeWith(HoldingTaxController::class, ["iSafRepository", iSafRepository::class]);
-                //     $holdingDues = $holdingTaxController->getHoldingDues($newReqs);
-                //     $currentDemand = $holdingDues->original['data']['currentDemand'];
-                //     $sms      = "Dear " . $ownerName . ", congratulations, your application Ref No. " . $applicationNo . " has been approved. Your Property ID is: " . $holdingNo . ". Please pay Rs. " . $currentDemand . " against Property Tax. For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
-                //     $response = send_sms($mobileNo, $sms, 1707169564214439001);
-                // }
+                #_sms in case of approval
+                if (strlen($mobileNo) == 10) {
+                    $newReqs = new Request(["propId" => $propProperties->id]);
+                    $holdingTaxController = App::makeWith(HoldingTaxController::class, ["iSafRepository", iSafRepository::class]);
+                    $holdingDues = $holdingTaxController->getHoldingDues($newReqs);
+                    $currentDemand = $holdingDues->original['data']['payableAmt'];
+                    $sms      = "Dear " . $ownerName . ", congratulations, your application Ref No. " . $applicationNo . " has been approved. Your Property ID is: " . $holdingNo . ". Please pay Rs. " . $currentDemand . " against Property Tax. For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
+                    $response = send_sms($mobileNo, $sms, 1707169564214439001);
+                }
             } else {
 
                 $prop_saf->setTable('prop_rejected_safs');
@@ -285,15 +285,15 @@ class PropertyMutationController extends Controller
                 $msg = "Mutation Application Rejected Successfully";
                 $metaReqs['verificationStatus'] = 0;
 
-                // $mobileNo = $new_saf_owners[0]['mobile_no'];
-                // $ownerName = $new_saf_owners[0]['owner_name'];
-                // $applicationNo = $newSafData->saf_no;
+                $mobileNo = $new_saf_owners[0]['mobile_no'];
+                $ownerName = $new_saf_owners[0]['owner_name'];
+                $applicationNo = $newSafData->saf_no;
 
-                // #_sms in case if rejection
-                // if (strlen($mobileNo) == 10) {
-                //     $sms      = "Dear " . $ownerName . ", your application Ref No. " . $applicationNo . " has been returned by AMC due to incomplete Documents/Information for the Property having Holding No. " . $holdingNo . ". For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
-                //     $response = send_sms($mobileNo, $sms, 1707169564208638633);
-                // }
+                #_sms in case if rejection
+                if (strlen($mobileNo) == 10) {
+                    $sms      = "Dear " . $ownerName . ", your application Ref No. " . $applicationNo . " has been returned by AMC due to incomplete Documents/Information for the Property having Holding No. " . $holdingNo . ". For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
+                    $response = send_sms($mobileNo, $sms, 1707169564208638633);
+                }
             }
 
             $prop_saf->save();
