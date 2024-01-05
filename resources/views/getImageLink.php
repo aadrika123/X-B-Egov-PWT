@@ -43,8 +43,6 @@ class getImageLink
             header('Cache-Control: no-cache');
         }
         header('Content-type: ' . $getInfo['mime']);
-        header('Access-Control-Allow-Origin', '*');
-        header('Access-Control-Allow-Headers', 'X-Requested-With, Content-Type, X-Token-Auth, Authorization');
         header('Content-Length: ' . filesize($image));
         header('Cache-Control: no-cache');
         ob_clean();
