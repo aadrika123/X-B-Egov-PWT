@@ -151,7 +151,7 @@ class CitizenRepository implements iCitizenRepository
     {
         $applications = array();
         $propertyApplications = DB::table('prop_active_safs')
-            ->Join('wf_roles as r', 'r.id', '=', 'prop_active_safs.current_role')
+            ->leftJoin('wf_roles as r', 'r.id', '=', 'prop_active_safs.current_role')
             ->leftJoin('prop_transactions as t', 't.saf_id', '=', 'prop_active_safs.id')
             ->select(
                 'prop_active_safs.id as application_id',
@@ -160,7 +160,12 @@ class CitizenRepository implements iCitizenRepository
                 'holding_no',
                 'assessment_type',
                 'r.role_name as current_level',
-                DB::raw("TO_CHAR(application_date, 'DD-MM-YYYY') as application_date"),
+                DB::raw("TO_CHAR(application_date, 'DD-MM-YYYY') as application_date,
+                    CASE WHEN prop_active_safs.current_role = prop_active_safs.initiator_role_id THEN TRUE
+                        WHEN prop_active_safs.current_role IS NULL THEN TRUE
+                        ELSE FALSE
+                    END AS citizen_can_edit
+                "),
                 'applicant_name',
                 'payment_status',
                 'doc_upload_status',

@@ -7,6 +7,7 @@ use App\MicroServices\DocUpload;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropSaf;
+use App\Models\Property\PropSafsOwner;
 use App\Models\Property\SecondaryDocVerification;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
@@ -293,7 +294,9 @@ class SafDocController extends Controller
             $refUserId = $refUser->id ?? 0;
             $mWfActiveDocument = new WfActiveDocument();
             $mActiveSafs = new PropActiveSaf();
+            $mActiveSafsOwners = new PropActiveSafsOwner();
             $mPropSaf = new PropSaf();
+            $mSafsOwners = new PropSafsOwner();
             $mCOMMON_FUNCTION = new CommonFunction();
             $moduleId = FacadesConfig::get('module-constants.PROPERTY_MODULE_ID');              // 1
 
@@ -308,10 +311,12 @@ class SafDocController extends Controller
             $refUlbId = $safDetails->ulb_id;
             $userRole = $mCOMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $workflowId);
             $sameWorkRoles = $mCOMMON_FUNCTION->getReactionActionTakenRole($refUserId, $refUlbId, $workflowId, "doc_verify");
-            $documents = $documents->map(function ($val) use ($sameWorkRoles, $userRole) {
+            $owners = $mActiveSafs->getTable()=="prop_active_safs" ? $mActiveSafsOwners->getOwnersBySafId($safDetails->id) : $mSafsOwners->getOwnersBySafId($safDetails->id) ;            
+            $documents = $documents->map(function ($val) use ($sameWorkRoles, $userRole,$owners) {
                 $seconderyData = (new SecondaryDocVerification())->SeconderyWfActiveDocumentById($val->id);
                 $val->verify_status_secondery = $seconderyData ? $seconderyData->verify_status : 0;
                 $val->remarks_secondery = $seconderyData ? $seconderyData->remarks :  "";
+                $val->owner_name = (collect($owners)->where("id",$val->owner_dtl_id)->first())->owner_name?? "";
                 if (count($sameWorkRoles) > 1 && $userRole && $userRole->role_id != ($sameWorkRoles->first())["id"] && $userRole->can_verify_document) {
                     $val->verify_status = $seconderyData ? $val->verify_status_secondery : $val->verify_status;
                     $val->remarks = $seconderyData ? $val->remarks_secondery : $val->remarks;
