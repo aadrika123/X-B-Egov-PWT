@@ -697,6 +697,7 @@ class ActiveSafController extends Controller
             $fullDetailsData['application_no'] = $data->saf_no;
             $fullDetailsData['apply_date'] = $data->application_date;
             $fullDetailsData['ward_mstr_id'] = $data->ward_mstr_id;
+            $fullDetailsData['property_no'] = (!$data->property_no) ? true :false ;
 
             $fullDetailsData['doc_verify_status'] = $data->doc_verify_status;
             $fullDetailsData['doc_upload_status'] = $data->doc_upload_status;
@@ -1205,6 +1206,12 @@ class ActiveSafController extends Controller
      */
     public function checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $userId)
     {
+        $workflowId = WfWorkflow::where('id', $saf->workflow_id)
+                    ->first();
+        $wfContent = Config::get('workflow-constants');
+        $skipFiledWorkWfMstrId = [
+            $wfContent["SAF_MUTATION_ID"],
+        ];
         // Derivative Assignments
         switch ($senderRoleId) {
             case $wfLevels['BO']:                        // Back Office Condition
@@ -1218,14 +1225,14 @@ class ActiveSafController extends Controller
                 break;
 
             case $wfLevels['TC']:
-                if ($saf->is_agency_verified == false && $saf->prop_type_mstr_id != 4)
+                if ($saf->is_agency_verified == false && $saf->prop_type_mstr_id != 4 && (!in_array(($workflowId->id??0),$skipFiledWorkWfMstrId)))
                     throw new Exception("Agency Verification Not Done");
-                if ($saf->is_geo_tagged == false)
+                if ($saf->is_geo_tagged == false && (!in_array(($workflowId->id??0),$skipFiledWorkWfMstrId)))
                     throw new Exception("Geo Tagging Not Done");
                 break;
 
             case $wfLevels['UTC']:
-                if ($saf->is_field_verified == false)
+                if ($saf->is_field_verified == false && (!in_array(($workflowId->id??0),$skipFiledWorkWfMstrId)))
                     throw new Exception("Field Verification Not Done");
                 break;
         }
@@ -3144,7 +3151,7 @@ class ActiveSafController extends Controller
                 throw new Exception("Data Not Find");
             }
             $check = $this->chequePropertyNo($request);
-            if (!$check->original["statsus"]) {
+            if (!$check->original["status"]) {
                 return $check;
             }
             DB::beginTransaction();
