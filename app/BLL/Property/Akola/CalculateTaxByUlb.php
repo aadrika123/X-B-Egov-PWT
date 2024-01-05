@@ -74,6 +74,8 @@ class CalculateTaxByUlb extends TaxCalculator
             "ward" => $this->_propVerifications->ward_id??null,
             "zone" => $this->_safs->zone_mstr_id??null,
             "assessmentType" =>(flipConstants(Config::get("PropertyConstaint.ASSESSMENT-TYPE"))[$this->_safs->assessment_type]??''),
+            "nakshaAreaOfPlot" => $this->_safs->naksha_area_of_plot,
+            "isAllowDoubleTax" => $this->_safs->is_allow_double_tax,
             "floor" => [],
             "owner" => []
         ];

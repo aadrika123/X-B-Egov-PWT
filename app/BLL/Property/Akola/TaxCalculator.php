@@ -170,7 +170,26 @@ class TaxCalculator
                 $isCommercial = ($item->usageType == $this->_residentialUsageType) ? false : true;                    // Residential usage type id
 
                 $stateTaxes = $this->readStateTaxes($floorBuildupArea, $isCommercial,$alv);                   // Read State Taxes(2.3)
-
+                
+                $tax1 = 0;
+                $diffArrea = 0;
+                $doubleTax1 = ($generalTax + $roadTax + $firefightingTax + $educationTax
+                    + $waterTax + $cleanlinessTax + $sewerageTax
+                    + $treeTax + $stateTaxes['educationTax'] + $stateTaxes['professionalTax'] 
+                    + ($openPloatTax??0));
+                if($this->_REQUEST->nakshaAreaOfPlot)
+                {
+                    $diffArrea = ($this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot)>0 ? $this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot :0;
+                }
+                # double tax apply
+                if($this->_REQUEST->isAllowDoubleTax)
+                {
+                    $tax1 = $doubleTax1;
+                }
+                # 100% penalty apply on diff arrea
+                elseif($diffArrea>0){
+                    $tax1 = $doubleTax1 * ($diffArrea / ($this->_REQUEST->areaOfPlot>0?$this->_REQUEST->areaOfPlot:1));
+                }
                 $this->_floorsTaxes[$key] = [
                     'usageType' => $item->usageType,
                     'constructionType' => $item->constructionType??"",
@@ -198,6 +217,7 @@ class TaxCalculator
                     'cleanlinessTax' => $cleanlinessTax,
                     'sewerageTax' => $sewerageTax,
                     'treeTax' => $treeTax,
+                    // "tax1"=>$tax1,
                     'isCommercial' => $isCommercial,
                     'stateEducationTaxPerc' => $stateTaxes['educationTaxPerc'],
                     'stateEducationTax' => $stateTaxes['educationTax'],
@@ -283,6 +303,26 @@ class TaxCalculator
 
             $stateTaxes = $this->readStateTaxes($this->_calculatorParams['areaOfPlot'], $isCommercial,$alv);                   // Read State Taxes(3.1)
 
+            $tax1 = 0;
+            $diffArrea = 0;
+            $doubleTax1 = ($generalTax + $roadTax + $firefightingTax + $educationTax
+                + $waterTax + $cleanlinessTax + $sewerageTax
+                + $treeTax + $stateTaxes['educationTax'] + $stateTaxes['professionalTax'] 
+                + ($openPloatTax??0));
+            if($this->_REQUEST->nakshaAreaOfPlot)
+            {
+                $diffArrea = ($this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot)>0 ? $this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot :0;
+            }
+            # double tax apply
+            if($this->_REQUEST->isAllowDoubleTax)
+            {
+                $tax1 = $doubleTax1;
+            }
+            # 100% penalty apply on diff arrea
+            elseif($diffArrea>0){
+                $tax1 = $doubleTax1 * ($diffArrea / ($this->_REQUEST->areaOfPlot>0?$this->_REQUEST->areaOfPlot:1));
+            }
+
             $this->_floorsTaxes[0] = [
                 'rate' => $rate,
                 'floorKey' => "Vacant Land",
@@ -302,6 +342,7 @@ class TaxCalculator
                 'cleanlinessTax' => $cleanlinessTax,
                 'sewerageTax' => $sewerageTax,
                 'treeTax' => $treeTax,
+                // "tax1"=>$tax1,
                 "openPloatTax" => $openPloatTax,
                 'isCommercial' => $isCommercial,
                 'stateEducationTaxPerc' => $stateTaxes['educationTaxPerc'],
@@ -403,12 +444,13 @@ class TaxCalculator
                 "professionalTaxPerc" => roundFigure($taxes->sum('professionalTaxPerc') / $totalKeys),
                 "professionalTax" => roundFigure($taxes->sum('professionalTax')),
                 "openPloatTax" => roundFigure($taxes->sum('openPloatTax')),
+                "tax1" => roundFigure($taxes->sum('tax1')),
             ];
         });
         $annualTaxes['totalTax'] = roundFigure($annualTaxes['generalTax'] + $annualTaxes['roadTax'] + $annualTaxes['firefightingTax'] + $annualTaxes['educationTax']
             + $annualTaxes['waterTax'] + $annualTaxes['cleanlinessTax'] + $annualTaxes['sewerageTax']
             + $annualTaxes['treeTax'] + $annualTaxes['stateEducationTax'] + $annualTaxes['professionalTax'] 
-            + ($annualTaxes['openPloatTax']??0) 
+            + ($annualTaxes['openPloatTax']??0) + ($annualTaxes['tax1']??0) 
             );
         return $annualTaxes;
     }

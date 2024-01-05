@@ -92,7 +92,7 @@ class PropertyController extends Controller
             if (!$firstOwner)
                 throw new Exception('Owner Not Found');
             $ownerMobile = $firstOwner->mobileNo;
-            if ($ownerMobile == "NA" || strlen($ownerMobile) < 10)
+            if (strlen($ownerMobile) <> 10)
                 throw new Exception('Mobile No. Does Not Exist or Invalid');
 
             $myRequest = new \Illuminate\Http\Request();
