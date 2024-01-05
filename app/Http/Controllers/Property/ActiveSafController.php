@@ -132,7 +132,7 @@ class ActiveSafController extends Controller
     protected $saf_repository;
     public $_replicatedPropId;
     protected $_COMMONFUNCTION;
-    protected $_SkipFiledWorkWfMstrId=[];
+    protected $_SkipFiledWorkWfMstrId = [];
     public function __construct(iSafRepository $saf_repository)
     {
         $this->Repository = $saf_repository;
@@ -1082,8 +1082,7 @@ class ActiveSafController extends Controller
                     $forwardBackwardIds->backward_role_id = $wfLevels['TC'];
                 }
 
-                if($saf->prop_type_mstr_id == 4 && $saf->current_role == $wfLevels['DA'] && in_array($wfMstrId,$this->_SkipFiledWorkWfMstrId))
-                {                    
+                if ($saf->prop_type_mstr_id == 4 && $saf->current_role == $wfLevels['DA'] && in_array($wfMstrId, $this->_SkipFiledWorkWfMstrId)) {
                     $forwardBackwardIds->backward_role_id = $wfLevels['BO'];
                 }
 
@@ -1544,7 +1543,7 @@ class ActiveSafController extends Controller
                 $fieldVerifiedSaf = $propSafVerification->getVerifications2($safId);
             }
 
-            if (collect($fieldVerifiedSaf)->isEmpty() && !in_array($safDetails->workflow_id,$this->_SkipFiledWorkWfMstrId))
+            if (collect($fieldVerifiedSaf)->isEmpty() && !in_array($safDetails->workflow_id, $this->_SkipFiledWorkWfMstrId))
                 throw new Exception("Site Verification not Exist");
 
             DB::beginTransaction();
@@ -1626,7 +1625,6 @@ class ActiveSafController extends Controller
                 'famId' => $famId,
                 'propId' => $safApprovalBll->_replicatedPropId
             ];
-            dd();
             DB::commit();
             DB::connection('pgsql_master')->commit();
             return responseMsgs(true, $msg, $responseFields, "010110", "1.0", responseTime(), "POST", $req->deviceId);

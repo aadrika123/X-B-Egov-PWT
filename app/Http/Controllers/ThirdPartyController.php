@@ -59,8 +59,26 @@ class ThirdPartyController extends Controller
                     throw new Exception("Please Check Your Mobile No!");
                 }
             }
+
+            switch ($request->type) {
+                case ('Register'):
+                    $otpType = 'Citizen Registration';
+                    break;
+
+                case ('Forgot'):
+                    $otpType = 'Forgot Password';
+                    break;
+
+                case ('Attach Holding'):
+                    $otpType = 'Attach Holding';
+                    break;
+
+                case ('Update Mobile'):
+                    $otpType = 'Update Mobile';
+                    break;
+            }
+
             $generateOtp = $this->generateOtp();
-            $otpType     = $request->type == "Forgot" ? "Forgot Password" : $request->type;
             $sms         = "OTP for " . $otpType . " at Akola Municipal Corporation's portal is " . $generateOtp . ". This OTP is valid for 10 minutes.";
 
             $response = send_sms($mobileNo, $sms, 1707170367857263583);
