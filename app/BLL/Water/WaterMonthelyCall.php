@@ -310,7 +310,7 @@ class WaterMonthelyCall
                 # For fixed connection calculation 
             case ("Fixed"):                                                                         // Static
                 $monthsArray        = [];
-                $useStartDate       = $this->_consumerLastDemand->demand_from ?? $this->_consuemrDetails->connection_date;
+                $useStartDate       = $this->_consumerLastDemand->demand_upto ?? $this->_consuemrDetails->connection_date;
                 $endDate            = Carbon::parse($this->_now->copy())->endOfMonth();
                 $startDate          = ((Carbon::parse($useStartDate))->firstOfMonth())->addMonth();
 

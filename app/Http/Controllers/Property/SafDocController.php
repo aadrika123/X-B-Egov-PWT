@@ -60,7 +60,8 @@ class SafDocController extends Controller
             $totalDocLists['docUploadStatus'] = $refSafs->doc_upload_status;
             $totalDocLists['docVerifyStatus'] = $refSafs->doc_verify_status;
             $totalDocLists['paymentStatus'] = $refSafs->payment_status;
-            $totalDocLists['isCitizen'] = ($refSafs->citizen_id == null) ? false : true;
+            $totalDocLists['isCitizen'] = ($refSafs->citizen_id == null) ? false : true; 
+            $totalDocLists['citizenCanSendOfficer'] = (($refSafs->doc_upload_status && $refSafs->initiator_role_id == $refSafs->current_role) || $refSafs->parked) ? true  : false;
 
             return responseMsgs(true, "", remove_null($totalDocLists), "010203", "", "", 'POST', "");
         } catch (Exception $e) {
