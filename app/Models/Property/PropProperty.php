@@ -691,7 +691,7 @@ class PropProperty extends Model
                     property_id,
                     status
                     FROM prop_demands
-                WHERE fyear='".getFY()."' 
+                WHERE fyear='" . getFY() . "' 
                     AND status=1
                     AND due_total_tax >0
                 ) as d"
@@ -705,7 +705,7 @@ class PropProperty extends Model
                     property_id,
                     status
                     FROM prop_demands
-                WHERE fyear<'".getFY()."' 
+                WHERE fyear<'" . getFY() . "' 
                     AND status=1
                     AND due_total_tax >0
                 ) as pd"
@@ -717,27 +717,27 @@ class PropProperty extends Model
     public function searchPropertyV2($ulbId)
     {
         return PropProperty::select(
-                'prop_properties.id',
-                'prop_properties.ulb_id',
-                'prop_properties.holding_no',
-                'zone_name',
-                'latitude',
-                'longitude',
-                'prop_properties.new_holding_no',
-                'prop_properties.pt_no',
-                'prop_properties.khata_no',
-                'prop_properties.plot_no',
-                'prop_properties.property_no',
-                'ward_name',
-                'prop_address',
-                'prop_properties.status as active_status',
-                'o.mobile_no',
-                'o.owner_name',
-                DB::raw("
+            'prop_properties.id',
+            'prop_properties.ulb_id',
+            'prop_properties.holding_no',
+            'zone_name',
+            'latitude',
+            'longitude',
+            'prop_properties.new_holding_no',
+            'prop_properties.pt_no',
+            'prop_properties.khata_no',
+            'prop_properties.plot_no',
+            'prop_properties.property_no',
+            'ward_name',
+            'prop_address',
+            'prop_properties.status as active_status',
+            'o.mobile_no',
+            'o.owner_name',
+            DB::raw("
                     CASE WHEN TRIM(o.owner_name)<>'' THEN o.owner_name ELSE o.owner_name_marathi END AS owner_name,
                     CASE WHEN COALESCE(d.due_total_tax,0)>0 then 2 else 1  END AS paid_status
                     "),
-            )
+        )
             ->join('zone_masters', 'zone_masters.id', 'prop_properties.zone_mstr_id')
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
             ->leftjoin(DB::raw("(select latitude, longitude,  prop_saf_geotag_uploads.saf_id
@@ -768,20 +768,6 @@ class PropProperty extends Model
                 ) AS d"
             ), function ($join) {
                 $join->on("d.property_id", "=", "prop_properties.id");
-            })
-            ->leftJoin(DB::raw(
-                "(SELECT 
-                    paid_status,
-                    fyear,
-                    property_id,
-                    status
-                    FROM prop_demands
-                WHERE fyear<'".getFY()."' 
-                    AND status=1
-                    AND due_total_tax >0
-                ) as pd"
-            ), function ($join) {
-                $join->on("pd.property_id", "=", "prop_properties.id");
             });
     }
 
@@ -1041,52 +1027,52 @@ class PropProperty extends Model
 
     public function getUpdateRqu()
     {
-        return $this->hasMany(PropPropertyUpdateRequest::class,"prop_id","id")
-        ->where("prop_property_update_requests.status",1)
-        ->orderBy("id","ASC");
+        return $this->hasMany(PropPropertyUpdateRequest::class, "prop_id", "id")
+            ->where("prop_property_update_requests.status", 1)
+            ->orderBy("id", "ASC");
     }
     public function getUpdatePendingRqu()
     {
-        return $this->hasOne(PropPropertyUpdateRequest::class,"prop_id","id")
-        ->where("prop_property_update_requests.status",1)
-        ->where("prop_property_update_requests.pending_status",1)
-        ->orderBy("id","ASC");
+        return $this->hasOne(PropPropertyUpdateRequest::class, "prop_id", "id")
+            ->where("prop_property_update_requests.status", 1)
+            ->where("prop_property_update_requests.pending_status", 1)
+            ->orderBy("id", "ASC");
     }
 
     public function Owneres()
     {
-        return $this->hasMany(PropOwner::class,"property_id","id")
-                ->where("status",1)
-                ->orderBy("id","ASC");        
+        return $this->hasMany(PropOwner::class, "property_id", "id")
+            ->where("status", 1)
+            ->orderBy("id", "ASC");
     }
     public function floars()
     {
-        return $this->hasMany(PropFloor::class,"property_id","id")
-                ->where(function($where){
-                    $where->whereNull("date_upto")
-                    ->OrWhere("date_upto",">=",Carbon::now()->format("Y-m-d"));
-                })
-                ->orderBy("id","ASC");
+        return $this->hasMany(PropFloor::class, "property_id", "id")
+            ->where(function ($where) {
+                $where->whereNull("date_upto")
+                    ->OrWhere("date_upto", ">=", Carbon::now()->format("Y-m-d"));
+            })
+            ->orderBy("id", "ASC");
     }
 
     public function PropDueDemands()
     {
-        return $this->hasMany(PropDemand::class,"property_id","id")
-            ->where("status",1)
-            ->where("due_total_tax",">",0)
-            ->orderBy("fyear","ASC");
+        return $this->hasMany(PropDemand::class, "property_id", "id")
+            ->where("status", 1)
+            ->where("due_total_tax", ">", 0)
+            ->orderBy("fyear", "ASC");
     }
     public function PropLastPaidDemands()
     {
-        return $this->hasOne(PropDemand::class,"property_id","id")
-            ->where("status",1)
-            ->where("due_total_tax","=",0)
-            ->orderBy("fyear","DESC");
+        return $this->hasOne(PropDemand::class, "property_id", "id")
+            ->where("status", 1)
+            ->where("due_total_tax", "=", 0)
+            ->orderBy("fyear", "DESC");
     }
     public function PropLastDemands()
     {
-        return $this->hasOne(PropDemand::class,"property_id","id")
-            ->where("status",1)
-            ->orderBy("fyear","DESC")->first();
+        return $this->hasOne(PropDemand::class, "property_id", "id")
+            ->where("status", 1)
+            ->orderBy("fyear", "DESC")->first();
     }
 }
