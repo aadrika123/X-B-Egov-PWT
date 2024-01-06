@@ -56,7 +56,6 @@ class reqApplySaf extends FormRequest
         $rules['propertyType']  = "required|int";
         $rules['ownershipType'] = "required|int";
         $rules['areaOfPlot']    = "required|numeric|not_in:0";
-        $rules['isMobileTower'] = "required|bool";
         $rules['owner'] = "required|array";
         if (isset($this->owner) && $this->owner) {
             $rules["owner.*.ownerName"] = "required";
@@ -65,6 +64,7 @@ class reqApplySaf extends FormRequest
             $rules["owner.*.isArmedForce"] = "required|in:true,false,0,1";
             $rules["owner.*.isSpeciallyAbled"] = "required|in:true,false,0,1";
         }
+        $rules['isMobileTower'] = "required|bool";
         if (isset($this->isMobileTower) && $this->isMobileTower) {
             $rules['mobileTower.area'] = "required|numeric";
             $rules['mobileTower.dateFrom'] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
@@ -90,14 +90,13 @@ class reqApplySaf extends FormRequest
             if (isset($this->floor) && $this->floor) {
                 $rules["floor.*.propFloorDetailId"] =   "nullable|numeric";
                 $rules["floor.*.floorNo"]           =   "required|int";
-                $rules["floor.*.usageType"]           =   "required|int";
+                $rules["floor.*.usageType"]         =   "required|int";
                 $rules["floor.*.constructionType"]  =   "required";
                 $rules["floor.*.occupancyType"]     =   "required|int";
-
                 $rules["floor.*.buildupArea"]       =   "required|numeric|not_in:0";
-                // $rules["floor.*.dateFrom"]          =   "required|date|date_format:Y-m-d|before_or_equal:$mNowDate|after_or_equal:$this->dateOfPurchase";
-                $rules["floor.*.dateFrom"]           = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate".($this->assessmentType!=1?"":"|after_or_equal:$this->dateOfPurchase");
+                $rules["floor.*.dateFrom"]          =   "required|date|date_format:Y-m-d|before_or_equal:$mNowDate" . ($this->assessmentType != 1 ? "" : "|after_or_equal:$this->dateOfPurchase");
                 $rules["floor.*.dateUpto"]          =   "nullable|date|date_format:Y-m-d|before_or_equal:$mNowDate|before:$this->dateFrom";
+                // $rules["floor.*.dateFrom"]          =   "required|date|date_format:Y-m-d|before_or_equal:$mNowDate|after_or_equal:$this->dateOfPurchase";
             }
         }
 
@@ -129,7 +128,7 @@ class reqApplySaf extends FormRequest
                 $rules["owner.*.isArmedForce"]        =   "required|bool";
                 $rules["owner.*.isSpeciallyAbled"]    =   "required|bool";
                 $rules["owner.*.ownerNameMarathi"]    =   "required|string";
-                $rules["owner.*.guardianNameMarathi"]    =   "nullable|string";
+                $rules["owner.*.guardianNameMarathi"] =   "nullable|string";
             }
         }
         return $rules;
