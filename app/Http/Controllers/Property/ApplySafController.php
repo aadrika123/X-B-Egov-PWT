@@ -138,7 +138,7 @@ class ApplySafController extends Controller
             $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)['role_id'];
 
             if ($userType == $this->_citizenUserType) {
-            //     $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)['forward_role_id'];         // Send to DA in Case of Citizen
+                //     $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)['forward_role_id'];         // Send to DA in Case of Citizen
                 $metaReqs['userId'] = null;
                 $metaReqs['citizenId'] = $user_id;
             }
@@ -182,9 +182,12 @@ class ApplySafController extends Controller
             $this->sendToWorkflow($createSaf, $user_id);
             DB::commit();
 
-            $sms = AkolaProperty(["owner_name" => Str::limit(trim($ownerDetail[0]['ownerName']), 30), "saf_no" => $safNo, "assessment_type" => $request->assessmentType, "holding_no" => $request->propertyNo ?? ""], ($request->assessmentType == "New Assessment" ? "New Assessment" : "Reassessment"));
+            $ownerName = Str::limit(trim($ownerDetail[0]['ownerName']), 30);
+            $ownerMobile = $ownerDetail[0]['mobileNo'];
+
+            $sms = AkolaProperty(["owner_name" => $ownerName, "saf_no" => $safNo, "assessment_type" => $request->assessmentType, "holding_no" => $request->propertyNo ?? ""], ($request->assessmentType == "New Assessment" ? "New Assessment" : "Reassessment"));
             if (($sms["status"] !== false)) {
-                $respons = SMSAKGOVT(8797770238, $sms["sms"], $sms["temp_id"]);
+                $respons = send_sms($ownerMobile, $sms["sms"], $sms["temp_id"]);
             }
 
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
