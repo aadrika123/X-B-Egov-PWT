@@ -6,6 +6,9 @@ use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropSafsFloor;
 use App\Models\Property\PropSafsOwner;
+use App\Models\Property\PropSafVerification;
+use App\Models\Property\PropSafVerificationDtl;
+use App\Traits\Property\SAF;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
@@ -17,12 +20,15 @@ use Illuminate\Support\Facades\Config;
  */
 class CalculateSafTaxById extends TaxCalculator
 {
+    use SAF;
     private $_safDtls;
     private $_REQUEST;
     private $_mPropActiveSafFloors;
     private $_mPropSafFloors;
     private $_mPropActiveSafOwners;
     private $_mPropSafOwner;
+    private $_mLastVerification;
+    private $_mLastFloorVerification;
 
     public function __construct($safDtls)
     {
@@ -31,6 +37,9 @@ class CalculateSafTaxById extends TaxCalculator
         $this->_mPropActiveSafOwners = new PropActiveSafsOwner();
         $this->_mPropSafOwner = new PropSafsOwner();
         $this->_safDtls = $safDtls;
+        $this->_mLastVerification = PropSafVerification::where("saf_id",$this->_safDtls->id)->where("status",1)->orderBy("id","DESC")->first();
+        $this->_mLastFloorVerification = PropSafVerificationDtl::where("verification_id",$this->_mLastVerification->id??0)->where("status",1)->orderBy("id","DESC")->get();
+        $this->_safDtls = $this->addjustVerifySafDtls($this->_safDtls ,$this->_mLastVerification);
         $this->generateRequests();                                      // making request
         parent::__construct($this->_REQUEST);                           // making parent constructor for tax calculator BLL
         $this->calculateTax();                                          // Calculate Tax with Tax Calculator
@@ -64,10 +73,28 @@ class CalculateSafTaxById extends TaxCalculator
             if (collect($propFloors)->isEmpty())
                 $propFloors = $this->_mPropSafFloors->getSafFloorsBySafId($this->_safDtls->id);
 
-            if (collect($propFloors)->isEmpty())
+            if (collect($propFloors)->isEmpty() && collect($this->_mLastFloorVerification)->isEmpty())
                 throw new Exception("Floors not available for this property");
 
+            $notInApplication = collect($this->_mLastFloorVerification)->whereNotIn("saf_floor_id",collect($propFloors)->pluck("id")); 
             foreach ($propFloors as $floor) {
+                $verifyFloor = collect($this->_mLastFloorVerification)->whereNotIn("saf_floor_id",$floor->id)->first();
+                $floor  = $this->addjustVerifyFloorDtls($floor,$verifyFloor);  
+                $floorReq =  [
+                    "floorNo" => $floor->floor_mstr_id,
+                    "constructionType" =>  $floor->const_type_mstr_id,
+                    "occupancyType" =>  $floor->occupancy_type_mstr_id??"",
+                    "usageType" => $floor->usage_type_mstr_id,
+                    "buildupArea" =>  $floor->builtup_area,
+                    "dateFrom" =>  $floor->date_from
+                ];
+                array_push($calculationReq['floor'], $floorReq);
+            }            
+            foreach($notInApplication as  $newfloor)
+            {
+                $newfloorObj = new PropActiveSafsFloor();
+
+                $floor  = $this->addjustVerifyFloorDtls($newfloorObj,$newfloor);
                 $floorReq =  [
                     "floorNo" => $floor->floor_mstr_id,
                     "constructionType" =>  $floor->const_type_mstr_id,
@@ -91,4 +118,5 @@ class CalculateSafTaxById extends TaxCalculator
         array_push($calculationReq['owner'], $ownerReq);
         $this->_REQUEST = new Request($calculationReq);
     }
+
 }

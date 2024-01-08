@@ -809,11 +809,12 @@ class ActiveSafController extends Controller
                 throw new Exception("Application Not Found");
 
             $data->current_role_name = 'Approved By ' . $data->current_role_name;
-            $safVerification = $mVerification->getLastVerification($data->id);
-            if ($safVerification) {
-                $data->old_ward_no = $safVerification->ward_name ? $safVerification->ward_name : $data->old_ward_no;
-                $data->category = $safVerification->category ? $safVerification->category : $data->category;
-                $verificationDtl = $mVerificationDtls->getVerificationDtls($safVerification->id);
+            $safVerification = $mVerification->where("saf_id",$data->id)->where("status",1)->orderBy("id","DESC")->first();
+            $verificationDtl = $mVerificationDtls->getVerificationDtls($safVerification->id??0);
+            if($safVerification)
+            {
+                $data = $this->addjustVerifySafDtls($data,$safVerification);
+                $data = $this->addjustVerifySafDtlVal($data);
             }
             // $data->
             if ($data->payment_status == 0) {
@@ -835,14 +836,22 @@ class ActiveSafController extends Controller
             $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data['id']);      // Model Function to Get Floor Details
             if (collect($getFloorDtls)->isEmpty())
                 $getFloorDtls = $mPropSafsFloors->getFloorsBySafId($data['id']);
-            $data['floors'] = $getFloorDtls->map(function ($val) use ($verificationDtl) {
-                $new = $verificationDtl->where("saf_floor_id", $val->id)->first();
-                $val->floor_name = $new ? $new->floor_name : $val->floor_name;
-                $val->usage_type = $new ? $new->usage_type : $val->usage_type;
-                $val->occupancy_type = $new ? $new->occupancy_type : $val->occupancy_type;
-                $val->construction_type = $new ? $new->construction_type : $val->construction_type;
+
+            
+            $notInApplication = collect($verificationDtl)->whereNotIn("saf_floor_id",collect($getFloorDtls)->pluck("id"));
+            $getFloorDtls = collect($getFloorDtls)->map(function($val) use($verificationDtl){
+                $newFloors = $verificationDtl->where("saf_floor_id",$val->id)->first();
+                $val = $this->addjustVerifyFloorDtls($val,$newFloors);
+                $val = $this->addjustVerifyFloorDtlVal($val);
                 return $val;
             });
+            $notInApplication->map(function($val)use($getFloorDtls){ 
+                $newfloorObj = new PropActiveSafsFloor();               
+                $val = $this->addjustVerifyFloorDtls($newfloorObj,$val);
+                $val = $this->addjustVerifyFloorDtlVal($val);
+                $getFloorDtls->push($val);
+            });            
+            $data['floors'] = $getFloorDtls;
             $data["tranDtl"] = $mPropTransaction->getSafTranList($data['id']);
             $data["userDtl"] = [
                 "user_id" => $user->id ?? 0,
@@ -861,6 +870,114 @@ class ActiveSafController extends Controller
             if ($this->_COMMONFUNCTION->checkUsersWithtocken("active_citizens")) {
                 $data["can_take_payment"] = (($data["proccess_fee_paid"] ?? 1) == 0) ? true : false;
             }
+            
+            return responseMsgs(true, "Saf Dtls", remove_null($data), "010127", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(true, $e->getMessage(), [], "010127", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    public function getSafOrignalDetails(Request $req)
+    {
+        $req->validate([
+            'applicationId' => 'required|digits_between:1,9223372036854775807'
+        ]);
+        try {
+            // Variable Assignments
+            $mPropActiveSaf = new PropActiveSaf();
+            $mPropSafOwner = new PropSafsOwner();
+            $mPropSaf = new PropSaf();
+            $mPropSafsFloors = new PropSafsFloor();
+            $mPropActiveSafOwner = new PropActiveSafsOwner();
+            $mActiveSafsFloors = new PropActiveSafsFloor();
+            $mPropSafMemoDtls = new PropSafMemoDtl();
+            $mPropTransaction = new PropTransaction();
+            $mVerification = new PropSafVerification();
+            $verificationDtl = collect();
+            $mVerificationDtls = new PropSafVerificationDtl();
+            $memoDtls = array();
+            $data = array();
+            $user = Auth()->user();
+
+            // Derivative Assignments
+            $data = $mPropActiveSaf->getActiveSafDtls()                         // <------- Model function Active SAF Details
+                ->where('prop_active_safs.id', $req->applicationId)
+                ->first();
+            // if (!$data)
+            // throw new Exception("Application Not Found");
+
+            if (collect($data)->isEmpty()) {
+                $data = $mPropSaf->getSafDtls()
+                    ->where('prop_safs.id', $req->applicationId)
+                    ->first();
+            }
+
+            if (collect($data)->isEmpty())
+                throw new Exception("Application Not Found");
+
+            $data->current_role_name = 'Approved By ' . $data->current_role_name;            
+            // $data->
+            if ($data->payment_status == 0) {
+                $data->current_role_name = null;
+                $data->current_role_name2 = "Payment is Pending";
+            } elseif ($data->payment_status == 2) {
+                $data->current_role_name = null;
+                $data->current_role_name2 = "Cheque Payment Verification Pending";
+            } else
+                $data->current_role_name2 = $data->current_role_name;
+
+            $data = json_decode(json_encode($data), true);
+
+            $ownerDtls = $mPropActiveSafOwner->getOwnersBySafId($data['id']);
+            if (collect($ownerDtls)->isEmpty())
+                $ownerDtls = $mPropSafOwner->getOwnersBySafId($data['id']);
+
+            $data['owners'] = $ownerDtls;
+            $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data['id']);      // Model Function to Get Floor Details
+            if (collect($getFloorDtls)->isEmpty())
+                $getFloorDtls = $mPropSafsFloors->getFloorsBySafId($data['id']);
+            $data['floors'] = $getFloorDtls;
+            $data["tranDtl"] = $mPropTransaction->getSafTranList($data['id']);
+            $data["userDtl"] = [
+                "user_id" => $user->id ?? 0,
+                "user_type" => $user->user_type ?? "",
+                "ulb_id" => $user->ulb_id ?? 0,
+                "user_name" => $user->name ?? ""
+            ];
+            $memoDtls = $mPropSafMemoDtls->memoLists($data['id']);
+            $data['memoDtls'] = $memoDtls;
+            if ($status = ((new \App\Repository\Property\Concrete\SafRepository())->applicationStatus($req->applicationId, true))) {
+                $data["current_role_name2"] = $status;
+            }
+            $usertype = $this->_COMMONFUNCTION->getUserAllRoles();
+            $testRole = collect($usertype)->whereIn("sort_name", Config::get("TradeConstant.CANE-CUTE-PAYMENT"));
+            $data["can_take_payment"] = (collect($testRole)->isNotEmpty() && ($data["proccess_fee_paid"] ?? 1) == 0) ? true : false;
+            if ($this->_COMMONFUNCTION->checkUsersWithtocken("active_citizens")) {
+                $data["can_take_payment"] = (($data["proccess_fee_paid"] ?? 1) == 0) ? true : false;
+            }
+            $lastTcVerificationData = PropSafVerification::select(
+                        'prop_saf_verifications.*',
+                        'p.property_type',
+                        'u.ward_name as ward_no',
+                        "users.name as user_name"
+                    )
+                    ->leftjoin('ref_prop_types as p', 'p.id', '=', 'prop_saf_verifications.prop_type_id')
+                    ->leftjoin('ulb_ward_masters as u', 'u.id', '=', 'prop_saf_verifications.ward_id')
+                    ->leftjoin('users', 'users.id', '=', 'prop_saf_verifications.user_id')
+                    ->where("prop_saf_verifications.saf_id", $req->applicationId)
+                    ->where("prop_saf_verifications.agency_verification", true)
+                    ->where("prop_saf_verifications.status", 1)
+                    ->orderBy("prop_saf_verifications.id","DESC")
+                    ->first();
+            $lastTcFloorVerificationData =  PropSafVerificationDtl::select('prop_saf_verification_dtls.*', 'f.floor_name', 'u.usage_type', 'o.occupancy_type', 'c.construction_type')
+                    ->leftjoin('ref_prop_floors as f', 'f.id', '=', 'prop_saf_verification_dtls.floor_mstr_id')
+                    ->leftjoin('ref_prop_usage_types as u', 'u.id', '=', 'prop_saf_verification_dtls.usage_type_id')
+                    ->leftjoin('ref_prop_occupancy_types as o', 'o.id', '=', 'prop_saf_verification_dtls.occupancy_type_id')
+                    ->leftjoin('ref_prop_construction_types as c', 'c.id', '=', 'prop_saf_verification_dtls.construction_type_id')
+                    ->where("verification_id", $lastTcVerificationData->id??0)
+                    ->get();
+            $data["lastTcVerificationData"] = $lastTcVerificationData;
+            $data["lastTcFloorVerificationData"] = $lastTcFloorVerificationData;
             return responseMsgs(true, "Saf Dtls", remove_null($data), "010127", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(true, $e->getMessage(), [], "010127", "1.0", "", "POST", $req->deviceId ?? "");
