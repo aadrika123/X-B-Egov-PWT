@@ -13,6 +13,8 @@ use App\Models\MplYearlyReport;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropSaf;
 use App\Models\Property\PropTransaction;
+use App\Models\Trade\TradeTransaction;
+use App\Models\Water\WaterTran;
 use App\Repository\Common\CommonFunction;
 use App\Repository\Property\Interfaces\IReport;
 use App\Repository\Property\Interfaces\iSafRepository;
@@ -265,9 +267,12 @@ class ReportController extends Controller
      */
     public function listFY(Request $request)
     {
-        $currentYear = Carbon::now()->year;
+        $currentDate = Carbon::now();
+        $currentYear = $currentDate->year;
         $financialYears = array();
         $currentYear = date('Y');
+        if ($currentDate->month <= 3)
+            $currentYear = $currentYear - 1;
 
         for ($year = 2015; $year <= $currentYear; $year++) {
             $startOfYear = $year . '-04-01'; // Financial year starts on April 1st
@@ -1180,6 +1185,66 @@ class ReportController extends Controller
                 ],
             ];
 
+            #trade
+            $data['Trade']['tota_trade_licenses']    = $currentYearData->total_trade_licenses;
+            $data['Trade']['total_trade_licenses_underprocess']    = $currentYearData->total_trade_licenses_underprocess;
+            $data['Trade']['trade_current_cash_payment']    = $currentYearData->trade_current_cash_payment;
+            $data['Trade']['trade_current_cheque_payment']    = $currentYearData->trade_current_cheque_payment;
+            $data['Trade']['trade_current_dd_payment']    = $currentYearData->trade_current_dd_payment;
+            $data['Trade']['trade_current_card_payment']    = $currentYearData->trade_current_card_payment;
+            $data['Trade']['trade_current_neft_payment']    = $currentYearData->trade_current_neft_payment;
+            $data['Trade']['trade_current_rtgs_payment']    = $currentYearData->trade_current_rtgs_payment;
+            $data['Trade']['trade_current_online_payment']    = $currentYearData->trade_current_online_payment;
+            $data['Trade']['trade_current_online_counts']    = $currentYearData->trade_current_online_counts;
+            $data['Trade']['trade_lastyear_cash_payment']    = $currentYearData->trade_lastyear_cash_payment;
+            $data['Trade']['trade_lastyear_cheque_payment']    = $currentYearData->trade_lastyear_cheque_payment;
+            $data['Trade']['trade_lastyear_dd_payment']    = $currentYearData->trade_lastyear_dd_payment;
+            $data['Trade']['trade_lastyear_neft_payment']    = $currentYearData->trade_lastyear_neft_payment;
+            $data['Trade']['tota_trade_licenses']    = $currentYearData->total_trade_licenses;
+            $data['Trade']['trade_lastyear_rtgs_payment']    = $currentYearData->trade_lastyear_rtgs_payment;
+            $data['Trade']['trade_lastyear_online_payment']    = $currentYearData->trade_lastyear_online_payment;
+            $data['Trade']['trade_lastyear_online_counts']    = $currentYearData->trade_lastyear_online_counts;
+            $data['Trade']['trade_renewal_less_then_1_year']    = $currentYearData->trade_renewal_less_then_1_year;
+            $data['Trade']['trade_renewal_more_then_1_year']    = $currentYearData->trade_renewal_more_then_1_year;
+            $data['Trade']['trade_renewal_more_then_1_year_and_less_then_5_years']    = $currentYearData->trade_renewal_more_then_1_year_and_less_then_5_years;
+            $data['Trade']['trade_renewal_more_then_5_year']    = $currentYearData->trade_renewal_more_then_5_year;
+
+            #water
+            $data['Water']['water_connection_underprocess']    = $currentYearData->water_connection_underprocess;
+
+            $data['Payment Modes']['current_year_neft_collection']     = round(($currentYearData->current_year_neft_collection ?? 0) / 10000000, 2);
+            $data['Water']['water_fix_connection_type']    = $currentYearData->water_fix_connection_type;
+            $data['Water']['water_meter_connection_type']    = $currentYearData->water_meter_connection_type;
+            //$data['Water']['water_current_demand']    = round(($currentYearData->water_current_demand)/10000000,2);
+            $data['Water']['water_current_demand']    = ($currentYearData->water_current_demand);
+
+            $data['Water']['water_arrear_demand']    = $currentYearData->water_arrear_demand;
+
+
+            $data['Water']['water_total_demand']    = $currentYearData->water_total_demand;
+            $data['Water']['water_current_collection']    = $currentYearData->water_current_collection;
+            $data['Water']['water_arrear_collection']    = $currentYearData->water_arrear_collection;
+            $data['Water']['water_total_collection']    = $currentYearData->water_total_collection;
+            $data['Water']['water_current_collection_efficiency']    = $currentYearData->water_current_collection_efficiency;
+            $data['Water']['water_arrear_collection_efficiency']    = $currentYearData->water_arrear_collection_efficiency;
+
+
+            #property_new
+            $data['Property']['a_zone_name']    = $currentYearData->a_zone_name;
+            $data['Property']['a_prop_total_hh']    = $currentYearData->a_prop_total_hh;
+
+            $data['Property']['a_prop_total_amount']    = $currentYearData->a_prop_total_amount;
+
+            $data['Property']['b_zone_name']    = $currentYearData->b_zone_name;
+            $data['Property']['b_prop_total_hh']    = $currentYearData->b_prop_total_hh;
+            $data['Property']['b_prop_total_amount']    = $currentYearData->b_prop_total_amount;
+            $data['Property']['c_zone_name']    = $currentYearData->c_zone_name;
+            $data['Property']['c_prop_total_hh']    = $currentYearData->c_prop_total_hh;
+            $data['Property']['c_prop_total_amount']    = $currentYearData->c_prop_total_amount;
+            $data['Property']['d_zone_name']    = $currentYearData->d_zone_name;
+            $data['Property']['d_prop_total_hh']    = $currentYearData->d_prop_total_hh;
+            $data['Property']['d_prop_total_amount']    = $currentYearData->d_prop_total_amount;
+
             return responseMsgs(true, "Mpl Report", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
@@ -2001,9 +2066,13 @@ class ReportController extends Controller
     {
         $todayDate = Carbon::now();
         $currentFy = getFY();
-        $currentfyStartDate = $todayDate->startOfYear()->addMonths(3)->format("Y-m-d");
-        $currentfyEndDate   = $todayDate->startOfYear()->addYears(1)->addMonths(3)->addDay(-1)->format("Y-m-d");
-        echo $currentFy;
+        // $currentfyStartDate = $todayDate->startOfYear()->addMonths(3)->format("Y-m-d");
+        // $currentfyEndDate   = $todayDate->startOfYear()->addYears(1)->addMonths(3)->addDay(-1)->format("Y-m-d");
+
+        list($currentfyStartDate, $currentfyEndDate) = explode('-', getFY());
+        $currentfyStartDate = $currentfyStartDate . "-04-01";
+        $currentfyEndDate = $currentfyEndDate . "-03-31";
+
         $sql = "SELECT 
                         total_assessment.*, 
                         applied_safs.*, 
@@ -2528,9 +2597,13 @@ class ReportController extends Controller
                        SELECT * FROM current_payments,lastyear_payments,jsk_collections
                 ) AS payment_modes";
         $data = DB::select($sql);
-        return  $data = $data[0];
+        $data = $data[0];
         $mMplYearlyReport = new MplYearlyReport();
         $currentFy = getFY();
+
+        $tradedata = $this->tradedetails();
+        $propdata = $this->propertydetails();
+        $waterdata = $this->waterdetails();
 
         $updateReqs = [
             "total_assessment" => $data->total_assessed_props,
@@ -2556,21 +2629,21 @@ class ReportController extends Controller
 
 
 
-            "count_not_paid_3yrs" => $data->pending_cnt_3yrs,
-            "amount_not_paid_3yrs" => $data->amt_not_paid_3yrs,
-            "count_not_paid_2yrs" => $data->pending_cnt_2yrs,
-            "amount_not_paid_2yrs" => $data->amt_not_paid_2yrs,
-            "count_not_paid_1yrs" => $data->pending_cnt_1yrs,
-            "amount_not_paid_1yrs" => $data->amt_not_paid_1yrs,
-            "demand_outstanding_this_year" => $data->outstanding_amt_curryear,
-            "demand_outstanding_from_this_year_prop_count" => $data->outstanding_cnt_curryear,
-            "demand_outstanding_coll_this_year" => $data->recoverable_demand_currentyr,
+            // "count_not_paid_3yrs" => $data->pending_cnt_3yrs,
+            // "amount_not_paid_3yrs" => $data->amt_not_paid_3yrs,
+            // "count_not_paid_2yrs" => $data->pending_cnt_2yrs,
+            // "amount_not_paid_2yrs" => $data->amt_not_paid_2yrs,
+            // "count_not_paid_1yrs" => $data->pending_cnt_1yrs,
+            // "amount_not_paid_1yrs" => $data->amt_not_paid_1yrs,
+            // "demand_outstanding_this_year" => $data->outstanding_amt_curryear,
+            // "demand_outstanding_from_this_year_prop_count" => $data->outstanding_cnt_curryear,
+            // "demand_outstanding_coll_this_year" => $data->recoverable_demand_currentyr,
 
             "last_year_payment_amount" => $data->lastyr_pmt_amt,
             "last_year_payment_count" => $data->lastyr_pmt_cnt,
             "this_year_payment_count" => $data->currentyr_pmt_cnt,
             "this_year_payment_amount" => $data->currentyr_pmt_amt,
-            "mutation_this_year_count" => $data->current_yr_mutation_count,
+            // "mutation_this_year_count" => $data->current_yr_mutation_count,
             // "assessed_property_this_year_achievement" => $data->outstanding_amt_lastyear,
             // "assessed_property_this_year_achievement" => $data->outstanding_cnt_lastyear,
             // "assessed_property_this_year_achievement" => $data->recoverable_demand_lastyear,
@@ -2639,6 +2712,61 @@ class ReportController extends Controller
             // "fyear" => "$currentFy",
             // "ulb_id" => "2",
             // "ulb_name" => "Akola Municipal Corporation",
+
+
+            #trade
+            'total_trade_licenses'  => $tradedata->total_trade_licenses,
+            'total_trade_licenses_underprocess' => $tradedata->total_trade_licenses_underprocess,
+            'trade_current_cash_payment' => $tradedata->trade_current_cash_payment,
+            'trade_current_cheque_payment' => $tradedata->trade_current_cheque_payment,
+            'trade_current_dd_payment' => $tradedata->trade_current_dd_payment,
+            'trade_current_card_payment' => $tradedata->trade_current_card_payment,
+            'trade_current_neft_payment' => $tradedata->trade_current_neft_payment,
+            'trade_current_rtgs_payment' => $tradedata->trade_current_rtgs_payment,
+            'trade_current_online_payment' => $tradedata->trade_current_online_payment,
+            'trade_current_online_counts' => $tradedata->trade_current_online_counts,
+            'trade_lastyear_cash_payment' => $tradedata->trade_lastyear_cash_payment,
+            'trade_lastyear_cheque_payment' => $tradedata->trade_lastyear_cheque_payment,
+            'trade_lastyear_dd_payment' => $tradedata->trade_lastyear_dd_payment,
+            'trade_lastyear_neft_payment' => $tradedata->trade_lastyear_neft_payment,
+            'trade_lastyear_rtgs_payment' => $tradedata->trade_lastyear_rtgs_payment,
+            'trade_lastyear_online_payment' => $tradedata->trade_lastyear_online_payment,
+            'trade_lastyear_online_counts' => $tradedata->trade_lastyear_online_counts,
+            'trade_renewal_less_then_1_year' => $tradedata->trade_renewal_less_then_1_year,
+            'trade_renewal_more_then_1_year' => $tradedata->trade_renewal_more_then_1_year,
+            'trade_renewal_more_then_1_year_and_less_then_5_years' => $tradedata->trade_renewal_more_then_1_year_and_less_then_5_years,
+            'trade_renewal_more_then_5_year' => $tradedata->trade_renewal_more_then_5_year,
+
+            // #property_new
+            'a_zone_name'  => $propdata->a_zone_name,
+            'a_prop_total_hh'  => $propdata->a_prop_total_hh,
+            'a_prop_total_amount'  => $propdata->a_prop_total_amount,
+            'b_zone_name'  => $propdata->b_zone_name,
+            'b_prop_total_hh'  => $propdata->b_prop_total_hh,
+            'b_prop_total_amount'  => $propdata->b_prop_total_amount,
+            'c_zone_name'  => $propdata->c_zone_name,
+            'c_prop_total_hh'  => $propdata->c_prop_total_hh,
+            'c_prop_total_amount'  => $propdata->c_prop_total_amount,
+            'd_zone_name'  => $propdata->d_zone_name,
+            'd_prop_total_hh'  => $propdata->d_prop_total_hh,
+            'd_prop_total_amount'  => $propdata->d_prop_total_amount,
+
+
+
+
+            #water
+            'water_connection_underprocess'  => $waterdata->water_connection_underprocess,
+            //'water_total_consumer'  => $waterdata->water_total_consumer,
+            'water_fix_connection_type'  => $waterdata->water_fix_connection_type,
+            'water_meter_connection_type'  => $waterdata->water_meter_connection_type,
+            'water_current_demand'  => $waterdata->water_current_demand,
+            'water_arrear_demand'  => $waterdata->water_arrear_demand,
+            'water_total_demand'  => $waterdata->water_total_demand,
+            'water_current_collection'  => $waterdata->water_current_collection,
+            'water_arrear_collection'  => $waterdata->water_arrear_collection,
+            'water_total_collection'  => $waterdata->water_total_collection,
+            'water_current_collection_efficiency'  => $waterdata->water_current_collection_efficiency,
+            'water_arrear_collection_efficiency'  => $waterdata->water_arrear_collection_efficiency
         ];
 
         $mMplYearlyReport->where('fyear', $currentFy)
@@ -2649,6 +2777,438 @@ class ReportController extends Controller
 
         dd("ok");
     }
+
+    /**
+     * | Coded By : Prity Pandey
+     * | Date : 06-01-2024
+     */
+
+    /**
+     * | Trade Details
+     */
+    public function tradedetails()
+    {
+        # total trade licences
+        $sql_total_trade_license = "
+                                    
+                                    select count(id) as total_trade_licenses
+                                    from trade_licences
+                                    where is_active = true and ulb_id = 2
+        ";
+        #license_underprocess
+        $sql_active_trade_license = "
+                                    
+                                    select count(id) as total_trade_licenses_underprocess
+                                    FROM active_trade_licences
+                                    WHERE is_active = true AND ulb_id = 2
+        ";
+        #Online Payments trade
+        $sql_online_payment_trade = "    
+                                WITH payment_mode as (
+                                    select distinct (UPPER(payment_mode)) as payment_mode
+                                    from trade_transactions
+                                    
+                                ),
+                                current_payments AS (
+                                    SELECT ulb_id,                                                
+                                                SUM(CASE WHEN UPPER(payment_mode.payment_mode)='CASH' THEN  paid_amount ELSE 0 END) AS trade_current_cash_payment,
+                                                SUM(CASE WHEN UPPER(payment_mode.payment_mode)='CHEQUE' THEN  paid_amount ELSE 0 END) AS trade_current_cheque_payment,
+                                                SUM(CASE WHEN UPPER(payment_mode.payment_mode)='DD' THEN  paid_amount ELSE 0 END) AS trade_current_dd_payment,
+                                                SUM(CASE WHEN UPPER(payment_mode.payment_mode)='CARD PAYMENT' THEN  paid_amount ELSE 0 END) AS trade_current_card_payment,
+                                                SUM(CASE WHEN UPPER(payment_mode.payment_mode)='NEFT' THEN  paid_amount ELSE 0 END) AS trade_current_neft_payment,
+                                                SUM(CASE WHEN UPPER(payment_mode.payment_mode)='RTGS' THEN  paid_amount ELSE 0 END) AS trade_current_rtgs_payment,
+                                                SUM(CASE WHEN UPPER(payment_mode.payment_mode)='ONLINE' THEN  paid_amount ELSE 0 END) AS trade_current_online_payment,
+                                                SUM(CASE WHEN UPPER(payment_mode.payment_mode)='ONLINE' THEN 1 ELSE 0 END) AS trade_current_online_counts,
+                                                
+                                                0 AS trade_lastyear_cash_payment,
+                                                0 AS trade_lastyear_cheque_payment,
+                                                0 AS trade_lastyear_dd_payment,
+                                                0 AS trade_lastyear_neft_payment,
+                                                0 AS trade_lastyear_rtgs_payment,
+                                                0 AS trade_lastyear_online_payment,
+                                                Null::numeric AS trade_lastyear_online_counts
+                                    FROM payment_mode
+                                    join trade_transactions on UPPER (trade_transactions.payment_mode) = payment_mode.payment_mode
+                                    WHERE tran_date BETWEEN '2023-04-01' AND '2024-03-31'					-- Parameterize this for current fyear range date
+                                        AND  status=1 
+                                    group by ulb_id
+                        
+                                ),
+                                lastyear_payments AS (
+                                        SELECT ulb_id,                                        
+                                                0 AS trade_current_cash_payment,
+                                                0 AS trade_current_cheque_payment,
+                                                0 AS trade_current_dd_payment,
+                                                0  AS trade_current_card_payment,
+                                                0 AS trade_current_neft_payment,
+                                                0 AS trade_current_rtgs_payment,
+                                                0 AS trade_current_online_payment,
+                                                Null::numeric AS trade_current_online_counts,
+                                                                                
+                                                SUM(CASE WHEN UPPER(payment_mode.payment_mode)='CASH' THEN  paid_amount ELSE 0 END) AS trade_lastyear_cash_payment,
+                                                SUM(CASE WHEN UPPER(payment_mode.payment_mode)='CHEQUE' THEN  paid_amount ELSE 0 END) AS trade_lastyear_cheque_payment,
+                                                SUM(CASE WHEN UPPER(payment_mode.payment_mode)='DD' THEN  paid_amount ELSE 0 END) AS trade_lastyear_dd_payment,
+                                                SUM(CASE WHEN UPPER(payment_mode.payment_mode)='NEFT' THEN  paid_amount ELSE 0 END) AS trade_lastyear_neft_payment,
+                                                SUM(CASE WHEN UPPER(payment_mode.payment_mode)='RTGS' THEN  paid_amount ELSE 0 END) AS trade_lastyear_rtgs_payment,
+
+                                                SUM(CASE WHEN UPPER(payment_mode.payment_mode)='ONLINE' THEN  paid_amount ELSE 0 END) AS trade_lastyear_online_payment,
+                                                SUM(CASE WHEN UPPER(payment_mode.payment_mode)='ONLINE' THEN 1 ELSE 0 END) AS trade_lastyear_online_counts
+
+                                    FROM payment_mode
+                                    join trade_transactions on UPPER (trade_transactions.payment_mode) = payment_mode.payment_mode
+                                    WHERE tran_date BETWEEN '2022-04-01' AND '2023-03-31'					
+                                        AND  status=1 
+                                    group by ulb_id
+
+                                )
+                                select 
+                                    ulb_id,                                   
+                                    sum (trade_current_cash_payment) as trade_current_cash_payment, 
+                                    sum (trade_current_cheque_payment) as trade_current_cheque_payment, 
+                                    sum(trade_current_dd_payment) as trade_current_dd_payment,
+                                    sum(trade_current_card_payment) as trade_current_card_payment,
+                                    sum(trade_current_neft_payment) as trade_current_neft_payment,
+                                    sum(trade_current_rtgs_payment) as trade_current_rtgs_payment,
+                                    sum(trade_current_online_payment) as trade_current_online_payment,
+                                    sum(trade_current_online_counts) as trade_current_online_counts,
+                                    sum (trade_lastyear_cash_payment) as trade_lastyear_cash_payment, 
+                                    sum(trade_lastyear_cheque_payment) as trade_lastyear_cheque_payment,
+                                    sum(trade_lastyear_dd_payment) as trade_lastyear_dd_payment,
+                                    sum(trade_lastyear_neft_payment) as trade_lastyear_neft_payment,
+                                    sum(trade_lastyear_rtgs_payment) as trade_lastyear_rtgs_payment,
+                                    sum(trade_lastyear_online_payment) as trade_lastyear_online_payment,
+                                    sum(trade_lastyear_online_counts) as trade_lastyear_online_counts
+                                    
+                                from (
+                                    (
+                                    select * 
+                                    from current_payments
+                                    )
+                                    union all
+                                    (
+                                    select * 
+                                    from lastyear_payments
+                                    )
+                                )as payment
+                                group by ulb_id
+            ";
+
+        # Renewal pending  
+        $sql_renewal_pending_trade = "    
+                                select 
+                                count(
+                                    case when ( 
+                                                (DATE_PART('YEAR', current_date :: DATE) - DATE_PART('YEAR', valid_upto :: DATE)) * 12
+                                                +(DATE_PART('Month', current_date :: DATE) - DATE_PART('Month', valid_upto :: DATE))
+                                                )/12 <= 1 then id else null end
+                                                ) as less_then_1_year,
+                                count(
+                                    case when ( 
+                                                (DATE_PART('YEAR', current_date :: DATE) - DATE_PART('YEAR', valid_upto :: DATE)) * 12
+                                                +(DATE_PART('Month', current_date :: DATE) - DATE_PART('Month', valid_upto :: DATE))
+                                                )/12 > 1 then id else null end
+                                                ) as more_then_1_year, 
+                                count(
+                                    case when ( 
+                                                (DATE_PART('YEAR', current_date :: DATE) - DATE_PART('YEAR', valid_upto :: DATE)) * 12
+                                                +(DATE_PART('Month', current_date :: DATE) - DATE_PART('Month', valid_upto :: DATE))
+                                                )/12 > 1 and 
+                                                ( 
+                                                (DATE_PART('YEAR', current_date :: DATE) - DATE_PART('YEAR', valid_upto :: DATE)) * 12
+                                                +(DATE_PART('Month', current_date :: DATE) - DATE_PART('Month', valid_upto :: DATE))
+                                                )/12 <=5 then id else null end
+                                                ) as more_then_1_year_and_less_then_5_years,
+                                count(
+                                    case when ( 
+                                                (DATE_PART('YEAR', current_date :: DATE) - DATE_PART('YEAR', valid_upto :: DATE)) * 12
+                                                +(DATE_PART('Month', current_date :: DATE) - DATE_PART('Month', valid_upto :: DATE))
+                                                )/12 >5 then id else null end
+                                                ) as more_then_5_year
+                            from trade_licences
+                            where is_active = true and valid_upto<current_date
+        ";
+        $respons = [];
+        $data = collect(DB::connection("pgsql_trade")->select($sql_total_trade_license))->first();
+        $respons["total_trade_licenses"] = $data->total_trade_licenses ?? 0;
+        $data = collect(DB::connection("pgsql_trade")->select($sql_active_trade_license))->first();
+        $respons["total_trade_licenses_underprocess"] = $data->total_trade_licenses_underprocess ?? 0;
+        $data = collect(DB::connection("pgsql_trade")->select($sql_online_payment_trade))->where("ulb_id", 2)->first();
+        $respons["trade_current_cash_payment"] = $data->trade_current_cash_payment ?? 0;
+        $respons["trade_current_cheque_payment"] = $data->trade_current_cheque_payment ?? 0;
+        $respons["trade_current_dd_payment"] = $data->trade_current_dd_payment ?? 0;
+        $respons["trade_current_card_payment"] = $data->trade_current_card_payment ?? 0;
+        $respons["trade_current_neft_payment"] = $data->trade_current_neft_payment ?? 0;
+        $respons["trade_current_rtgs_payment"] = $data->trade_current_rtgs_payment ?? 0;
+        $respons["trade_current_online_payment"] = $data->trade_current_online_payment ?? 0;
+        $respons["trade_current_online_counts"] = $data->trade_current_online_counts ?? 0;
+        $respons["trade_lastyear_cash_payment"] = $data->trade_lastyear_cash_payment ?? 0;
+        $respons["trade_lastyear_cheque_payment"] = $data->trade_lastyear_cheque_payment ?? 0;
+        $respons["trade_lastyear_dd_payment"] = $data->trade_lastyear_dd_payment ?? 0;
+        $respons["trade_lastyear_neft_payment"] = $data->trade_lastyear_neft_payment ?? 0;
+        $respons["trade_lastyear_rtgs_payment"] = $data->trade_lastyear_rtgs_payment ?? 0;
+        $respons["trade_lastyear_online_payment"] = $data->trade_lastyear_online_payment ?? 0;
+        $respons["trade_lastyear_online_counts"] = $data->trade_lastyear_online_counts ?? 0;
+
+        $data = collect(DB::connection("pgsql_trade")->select($sql_renewal_pending_trade))->first();
+        $respons["trade_renewal_less_then_1_year"] = $data->less_then_1_year ?? 0;
+        $respons["trade_renewal_more_then_1_year"] = $data->more_then_1_year ?? 0;
+        $respons["trade_renewal_more_then_1_year_and_less_then_5_years"] = $data->more_then_1_year_and_less_then_5_years ?? 0;
+        $respons["trade_renewal_more_then_5_year"] = $data->more_then_5_year ?? 0;
+
+        return (object)$respons;
+    }
+
+    public function propertydetails()
+    {
+        # total trade licences
+        $sql_property_under_assesment = "
+                                    
+                                    select count(id) as property_under_assesment
+                                    from prop_active_safs
+                                    where previous_holding_id is not null
+        ";
+        #license_underprocess
+        $sql_property_zonal = "
+                                    
+                                    select zone_masters.id,
+                                    case when zone_masters.id =1 then 'A-East Zone'
+                                        when zone_masters.id = 2 then 'B-West Zone'
+                                        when zone_masters.id = 3 then 'C-North Zone'
+                                        when zone_masters.id = 4 then 'D-South Zone'
+                                        else 'NA' end as prop_zone_name, 
+                                    count(distinct(prop_properties.id)) as prop_total_hh, sum(amount) as prop_total_amount
+                                    from zone_masters
+                                    join prop_properties on  prop_properties.zone_mstr_id =zone_masters.id 
+                                    join (
+                                        select property_id,sum(amount) as amount
+                                        from prop_transactions
+                                        JOIN (
+                                                                            
+                                                SELECT DISTINCT wf_roleusermaps.user_id as role_user_id
+                                                FROM wf_roles
+                                                JOIN wf_roleusermaps ON wf_roleusermaps.wf_role_id = wf_roles.id 
+                                                    AND wf_roleusermaps.is_suspended = FALSE
+                                                JOIN wf_workflowrolemaps ON wf_workflowrolemaps.wf_role_id = wf_roleusermaps.wf_role_id
+                                                    AND wf_workflowrolemaps.is_suspended = FALSE
+                                                JOIN wf_workflows ON wf_workflows.id = wf_workflowrolemaps.workflow_id AND wf_workflows.is_suspended = FALSE 
+                                                JOIN ulb_masters ON ulb_masters.id = wf_workflows.ulb_id
+                                                WHERE wf_roles.is_suspended = FALSE 
+                                                    AND wf_workflows.ulb_id = 2
+                                                    AND wf_roles.id not in (8,108)
+                                                    --AND wf_workflows.id in (3,4,5)
+                                                GROUP BY wf_roleusermaps.user_id
+                                                ORDER BY wf_roleusermaps.user_id
+                                         ) collecter on prop_transactions.user_id  = collecter.role_user_id
+                                        where status in (1,2)
+                                        and tran_date between '2023-04-01' and '2024-03-31'
+                                        and property_id is not null
+                                        group by property_id
+                                    ) transactions on transactions.property_id = prop_properties.id
+                                    group by zone_masters.id 
+                                    order by zone_masters.id 
+        ";
+
+        $respons = [];
+        $data = collect(DB::connection("pgsql")->select($sql_property_under_assesment))->first();
+        $respons["property_under_assesment"] = $data->property_under_assesment ?? 0;
+        $data = collect(DB::connection("pgsql")->select($sql_property_zonal));
+
+        $respons["a_zone_name"] = (collect($data)->where("id", 1)->first()->prop_zone_name) ?? 0;
+        $respons["a_prop_total_hh"] = (collect($data)->where("id", 1)->first()->prop_total_hh) ?? 0;
+        $respons["a_prop_total_amount"] = (collect($data)->where("id", 1)->first()->prop_total_amount) ?? 0;
+
+        $respons["b_zone_name"] = (collect($data)->where("id", 2)->first()->prop_zone_name) ?? 0;
+        $respons["b_prop_total_hh"] = (collect($data)->where("id", 2)->first()->prop_total_hh) ?? 0;
+        $respons["b_prop_total_amount"] = (collect($data)->where("id", 2)->first()->prop_total_amount) ?? 0;
+
+        $respons["c_zone_name"] = (collect($data)->where("id", 3)->first()->prop_zone_name) ?? 0;
+        $respons["c_prop_total_hh"] = (collect($data)->where("id", 3)->first()->prop_total_hh) ?? 0;
+        $respons["c_prop_total_amount"] = (collect($data)->where("id", 3)->first()->prop_total_amount) ?? 0;
+
+        $respons["d_zone_name"] = (collect($data)->where("id", 4)->first()->prop_zone_name) ?? 0;
+        $respons["d_prop_total_hh"] = (collect($data)->where("id", 4)->first()->prop_total_hh) ?? 0;
+        $respons["d_prop_total_amount"] = (collect($data)->where("id", 4)->first()->prop_total_amount) ?? 0;
+
+        return (object)$respons;
+    }
+
+    public function waterdetails()
+    {
+        # total trade licences
+        $sql_water_application_underprocess = "
+                                                                            
+                                        select count(id) as water_connection_underprocess
+                                        from water_applications
+                                        where status = true
+        ";
+        #license_underprocess
+        $sql_water_connection_type = "
+                                    
+                                select count(water_second_consumers.id) as water_total_consumer, 
+                                    case when water_consumer_meters.connection_type in (1,2) then 'meter' else 'fix' end as water_connection_type
+                                from water_second_consumers
+                                left join (
+                                    select *
+                                    from water_consumer_meters
+                                    where id in(
+                                        select max(id)
+                                        from water_consumer_meters
+                                        where status = 1
+                                        group by consumer_id
+                                    )
+                                )water_consumer_meters on water_consumer_meters.consumer_id = water_second_consumers.id
+                                where water_second_consumers.status = 1
+                                group by( case when water_consumer_meters.connection_type in (1,2) then 'meter' else 'fix' end)
+                            
+        ";
+        #water_demand
+        $sql_water_demand = "
+                                                                            
+                                                                                    
+                                            SELECT 
+                                            SUM(
+                                                    CASE WHEN water_consumer_demands.demand_from >= '2023-04-01' 
+                                                    AND water_consumer_demands.demand_upto <='2024-03-31' then water_consumer_demands.due_balance_amount
+                                                        ELSE 0
+                                                        END
+                                            ) AS water_current_demand,
+                                            SUM(
+                                                CASE WHEN water_consumer_demands.demand_from <'2023-04-01' then water_consumer_demands.due_balance_amount
+                                                    ELSE 0
+                                                    END
+                                                ) AS water_arrear_demand,
+                                            SUM(water_consumer_demands.due_balance_amount) AS water_total_demand
+                                            FROM water_consumer_demands
+                                            where status = true
+            ";
+
+
+        $sql_water_collection_efficiency = "
+                                            SELECT 
+                                            SUM(
+                                                CASE WHEN water_trans.tran_date >= '2023-04-01' 
+                                                    AND water_trans.tran_date <= '2024-03-31' 
+                                                    THEN water_trans.amount
+                                                    ELSE 0
+                                                END
+                                            ) AS water_current_collection,
+                                            SUM(
+                                                CASE WHEN water_trans.tran_date < '2023-04-01' 
+                                                    THEN water_trans.amount
+                                                    ELSE 0
+                                                END
+                                            ) AS water_arrear_collection,
+                                            SUM(water_trans.amount) AS water_total_collection,
+                                            CASE 
+                                                WHEN SUM(water_trans.amount) > 0 
+                                                THEN (SUM(CASE WHEN water_trans.tran_date >= '2023-04-01' 
+                                                                AND water_trans.tran_date <= '2024-03-31' 
+                                                                THEN water_trans.amount
+                                                                ELSE 0
+                                                            END) / SUM(water_trans.amount)) * 100
+                                                ELSE 0
+                                            END AS water_current_collection_efficiency,
+                                            CASE 
+                                                WHEN SUM(water_trans.amount) > 0 
+                                                THEN (SUM(CASE WHEN water_trans.tran_date < '2023-04-01' 
+                                                                THEN water_trans.amount
+                                                                ELSE 0
+                                                            END) / SUM(water_trans.amount)) * 100
+                                                ELSE 0
+                                            END AS water_arrear_collection_efficiency
+                                        FROM water_trans
+                                        WHERE status = 1
+    
+        ";
+
+        $respons = [];
+        $data = collect(DB::connection("pgsql_water")->select($sql_water_application_underprocess))->first();
+        $respons["water_connection_underprocess"] = $data->water_connection_underprocess ?? 0;
+        $data = collect(DB::connection("pgsql_water")->select($sql_water_connection_type));
+        //dd((collect($data)->where("water_connection_type","meter")->first())->water_total_consumer);
+        $respons["water_meter_connection_type"] = (collect($data)->where("water_connection_type", "meter")->first())->water_total_consumer ?? 0;
+        $respons["water_fix_connection_type"] = (collect($data)->where("water_connection_type", "fix")->first())->water_total_consumer ?? 0;
+        $data = collect(DB::connection("pgsql_water")->select($sql_water_demand))->first();
+        $respons["water_current_demand"] = $data->water_current_demand ?? 0;
+        $respons["water_arrear_demand"] = $data->water_arrear_demand ?? 0;
+        $respons["water_total_demand"] = $data->water_total_demand ?? 0;
+
+        $data = collect(DB::connection("pgsql_water")->select($sql_water_collection_efficiency))->first();
+        $respons["water_current_collection"] = $data->water_current_collection ?? 0;
+        $respons["water_arrear_collection"] = $data->water_arrear_collection ?? 0;
+        $respons["water_total_collection"] = $data->water_total_collection ?? 0;
+        $respons["water_current_collection_efficiency"] = $data->water_current_collection_efficiency ?? 0;
+        $respons["water_arrear_collection_efficiency"] = $data->water_arrear_collection_efficiency ?? 0;
+
+        return (object)$respons;
+    }
+
+    public function mplReportCollectionnew(Request $request)
+    {
+        try {
+            $request->merge(["metaData" => ["pr111.1", 1.1, null, $request->getMethod(), null]]);
+            $ulbId = $request->ulbId ?? 2;
+            $currentDate = Carbon::now()->format("Y-m-d");
+
+            // PropTransaction Query
+            $propTransactionQuery = PropTransaction::select(DB::raw("SUM(prop_transactions.amount) AS total_amount, COUNT(distinct (prop_transactions.property_id)) AS total_hh, count(id) as total_tran"))
+                ->wherein("status", [1, 2])
+                ->where("tran_date", $currentDate)
+                ->wherenotnull("property_id")
+                ->get();
+            $propTransactionQuery = ($propTransactionQuery
+                ->map(function ($val) {
+                    $val->total_amount = $val->total_amount ? $val->total_amount : 0;
+                    return ($val);
+                }))
+                ->first();
+
+            // TradeTransaction Query
+            $tradeTransactionQuery = TradeTransaction::select(DB::raw("sum(paid_amount) as total_amount, count(distinct(temp_id)) as total_license, count(id) as total_tran"))
+                ->wherein("status", [1, 2])
+                ->where("tran_date", $currentDate)
+                ->get();
+            $tradeTransactionQuery = ($tradeTransactionQuery
+                ->map(function ($val) {
+                    $val->total_amount = $val->total_amount ? $val->total_amount : 0;
+                    return ($val);
+                }))
+                ->first();
+
+
+            // WaterTransaction Query
+            $waterTransactionQuery = WaterTran::select(
+                DB::raw("sum(amount)as total_amount , count(distinct(related_id)) as total_consumer, count(id) as total_tran")
+            )
+                ->wherein("status", [1, 2])
+                ->where("tran_date", $currentDate)
+                ->where("tran_type", 'Demand Collection')
+                ->get();
+            $waterTransactionQuery = ($waterTransactionQuery
+                ->map(function ($val) {
+                    $val->total_amount = $val->total_amount ? $val->total_amount : 0;
+                    return ($val);
+                }))
+                ->first();
+            // Combine the results
+            $toDayCollection = $propTransactionQuery->total_amount + $tradeTransactionQuery->total_amount + $waterTransactionQuery->total_amount;
+            $data = [
+                "toDayCollection" => ($toDayCollection ? $toDayCollection : 0),
+                "propDetails" => $propTransactionQuery,
+                "tradeDetails" => $tradeTransactionQuery,
+                "waterDetails" => $waterTransactionQuery,
+            ];
+
+            return responseMsgs(true, "Mpl Report Today Coll", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
+
+    /**
+     * | End of Prity Pandey Code
+     */
+
 
     public function AprovedRejectList(Request $request)
     {
