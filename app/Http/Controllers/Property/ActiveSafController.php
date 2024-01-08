@@ -927,34 +927,6 @@ class ActiveSafController extends Controller
                 $data->current_role_name2 = $data->current_role_name;
 
             $data = json_decode(json_encode($data), true);
-
-            $ownerDtls = $mPropActiveSafOwner->getOwnersBySafId($data['id']);
-            if (collect($ownerDtls)->isEmpty())
-                $ownerDtls = $mPropSafOwner->getOwnersBySafId($data['id']);
-
-            $data['owners'] = $ownerDtls;
-            $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data['id']);      // Model Function to Get Floor Details
-            if (collect($getFloorDtls)->isEmpty())
-                $getFloorDtls = $mPropSafsFloors->getFloorsBySafId($data['id']);
-            $data['floors'] = $getFloorDtls;
-            $data["tranDtl"] = $mPropTransaction->getSafTranList($data['id']);
-            $data["userDtl"] = [
-                "user_id" => $user->id ?? 0,
-                "user_type" => $user->user_type ?? "",
-                "ulb_id" => $user->ulb_id ?? 0,
-                "user_name" => $user->name ?? ""
-            ];
-            $memoDtls = $mPropSafMemoDtls->memoLists($data['id']);
-            $data['memoDtls'] = $memoDtls;
-            if ($status = ((new \App\Repository\Property\Concrete\SafRepository())->applicationStatus($req->applicationId, true))) {
-                $data["current_role_name2"] = $status;
-            }
-            $usertype = $this->_COMMONFUNCTION->getUserAllRoles();
-            $testRole = collect($usertype)->whereIn("sort_name", Config::get("TradeConstant.CANE-CUTE-PAYMENT"));
-            $data["can_take_payment"] = (collect($testRole)->isNotEmpty() && ($data["proccess_fee_paid"] ?? 1) == 0) ? true : false;
-            if ($this->_COMMONFUNCTION->checkUsersWithtocken("active_citizens")) {
-                $data["can_take_payment"] = (($data["proccess_fee_paid"] ?? 1) == 0) ? true : false;
-            }
             $lastTcVerificationData = PropSafVerification::select(
                         'prop_saf_verifications.*',
                         'p.property_type',
@@ -976,10 +948,97 @@ class ActiveSafController extends Controller
                     ->leftjoin('ref_prop_construction_types as c', 'c.id', '=', 'prop_saf_verification_dtls.construction_type_id')
                     ->where("verification_id", $lastTcVerificationData->id??0)
                     ->get();
+            $ownerDtls = $mPropActiveSafOwner->getOwnersBySafId($data['id']);
+            if (collect($ownerDtls)->isEmpty())
+                $ownerDtls = $mPropSafOwner->getOwnersBySafId($data['id']);
+
+            $data['owners'] = $ownerDtls;
+            $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data['id']);      // Model Function to Get Floor Details
+            if (collect($getFloorDtls)->isEmpty())
+                $getFloorDtls = $mPropSafsFloors->getFloorsBySafId($data['id']);
+
+            $notInApplication = collect($lastTcFloorVerificationData)->whereNotIn("saf_floor_id",collect($getFloorDtls)->pluck("id"));
+            
+            $getFloorDtls = collect($getFloorDtls)->map(function($val) use($lastTcFloorVerificationData){
+                $newFloors = $lastTcFloorVerificationData->where("saf_floor_id",$val->id)->first();
+                $newFloorsIds = $this->addjustVerifyFloorDtls($val,$newFloors);
+                $newFloorsVals = $this->addjustVerifyFloorDtlVal($newFloorsIds);
+                $val->tc_verified_usage_type_mstr_id = $newFloors->usage_type_id ??"";
+                $val->tc_verified_const_type_mstr_id = $newFloors->construction_type_id ??"";
+                $val->tc_verified_occupancy_type_mstr_id = $newFloors->occupancy_type_id ??"";
+                $val->tc_verified_builtup_area = $newFloors->builtup_area ??"";
+                $val->tc_verified_date_from = $newFloors->date_from ??"";
+                $val->tc_verified_date_upto= $newFloors->date_to ??"";
+                $val->tc_verified_carpet_area = $newFloors->carpet_area ??"";
+                $val->tc_verified_floor_name = $newFloors ? $newFloorsVals->floor_name :"";
+                $val->tc_verified_usage_type = $newFloors ? $newFloorsVals->usage_type  : "";
+                $val->tc_verified_occupancy_type = $newFloors ? $newFloorsVals->occupancy_type  : "";
+                $val->tc_verified_construction_type = $newFloors ? $newFloorsVals->construction_type  : "";
+                return $val;
+            });
+            $notInApplication->map(function($val)use($getFloorDtls,$data){ 
+                $newfloorObj = new PropActiveSafsFloor();               
+                $val = $this->addjustVerifyFloorDtls($newfloorObj,$val);
+                $val = $this->addjustVerifyFloorDtlVal($val);
+               
+                $val->tc_verified_usage_type_mstr_id = $val->usage_type_mstr_id ??"";
+                $val->tc_verified_const_type_mstr_id = $val->const_type_mstr_id ??"";
+                $val->tc_verified_occupancy_type_mstr_id = $val->occupancy_type_mstr_id ??"";
+                $val->tc_verified_builtup_area = $val->builtup_area ??"";
+                $val->tc_verified_date_from = $val->date_from ??"";
+                $val->tc_verified_date_upto= $val->date_upto ??"";
+                $val->tc_verified_carpet_area = $val->carpet_area ??"";
+                $val->tc_verified_floor_name = $val->floor_name ??"";
+                $val->tc_verified_usage_type = $val->usage_type ??"";
+                $val->tc_verified_occupancy_type = $val->occupancy_type ??"";
+                $val->tc_verified_construction_type = $val->construction_type ??"";
+
+                $val->id = 0 ;   
+                $val->saf_id = $data['id'] ;  
+                // $val->floor_mstr_id = null ;    
+                // $val->usage_type_mstr_id = null ;    
+                // $val->const_type_mstr_id = null ;      
+                // $val->occupancy_type_mstr_id = null ; 
+                // $val->builtup_area = null ; 
+                // $val->date_from = null ; 
+                // $val->date_upto = null ; 
+                // $val->status = null ; 
+                // $val->carpet_area = null ; 
+                // $val->prop_floor_details_id = null ; 
+                // $val->user_id = null ; 
+                // $val->old_floor_id = null ; 
+                // $val->no_of_rooms = null ; 
+                // $val->no_of_toilets = null ; 
+                // $val->floor_name = null ; 
+                // $val->usage_type = null ; 
+                // $val->occupancy_type = null ; 
+                // $val->construction_type = null ; 
+                $getFloorDtls->push($val);
+            }); 
+            $data['floors'] = $getFloorDtls;
+            $data["tranDtl"] = $mPropTransaction->getSafTranList($data['id']);
+            $data["userDtl"] = [
+                "user_id" => $user->id ?? 0,
+                "user_type" => $user->user_type ?? "",
+                "ulb_id" => $user->ulb_id ?? 0,
+                "user_name" => $user->name ?? ""
+            ];
+            $memoDtls = $mPropSafMemoDtls->memoLists($data['id']);
+            $data['memoDtls'] = $memoDtls;
+            if ($status = ((new \App\Repository\Property\Concrete\SafRepository())->applicationStatus($req->applicationId, true))) {
+                $data["current_role_name2"] = $status;
+            }
+            $usertype = $this->_COMMONFUNCTION->getUserAllRoles();
+            $testRole = collect($usertype)->whereIn("sort_name", Config::get("TradeConstant.CANE-CUTE-PAYMENT"));
+            $data["can_take_payment"] = (collect($testRole)->isNotEmpty() && ($data["proccess_fee_paid"] ?? 1) == 0) ? true : false;
+            if ($this->_COMMONFUNCTION->checkUsersWithtocken("active_citizens")) {
+                $data["can_take_payment"] = (($data["proccess_fee_paid"] ?? 1) == 0) ? true : false;
+            }            
             $data["lastTcVerificationData"] = $lastTcVerificationData;
             $data["lastTcFloorVerificationData"] = $lastTcFloorVerificationData;
             return responseMsgs(true, "Saf Dtls", remove_null($data), "010127", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
+            dd($e->getMessage(),$e->getFile(),$e->getLine());
             return responseMsgs(true, $e->getMessage(), [], "010127", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }

@@ -691,7 +691,7 @@ trait SAF
         $floor->floor_name          = (collect($floor_type)->where("id",$floor->floor_mstr_id)->first())->floor_name ?? $floor->floor_name;
         $floor->usage_type          = (collect($usage_type)->where("id",$floor->usage_type_mstr_id)->first())->usage_type ?? $floor->usage_type;
         $floor->construction_type   = (collect($construction_type)->where("id",$floor->const_type_mstr_id)->first())->construction_type ?? $floor->construction_type;
-        $floor->occupancy_type      = (collect($occupancy_type)->where("id",$floor->occupancy_type_mstr_id)->first())->construction_type ?? $floor->occupancy_type;
+        $floor->occupancy_type      = (collect($occupancy_type)->where("id",$floor->occupancy_type_mstr_id)->first())->occupancy_type ?? $floor->occupancy_type;
        
         return $floor;
     }
