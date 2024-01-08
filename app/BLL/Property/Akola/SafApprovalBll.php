@@ -466,10 +466,94 @@ class SafApprovalBll
                 "due_major_building"=>$val["majorBuildingTax"]??0,
                 "due_open_ploat_tax"=>$val["openPloatTax"]??0,
             ];
+            if($oldDemand = $demand->where("fyear",$arr["fyear"])->where("property_id",$arr["property_id"])->first())
+            {
+                $oldDemand->maintanance_amt = $arr["maintanance_amt"];
+                $oldDemand->maintanance_amt = $arr["maintanance_amt"];
+                $oldDemand->maintanance_amt = $arr["maintanance_amt"];
+                $oldDemand->maintanance_amt = $arr["maintanance_amt"];
+                $oldDemand->maintanance_amt = $arr["maintanance_amt"];
+                $oldDemand->maintanance_amt = $arr["maintanance_amt"];
+                $oldDemand->maintanance_amt = $arr["maintanance_amt"];
+                $oldDemand->maintanance_amt = $arr["maintanance_amt"];
+                $oldDemand->maintanance_amt = $arr["maintanance_amt"];
+                $oldDemand->maintanance_amt = $arr["maintanance_amt"];
+                $oldDemand->maintanance_amt = $arr["maintanance_amt"];
+                $oldDemand->maintanance_amt = $arr["maintanance_amt"];
+                $oldDemand->maintanance_amt = $arr["maintanance_amt"];
+                $oldDemand->maintanance_amt = $arr["maintanance_amt"];
+                $oldDemand->maintanance_amt = $arr["maintanance_amt"];
+                $oldDemand->maintanance_amt = $arr["maintanance_amt"];
+                $oldDemand->maintanance_amt = $arr["maintanance_amt"];
+                $oldDemand->maintanance_amt = $arr["maintanance_amt"];
+                $oldDemand->maintanance_amt = $arr["maintanance_amt"];
+                $oldDemand->maintanance_amt = $arr["maintanance_amt"];
+            }
             $demand->store($arr);
             
         }
     }
+
+    // public function updateOldDemands($oldDemand,$newDemand)
+    // {
+    //     $oldDemand->maintanance_amt = $oldDemand->maintanance_amt + $newDemand["maintanance_amt"];
+    //     $oldDemand->aging_amt       = $oldDemand->aging_amt + $newDemand["aging_amt"];
+    //     $oldDemand->general_tax     = $oldDemand->general_tax + $newDemand["general_tax"];
+    //     $oldDemand->road_tax        = $oldDemand->road_tax + $newDemand["road_tax"];
+    //     $oldDemand->firefighting_tax = $oldDemand->firefighting_tax + $newDemand["firefighting_tax"];
+    //     $oldDemand->education_tax   = $oldDemand->education_tax + $newDemand["education_tax"];
+    //     $oldDemand->water_tax       = $oldDemand->water_tax + $newDemand["water_tax"];
+    //     $oldDemand->cleanliness_tax = $oldDemand->cleanliness_tax + $newDemand["cleanliness_tax"];
+    //     $oldDemand->sewarage_tax    = $oldDemand->sewarage_tax + $newDemand["sewarage_tax"];
+    //     $oldDemand->tree_tax        = $oldDemand->tree_tax + $newDemand["tree_tax"];
+    //     $oldDemand->professional_tax = $oldDemand->professional_tax + $newDemand["professional_tax"];
+    //     $oldDemand->total_tax       = $oldDemand->total_tax + $newDemand["total_tax"];
+    //     $oldDemand->balance         = $oldDemand->balance + $newDemand["total_tax"];
+    //     $oldDemand->tax1            = $oldDemand->tax1 + $newDemand["tax1"];
+    //     $oldDemand->tax2            = $oldDemand->tax2 + $newDemand["tax2"];
+    //     $oldDemand->tax3            = $oldDemand->tax3 + $newDemand["tax3"];
+    //     $oldDemand->sp_education_tax = $oldDemand->sp_education_tax + $newDemand["sp_education_tax"];
+    //     $oldDemand->water_benefit   = $oldDemand->water_benefit + $newDemand["water_benefit"];
+    //     $oldDemand->water_bill      = $oldDemand->water_bill + $newDemand["water_bill"];
+    //     $oldDemand->sp_water_cess   = $oldDemand->sp_water_cess + $newDemand["sp_water_cess"];
+    //     $oldDemand->drain_cess      = $oldDemand->drain_cess + $newDemand["drain_cess"];
+    //     $oldDemand->light_cess      = $oldDemand->light_cess + $newDemand["light_cess"];
+    //     $oldDemand->major_building  = $oldDemand->major_building + $newDemand["major_building"];
+    //     $oldDemand->due_maintanance_amt  = $oldDemand->due_maintanance_amt + $newDemand["due_maintanance_amt"];
+    //     $oldDemand->due_aging_amt  = $oldDemand->due_aging_amt + $newDemand["due_aging_amt"];
+    //     $oldDemand->due_general_tax  = $oldDemand->due_general_tax + $newDemand["due_general_tax"];
+    //     $oldDemand->due_road_tax  = $oldDemand->due_road_tax + $newDemand["due_road_tax"];
+    //     $oldDemand->due_firefighting_tax  = $oldDemand->due_firefighting_tax + $newDemand["due_firefighting_tax"];
+    //     $oldDemand->due_education_tax  = $oldDemand->due_education_tax + $newDemand["due_education_tax"];
+    //     $oldDemand->due_water_tax  = $oldDemand->due_water_tax + $newDemand["due_water_tax"];
+    //     $oldDemand->due_cleanliness_tax  = $oldDemand->due_cleanliness_tax + $newDemand["due_cleanliness_tax"];
+    //     $oldDemand->due_sewarage_tax  = $oldDemand->due_sewarage_tax + $newDemand["due_sewarage_tax"];
+    //     $oldDemand->due_tree_tax  = $oldDemand->due_tree_tax + $newDemand["due_tree_tax"];
+    //     $oldDemand->due_professional_tax  = $oldDemand->due_professional_tax + $newDemand["due_professional_tax"];
+    //     $oldDemand->due_total_tax  = $oldDemand->due_total_tax + $newDemand["due_total_tax"];
+    //     $oldDemand->due_balance  = $oldDemand->due_balance + $newDemand["due_balance"];
+    //     $oldDemand->due_tax1  = $oldDemand->due_tax1 + $newDemand["due_tax1"];
+    //     $oldDemand->due_tax2  = $oldDemand->due_tax2 + $newDemand["due_tax2"];
+    //     $oldDemand->due_tax3  = $oldDemand->due_tax3 + $newDemand["due_tax3"];
+    //     $oldDemand->due_sp_education_tax  = $oldDemand->due_sp_education_tax + $newDemand["due_sp_education_tax"];
+    //     $oldDemand->due_water_benefit  = $oldDemand->due_water_benefit + $newDemand["due_water_benefit"];
+    //     $oldDemand->due_water_bill  = $oldDemand->due_water_bill + $newDemand["due_water_bill"];
+    //     $oldDemand->due_sp_water_cess  = $oldDemand->due_sp_water_cess + $newDemand["due_sp_water_cess"];
+    //     $oldDemand->due_drain_cess  = $oldDemand->due_drain_cess + $newDemand["due_drain_cess"];
+    //     $oldDemand->due_light_cess  = $oldDemand->due_light_cess + $newDemand["due_light_cess"];
+    //     $oldDemand->due_major_building  = $oldDemand->due_major_building + $newDemand["due_major_building"];
+    //     $oldDemand->open_ploat_tax  = $oldDemand->open_ploat_tax + $newDemand["open_ploat_tax"];
+    //     $oldDemand->due_open_ploat_tax  = $oldDemand->due_open_ploat_tax + $newDemand["due_open_ploat_tax"];
+    //     if($oldDemand->due_total_tax>0 && $oldDemand->paid_status==1)
+    //     {
+    //         $oldDemand->is_full_paid = false;
+    //     }
+    //     if($oldDemand->due_total_tax>0 && $oldDemand->paid_status==0)
+    //     {
+    //         $oldDemand->is_full_paid = true;
+    //     }
+    //     return $oldDemand;
+    // }
 
     public function transerMutationDemands()
     {
