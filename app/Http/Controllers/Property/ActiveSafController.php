@@ -3482,7 +3482,8 @@ class ActiveSafController extends Controller
             if ($verifications->agency_verification) {
                 $PropertyDeactivate = new \App\Repository\Property\Concrete\PropertyDeactivate();
                 $geoTagging = PropSafGeotagUpload::where("saf_id", $saf->id)->get()->map(function ($val) use ($PropertyDeactivate) {
-                    $val->paths = $PropertyDeactivate->readDocumentPath($val->relative_path . "/" . $val->image_path);
+                    $val->paths = Config::get('module-constants.DOC_URL')."/".$val->relative_path."/".$val->image_path;
+                    // $val->paths = $PropertyDeactivate->readDocumentPath($val->relative_path . "/" . $val->image_path);
                     return $val;
                 });
                 $message = "TC Verification Details";
