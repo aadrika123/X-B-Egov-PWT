@@ -9,12 +9,13 @@ use Illuminate\Support\Facades\DB;
 class location extends Model
 {
     use HasFactory;
-    public $timestamps=false;
+    public $timestamps = false;
     protected $guarded = [];
 
     # get tc details 
-    public function getTcDetails($tcId){
-        return location::select (
+    public function getTcDetails($tcId)
+    {
+        return location::select(
             'locations.latitude',
             'locations.longitude',
             'locations.altitude',
@@ -24,7 +25,7 @@ class location extends Model
             'users.name',
 
         )
-        ->leftjoin('users','users.id','=','locations.tc_id')
-        ->where('locations.tc_id',$tcId);
-     }
+            ->leftjoin('users', 'users.id', '=', 'locations.tc_id')
+            ->where('locations.tc_id', $tcId);
+    }
 }
