@@ -8,7 +8,7 @@ use App\Http\Controllers\ThirdPartyController;
 use App\MicroServices\DocUpload;
 use App\Models\ActiveCitizen;
 use App\Models\Citizen\ActiveCitizenUndercare;
-use App\Models\property\location;
+use App\Models\Property\Location;
 use App\Models\Property\PropActiveConcession;
 use App\Models\Property\PropActiveHarvesting;
 use App\Models\Property\PropActiveObjection;
@@ -1778,14 +1778,14 @@ class PropertyController extends Controller
             return validationError($validated);
         try {
             $req->all();
-            $mlocations = new location();
+            $mLocation = new Location();
             return $tcId       = $req->tcId;
             $pages      = $req->pages ?? 10;
-            $mlocation  = $mlocations->getTcDetails($tcId)
+            $mLocation  = $mLocation->getTcDetails($tcId)
                 ->paginate($pages);
-            if (!$mlocation)
+            if (!$mLocation)
                 throw new Exception("No Data Found Against tc ");
-            return responseMsgs(true, "get tc loacations ", remove_null($mlocation), "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            return responseMsgs(true, "get tc loacations ", remove_null($mLocation), "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
