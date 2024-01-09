@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 class Location extends Model
 {
     use HasFactory;
-    public $timestamps = false;
+    // public $timestamps = false;
     protected $guarded = [];
 
     # get tc details 
