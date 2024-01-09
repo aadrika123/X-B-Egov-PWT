@@ -1746,48 +1746,47 @@ class PropertyController extends Controller
                 "altitude"   => "nullable",
             ]
         );
-        if ($validated->fails()){
+        if ($validated->fails()) {
             return responseMsgs(false, $validated->errors(), "", "011610", "1.0", "", "POST", $req->deviceId ?? "");
-        }            
+        }
 
         try {
             $mlocations = new location();
             $mlocations->tc_id    = $req->tcId;
             $mlocations->latitude = $req->latitude;
-            $mlocations->longitude= $req->longitude;
+            $mlocations->longitude = $req->longitude;
             $mlocations->altitude = $req->altitude;
             $mlocations->save();
 
             return responseMsgs(true, "tc location updated", [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, [$e->getMessage(),$e->getFile(),$e->getLine()], [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
 
     #get tc locations
-    public function getTcLocations(Request $req){
+    public function getTcLocations(Request $req)
+    {
         $validated = Validator::make(
             $req->all(),
             [
-                "tcId"       => "required|",
+                "tcId"       => "required",
                 'pages'     => 'nullable',
             ]
-        ); 
+        );
         if ($validated->fails())
             return validationError($validated);
-        try{
-            $mlocations =new location();
-            $tcId       =$req->tcId;
+        try {
+            $mlocations = new location();
+            $tcId       = $req->tcId;
             $pages      = $req->pages ?? 10;
-         
-            $mlocation =$mlocations->getTcDetails($tcId)->paginate($pages);
+
+            $mlocation = $mlocations->getTcDetails($tcId)->paginate($pages);
             if (!$mlocation)
-            throw new Exception("No Data Found Against tc ");
+                throw new Exception("No Data Found Against tc ");
             return responseMsgs(true, "get tc loacations ", remove_null($mlocation), "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
-
-    
 }
