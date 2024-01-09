@@ -1769,12 +1769,12 @@ class PropertyController extends Controller
         $validated = Validator::make(
             $req->all(),
             [
-                "tcId"       => "required|",
-                'pages'     => 'nullable',
+                "tcId"       => "required",
+                'pages'     =>  'nullable',
             ]
         ); 
         if ($validated->fails())
-            return validationError($validated);
+        return responseMsgs(false, $validated->errors(), "", "011610", "1.0", "", "POST", $req->deviceId ?? "");
         try{
             $mlocations =new location();
             $tcId       =$req->tcId;
