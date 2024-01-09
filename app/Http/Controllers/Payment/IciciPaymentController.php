@@ -197,7 +197,7 @@ class IciciPaymentController extends Controller
         | Working  
         | Use in case of webhook not used
      */
-    public function getCallbackDetial(Request $req)
+    public function getCallbackDetialV1(Request $req)
     {
         try {
             # Save the callback data
@@ -261,13 +261,13 @@ class IciciPaymentController extends Controller
         }
     }
 
-    public function getCallbackDetialV1(Request $req)
+    public function getCallbackDetial(Request $req)
     {
         try {
             # Save the callback data
             $mIciciPaymentReq = new IciciPaymentReq();
             Storage::disk('public')->put('icici/callback/' . $req->Unique_Ref_Number . '.json', json_encode($req->all())); 
-            $redirectUrl  = Config::get("payment-constants.FRONT_URL");  dd(json_encode($req->all()));     
+            $redirectUrl  = Config::get("payment-constants.FRONT_URL");     
             # Check if the payament is success 
             if ($req->Response_Code == "E000") {
                 # Check the transaction initials

@@ -1,19 +1,21 @@
 <?php
 
-namespace App\Models\property;
+namespace App\Models\Property;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
-class location extends Model
+class Location extends Model
 {
     use HasFactory;
+    // public $timestamps = false;
     protected $guarded = [];
 
     # get tc details 
-    public function getTcDetails($tcId){
-        return location::select (
+    public function getTcDetails($tcId)
+    {
+        return Location::select(
             'locations.latitude',
             'locations.longitude',
             'locations.altitude',
@@ -23,7 +25,7 @@ class location extends Model
             'users.name',
 
         )
-        ->leftjoin('users','users.id','=','locations.tc_id')
-        ->where('locations.tc_id',$tcId);
-     }
+            ->leftjoin('users', 'users.id', '=', 'locations.tc_id')
+            ->where('locations.tc_id', $tcId);
+    }
 }

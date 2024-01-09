@@ -317,10 +317,10 @@ class SafDocController extends Controller
                 $val->verify_status_secondery = $seconderyData ? $seconderyData->verify_status : 0;
                 $val->remarks_secondery = $seconderyData ? $seconderyData->remarks :  "";
                 $val->owner_name = (collect($owners)->where("id",$val->owner_dtl_id)->first())->owner_name?? "";
-                if (count($sameWorkRoles) > 1 && $userRole && $userRole->role_id != ($sameWorkRoles->first())["id"] && $userRole->can_verify_document) {
+                // if (count($sameWorkRoles) > 1 && $userRole && $userRole->role_id != ($sameWorkRoles->first())["id"] && $userRole->can_verify_document) {
                     $val->verify_status = $seconderyData ? $val->verify_status_secondery : $val->verify_status;
                     $val->remarks = $seconderyData ? $val->remarks_secondery : $val->remarks;
-                }
+                // }
                 if ($val->doc_code  == 'PHOTOGRAPH') {
                     $val->verify_status = 1;
                     $val->remarks = "";

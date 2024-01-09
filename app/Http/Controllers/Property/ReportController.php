@@ -1211,30 +1211,24 @@ class ReportController extends Controller
 
             #water
             $data['Water']['water_connection_underprocess']    = $currentYearData->water_connection_underprocess;
-
-            $data['Payment Modes']['current_year_neft_collection']     = round(($currentYearData->current_year_neft_collection ?? 0) / 10000000, 2);
             $data['Water']['water_fix_connection_type']    = $currentYearData->water_fix_connection_type;
             $data['Water']['water_meter_connection_type']    = $currentYearData->water_meter_connection_type;
+
             //$data['Water']['water_current_demand']    = round(($currentYearData->water_current_demand)/10000000,2);
-            $data['Water']['water_current_demand']    = ($currentYearData->water_current_demand);
+            $data['Water']['water_current_demand']    = round(($currentYearData->water_current_demand ?? 0) / 10000000, 2); #in cr
+            $data['Water']['water_arrear_demand']    = round(($currentYearData->water_arrear_demand ?? 0) / 10000000, 2); # in cr
 
-            $data['Water']['water_arrear_demand']    = $currentYearData->water_arrear_demand;
-
-
-            $data['Water']['water_total_demand']    = $currentYearData->water_total_demand;
-            $data['Water']['water_current_collection']    = $currentYearData->water_current_collection;
-            $data['Water']['water_arrear_collection']    = $currentYearData->water_arrear_collection;
-            $data['Water']['water_total_collection']    = $currentYearData->water_total_collection;
+            // $data['Water']['water_total_demand']    = $currentYearData->water_total_demand;
+            $data['Water']['water_current_collection']    = round(($currentYearData->water_current_collection ?? 0) / 10000000, 2); # in cr
+            $data['Water']['water_arrear_collection']    = round(($currentYearData->water_arrear_collection ?? 0) / 10000000, 2); # in cr
+            $data['Water']['water_total_collection']    = round(($currentYearData->water_total_collection ?? 0) / 10000000, 2); # in cr
             $data['Water']['water_current_collection_efficiency']    = $currentYearData->water_current_collection_efficiency;
             $data['Water']['water_arrear_collection_efficiency']    = $currentYearData->water_arrear_collection_efficiency;
-
 
             #property_new
             $data['Property']['a_zone_name']    = $currentYearData->a_zone_name;
             $data['Property']['a_prop_total_hh']    = $currentYearData->a_prop_total_hh;
-
             $data['Property']['a_prop_total_amount']    = $currentYearData->a_prop_total_amount;
-
             $data['Property']['b_zone_name']    = $currentYearData->b_zone_name;
             $data['Property']['b_prop_total_hh']    = $currentYearData->b_prop_total_hh;
             $data['Property']['b_prop_total_amount']    = $currentYearData->b_prop_total_amount;
@@ -2761,12 +2755,15 @@ class ReportController extends Controller
             'water_meter_connection_type'  => $waterdata->water_meter_connection_type,
             'water_current_demand'  => $waterdata->water_current_demand,
             'water_arrear_demand'  => $waterdata->water_arrear_demand,
-            'water_total_demand'  => $waterdata->water_total_demand,
+            //'water_total_demand'  => $waterdata->water_total_demand,
             'water_current_collection'  => $waterdata->water_current_collection,
             'water_arrear_collection'  => $waterdata->water_arrear_collection,
             'water_total_collection'  => $waterdata->water_total_collection,
+            'water_total_prev_collection'  => $waterdata->water_total_prev_collection,
+            'water_arrear_collection_efficiency'  => $waterdata->water_arrear_collection_efficiency,
             'water_current_collection_efficiency'  => $waterdata->water_current_collection_efficiency,
-            'water_arrear_collection_efficiency'  => $waterdata->water_arrear_collection_efficiency
+            'water_current_outstanding'  => $waterdata->water_current_outstanding,
+            'water_arrear_outstanding'  => $waterdata->water_arrear_outstanding,
         ];
 
         $mMplYearlyReport->where('fyear', $currentFy)
@@ -3063,63 +3060,68 @@ class ReportController extends Controller
         ";
         #water_demand
         $sql_water_demand = "
-                                                                            
-                                                                                    
-                                            SELECT 
-                                            SUM(
-                                                    CASE WHEN water_consumer_demands.demand_from >= '2023-04-01' 
-                                                    AND water_consumer_demands.demand_upto <='2024-03-31' then water_consumer_demands.due_balance_amount
-                                                        ELSE 0
-                                                        END
-                                            ) AS water_current_demand,
-                                            SUM(
-                                                CASE WHEN water_consumer_demands.demand_from <'2023-04-01' then water_consumer_demands.due_balance_amount
-                                                    ELSE 0
-                                                    END
-                                                ) AS water_arrear_demand,
-                                            SUM(water_consumer_demands.due_balance_amount) AS water_total_demand
-                                            FROM water_consumer_demands
-                                            where status = true
-            ";
-
-
-        $sql_water_collection_efficiency = "
-                                            SELECT 
-                                            SUM(
-                                                CASE WHEN water_trans.tran_date >= '2023-04-01' 
-                                                    AND water_trans.tran_date <= '2024-03-31' 
-                                                    THEN water_trans.amount
-                                                    ELSE 0
-                                                END
-                                            ) AS water_current_collection,
-                                            SUM(
-                                                CASE WHEN water_trans.tran_date < '2023-04-01' 
-                                                    THEN water_trans.amount
-                                                    ELSE 0
-                                                END
-                                            ) AS water_arrear_collection,
-                                            SUM(water_trans.amount) AS water_total_collection,
-                                            CASE 
-                                                WHEN SUM(water_trans.amount) > 0 
-                                                THEN (SUM(CASE WHEN water_trans.tran_date >= '2023-04-01' 
-                                                                AND water_trans.tran_date <= '2024-03-31' 
-                                                                THEN water_trans.amount
-                                                                ELSE 0
-                                                            END) / SUM(water_trans.amount)) * 100
-                                                ELSE 0
-                                            END AS water_current_collection_efficiency,
-                                            CASE 
-                                                WHEN SUM(water_trans.amount) > 0 
-                                                THEN (SUM(CASE WHEN water_trans.tran_date < '2023-04-01' 
-                                                                THEN water_trans.amount
-                                                                ELSE 0
-                                                            END) / SUM(water_trans.amount)) * 100
-                                                ELSE 0
-                                            END AS water_arrear_collection_efficiency
-                                        FROM water_trans
-                                        WHERE status = 1
-    
-        ";
+                        with demand as (
+                            select ulb_id,sum(case when demand_from >='2023-04-01' and demand_upto <='2024-03-31' then amount else 0 end) as current_demand,
+                            sum(case when demand_upto <'2023-04-01'then amount else 0 end) as arrear_demand,
+                            sum(amount) as total_demand,count(distinct consumer_id) as total_consumer
+                            from water_consumer_demands
+                            where status = true and demand_upto<'2024-03-31'
+                            group by ulb_id
+                            
+                        ),
+                        collection as (
+                            
+                            select water_consumer_demands.ulb_id, sum(water_tran_details.paid_amount) as total_collection,
+                                sum(case when water_consumer_demands.demand_from >='2023-04-01' 
+                                    and water_consumer_demands.demand_upto <='2024-03-31' 
+                                    then water_tran_details.paid_amount else 0 
+                                    end) as current_collection,
+                                sum(case when water_consumer_demands.demand_upto <'2023-04-01'
+                                    then water_tran_details.paid_amount else 0 
+                                    end) as arrear_collection,
+                                count(distinct water_consumer_demands.consumer_id) as total_coll_consumer
+                            from  water_tran_details
+                            join water_consumer_demands on water_consumer_demands.id = 	water_tran_details.demand_id
+                            join water_trans on water_trans.id = water_tran_details.tran_id
+                            where water_trans.tran_date between '2023-04-01' and '2024-03-31' and water_trans.status in(1,2)
+                                and water_trans.tran_type = 'Demand Collection'
+                                and water_tran_details.status = 1
+                            group by  water_consumer_demands.ulb_id
+                                
+                        ),
+                        prev_collection as (
+                            select water_trans.ulb_id,sum(water_tran_details.paid_amount) as total_prev_collection,
+                                count(distinct water_trans.related_id) as total_prev_coll_consumer
+                            from  water_tran_details
+                            join water_trans on water_trans.id = water_tran_details.tran_id
+                            where water_trans.tran_date < '2023-04-01' and water_trans.status in(1,2)
+                                and water_trans.tran_type = 'Demand Collection'
+                            and water_tran_details.status = 1
+                            group by  water_trans.ulb_id
+                        )
+                        select demand.ulb_id,sum(Coalesce(demand.current_demand,0) ) as water_current_demand ,
+                            sum(Coalesce(collection.current_collection,0) ) as water_current_collection,
+                            sum(Coalesce(prev_collection.total_prev_collection,0) ) as water_total_prev_collection,
+                            (sum(Coalesce(demand.arrear_demand,0) ) - sum(Coalesce(prev_collection.total_prev_collection,0) )) as water_arrear_demand 
+                            ,
+                            sum(Coalesce(collection.arrear_collection,0) ) as water_arrear_collection,
+                            (sum(Coalesce(demand.current_demand,0) )- sum(Coalesce(collection.current_collection,0) )) as water_current_outstanding,
+                            ((sum(Coalesce(demand.arrear_demand,0) ) - sum(Coalesce(prev_collection.total_prev_collection,0) ))- sum(Coalesce(collection.arrear_collection,0) )) as water_arrear_outstanding,
+                            sum(Coalesce(collection.total_collection,0)) as water_total_collection,
+                            CASE 
+                                WHEN SUM(COALESCE(demand.current_demand, 0)) > 0 
+                                THEN (SUM(COALESCE(collection.current_collection, 0)) / SUM(COALESCE(demand.current_demand, 0))) * 100
+                                ELSE 0
+                            END AS water_current_collection_efficiency,
+                            CASE 
+                                WHEN (SUM(COALESCE(demand.arrear_demand, 0)) - SUM(COALESCE(prev_collection.total_prev_collection, 0))) > 0 
+                                THEN (SUM(COALESCE(collection.arrear_collection, 0)) / (SUM(COALESCE(demand.arrear_demand, 0)) - SUM(COALESCE(prev_collection.total_prev_collection, 0)))) * 100
+                                ELSE 0
+                            END AS water_arrear_collection_efficiency
+                        from demand
+                        left join collection on collection.ulb_id = demand.ulb_id
+                        left join prev_collection on prev_collection.ulb_id = demand.ulb_id
+                        group by demand.ulb_id";
 
         $respons = [];
         $data = collect(DB::connection("pgsql_water")->select($sql_water_application_underprocess))->first();
@@ -3131,14 +3133,14 @@ class ReportController extends Controller
         $data = collect(DB::connection("pgsql_water")->select($sql_water_demand))->first();
         $respons["water_current_demand"] = $data->water_current_demand ?? 0;
         $respons["water_arrear_demand"] = $data->water_arrear_demand ?? 0;
-        $respons["water_total_demand"] = $data->water_total_demand ?? 0;
-
-        $data = collect(DB::connection("pgsql_water")->select($sql_water_collection_efficiency))->first();
+        $respons["water_total_prev_collection"] = $data->water_total_prev_collection ?? 0;
         $respons["water_current_collection"] = $data->water_current_collection ?? 0;
         $respons["water_arrear_collection"] = $data->water_arrear_collection ?? 0;
         $respons["water_total_collection"] = $data->water_total_collection ?? 0;
         $respons["water_current_collection_efficiency"] = $data->water_current_collection_efficiency ?? 0;
         $respons["water_arrear_collection_efficiency"] = $data->water_arrear_collection_efficiency ?? 0;
+        $respons["water_current_outstanding"] = $data->water_current_outstanding ?? 0;
+        $respons["water_arrear_outstanding"] = $data->water_arrear_outstanding ?? 0;
 
         return (object)$respons;
     }
