@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class location extends Model
 {
     use HasFactory;
+    protected $guarded = [];
 
     # get tc details 
      public function getTcDetails($tcId){

@@ -1740,14 +1740,15 @@ class PropertyController extends Controller
         $validated = Validator::make(
             $req->all(),
             [
-                "tcId"       => "required|",
-                "latitude"   => "required|",
-                "longitude"  => "required|",
-                "altitude"   => "nullable|",
+                "tcId"       => "required",
+                "latitude"   => "required",
+                "longitude"  => "required",
+                "altitude"   => "nullable",
             ]
         );
-        if ($validated->fails())
-            return validationError($validated);
+        if ($validated->fails()){
+            return responseMsgs(false, $validated->errors(), "", "011610", "1.0", "", "POST", $req->deviceId ?? "");
+        }            
 
         try {
             $mlocations = new location();
