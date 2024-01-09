@@ -1777,7 +1777,7 @@ class PropertyController extends Controller
         if ($validated->fails())
             return validationError($validated);
         try {
-            return $req->all();
+            // return $req->all();
             $mlocations = new location();
             $tcId       = $req->tcId;
             $pages      = $req->pages ?? 10;
