@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class location extends Model
 {
     use HasFactory;
+    public $timestamps=false;
     protected $guarded = [];
 
     # get tc details 

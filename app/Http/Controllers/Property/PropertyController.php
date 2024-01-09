@@ -1760,7 +1760,7 @@ class PropertyController extends Controller
 
             return responseMsgs(true, "tc location updated", [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            return responseMsgs(false, [$e->getMessage(),$e->getFile(),$e->getLine()], [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
 
