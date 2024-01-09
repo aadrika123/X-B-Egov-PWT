@@ -2757,7 +2757,6 @@ class WaterReportController extends Controller
     }
 
     /**
-     * 
      * bulk demand bill 
      */
 
@@ -2842,9 +2841,13 @@ class WaterReportController extends Controller
                 subquery.current_demands,
                 subquery.demand_from,
                 subquery.demand_upto,
-                subquery.total_amount
+                subquery.total_amount,
+                subquery.arrear_demand_date,
+                subquery.current_demand_date,
+                users.user_name
             FROM (
                 SELECT 
+                    wd.emp_details_id,
                     wd.consumer_id,
                     wd.connection_type,
                     wd.status,
@@ -2860,7 +2863,8 @@ class WaterReportController extends Controller
                     wd.consumer_id, 
                     wd.connection_type,
                     wd.status, 
-                    wd.demand_no
+                    wd.demand_no,
+                    wd.emp_details_id
             ) water_consumer_demands
             JOIN water_second_consumers ON water_second_consumers.id = water_consumer_demands.consumer_id
             LEFT JOIN water_consumer_owners ON water_consumer_owners.consumer_id = water_second_consumers.id
@@ -2868,20 +2872,23 @@ class WaterReportController extends Controller
             LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id = water_second_consumers.ward_mstr_id
             LEFT JOIN water_meter_reading_docs ON water_meter_reading_docs.demand_id = water_consumer_demands.demand_id
             JOIN water_consumer_initial_meters ON water_consumer_initial_meters.consumer_id = water_second_consumers.id
+            LEFT JOIN users on users.id = water_consumer_demands.emp_details_id
             LEFT JOIN (
             SELECT 
                 consumer_id, MIN(demand_from) AS demand_from,MAX(demand_upto) AS demand_upto,
                 sum(water_consumer_demands.due_balance_amount) as total_amount,
                 SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.arrear_demand ELSE 0 END) AS arrear_demands,
                 SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.current_demand ELSE 0 END) AS current_demands,
-                SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NOT NULL THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS generate_amount
+                SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NOT NULL THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS generate_amount,
+                max(case when water_consumer_demands.consumer_tax_id is null then water_consumer_demands.arrear_demand_date else null end ) as arrear_demand_date,
+                max(case when water_consumer_demands.consumer_tax_id is null then water_consumer_demands.current_demand_date else null end ) as current_demand_date
                 FROM water_consumer_demands
                 GROUP BY consumer_id
         ) AS subquery ON subquery.consumer_id = water_consumer_demands.consumer_id
             WHERE 
                 water_second_consumers.zone_mstr_id = $zoneId
                 " . ($wardId ? " AND water_second_consumers.ward_mstr_id = $wardId" : "") . "
-                " .($metertype ? " AND water_consumer_demands.connection_type='$metertype'" :"")."
+                " . ($metertype ? " AND water_consumer_demands.connection_type='$metertype'" : "") . "
             GROUP BY 
                 water_meter_reading_docs.file_name,
                 water_meter_reading_docs.relative_path,
@@ -2891,6 +2898,7 @@ class WaterReportController extends Controller
                 water_consumer_demands.status,
                 water_consumer_demands.sum_amount,
                 water_consumer_demands.demand_no,
+                water_consumer_demands.emp_details_id,
                 ulb_ward_masters.ward_name,
                 water_second_consumers.id,
                 water_consumer_owners.applicant_name,
@@ -2905,9 +2913,14 @@ class WaterReportController extends Controller
                 subquery.current_demands,
                 subquery.demand_from,
                 subquery.demand_upto,
-                subquery.total_amount                
+                subquery.total_amount ,
+                subquery.arrear_demand_date,
+                subquery.current_demand_date, 
+                users.user_name
+                ORDER BY water_consumer_demands.consumer_id             
         ");
             $data = DB::connection('pgsql_water')->select(DB::raw($rawData));
+            return response()->json($data);
             $list = [
                 "data" => $data,
                 'billdate' => $NowDate,
@@ -2919,7 +2932,7 @@ class WaterReportController extends Controller
         }
     }
     /**\
-     * bulk receipt 
+     * bulk payment receipt
      */
     public function bulkReceipt(Request $request)
     {
@@ -3049,9 +3062,6 @@ class WaterReportController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
-    /**
-     * date wise collection report
-     */
     /**\
      * bulk receipt 
      */
@@ -3316,7 +3326,7 @@ class WaterReportController extends Controller
         }
     }
 
-       public function tcvisitRecords(colllectionReport $request)
+    public function tcvisitRecords(colllectionReport $request)
     {
         $request->merge(["metaData" => ["pr1.1", 1.1, null, $request->getMethod(), null,]]);
         $metaData = collect($request->metaData)->all();

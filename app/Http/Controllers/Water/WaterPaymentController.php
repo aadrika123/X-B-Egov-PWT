@@ -708,7 +708,7 @@ class WaterPaymentController extends Controller
                 throw new Exception("Ulb Not Found!");
             }
             $finalCharges = $this->preOfflinePaymentParams($request, $startingDate, $endDate);
-            
+
             $this->begin();
             $tranNo = $midGeneration->generateTransactionNo($user->ulb_id);
             $request->merge([
@@ -1825,17 +1825,30 @@ class WaterPaymentController extends Controller
             //     'New Assessment'
             // );
             // if (($sms["status"] !== false)) {
-            //     $respons = SMSAKGOVT(6206998554, $sms["sms"], $sms["temp_id"]);
+            //     $respons = SMSAKGOVT(7319867430, $sms["sms"], $sms["temp_id"]);
+            // }
+
+            // $sms = AkolaProperty(
+            //     [
+            //         "owner_name" => $ownerName,
+            //         "saf_no" => $safNo,
+            //         "assessment_type" => $request->assessmentType,
+            //         "holding_no" => $request->propertyNo ?? ""
+            //     ],
+            //     ($request->assessmentType == "New Assessment" ? "New Assessment" : "Reassessment")
+            // );
+            // if (($sms["status"] !== false)) {
+            //     $respons = send_sms($ownerMobile, $sms["sms"], $sms["temp_id"]);
             // }
             # watsapp message   
             // Register_message
-            // $whatsapp2 = (Whatsapp_Send(
-            //     6206998554,
+            // return  $whatsapp2 = (Whatsapp_Send(
+            //     7319867430,
             //     "trn_2_var",
             //     [
             //         "content_type" => "text",
             //         [
-            //              $returnValues["customerName"],
+            //             $returnValues["customerName"],
             //             $returnValues['transactionNo'],
             //             $returnValues['consumerNo'],
             //         ]

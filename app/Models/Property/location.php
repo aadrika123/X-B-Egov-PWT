@@ -1,0 +1,25 @@
+<?php
+
+namespace App\Models\property;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class location extends Model
+{
+    use HasFactory;
+
+    # get tc details 
+     public function getTcDetails($tcId){
+        return location::select (
+            'locations.latitude',
+            'locations.longitude',
+            'locations.altitude',
+            'users.user_name',
+            'users.name',
+
+        )
+        ->leftjoin('users','users.id','=','locations.tc_id')
+        ->where('locations.tc_id',$tcId);
+     }
+}

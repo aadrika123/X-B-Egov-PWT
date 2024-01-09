@@ -655,6 +655,8 @@ Route::controller(ReferenceController::class)->group(function () {
 Route::controller(PropertyController::class)->group(function () {
   Route::post('getpropLatLong', 'getpropLatLong');                             // 01
   Route::post('upload-document', 'uploadDocument');                             // 01
+  Route::post('property/save-locations','saveLocations');                     
+  Route::post('property/get-tc-locations','getTcLocations');
   Route::post('');
 });
 

@@ -8,6 +8,7 @@ use App\Http\Controllers\ThirdPartyController;
 use App\MicroServices\DocUpload;
 use App\Models\ActiveCitizen;
 use App\Models\Citizen\ActiveCitizenUndercare;
+use App\Models\property\location;
 use App\Models\Property\PropActiveConcession;
 use App\Models\Property\PropActiveHarvesting;
 use App\Models\Property\PropActiveObjection;
@@ -1731,4 +1732,58 @@ class PropertyController extends Controller
             return responseMsgs(false, $e->getMessage(), [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
+
+    # save tc locations
+
+    public function saveLocations(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                "tcId"       => "required|",
+                "latitude"   => "required|",
+                "longitude"  => "required|",
+                "altitude"   => "required|",
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $mlocations = new location();
+            $mlocations->tc_id    = $req->tcId;
+            $mlocations->latitude = $req->latitude;
+            $mlocations->longitude= $req->longitude;
+            $mlocations->altitude = $req->altitude;
+            $mlocations->save();
+
+            return responseMsgs(true, "tc location updated", [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    #get tc locations
+    public function getTcLocations(Request $req){
+        $validated = Validator::make(
+            $req->all(),
+            [
+                "tcId"       => "required|",
+            ]
+        ); 
+        if ($validated->fails())
+            return validationError($validated);
+        try{
+            $mlocations =new location();
+            $tcId       =$req->tcId;
+            $mlocation =$mlocations->getTcDetails($tcId)->first();
+            if (!$mlocation)
+            throw new Exception("No Data Found Against tc ");
+            return responseMsgs(true, "get tc loacations ", $mlocation, "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    
 }

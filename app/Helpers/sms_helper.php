@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 
+
 if (!function_exists('SMSJHGOVT')) {
     function SMSJHGOVT($mobileno, $message, $templateid = null)
     {
@@ -612,7 +613,7 @@ function whattest(object $request)
     ));
 }
 
-
+// AKOLA SMS 
 if (!function_exists('SMSAKGOVT')) {
     function SMSAKGOVT($mobileno, $message, $templateid = null)
     {
