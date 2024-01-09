@@ -151,8 +151,8 @@ class ApplySafController extends Controller
             // Generate Calculation
             if (!$request->no_calculater)
                 $taxCalculator->calculateTax();
-            if (($taxCalculator->_oldUnpayedAmount ?? 0) > 0 && $request->assessmentType == 3) {
-                // throw new Exception("Old Demand Amount Of ".$taxCalculator->_oldUnpayedAmount." Not Cleard");
+            if (($taxCalculator->_oldUnpayedAmount ?? 0) > 0 && ($request->assessmentType == 3||$request->assessmentType=="Mutation")) {
+                throw new Exception("Old Demand Amount Of ".$taxCalculator->_oldUnpayedAmount." Not Cleard");
             }
             DB::beginTransaction();
             $createSaf = $saf->store($request);                                         // Store SAF Using Model function 

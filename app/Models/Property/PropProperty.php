@@ -1062,6 +1062,14 @@ class PropProperty extends Model
             ->where("due_total_tax", ">", 0)
             ->orderBy("fyear", "ASC");
     }
+    public function PropArrearDueDemands()
+    {
+        return $this->hasMany(PropDemand::class, "property_id", "id")
+            ->where("status", 1)
+            ->where("due_total_tax", ">", 0)
+            ->where("fyear", "<>", getFY())
+            ->orderBy("fyear", "ASC");
+    }
     public function PropLastPaidDemands()
     {
         return $this->hasOne(PropDemand::class, "property_id", "id")
