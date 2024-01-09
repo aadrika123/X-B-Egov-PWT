@@ -107,7 +107,7 @@ class CitizenHoldingController extends Controller
                 "workflowId" => $demand["basicDetails"]["workflowId"],
                 "moduleId" => $demand["basicDetails"]["moduleId"],
                 "moduleId" => $demand["basicDetails"]["moduleId"],
-                "callbackUrl" => $this->_callbackUrl,
+                "callbackUrl" => $request->callbackUrl ? $request->callbackUrl : $this->_callbackUrl,
                 // "userId" => $user->id,
                 // "userType"  => $user->user_type,
                 // "auth"  => $user

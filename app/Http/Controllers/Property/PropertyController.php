@@ -1288,7 +1288,13 @@ class PropertyController extends Controller
             $propDetails = $mPropProperty->getPropBasicDtls($req->propId);
             $propFloors = $mPropFloors->getPropFloors($req->propId);
             $propOwner = $mPropOwner->getfirstOwner($req->propId);
-
+            $mPropProperty->id = $req->propId;
+            $propOwnerAll = $mPropProperty->Owneres()->get();
+            $propOwnerAll = collect($propOwnerAll)->map(function($val){                 
+                $val->owner_name_marathi = trim($val->owner_name_marathi) ? trim($val->owner_name_marathi) : trim($val->owner_name);
+                return $val;
+            });
+            $propOwnerAllMarathi = $propOwnerAll->implode("owner_name_marathi"," ,");
             $floorTypes = $propFloors->implode('floor_name', ',');
             $floorCode = $propFloors->implode('floor_code', '-');
             $usageTypes = $propFloors->implode('usage_type', ',');
@@ -1321,7 +1327,7 @@ class PropertyController extends Controller
                 'floor_const_code' => $constCode,
                 'total_buildup_area' => $totalBuildupArea,
                 'area_of_plot' => $propDetails->area_of_plot,
-                'primary_owner_name' => $propOwner->owner_name_marathi ?? null,
+                'primary_owner_name' => $propOwnerAllMarathi ? $propOwnerAllMarathi : ($propOwner->owner_name_marathi ?? null),
                 'applicant_name' => $propDetails->applicant_marathi,
                 'property_from' => $minFloorFromDate,
                 'demands' => $propDemand
