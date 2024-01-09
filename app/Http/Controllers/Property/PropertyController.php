@@ -1777,11 +1777,11 @@ class PropertyController extends Controller
         if ($validated->fails())
             return validationError($validated);
         try {
-            return $req->all();
+            $req->all();
             $mlocations = new location();
-            return  $tcId       = $req->tcId;
+            return $tcId       = $req->tcId;
             $pages      = $req->pages ?? 10;
-            $mlocation = $mlocations->getTcDetails($tcId)
+            $mlocation  = $mlocations->getTcDetails($tcId)
                 ->paginate($pages);
             if (!$mlocation)
                 throw new Exception("No Data Found Against tc ");
