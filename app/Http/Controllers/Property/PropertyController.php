@@ -1779,11 +1779,10 @@ class PropertyController extends Controller
         try {
             // return $req->all();
             $mlocations = new location();
-            $tcId       = $req->tcId;
+            return  $tcId       = $req->tcId;
             $pages      = $req->pages ?? 10;
-            return  $mlocation = $mlocations->getTcDetails($tcId)
-                ->get();
-            // ->paginate($pages);
+            $mlocation = $mlocations->getTcDetails($tcId)
+                ->paginate($pages);
             if (!$mlocation)
                 throw new Exception("No Data Found Against tc ");
             return responseMsgs(true, "get tc loacations ", remove_null($mlocation), "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
