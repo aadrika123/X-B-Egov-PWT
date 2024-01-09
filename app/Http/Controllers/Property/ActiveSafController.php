@@ -2186,7 +2186,8 @@ class ActiveSafController extends Controller
             $map = collect();
             if($response->original["status"])
             {
-                $map = collect($response->original["data"])->where("doc_category","Layout sanction Map")->first();            
+                $map = collect($response->original["data"])->where("doc_category","Layout sanction Map")->first(); 
+                $map["ext"] = strtolower(collect(explode(".",$map["doc_path"]))->last());           
                 
             }
             
