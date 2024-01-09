@@ -1771,25 +1771,14 @@ class PropertyController extends Controller
             $req->all(),
             [
                 "tcId"       => "required",
-<<<<<<< HEAD
-                'pages'     =>  'nullable',
-=======
                 'pages'     => 'nullable',
->>>>>>> 16b62cf82ddfb02b03d997c1ed9b73e6475f84c6
             ]
         );
         if ($validated->fails())
-<<<<<<< HEAD
-        return responseMsgs(false, $validated->errors(), "", "011610", "1.0", "", "POST", $req->deviceId ?? "");
-        try{
-            $mlocations =new location();
-            $tcId       =$req->tcId;
-=======
             return validationError($validated);
         try {
             $mLocation  = new Location();
             $tcId       = $req->tcId;
->>>>>>> 16b62cf82ddfb02b03d997c1ed9b73e6475f84c6
             $pages      = $req->pages ?? 10;
             $mLocation  = $mLocation->getTcDetails($tcId)
                 ->paginate($pages);
