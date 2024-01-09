@@ -18,6 +18,7 @@ class location extends Model
             'locations.longitude',
             'locations.altitude',
             DB::raw('DATE(locations.created_at) as created_date'),
+            'locations.created_at',
             'users.user_name',
             'users.name',
 
