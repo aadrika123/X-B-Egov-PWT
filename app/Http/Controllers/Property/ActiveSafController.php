@@ -1184,6 +1184,14 @@ class ActiveSafController extends Controller
                 'roleId' => $senderRoleId
             ]);
             $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIds($roleMapsReqs);
+            if(!$forwardBackwardIds)
+            {
+                $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIdsV2($roleMapsReqs);
+            }
+            if(!$forwardBackwardIds)
+            {
+                throw new Exception("You Are Noth Authorize For This Workflow");
+            }
             $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id);
             DB::beginTransaction();
             DB::connection('pgsql_master')->beginTransaction();
