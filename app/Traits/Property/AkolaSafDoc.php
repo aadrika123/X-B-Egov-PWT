@@ -3,6 +3,7 @@
 namespace App\Traits\Property;
 
 use App\Models\Masters\RefRequiredDocument;
+use App\Models\Property\SecondaryDocVerification;
 use App\Models\Workflows\WfActiveDocument;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
@@ -79,13 +80,16 @@ use Illuminate\Support\Facades\Config;
                     ->first();
                 }
                 if ($uploadedDoc) {
+                    $seconderyData = (new SecondaryDocVerification())->SeconderyWfActiveDocumentById($uploadedDoc->id??0);
                     $response = [
                         "uploadedDocId" => $uploadedDoc->id ?? "",
                         "documentCode" => $item,
                         "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
                         "docPath" => $uploadedDoc->doc_path ?? "",
-                        "verifyStatus" => $uploadedDoc->verify_status ?? "",
-                        "remarks" => $uploadedDoc->remarks ?? "",
+                        "verifyStatus" => $seconderyData ? $seconderyData->verify_status : ($uploadedDoc->verify_status ?? ""),
+                        "remarks" => $seconderyData ? $seconderyData->remarks : ($uploadedDoc->remarks ?? ""),
+                        "verify_status_secondery" => $seconderyData ? $seconderyData->verify_status : 0,
+                        "remarks_secondery" => $seconderyData ? $seconderyData->remarks :  "",
                     ];
                     $documents->push($response);
                 }

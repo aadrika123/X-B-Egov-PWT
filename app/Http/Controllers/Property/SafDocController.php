@@ -135,14 +135,17 @@ class SafDocController extends Controller
                     ->first();
 
                 if ($uploadedDoc) {
+                    $seconderyData = (new SecondaryDocVerification())->SeconderyWfActiveDocumentById($uploadedDoc->id??0);
                     $response = [
                         "uploadedDocId" => $uploadedDoc->id ?? "",
                         "documentCode" => $item,
                         "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
                         "docPath" =>  $uploadedDoc->doc_path ?? "",
                         // "verifyStatus" => $refSafs->payment_status == 1 ? ($uploadedDoc->verify_status ?? "") : 0,
-                        "verifyStatus" => ($uploadedDoc->verify_status ?? 0),
-                        "remarks" => $uploadedDoc->remarks ?? "",
+                        "verifyStatus" => $seconderyData ? $seconderyData->verify_status : ($uploadedDoc->verify_status ?? 0),
+                        "remarks" => $seconderyData ? $seconderyData->remarks : ($uploadedDoc->remarks ?? ""),
+                        "verify_status_secondery" => $seconderyData ? $seconderyData->verify_status : 0,
+                        "remarks_secondery" => $seconderyData ? $seconderyData->remarks :  "",
                     ];
                     $documents->push($response);
                 }

@@ -51,6 +51,16 @@ class SecondaryDocVerification extends Model
                 $document->update($req);
     }
 
+    public function readRejectedDocuments(array $metaReqs)
+    {
+        return self::select("wf_active_documents.*","secondary_doc_verifications.verify_status")
+            ->join("wf_active_documents","wf_active_documents.id","secondary_doc_verifications.wf_active_documents_id")
+            ->where('secondary_doc_verifications.active_id', $metaReqs['activeId'])
+            ->where('secondary_doc_verifications.verify_status', 2)
+            ->where('secondary_doc_verifications.status', 1)
+            ->get();
+    }
+
 
 
 }
