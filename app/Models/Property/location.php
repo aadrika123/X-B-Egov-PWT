@@ -15,7 +15,7 @@ class Location extends Model
     # get tc details 
     public function getTcDetails($tcId)
     {
-        return location::select(
+        return Location::select(
             'locations.latitude',
             'locations.longitude',
             'locations.altitude',
