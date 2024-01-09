@@ -87,6 +87,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use App\MicroServices\IdGenerator\HoldingNoGenerator;
 use App\Models\Property\RefPropCategory;
+use App\Models\Property\SecondaryDocVerification;
 use App\Models\Workflows\WfMaster;
 use App\Models\Workflows\WfRole;
 use App\Repository\Common\CommonFunction;
@@ -1943,7 +1944,10 @@ class ActiveSafController extends Controller
                 'moduleId' => $moduleId
             ];
             $getRejectedDocument = $mWfActiveDocument->readRejectedDocuments($getDocReqs);
-
+            if(collect($getRejectedDocument)->isEmpty())
+            {
+                $getRejectedDocument = (new SecondaryDocVerification())->readRejectedDocuments($getDocReqs);
+            }
             if (collect($getRejectedDocument)->isEmpty())
                 throw new Exception("Document Not Rejected You Can't back to citizen this application");
 
