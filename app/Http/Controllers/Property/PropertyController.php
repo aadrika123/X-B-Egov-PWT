@@ -1781,9 +1781,8 @@ class PropertyController extends Controller
             $mlocations = new location();
             $tcId       = $req->tcId;
             $pages      = $req->pages ?? 10;
-            $mlocation = "ok";
-            // $mlocation = $mlocations->getTcDetails($tcId)
-            //     ->get();
+            return  $mlocation = $mlocations->getTcDetails($tcId)
+                ->get();
             // ->paginate($pages);
             if (!$mlocation)
                 throw new Exception("No Data Found Against tc ");
