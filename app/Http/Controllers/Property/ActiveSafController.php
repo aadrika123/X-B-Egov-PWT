@@ -2088,7 +2088,7 @@ class ActiveSafController extends Controller
         if ($validated->fails())
             return validationError($validated);
         try {
-            $request->merge(["id" => $request->safId]);
+            $request->merge(["id" => $request->safId,"applicationId"=>$request->safId]);
             $response = $this->calculateSafBySafId($request);
             if (!$response->original["status"]) {
                 throw new Exception($response->original["message"]);
@@ -2181,10 +2181,20 @@ class ActiveSafController extends Controller
                 $val->paths = (config('app.url') . "/" . $val->relative_path . "/" . $val->image_path);
                 return $val;
             });
+            $safDocController = App::makeWith(SafDocController::class); 
+            $response = $safDocController->getUploadDocuments($request);
+            $map = collect();
+            if($response->original["status"])
+            {
+                $map = collect($response->original["data"])->where("doc_category","Layout sanction Map")->first(); 
+                $map["ext"] = strtolower(collect(explode(".",$map["doc_path"]))->last());           
+                
+            }
+            
             $data["geoTagging"] = $geoTagging;
             $data["images"] = [
                 "photograph" => collect($data["geoTagging"])->where("direction_type", "Front") ? (collect($data["geoTagging"])->where("direction_type", "Front"))->pluck("paths")->first() ?? "" : (collect($data["geoTagging"])->where("direction_type", "<>", "naksha")->first() ? (collect($data["geoTagging"])->where("direction_type", "<>", "naksha")->first())->pluck("paths") : ""),
-                "naksha"    => collect($data["geoTagging"])->where("direction_type", "naksha")->first() ? (collect($data["geoTagging"])->where("direction_type", "naksha")->first())->pluck("paths") : "",
+                "naksha"    => $map ? $map["doc_path"]: (collect($data["geoTagging"])->where("direction_type", "naksha")->first() ? (collect($data["geoTagging"])->where("direction_type", "naksha")->first())->pluck("paths") : ""),
             ];
             $floorsTaxes = collect($data["floorsTaxes"] ?? []);
             $data["grandFloorsTaxes"] = [
