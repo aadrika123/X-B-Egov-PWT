@@ -11,6 +11,7 @@ class location extends Model
     use HasFactory;
     public $timestamps = false;
     protected $guarded = [];
+    protected $table = "locations";
 
     # get tc details 
     public function getTcDetails($tcId)
