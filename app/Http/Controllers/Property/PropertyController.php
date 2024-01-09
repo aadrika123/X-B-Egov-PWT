@@ -1743,7 +1743,7 @@ class PropertyController extends Controller
                 "tcId"       => "required|",
                 "latitude"   => "required|",
                 "longitude"  => "required|",
-                "altitude"   => "required|",
+                "altitude"   => "nullable|",
             ]
         );
         if ($validated->fails())
