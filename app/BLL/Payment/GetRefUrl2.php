@@ -15,32 +15,43 @@ use Illuminate\Support\Facades\Http;
  */
 class GetRefUrl
 {
-    private  $icid ;
-    private  $aesKey ;                                              
-    private  $subMerchantId ;
-    private  $paymentMode ;
-    private  $baseUrl ;                       
-    private  $returnUrl; 
-    private  $ciphering ;                                                                  
-    private  $cipheringV2 ;
+    // private static $icid ;
+    // private static $aesKey ;                                              
+    // private static $subMerchantId ;
+    // private static $paymentMode ;
+    // private static $baseUrl ;                       
+    // private static $returnUrl; 
+    // private static $ciphering ;                                                                  
+    // private static $cipheringV2 ;
     
 
-    
+    // private static $icid = 600587;
+    // private static $icid = 136082;                                                       // Merchant Id uat
+    private static $icid = 378278;                                                          // live
+    // private static $aesKey = 6000010105805020;
+    // private static $aesKey = 1300011160805020;                                           // Uat
+    private static $aesKey = 3705200682705002;                                              // Live
+    private static $subMerchantId = 45;
+    private static $paymentMode = 9;
+    private static $baseUrl = "https://eazypay.icicibank.com";                       // https://eazypayuat.icicibank.com
+    private static $returnUrl = "https://egov.modernulb.com/api/payment/v1/collect-callback-data"; //"http://203.129.217.62:82/api/payment/v1/collect-callback-data";                   // http://203.129.217.62:82/api/payment/v1/collect-callback-data   https://modernulb.com/property/payment-success/87878787  https://modernulb.com/property/paymentReceipt/550980/holding
+    private static $ciphering = "aes-128-ecb";                                                                  // Store the cipher method for encryption
+    private static $cipheringV2 = 'AES-128-ECB';
     public $_tranAmt;
     public $_refNo;
     public $_refUrl;
 
-    public function __construct()
-    {
-        $this->icid             = Config::get("payment-constants.ICICI_ID");
-        $this->aesKey           = Config::get("payment-constants.ICICI_AESKEY");                                              
-        $this->subMerchantId    = Config::get("payment-constants.ICICI_MERCHANT_ID"); ;
-        $this->paymentMode      = 9;
-        $this->baseUrl          = Config::get("payment-constants.ICICI_BASE_URL");                       
-        $this->returnUrl        = Config::get("payment-constants.ICICI_RETURN_URL");  
-        $this->ciphering        = Config::get("payment-constants.ICICI_CIPHERING");                                                                   
-        $this->cipheringV2      = Config::get("payment-constants.ICICI_CIPHERING_V2");
-    }
+    // public function __construct()
+    // {
+    //     $this->icid             = Config::get("payment-constants.ICICI_ID");
+    //     $this->aesKey           = Config::get("payment-constants.ICICI_AESKEY");                                              
+    //     $this->subMerchantId    = Config::get("payment-constants.ICICI_MERCHANT_ID"); ;
+    //     $this->paymentMode      = 9;
+    //     $this->baseUrl          = Config::get("payment-constants.ICICI_BASE_URL");                       
+    //     $this->returnUrl        = Config::get("payment-constants.ICICI_RETURN_URL");  
+    //     $this->ciphering        = Config::get("payment-constants.ICICI_CIPHERING");                                                                   
+    //     $this->cipheringV2      = Config::get("payment-constants.ICICI_CIPHERING_V2");
+    // }
 
     /**
      * | Generate Referal Url
@@ -52,22 +63,22 @@ class GetRefUrl
         $this->_refNo       = $refNo;
         // $tranAmt            = 1;
         $tranAmt            =  $req->amount;                                                                            // Remove the static amount
-        // $mandatoryField     = "$refNo|" . $this->subMerchantId . "|$tranAmt|" . $todayDate . "|0123456789|xy|xy";               // 10 is transactional amount
-        $mandatoryField     = "$refNo|" . $this->subMerchantId . "|$tranAmt|" . $req->moduleId;                                              // 10 is transactional amount
+        // $mandatoryField     = "$refNo|" . self::$subMerchantId . "|$tranAmt|" . $todayDate . "|0123456789|xy|xy";               // 10 is transactional amount
+        $mandatoryField     = "$refNo|" . self::$subMerchantId . "|$tranAmt|" . $req->moduleId;                                              // 10 is transactional amount
         $eMandatoryField    = $this->encryptAes($mandatoryField);
         // $optionalField      = $this->encryptAes("X|X|X");
         $optionalField      = $this->encryptAes("");
-        $returnUrl          = $this->encryptAes($this->returnUrl);
+        $returnUrl          = $this->encryptAes(self::$returnUrl);
         $eRefNo             = $this->encryptAes($refNo);
-        $subMerchantId      = $this->encryptAes($this->subMerchantId);
+        $subMerchantId      = $this->encryptAes(self::$subMerchantId);
         // $eTranAmt           = $this->encryptAes($tranAmt);
         $eTranAmt           = $this->encryptAes($tranAmt);
-        $paymentMode        = $this->encryptAes($this->paymentMode);
+        $paymentMode        = $this->encryptAes(self::$paymentMode);
 
-        $plainUrl = $this->baseUrl . '/EazyPG?merchantid=' . $this->icid . '&mandatory fields=' . $mandatoryField . "&optional fields=''" . '&returnurl=' . $this->returnUrl . '&Reference No=' . $refNo
-            . '&submerchantid=' . $this->subMerchantId . '&transaction amount=' . "$tranAmt" . '&paymode=' . $this->paymentMode;
+        $plainUrl = self::$baseUrl . '/EazyPG?merchantid=' . self::$icid . '&mandatory fields=' . $mandatoryField . "&optional fields=''" . '&returnurl=' . self::$returnUrl . '&Reference No=' . $refNo
+            . '&submerchantid=' . self::$subMerchantId . '&transaction amount=' . "$tranAmt" . '&paymode=' . self::$paymentMode;
 
-        $encryptUrl = $this->baseUrl . '/EazyPG?merchantid=' . $this->icid . '&mandatory fields=' . $eMandatoryField . "&optional fields=''" . '&returnurl=' . $returnUrl . '&Reference No=' . $eRefNo
+        $encryptUrl = self::$baseUrl . '/EazyPG?merchantid=' . self::$icid . '&mandatory fields=' . $eMandatoryField . "&optional fields=''" . '&returnurl=' . $returnUrl . '&Reference No=' . $eRefNo
             . '&submerchantid=' . $subMerchantId . '&transaction amount=' . $eTranAmt . '&paymode=' . $paymentMode;
         $this->_refUrl = $encryptUrl;
         return [
@@ -82,8 +93,8 @@ class GetRefUrl
     public function encryptAes($string)
     {
         // Encrption AES
-        $cipher = $this->ciphering;
-        $key = $this->aesKey;
+        $cipher = self::$ciphering;
+        $key = self::$aesKey;
         in_array($cipher, openssl_get_cipher_methods(true));
         $ivlen = openssl_cipher_iv_length($cipher);
         //echo "ivlen [". $ivlen . "]";
@@ -100,7 +111,7 @@ class GetRefUrl
     public function decryptWebhookData($encodedData)
     {
         try {
-            $decryptedData = openssl_decrypt(base64_decode($encodedData), $this->cipheringV2, $this->aesKey, OPENSSL_RAW_DATA);
+            $decryptedData = openssl_decrypt(base64_decode($encodedData), self::$cipheringV2, self::$aesKey, OPENSSL_RAW_DATA);
             if ($decryptedData === false) {
                 throw new \Exception('Decryption failed.');
             }
