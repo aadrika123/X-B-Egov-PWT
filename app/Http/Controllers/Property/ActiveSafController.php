@@ -1226,7 +1226,7 @@ class ActiveSafController extends Controller
                     $saf->update();
                     $forwardBackwardIds->forward_role_id = $wfLevels['DA'];
                 }
-                if (!$geotagExist && $saf->current_role == $wfLevels['DA']) {
+                if (!$geotagExist && $saf->current_role == $wfLevels['DA'] && in_array($wfMstrId, $this->_SkipFiledWorkWfMstrId)) {
                     $forwardBackwardIds->forward_role_id = $wfLevels['UTC'];
                     if ($saf->prop_type_mstr_id == 4) {
                         $forwardBackwardIds->forward_role_id = $wfLevels['TC'];
@@ -3029,6 +3029,10 @@ class ActiveSafController extends Controller
             ]);
 
             $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
+            if(!$readRoleDtls)
+            {
+                $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfIdV2($getRoleReq);
+            }
             $roleId = $readRoleDtls->wf_role_id;
 
             DB::beginTransaction();

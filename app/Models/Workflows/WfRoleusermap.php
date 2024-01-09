@@ -55,6 +55,21 @@ class WfRoleusermap extends Model
             ->first();
     }
 
+    public function getRoleByUserWfIdV2($req)
+    {
+        return DB::table('wf_roleusermaps as r')
+            ->select(
+                'r.wf_role_id',
+                'w.forward_role_id',
+                'w.backward_role_id'
+            )
+            ->join('wf_workflowrolemaps as w', 'w.wf_role_id', '=', 'r.wf_role_id')
+            ->where('r.user_id', $req->userId)
+            ->where('w.workflow_id', $req->workflowId)
+            ->where('w.is_suspended', TRUE)
+            ->first();
+    }
+
     /**
      * | Get role by User Id
      */
