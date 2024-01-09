@@ -1775,7 +1775,7 @@ class PropertyController extends Controller
             ]
         );
         if ($validated->fails())
-            return validationError($validated);
+            return validationError(false, $validated->errors(), "", "011610", "1.0", "", "POST", $req->deviceId ?? "");
         try {
             $mLocation  = new Location();
             $tcId       = $req->tcId;
