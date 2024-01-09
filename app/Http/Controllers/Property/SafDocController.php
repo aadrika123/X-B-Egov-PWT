@@ -55,14 +55,19 @@ class SafDocController extends Controller
 
             $safOwnerDocs['ownerDocs'] = collect($refSafOwners)->map(function ($owner) use ($refSafs) {
                 return $this->getOwnerDocLists($owner, $refSafs);
-            });
-
+            }); 
+            
             $totalDocLists = collect($propTypeDocs)->merge($safOwnerDocs);
+            $status =  $this->check($totalDocLists);
+            if($refSafs->doc_upload_status && isset($status["docUploadStatus"]))
+            {
+                $refSafs->doc_upload_status = (!$status["docUploadStatus"]) ? 0 : $refSafs->doc_upload_status;
+            }            
             $totalDocLists['docUploadStatus'] = $refSafs->doc_upload_status;
             $totalDocLists['docVerifyStatus'] = $refSafs->doc_verify_status;
             $totalDocLists['paymentStatus'] = $refSafs->payment_status;
             $totalDocLists['isCitizen'] = ($refSafs->citizen_id == null) ? false : true; 
-            $totalDocLists['citizenCanSendOfficer'] = (($refSafs->doc_upload_status && $refSafs->initiator_role_id == $refSafs->current_role) || $refSafs->parked) ? true  : false;
+            $totalDocLists['citizenCanSendOfficer'] = ($refSafs->doc_upload_status && ($refSafs->initiator_role_id == $refSafs->current_role || $refSafs->parked)) ? true  : false;
 
             return responseMsgs(true, "", remove_null($totalDocLists), "010203", "", "", 'POST', "");
         } catch (Exception $e) {
