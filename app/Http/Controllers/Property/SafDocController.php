@@ -326,8 +326,8 @@ class SafDocController extends Controller
                 $val->remarks_secondery = $seconderyData ? $seconderyData->remarks :  "";
                 $val->owner_name = (collect($owners)->where("id",$val->owner_dtl_id)->first())->owner_name?? "";
                 // if (count($sameWorkRoles) > 1 && $userRole && $userRole->role_id != ($sameWorkRoles->first())["id"] && $userRole->can_verify_document) {
-                    $val->verify_status = $seconderyData ? $val->verify_status_secondery : $val->verify_status;
-                    $val->remarks = $seconderyData ? $val->remarks_secondery : $val->remarks;
+                //     $val->verify_status = $seconderyData ? $val->verify_status_secondery : $val->verify_status;
+                //     $val->remarks = $seconderyData ? $val->remarks_secondery : $val->remarks;
                 // }
                 if ($val->doc_code  == 'PHOTOGRAPH') {
                     $val->verify_status = 1;
@@ -642,7 +642,14 @@ class SafDocController extends Controller
             # For Rejection Doc Upload Status and Verify Status will disabled
             if ($req->docStatus == "Rejected") {
                 $status = 2;
-            }
+                $safDtls->doc_verify_status = 0;
+                $safDtls->doc_verify_status = 0;
+            }$reqs = [
+                'remarks' => $req->docRemarks,
+                'verify_status' => $status,
+                'action_taken_by' => $refUserId
+            ];
+            $mWfDocument->docVerifyReject($wfDocId, $reqs);
             $refUlbId = $safDtls->ulb_id;
             $workflowId = $safDtls->workflow_id;
             $userRole = $mCOMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $workflowId);
