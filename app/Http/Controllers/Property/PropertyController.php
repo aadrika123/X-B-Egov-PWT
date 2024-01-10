@@ -1740,7 +1740,7 @@ class PropertyController extends Controller
     }
 
     # save tc locations
-
+    
     public function saveLocations(Request $req)
     {
         $validated = Validator::make(
@@ -1757,11 +1757,13 @@ class PropertyController extends Controller
         }
 
         try {
-            $mlocations = new location();
-            $mlocations->tc_id    = $req->tcId;
-            $mlocations->latitude = $req->latitude;
+            $mlocations = new Location();
+            $nowTime    = Carbon::now()->format('h:i:s A');
+            $mlocations->tc_id     = $req->tcId;
+            $mlocations->latitude  = $req->latitude;
             $mlocations->longitude = $req->longitude;
-            $mlocations->altitude = $req->altitude;
+            $mlocations->altitude  = $req->altitude;
+            $mlocations->time      = $nowTime;
             $mlocations->save();
 
             return responseMsgs(true, "tc location updated", [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
@@ -1777,7 +1779,7 @@ class PropertyController extends Controller
             $req->all(),
             [
                 "tcId"       => "required",
-                'pages'     => 'nullable',
+                'pages'     =>  'nullable',
             ]
         );
         if ($validated->fails())
