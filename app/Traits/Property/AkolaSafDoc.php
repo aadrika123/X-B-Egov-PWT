@@ -86,10 +86,8 @@ use Illuminate\Support\Facades\Config;
                         "documentCode" => $item,
                         "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
                         "docPath" => $uploadedDoc->doc_path ?? "",
-                        "verifyStatus" => $seconderyData ? $seconderyData->verify_status : ($uploadedDoc->verify_status ?? ""),
-                        "remarks" => $seconderyData ? $seconderyData->remarks : ($uploadedDoc->remarks ?? ""),
-                        "verify_status_secondery" => $seconderyData ? $seconderyData->verify_status : 0,
-                        "remarks_secondery" => $seconderyData ? $seconderyData->remarks :  "",
+                        "verifyStatus" => ($uploadedDoc->verify_status ?? ""),
+                        "remarks" =>  ($uploadedDoc->remarks ?? ""),
                     ];
                     $documents->push($response);
                 }
