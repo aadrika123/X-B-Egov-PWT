@@ -13,6 +13,7 @@ use App\Models\Property\PropIciciPaymentsRequest;
 use App\Models\Property\PropIciciPaymentsResponse;
 use App\Models\Property\PropPinelabPaymentsRequest;
 use App\Models\Property\PropPinelabPaymentsResponse;
+use App\Repository\Common\CommonFunction;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
@@ -33,6 +34,7 @@ class CitizenHoldingController extends Controller
     protected $_PropPinelabPaymentsRequest ;
     protected $_PropPinelabPaymentsResponse ;
     protected $_PineLabPayment ;
+    protected $_COMONFUNCTION;
 
     public function __construct(iSafRepository $safRepo)
     {
@@ -45,6 +47,7 @@ class CitizenHoldingController extends Controller
         $this->_PropPinelabPaymentsRequest = new PropPinelabPaymentsRequest();
         $this->_PropPinelabPaymentsResponse = new PropPinelabPaymentsResponse();
         $this->_PineLabPayment =  new PineLabPayment;
+        $this->_COMONFUNCTION = new CommonFunction();
     }
 
     public function getHoldingDues(Request $request)
@@ -70,7 +73,8 @@ class CitizenHoldingController extends Controller
             ]);
         }
         try {
-            // $user = authUser($request);
+            $user = Auth()->user()??null;
+            $isCitizenUserType = $user ? $this->_COMONFUNCTION->checkUsersWithtocken("active_citizens") : true;
             $demandsResponse = $this->_HoldingTaxController->getHoldingDues($request);
             if (!$demandsResponse->original["status"]) {
                 return $demandsResponse;
@@ -112,6 +116,10 @@ class CitizenHoldingController extends Controller
                 // "userType"  => $user->user_type,
                 // "auth"  => $user
             ]);
+            if(!$isCitizenUserType)
+            {
+                $request->merge(["userId"=>$user->id]);
+            }
             $respons = $this->_IciciPaymentController->getReferalUrl($request);
             if (!$respons->original["status"]) {
                 throw new Exception("Payment Not Initiate");
@@ -164,6 +172,19 @@ class CitizenHoldingController extends Controller
             "id"         => $reqData->prop_id,
             "paymentMode" => "ONLINE",
         ]);
+        $reqDataRequest = json_decode($reqData->request,true);
+        if(isset($reqDataRequest["userId"]))
+        {
+            $newReqs->merge([
+                "userId"=>$reqDataRequest["userId"],
+            ]);
+        }
+        if(isset($reqDataRequest["auth"]))
+        {
+            $newReqs->merge([
+                "userType"=>$reqDataRequest["auth"]["user_type"]??"",
+            ]);
+        }
         
         $data = $mHoldingTaxController->offlinePaymentHoldingV2($newReqs);
 

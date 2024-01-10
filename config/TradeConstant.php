@@ -78,7 +78,7 @@ return [
     
     "CANE-NO-HAVE-WARD"=>["ONLINE", "JSK","BO" ,"PM","SUPER ADMIN", "TL"],
     "CANE-APPLY-APPLICATION"=>["ONLINE", "JSK", "SRLP","UTC", "FE","TC", "SUPER ADMIN", "TL"],
-    "CANE-CUTE-PAYMENT"=>["JSK", "SRLP","UTC","FE", "TC", "SUPER ADMIN", "TL"],
+    "CANE-CUTE-PAYMENT"=>["JSK", "SRLP","UTC","FE", "TC", "SUPER ADMIN","ADMIN", "TL"],
     "VERIFICATION-STATUS"=>
     [
         "PENDING"   => 0,
