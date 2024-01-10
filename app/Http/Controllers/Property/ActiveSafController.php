@@ -2024,6 +2024,7 @@ class ActiveSafController extends Controller
         if ($validated->fails())
             return validationError($validated);
         try {
+            $mVerification = new PropSafVerification();
             $safDtls = PropActiveSaf::find($req->id);
             if (!$safDtls)
                 $safDtls = PropSaf::find($req->id);
@@ -2031,8 +2032,17 @@ class ActiveSafController extends Controller
             if (collect($safDtls)->isEmpty())
                 throw new Exception("Saf Not Available");
 
+            $safVerification = $mVerification->where("saf_id",$safDtls->id)->where("status",1)->orderBy("id","DESC")->first();
             $fullSafDtls = $this->details($req);                    // for full details purpose
-
+            if($safVerification)
+            {
+                $safDtls = $this->addjustVerifySafDtls($safDtls,$safVerification);
+                $safDtls = $this->addjustVerifySafDtlVal($safDtls);
+                $fullSafDtls["property_type"] = $safDtls->property_type??$fullSafDtls["property_type"];
+                $fullSafDtls["zone"]          = $safDtls->zone??$fullSafDtls["zone"] ;
+                $fullSafDtls["old_ward_no"]   = $safDtls->old_ward_no??$fullSafDtls["old_ward_no"];
+            }
+            
             $calculateSafTaxById = new CalculateSafTaxById($safDtls);
             $demand = $calculateSafTaxById->_GRID;
             $demand['ulbWiseTax'] = [];
