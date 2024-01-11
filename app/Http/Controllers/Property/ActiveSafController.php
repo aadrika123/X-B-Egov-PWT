@@ -852,6 +852,12 @@ class ActiveSafController extends Controller
                 $val = $this->addjustVerifyFloorDtlVal($val);
                 $getFloorDtls->push($val);
             });
+
+            $data["builtup_area"] = $data['area_of_plot'];
+            if($data['prop_type_mstr_id'] !=4)
+            {
+                $data["builtup_area"] = $getFloorDtls->sum("builtup_area");
+            }
             $data['floors'] = $getFloorDtls;
             $data["tranDtl"] = $mPropTransaction->getSafTranList($data['id']);
             $data["userDtl"] = [
