@@ -147,6 +147,10 @@ class TaxCalculator
     public function generateFloorWiseTax()
     {
         if ($this->_REQUEST->propertyType != 4) {
+            $totalFloor = collect($this->_REQUEST->floor)->count();
+            $totalBuildupArea = collect($this->_REQUEST->floor)->sum("buildupArea");
+            $AllDiffArrea = ($totalBuildupArea -$this->_REQUEST->nakshaAreaOfPlot) >0 ? $totalBuildupArea -$this->_REQUEST->nakshaAreaOfPlot :0;
+           
             foreach ($this->_REQUEST->floor as $key => $item) {
                 $item = (object)$item;
                 $rate = $this->readRateByFloor($item);                 // (2.1)
@@ -181,7 +185,8 @@ class TaxCalculator
                     + ($openPloatTax??0));
                 if($this->_REQUEST->nakshaAreaOfPlot)
                 {
-                    $diffArrea = ($this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot)>0 ? $this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot :0;
+                    // $diffArrea = ($this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot)>0 ? $this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot :0;
+                    $diffArrea = $AllDiffArrea / ($totalBuildupArea>0 ? $totalBuildupArea : 1);                   
                 }
                 # double tax apply
                 if($this->_REQUEST->isAllowDoubleTax)
@@ -190,7 +195,8 @@ class TaxCalculator
                 }
                 # 100% penalty apply on diff arrea
                 elseif($diffArrea>0){
-                    $tax1 = $doubleTax1 * ($diffArrea / ($this->_REQUEST->areaOfPlot>0?$this->_REQUEST->areaOfPlot:1));
+                    // $tax1 = $doubleTax1 * ($diffArrea / ($this->_REQUEST->areaOfPlot>0?$this->_REQUEST->areaOfPlot:1));
+                    $tax1 = $doubleTax1 * ($diffArrea);
                 }
                 $this->_floorsTaxes[$key] = [
                     'usageType' => $item->usageType,
@@ -313,7 +319,7 @@ class TaxCalculator
                 + ($openPloatTax??0));
             if($this->_REQUEST->nakshaAreaOfPlot)
             {
-                $diffArrea = ($this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot)>0 ? $this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot :0;
+                $diffArrea = ($this->_REQUEST->areaOfPlot - $this->_REQUEST->nakshaAreaOfPlot)>0 ? $this->_REQUEST->areaOfPlot -  $this->_REQUEST->nakshaAreaOfPlot :0;
             }
             # double tax apply
             if($this->_REQUEST->isAllowDoubleTax)
