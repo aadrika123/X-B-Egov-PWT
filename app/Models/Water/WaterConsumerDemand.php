@@ -63,13 +63,13 @@ class WaterConsumerDemand extends Model
                 'subquery.consumer_id','=','water_consumer_demands.consumer_id'
             )
             ->leftjoin(
-                DB::raw('(SELECT consumer_id, MIN(demand_from) as demand_from FROM water_consumer_demands GROUP BY consumer_id) as min_demand_from'),
+                DB::raw('(SELECT consumer_id, MIN(demand_from) as demand_from FROM water_consumer_demands where status=true  GROUP BY consumer_id) as min_demand_from'),
                 'min_demand_from.consumer_id',
                 '=',
                 'water_consumer_demands.consumer_id'
             )
             ->leftjoin(
-                DB::raw('(SELECT consumer_id, MAX(demand_upto) as demand_upto FROM water_consumer_demands GROUP BY consumer_id) as max_demand_upto'),
+                DB::raw('(SELECT consumer_id, MAX(demand_upto) as demand_upto FROM water_consumer_demands where status=true GROUP BY consumer_id) as max_demand_upto'),
                 'max_demand_upto.consumer_id',
                 '=',
                 'water_consumer_demands.consumer_id'
