@@ -990,7 +990,7 @@ class ReportController extends Controller
             $data['Payment Modes']['last_year_neft_collection']        = round(($prevYearData->last_year_neft_collection ?? 0) / 10000000, 2);                     #_in cr
             $data['Payment Modes']['current_year_rtgs_collection']     = round(($currentYearData->current_year_rtgs_collection ?? 0) / 10000000, 2);               #_in cr
             $data['Payment Modes']['last_year_rtgs_collection']        = round(($prevYearData->last_year_rtgs_collection ?? 0) / 10000000, 2);                     #_in cr
-            $data['Payment Modes']['current_year_online_collection']     = round(($currentYearData->online_application_amount_this_year ?? 0) / 10000000, 2);               #_in cr
+            $data['Payment Modes']['current_year_online_collection']     = round(($currentYearData->current_year_online_collection ?? 0) / 10000000, 2);               #_in cr
             $data['Payment Modes']['last_year_online_collection']        = round(($prevYearData->online_application_amount_this_year ?? 0) / 10000000, 2);                     #_in cr
 
             #_Citizen Engagement
@@ -1238,12 +1238,12 @@ class ReportController extends Controller
             $data['Property']['d_zone_name']    = $currentYearData->d_zone_name;
             $data['Property']['d_prop_total_hh']    = $currentYearData->d_prop_total_hh;
             $data['Property']['d_prop_total_amount']    = $currentYearData->d_prop_total_amount;
-            $data['Property']['prop_current_demand']    = round(($currentYearData->prop_current_demand??0)/10000000,2);
-            $data['Property']['prop_arrear_demand']    = round(($currentYearData->prop_arrear_demand??0)/10000000,2);
-            $data['Property']['prop_total_demand']    = round(($currentYearData->prop_total_demand??0)/10000000,2);
-            $data['Property']['prop_current_collection']    = round(($currentYearData->prop_current_collection??0)/10000000,2);
-            $data['Property']['prop_arrear_collection']    = round(($currentYearData->prop_arrear_collection??0)/10000000,2);
-            $data['Property']['prop_total_collection']    = round(($currentYearData->prop_total_collection??0)/10000000,2);
+            $data['Property']['prop_current_demand']    = round(($currentYearData->prop_current_demand ?? 0) / 10000000, 2);
+            $data['Property']['prop_arrear_demand']    = round(($currentYearData->prop_arrear_demand ?? 0) / 10000000, 2);
+            $data['Property']['prop_total_demand']    = round(($currentYearData->prop_total_demand ?? 0) / 10000000, 2);
+            //$data['Property']['prop_current_collection']    = round(($currentYearData->prop_current_collection ?? 0) / 10000000, 2);
+            //$data['Property']['prop_arrear_collection']    = round(($currentYearData->prop_arrear_collection ?? 0) / 10000000, 2);
+            $data['Property']['prop_total_collection']    = round(($currentYearData->prop_total_collection ?? 0) / 10000000, 2);
 
 
             return responseMsgs(true, "Mpl Report", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
@@ -2288,7 +2288,7 @@ class ReportController extends Controller
                 ) AS current_demand_collection, 
 
                 (
-                  SELECT 
+                    SELECT 
                     SUM(
                       CASE WHEN nature = 'owned' THEN 1 ELSE 0 END
                     ) AS total_owned_props, 
@@ -2317,24 +2317,13 @@ class ReportController extends Controller
                           FROM 
                             prop_floors 
                           JOIN prop_properties ON prop_properties.id=prop_floors.property_id
+                          AND prop_properties.prop_type_mstr_id<>4 AND prop_type_mstr_id IS NOT null
                           WHERE prop_properties.status=1 AND prop_properties.ulb_id=2
                           GROUP BY 
                             property_id
                         ) AS a
-                    ) AS b, 
-                    (
-                      SELECT 
-                        COUNT(id) AS total_owned_props 
-                      FROM 
-                        prop_properties 
-                      WHERE 
-                        prop_type_mstr_id = 4 
-                        AND status = 1 AND ulb_id=2
-                    ) AS d 
-                  GROUP BY 
-                    d.total_owned_props
+                    ) AS b
                 ) AS total_occupancy_props,
- 
                 (
                     SELECT 
                         SUM(
@@ -2569,20 +2558,21 @@ class ReportController extends Controller
                   -- Online Payments	
                   WITH 
                      current_payments AS (
-                          SELECT 
-
-                                   SUM(CASE WHEN UPPER(payment_mode)='CASH' THEN amount ELSE 0 END) AS current_cash_payment,
-                                   SUM(CASE WHEN UPPER(payment_mode)='CHEQUE' THEN amount ELSE 0 END) AS current_cheque_payment,
-                                   SUM(CASE WHEN UPPER(payment_mode)='DD' THEN amount ELSE 0 END) AS current_dd_payment,
-                                   SUM(CASE WHEN UPPER(payment_mode)='CARD PAYMENT' THEN amount ELSE 0 END) AS current_card_payment,
-                                   SUM(CASE WHEN UPPER(payment_mode)='NEFT' THEN amount ELSE 0 END) AS current_neft_payment,
-                                   SUM(CASE WHEN UPPER(payment_mode)='RTGS' THEN amount ELSE 0 END) AS current_rtgs_payment,
-                                   SUM(CASE WHEN UPPER(payment_mode)='ONLINE' THEN amount ELSE 0 END) AS current_online_payment,
-                                   SUM(CASE WHEN UPPER(payment_mode)='ONLINE' THEN 1 ELSE 0 END) AS current_online_counts
-
-                           FROM prop_transactions
-                           WHERE tran_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate'					-- Parameterize this for current fyear range date
+                         
+                SELECT 
+                        SUM(CASE WHEN UPPER(payment_mode)='CASH' THEN amount ELSE 0 END) AS current_cash_payment,
+                        SUM(CASE WHEN UPPER(payment_mode)='CHEQUE' THEN amount ELSE 0 END) AS current_cheque_payment,
+                        SUM(CASE WHEN UPPER(payment_mode)='DD' THEN amount ELSE 0 END) AS current_dd_payment,
+                        SUM(CASE WHEN UPPER(payment_mode)='CARD PAYMENT' THEN amount ELSE 0 END) AS current_card_payment,
+                        SUM(CASE WHEN UPPER(payment_mode)='NEFT' THEN amount ELSE 0 END) AS current_neft_payment,
+                        SUM(CASE WHEN UPPER(payment_mode)='RTGS' THEN amount ELSE 0 END) AS current_rtgs_payment,
+                        SUM(CASE WHEN UPPER(payment_mode)='ONLINE' THEN amount ELSE 0 END) AS current_online_payment,
+                        SUM(CASE WHEN UPPER(payment_mode)='QR' THEN amount ELSE 0 END) AS current_qr_payment,
+                        SUM(CASE WHEN UPPER(payment_mode)='CARD' THEN amount ELSE 0 END) AS current_card_wise_payment
+                    FROM prop_transactions
+                    WHERE tran_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate' and saf_id is null					-- Parameterize this for current fyear range date
                            AND status=1 AND ulb_id=2
+
                        ),
                        lastyear_payments AS (
                            SELECT 
@@ -2625,26 +2615,26 @@ class ReportController extends Controller
 
         $updateReqs = [
             "total_assessment" => $data->total_assessed_props,
-            "total_prop_vacand" => $data->total_vacant_land,
-            "total_prop_residential" => $data->total_residential_props,
+            "total_prop_vacand" => $propdata->total_vacant_land + $propdata->null_prop_data + $propdata->null_floor_data,            "total_prop_residential" => $data->total_residential_props,
             "total_prop_commercial"  => $data->total_commercial_props,
             "total_prop_industrial" => $data->total_industrial_props,
             "total_prop_gbsaf" => $data->total_govt_props,
             "total_prop_mixe" => $data->total_mixed_commercial_props,
             "total_prop_religious" => $data->total_religious_props,
             "total_property" => $data->total_props,
-            "vacant_property" => $data->total_vacant_land,
+            "vacant_property" => $propdata->total_vacant_land + $propdata->null_prop_data + $propdata->null_floor_data,
             "owned_property" => $data->total_owned_props,
             "rented_property" => $data->total_rented_props,
             "mixed_property" => $data->total_mixed_owned_props,
+
             "current_year_cash_collection" => $data->current_cash_payment,
-            "current_year_card_collection" => $data->current_card_payment,
+            "current_year_card_collection" => $data->current_card_payment + $data->current_card_wise_payment,
             "current_year_dd_collection"   => $data->current_dd_payment,
             "current_year_cheque_collection" => $data->current_cheque_payment,
             "current_year_neft_collection" => $data->current_neft_payment,
             "current_year_rtgs_collection" => $data->current_rtgs_payment,
-            "current_year_upi_collection" => $data->current_online_payment,
-
+            "current_year_upi_collection" => $data->current_qr_payment,
+            "current_year_online_collection" => $data->current_online_payment,
 
 
             // "count_not_paid_3yrs" => $data->pending_cnt_3yrs,
@@ -2661,8 +2651,8 @@ class ReportController extends Controller
             "last_year_payment_count" => $data->lastyr_pmt_cnt,
             "this_year_payment_count" => $data->currentyr_pmt_cnt,
             "this_year_payment_amount" => $data->currentyr_pmt_amt,
-            "collection_against_current_demand"=>$data->current_demand_collection,
-            "collection_againt_arrear_demand"=>$data->arrear_demand_collection,
+            "collection_against_current_demand" => $data->current_demand_collection,
+            "collection_againt_arrear_demand" => $data->arrear_demand_collection,
             // "mutation_this_year_count" => $data->current_yr_mutation_count,
             // "assessed_property_this_year_achievement" => $data->outstanding_amt_lastyear,
             // "assessed_property_this_year_achievement" => $data->outstanding_cnt_lastyear,
@@ -3037,8 +3027,8 @@ class ReportController extends Controller
                                     group by zone_masters.id 
                                     order by zone_masters.id 
         ";
-            # total demands
-            $sql_property_demand = "
+        # total demands
+        $sql_property_demand = "
                 select 
                 SUM(
                     CASE WHEN prop_demands.fyear  = '2023-2024' then prop_demands.total_tax
@@ -3054,50 +3044,77 @@ class ReportController extends Controller
             FROM prop_demands
             WHERE prop_demands.status =1 
             ";
-            # total collection
-            $sql_property_collection = "
-            select SUM(              
-                CASE WHEN prop_demands.fyear = '2023-2024' and prop_demands.paid_status =1 then prop_demands.paid_total_tax           
-                ELSE 0                                   
-                END                        
-            ) AS prop_current_collection,
-            SUM(CASE WHEN prop_demands.fyear < '2023-2024' and prop_demands.paid_status =1  then prop_demands.paid_total_tax 
-            ELSE 0 END
-            ) AS prop_arrear_collection,
-            SUM(CASE WHEN prop_demands.paid_status =1 then prop_demands.paid_total_tax ELSE 0 END
-            ) AS prop_total_collection
-            FROM prop_demands                    
-            WHERE prop_demands.status =1
-            ";
-            $respons = [];
-            $data = collect(DB::connection("pgsql")->select($sql_property_under_assesment))->first();
-            $respons["property_under_assesment"] = $data->property_under_assesment ?? 0;
-            $data = collect(DB::connection("pgsql")->select($sql_property_zonal));
+        # total collection
+        $sql_property_collection = "
+             select sum(amount) AS prop_total_collection
+             from prop_transactions
+             where prop_transactions.tran_date between '2023-04-01' and '2024-03-31' 
+             and saf_id is  null
+             and prop_transactions.status = 1
+             ";
+        $sql_prop_vacant_land = "
+                         SELECT 
+                             (
+                                 SELECT COUNT(id) 
+                                 FROM prop_properties p 
+                                 WHERE p.prop_type_mstr_id = 4 
+                                 AND status = 1 
+                                 AND ulb_id = 2
+                             ) AS total_vacant_land
+         ";
+        $sql_prop_null_data = "
+                           SELECT 
+                           (
+                           select count(p.id) as null_prop_data
+                               FROM prop_properties p 
+                               WHERE p.prop_type_mstr_id IS NULL AND p.status=1
+                       ) AS null_prop_data";
+        $sql_prop_null_floor_data = "
+                       SELECT count(DISTINCT p.id) as null_floor_data
+                       FROM prop_properties p 
+                       LEFT JOIN prop_floors f ON f.property_id = p.id AND f.status = 1
+                       WHERE p.status = 1 
+                       AND p.prop_type_mstr_id IS NOT NULL 
+                       AND p.prop_type_mstr_id <> 4 
+                       AND f.id IS NULL
+                   ";
+        $respons = [];
+        $data = collect(DB::connection("pgsql")->select($sql_property_under_assesment))->first();
+        $respons["property_under_assesment"] = $data->property_under_assesment ?? 0;
+        $data = collect(DB::connection("pgsql")->select($sql_property_zonal));
 
-            $respons["a_zone_name"] = (collect($data)->where("id", 1)->first()->prop_zone_name) ?? 0;
-            $respons["a_prop_total_hh"] = (collect($data)->where("id", 1)->first()->prop_total_hh) ?? 0;
-            $respons["a_prop_total_amount"] = (collect($data)->where("id", 1)->first()->prop_total_amount) ?? 0;
+        $respons["a_zone_name"] = (collect($data)->where("id", 1)->first()->prop_zone_name) ?? 0;
+        $respons["a_prop_total_hh"] = (collect($data)->where("id", 1)->first()->prop_total_hh) ?? 0;
+        $respons["a_prop_total_amount"] = (collect($data)->where("id", 1)->first()->prop_total_amount) ?? 0;
 
-            $respons["b_zone_name"] = (collect($data)->where("id", 2)->first()->prop_zone_name) ?? 0;
-            $respons["b_prop_total_hh"] = (collect($data)->where("id", 2)->first()->prop_total_hh) ?? 0;
-            $respons["b_prop_total_amount"] = (collect($data)->where("id", 2)->first()->prop_total_amount) ?? 0;
+        $respons["b_zone_name"] = (collect($data)->where("id", 2)->first()->prop_zone_name) ?? 0;
+        $respons["b_prop_total_hh"] = (collect($data)->where("id", 2)->first()->prop_total_hh) ?? 0;
+        $respons["b_prop_total_amount"] = (collect($data)->where("id", 2)->first()->prop_total_amount) ?? 0;
 
-            $respons["c_zone_name"] = (collect($data)->where("id", 3)->first()->prop_zone_name) ?? 0;
-            $respons["c_prop_total_hh"] = (collect($data)->where("id", 3)->first()->prop_total_hh) ?? 0;
-            $respons["c_prop_total_amount"] = (collect($data)->where("id", 3)->first()->prop_total_amount) ?? 0;
+        $respons["c_zone_name"] = (collect($data)->where("id", 3)->first()->prop_zone_name) ?? 0;
+        $respons["c_prop_total_hh"] = (collect($data)->where("id", 3)->first()->prop_total_hh) ?? 0;
+        $respons["c_prop_total_amount"] = (collect($data)->where("id", 3)->first()->prop_total_amount) ?? 0;
 
-            $respons["d_zone_name"] = (collect($data)->where("id", 4)->first()->prop_zone_name) ?? 0;
-            $respons["d_prop_total_hh"] = (collect($data)->where("id", 4)->first()->prop_total_hh) ?? 0;
-            $respons["d_prop_total_amount"] = (collect($data)->where("id", 4)->first()->prop_total_amount) ?? 0;
+        $respons["d_zone_name"] = (collect($data)->where("id", 4)->first()->prop_zone_name) ?? 0;
+        $respons["d_prop_total_hh"] = (collect($data)->where("id", 4)->first()->prop_total_hh) ?? 0;
+        $respons["d_prop_total_amount"] = (collect($data)->where("id", 4)->first()->prop_total_amount) ?? 0;
 
-            $data = collect(DB::connection("pgsql")->select($sql_property_demand))->first();
-            $respons["prop_current_demand"] = $data->prop_current_demand ?? 0;
-            $respons["prop_arrear_demand"] = $data->prop_arrear_demand ?? 0;
-            $respons["prop_total_demand"] = $data->prop_total_demand ?? 0;
-            $data = collect(DB::connection("pgsql")->select($sql_property_collection))->first();
-            $respons["prop_current_collection"] = $data->prop_current_collection ?? 0;
-            $respons["prop_arrear_collection"] = $data->prop_arrear_collection ?? 0;
-            $respons["prop_total_collection"] = $data->prop_total_collection ?? 0;
+        $data = collect(DB::connection("pgsql")->select($sql_property_demand))->first();
+        $respons["prop_current_demand"] = $data->prop_current_demand ?? 0;
+        $respons["prop_arrear_demand"] = $data->prop_arrear_demand ?? 0;
+        $respons["prop_total_demand"] = $data->prop_total_demand ?? 0;
+        $data = collect(DB::connection("pgsql")->select($sql_property_collection))->first();
+        // $respons["prop_current_collection"] = $data->prop_current_collection ?? 0;
+        // $respons["prop_arrear_collection"] = $data->prop_arrear_collection ?? 0;
+        $respons["prop_total_collection"] = $data->prop_total_collection ?? 0;
+
+        $data = collect(DB::connection("pgsql")->select($sql_prop_vacant_land))->first();
+        $respons["total_vacant_land"] = $data->total_vacant_land ?? 0;
+
+        $data = collect(DB::connection("pgsql")->select($sql_prop_null_data))->first();
+        $respons["null_prop_data"] = $data->null_prop_data ?? 0;
+        $data = collect(DB::connection("pgsql")->select($sql_prop_null_floor_data))->first();
+        $respons["null_floor_data"] = $data->null_floor_data ?? 0;
         return (object)$respons;
     }
 
