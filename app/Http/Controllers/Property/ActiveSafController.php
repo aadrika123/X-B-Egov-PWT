@@ -1038,7 +1038,7 @@ class ActiveSafController extends Controller
             $data["lastTcVerificationData"] = $lastTcVerificationData;
             $data["lastTcFloorVerificationData"] = $lastTcFloorVerificationData;
             return responseMsgs(true, "Saf Dtls", remove_null($data), "010127", "1.0", "", "POST", $req->deviceId ?? "");
-        } catch (Exception $e) {            
+        } catch (Exception $e) {
             return responseMsgs(true, $e->getMessage(), [], "010127", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
@@ -1058,7 +1058,7 @@ class ActiveSafController extends Controller
             $mActiveSafsFloors = new PropActiveSafsFloor();
             $mPropSafMemoDtls = new PropSafMemoDtl();
             $mPropTransaction = new PropTransaction();
-            
+
             $memoDtls = array();
             $data = array();
             $user = Auth()->user();
@@ -1079,7 +1079,7 @@ class ActiveSafController extends Controller
             if (collect($data)->isEmpty())
                 throw new Exception("Application Not Found");
 
-            $data->current_role_name = 'Approved By ' . $data->current_role_name;            
+            $data->current_role_name = 'Approved By ' . $data->current_role_name;
             // $data->
             if ($data->payment_status == 0) {
                 $data->current_role_name = null;
@@ -1091,7 +1091,7 @@ class ActiveSafController extends Controller
                 $data->current_role_name2 = $data->current_role_name;
 
             $data = json_decode(json_encode($data), true);
-            
+
             $ownerDtls = $mPropActiveSafOwner->getOwnersBySafId($data['id']);
             if (collect($ownerDtls)->isEmpty())
                 $ownerDtls = $mPropSafOwner->getOwnersBySafId($data['id']);
@@ -1100,7 +1100,7 @@ class ActiveSafController extends Controller
             $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data['id']);      // Model Function to Get Floor Details
             if (collect($getFloorDtls)->isEmpty())
                 $getFloorDtls = $mPropSafsFloors->getFloorsBySafId($data['id']);
-            
+
             $data['floors'] = $getFloorDtls;
             $data["tranDtl"] = $mPropTransaction->getSafTranList($data['id']);
             $data["userDtl"] = [
@@ -1119,9 +1119,9 @@ class ActiveSafController extends Controller
             $data["can_take_payment"] = (collect($testRole)->isNotEmpty() && ($data["proccess_fee_paid"] ?? 1) == 0) ? true : false;
             if ($this->_COMMONFUNCTION->checkUsersWithtocken("active_citizens")) {
                 $data["can_take_payment"] = (($data["proccess_fee_paid"] ?? 1) == 0) ? true : false;
-            } 
+            }
             return responseMsgs(true, "Saf Dtls", remove_null($data), "010127", "1.0", "", "POST", $req->deviceId ?? "");
-        } catch (Exception $e) {            
+        } catch (Exception $e) {
             return responseMsgs(true, $e->getMessage(), [], "010127", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
