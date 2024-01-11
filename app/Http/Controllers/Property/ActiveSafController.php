@@ -1038,8 +1038,90 @@ class ActiveSafController extends Controller
             $data["lastTcVerificationData"] = $lastTcVerificationData;
             $data["lastTcFloorVerificationData"] = $lastTcFloorVerificationData;
             return responseMsgs(true, "Saf Dtls", remove_null($data), "010127", "1.0", "", "POST", $req->deviceId ?? "");
-        } catch (Exception $e) {
-            dd($e->getMessage(), $e->getFile(), $e->getLine());
+        } catch (Exception $e) {            
+            return responseMsgs(true, $e->getMessage(), [], "010127", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    public function getOrignalSaf(Request $req)
+    {
+        $req->validate([
+            'applicationId' => 'required|digits_between:1,9223372036854775807'
+        ]);
+        try {
+            // Variable Assignments
+            $mPropActiveSaf = new PropActiveSaf();
+            $mPropSafOwner = new PropSafsOwner();
+            $mPropSaf = new PropSaf();
+            $mPropSafsFloors = new PropSafsFloor();
+            $mPropActiveSafOwner = new PropActiveSafsOwner();
+            $mActiveSafsFloors = new PropActiveSafsFloor();
+            $mPropSafMemoDtls = new PropSafMemoDtl();
+            $mPropTransaction = new PropTransaction();
+            
+            $memoDtls = array();
+            $data = array();
+            $user = Auth()->user();
+
+            // Derivative Assignments
+            $data = $mPropActiveSaf->getActiveSafDtls()                         // <------- Model function Active SAF Details
+                ->where('prop_active_safs.id', $req->applicationId)
+                ->first();
+            // if (!$data)
+            // throw new Exception("Application Not Found");
+
+            if (collect($data)->isEmpty()) {
+                $data = $mPropSaf->getSafDtls()
+                    ->where('prop_safs.id', $req->applicationId)
+                    ->first();
+            }
+
+            if (collect($data)->isEmpty())
+                throw new Exception("Application Not Found");
+
+            $data->current_role_name = 'Approved By ' . $data->current_role_name;            
+            // $data->
+            if ($data->payment_status == 0) {
+                $data->current_role_name = null;
+                $data->current_role_name2 = "Payment is Pending";
+            } elseif ($data->payment_status == 2) {
+                $data->current_role_name = null;
+                $data->current_role_name2 = "Cheque Payment Verification Pending";
+            } else
+                $data->current_role_name2 = $data->current_role_name;
+
+            $data = json_decode(json_encode($data), true);
+            
+            $ownerDtls = $mPropActiveSafOwner->getOwnersBySafId($data['id']);
+            if (collect($ownerDtls)->isEmpty())
+                $ownerDtls = $mPropSafOwner->getOwnersBySafId($data['id']);
+
+            $data['owners'] = $ownerDtls;
+            $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data['id']);      // Model Function to Get Floor Details
+            if (collect($getFloorDtls)->isEmpty())
+                $getFloorDtls = $mPropSafsFloors->getFloorsBySafId($data['id']);
+            
+            $data['floors'] = $getFloorDtls;
+            $data["tranDtl"] = $mPropTransaction->getSafTranList($data['id']);
+            $data["userDtl"] = [
+                "user_id" => $user->id ?? 0,
+                "user_type" => $user->user_type ?? "",
+                "ulb_id" => $user->ulb_id ?? 0,
+                "user_name" => $user->name ?? ""
+            ];
+            $memoDtls = $mPropSafMemoDtls->memoLists($data['id']);
+            $data['memoDtls'] = $memoDtls;
+            if ($status = ((new \App\Repository\Property\Concrete\SafRepository())->applicationStatus($req->applicationId, true))) {
+                $data["current_role_name2"] = $status;
+            }
+            $usertype = $this->_COMMONFUNCTION->getUserAllRoles();
+            $testRole = collect($usertype)->whereIn("sort_name", Config::get("TradeConstant.CANE-CUTE-PAYMENT"));
+            $data["can_take_payment"] = (collect($testRole)->isNotEmpty() && ($data["proccess_fee_paid"] ?? 1) == 0) ? true : false;
+            if ($this->_COMMONFUNCTION->checkUsersWithtocken("active_citizens")) {
+                $data["can_take_payment"] = (($data["proccess_fee_paid"] ?? 1) == 0) ? true : false;
+            } 
+            return responseMsgs(true, "Saf Dtls", remove_null($data), "010127", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {            
             return responseMsgs(true, $e->getMessage(), [], "010127", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
