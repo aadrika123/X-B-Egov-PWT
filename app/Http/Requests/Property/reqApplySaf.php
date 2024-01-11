@@ -42,6 +42,12 @@ class reqApplySaf extends FormRequest
             $rules["isOwnerChanged"] = "required|bool";
             $rules["saleValue"]      = "required|digits_between:1,9223372036854775807";
         }
+        if (isset($this->assessmentType) && $this->assessmentType == 4) {
+            $rules['bifurcatedPlot'] = "required|numeric|max:" . $this->areaOfPlot;
+            $rules['biDateOfPurchase'] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
+            $rules['transferModeId'] = "required";
+            $rules["saleValue"]      = "required|digits_between:1,9223372036854775807";
+        }
         if (isset($this->assessmentType) && $this->assessmentType == 5) {
             $rules['holdingNoLists'] = "required|array";
             $rules['holdingNoLists.*'] = "required";
@@ -97,6 +103,9 @@ class reqApplySaf extends FormRequest
                 $rules["floor.*.dateFrom"]          =   "required|date|date_format:Y-m-d|before_or_equal:$mNowDate" . ($this->assessmentType != 1 ? "" : "|after_or_equal:$this->dateOfPurchase");
                 $rules["floor.*.dateUpto"]          =   "nullable|date|date_format:Y-m-d|before_or_equal:$mNowDate|before:$this->dateFrom";
                 // $rules["floor.*.dateFrom"]          =   "required|date|date_format:Y-m-d|before_or_equal:$mNowDate|after_or_equal:$this->dateOfPurchase";
+
+                if ($this->assessmentType == 4)
+                    $rules["floor.*.biBuildupArea"] =   "required|numeric";
             }
         }
 

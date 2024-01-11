@@ -47,8 +47,8 @@ class PropActiveSafsFloor extends Model
                         prop_active_safs_floors.no_of_rooms	, 	
                         prop_active_safs_floors.no_of_toilets
                 "))
-                ->join("prop_active_safs","prop_active_safs.id","prop_active_safs_floors.saf_id")
-               ->where("prop_active_safs_floors.saf_id",$safId)->get();
+            ->join("prop_active_safs", "prop_active_safs.id", "prop_active_safs_floors.saf_id")
+            ->where("prop_active_safs_floors.saf_id", $safId)->get();
     }
 
     /**
@@ -158,6 +158,7 @@ class PropActiveSafsFloor extends Model
         $floor->user_id = $userId;
         $floor->no_of_rooms = $req['noOfRooms'] ?? null;
         $floor->no_of_toilets = $req['noOfToilet'] ?? null;
+        $floor->bifurcated_buildup_area = $req['biBuildupArea'] ?? null;
         $floor->save();
     }
 
