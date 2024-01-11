@@ -60,9 +60,13 @@ class Calculate2PercPenalty
 
         $amount = $monthlyBalance * $noOfPenalMonths;
         $penalAmt = $amount * 0.02;
-        if($demand->fyear != $currentFy)
-        // dd($demand,$noOfPenalMonths,$amount,$penalAmt, Carbon::now()->firstOfMonth()->format("Y-m-d"));
-        $demand->monthlyPenalty = roundFigure($penalAmt);
+        // if($demand->fyear=='2021-2022'){
+        //     dd($demand,$noOfPenalMonths,$amount,$penalAmt, Carbon::now()->firstOfMonth()->format("Y-m-d"),$monthlyBalance);
+        // }
+        if($demand->fyear != $currentFy){
+            $demand->monthlyPenalty = roundFigure($penalAmt);
+        }
+        
     }
 
     /**
