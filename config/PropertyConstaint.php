@@ -47,7 +47,9 @@ return [
         "3" => "Will",
         "4" => "Lease",
         "5" => "Partition",
-        "6" => "Succession"
+        "6" => "Succession",
+        "7" => "Heridity/Will/Gift",
+        "8" => "Sale/Purchase/Lease"
     ],
     "OWNERSHIP-TYPE" => [
         "1"     => "INDIVIDUAL",

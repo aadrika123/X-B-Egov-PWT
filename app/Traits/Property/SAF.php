@@ -238,7 +238,7 @@ trait SAF
                 $refFloor = json_decode(json_encode($refFloor), true);
             $array['floor'][$key]['floorNo'] = $refFloor['floor_mstr_id'];
             $array['floor'][$key]['useType'] = $refFloor['usage_type_mstr_id'];
-            $array['floor'][$key]['usageType']= $refFloor['usage_type_mstr_id'];
+            $array['floor'][$key]['usageType'] = $refFloor['usage_type_mstr_id'];
             $array['floor'][$key]['constructionType'] = $refFloor['const_type_mstr_id'];
             $array['floor'][$key]['occupancyType'] = $refFloor['occupancy_type_mstr_id'];
             $array['floor'][$key]['buildupArea'] = $refFloor['builtup_area'];
@@ -579,123 +579,110 @@ trait SAF
             ->first();
     }
 
-     /**
+    /**
      * =========== Mutasion ProccessFee ========
      *          Created By : Sandeep bara
      *          Date       : 30-11-2023
      *          
      */
-    public function readProccessFee($assessmentType,$saleVal=0, $propertyType=0,  $transferType=0, $isLocateOnGovLan = false)
+    public function readProccessFee($assessmentType, $saleVal = 0, $propertyType = 0,  $transferType = 0, $isLocateOnGovLan = false)
     {
         $propertyTypeCon = flipConstants(Config::get("PropertyConstaint.PROPERTY-TYPE"));
         $transferTypeCon = flipConstants(Config::get("PropertyConstaint.TRANSFER_MODES"));
-        if(is_numeric($assessmentType))
-        {
-            $assessmentType = Config::get("PropertyConstaint.ASSESSMENT-TYPE.".$assessmentType);
+        if (is_numeric($assessmentType)) {
+            $assessmentType = Config::get("PropertyConstaint.ASSESSMENT-TYPE." . $assessmentType);
         }
         $proccessFee = 15000;
-        if($propertyType != $propertyTypeCon["VACANT LAND"] && $transferType != $transferTypeCon["Succession"] && $saleVal <= 1500000 && !$isLocateOnGovLan)
-        {
+        if ($propertyType != $propertyTypeCon["VACANT LAND"] && $transferType != $transferTypeCon["Heridity/Will/Gift"] && $saleVal <= 1500000 && !$isLocateOnGovLan) {
             $proccessFee = $saleVal * 0.01;
-        }
-        elseif($propertyType != $propertyTypeCon["VACANT LAND"] && $transferType != $transferTypeCon["Succession"] && $saleVal > 1500000 && !$isLocateOnGovLan)
-        {
+        } elseif ($propertyType != $propertyTypeCon["VACANT LAND"] && $transferType != $transferTypeCon["Heridity/Will/Gift"] && $saleVal > 1500000 && !$isLocateOnGovLan) {
             $proccessFee = 15000;
-        }
-        elseif($propertyType != $propertyTypeCon["VACANT LAND"] && $transferType == $transferTypeCon["Succession"] && !$isLocateOnGovLan)
-        {
+        } elseif ($propertyType != $propertyTypeCon["VACANT LAND"] && $transferType == $transferTypeCon["Heridity/Will/Gift"] && !$isLocateOnGovLan) {
             $proccessFee = 500;
-        }
-        elseif($propertyType != $propertyTypeCon["VACANT LAND"] && !$isLocateOnGovLan)
-        {
+        } elseif ($propertyType != $propertyTypeCon["VACANT LAND"] && !$isLocateOnGovLan) {
+            $proccessFee = 2000;
+        } elseif ($propertyType == $propertyTypeCon["VACANT LAND"]) {
             $proccessFee = 2000;
         }
-        elseif($propertyType == $propertyTypeCon["VACANT LAND"])
-        {
-            $proccessFee = 2000;
-        }
-        if($assessmentType != "Mutation")
-        {
+        if ($assessmentType != ("Mutation" || "Bifurcation")) {
             $proccessFee = 0;
         }
         return $proccessFee;
     }
 
-    public function addjustVerifySafDtls($safData,$verificationData)
+    public function addjustVerifySafDtls($safData, $verificationData)
     {
-        $safData->prop_type_mstr_id         = $verificationData ? ($verificationData->prop_type_id?? $safData->prop_type_mstr_id) : $safData->prop_type_mstr_id ;
+        $safData->prop_type_mstr_id         = $verificationData ? ($verificationData->prop_type_id ?? $safData->prop_type_mstr_id) : $safData->prop_type_mstr_id;
         $safData->ward_mstr_id              = $verificationData ? ($verificationData->ward_id ?? $safData->ward_mstr_id) : $safData->ward_mstr_id;
-        $safData->zone_mstr_id               = $verificationData ? ($verificationData->zone_mstr_id ?? $safData->zone_mstr_id) : $safData->zone_mstr_id ;
-        $safData->area_of_plot              = $verificationData ? ($verificationData->area_of_plot ?? $safData->area_of_plot) : $safData->area_of_plot ;
-        $safData->is_mobile_tower           = $verificationData ? ($verificationData->has_mobile_tower ?? $safData->is_mobile_tower) : $safData->is_mobile_tower ;
-        $safData->tower_area                = $verificationData ? ($verificationData->tower_area ?? $safData->tower_area) : $safData->tower_area ;
-        $safData->tower_installation_date   = $verificationData ? ($verificationData->tower_installation_date ?? $safData->tower_installation_date) : $safData->tower_installation_date ;
-        $safData->is_hoarding_board         = $verificationData ? ($verificationData->has_hoarding ?? $safData->is_hoarding_board) : $safData->is_hoarding_board ;
-        $safData->hoarding_area             = $verificationData ? ($verificationData->hoarding_area ?? $safData->hoarding_area) : $safData->hoarding_area ;
-        $safData->hoarding_installation_date = $verificationData ? ($verificationData->hoarding_installation_date ?? $safData->hoarding_installation_date) : $safData->hoarding_installation_date ;
+        $safData->zone_mstr_id               = $verificationData ? ($verificationData->zone_mstr_id ?? $safData->zone_mstr_id) : $safData->zone_mstr_id;
+        $safData->area_of_plot              = $verificationData ? ($verificationData->area_of_plot ?? $safData->area_of_plot) : $safData->area_of_plot;
+        $safData->is_mobile_tower           = $verificationData ? ($verificationData->has_mobile_tower ?? $safData->is_mobile_tower) : $safData->is_mobile_tower;
+        $safData->tower_area                = $verificationData ? ($verificationData->tower_area ?? $safData->tower_area) : $safData->tower_area;
+        $safData->tower_installation_date   = $verificationData ? ($verificationData->tower_installation_date ?? $safData->tower_installation_date) : $safData->tower_installation_date;
+        $safData->is_hoarding_board         = $verificationData ? ($verificationData->has_hoarding ?? $safData->is_hoarding_board) : $safData->is_hoarding_board;
+        $safData->hoarding_area             = $verificationData ? ($verificationData->hoarding_area ?? $safData->hoarding_area) : $safData->hoarding_area;
+        $safData->hoarding_installation_date = $verificationData ? ($verificationData->hoarding_installation_date ?? $safData->hoarding_installation_date) : $safData->hoarding_installation_date;
 
-        $safData->is_petrol_pump            = $verificationData ? ($verificationData->is_petrol_pump ?? $safData->is_petrol_pump) : $safData->is_petrol_pump ;
-        $safData->under_ground_area         = $verificationData ? ($verificationData->underground_area ?? $safData->under_ground_area) : $safData->under_ground_area ;
-        $safData->petrol_pump_completion_date = $verificationData ? ($verificationData->petrol_pump_completion_date ?? $safData->petrol_pump_completion_date) : $safData->petrol_pump_completion_date ;
-        $safData->is_water_harvesting       = $verificationData ? ($verificationData->has_water_harvesting ?? $safData->is_water_harvesting) : $safData->is_water_harvesting ;
-        $safData->rwh_date_from               = $verificationData ? ($verificationData->rwh_date_from ?? $safData->rwh_date_from) : $safData->rwh_date_from ;
-        $safData->category_id               = $verificationData ? ($verificationData->category_id ?? $safData->category_id) : $safData->category_id ;        
+        $safData->is_petrol_pump            = $verificationData ? ($verificationData->is_petrol_pump ?? $safData->is_petrol_pump) : $safData->is_petrol_pump;
+        $safData->under_ground_area         = $verificationData ? ($verificationData->underground_area ?? $safData->under_ground_area) : $safData->under_ground_area;
+        $safData->petrol_pump_completion_date = $verificationData ? ($verificationData->petrol_pump_completion_date ?? $safData->petrol_pump_completion_date) : $safData->petrol_pump_completion_date;
+        $safData->is_water_harvesting       = $verificationData ? ($verificationData->has_water_harvesting ?? $safData->is_water_harvesting) : $safData->is_water_harvesting;
+        $safData->rwh_date_from               = $verificationData ? ($verificationData->rwh_date_from ?? $safData->rwh_date_from) : $safData->rwh_date_from;
+        $safData->category_id               = $verificationData ? ($verificationData->category_id ?? $safData->category_id) : $safData->category_id;
         return $safData;
     }
 
     public function addjustVerifySafDtlVal($safData)
     {
-        $controller = App::makeWith(ActiveSafController::class,["iSafRepository"=>app(\App\Repository\Property\Interfaces\iSafRepository::class)]);
+        $controller = App::makeWith(ActiveSafController::class, ["iSafRepository" => app(\App\Repository\Property\Interfaces\iSafRepository::class)]);
         $response = $controller->masterSaf(new Request);
-        if(!$response->original["status"]) 
-        {
+        if (!$response->original["status"]) {
             throw new Exception("Master Data Not Found");
-        } 
-        $data = $response->original["data"];  
+        }
+        $data = $response->original["data"];
         $property_type = $data["property_type"];
         $zone_master = $data["zone"];
         $ward_master = $data["ward_master"];
-        $categories = $data["categories"];  
-        $safData->property_type     = (collect($property_type)->where("id",$safData->prop_type_mstr_id)->first())->property_type ?? $safData->property_type ;
-        $safData->old_ward_no       = (collect($ward_master)->where("id",$safData->ward_mstr_id)->first())->ward_name ?? $safData->old_ward_no ;
-        $safData->zone              = (collect($zone_master)->where("id",$safData->zone_mstr_id)->first())->zone_name ?? $safData->zone ;
-        
-        $safData->category = (collect($categories)->where("id",$safData->category_id)->first())->category ?? $safData->category ;
+        $categories = $data["categories"];
+        $safData->property_type     = (collect($property_type)->where("id", $safData->prop_type_mstr_id)->first())->property_type ?? $safData->property_type;
+        $safData->old_ward_no       = (collect($ward_master)->where("id", $safData->ward_mstr_id)->first())->ward_name ?? $safData->old_ward_no;
+        $safData->zone              = (collect($zone_master)->where("id", $safData->zone_mstr_id)->first())->zone_name ?? $safData->zone;
+
+        $safData->category = (collect($categories)->where("id", $safData->category_id)->first())->category ?? $safData->category;
         return $safData;
     }
 
-    public function addjustVerifyFloorDtls($floor,$verifyFloor)
+    public function addjustVerifyFloorDtls($floor, $verifyFloor)
     {
-        $floor->floor_mstr_id               = $verifyFloor ? ($verifyFloor->floor_mstr_id ??$floor->floor_mstr_id) : $floor->floor_mstr_id ;
-        $floor->usage_type_mstr_id          = $verifyFloor ? ($verifyFloor->usage_type_id ??$floor->usage_type_mstr_id) : $floor->usage_type_mstr_id ;
-        $floor->const_type_mstr_id          = $verifyFloor ? ($verifyFloor->construction_type_id ??$floor->const_type_mstr_id) : $floor->const_type_mstr_id ;
-        $floor->occupancy_type_mstr_id      = $verifyFloor ? ($verifyFloor->occupancy_type_id ??$floor->occupancy_type_mstr_id) : $floor->occupancy_type_mstr_id ;
-        $floor->builtup_area                = $verifyFloor ? ($verifyFloor->builtup_area ??$floor->builtup_area) : $floor->builtup_area ;
-        $floor->date_from                   = $verifyFloor ? ($verifyFloor->date_from ??$floor->date_from) : $floor->date_from ;
-        $floor->date_upto                   = $verifyFloor ? ($verifyFloor->date_to ??$floor->date_upto) : $floor->date_upto ;
-        $floor->carpet_area                 = $verifyFloor ? ($verifyFloor->carpet_area ??$floor->carpet_area) : $floor->carpet_area ;
+        $floor->floor_mstr_id               = $verifyFloor ? ($verifyFloor->floor_mstr_id ?? $floor->floor_mstr_id) : $floor->floor_mstr_id;
+        $floor->usage_type_mstr_id          = $verifyFloor ? ($verifyFloor->usage_type_id ?? $floor->usage_type_mstr_id) : $floor->usage_type_mstr_id;
+        $floor->const_type_mstr_id          = $verifyFloor ? ($verifyFloor->construction_type_id ?? $floor->const_type_mstr_id) : $floor->const_type_mstr_id;
+        $floor->occupancy_type_mstr_id      = $verifyFloor ? ($verifyFloor->occupancy_type_id ?? $floor->occupancy_type_mstr_id) : $floor->occupancy_type_mstr_id;
+        $floor->builtup_area                = $verifyFloor ? ($verifyFloor->builtup_area ?? $floor->builtup_area) : $floor->builtup_area;
+        $floor->date_from                   = $verifyFloor ? ($verifyFloor->date_from ?? $floor->date_from) : $floor->date_from;
+        $floor->date_upto                   = $verifyFloor ? ($verifyFloor->date_to ?? $floor->date_upto) : $floor->date_upto;
+        $floor->carpet_area                 = $verifyFloor ? ($verifyFloor->carpet_area ?? $floor->carpet_area) : $floor->carpet_area;
         return $floor;
     }
 
     public function addjustVerifyFloorDtlVal($floor)
     {
-        $controller = App::makeWith(ActiveSafController::class,["iSafRepository"=>app(\App\Repository\Property\Interfaces\iSafRepository::class)]);
+        $controller = App::makeWith(ActiveSafController::class, ["iSafRepository" => app(\App\Repository\Property\Interfaces\iSafRepository::class)]);
         $response = $controller->masterSaf(new Request);
-        if(!$response->original["status"]) 
-        {
+        if (!$response->original["status"]) {
             throw new Exception("Master Data Not Found");
-        } 
-        $data = $response->original["data"];      
+        }
+        $data = $response->original["data"];
         $floor_type = $data["floor_type"];
         $occupancy_type = $data["occupancy_type"];
-        $usage_type = $data["usage_type"];  
-        $construction_type = $data["construction_type"];   
+        $usage_type = $data["usage_type"];
+        $construction_type = $data["construction_type"];
 
-        $floor->floor_name          = (collect($floor_type)->where("id",$floor->floor_mstr_id)->first())->floor_name ?? $floor->floor_name;
-        $floor->usage_type          = (collect($usage_type)->where("id",$floor->usage_type_mstr_id)->first())->usage_type ?? $floor->usage_type;
-        $floor->construction_type   = (collect($construction_type)->where("id",$floor->const_type_mstr_id)->first())->construction_type ?? $floor->construction_type;
-        $floor->occupancy_type      = (collect($occupancy_type)->where("id",$floor->occupancy_type_mstr_id)->first())->occupancy_type ?? $floor->occupancy_type;
-       
+        $floor->floor_name          = (collect($floor_type)->where("id", $floor->floor_mstr_id)->first())->floor_name ?? $floor->floor_name;
+        $floor->usage_type          = (collect($usage_type)->where("id", $floor->usage_type_mstr_id)->first())->usage_type ?? $floor->usage_type;
+        $floor->construction_type   = (collect($construction_type)->where("id", $floor->const_type_mstr_id)->first())->construction_type ?? $floor->construction_type;
+        $floor->occupancy_type      = (collect($occupancy_type)->where("id", $floor->occupancy_type_mstr_id)->first())->occupancy_type ?? $floor->occupancy_type;
+
         return $floor;
     }
 }

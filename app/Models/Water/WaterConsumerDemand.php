@@ -57,7 +57,9 @@ class WaterConsumerDemand extends Model
                 SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.arrear_demand ELSE 0 END) AS arrear_demands,
                 SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.current_demand ELSE 0 END) AS current_demands,
                 SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NOT NULL THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS generate_amount
-                FROM water_consumer_demands GROUP BY consumer_id) as subquery'),
+                FROM water_consumer_demands
+                WHERE status=true
+                 GROUP BY consumer_id) as subquery'),
                 'subquery.consumer_id','=','water_consumer_demands.consumer_id'
             )
             ->leftjoin(
@@ -73,6 +75,7 @@ class WaterConsumerDemand extends Model
                 'water_consumer_demands.consumer_id'
             )
             // ->where('water_consumer_demands.paid_status', 0)
+            ->where('water_consumer_demands.status',true )
             ->where('water_consumer_demands.is_full_paid', false)
             ->where('water_consumer_demands.consumer_id', $consumerId)
             ->orderByDesc('water_consumer_demands.generation_date')
