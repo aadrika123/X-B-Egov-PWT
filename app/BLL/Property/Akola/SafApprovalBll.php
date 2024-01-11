@@ -190,6 +190,9 @@ class SafApprovalBll
         // ✅Replication of Verified Saf Details by Ulb TC
         $propProperties->prop_type_mstr_id = $this->_verifiedPropDetails[0]->prop_type_id;
         $propProperties->area_of_plot = $this->_verifiedPropDetails[0]->area_of_plot;
+        if ($this->_activeSaf->assessment_type == 'Bifurcation')
+            $propProperties->area_of_plot = $this->_activeSaf->area_of_plot - $this->_activeSaf->bifurcated_plot_area;
+
         $propProperties->ward_mstr_id = $this->_verifiedPropDetails[0]->ward_id;
         $propProperties->zone_mstr_id = $this->_verifiedPropDetails[0]->zone_mstr_id;
         $propProperties->is_mobile_tower = $this->_verifiedPropDetails[0]->has_mobile_tower;
@@ -646,7 +649,8 @@ class SafApprovalBll
 
                 foreach ($this->_floorDetails as $floorDetail) {
                     $propFloor =  collect($propFloors)->where('id', $floorDetail->prop_floor_details_id);
-                    $propFloor['builtup_area'] = $propFloor['builtup_area'] - $floorDetail->bifurcated_buildup_area;
+                    $propFloor =  collect($propFloor)->first();
+                    $propFloor->builtup_area = $propFloor->builtup_area - $floorDetail->bifurcated_buildup_area;
                     $propFloor->save();
                 }
             }
