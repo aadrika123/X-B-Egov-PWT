@@ -87,6 +87,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use App\MicroServices\IdGenerator\HoldingNoGenerator;
 use App\Models\Property\RefPropCategory;
+use App\Models\Property\SecondaryDocVerification;
 use App\Models\Workflows\WfMaster;
 use App\Models\Workflows\WfRole;
 use App\Repository\Common\CommonFunction;
@@ -1184,6 +1185,14 @@ class ActiveSafController extends Controller
                 'roleId' => $senderRoleId
             ]);
             $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIds($roleMapsReqs);
+            if(!$forwardBackwardIds)
+            {
+                $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIdsV2($roleMapsReqs);
+            }
+            if(!$forwardBackwardIds)
+            {
+                throw new Exception("You Are Noth Authorize For This Workflow");
+            }
             $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id);
             DB::beginTransaction();
             DB::connection('pgsql_master')->beginTransaction();
@@ -1935,7 +1944,10 @@ class ActiveSafController extends Controller
                 'moduleId' => $moduleId
             ];
             $getRejectedDocument = $mWfActiveDocument->readRejectedDocuments($getDocReqs);
-
+            if(collect($getRejectedDocument)->isEmpty())
+            {
+                $getRejectedDocument = (new SecondaryDocVerification())->readRejectedDocuments($getDocReqs);
+            }
             if (collect($getRejectedDocument)->isEmpty())
                 throw new Exception("Document Not Rejected You Can't back to citizen this application");
 
@@ -2012,6 +2024,7 @@ class ActiveSafController extends Controller
         if ($validated->fails())
             return validationError($validated);
         try {
+            $mVerification = new PropSafVerification();
             $safDtls = PropActiveSaf::find($req->id);
             if (!$safDtls)
                 $safDtls = PropSaf::find($req->id);
@@ -2019,8 +2032,17 @@ class ActiveSafController extends Controller
             if (collect($safDtls)->isEmpty())
                 throw new Exception("Saf Not Available");
 
+            $safVerification = $mVerification->where("saf_id",$safDtls->id)->where("status",1)->orderBy("id","DESC")->first();
             $fullSafDtls = $this->details($req);                    // for full details purpose
-
+            if($safVerification)
+            {
+                $safDtls = $this->addjustVerifySafDtls($safDtls,$safVerification);
+                $safDtls = $this->addjustVerifySafDtlVal($safDtls);
+                $fullSafDtls["property_type"] = $safDtls->property_type??$fullSafDtls["property_type"];
+                $fullSafDtls["zone"]          = $safDtls->zone??$fullSafDtls["zone"] ;
+                $fullSafDtls["old_ward_no"]   = $safDtls->old_ward_no??$fullSafDtls["old_ward_no"];
+            }
+            
             $calculateSafTaxById = new CalculateSafTaxById($safDtls);
             $demand = $calculateSafTaxById->_GRID;
             $demand['ulbWiseTax'] = [];

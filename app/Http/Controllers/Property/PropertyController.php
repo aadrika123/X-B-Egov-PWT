@@ -1288,7 +1288,13 @@ class PropertyController extends Controller
             $propDetails = $mPropProperty->getPropBasicDtls($req->propId);
             $propFloors = $mPropFloors->getPropFloors($req->propId);
             $propOwner = $mPropOwner->getfirstOwner($req->propId);
-
+            $mPropProperty->id = $req->propId;
+            $propOwnerAll = $mPropProperty->Owneres()->get();
+            $propOwnerAll = collect($propOwnerAll)->map(function($val){                 
+                $val->owner_name_marathi = trim($val->owner_name_marathi) ? trim($val->owner_name_marathi) : trim($val->owner_name);
+                return $val;
+            });
+            $propOwnerAllMarathi = $propOwnerAll->implode("owner_name_marathi"," ,");
             $floorTypes = $propFloors->implode('floor_name', ',');
             $floorCode = $propFloors->implode('floor_code', '-');
             $usageTypes = $propFloors->implode('usage_type', ',');
@@ -1321,7 +1327,7 @@ class PropertyController extends Controller
                 'floor_const_code' => $constCode,
                 'total_buildup_area' => $totalBuildupArea,
                 'area_of_plot' => $propDetails->area_of_plot,
-                'primary_owner_name' => $propOwner->owner_name_marathi ?? null,
+                'primary_owner_name' => $propOwnerAllMarathi ? $propOwnerAllMarathi : ($propOwner->owner_name_marathi ?? null),
                 'applicant_name' => $propDetails->applicant_marathi,
                 'property_from' => $minFloorFromDate,
                 'demands' => $propDemand
@@ -1734,7 +1740,7 @@ class PropertyController extends Controller
     }
 
     # save tc locations
-
+    
     public function saveLocations(Request $req)
     {
         $validated = Validator::make(
@@ -1751,11 +1757,13 @@ class PropertyController extends Controller
         }
 
         try {
-            $mlocations = new location();
-            $mlocations->tc_id    = $req->tcId;
-            $mlocations->latitude = $req->latitude;
+            $mlocations = new Location();
+            $nowTime    = Carbon::now()->format('h:i:s A');
+            $mlocations->tc_id     = $req->tcId;
+            $mlocations->latitude  = $req->latitude;
             $mlocations->longitude = $req->longitude;
-            $mlocations->altitude = $req->altitude;
+            $mlocations->altitude  = $req->altitude;
+            $mlocations->time      = $nowTime;
             $mlocations->save();
 
             return responseMsgs(true, "tc location updated", [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
@@ -1771,11 +1779,11 @@ class PropertyController extends Controller
             $req->all(),
             [
                 "tcId"       => "required",
-                'pages'     => 'nullable',
+                'pages'     =>  'nullable',
             ]
         );
         if ($validated->fails())
-            return validationError($validated);
+            return validationError(false, $validated->errors(), "", "011610", "1.0", "", "POST", $req->deviceId ?? "");
         try {
             $mLocation  = new Location();
             $tcId       = $req->tcId;

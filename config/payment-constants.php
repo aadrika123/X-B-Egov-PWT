@@ -9,6 +9,7 @@ return [
     "ULB_LOGO_URL" =>  env("ulb_logo_url", "http://localhost/"),
     "FRONT_URL"     => env("FRONT_URL", "https://modernulb.com") ,
     "PROPERTY_FRONT_URL" => (env("FRONT_URL", "https://modernulb.com") . "/citizen/property/payment-status"),
+    "MOBI_PROPERTY_FRONT_FAIL_URL" => (env("MOBI_FRONT_URL", "https://modernulb.com/amc-app") . "/property/demand-details"),
     "WATER_FAIL_URL"    => (env("FRONT_URL","https://modernulb.com") . "/water/water-demand-payment/"),
     'PAYMENT_MODE' => [
         '1' => 'ONLINE',

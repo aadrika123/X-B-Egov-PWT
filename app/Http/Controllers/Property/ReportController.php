@@ -1238,6 +1238,13 @@ class ReportController extends Controller
             $data['Property']['d_zone_name']    = $currentYearData->d_zone_name;
             $data['Property']['d_prop_total_hh']    = $currentYearData->d_prop_total_hh;
             $data['Property']['d_prop_total_amount']    = $currentYearData->d_prop_total_amount;
+            $data['Property']['prop_current_demand']    = round(($currentYearData->prop_current_demand??0)/10000000,2);
+            $data['Property']['prop_arrear_demand']    = round(($currentYearData->prop_arrear_demand??0)/10000000,2);
+            $data['Property']['prop_total_demand']    = round(($currentYearData->prop_total_demand??0)/10000000,2);
+            $data['Property']['prop_current_collection']    = round(($currentYearData->prop_current_collection??0)/10000000,2);
+            $data['Property']['prop_arrear_collection']    = round(($currentYearData->prop_arrear_collection??0)/10000000,2);
+            $data['Property']['prop_total_collection']    = round(($currentYearData->prop_total_collection??0)/10000000,2);
+
 
             return responseMsgs(true, "Mpl Report", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
@@ -2086,7 +2093,9 @@ class ReportController extends Controller
                         top_wards_collections.*,
                         top_area_safs.*,
                         area_wise_defaulter.*,
-                        payment_modes.*
+                        payment_modes.*,
+                        current_demand_collection.*,
+                        arrear_demand_collection.*
         
                 FROM 
                     (
@@ -2263,6 +2272,21 @@ class ReportController extends Controller
                     p.prop_type_mstr_id = 4 
                     AND status = 1 AND ulb_id=2
                 ) AS total_vacant_land, 
+                (
+                    SELECT SUM(total_tax-adjust_amt) AS arrear_demand_collection 
+                            FROM prop_transactions t
+                        JOIN prop_tran_dtls td ON td.tran_id=t.id AND td.status=1
+                        JOIN prop_demands d ON d.id=td.prop_demand_id AND d.status=1
+                        WHERE t.status=1 AND d.fyear<'2023-2024' AND t.tran_date BETWEEN '2023-04-01' AND '2024-03-31'
+                ) AS arrear_demand_collection, 
+                (
+                    SELECT SUM(total_tax-adjust_amt) AS current_demand_collection
+                        FROM prop_transactions t
+                    JOIN prop_tran_dtls td ON td.tran_id=t.id AND td.status=1
+                    JOIN prop_demands d ON d.id=td.prop_demand_id AND d.status=1
+                    WHERE t.status=1 AND d.fyear='2023-2024' AND t.tran_date BETWEEN '2023-04-01' AND '2024-03-31'
+                ) AS current_demand_collection, 
+
                 (
                   SELECT 
                     SUM(
@@ -2637,6 +2661,8 @@ class ReportController extends Controller
             "last_year_payment_count" => $data->lastyr_pmt_cnt,
             "this_year_payment_count" => $data->currentyr_pmt_cnt,
             "this_year_payment_amount" => $data->currentyr_pmt_amt,
+            "collection_against_current_demand"=>$data->current_demand_collection,
+            "collection_againt_arrear_demand"=>$data->arrear_demand_collection,
             // "mutation_this_year_count" => $data->current_yr_mutation_count,
             // "assessed_property_this_year_achievement" => $data->outstanding_amt_lastyear,
             // "assessed_property_this_year_achievement" => $data->outstanding_cnt_lastyear,
@@ -2744,6 +2770,13 @@ class ReportController extends Controller
             'd_zone_name'  => $propdata->d_zone_name,
             'd_prop_total_hh'  => $propdata->d_prop_total_hh,
             'd_prop_total_amount'  => $propdata->d_prop_total_amount,
+            'prop_current_demand'  => $propdata->prop_current_demand,
+            'prop_arrear_demand'  => $propdata->prop_arrear_demand,
+            'prop_total_demand'  => $propdata->prop_total_demand,
+            'prop_current_collection'  => $propdata->prop_current_collection,
+            'prop_arrear_collection'  => $propdata->prop_arrear_collection,
+            'prop_total_collection'  => $propdata->prop_total_collection,
+
 
 
 
@@ -3004,28 +3037,67 @@ class ReportController extends Controller
                                     group by zone_masters.id 
                                     order by zone_masters.id 
         ";
+            # total demands
+            $sql_property_demand = "
+                select 
+                SUM(
+                    CASE WHEN prop_demands.fyear  = '2023-2024' then prop_demands.total_tax
+                        ELSE 0
+                        END
+                ) AS prop_current_demand,
+                SUM(
+                    CASE WHEN prop_demands.fyear < '2023-2024' then prop_demands.total_tax
+                        ELSE 0
+                        END
+                ) AS prop_arrear_demand,
+                SUM(prop_demands.total_tax) AS prop_total_demand
+            FROM prop_demands
+            WHERE prop_demands.status =1 
+            ";
+            # total collection
+            $sql_property_collection = "
+            select SUM(              
+                CASE WHEN prop_demands.fyear = '2023-2024' and prop_demands.paid_status =1 then prop_demands.paid_total_tax           
+                ELSE 0                                   
+                END                        
+            ) AS prop_current_collection,
+            SUM(CASE WHEN prop_demands.fyear < '2023-2024' and prop_demands.paid_status =1  then prop_demands.paid_total_tax 
+            ELSE 0 END
+            ) AS prop_arrear_collection,
+            SUM(CASE WHEN prop_demands.paid_status =1 then prop_demands.paid_total_tax ELSE 0 END
+            ) AS prop_total_collection
+            FROM prop_demands                    
+            WHERE prop_demands.status =1
+            ";
+            $respons = [];
+            $data = collect(DB::connection("pgsql")->select($sql_property_under_assesment))->first();
+            $respons["property_under_assesment"] = $data->property_under_assesment ?? 0;
+            $data = collect(DB::connection("pgsql")->select($sql_property_zonal));
 
-        $respons = [];
-        $data = collect(DB::connection("pgsql")->select($sql_property_under_assesment))->first();
-        $respons["property_under_assesment"] = $data->property_under_assesment ?? 0;
-        $data = collect(DB::connection("pgsql")->select($sql_property_zonal));
+            $respons["a_zone_name"] = (collect($data)->where("id", 1)->first()->prop_zone_name) ?? 0;
+            $respons["a_prop_total_hh"] = (collect($data)->where("id", 1)->first()->prop_total_hh) ?? 0;
+            $respons["a_prop_total_amount"] = (collect($data)->where("id", 1)->first()->prop_total_amount) ?? 0;
 
-        $respons["a_zone_name"] = (collect($data)->where("id", 1)->first()->prop_zone_name) ?? 0;
-        $respons["a_prop_total_hh"] = (collect($data)->where("id", 1)->first()->prop_total_hh) ?? 0;
-        $respons["a_prop_total_amount"] = (collect($data)->where("id", 1)->first()->prop_total_amount) ?? 0;
+            $respons["b_zone_name"] = (collect($data)->where("id", 2)->first()->prop_zone_name) ?? 0;
+            $respons["b_prop_total_hh"] = (collect($data)->where("id", 2)->first()->prop_total_hh) ?? 0;
+            $respons["b_prop_total_amount"] = (collect($data)->where("id", 2)->first()->prop_total_amount) ?? 0;
 
-        $respons["b_zone_name"] = (collect($data)->where("id", 2)->first()->prop_zone_name) ?? 0;
-        $respons["b_prop_total_hh"] = (collect($data)->where("id", 2)->first()->prop_total_hh) ?? 0;
-        $respons["b_prop_total_amount"] = (collect($data)->where("id", 2)->first()->prop_total_amount) ?? 0;
+            $respons["c_zone_name"] = (collect($data)->where("id", 3)->first()->prop_zone_name) ?? 0;
+            $respons["c_prop_total_hh"] = (collect($data)->where("id", 3)->first()->prop_total_hh) ?? 0;
+            $respons["c_prop_total_amount"] = (collect($data)->where("id", 3)->first()->prop_total_amount) ?? 0;
 
-        $respons["c_zone_name"] = (collect($data)->where("id", 3)->first()->prop_zone_name) ?? 0;
-        $respons["c_prop_total_hh"] = (collect($data)->where("id", 3)->first()->prop_total_hh) ?? 0;
-        $respons["c_prop_total_amount"] = (collect($data)->where("id", 3)->first()->prop_total_amount) ?? 0;
+            $respons["d_zone_name"] = (collect($data)->where("id", 4)->first()->prop_zone_name) ?? 0;
+            $respons["d_prop_total_hh"] = (collect($data)->where("id", 4)->first()->prop_total_hh) ?? 0;
+            $respons["d_prop_total_amount"] = (collect($data)->where("id", 4)->first()->prop_total_amount) ?? 0;
 
-        $respons["d_zone_name"] = (collect($data)->where("id", 4)->first()->prop_zone_name) ?? 0;
-        $respons["d_prop_total_hh"] = (collect($data)->where("id", 4)->first()->prop_total_hh) ?? 0;
-        $respons["d_prop_total_amount"] = (collect($data)->where("id", 4)->first()->prop_total_amount) ?? 0;
-
+            $data = collect(DB::connection("pgsql")->select($sql_property_demand))->first();
+            $respons["prop_current_demand"] = $data->prop_current_demand ?? 0;
+            $respons["prop_arrear_demand"] = $data->prop_arrear_demand ?? 0;
+            $respons["prop_total_demand"] = $data->prop_total_demand ?? 0;
+            $data = collect(DB::connection("pgsql")->select($sql_property_collection))->first();
+            $respons["prop_current_collection"] = $data->prop_current_collection ?? 0;
+            $respons["prop_arrear_collection"] = $data->prop_arrear_collection ?? 0;
+            $respons["prop_total_collection"] = $data->prop_total_collection ?? 0;
         return (object)$respons;
     }
 

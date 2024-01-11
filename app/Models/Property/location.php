@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\DB;
 class Location extends Model
 {
     use HasFactory;
-    // public $timestamps = false;
     protected $guarded = [];
 
     # get tc details 
@@ -19,13 +18,15 @@ class Location extends Model
             'locations.latitude',
             'locations.longitude',
             'locations.altitude',
-            DB::raw('DATE(locations.created_at) as created_date'),
+            DB::raw('DATE(locations.created_at) as created_date'),  
+            'locations.created_at',
+            'locations.time',
             'locations.created_at',
             'users.user_name',
-            'users.name',
-
+            'users.name'
         )
-            ->leftjoin('users', 'users.id', '=', 'locations.tc_id')
-            ->where('locations.tc_id', $tcId);
+        ->leftJoin('users', 'users.id', '=', 'locations.tc_id')
+        ->where('locations.tc_id', $tcId);
     }
+
 }

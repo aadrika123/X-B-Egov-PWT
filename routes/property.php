@@ -370,6 +370,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
   Route::controller(CitizenHoldingController::class)->group(function () {
     Route::post('citizen/get-holding-dues', 'getHoldingDues');                    // (02.1) unthicatd/Property/ Holding Dues
     Route::post('citizen/icic-init-payment', 'ICICPaymentRequest');               // (02.2) unthicatd/Property/ initiate payment
+    Route::post('counter/icic-init-payment', 'ICICPaymentRequest');
     Route::post('citizen/icici-payment-response', 'ICICPaymentResponse');         // (02.3) unthicatd/Property/ payment response
     Route::post('citizen/test', 'testIcic');
 

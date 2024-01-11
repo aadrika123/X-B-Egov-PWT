@@ -131,7 +131,15 @@ class WfWorkflowrolemap extends Model
             ->where('workflow_id', $req->workflowId)
             ->where('wf_role_id', $req->roleId)
             ->where('is_suspended', false)
-            ->firstOrFail();
+            ->first();
+    }
+
+    public function getWfBackForwardIdsV2($req)
+    {
+        return WfWorkflowrolemap::select('forward_role_id', 'backward_role_id')
+            ->where('workflow_id', $req->workflowId)
+            ->where('wf_role_id', $req->roleId)
+            ->first();
     }
 
     /**

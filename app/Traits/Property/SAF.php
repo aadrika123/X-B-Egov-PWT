@@ -614,6 +614,7 @@ trait SAF
     {
         $safData->prop_type_mstr_id         = $verificationData ? ($verificationData->prop_type_id ?? $safData->prop_type_mstr_id) : $safData->prop_type_mstr_id;
         $safData->ward_mstr_id              = $verificationData ? ($verificationData->ward_id ?? $safData->ward_mstr_id) : $safData->ward_mstr_id;
+        $safData->zone_mstr_id               = $verificationData ? ($verificationData->zone_mstr_id ?? $safData->zone_mstr_id) : $safData->zone_mstr_id;
         $safData->area_of_plot              = $verificationData ? ($verificationData->area_of_plot ?? $safData->area_of_plot) : $safData->area_of_plot;
         $safData->is_mobile_tower           = $verificationData ? ($verificationData->has_mobile_tower ?? $safData->is_mobile_tower) : $safData->is_mobile_tower;
         $safData->tower_area                = $verificationData ? ($verificationData->tower_area ?? $safData->tower_area) : $safData->tower_area;
@@ -626,7 +627,7 @@ trait SAF
         $safData->under_ground_area         = $verificationData ? ($verificationData->underground_area ?? $safData->under_ground_area) : $safData->under_ground_area;
         $safData->petrol_pump_completion_date = $verificationData ? ($verificationData->petrol_pump_completion_date ?? $safData->petrol_pump_completion_date) : $safData->petrol_pump_completion_date;
         $safData->is_water_harvesting       = $verificationData ? ($verificationData->has_water_harvesting ?? $safData->is_water_harvesting) : $safData->is_water_harvesting;
-
+        $safData->rwh_date_from               = $verificationData ? ($verificationData->rwh_date_from ?? $safData->rwh_date_from) : $safData->rwh_date_from;
         $safData->category_id               = $verificationData ? ($verificationData->category_id ?? $safData->category_id) : $safData->category_id;
         return $safData;
     }
@@ -640,10 +641,12 @@ trait SAF
         }
         $data = $response->original["data"];
         $property_type = $data["property_type"];
+        $zone_master = $data["zone"];
         $ward_master = $data["ward_master"];
         $categories = $data["categories"];
         $safData->property_type     = (collect($property_type)->where("id", $safData->prop_type_mstr_id)->first())->property_type ?? $safData->property_type;
         $safData->old_ward_no       = (collect($ward_master)->where("id", $safData->ward_mstr_id)->first())->ward_name ?? $safData->old_ward_no;
+        $safData->zone              = (collect($zone_master)->where("id", $safData->zone_mstr_id)->first())->zone_name ?? $safData->zone;
 
         $safData->category = (collect($categories)->where("id", $safData->category_id)->first())->category ?? $safData->category;
         return $safData;

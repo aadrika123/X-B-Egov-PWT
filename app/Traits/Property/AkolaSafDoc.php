@@ -3,6 +3,7 @@
 namespace App\Traits\Property;
 
 use App\Models\Masters\RefRequiredDocument;
+use App\Models\Property\SecondaryDocVerification;
 use App\Models\Workflows\WfActiveDocument;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
@@ -79,13 +80,14 @@ use Illuminate\Support\Facades\Config;
                     ->first();
                 }
                 if ($uploadedDoc) {
+                    $seconderyData = (new SecondaryDocVerification())->SeconderyWfActiveDocumentById($uploadedDoc->id??0);
                     $response = [
                         "uploadedDocId" => $uploadedDoc->id ?? "",
                         "documentCode" => $item,
                         "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
                         "docPath" => $uploadedDoc->doc_path ?? "",
-                        "verifyStatus" => $uploadedDoc->verify_status ?? "",
-                        "remarks" => $uploadedDoc->remarks ?? "",
+                        "verifyStatus" => ($uploadedDoc->verify_status ?? ""),
+                        "remarks" =>  ($uploadedDoc->remarks ?? ""),
                     ];
                     $documents->push($response);
                 }
@@ -112,6 +114,43 @@ use Illuminate\Support\Facades\Config;
         });
         
         return collect($filteredDocs)->values()??[];
+    }
+    public function check($documentsList)
+    {
+        $applicationDoc = $documentsList["listDocs"];
+        $ownerDoc = $documentsList["ownerDocs"];
+        $appMandetoryDoc = $applicationDoc->whereIn("docType", ["R", "OR"]);
+        $appUploadedDoc = $applicationDoc->whereNotNull("uploadedDoc");
+        $appUploadedDocVerified = collect();
+        $appUploadedDoc->map(function ($val) use ($appUploadedDocVerified) {
+            $appUploadedDocVerified->push(["is_docVerify" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"] != 0) ? true : false) : true)]);
+            $appUploadedDocVerified->push(["is_docRejected" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false)]);
+        });
+        $is_appUploadedDocVerified = $appUploadedDocVerified->where("is_docVerify", false);
+        $is_appUploadedDocRejected = $appUploadedDocVerified->where("is_docRejected", true);
+        $is_appMandUploadedDoc  = $appMandetoryDoc->whereNull("uploadedDoc");
+        $Wdocuments = collect();
+        $ownerDoc->map(function ($val) use ($Wdocuments) {
+            $ownerId = $val["ownerDetails"]["ownerId"] ?? "";
+            $val["documents"]->map(function ($val1) use ($Wdocuments, $ownerId) {
+                $val1["ownerId"] = $ownerId;
+                $val1["is_uploded"] = (in_array($val1["docType"], ["R", "OR"]))  ? ((!empty($val1["uploadedDoc"])) ? true : false) : true;
+                $val1["is_docVerify"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"] != 0) ? true : false) : true;
+                $val1["is_docRejected"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false;
+                $Wdocuments->push($val1);
+            });
+        });
+        $ownerMandetoryDoc = $Wdocuments->whereIn("docType", ["R", "OR"]);
+        $is_ownerUploadedDoc = $Wdocuments->where("is_uploded", false);
+        $is_ownerDocVerify = $Wdocuments->where("is_docVerify", false);
+        $is_ownerDocRejected = $Wdocuments->where("is_docRejected", true);
+        $data = [
+            "docUploadStatus" => 0,
+            "docVerifyStatus" => 0,
+        ];
+        $data["docUploadStatus"] = (empty($is_ownerUploadedDoc->all()) && empty($is_appMandUploadedDoc->all()) && empty($is_ownerDocRejected->all()) && empty($is_appUploadedDocRejected->all()) );
+        $data["docVerifyStatus"] =  (empty($is_ownerDocVerify->all()) && empty($is_appUploadedDocVerified->all()));
+        return ($data);
     }
  }
 

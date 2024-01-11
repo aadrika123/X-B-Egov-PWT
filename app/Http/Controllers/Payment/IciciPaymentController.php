@@ -263,11 +263,17 @@ class IciciPaymentController extends Controller
 
     public function getCallbackDetial(Request $req)
     {
-        try {
+        try {      
+            if(!$req->Unique_Ref_Number)
+            {
+                $req->merge(["Unique_Ref_Number"=>explode("|",$req->mandatory_fields)[0]]);
+            }
+            
             # Save the callback data
             $mIciciPaymentReq = new IciciPaymentReq();
             Storage::disk('public')->put('icici/callback/' . $req->Unique_Ref_Number . '.json', json_encode($req->all())); 
-            $redirectUrl  = Config::get("payment-constants.FRONT_URL");     
+            $redirectUrl  = Config::get("payment-constants.FRONT_URL");  
+            $mobilePropFailUrl =    Config::get("payment-constants.MOBI_PROPERTY_FRONT_FAIL_URL");  
             # Check if the payament is success 
             if ($req->Response_Code == "E000") {
                 # Check the transaction initials
@@ -307,6 +313,11 @@ class IciciPaymentController extends Controller
                         $erroData = [
                             "redirectUrl" => $redirectUrl."/citizen"
                         ];
+                        break;
+                    case ($paymentReqsData->module_id == 1 && $paymentReqsData->user_id):
+                        $erroData = [
+                            "redirectUrl"          => $mobilePropFailUrl . "/" . $paymentReqsData->application_id
+                        ];                        
                         break;
                         # For water 
                     case ($paymentReqsData->module_id == 2):

@@ -319,10 +319,13 @@ class GeneratePaymentReceiptV2
         $to = explode('-',$this->_trans->to_fyear); 
         $to = $to[1]??($to[0]);        
         $duration = "April-01-".($from) ." to "."March-31-".($to);
+        $mobileDuration = ($from)." to ".($to);
         if($from==$to)
         {
             $duration = "April-01-".($from-1) ." to "."March-31-".($to);
+            $mobileDuration = ($from-1)." to ".($to);
         }
+        
         $receiptDtls = [
             "departmentSection" => $this->_mDepartmentSection,
             "accountDescription" => $this->_mAccDescription,
@@ -369,6 +372,7 @@ class GeneratePaymentReceiptV2
 
             "receiptNo" => isset($this->_trans->book_no) ? (explode('-', $this->_trans->book_no)[1]??"0") : "",                  
            'duration' => ($duration) ,
+           'mobileDuration' => ($mobileDuration) ,
         ];
 
         $this->_GRID['receiptDtls'] = $receiptDtls;
