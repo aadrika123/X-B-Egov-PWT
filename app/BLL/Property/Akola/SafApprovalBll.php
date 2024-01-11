@@ -70,6 +70,7 @@ class SafApprovalBll
         $wfContent = Config::get('workflow-constants');
         $this->_SkipFiledWorkWfMstrId = [
             $wfContent["SAF_MUTATION_ID"],
+            $wfContent["SAF_BIFURCATION_ID"],
         ];
     }
 
@@ -172,7 +173,7 @@ class SafApprovalBll
      */
     public function replicateProp()
     {
-        if (!in_array($this->_activeSaf->assessment_type, ['New Assessment', 'Mutation'])) #update Old Property According to New Data
+        if (!in_array($this->_activeSaf->assessment_type, ['New Assessment', 'Mutation', 'Bifurcation'])) #update Old Property According to New Data
         {
             return $this->updateOldHolding();
         }
@@ -635,10 +636,20 @@ class SafApprovalBll
             if (!$propProperties) {
                 throw new Exception("Old Property Not Found");
             }
-            $propProperties->update(["area_of_plot" => $propProperties->area_of_plot - $this->_activeSaf->area_of_plot]);
-            $propFloors = PropFloor::where("property_id", $propProperties->id)
-                ->orderby('id')
-                ->get();
+            $propProperties->update(["area_of_plot" => $propProperties->area_of_plot - $this->_activeSaf->bifurcated_plot_area]);
+
+            if ($this->_activeSaf->prop_type_mstr_id != 4) {               // Applicable Not for Vacant Land
+
+                $propFloors = PropFloor::where("property_id", $propProperties->id)
+                    ->orderby('id')
+                    ->get();
+
+                foreach ($this->_floorDetails as $floorDetail) {
+                    $propFloor =  collect($propFloors)->where('id', $floorDetail->prop_floor_details_id);
+                    $propFloor['builtup_area'] = $propFloor['builtup_area'] - $floorDetail->bifurcated_buildup_area;
+                    $propFloor->save();
+                }
+            }
         }
     }
 }
