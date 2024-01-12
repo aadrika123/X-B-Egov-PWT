@@ -101,9 +101,9 @@ class  PropActiveSaf extends Model
             'is_trust' => $req->isTrust ?? false,
             'trust_type' => $req->trustType ?? null,
             'category_id' => $req->category,
-            'sale_value' => ($req->assessmentType == 'Mutation') ? ($req->saleValue ?? null) : null,
-            'proccess_fee' => ($req->assessmentType == 'Mutation') ? ($req->proccessFee ?? 0) : 0,
-            'proccess_fee_paid' => (($req->proccessFee ?? 0) > 0 && $req->assessmentType == 'Mutation') ? 0 : 1,
+            'sale_value' => (in_array($req->assessmentType, ['Mutation', 'Bifurcation'])) ? ($req->saleValue ?? null) : null,
+            'proccess_fee' => (in_array($req->assessmentType, ['Mutation', 'Bifurcation'])) ? ($req->proccessFee ?? 0) : 0,
+            'proccess_fee_paid' => (($req->proccessFee ?? 0) > 0 && (in_array($req->assessmentType, ['Mutation', 'Bifurcation']))) ? 0 : 1,
             "property_no" => ($req->propertyNo ?? null),
             "bifurcated_plot_area" => ($req->bifurcatedPlot ?? null),
         ];
