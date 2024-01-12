@@ -60,7 +60,7 @@ class ApplySafReq extends FormRequest
                 "floor.*.usageType" => "required|integer",
                 "floor.*.buildupArea" => "required|numeric",
                 // "floor.*.dateFrom" => "required|date|date_format:Y-m-d|before_or_equal:$this->todayDate|after_or_equal:$this->dateOfPurchase"
-                "floor.*.dateFrom" => "required|date|date_format:Y-m-d|before_or_equal:$this->todayDate".($this->assessmentType==3?"":"|after_or_equal:$this->dateOfPurchase")
+                "floor.*.dateFrom" => "required|date|date_format:Y-m-d|before_or_equal:$todayDate" . ((in_array($this->assessmentType, [3, 4])) ? "" : "|after_or_equal:$this->dateOfPurchase")
             ]);
         }
         return $validation;
