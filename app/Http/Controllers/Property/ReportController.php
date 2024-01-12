@@ -2572,7 +2572,7 @@ class ReportController extends Controller
                     FROM prop_transactions
                     WHERE tran_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate' and saf_id is null					-- Parameterize this for current fyear range date
                            AND status=1 AND ulb_id=2
-
+
                        ),
                        lastyear_payments AS (
                            SELECT 
@@ -2763,8 +2763,8 @@ class ReportController extends Controller
             'prop_current_demand'  => $propdata->prop_current_demand,
             'prop_arrear_demand'  => $propdata->prop_arrear_demand,
             'prop_total_demand'  => $propdata->prop_total_demand,
-            'prop_current_collection'  => $propdata->prop_current_collection,
-            'prop_arrear_collection'  => $propdata->prop_arrear_collection,
+            //'prop_current_collection'  => $propdata->prop_current_collection,
+            //'prop_arrear_collection'  => $propdata->prop_arrear_collection,
             'prop_total_collection'  => $propdata->prop_total_collection,
 
 
@@ -3020,6 +3020,7 @@ class ReportController extends Controller
                                                 ORDER BY wf_roleusermaps.user_id
                                          ) collecter on prop_transactions.user_id  = collecter.role_user_id
                                         where status in (1,2)
+                                        and UPPER (payment_mode) != 'ONLINE'
                                         and tran_date between '2023-04-01' and '2024-03-31'
                                         and property_id is not null
                                         group by property_id
