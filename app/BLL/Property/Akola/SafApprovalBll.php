@@ -540,6 +540,8 @@ class SafApprovalBll
                 throw new Exception("Old Property Not Found");
             }
             $propProperties->update(["status" => 0]);
+            // $newPropProperties = PropProperty::find($this->_replicatedPropId);
+            // $newPropProperties->update(["status" => 0]);
             $dueDemands = PropDemand::where("property_id", $propProperties->id)
                 ->where("status", 1)
                 ->where("due_total_tax", ">", 0)

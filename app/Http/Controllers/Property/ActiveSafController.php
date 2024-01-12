@@ -3724,7 +3724,8 @@ class ActiveSafController extends Controller
                 if (sizeOf($floars) == sizeOf($verifications_detals)) {
                     $saf_data = collect(array_values(objToArray(($floars)->values())))->all();
                     $verification = collect(array_values(objToArray(($verifications_detals)->values())))->all();
-                } elseif ($keys == "floars") {
+                } 
+                if ($keys == "floars") {
                     // $saf_data=($floars->where("id",$val->id))->values();
                     // $verification=($verifications_detals->where("saf_floor_id",$val->id))->values();
                     $saf_data = collect(array_values(objToArray(($floars->where("id", $val->id))->values())))->all();
@@ -4526,10 +4527,26 @@ class ActiveSafController extends Controller
             $safTrans->verify_status = $request['verifyStatus'];
             $safTrans->book_no = $request['bookNo'] ?? null;
 
+            $property = PropProperty::where("saf_id",$saf->id)->first();
+            $Oldproperty = PropProperty::first($saf->previous_holding_id??0);
+            
             DB::beginTransaction();
             DB::connection('pgsql_master')->beginTransaction();
             $safTrans->save();
             $saf->update();
+            # Activate new Property
+            // if($property)
+            // {
+            //     $property->status = 1;
+            //     $property->update();
+            // }
+            // # Deactivate Old Property
+            // if($Oldproperty)
+            // {
+            //     $Oldproperty->status = 0;
+            //     $Oldproperty->update();
+            // }
+            
             if (in_array($request['paymentMode'], $offlinePaymentModes)) {
                 $request->merge(["tranId" => $safTrans->id]);
                 $this->postOtherPaymentModes($request);
