@@ -138,6 +138,10 @@ class TaxCalculator
             $this->_calculationDateFrom = $this->_newForm ? $this->_newForm : $this->_calculationDateFrom;  
             // $this->_calculationDateFrom =  Carbon::now()->format('Y-m-d');         
         }
+        if(isset($this->_REQUEST->assessmentType) && ($this->getAssestmentTypeStr()=='Reassessment' ))
+        {
+            $this->_calculationDateFrom =  Carbon::now()->format('Y-m-d');             
+        }
         $this->_currentFyear = calculateFYear(Carbon::now()->format('Y-m-d'));
     }
 
@@ -537,31 +541,32 @@ class TaxCalculator
             if(!$annualTaxes->isEmpty())
             {
                 $yearTax = $this->sumTaxes($annualTaxes);                       // 4.1
-                // switch($yearDiffs)
-                // {
-                //     case 0 :    $priveTotalTax = $this->_lastDemand ? $this->_lastDemand->total_tax : 0;
-                //                 $diffAmount = (($yearTax["totalTax"] - $priveTotalTax) > 0 ) ? ($yearTax["totalTax"] - $priveTotalTax) : 0;
-                //                 if($diffAmount>0){
-                //                     $diffPercent = ($diffAmount / ($yearTax["totalTax"]> 0 ? $yearTax["totalTax"] : 1))  ;
-                //                     $yearTax2 = $yearTax;
-                //                     $yearTax2["agingAmt"]    = roundFigure($yearTax["agingAmt"] * $diffPercent) ;
-                //                     $yearTax2["generalTax"]  = roundFigure($yearTax["generalTax"] * $diffPercent);
-                //                     $yearTax2["roadTax"]     = roundFigure($yearTax["roadTax"] * $diffPercent);
-                //                     $yearTax2["firefightingTax"] = roundFigure($yearTax["firefightingTax"] * $diffPercent) ;
-                //                     $yearTax2["educationTax"] = roundFigure($yearTax["educationTax"] * $diffPercent) ;
-                //                     $yearTax2["waterTax"]    = roundFigure($yearTax["waterTax"] * $diffPercent) ;
-                //                     $yearTax2["cleanlinessTax"] = roundFigure($yearTax["cleanlinessTax"] * $diffPercent) ;
-                //                     $yearTax2["sewerageTax"] = roundFigure($yearTax["sewerageTax"] * $diffPercent) ;
-                //                     $yearTax2["treeTax"]     = roundFigure($yearTax["treeTax"] * $diffPercent) ;
-                //                     $yearTax2["stateEducationTax"]  = roundFigure($yearTax["stateEducationTax"] * $diffPercent) ;
-                //                     $yearTax2["professionalTax"]  = roundFigure($yearTax["professionalTax"] * $diffPercent) ;
-                //                     $yearTax2["openPloatTax"]    = roundFigure($yearTax["openPloatTax"] * $diffPercent) ;
-                //                     $yearTax2["tax1"]        = roundFigure($yearTax["tax1"] * $diffPercent) ;
-                //                     $yearTax["totalTax"]    = roundFigure($yearTax["totalTax"] * $diffPercent);
-                //                     $yearTax["diffPercent"]    = roundFigure($diffPercent);
-                //                 }
-                //                 break;
-                // }
+                switch($yearDiffs)
+                {
+                    case 0 :    $priveTotalTax = $this->_lastDemand ? $this->_lastDemand->total_tax : 0;
+                                $diffAmount = (($yearTax["totalTax"] - $priveTotalTax) > 0 ) ? ($yearTax["totalTax"] - $priveTotalTax) : 0;
+                                if($diffAmount>0){
+                                    $diffPercent = ($diffAmount / ($yearTax["totalTax"]> 0 ? $yearTax["totalTax"] : 1))  ;
+                                    // $yearTax2 = $yearTax;
+                                    $yearTax["agingAmt"]    = roundFigure($yearTax["agingAmt"] * $diffPercent) ;
+                                    $yearTax["generalTax"]  = roundFigure($yearTax["generalTax"] * $diffPercent);
+                                    $yearTax["roadTax"]     = roundFigure($yearTax["roadTax"] * $diffPercent);
+                                    $yearTax["firefightingTax"] = roundFigure($yearTax["firefightingTax"] * $diffPercent) ;
+                                    $yearTax["educationTax"] = roundFigure($yearTax["educationTax"] * $diffPercent) ;
+                                    $yearTax["waterTax"]    = roundFigure($yearTax["waterTax"] * $diffPercent) ;
+                                    $yearTax["cleanlinessTax"] = roundFigure($yearTax["cleanlinessTax"] * $diffPercent) ;
+                                    $yearTax["sewerageTax"] = roundFigure($yearTax["sewerageTax"] * $diffPercent) ;
+                                    $yearTax["treeTax"]     = roundFigure($yearTax["treeTax"] * $diffPercent) ;
+                                    $yearTax["stateEducationTax"]  = roundFigure($yearTax["stateEducationTax"] * $diffPercent) ;
+                                    $yearTax["professionalTax"]  = roundFigure($yearTax["professionalTax"] * $diffPercent) ;
+                                    $yearTax["openPloatTax"]    = roundFigure($yearTax["openPloatTax"] * $diffPercent) ;
+                                    $yearTax["tax1"]        = roundFigure($yearTax["tax1"] * $diffPercent) ;
+                                    $yearTax["totalTax"]    = roundFigure($yearTax["totalTax"] * $diffPercent);
+                                    $yearTax["diffPercent"]    = roundFigure($diffPercent);
+                                    $yearTax["priveTotalTax"]    = roundFigure($priveTotalTax);
+                                }
+                                break;
+                }
                 $fyearWiseTaxes->put($fyear, array_merge($yearTax, ['fyear' => $fyear]));
             }
 
