@@ -216,12 +216,12 @@ class SafApprovalBll
                 "usage_type_mstr_id" => $floorDetail->usage_type_id,
                 "const_type_mstr_id" => $floorDetail->construction_type_id,
                 "occupancy_type_mstr_id" => $floorDetail->occupancy_type_id,
-                "builtup_area" => $floorDetail->builtup_area,
+                "builtup_area" => $floorDetail->builtup_area - $floorDetail->bifurcated_buildup_area ?? 0,
                 "date_from" => $floorDetail->date_from,
                 "date_upto" => $floorDetail->date_to,
                 "carpet_area" => $floorDetail->carpet_area,
                 "user_id" => $floorDetail->user_id,
-                "saf_floor_id" => $floorDetail->saf_floor_id
+                "saf_floor_id" => $floorDetail->saf_floor_id,
             ];
             $this->_mPropFloors->create($floorReq);
         }
@@ -463,16 +463,16 @@ class SafApprovalBll
                 "due_major_building" => $val["majorBuildingTax"] ?? 0,
                 "due_open_ploat_tax" => $val["openPloatTax"] ?? 0,
             ];
-            if ($oldDemand = $demand->where("fyear", $arr["fyear"])->where("property_id", $arr["property_id"])->where("status", 1)->first()) {                
-                $oldDemand = $this->updateOldDemands($oldDemand,$arr);
-                $oldDemand->update();                              
+            if ($oldDemand = $demand->where("fyear", $arr["fyear"])->where("property_id", $arr["property_id"])->where("status", 1)->first()) {
+                $oldDemand = $this->updateOldDemands($oldDemand, $arr);
+                $oldDemand->update();
                 continue;
             }
             $demand->store($arr);
         }
     }
 
-    public function updateOldDemands($oldDemand,$newDemand)
+    public function updateOldDemands($oldDemand, $newDemand)
     {
         $oldDemand->maintanance_amt = $oldDemand->maintanance_amt + $newDemand["maintanance_amt"];
         $oldDemand->aging_amt       = $oldDemand->aging_amt + $newDemand["aging_amt"];
@@ -522,12 +522,10 @@ class SafApprovalBll
         $oldDemand->due_major_building  = $oldDemand->due_major_building + $newDemand["due_major_building"];
         $oldDemand->open_ploat_tax  = $oldDemand->open_ploat_tax + $newDemand["open_ploat_tax"];
         $oldDemand->due_open_ploat_tax  = $oldDemand->due_open_ploat_tax + $newDemand["due_open_ploat_tax"];
-        if($oldDemand->due_total_tax>0 && $oldDemand->paid_status==1)
-        {
+        if ($oldDemand->due_total_tax > 0 && $oldDemand->paid_status == 1) {
             $oldDemand->is_full_paid = false;
         }
-        if($oldDemand->due_total_tax>0 && $oldDemand->paid_status==0)
-        {
+        if ($oldDemand->due_total_tax > 0 && $oldDemand->paid_status == 0) {
             $oldDemand->is_full_paid = true;
         }
         return $oldDemand;

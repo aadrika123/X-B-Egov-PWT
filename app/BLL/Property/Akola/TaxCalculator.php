@@ -36,7 +36,7 @@ class TaxCalculator
     private $_residentialUsageType;
     private $_newForm;
     public $_oldUnpayedAmount;
-    public $_lastDemand ;
+    public $_lastDemand;
     private $_LESS_PERSENTAGE_APPLY_WARD_IDS;
 
     /**
@@ -82,28 +82,31 @@ class TaxCalculator
             $oldestFloor = collect($this->_REQUEST->floor)->sortBy('dateFrom')->first();
             $this->_propFyearFrom = Carbon::parse($oldestFloor['dateFrom'])->format('Y');                // For Vacant Land Only
         }
-        
-        if(isset($this->_REQUEST->assessmentType) && ($this->getAssestmentTypeStr()!='New Assessment') && ($this->getAssestmentTypeStr() !='Amalgamation'))
-        {           
+
+        if (isset($this->_REQUEST->assessmentType) && ($this->getAssestmentTypeStr() != 'New Assessment') && ($this->getAssestmentTypeStr() != 'Amalgamation')) {
             $mPropFloors = new PropFloor();
             $mPropOwners = new PropOwner();
             $priProperty = PropProperty::find($this->_REQUEST->previousHoldingId);
             // $floors = $mPropFloors->getPropFloors($priProperty->id);
-            if($priProperty){
+            if ($priProperty) {
                 $unPaidDemand = $priProperty->PropArrearDueDemands()->get();
-                $this->_oldUnpayedAmount = collect($unPaidDemand)->sum("due_total_tax")??0;
+                $this->_oldUnpayedAmount = collect($unPaidDemand)->sum("due_total_tax") ?? 0;
             }
-            if($this->_oldUnpayedAmount>0)
-            {
+
+            if (isset($this->_REQUEST->assessmentType) && ($this->getAssestmentTypeStr() == 'Bifurcation')) {
+                $unPaidDemand = $priProperty->PropDueDemands()->get();
+                $this->_oldUnpayedAmount = collect($unPaidDemand)->sum("due_total_tax") ?? 0;
+            }
+
+            if ($this->_oldUnpayedAmount > 0) {
                 // throw new Exception("Old Demand Not Cleard");
             }
             $this->_lastDemand = $priProperty->PropLastDemands();
             $paydUptoDemand = $priProperty->PropLastPaidDemands()->get();
             $test = $unPaidDemand->toArray();
-            list($fromYear,$lastYear) = explode("-",$this->_lastDemand->fyear??getFY());
-            $this->_newForm = $lastYear."-04-01";
+            list($fromYear, $lastYear) = explode("-", $this->_lastDemand->fyear ?? getFY());
+            $this->_newForm = $lastYear . "-04-01";
             $this->_propFyearFrom = Carbon::parse($this->_newForm)->format('Y');
-            
         }
 
         $currentFYear = $this->_carbonToday->format('Y');
@@ -133,14 +136,12 @@ class TaxCalculator
             $this->_calculationDateFrom = collect($this->_REQUEST->floor)->sortBy('dateFrom')->first()['dateFrom'];
         else
             $this->_calculationDateFrom = $this->_REQUEST->dateOfPurchase;
-        if(isset($this->_REQUEST->assessmentType) && ($this->getAssestmentTypeStr()!='New Assessment' ) && ($this->getAssestmentTypeStr()!='Amalgamation'))
-        {
-            $this->_calculationDateFrom = $this->_newForm ? $this->_newForm : $this->_calculationDateFrom;  
+        if (isset($this->_REQUEST->assessmentType) && ($this->getAssestmentTypeStr() != 'New Assessment') && ($this->getAssestmentTypeStr() != 'Amalgamation')) {
+            $this->_calculationDateFrom = $this->_newForm ? $this->_newForm : $this->_calculationDateFrom;
             // $this->_calculationDateFrom =  Carbon::now()->format('Y-m-d');         
         }
-        if(isset($this->_REQUEST->assessmentType) && ($this->getAssestmentTypeStr()=='Reassessment' ))
-        {
-            $this->_calculationDateFrom =  Carbon::now()->format('Y-m-d');             
+        if (isset($this->_REQUEST->assessmentType) && ($this->getAssestmentTypeStr() == 'Reassessment')) {
+            $this->_calculationDateFrom =  Carbon::now()->format('Y-m-d');
         }
         $this->_currentFyear = calculateFYear(Carbon::now()->format('Y-m-d'));
     }
@@ -153,8 +154,8 @@ class TaxCalculator
         if ($this->_REQUEST->propertyType != 4) {
             $totalFloor = collect($this->_REQUEST->floor)->count();
             $totalBuildupArea = collect($this->_REQUEST->floor)->sum("buildupArea");
-            $AllDiffArrea = ($totalBuildupArea -$this->_REQUEST->nakshaAreaOfPlot) >0 ? $totalBuildupArea -$this->_REQUEST->nakshaAreaOfPlot :0;
-           
+            $AllDiffArrea = ($totalBuildupArea - $this->_REQUEST->nakshaAreaOfPlot) > 0 ? $totalBuildupArea - $this->_REQUEST->nakshaAreaOfPlot : 0;
+
             foreach ($this->_REQUEST->floor as $key => $item) {
                 $item = (object)$item;
                 $rate = $this->readRateByFloor($item);                 // (2.1)
@@ -179,35 +180,33 @@ class TaxCalculator
 
                 $isCommercial = ($item->usageType == $this->_residentialUsageType) ? false : true;                    // Residential usage type id
 
-                $stateTaxes = $this->readStateTaxes($floorBuildupArea, $isCommercial,$alv);                   // Read State Taxes(2.3)
-                
+                $stateTaxes = $this->readStateTaxes($floorBuildupArea, $isCommercial, $alv);                   // Read State Taxes(2.3)
+
                 $tax1 = 0;
                 $diffArrea = 0;
                 $doubleTax1 = ($generalTax + $roadTax + $firefightingTax + $educationTax
                     + $waterTax + $cleanlinessTax + $sewerageTax
-                    + $treeTax + $stateTaxes['educationTax'] + $stateTaxes['professionalTax'] 
-                    + ($openPloatTax??0));
-                if($this->_REQUEST->nakshaAreaOfPlot)
-                {
+                    + $treeTax + $stateTaxes['educationTax'] + $stateTaxes['professionalTax']
+                    + ($openPloatTax ?? 0));
+                if ($this->_REQUEST->nakshaAreaOfPlot) {
                     // $diffArrea = ($this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot)>0 ? $this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot :0;
-                    $diffArrea = $AllDiffArrea / ($totalBuildupArea>0 ? $totalBuildupArea : 1);                   
+                    $diffArrea = $AllDiffArrea / ($totalBuildupArea > 0 ? $totalBuildupArea : 1);
                 }
                 # double tax apply
-                if($this->_REQUEST->isAllowDoubleTax)
-                {
+                if ($this->_REQUEST->isAllowDoubleTax) {
                     $tax1 = $doubleTax1;
                 }
                 # 100% penalty apply on diff arrea
-                elseif($diffArrea>0){
+                elseif ($diffArrea > 0) {
                     // $tax1 = $doubleTax1 * ($diffArrea / ($this->_REQUEST->areaOfPlot>0?$this->_REQUEST->areaOfPlot:1));
                     $tax1 = $doubleTax1 * ($diffArrea);
                 }
                 $this->_floorsTaxes[$key] = [
                     'usageType' => $item->usageType,
-                    'constructionType' => $item->constructionType??"",
-                    'constructionTypeVal' => Config::get("PropertyConstaint.CONSTRUCTION-TYPE.".$item->constructionType??""),
-                    'occupancyType' => $item->occupancyType??"",
-                    'occupancyTypeVal' => Config::get("PropertyConstaint.OCCUPANCY-TYPE.".$item->occupancyType??""),
+                    'constructionType' => $item->constructionType ?? "",
+                    'constructionTypeVal' => Config::get("PropertyConstaint.CONSTRUCTION-TYPE." . $item->constructionType ?? ""),
+                    'occupancyType' => $item->occupancyType ?? "",
+                    'occupancyTypeVal' => Config::get("PropertyConstaint.OCCUPANCY-TYPE." . $item->occupancyType ?? ""),
                     'dateFrom' => $item->dateFrom,
                     'appliedFrom' => getFY($item->dateFrom),
                     'rate' => $rate,
@@ -229,7 +228,7 @@ class TaxCalculator
                     'cleanlinessTax' => $cleanlinessTax,
                     'sewerageTax' => $sewerageTax,
                     'treeTax' => $treeTax,
-                    "tax1"=>$tax1,
+                    "tax1" => $tax1,
                     'isCommercial' => $isCommercial,
                     'stateEducationTaxPerc' => $stateTaxes['educationTaxPerc'],
                     'stateEducationTax' => $stateTaxes['educationTax'],
@@ -295,44 +294,42 @@ class TaxCalculator
                 $rate = 8;
 
             $alv = roundFigure($this->_calculatorParams['areaOfPlot'] * $rate);
-            $maintance10Perc = 0;#roundFigure(($alv * $this->_maintancePerc) / 100);
-            $valueAfterMaintanance = roundFigure($alv - ($alv*0.1)); # 10% minuse on ALV
-            $aging = 0;#roundFigure(($valueAfterMaintanance * $agingPerc) / 100);
+            $maintance10Perc = 0; #roundFigure(($alv * $this->_maintancePerc) / 100);
+            $valueAfterMaintanance = roundFigure($alv - ($alv * 0.1)); # 10% minuse on ALV
+            $aging = 0; #roundFigure(($valueAfterMaintanance * $agingPerc) / 100);
             $taxValue = roundFigure($valueAfterMaintanance - $aging);
 
             // Municipal Taxes
-            $generalTax = 0;#roundFigure($taxValue * 0.30);
-            $roadTax = 0;#roundFigure($taxValue * 0.03);
-            $firefightingTax = 0;#roundFigure($taxValue * 0.02);
-            $educationTax = 0;#roundFigure($taxValue * 0.02);
-            $waterTax = 0;#roundFigure($taxValue * 0.02);
-            $cleanlinessTax = 0;#roundFigure($taxValue * 0.02);
-            $sewerageTax = 0;#roundFigure($taxValue * 0.02);
+            $generalTax = 0; #roundFigure($taxValue * 0.30);
+            $roadTax = 0; #roundFigure($taxValue * 0.03);
+            $firefightingTax = 0; #roundFigure($taxValue * 0.02);
+            $educationTax = 0; #roundFigure($taxValue * 0.02);
+            $waterTax = 0; #roundFigure($taxValue * 0.02);
+            $cleanlinessTax = 0; #roundFigure($taxValue * 0.02);
+            $sewerageTax = 0; #roundFigure($taxValue * 0.02);
             $treeTax = roundFigure($taxValue * 0.01);
             $openPloatTax = roundFigure($taxValue * 0.43);
-            
+
             $isCommercial = false;
 
-            $stateTaxes = $this->readStateTaxes($this->_calculatorParams['areaOfPlot'], $isCommercial,$alv);                   // Read State Taxes(3.1)
+            $stateTaxes = $this->readStateTaxes($this->_calculatorParams['areaOfPlot'], $isCommercial, $alv);                   // Read State Taxes(3.1)
 
             $tax1 = 0;
             $diffArrea = 0;
             $doubleTax1 = ($generalTax + $roadTax + $firefightingTax + $educationTax
                 + $waterTax + $cleanlinessTax + $sewerageTax
-                + $treeTax + $stateTaxes['educationTax'] + $stateTaxes['professionalTax'] 
-                + ($openPloatTax??0));
-            if($this->_REQUEST->nakshaAreaOfPlot)
-            {
-                $diffArrea = ($this->_REQUEST->areaOfPlot - $this->_REQUEST->nakshaAreaOfPlot)>0 ? $this->_REQUEST->areaOfPlot -  $this->_REQUEST->nakshaAreaOfPlot :0;
+                + $treeTax + $stateTaxes['educationTax'] + $stateTaxes['professionalTax']
+                + ($openPloatTax ?? 0));
+            if ($this->_REQUEST->nakshaAreaOfPlot) {
+                $diffArrea = ($this->_REQUEST->areaOfPlot - $this->_REQUEST->nakshaAreaOfPlot) > 0 ? $this->_REQUEST->areaOfPlot -  $this->_REQUEST->nakshaAreaOfPlot : 0;
             }
             # double tax apply
-            if($this->_REQUEST->isAllowDoubleTax)
-            {
+            if ($this->_REQUEST->isAllowDoubleTax) {
                 $tax1 = $doubleTax1;
             }
             # 100% penalty apply on diff arrea
-            elseif($diffArrea>0){
-                $tax1 = $doubleTax1 * ($diffArrea / ($this->_REQUEST->areaOfPlot>0?$this->_REQUEST->areaOfPlot:1));
+            elseif ($diffArrea > 0) {
+                $tax1 = $doubleTax1 * ($diffArrea / ($this->_REQUEST->areaOfPlot > 0 ? $this->_REQUEST->areaOfPlot : 1));
             }
 
             $this->_floorsTaxes[0] = [
@@ -354,7 +351,7 @@ class TaxCalculator
                 'cleanlinessTax' => $cleanlinessTax,
                 'sewerageTax' => $sewerageTax,
                 'treeTax' => $treeTax,
-                "tax1"=>$tax1,
+                "tax1" => $tax1,
                 "openPloatTax" => $openPloatTax,
                 'isCommercial' => $isCommercial,
                 'stateEducationTaxPerc' => $stateTaxes['educationTaxPerc'],
@@ -370,7 +367,7 @@ class TaxCalculator
     /**
      * | read State Taxes (2.3) && (3.1)
      */
-    public function readStateTaxes($floorBuildupArea, $isCommercial,$alv=0)
+    public function readStateTaxes($floorBuildupArea, $isCommercial, $alv = 0)
     {
         // State Taxes
         if (is_between($alv, 0, 150)) {
@@ -434,10 +431,10 @@ class TaxCalculator
     {
         $annualTaxes = $floorTaxes->pipe(function (Collection $taxes) {
             $totalKeys = $taxes->count();
-            $totalKeys = $totalKeys ?$totalKeys :1;
+            $totalKeys = $totalKeys ? $totalKeys : 1;
             return [
                 "alv" => (float)roundFigure($taxes->sum('alv')),
-                "maintancePerc" => $taxes->first()['maintancePerc']??0,
+                "maintancePerc" => $taxes->first()['maintancePerc'] ?? 0,
                 "maintantance10Perc" => roundFigure($taxes->sum('maintantance10Perc')),
                 "valueAfterMaintance" => roundFigure($taxes->sum('valueAfterMaintance')),
                 "agingPerc" => roundFigure($taxes->sum('agingPerc') / $totalKeys),
@@ -459,16 +456,18 @@ class TaxCalculator
                 "tax1" => roundFigure($taxes->sum('tax1')),
             ];
         });
-        $annualTaxes['totalTax'] = roundFigure($annualTaxes['generalTax'] + $annualTaxes['roadTax'] + $annualTaxes['firefightingTax'] + $annualTaxes['educationTax']
-            + $annualTaxes['waterTax'] + $annualTaxes['cleanlinessTax'] + $annualTaxes['sewerageTax']
-            + $annualTaxes['treeTax'] + $annualTaxes['stateEducationTax'] + $annualTaxes['professionalTax'] 
-            + ($annualTaxes['openPloatTax']??0) + ($annualTaxes['tax1']??0) 
-            );
-        $annualTaxes['totalTax2'] = roundFigure($annualTaxes['generalTax'] + $annualTaxes['roadTax'] + $annualTaxes['firefightingTax'] + $annualTaxes['educationTax']
-            + $annualTaxes['waterTax'] + $annualTaxes['cleanlinessTax'] + $annualTaxes['sewerageTax']
-            + $annualTaxes['treeTax'] + $annualTaxes['stateEducationTax'] + $annualTaxes['professionalTax'] 
-            + ($annualTaxes['openPloatTax']??0) 
-            );
+        $annualTaxes['totalTax'] = roundFigure(
+            $annualTaxes['generalTax'] + $annualTaxes['roadTax'] + $annualTaxes['firefightingTax'] + $annualTaxes['educationTax']
+                + $annualTaxes['waterTax'] + $annualTaxes['cleanlinessTax'] + $annualTaxes['sewerageTax']
+                + $annualTaxes['treeTax'] + $annualTaxes['stateEducationTax'] + $annualTaxes['professionalTax']
+                + ($annualTaxes['openPloatTax'] ?? 0) + ($annualTaxes['tax1'] ?? 0)
+        );
+        $annualTaxes['totalTax2'] = roundFigure(
+            $annualTaxes['generalTax'] + $annualTaxes['roadTax'] + $annualTaxes['firefightingTax'] + $annualTaxes['educationTax']
+                + $annualTaxes['waterTax'] + $annualTaxes['cleanlinessTax'] + $annualTaxes['sewerageTax']
+                + $annualTaxes['treeTax'] + $annualTaxes['stateEducationTax'] + $annualTaxes['professionalTax']
+                + ($annualTaxes['openPloatTax'] ?? 0)
+        );
         return $annualTaxes;
     }
 
@@ -479,9 +478,9 @@ class TaxCalculator
     public function generateFyearWiseTaxes()
     {
         $currentFyearEndDate = Carbon::now()->endOfYear()->addMonths(3)->format('Y-m-d');
-        list($From,$upto) =  explode("-",getFY());
-        if($upto){
-            $currentFyearEndDate = ($upto."-03-31");
+        list($From, $upto) =  explode("-", getFY());
+        if ($upto) {
+            $currentFyearEndDate = ($upto . "-03-31");
         }
         $fyearWiseTaxes = collect();
         // Act Of limitation
@@ -496,13 +495,11 @@ class TaxCalculator
          * for if vacand land apply New Assessment then teck tax from privisus 6 year
          */
         $privFiveYear = Carbon::now()->addYears(-5)->format('Y-m-d');
-        if($this->_REQUEST->applyDate)
-        {
+        if ($this->_REQUEST->applyDate) {
             $privFiveYear = Carbon::parse($this->_REQUEST->applyDate)->addYears(-5)->format('Y-m-d');
         }
-        
-        if((Config::get("PropertyConstaint.ASSESSMENT-TYPE.".$this->_REQUEST->assessmentType)=='New Assessment' || $this->_REQUEST->assessmentType =='New Assessment') && $privFiveYear<$this->_calculationDateFrom)
-        {
+
+        if ((Config::get("PropertyConstaint.ASSESSMENT-TYPE." . $this->_REQUEST->assessmentType) == 'New Assessment' || $this->_REQUEST->assessmentType == 'New Assessment') && $privFiveYear < $this->_calculationDateFrom) {
             $this->_GRID['demandPendingYrs'] = 6;
             $this->_calculationDateFrom = $privFiveYear;
         }
@@ -511,12 +508,11 @@ class TaxCalculator
         while ($this->_calculationDateFrom <= $currentFyearEndDate) {
             $annualTaxes = collect($this->_floorsTaxes)->where('dateFrom', '<=', $this->_calculationDateFrom);
             // dd($this->_REQUEST->propertyType,$this->_REQUEST["ward"],$this->_REQUEST->all());
-            if($this->_REQUEST->propertyType == 4 && in_array($this->_REQUEST["ward"],$this->_LESS_PERSENTAGE_APPLY_WARD_IDS) && getFy($this->_calculationDateFrom)<='2021-2023'){
-                               
-                $annualTaxes = $annualTaxes->map(function($vals){                    
-                    $prcent = Config::get('akola-property-constant.LESS_PERSENTAGE_APPLY_FYEARS.'.getFy($this->_calculationDateFrom));
-                    if($prcent)
-                    {
+            if ($this->_REQUEST->propertyType == 4 && in_array($this->_REQUEST["ward"], $this->_LESS_PERSENTAGE_APPLY_WARD_IDS) && getFy($this->_calculationDateFrom) <= '2021-2023') {
+
+                $annualTaxes = $annualTaxes->map(function ($vals) {
+                    $prcent = Config::get('akola-property-constant.LESS_PERSENTAGE_APPLY_FYEARS.' . getFy($this->_calculationDateFrom));
+                    if ($prcent) {
                         $vals["agingAmt"] = $vals["agingAmt"] * $prcent;
                         $vals["taxValue"] = $vals["taxValue"] * $prcent;
                         $vals["generalTax"] = $vals["generalTax"] * $prcent;
@@ -536,36 +532,35 @@ class TaxCalculator
                     return $vals;
                 });
             }
-            
+
             $fyear = getFY($this->_calculationDateFrom);
-            if(!$annualTaxes->isEmpty())
-            {
+            if (!$annualTaxes->isEmpty()) {
                 $yearTax = $this->sumTaxes($annualTaxes);                       // 4.1
-                switch($yearDiffs)
-                {
-                    case 0 :    $priveTotalTax = $this->_lastDemand ? $this->_lastDemand->total_tax : 0;
-                                $diffAmount = (($yearTax["totalTax"] - $priveTotalTax) > 0 ) ? ($yearTax["totalTax"] - $priveTotalTax) : 0;
-                                if($diffAmount>0){
-                                    $diffPercent = ($diffAmount / ($yearTax["totalTax"]> 0 ? $yearTax["totalTax"] : 1))  ;
-                                    // $yearTax2 = $yearTax;
-                                    $yearTax["agingAmt"]    = roundFigure($yearTax["agingAmt"] * $diffPercent) ;
-                                    $yearTax["generalTax"]  = roundFigure($yearTax["generalTax"] * $diffPercent);
-                                    $yearTax["roadTax"]     = roundFigure($yearTax["roadTax"] * $diffPercent);
-                                    $yearTax["firefightingTax"] = roundFigure($yearTax["firefightingTax"] * $diffPercent) ;
-                                    $yearTax["educationTax"] = roundFigure($yearTax["educationTax"] * $diffPercent) ;
-                                    $yearTax["waterTax"]    = roundFigure($yearTax["waterTax"] * $diffPercent) ;
-                                    $yearTax["cleanlinessTax"] = roundFigure($yearTax["cleanlinessTax"] * $diffPercent) ;
-                                    $yearTax["sewerageTax"] = roundFigure($yearTax["sewerageTax"] * $diffPercent) ;
-                                    $yearTax["treeTax"]     = roundFigure($yearTax["treeTax"] * $diffPercent) ;
-                                    $yearTax["stateEducationTax"]  = roundFigure($yearTax["stateEducationTax"] * $diffPercent) ;
-                                    $yearTax["professionalTax"]  = roundFigure($yearTax["professionalTax"] * $diffPercent) ;
-                                    $yearTax["openPloatTax"]    = roundFigure($yearTax["openPloatTax"] * $diffPercent) ;
-                                    $yearTax["tax1"]        = roundFigure($yearTax["tax1"] * $diffPercent) ;
-                                    $yearTax["totalTax"]    = roundFigure($yearTax["totalTax"] * $diffPercent);
-                                    $yearTax["diffPercent"]    = roundFigure($diffPercent);
-                                    $yearTax["priveTotalTax"]    = roundFigure($priveTotalTax);
-                                }
-                                break;
+                switch ($yearDiffs) {
+                    case 0:
+                        $priveTotalTax = $this->_lastDemand ? $this->_lastDemand->total_tax : 0;
+                        $diffAmount = (($yearTax["totalTax"] - $priveTotalTax) > 0) ? ($yearTax["totalTax"] - $priveTotalTax) : 0;
+                        if ($diffAmount > 0) {
+                            $diffPercent = ($diffAmount / ($yearTax["totalTax"] > 0 ? $yearTax["totalTax"] : 1));
+                            // $yearTax2 = $yearTax;
+                            $yearTax["agingAmt"]    = roundFigure($yearTax["agingAmt"] * $diffPercent);
+                            $yearTax["generalTax"]  = roundFigure($yearTax["generalTax"] * $diffPercent);
+                            $yearTax["roadTax"]     = roundFigure($yearTax["roadTax"] * $diffPercent);
+                            $yearTax["firefightingTax"] = roundFigure($yearTax["firefightingTax"] * $diffPercent);
+                            $yearTax["educationTax"] = roundFigure($yearTax["educationTax"] * $diffPercent);
+                            $yearTax["waterTax"]    = roundFigure($yearTax["waterTax"] * $diffPercent);
+                            $yearTax["cleanlinessTax"] = roundFigure($yearTax["cleanlinessTax"] * $diffPercent);
+                            $yearTax["sewerageTax"] = roundFigure($yearTax["sewerageTax"] * $diffPercent);
+                            $yearTax["treeTax"]     = roundFigure($yearTax["treeTax"] * $diffPercent);
+                            $yearTax["stateEducationTax"]  = roundFigure($yearTax["stateEducationTax"] * $diffPercent);
+                            $yearTax["professionalTax"]  = roundFigure($yearTax["professionalTax"] * $diffPercent);
+                            $yearTax["openPloatTax"]    = roundFigure($yearTax["openPloatTax"] * $diffPercent);
+                            $yearTax["tax1"]        = roundFigure($yearTax["tax1"] * $diffPercent);
+                            $yearTax["totalTax"]    = roundFigure($yearTax["totalTax"] * $diffPercent);
+                            $yearTax["diffPercent"]    = roundFigure($diffPercent);
+                            $yearTax["priveTotalTax"]    = roundFigure($priveTotalTax);
+                        }
+                        break;
                 }
                 $fyearWiseTaxes->put($fyear, array_merge($yearTax, ['fyear' => $fyear]));
             }
@@ -598,26 +593,24 @@ class TaxCalculator
 
             if (collect($currentYearTax)->isEmpty() && $this->_REQUEST->assessmentType == 1)
                 throw new Exception("Current Year Taxes Not Available");
-            if (collect($currentYearTax)->isEmpty() && $this->_REQUEST->assessmentType != 1)
-            {
+            if (collect($currentYearTax)->isEmpty() && $this->_REQUEST->assessmentType != 1) {
                 $currentYearTax['generalTax'] = [];
             }
 
             $cyGeneralTax = $currentYearTax['generalTax'];
             $this->_GRID['isRebateApplied'] = true;
-            $this->_GRID['rebateAmt'] = $cyGeneralTax?$cyGeneralTax:0;
+            $this->_GRID['rebateAmt'] = $cyGeneralTax ? $cyGeneralTax : 0;
         }
 
         // Calculation of Payable Amount
-        $this->_GRID['payableAmt'] = round($this->_GRID['grandTaxes']['totalTax'] - ($this->_GRID['rebateAmt']??0));
+        $this->_GRID['payableAmt'] = round($this->_GRID['grandTaxes']['totalTax'] - ($this->_GRID['rebateAmt'] ?? 0));
     }
 
     public function getAssestmentTypeStr()
     {
-        $assessmentType =$this->_REQUEST->assessmentType??"";
-        if(is_numeric($this->_REQUEST->assessmentType))
-        {
-            $assessmentType = Config::get("PropertyConstaint.ASSESSMENT-TYPE.".$this->_REQUEST->assessmentType);
+        $assessmentType = $this->_REQUEST->assessmentType ?? "";
+        if (is_numeric($this->_REQUEST->assessmentType)) {
+            $assessmentType = Config::get("PropertyConstaint.ASSESSMENT-TYPE." . $this->_REQUEST->assessmentType);
         }
         return $assessmentType;
     }
