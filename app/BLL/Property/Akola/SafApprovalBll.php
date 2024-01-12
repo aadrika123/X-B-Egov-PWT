@@ -194,7 +194,7 @@ class SafApprovalBll
             $propProperties->area_of_plot = $this->_activeSaf->bifurcated_plot_area;
 
         $propProperties->ward_mstr_id = $this->_verifiedPropDetails[0]->ward_id;
-        $propProperties->zone_mstr_id = $this->_verifiedPropDetails[0]->zone_mstr_id;
+        $propProperties->zone_mstr_id = $this->_verifiedPropDetails[0]->zone_mstr_id ? $this->_verifiedPropDetails[0]->zone_mstr_id : $propProperties->zone_mstr_id;
         $propProperties->is_mobile_tower = $this->_verifiedPropDetails[0]->has_mobile_tower;
         $propProperties->tower_area = $this->_verifiedPropDetails[0]->tower_area;
         $propProperties->tower_installation_date = $this->_verifiedPropDetails[0]->tower_installation_date;
@@ -271,7 +271,7 @@ class SafApprovalBll
         $propProperties->prop_type_mstr_id = $this->_verifiedPropDetails[0]->prop_type_id;
         $propProperties->area_of_plot = $this->_verifiedPropDetails[0]->area_of_plot;
         $propProperties->ward_mstr_id = $this->_verifiedPropDetails[0]->ward_id;
-        $propProperties->zone_mstr_id = $this->_verifiedPropDetails[0]->zone_mstr_id;
+        $propProperties->zone_mstr_id = $this->_verifiedPropDetails[0]->zone_mstr_id ? $this->_verifiedPropDetails[0]->zone_mstr_id : $propProperties->zone_mstr_id;
         $propProperties->is_mobile_tower = $this->_verifiedPropDetails[0]->has_mobile_tower;
         $propProperties->tower_area = $this->_verifiedPropDetails[0]->tower_area;
         $propProperties->tower_installation_date = $this->_verifiedPropDetails[0]->tower_installation_date;
