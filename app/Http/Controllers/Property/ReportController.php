@@ -2763,8 +2763,8 @@ class ReportController extends Controller
             'prop_current_demand'  => $propdata->prop_current_demand,
             'prop_arrear_demand'  => $propdata->prop_arrear_demand,
             'prop_total_demand'  => $propdata->prop_total_demand,
-            'prop_current_collection'  => $propdata->prop_current_collection,
-            'prop_arrear_collection'  => $propdata->prop_arrear_collection,
+            //'prop_current_collection'  => $propdata->prop_current_collection,
+            //'prop_arrear_collection'  => $propdata->prop_arrear_collection,
             'prop_total_collection'  => $propdata->prop_total_collection,
 
 
