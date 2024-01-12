@@ -151,7 +151,7 @@ class ApplySafController extends Controller
             // Generate Calculation
             if (!$request->no_calculater)
                 $taxCalculator->calculateTax();
-            if (($taxCalculator->_oldUnpayedAmount ?? 0) > 0 && ($request->assessmentType == 3 || $request->assessmentType == "Mutation" || $request->assessmentType == "Bifurcation")) {
+            if (($taxCalculator->_oldUnpayedAmount ?? 0) > 0 && ($request->assessmentType == 3 || $request->assessmentType == 4 || $request->assessmentType == "Mutation" || $request->assessmentType == "Bifurcation")) {
                 throw new Exception("Old Demand Amount Of " . $taxCalculator->_oldUnpayedAmount . " Not Cleard");
             }
             DB::beginTransaction();
@@ -175,7 +175,7 @@ class ApplySafController extends Controller
                     $floorDetail = $request['floor'];
                     foreach ($floorDetail as $floorDetails) {
                         $floor = new PropActiveSafsFloor();
-                        $floor->addfloor($floorDetails, $safId, $user_id);
+                        $floor->addfloor($floorDetails, $safId, $user_id, $request->assessmentType, $request['biDateOfPurchase'] ?? null);
                     }
                 }
             }

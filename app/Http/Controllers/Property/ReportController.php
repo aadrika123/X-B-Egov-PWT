@@ -2080,9 +2080,9 @@ class ReportController extends Controller
                         applied_industries_safs.*, 
                         applied_gb_safs.*, 
                         total_props.*, 
-                        total_vacant_land.*, 
                         total_occupancy_props.*,
                         property_use_type.*,
+                        -- total_vacant_land.*, 
                         --pnding_3yrs.*,
                         --pnding_2yrs.*,
                         --pnding_1yrs.*,
@@ -2263,15 +2263,15 @@ class ReportController extends Controller
                   WHERE 
                     status = 1 AND ulb_id=2
                 ) AS total_props, 
-                (
-                  SELECT 
-                    COUNT(id) AS total_vacant_land 
-                  FROM 
-                    prop_properties p 
-                  WHERE 
-                    p.prop_type_mstr_id = 4 
-                    AND status = 1 AND ulb_id=2
-                ) AS total_vacant_land, 
+                -- (
+                --   SELECT 
+                --     COUNT(id) AS total_vacant_land 
+                --   FROM 
+                --     prop_properties p 
+                --   WHERE 
+                --     p.prop_type_mstr_id = 4 
+                --     AND status = 1 AND ulb_id=2
+                -- ) AS total_vacant_land, 
                 (
                     SELECT SUM(total_tax-adjust_amt) AS arrear_demand_collection 
                             FROM prop_transactions t

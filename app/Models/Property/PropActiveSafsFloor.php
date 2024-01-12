@@ -45,7 +45,8 @@ class PropActiveSafsFloor extends Model
                         prop_active_safs_floors.user_id	, 
                         prop_active_safs.ulb_id ,	
                         prop_active_safs_floors.no_of_rooms	, 	
-                        prop_active_safs_floors.no_of_toilets
+                        prop_active_safs_floors.no_of_toilets,
+                        prop_active_safs_floors.bifurcated_buildup_area
                 "))
             ->join("prop_active_safs", "prop_active_safs.id", "prop_active_safs_floors.saf_id")
             ->where("prop_active_safs_floors.saf_id", $safId)->get();
@@ -137,7 +138,7 @@ class PropActiveSafsFloor extends Model
         $floor->update($reqs);
     }
 
-    public function addfloor($req, $safId, $userId)
+    public function addfloor($req, $safId, $userId, $assessmentType, $biDateOfPurchase)
     {
         if ($req['usageType'] == 1)
             $carpetArea =  $req['buildupArea'] * 0.70;
@@ -153,6 +154,9 @@ class PropActiveSafsFloor extends Model
         $floor->builtup_area = $req['buildupArea'] ?? null;
         $floor->carpet_area = $carpetArea;
         $floor->date_from = $req['dateFrom'] ?? null;
+        if ($assessmentType == "Bifurcation")
+            $floor->date_from = $biDateOfPurchase;
+
         $floor->date_upto = $req['dateUpto'] ?? null;
         $floor->prop_floor_details_id = $req['propFloorDetailId'] ?? null;
         $floor->user_id = $userId;
