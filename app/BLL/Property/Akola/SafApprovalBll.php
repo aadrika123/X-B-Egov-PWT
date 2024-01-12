@@ -247,6 +247,7 @@ class SafApprovalBll
         }
         $oldFloor = PropFloor::where("property_id", $propProperties->id)->get();
         $oldOwners = PropOwner::where("property_id", $propProperties->id)->get();
+        $oldDemand = PropDemand::where("property_id", $propProperties->id)->get();
         $history = new PropAssessmentHistory();
         $history->property_id = $propProperties->id;
         $history->assessment_type = $this->_activeSaf->assessment_type;
@@ -254,6 +255,8 @@ class SafApprovalBll
         $history->prop_log = json_encode($propProperties->toArray(), JSON_UNESCAPED_UNICODE);
         $history->owner_log = json_encode($oldOwners->toArray(), JSON_UNESCAPED_UNICODE);
         $history->floar_log = json_encode($oldFloor->toArray(), JSON_UNESCAPED_UNICODE);
+        $history->demand_log = json_encode($oldDemand->toArray(), JSON_UNESCAPED_UNICODE);
+
         $history->user_id = Auth()->user() ? Auth()->user()->id : 0;
         $history->save();
 
@@ -460,12 +463,9 @@ class SafApprovalBll
                 "due_major_building" => $val["majorBuildingTax"] ?? 0,
                 "due_open_ploat_tax" => $val["openPloatTax"] ?? 0,
             ];
-            if ($oldDemand = $demand->where("fyear", $arr["fyear"])->where("property_id", $arr["property_id"])->where("status", 1)->first()) {
-                $old = $demand->where("fyear", $arr["fyear"])->where("property_id", $arr["property_id"])->where("status", 1)->first();
+            if ($oldDemand = $demand->where("fyear", $arr["fyear"])->where("property_id", $arr["property_id"])->where("status", 1)->first()) {                
                 $oldDemand = $this->updateOldDemands($oldDemand,$arr);
-                $oldDemand->update();
-                $old2 = $demand->where("fyear", $arr["fyear"])->where("property_id", $arr["property_id"])->where("status", 1)->first();
-                
+                $oldDemand->update();                              
                 continue;
             }
             $demand->store($arr);
