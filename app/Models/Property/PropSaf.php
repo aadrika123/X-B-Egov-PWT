@@ -196,7 +196,8 @@ class PropSaf extends Model
                 'building_type',
                 'prop_usage_type',
                 'zone_masters.zone_name as zone',
-                'cat.category'
+                'cat.category',
+                'cat.description as category_description',
             )
             ->leftJoin('ulb_ward_masters as w', 'w.id', '=', 'prop_safs.ward_mstr_id')
             ->leftJoin('wf_roles as wr', 'wr.id', '=', 'prop_safs.current_role')
@@ -269,7 +270,7 @@ class PropSaf extends Model
             'p.saf_no as application_no',
             'p.applicant_name as eng_applicant_name',
             'p.applicant_name as applicant_marathi',
-            
+
             'p.plot_no',
             'p.property_no',
             'p.area_of_plot',
@@ -282,10 +283,10 @@ class PropSaf extends Model
             'o.mobile_no',
             'u.ward_name as ward_no'
         ];
-        $data=  DB::table('prop_safs as p')
+        $data =  DB::table('prop_safs as p')
             ->select(
-                $select 
-                
+                $select
+
             )
             // ->leftJoin('prop_safs_owners as o', 'o.saf_id', '=', 'p.id')
             ->leftjoin(DB::raw("(
@@ -303,11 +304,10 @@ class PropSaf extends Model
             ->join('zone_masters as z', 'z.id', '=', 'p.zone_mstr_id')
             ->where('p.id', $safId)
             ->first();
-            if(!$data)
-            {
-                $data=  DB::table('prop_active_safs as p')
+        if (!$data) {
+            $data =  DB::table('prop_active_safs as p')
                 ->select(
-                    $select 
+                    $select
                 )
                 // ->leftJoin('prop_safs_owners as o', 'o.saf_id', '=', 'p.id')
                 ->leftjoin(DB::raw("(
@@ -325,13 +325,12 @@ class PropSaf extends Model
                 ->join('zone_masters as z', 'z.id', '=', 'p.zone_mstr_id')
                 ->where('p.id', $safId)
                 ->first();
-            }
-            
-            if(!$data)
-            {
-                $data=  DB::table('prop_rejected_safs as p')
+        }
+
+        if (!$data) {
+            $data =  DB::table('prop_rejected_safs as p')
                 ->select(
-                    $select 
+                    $select
                 )
                 // ->leftJoin('prop_safs_owners as o', 'o.saf_id', '=', 'p.id')
                 ->leftjoin(DB::raw("(
@@ -349,7 +348,7 @@ class PropSaf extends Model
                 ->join('zone_masters as z', 'z.id', '=', 'p.zone_mstr_id')
                 ->where('p.id', $safId)
                 ->first();
-            }
+        }
         return $data;
     }
 }

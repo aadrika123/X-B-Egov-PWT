@@ -16,6 +16,7 @@ class WaterSecondConnectionCharge extends Model
     $watercharges->consumer_id     =$refrequest['consumerId'];
     $watercharges->amount          =$refrequest['amount'];
     $watercharges->charge_category = $refrequest['chargeCategory'];
+    $watercharges->paid_status     = 1;
     $watercharges->save();
     return $watercharges;
 

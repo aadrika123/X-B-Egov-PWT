@@ -11,6 +11,7 @@ use App\Http\Requests\Property\Reports\UserWiseLevelPending;
 use App\Http\Requests\Property\Reports\UserWiseWardWireLevelPending;
 use App\Models\MplYearlyReport;
 use App\Models\Property\PropDemand;
+use App\Models\Property\PropPropertyUpdateRequest;
 use App\Models\Property\PropSaf;
 use App\Models\Property\PropTransaction;
 use App\Models\Trade\TradeTransaction;
@@ -3481,6 +3482,83 @@ class ReportController extends Controller
         }
         return $this->Repository->tranDeactivatedList($request);
     }
+
+    /**
+     * | Maker Checker Report  
+     */
+    public function makerChecker(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "userType" => "required|in:maker,checker",
+                "fromDate" => "required|date|date_format:Y-m-d",
+                "uptoDate" => "required|date|date_format:Y-m-d|after_or_equal:" . $request->fromDate,
+                "wardId"   => "nullable|digits_between:1,9223372036854775807",
+                "zoneId"   => "nullable|digits_between:1,9223372036854775807",
+                "userId"   => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+
+            $perPage  = $request->perPage;
+            $fromDate = $request->fromDate;
+            $uptoDate = $request->uptoDate;
+            $userId   = $wardId = $zoneId = null;
+
+            if ($request->wardId) {
+                $wardId = $request->wardId;
+            }
+            if ($request->zoneId) {
+                $zoneId = $request->zoneId;
+            }
+            if ($request->userId) {
+                $userId = $request->userId;
+            }
+
+            $mPropPropertyUpdateRequest =  new PropPropertyUpdateRequest();
+            $data =  $mPropPropertyUpdateRequest->updateDetails();
+
+            #maker
+            if ($request->userType == 'maker') {
+                $data =  $data
+                    ->whereBetween('prop_property_update_requests.created_at', [$fromDate, $uptoDate]);
+
+                if ($userId)
+                    $data = $data->where("prop_property_update_requests.user_id", $userId);
+            }
+
+            #checker
+            if ($request->userType == 'checker') {
+                $data = $data
+                    ->whereBetween('prop_property_update_requests.approval_date', [$fromDate, $uptoDate]);
+
+                if ($userId)
+                    $data = $data->where("prop_property_update_requests.approved_by", $userId);
+            }
+
+            if ($wardId) {
+                $data = $data->where("prop_property_update_requests.ward_mstr_id", $wardId);
+            }
+            if ($zoneId) {
+                $data = $data->where("prop_property_update_requests.zone_mstr_id", $zoneId);
+            }
+            $data = $data->paginate($perPage);
+
+            return responseMsgs(true, "Data Retreived", $data, "", "", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), []);
+        }
+
+        // ->paginate($perPage);
+    }
+
+
+
+
     /*
 
      #====================================================

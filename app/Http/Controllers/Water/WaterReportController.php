@@ -2920,7 +2920,7 @@ class WaterReportController extends Controller
                 ORDER BY water_consumer_demands.consumer_id             
         ");
             $data = DB::connection('pgsql_water')->select(DB::raw($rawData));
-            return response()->json($data);
+            // return response()->json($data);
             $list = [
                 "data" => $data,
                 'billdate' => $NowDate,

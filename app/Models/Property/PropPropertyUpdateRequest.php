@@ -19,11 +19,11 @@ class PropPropertyUpdateRequest extends Model
             "prop_id"   =>  $req->propId,
             "holding_no" => $req->holdingNo,
             "new_holding_no" => $req->newHoldingNo,
-            "pt_no"=>  $req->ptNo,
-            "property_no"=>  $req->propertyNo,
+            "pt_no" =>  $req->ptNo,
+            "property_no" =>  $req->propertyNo,
             "logs" =>  $req->logs,
-            "supporting_doc"=>$req->supportingDocument,
-            "unique_id"=>$req->uniqueId,
+            "supporting_doc" => $req->supportingDocument,
+            "unique_id" => $req->uniqueId,
             "reference_no" => $req->referenceNo,
             "is_full_update" => $req->isFullUpdate,
 
@@ -72,7 +72,7 @@ class PropPropertyUpdateRequest extends Model
 
             'is_water_harvesting' => $req->isWaterHarvesting,
             'rwh_date_from' => ($req->isWaterHarvesting == 1) ? $req->rwhDateFrom : null,
-            'land_occupation_date' => $req->landOccupationDate?$req->landOccupationDate:$req->dateOfPurchase,
+            'land_occupation_date' => $req->landOccupationDate ? $req->landOccupationDate : $req->dateOfPurchase,
             'application_date' =>  $req->applicationDate,
             'assessment_type' => $req->assessmentType,
             'prop_state' => $req->propState,
@@ -88,7 +88,7 @@ class PropPropertyUpdateRequest extends Model
             'user_id' => $req->userId,
             'workflow_id' => $req->workflowId,
             'ulb_id' => $req->ulbId,
-            'pending_status' => $req->pendingStatus??0,
+            'pending_status' => $req->pendingStatus ?? 0,
             'current_role_id' => $req->finisherRoleId,
             'initiator_role_id' => $req->finisherRoleId,
             'finisher_role_id' => $req->finisherRoleId,
@@ -107,7 +107,7 @@ class PropPropertyUpdateRequest extends Model
             'is_trust_verified' => $req->isTrustVerified ?? false,
             'category_id' => $req->category,
         ];
-        $propUpdateReq= PropPropertyUpdateRequest::create($reqs);   
+        $propUpdateReq = PropPropertyUpdateRequest::create($reqs);
         return ([
             'id' => $propUpdateReq->id,
             'application_no' => $propUpdateReq->request_no,
@@ -119,9 +119,9 @@ class PropPropertyUpdateRequest extends Model
 
     public function WorkFlowMetaList()
     {
-        return self::where("prop_property_update_requests.status",1)
-            ->where("prop_property_update_requests.pending_status",1)
-            ->join("prop_properties","prop_properties.id","prop_property_update_requests.prop_id")
+        return self::where("prop_property_update_requests.status", 1)
+            ->where("prop_property_update_requests.pending_status", 1)
+            ->join("prop_properties", "prop_properties.id", "prop_property_update_requests.prop_id")
             ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                             STRING_AGG(guardian_name,',') AS guardian_name,
                             STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
@@ -134,33 +134,64 @@ class PropPropertyUpdateRequest extends Model
                         GROUP BY property_id
                         )owner"), function ($join) {
                 $join->on("owner.property_id", "prop_properties.id");
-                })
-                ->select(
-                    "prop_property_update_requests.id",
-                    "prop_property_update_requests.request_no",
-                    "prop_property_update_requests.prop_id",
-                    "prop_property_update_requests.workflow_id",
-                    "owner.owner_name",
-                    "owner.guardian_name",
-                    "owner.mobile_no",
-                    "owner.email",
-                    "owner.owner_name_marathi",
-                    "owner.guardian_name_marathi",
-                    "prop_property_update_requests.holding_no",
-                    "prop_property_update_requests.property_no",
-                    "prop_property_update_requests.current_role_id",
-                    "prop_property_update_requests.is_full_update",
-                    DB::raw("TO_CHAR(CAST(prop_property_update_requests.created_at AS DATE), 'DD-MM-YYYY') as application_date"),
-                );
+            })
+            ->select(
+                "prop_property_update_requests.id",
+                "prop_property_update_requests.request_no",
+                "prop_property_update_requests.prop_id",
+                "prop_property_update_requests.workflow_id",
+                "owner.owner_name",
+                "owner.guardian_name",
+                "owner.mobile_no",
+                "owner.email",
+                "owner.owner_name_marathi",
+                "owner.guardian_name_marathi",
+                "prop_property_update_requests.holding_no",
+                "prop_property_update_requests.property_no",
+                "prop_property_update_requests.current_role_id",
+                "prop_property_update_requests.is_full_update",
+                DB::raw("TO_CHAR(CAST(prop_property_update_requests.created_at AS DATE), 'DD-MM-YYYY') as application_date"),
+            );
     }
 
     public function getOwnersUpdateReq()
     {
-        return $this->hasMany(PropOwnerUpdateRequest::class,"request_id","id")->where("prop_owner_update_requests.status",1);
+        return $this->hasMany(PropOwnerUpdateRequest::class, "request_id", "id")->where("prop_owner_update_requests.status", 1);
     }
 
     public function getFloorsUpdateReq()
     {
-        return $this->hasMany(PropFloorsUpdateRequest::class,"request_id","id")->where("prop_floors_update_requests.status",1);
+        return $this->hasMany(PropFloorsUpdateRequest::class, "request_id", "id")->where("prop_floors_update_requests.status", 1);
+    }
+
+    /**
+     * | Update Details
+     */
+    public function updateDetails()
+    {
+        return PropPropertyUpdateRequest::select(
+            'prop_property_update_requests.id',
+            'prop_property_update_requests.applicant_name as owner_name',
+            'prop_property_update_requests.property_no',
+            'holding_no',
+            'zone_name',
+            'ward_name as ward_no',
+            'u.name as applied_by',
+            'uu.name as approved_by',
+            DB::raw("TO_CHAR(prop_property_update_requests.created_at, 'DD-MM-YYYY') as apply_date"),
+            DB::raw("TO_CHAR(prop_property_update_requests.approval_date, 'DD-MM-YYYY') as approved_date"),
+            DB::raw(
+                "case when pending_status =1 then 'Pending'
+                      when pending_status =4 then 'Rejected'
+                      when pending_status =5 then 'Approved'
+                    end
+                      as status"
+            ),
+        )
+            ->where('prop_property_update_requests.status', 1)
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_property_update_requests.ward_mstr_id')
+            ->join('zone_masters', 'zone_masters.id', 'prop_property_update_requests.zone_mstr_id')
+            ->join('users as u', 'u.id', 'prop_property_update_requests.user_id')
+            ->leftjoin('users as uu', 'uu.id', 'prop_property_update_requests.approved_by');
     }
 }
