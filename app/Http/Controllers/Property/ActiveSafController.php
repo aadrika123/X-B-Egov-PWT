@@ -854,8 +854,7 @@ class ActiveSafController extends Controller
             });
 
             $data["builtup_area"] = $data['area_of_plot'];
-            if($data['prop_type_mstr_id'] !=4)
-            {
+            if ($data['prop_type_mstr_id'] != 4) {
                 $data["builtup_area"] = $getFloorDtls->sum("builtup_area");
             }
             $data['floors'] = $getFloorDtls;
@@ -2172,6 +2171,7 @@ class ActiveSafController extends Controller
                 "ownership_type" => $fullSafDtls['ownership_type'],
                 "payment_status" => $fullSafDtls['payment_status'],
                 "categoryType"  => $fullSafDtls['category'] ?? "",
+                "category_description"  => $fullSafDtls['category_description'] ?? "",
             ];
 
             return responseMsgs(true, "Demand Details", remove_null($demand), "", "1.0", responseTime(), "POST", $req->deviceId);
@@ -2315,7 +2315,7 @@ class ActiveSafController extends Controller
                 "valueAfterMaintance" => $floorsTaxes->sum("valueAfterMaintance") ?? "0",
                 "agingPerc"         => $floorsTaxes->sum("agingPerc") ?? "0",
                 "agingAmt"          => $floorsTaxes->sum("agingAmt") ?? "0",
-                "taxValue"          => $floorsTaxes->sum("taxValue") ?? "0",
+                "taxValue"          => roundFigure($floorsTaxes->sum("taxValue"), 2) ?? "0",
                 "openPloatTax"      => $floorsTaxes->sum("openPloatTax") ?? "0",
                 "generalTax"        => $floorsTaxes->sum("generalTax") ?? "0",
                 "roadTax"           => $floorsTaxes->sum("roadTax") ?? "0",
@@ -3724,7 +3724,7 @@ class ActiveSafController extends Controller
                 if (sizeOf($floars) == sizeOf($verifications_detals)) {
                     $saf_data = collect(array_values(objToArray(($floars)->values())))->all();
                     $verification = collect(array_values(objToArray(($verifications_detals)->values())))->all();
-                } 
+                }
                 if ($keys == "floars") {
                     // $saf_data=($floars->where("id",$val->id))->values();
                     // $verification=($verifications_detals->where("saf_floor_id",$val->id))->values();
@@ -4527,9 +4527,9 @@ class ActiveSafController extends Controller
             $safTrans->verify_status = $request['verifyStatus'];
             $safTrans->book_no = $request['bookNo'] ?? null;
 
-            $property = PropProperty::where("saf_id",$saf->id)->first();
-            $Oldproperty = PropProperty::first($saf->previous_holding_id??0);
-            
+            $property = PropProperty::where("saf_id", $saf->id)->first();
+            $Oldproperty = PropProperty::first($saf->previous_holding_id ?? 0);
+
             DB::beginTransaction();
             DB::connection('pgsql_master')->beginTransaction();
             $safTrans->save();
@@ -4546,7 +4546,7 @@ class ActiveSafController extends Controller
             //     $Oldproperty->status = 0;
             //     $Oldproperty->update();
             // }
-            
+
             if (in_array($request['paymentMode'], $offlinePaymentModes)) {
                 $request->merge(["tranId" => $safTrans->id]);
                 $this->postOtherPaymentModes($request);
