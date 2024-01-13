@@ -61,6 +61,7 @@ class PropSafVerification extends Model
             'prop_type_id' => $req->propertyType,
             'area_of_plot' => $req->areaOfPlot,
             'ward_id' => $req->wardId,
+            'zone_mstr_id' => $req->zone,
             'has_mobile_tower' => $req->isMobileTower,
             'tower_area' => $req->mobileTower['area'],
             'tower_installation_date' => $req->mobileTower['dateFrom'],
@@ -71,6 +72,7 @@ class PropSafVerification extends Model
             'underground_area' => $req->petrolPump['area'],
             'petrol_pump_completion_date' => $req->petrolPump['dateFrom'],
             'has_water_harvesting' => $req->isWaterHarvesting,
+            'rwh_date_from' => ($req->isWaterHarvesting == 1) ? $req->rainWaterHarvestingInstallationDate : null,
             'user_id' => $req->userId,
             'ulb_id' => $req->ulbId,
             'category_id' => $req->category

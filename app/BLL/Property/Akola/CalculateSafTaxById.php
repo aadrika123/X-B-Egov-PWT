@@ -77,8 +77,8 @@ class CalculateSafTaxById extends TaxCalculator
                 throw new Exception("Floors not available for this property");
 
             $notInApplication = collect($this->_mLastFloorVerification)->whereNotIn("saf_floor_id",collect($propFloors)->pluck("id")); 
-            foreach ($propFloors as $floor) {
-                $verifyFloor = collect($this->_mLastFloorVerification)->whereNotIn("saf_floor_id",$floor->id)->first();
+            foreach ($propFloors as $floor) {                
+                $verifyFloor = collect($this->_mLastFloorVerification->values())->whereIn("saf_floor_id",$floor->id)->first();
                 $floor  = $this->addjustVerifyFloorDtls($floor,$verifyFloor);  
                 $floorReq =  [
                     "floorNo" => $floor->floor_mstr_id,
