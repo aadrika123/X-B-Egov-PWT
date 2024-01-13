@@ -3502,6 +3502,7 @@ class ReportController extends Controller
         if ($validated->fails())
             return validationError($validated);
         $perPage = $request->perPage;
+        $userId = $wardId = $zoneId = null;
 
         if ($request->wardId) {
             $wardId = $request->wardId;
@@ -3514,6 +3515,10 @@ class ReportController extends Controller
         }
 
         $mPropPropertyUpdateRequest =  new PropPropertyUpdateRequest();
+        if ($request->userType == 'maker')
+            $mPropPropertyUpdateRequest
+                // ->whereBetween('')
+            ;
         if ($userId) {
             $data = $mPropPropertyUpdateRequest->where("users.id", $userId);
         }
