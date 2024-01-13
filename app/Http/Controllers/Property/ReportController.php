@@ -3491,7 +3491,7 @@ class ReportController extends Controller
         $validated = Validator::make(
             $request->all(),
             [
-                "userType" => "nullable|in:maker,checker",
+                "userType" => "required|in:maker,checker",
                 "fromDate" => "required|date|date_format:Y-m-d",
                 "uptoDate" => "required|date|date_format:Y-m-d|after_or_equal:" . $request->fromDate,
                 "wardId"   => "nullable|digits_between:1,9223372036854775807",
