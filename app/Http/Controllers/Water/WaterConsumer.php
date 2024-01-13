@@ -1968,13 +1968,17 @@ class WaterConsumer extends Controller
             $mwaterConsumerMeter   = new WaterConsumerMeter();
             $mwaterConsumerInitial = new WaterConsumerInitialMeter();
             $mwaterConsumerOwner   = new WaterConsumerOwner();
+            $mwaterConsumerDemand  = new WaterConsumerDemand();
             $refConParamId         = Config::get("waterConstaint.PARAM_IDS");
             $refPropertyType       = Config::get("waterConstaint.PAYMENT_FOR_CONSUMER");
+            $userDetails           = $this->checkUserType($req);
 
             if ($req->IsMeterWorking == 1) {
                 $connectionType = 1;
+                $connectionTypeString = 'Meter';
             } else {
                 $connectionType = 3;
+                $connectionTypeString = 'Fixed';
             }
             if ($req->Category == 'Slum' && $req->TabSize != 15) {
                 throw new Exception('Tab size must be 15 for Slum');
@@ -1987,37 +1991,33 @@ class WaterConsumer extends Controller
             $idGeneration = new PrefixIdGenerator($refConParamId['WCD'], $ulbId);
             $applicationNo = $idGeneration->generate();
             $applicationNo = str_replace('/', '-', $applicationNo);
-
             $meta = [
-                'status' => '4',
+                'status' => '1',
                 'wardmstrId' => "3",
-                "meterNo"   => $req['MeterNo'],
+                "meterNo"   => $req['meterNo'],
                 "connectionType" => $connectionType
             ];
-
             $water = $mWaterSecondConsumer->saveConsumer($req, $meta, $applicationNo);  // save active consumer
-
-            $refRequest = [
-                "consumerId" => $water->id,
-                "amount"    => 3250,
+           $refRequest = [
+                "consumerId"     => $water->id,
                 "chargeCategory" => $refPropertyType['1'],
                 "InitialMeter"   => $water->meter_reading,
-                "connectionType" => $connectionType
+                "ConnectionType" => $connectionType,
+                "connectionType" => $connectionTypeString,
+                "amount"         => $req->amount,
+                "ward"           => $req->ward,
+                "ConnectionDate" => $req->connectionDate
             ];
-            $water = $mwaterConnection->saveCharges($refRequest);                // save connection charges 
-            $water = $mwaterConsumerOwner->saveConsumerOwner($req, $refRequest);  // save owner detail
-            $water = $mwaterConsumerInitial->saveConsumerReadings($refRequest);   // meter reading
-            $water = $mwaterConsumerMeter->saveInitialMeter($refRequest, $meta);   // initail or final reading
-
-
+            $water = $mwaterConnection->saveCharges($refRequest);                                // save connection charges 
+            $water = $mwaterConsumerOwner->saveConsumerOwner($req, $refRequest);                     // save owner detail
+            $water = $mwaterConsumerInitial->saveConsumerReadings($refRequest);                      // meter reading
+            $water = $mwaterConsumerMeter->saveInitialMeter($refRequest, $meta);                     // initail or final reading
+            $water = $mwaterConsumerDemand->saveNewConnectionDemand($req,$refRequest,$userDetails);
             $returnData = [
-                'applicationNo' => $applicationNo,
-                "applicationId" => $refRequest['consumerId']
-
+                'consumerNo' => $applicationNo,
+                "consumerId" => $refRequest['consumerId']
             ];
-
             $this->commit();
-
             return responseMsgs(true, "save consumer!", remove_null($returnData), "", "02", ".ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             $this->rollback(); // Assuming this is part of your transaction handling
@@ -2489,4 +2489,11 @@ class WaterConsumer extends Controller
             return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
         }
     }
+    /**
+     * update new connection consumers
+     */
+    public function updateNewConnection(Request $request){
+
+    }
+
 }

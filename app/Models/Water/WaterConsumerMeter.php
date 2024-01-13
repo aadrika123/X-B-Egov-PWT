@@ -124,7 +124,7 @@ class WaterConsumerMeter extends Model
         $mWaterConsumerMeter->consumer_id          = $refrequest['consumerId'];
         $mWaterConsumerMeter->final_meter_reading  = $refrequest['InitialMeter'];
         $mWaterConsumerMeter->initial_reading      = $refrequest['InitialMeter'];
-        $mWaterConsumerMeter->connection_type      = $refrequest['connectionType'];
+        $mWaterConsumerMeter->connection_type      = $refrequest['ConnectionType'];
         $mWaterConsumerMeter->meter_no             = $meta['meterNo'];
 
 

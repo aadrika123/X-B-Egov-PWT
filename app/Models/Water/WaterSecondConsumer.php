@@ -29,23 +29,23 @@ class WaterSecondConsumer extends Model
         $waterSecondConsumer->ulb_id                    = $req->ulbId;
         $waterSecondConsumer->zone                      = $req->zone;
         $waterSecondConsumer->cycle                     = $req->Cycle;
-        $waterSecondConsumer->property_no               = $req->PropertyNo;
+        $waterSecondConsumer->property_no               = $req->propertyNo;
         $waterSecondConsumer->consumer_no               = $applicationNo;
-        $waterSecondConsumer->mobile_no                 = $req->MoblieNo;
-        $waterSecondConsumer->address                   = $req->Address;
-        $waterSecondConsumer->landmark                  = $req->PoleLandmark;
-        $waterSecondConsumer->dtc_code                  = $req->DtcCode;
-        $waterSecondConsumer->meter_make                = $req->MeterMake;
-        $waterSecondConsumer->meter_no                  = $req->MeterNo;
-        $waterSecondConsumer->meter_digit               = $req->MeterDigit;
-        $waterSecondConsumer->tab_size                  = $req->TabSize;
-        $waterSecondConsumer->meter_state               = $req->MeterState;
+        $waterSecondConsumer->mobile_no                 = $req->moblieNo;
+        $waterSecondConsumer->address                   = $req->address;
+        $waterSecondConsumer->landmark                  = $req->poleLandmark;
+        $waterSecondConsumer->dtc_code                  = $req->mtcCode;
+        $waterSecondConsumer->meter_make                = $req->meterMake;
+        $waterSecondConsumer->meter_no                  = $req->meterNo;
+        $waterSecondConsumer->meter_digit               = $req->meterDigit;
+        $waterSecondConsumer->tab_size                  = $req->tabSize;
+        $waterSecondConsumer->meter_state               = $req->meterState;
         $waterSecondConsumer->reading_date              = $req->ReadingDate;
         $waterSecondConsumer->connection_date           = $req->ConectionDate;
         $waterSecondConsumer->disconnection_date        = $req->DisconnectionDate;
         $waterSecondConsumer->disconned_reading         = $req->DisconnedDate;
         $waterSecondConsumer->book_no                   = $req->BookNo;
-        $waterSecondConsumer->folio_no                  = $req->FolioNo;
+        $waterSecondConsumer->folio_no                  = $req->PropertyNo;
         $waterSecondConsumer->no_of_connection          = $req->NoOfConnection;
         $waterSecondConsumer->is_meter_rented           = $req->IsMeterRented;
         $waterSecondConsumer->rent_amount               = $req->RentAmount;
@@ -54,10 +54,12 @@ class WaterSecondConsumer extends Model
         $waterSecondConsumer->status                    = $meta['status'];
         $waterSecondConsumer->ward_mstr_id              = $meta['wardmstrId'];
         $waterSecondConsumer->category                  = $req->Category;
-        $waterSecondConsumer->property_type_id          = $req->PropertyType;
+        $waterSecondConsumer->property_type_id          = $req->propertyType;
         $waterSecondConsumer->meter_reading             = $req->MeterReading;
         $waterSecondConsumer->is_meter_working          = $req->IsMeterWorking;
         $waterSecondConsumer->connection_type_id        = $meta['connectionType'];
+        $waterSecondConsumer->zone_mstr_id              = $req->zone;
+        $waterSecondConsumer->ward_mstr_id              = $req->ward;
 
 
         $waterSecondConsumer->save();
