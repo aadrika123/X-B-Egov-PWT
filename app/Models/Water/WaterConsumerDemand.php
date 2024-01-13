@@ -192,6 +192,38 @@ class WaterConsumerDemand extends Model
 
         return $mWaterConsumerDemand->id;
     }
+    /**
+     * this function for new consumer entry 
+     */
+    public function saveNewConnectionDemand($req,$refRequest,$userDetails)
+    {
+        $mWaterConsumerDemand = new WaterConsumerDemand();
+        $mWaterConsumerDemand->consumer_id              =  $refRequest['consumerId'];
+        $mWaterConsumerDemand->ward_id                  =  $refRequest['ward'];
+        $mWaterConsumerDemand->ulb_id                   =  2;
+        $mWaterConsumerDemand->generation_date          =  $refRequest['ConnectionDate'];
+        $mWaterConsumerDemand->amount                   =  0;
+        $mWaterConsumerDemand->paid_status              =  0;                                   // Static
+        $mWaterConsumerDemand->consumer_tax_id          =  null;
+        $mWaterConsumerDemand->emp_details_id           =  $userDetails['emp_id'] ?? null;
+        $mWaterConsumerDemand->citizen_id               =  $userDetails['citizen_id'] ?? null;
+        $mWaterConsumerDemand->demand_from              =  $refRequest['ConnectionDate'];
+        // $mWaterConsumerDemand->demand_upto              =  $req['demand_upto'];
+        $mWaterConsumerDemand->penalty                  =   0;                                  // Static
+        // $mWaterConsumerDemand->current_meter_reading    =  $req->finalRading;
+        $mWaterConsumerDemand->unit_amount              =  0;
+        $mWaterConsumerDemand->connection_type          =  $refRequest['connectionType'];
+        $mWaterConsumerDemand->demand_no                =  "WCD" . random_int(100000, 999999) . "/" . random_int(1, 10);
+        $mWaterConsumerDemand->balance_amount           =  0;
+        $mWaterConsumerDemand->created_at               =  Carbon::now();
+        $mWaterConsumerDemand->due_balance_amount       =  0;
+        $mWaterConsumerDemand->current_demand           =  0;
+        $mWaterConsumerDemand->save();
+        //  return $mWaterConsumerDemand->consumer_id;
+        return $mWaterConsumerDemand->id;
+        return $mWaterConsumerDemand;
+    }
+
 
 
     /**

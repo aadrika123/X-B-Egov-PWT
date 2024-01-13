@@ -33,6 +33,7 @@ class WaterConsumerOwner extends Model
         $waterConsumerOwner->guardian_name       = $req->GuardianName;
         $waterConsumerOwner->mobile_no           = $req->MobileNo;
         $waterConsumerOwner->email               = $req->Email;
+        $waterConsumerOwner->status              = true ;
         $waterConsumerOwner->save();
         return $waterConsumerOwner;
     }

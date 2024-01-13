@@ -26,43 +26,46 @@ class newWaterRequest extends FormRequest
     public function rules()
     {
         $rules['Zone']                  = 'nullable';
+        $rules['ward']                  =  'nullable';
         $rule['ulbId']                  = 'required|numeric';
         $rules['PropertyNo']            = 'required';
-        $rules['MobileNo']               = 'required|numeric';
-        $rules['Address']                = 'required';
-        $rules['PoleLandmark']           = "required";
-        $rules['DtcCode']                = 'nullable';
-        $rules['MeterMake']              = 'nullable';
-        $rules['MeterNo']                = "required";
-        $rules['MeterDigit']             = 'nullable';
-        $rules['MeterCategory']          = "nullable";
-        $rule['TabSize']                 = "required|numeric";
-        $rule['MeterState']              = "nullable";
-        $rule['MeterReadig']             = 'nullable|numeric';
-        $rule['ReadingDate']             = 'nullable';
+        $rules['mobileNo']               = 'nullable|numeric';
+        $rules['address']                = 'nullable';
+        $rules['poleLandmark']           = "nullable";
+        $rules['dtcCode']                = 'nullable';
+        $rules['meterMake']              = 'nullable';
+        $rules['meterNo']                = "required";
+        $rules['meterDigit']             = 'nullable';
+        $rules['meterCategory']          = "nullable";
+        $rule['tabSize']                 = "required|numeric";
+        $rule['meterState']              = "nullable";
+        $rule['meterReadig']             = 'nullable|numeric';
+        $rule['readingDate']             = 'nullable';
+        $rules['amount']                  = 'required';
      $rules = [
-    'ConnectionDate' => 'nullable|date_format:Y-m-d',
+    'connectionDate' => 'nullable|date_format:Y-m-d',
 ];
 
-        $rule['DisconnectionDate']       = 'nullable|date_format:Y-m-d';
-        $rule['DisconnedReading']        = "nullable";
-        $rule['BookNo']                   = 'nullable';
-        $rule['FolioNo']                  = "nullable";
-        $rule['BuildingNo']               = 'nullable';
-        $rule['NoOfConnection']           = "nullable";
-        $rule['IsMeterRented']            = "nullable";
-        $rule['RentAmount']               = "nullable";
-        $rule['TotalAmount']              = 'nullable';
-        $rule['NearestConsumerNo']        = 'nullable';
-        $rules['initial_meter']           = 'nullable';
-        $rules['ownerName']               = 'required';
-        $rules['GuardianName']            = 'required';
-        $rules['Email']                   ='required';
-        $rules['Category']                = 'required';
-        $rules['PropertyType']            ='required';
-        $rules['IsMeterWorking']          = 'nullbale';
-        $rules['ConnectionId']            ="required";
-        $rules['propertyNoType']          ="required";
+        $rule['disconnectionDate']        = 'nullable|date_format:Y-m-d';
+        $rule['disconnedReading']         = "nullable";
+        $rule['bookNo']                   = 'nullable';
+        $rule['folioNo']                  = "nullable";
+        $rule['buildingNo']               = 'nullable';
+        $rule['noOfConnection']           = "nullable";
+        $rule['isMeterRented']            = "nullable";
+        $rule['rentAmount']               = "nullable";
+        $rule['totalAmount']              = 'nullable';
+        $rule['nearestConsumerNo']        = 'nullable';
+        $rules['initialMeter']           = 'nullable';
+        $rules['ownerName']               = 'nullable';
+        $rules['guardianName']            = 'nullable';
+        $rules['email']                   ='nullable';
+        $rules['category']                = 'required';
+        $rules['propertyType']            ='required';
+        $rules['isMeterWorking']          = 'nullbale';
+        $rules['connectionId']            ="nullable";
+        $rules['propertyNoType']          ="nullable";
+     
         return $rules;
     }
 
