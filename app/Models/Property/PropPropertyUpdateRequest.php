@@ -178,8 +178,15 @@ class PropPropertyUpdateRequest extends Model
             'ward_name as ward_no',
             'u.name as applied_by',
             'uu.name as approved_by',
-            'prop_property_update_requests.created_at as apply_date',
-            'prop_property_update_requests.approval_date as approved_date',
+            DB::raw("TO_CHAR(prop_property_update_requests.created_at, 'DD-MM-YYYY') as apply_date"),
+            DB::raw("TO_CHAR(prop_property_update_requests.approval_date, 'DD-MM-YYYY') as approved_date"),
+            DB::raw(
+                "case when pending_status =1 then 'Pending'
+                      when pending_status =4 then 'Rejected'
+                      when pending_status =5 then 'Approved'
+                    end
+                      as status"
+            ),
         )
             ->where('prop_property_update_requests.status', 1)
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_property_update_requests.ward_mstr_id')
