@@ -11,6 +11,7 @@ use App\Http\Requests\Property\Reports\UserWiseLevelPending;
 use App\Http\Requests\Property\Reports\UserWiseWardWireLevelPending;
 use App\Models\MplYearlyReport;
 use App\Models\Property\PropDemand;
+use App\Models\Property\PropPropertyUpdateRequest;
 use App\Models\Property\PropSaf;
 use App\Models\Property\PropTransaction;
 use App\Models\Trade\TradeTransaction;
@@ -3481,6 +3482,61 @@ class ReportController extends Controller
         }
         return $this->Repository->tranDeactivatedList($request);
     }
+
+    /**
+     * | Maker Checker Report  
+     */
+    public function makerChecker(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "userType" => "nullable|in:maker,checker",
+                "fromDate" => "required|date|date_format:Y-m-d",
+                "uptoDate" => "required|date|date_format:Y-m-d|after_or_equal:" . $request->fromDate,
+                "wardId"   => "nullable|digits_between:1,9223372036854775807",
+                "zoneId"   => "nullable|digits_between:1,9223372036854775807",
+                "userId"   => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        $perPage = $request->perPage;
+        $userId = $wardId = $zoneId = null;
+
+        if ($request->wardId) {
+            $wardId = $request->wardId;
+        }
+        if ($request->zoneId) {
+            $zoneId = $request->zoneId;
+        }
+        if ($request->userId) {
+            $userId = $request->userId;
+        }
+
+        $mPropPropertyUpdateRequest =  new PropPropertyUpdateRequest();
+        if ($request->userType == 'maker')
+            $mPropPropertyUpdateRequest
+                // ->whereBetween('')
+            ;
+        if ($userId) {
+            $data = $mPropPropertyUpdateRequest->where("users.id", $userId);
+        }
+        if ($wardId) {
+            $data = $data->where("ulb_ward_masters.id", $wardId);
+        }
+        if ($zoneId) {
+            $data = $data->where("zone_masters.id", $zoneId);
+        }
+
+        return $mPropPropertyUpdateRequest
+            // ->whereBetween('')
+            ->paginate($perPage);
+    }
+
+
+
+
     /*
 
      #====================================================

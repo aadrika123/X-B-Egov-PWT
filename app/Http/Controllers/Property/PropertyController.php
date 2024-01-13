@@ -22,6 +22,7 @@ use App\Models\Property\PropPenaltyrebate;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropPropertyUpdateRequest;
 use App\Models\Property\PropSaf;
+use App\Models\Property\PropSafGeotagUpload;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Property\PropSafsOwner;
 use App\Models\Property\PropTranDtl;
@@ -1290,11 +1291,11 @@ class PropertyController extends Controller
             $propOwner = $mPropOwner->getfirstOwner($req->propId);
             $mPropProperty->id = $req->propId;
             $propOwnerAll = $mPropProperty->Owneres()->get();
-            $propOwnerAll = collect($propOwnerAll)->map(function($val){                 
+            $propOwnerAll = collect($propOwnerAll)->map(function ($val) {
                 $val->owner_name_marathi = trim($val->owner_name_marathi) ? trim($val->owner_name_marathi) : trim($val->owner_name);
                 return $val;
             });
-            $propOwnerAllMarathi = $propOwnerAll->implode("owner_name_marathi"," ,");
+            $propOwnerAllMarathi = $propOwnerAll->implode("owner_name_marathi", " ,");
             $floorTypes = $propFloors->implode('floor_name', ',');
             $floorCode = $propFloors->implode('floor_code', '-');
             $usageTypes = $propFloors->implode('usage_type', ',');
@@ -1310,6 +1311,17 @@ class PropertyController extends Controller
                 $propDemand->tax_value = roundFigure($propDemand->alv - ($propDemand->maintanance_amt + $propDemand->aging_amt));
             }
             $propUsageTypes = collect($propDemand)->isNotEmpty() && $propDemand->professional_tax == 0 ? 'निवासी' : 'अनिवासी';
+
+            $safId = $propDetails->saf_id;
+            $geotaggedImg = null;
+            if ($safId) {
+                $geoTagging = PropSafGeotagUpload::where("saf_id", $safId)->orderBy("id", "ASC")->get()->map(function ($val) {
+                    $val->paths = (config('app.url') . "/" . $val->relative_path . "/" . $val->image_path);
+                    return $val;
+                });
+
+                $geotaggedImg = collect($geoTagging)->where("direction_type", "Front") ? (collect($geoTagging)->where("direction_type", "Front"))->pluck("paths")->first() ?? "" : (collect($geoTagging)->where("direction_type", "<>", "naksha")->first() ? (collect($geoTagging)->where("direction_type", "<>", "naksha")->first())->pluck("paths") : "");
+            }
 
             $responseDetails = [
                 'zone_no' => $propDetails->zone_name,
@@ -1330,6 +1342,7 @@ class PropertyController extends Controller
                 'primary_owner_name' => $propOwnerAllMarathi ? $propOwnerAllMarathi : ($propOwner->owner_name_marathi ?? null),
                 'applicant_name' => $propDetails->applicant_marathi,
                 'property_from' => $minFloorFromDate,
+                'geo_tag_image' =>  $geotaggedImg,
                 'demands' => $propDemand
             ];
             return responseMsgs(true, "Property Details", remove_null($responseDetails));
@@ -1740,7 +1753,7 @@ class PropertyController extends Controller
     }
 
     # save tc locations
-    
+
     public function saveLocations(Request $req)
     {
         $validated = Validator::make(
