@@ -171,9 +171,10 @@ class PropPropertyUpdateRequest extends Model
     {
         return PropPropertyUpdateRequest::select(
             'prop_property_update_requests.id',
-            'prop_property_update_requests.applicant_name',
+            'prop_property_update_requests.applicant_name as owner_name',
+            'prop_property_update_requests.property_no',
             'holding_no',
-            'zone_name',
+            'zone_name as ward_no',
             'ward_name',
             'u.name as applied_by',
             'uu.name as approved_by',
