@@ -4530,7 +4530,7 @@ class ActiveSafController extends Controller
             $safTrans->book_no = $request['bookNo'] ?? null;
 
             $property = PropProperty::where("saf_id", $saf->id)->first();
-            $Oldproperty = PropProperty::first($saf->previous_holding_id ?? 0);
+            $Oldproperty = PropProperty::find($saf->previous_holding_id ?? 0);
 
             DB::beginTransaction();
             DB::connection('pgsql_master')->beginTransaction();
