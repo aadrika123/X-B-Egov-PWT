@@ -3592,30 +3592,27 @@ class ReportController extends Controller
                 $userId = $request->userId;
             }
 
-            $checkerCount = PropPropertyUpdateRequest::selectRaw('user_id,name as user_name, COUNT(prop_property_update_requests.*) as count')
+            $makerCount = PropPropertyUpdateRequest::selectRaw('user_id,name as user_name, COUNT(prop_property_update_requests.*) as count')
                 ->whereBetween('prop_property_update_requests.created_at', [$fromDate, $uptoDate])
                 ->join('users', 'users.id', 'prop_property_update_requests.user_id')
                 ->groupBy('user_id', 'name')
                 ->get();
 
-
-
-            DB::enableQueryLog();
-            $makerCount = PropPropertyUpdateRequest::selectRaw('user_id,name as user_name, COUNT(prop_property_update_requests.*) as count')
+            $checkerCount = PropPropertyUpdateRequest::selectRaw('user_id,name as user_name, COUNT(prop_property_update_requests.*) as count')
                 ->whereBetween('prop_property_update_requests.approval_date', [$fromDate, $uptoDate])
                 ->join('users', 'users.id', 'prop_property_update_requests.user_id')
                 ->groupBy('user_id', 'name')
                 ->get();
-            dd(DB::getQueryLog($makerCount));
 
+            $rejectedCount = PropPropertyUpdateRequest::selectRaw('user_id,name as user_name, COUNT(prop_property_update_requests.*) as count,pending_status')
+                ->whereBetween('prop_property_update_requests.approval_date', [$fromDate, $uptoDate])
+                ->join('users', 'users.id', 'prop_property_update_requests.user_id')
+                ->groupBy('user_id', 'name', 'pending_status')
+                ->get();
 
-            if ($wardId) {
-                $data = $data->where("prop_property_update_requests.ward_mstr_id", $wardId);
-            }
-            if ($zoneId) {
-                $data = $data->where("prop_property_update_requests.zone_mstr_id", $zoneId);
-            }
-            $data = $data->paginate($perPage);
+            $data['checker_count']  = $checkerCount;
+            $data['maker_count']    = $makerCount;
+            $data['rejected_count'] = collect($rejectedCount)->where('pending_status', 4)->values();
 
             return responseMsgs(true, "Data Retreived", $data, "", "", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
