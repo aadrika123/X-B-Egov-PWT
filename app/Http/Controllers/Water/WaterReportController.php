@@ -2947,23 +2947,23 @@ class WaterReportController extends Controller
                     subquery.current_demand_date, 
                     users.user_name
                     ORDER BY water_consumer_demands.consumer_id   
-                    limit $limit offset $offset 
+
                    
             ");
 // return $offset;
         //   return  DB::connection('pgsql_water')->select($rawData);
 
             // dd(($rawData));
-            $data = collect(DB::connection('pgsql_water')->select(DB::raw($rawData)));
-            $totalQuery = "SELECT COUNT(*) AS total FROM ($rawData) AS subquery_total";
-            $total = (collect(DB::SELECT($totalQuery))->first())->total ?? 0;
-            $lastPage = ceil($total / $perPage);
+            $data = DB::connection('pgsql_water')->select(DB::raw($rawData));
+            // $totalQuery = "SELECT COUNT(*) AS total FROM ($rawData) AS subquery_total";
+            // $total = (collect(DB::SELECT($totalQuery))->first())->total ?? 0;
+            // $lastPage = ceil($total / $perPage);
             $list = [
                 "current_page" => $page,
                 "data" => $data,
-                "total" => $total,
+                // "total" => $total,
                 "per_page" => $perPage,
-                "last_page" => $lastPage - 1
+                // "last_page" => $lastPage - 1
             ];
             return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime = NULL, $action, $deviceId);
         } catch (Exception $e) {
