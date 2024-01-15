@@ -815,32 +815,42 @@ class PostPropPaymentV2
             /**
              * | due taxes = paid_taxes-due Taxes
              */
-            $tblDemand->paid_status = 1;           // Paid Status Updation
-            $tblDemand->balance = $tblDemand->balance - $paidTaxes->paidTotalTax > 0 ? $tblDemand->balance - $paidTaxes->paidTotalTax : 0;
-            $tblDemand->due_general_tax = $tblDemand->due_general_tax - $paidTaxes->paidGeneralTax;
-            $tblDemand->due_road_tax = $tblDemand->due_road_tax - $paidTaxes->paidRoadTax;
+            $tblDemand->paid_status         = 1;           // Paid Status Updation
+            $tblDemand->balance             = $tblDemand->balance - $paidTaxes->paidTotalTax > 0 ? $tblDemand->balance - $paidTaxes->paidTotalTax : 0;
+            $tblDemand->due_general_tax     = $tblDemand->due_general_tax - $paidTaxes->paidGeneralTax;
+            $tblDemand->due_road_tax        = $tblDemand->due_road_tax - $paidTaxes->paidRoadTax;
             $tblDemand->due_firefighting_tax = $tblDemand->due_firefighting_tax - $paidTaxes->paidFirefightingTax;
-            $tblDemand->due_education_tax = $tblDemand->due_education_tax - $paidTaxes->paidEducationTax;
-            $tblDemand->due_water_tax = $tblDemand->due_water_tax - $paidTaxes->paidWaterTax;
+            $tblDemand->due_education_tax   = $tblDemand->due_education_tax - $paidTaxes->paidEducationTax;
+            $tblDemand->due_water_tax       = $tblDemand->due_water_tax - $paidTaxes->paidWaterTax;
             $tblDemand->due_cleanliness_tax = $tblDemand->due_cleanliness_tax - $paidTaxes->paidCleanlinessTax;
-            $tblDemand->due_sewarage_tax = $tblDemand->due_sewarage_tax - $paidTaxes->paidSewarageTax;
-            $tblDemand->due_tree_tax = $tblDemand->due_tree_tax - $paidTaxes->paidTreeTax;
+            $tblDemand->due_sewarage_tax    = $tblDemand->due_sewarage_tax - $paidTaxes->paidSewarageTax;
+            $tblDemand->due_tree_tax        = $tblDemand->due_tree_tax - $paidTaxes->paidTreeTax;
             $tblDemand->due_professional_tax = $tblDemand->due_professional_tax - $paidTaxes->paidProfessionalTax;
-            $tblDemand->due_total_tax = $tblDemand->due_total_tax - $paidTaxes->paidTotalTax;
-            $tblDemand->due_balance = $tblDemand->due_total_tax;
-            $tblDemand->due_tax1 = $tblDemand->due_tax1 - $paidTaxes->paidTax1;
-            $tblDemand->due_tax2 = $tblDemand->due_tax2 - $paidTaxes->paidTax2;
-            $tblDemand->due_tax3 = $tblDemand->due_tax3 - $paidTaxes->paidTax3;
+            $tblDemand->due_total_tax       = $tblDemand->due_total_tax - $paidTaxes->paidTotalTax;
+            $tblDemand->due_balance         = $tblDemand->due_total_tax;
+            $tblDemand->due_tax1            = $tblDemand->due_tax1 - $paidTaxes->paidTax1;
+            $tblDemand->due_tax2            = $tblDemand->due_tax2 - $paidTaxes->paidTax2;
+            $tblDemand->due_tax3            = $tblDemand->due_tax3 - $paidTaxes->paidTax3;
             $tblDemand->due_sp_education_tax = $tblDemand->due_sp_education_tax - $paidTaxes->paidStateEducationTax;
-            $tblDemand->due_water_benefit = $tblDemand->due_water_benefit - $paidTaxes->paidWaterBenefit;
-            $tblDemand->due_water_bill = $tblDemand->due_water_bill - $paidTaxes->paidWaterBill;
-            $tblDemand->due_sp_water_cess = $tblDemand->due_sp_water_cess - $paidTaxes->paidSpWaterCess;
-            $tblDemand->due_drain_cess = $tblDemand->due_drain_cess - $paidTaxes->paidDrainCess;
-            $tblDemand->due_light_cess = $tblDemand->due_light_cess - $paidTaxes->paidLightCess;
-            $tblDemand->due_major_building = $tblDemand->due_major_building - $paidTaxes->paidMajorBuilding;
-            $tblDemand->due_open_ploat_tax = $tblDemand->due_open_ploat_tax - $paidTaxes->paidOpenPloatTax ?? 0;
-            $tblDemand->paid_total_tax = $paidTaxes->paidTotalTax + $tblDemand->paid_total_tax;
-
+            $tblDemand->due_water_benefit   = $tblDemand->due_water_benefit - $paidTaxes->paidWaterBenefit;
+            $tblDemand->due_water_bill      = $tblDemand->due_water_bill - $paidTaxes->paidWaterBill;
+            $tblDemand->due_sp_water_cess   = $tblDemand->due_sp_water_cess - $paidTaxes->paidSpWaterCess;
+            $tblDemand->due_drain_cess      = $tblDemand->due_drain_cess - $paidTaxes->paidDrainCess;
+            $tblDemand->due_light_cess      = $tblDemand->due_light_cess - $paidTaxes->paidLightCess;
+            $tblDemand->due_major_building  = $tblDemand->due_major_building - $paidTaxes->paidMajorBuilding;
+            $tblDemand->due_open_ploat_tax  = $tblDemand->due_open_ploat_tax - $paidTaxes->paidOpenPloatTax ?? 0;
+            $tblDemand->paid_total_tax      = $paidTaxes->paidTotalTax + $tblDemand->paid_total_tax;
+            #it is testing purps only
+            if(strtoupper($this->_REQ['paymentMode'])!="ONLINE"){
+                foreach($tblDemand->toArray() as $keys=>$testVal)
+                {
+                    if(is_numeric($testVal) && $testVal<0)
+                    {
+                        throw new Exception($keys." Go On Nagative of fyear".$tblDemand->fyear);
+                    }
+                }
+            }
+            # end hear
             if (isset($isPartWisePaid))
                 $tblDemand->has_partwise_paid = $isPartWisePaid;
 

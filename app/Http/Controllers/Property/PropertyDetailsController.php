@@ -492,7 +492,7 @@ class PropertyDetailsController extends Controller
                 default:
                     $data = $mPropProperty->searchPropertyV2($ulbId);
             }
-            $data = $data->where('prop_properties.status', 1);
+            $data = $data->whereIn('prop_properties.status', [1,3]);
 
             if ($request->zoneId) {
                 $data = $data->where("prop_properties.zone_mstr_id", $request->zoneId);

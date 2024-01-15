@@ -1048,12 +1048,29 @@ class PropertyController extends Controller
                         ->first();
                     break;
             }
+            $prop = PropProperty::find($propertyId);
+            if($prop && $prop->status==0)
+            {
+                switch($prop->status)
+                {
+                    case 0 : throw new Exception("Property Is Already Deactivated");
+                            break;
+                    case 2 : throw new Exception("Property Is Deactivated By Deactivated Request");
+                            break;
+                    case 3 : throw new Exception("Property Is Deactivated After Mutaion Fee Payment");
+                            break;
+                    case 4 : throw new Exception("Property Is Deactivated By Mutaion");
+                            break;
+                }
+                
+            }
             if ($data) {
                 $msg['id'] = $data->id;
                 $msg['inWorkflow'] = true;
                 $msg['currentRole'] = $data->role_name;
                 $msg['message'] = "The application is still in workflow and pending at " . $data->role_name . ". Please Track your application with " . $data->application_no;
-            } else
+            } 
+            else
                 $msg['inWorkflow'] = false;
 
             return responseMsgs(true, 'Data Updated', $msg, '010801', '01', '', 'Post', '');
