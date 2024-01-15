@@ -227,7 +227,7 @@ class PropertyDeactivateController extends Controller
                 $verifired->status = 5;
                 $verifired->approve_date = Carbon::now()->formate('Y-m-d');
                 $verifired->approve_by = $user_id;
-                $PropProperty->status = 0;
+                $PropProperty->status = 2;
                 $PropProperty->update();
                 $msg = "Property Deactivated Successfully !! Holding No " . $PropProperty->holding_no;
             }
@@ -317,7 +317,7 @@ class PropertyDeactivateController extends Controller
             "applicationId" => "required|digits_between:1,9223372036854775807",
         ]);
         try {
-            $userId = authUser()->id;
+            $userId = Auth()->user()->id;
             $refDeactivationReq = PropActiveDeactivationRequest::find($request->applicationId);
             $refDeactivationReq->is_escalate = $request->escalateStatus <= 0 ? true : false;
             $refDeactivationReq->escalate_by = $userId;
