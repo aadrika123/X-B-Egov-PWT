@@ -1973,7 +1973,7 @@ class WaterConsumer extends Controller
             $refPropertyType       = Config::get("waterConstaint.PAYMENT_FOR_CONSUMER");
             $userDetails           = $this->checkUserType($req);
 
-            if ($req->IsMeterWorking == 1) {
+            if ($req->connectionType==1) {
                 $connectionType = 1;
                 $connectionTypeString = 'Meter';
             } else {

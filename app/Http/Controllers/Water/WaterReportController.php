@@ -2812,6 +2812,7 @@ class WaterReportController extends Controller
             }
                 $rawData = ("SELECT 
                     distinct(water_consumer_demands.consumer_id),
+                    water_consumer_demands.generation_date,
                     ulb_ward_masters.ward_name AS ward_no,
                     water_second_consumers.id,
                     'water' AS type,
@@ -2847,6 +2848,7 @@ class WaterReportController extends Controller
                     users.user_name
                 FROM (
                     SELECT  
+                        wd.genertation_date
                         wd.emp_details_id,
                         wd.consumer_id,
                         wd.connection_type,

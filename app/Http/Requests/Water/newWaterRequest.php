@@ -42,9 +42,9 @@ class newWaterRequest extends FormRequest
         $rule['meterReadig']             = 'nullable|numeric';
         $rule['readingDate']             = 'nullable';
         $rules['amount']                  = 'required';
-     $rules = [
-    'connectionDate' => 'nullable|date_format:Y-m-d',
-];
+        $rules = [
+            'connectionDate' => 'nullable|date_format:Y-m-d',
+        ];
 
         $rule['disconnectionDate']        = 'nullable|date_format:Y-m-d';
         $rule['disconnedReading']         = "nullable";
@@ -59,13 +59,14 @@ class newWaterRequest extends FormRequest
         $rules['initialMeter']           = 'nullable';
         $rules['ownerName']               = 'nullable';
         $rules['guardianName']            = 'nullable';
-        $rules['email']                   ='nullable';
+        $rules['email']                   = 'nullable';
         $rules['category']                = 'required';
-        $rules['propertyType']            ='required';
+        $rules['propertyType']            = 'required';
         $rules['isMeterWorking']          = 'nullbale';
-        $rules['connectionId']            ="nullable";
-        $rules['propertyNoType']          ="nullable";
-     
+        $rules['connectionId']            = "nullable";
+        $rules['propertyNoType']          = "nullable";
+        $rules['connectionType']          = "required";
+
         return $rules;
     }
 
