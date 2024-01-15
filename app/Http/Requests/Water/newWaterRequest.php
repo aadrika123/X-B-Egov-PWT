@@ -37,7 +37,7 @@ class newWaterRequest extends FormRequest
         $rules['meterNo']                = "required";
         $rules['meterDigit']             = 'nullable';
         $rules['meterCategory']          = "nullable";
-        $rule['tabSize']                 = "required|numeric";
+        $rule['tapSize']                 = "required|numeric";
         $rule['meterState']              = "nullable";
         $rule['meterReadig']             = 'nullable|numeric';
         $rule['readingDate']             = 'nullable';
@@ -57,7 +57,7 @@ class newWaterRequest extends FormRequest
         $rule['totalAmount']              = 'nullable';
         $rule['nearestConsumerNo']        = 'nullable';
         $rules['initialMeter']           = 'nullable';
-        $rules['ownerName']               = 'nullable';
+        $rules['applicantName']               = 'nullable';
         $rules['guardianName']            = 'nullable';
         $rules['email']                   = 'nullable';
         $rules['category']                = 'required';

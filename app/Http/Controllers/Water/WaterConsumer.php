@@ -1980,7 +1980,7 @@ class WaterConsumer extends Controller
                 $connectionType = 3;
                 $connectionTypeString = 'Fixed';
             }
-            if ($req->Category == 'Slum' && $req->TabSize != 15) {
+            if ($req->Category == 'Slum' && $req->tapSize != 15) {
                 throw new Exception('Tab size must be 15 for Slum');
             }
             if ($req->PropertyType == '2' && $req->Category == 'Slum') {

@@ -38,7 +38,7 @@ class WaterSecondConsumer extends Model
         $waterSecondConsumer->meter_make                = $req->meterMake;
         $waterSecondConsumer->meter_no                  = $req->meterNo;
         $waterSecondConsumer->meter_digit               = $req->meterDigit;
-        $waterSecondConsumer->tab_size                  = $req->tabSize;
+        $waterSecondConsumer->tab_size                  = $req->tapSize;
         $waterSecondConsumer->meter_state               = $req->meterState;
         $waterSecondConsumer->reading_date              = $req->ReadingDate;
         $waterSecondConsumer->connection_date           = $req->ConectionDate;
