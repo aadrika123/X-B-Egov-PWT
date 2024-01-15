@@ -6,7 +6,7 @@ use App\BLL\Water\WaterMonthelyCall;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Water\reqDeactivate;
 use App\Http\Requests\Water\reqMeterEntry;
-use App\Http\Requests\water\newWaterRequest;
+use App\Http\Requests\Water\newWaterRequest;
 use App\MicroServices\DocUpload;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Masters\RefRequiredDocument;

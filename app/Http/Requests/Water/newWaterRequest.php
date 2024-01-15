@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests\water;
+namespace App\Http\Requests\Water;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
