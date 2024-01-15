@@ -1974,7 +1974,7 @@ class WaterConsumer extends Controller
             $userDetails           = $this->checkUserType($req);
 
             if ($req->connectionType==1) {
-                $connectionType = 1;
+                $connectionType = 1; 
                 $connectionTypeString = 'Meter';
             } else {
                 $connectionType = 3;
