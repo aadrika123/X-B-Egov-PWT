@@ -614,7 +614,7 @@ trait SAF
     {
         $safData->prop_type_mstr_id         = $verificationData ? ($verificationData->prop_type_id ?? $safData->prop_type_mstr_id) : $safData->prop_type_mstr_id;
         $safData->ward_mstr_id              = $verificationData ? ($verificationData->ward_id ?? $safData->ward_mstr_id) : $safData->ward_mstr_id;
-        $safData->zone_mstr_id               = $verificationData ? ($verificationData->zone_mstr_id ?? $safData->zone_mstr_id) : $safData->zone_mstr_id;
+        $safData->zone_mstr_id              = $verificationData ? ($verificationData->zone_mstr_id ? $verificationData->zone_mstr_id :  $safData->zone_mstr_id) : $safData->zone_mstr_id;
         $safData->area_of_plot              = $verificationData ? ($verificationData->area_of_plot ?? $safData->area_of_plot) : $safData->area_of_plot;
         $safData->is_mobile_tower           = $verificationData ? ($verificationData->has_mobile_tower ?? $safData->is_mobile_tower) : $safData->is_mobile_tower;
         $safData->tower_area                = $verificationData ? ($verificationData->tower_area ?? $safData->tower_area) : $safData->tower_area;

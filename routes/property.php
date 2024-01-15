@@ -660,6 +660,7 @@ Route::controller(PropertyController::class)->group(function () {
   Route::post('getpropLatLong', 'getpropLatLong');                             // 01
   Route::post('upload-document', 'uploadDocument');                             // 01
   Route::post('save-locations', 'saveLocations');
+  Route::post('tc-locations-v2', 'saveLocationsV2');
   Route::post('get-tc-locations', 'getTcLocations');
   // Route::post('');
 });

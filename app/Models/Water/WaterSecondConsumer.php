@@ -45,7 +45,7 @@ class WaterSecondConsumer extends Model
         $waterSecondConsumer->disconnection_date        = $req->DisconnectionDate;
         $waterSecondConsumer->disconned_reading         = $req->DisconnedDate;
         $waterSecondConsumer->book_no                   = $req->BookNo;
-        $waterSecondConsumer->folio_no                  = $req->PropertyNo;
+        $waterSecondConsumer->folio_no                  = $req->propertyNo;
         $waterSecondConsumer->no_of_connection          = $req->NoOfConnection;
         $waterSecondConsumer->is_meter_rented           = $req->IsMeterRented;
         $waterSecondConsumer->rent_amount               = $req->RentAmount;
@@ -53,7 +53,7 @@ class WaterSecondConsumer extends Model
         $waterSecondConsumer->nearest_consumer_no       = $req->NearestConsumerNo;
         $waterSecondConsumer->status                    = $meta['status'];
         $waterSecondConsumer->ward_mstr_id              = $meta['wardmstrId'];
-        $waterSecondConsumer->category                  = $req->Category;
+        $waterSecondConsumer->category                  = $req->category;
         $waterSecondConsumer->property_type_id          = $req->propertyType;
         $waterSecondConsumer->meter_reading             = $req->MeterReading;
         $waterSecondConsumer->is_meter_working          = $req->IsMeterWorking;
@@ -163,7 +163,9 @@ class WaterSecondConsumer extends Model
     {
         return WaterSecondConsumer::select([
             DB::raw("
-            water_consumer_demands.id AS demand_id,
+          water_consumer_demands.id AS demand_id,
+                water_consumer_demands.consumer_id,
+                water_consumer_demands.due_balance_amount,
             CASE
                    WHEN water_consumer_demands.due_balance_amount <=0  THEN true
                    else false

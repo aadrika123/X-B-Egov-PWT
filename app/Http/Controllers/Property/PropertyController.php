@@ -1810,4 +1810,38 @@ class PropertyController extends Controller
             return responseMsgs(false, $e->getMessage(), [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
         }
     }
+
+
+    /**
+     * ||==================Functions for Tc Location Save =======================
+     *          created By : sandeep Bara
+     *          Date       : 13-01-2024
+     */
+
+    public function saveLocationsV2(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                "tcId"       => "required",
+                "latitude"   => "required",
+                "longitude"  => "required",
+                "altitude"   => "nullable",
+            ]
+        );
+        if ($validated->fails()) {
+            return responseMsgs(false, $validated->errors(), "", "011610", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+
+        try {
+            $mlocations = new Location();
+            if(!$mlocations->store($req))
+            {
+                throw new Exception("tc location updated error");
+            }
+            return responseMsgs(true, "tc location Save", '', "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
 }
