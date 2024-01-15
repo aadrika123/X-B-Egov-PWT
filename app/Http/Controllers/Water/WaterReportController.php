@@ -2269,6 +2269,7 @@ class WaterReportController extends Controller
         // return $request->all();
         try {
             $metertype      = null;
+            $propertyType   = $request->propertyType;
             $refUser        = authUser($request);
             $ulbId          = $refUser->ulb_id;
             $wardId = null;
@@ -2308,6 +2309,15 @@ class WaterReportController extends Controller
             if ($request->metertype == 2) {
                 $metertype = 'Fixed';
             }
+            // if ($request->propertyType == 1){
+            //     $propertyType = 'Resedential';
+
+            // }
+            // if ($request->propertyType == 2){
+            //     $propertyType = 'Commercial';
+
+            // }
+            
 
             // DB::connection('pgsql_water')->enableQueryLog();
 
@@ -2324,7 +2334,8 @@ class WaterReportController extends Controller
             water_consumer_owners.guardian_name,
             water_consumer_owners.mobile_no,
             water_second_consumers.ward_mstr_id,
-            zone_masters.zone_name
+            zone_masters.zone_name,
+            water_property_type_mstrs.property_type
         FROM (
             SELECT 
                 COUNT(water_consumer_demands.id)as demand_count,
@@ -2347,6 +2358,7 @@ class WaterReportController extends Controller
         LEFT JOIN water_consumer_owners ON water_consumer_owners.consumer_id = water_second_consumers.id
         LEFT JOIN zone_masters ON zone_masters.id = water_second_consumers.zone_mstr_id
         LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id = water_second_consumers.ward_mstr_id
+        LEFT JOIN water_property_type_mstrs ON water_property_type_mstrs.id =water_second_consumers.property_type_id
         JOIN (
             SELECT 
                 STRING_AGG(applicant_name, ', ') AS owner_name, 
@@ -2369,6 +2381,9 @@ class WaterReportController extends Controller
             }
             if ($metertype) {
                 $rawData = $rawData . "and water_consumer_demands.connection_type = '$metertype'";
+            }
+            if ($propertyType){
+                $rawData = $rawData . "and water_second_consumers.property_type_id = '$propertyType'";
             }
 
             $data = DB::connection('pgsql_water')->select(DB::raw($rawData . " OFFSET 0
