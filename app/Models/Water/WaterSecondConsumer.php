@@ -58,8 +58,8 @@ class WaterSecondConsumer extends Model
         $waterSecondConsumer->meter_reading             = $req->MeterReading;
         $waterSecondConsumer->is_meter_working          = $req->IsMeterWorking;
         $waterSecondConsumer->connection_type_id        = $meta['connectionType'];
-        $waterSecondConsumer->zone_mstr_id              = $req->zone;
-        $waterSecondConsumer->ward_mstr_id              = $req->ward;
+        $waterSecondConsumer->zone_mstr_id              = $req->zoneId;
+        $waterSecondConsumer->ward_mstr_id              = $req->wardId;
 
 
         $waterSecondConsumer->save();

@@ -1803,28 +1803,56 @@ class PropertyController extends Controller
     }
 
     #get tc locations
-    public function getTcLocations(Request $req)
+    public function getTcLocations(Request $request)
     {
         $validated = Validator::make(
-            $req->all(),
+            $request->all(),
             [
                 "tcId"       => "required",
-                'pages'     =>  'nullable',
+                'perPage'     =>  'nullable',
+                'perPage'     =>  'nullable',
             ]
         );
         if ($validated->fails())
-            return validationError(false, $validated->errors(), "", "011610", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $validated->errors(), "", "011610", "1.0", "", "POST", $request->deviceId ?? "");
         try {
             $mLocation  = new Location();
-            $tcId       = $req->tcId;
-            $pages      = $req->pages ?? 10;
-            $mLocation  = $mLocation->getTcDetails($tcId)
-                ->paginate($pages);
-            if (!$mLocation)
-                throw new Exception("No Data Found Against tc ");
-            return responseMsgs(true, "get tc loacations ", remove_null($mLocation), "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            $tcId       = $request->tcId;
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
+            $wardId = $zoneId = null;
+            if($request->fromDate)
+            {
+                $fromDate = $request->fromDate;
+            }
+            if($request->uptoDate)
+            {
+                $uptoDate = $request->uptoDate;
+            }
+            if($request->wardId)
+            {
+                $wardId = $request->wardId;
+            }
+            if($request->zoneId)
+            {
+                $zoneId = $request->zoneId;
+            }
+            $data  = $mLocation->getTcDetails($tcId)
+                    ->whereBetween(DB::raw("Cast(locations.created_at As date)"),[$fromDate,$uptoDate])
+                    ->orderBy("locations.id","DESC");
+            
+            $paginator = $data->paginate($perPage);
+
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true, "get tc loacations ", remove_null($list), "011918", "01", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), [], "011918", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
 

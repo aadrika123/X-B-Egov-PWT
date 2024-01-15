@@ -2269,6 +2269,7 @@ class WaterReportController extends Controller
         // return $request->all();
         try {
             $metertype      = null;
+            $propertyType   = $request->propertyType;
             $refUser        = authUser($request);
             $ulbId          = $refUser->ulb_id;
             $wardId = null;
@@ -2308,6 +2309,15 @@ class WaterReportController extends Controller
             if ($request->metertype == 2) {
                 $metertype = 'Fixed';
             }
+            // if ($request->propertyType == 1){
+            //     $propertyType = 'Resedential';
+
+            // }
+            // if ($request->propertyType == 2){
+            //     $propertyType = 'Commercial';
+
+            // }
+            
 
             // DB::connection('pgsql_water')->enableQueryLog();
 
@@ -2324,7 +2334,8 @@ class WaterReportController extends Controller
             water_consumer_owners.guardian_name,
             water_consumer_owners.mobile_no,
             water_second_consumers.ward_mstr_id,
-            zone_masters.zone_name
+            zone_masters.zone_name,
+            water_property_type_mstrs.property_type
         FROM (
             SELECT 
                 COUNT(water_consumer_demands.id)as demand_count,
@@ -2347,6 +2358,7 @@ class WaterReportController extends Controller
         LEFT JOIN water_consumer_owners ON water_consumer_owners.consumer_id = water_second_consumers.id
         LEFT JOIN zone_masters ON zone_masters.id = water_second_consumers.zone_mstr_id
         LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id = water_second_consumers.ward_mstr_id
+        LEFT JOIN water_property_type_mstrs ON water_property_type_mstrs.id =water_second_consumers.property_type_id
         JOIN (
             SELECT 
                 STRING_AGG(applicant_name, ', ') AS owner_name, 
@@ -2369,6 +2381,9 @@ class WaterReportController extends Controller
             }
             if ($metertype) {
                 $rawData = $rawData . "and water_consumer_demands.connection_type = '$metertype'";
+            }
+            if ($propertyType){
+                $rawData = $rawData . "and water_second_consumers.property_type_id = '$propertyType'";
             }
 
             $data = DB::connection('pgsql_water')->select(DB::raw($rawData . " OFFSET 0
@@ -2932,23 +2947,23 @@ class WaterReportController extends Controller
                     subquery.current_demand_date, 
                     users.user_name
                     ORDER BY water_consumer_demands.consumer_id   
-                    limit $limit offset $offset 
+
                    
             ");
 // return $offset;
         //   return  DB::connection('pgsql_water')->select($rawData);
 
             // dd(($rawData));
-            $data = collect(DB::connection('pgsql_water')->select(DB::raw($rawData)));
-            $totalQuery = "SELECT COUNT(*) AS total FROM ($rawData) AS subquery_total";
-            $total = (collect(DB::SELECT($totalQuery))->first())->total ?? 0;
-            $lastPage = ceil($total / $perPage);
+            $data = DB::connection('pgsql_water')->select(DB::raw($rawData));
+            // $totalQuery = "SELECT COUNT(*) AS total FROM ($rawData) AS subquery_total";
+            // $total = (collect(DB::SELECT($totalQuery))->first())->total ?? 0;
+            // $lastPage = ceil($total / $perPage);
             $list = [
                 "current_page" => $page,
                 "data" => $data,
-                "total" => $total,
+                // "total" => $total,
                 "per_page" => $perPage,
-                "last_page" => $lastPage - 1
+                // "last_page" => $lastPage - 1
             ];
             return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime = NULL, $action, $deviceId);
         } catch (Exception $e) {

@@ -198,11 +198,10 @@ class PostPropPaymentV2
     /**
      * | Beginning Transactions
      */
-    public function postPayment()
+    public function postPaymentOld()
     {
-        // if ($this->_REQ->paymentType == 'isPartPayment') {
-            return $this->postPaymentV2();
-        //  }
+        return $this->postPayment();
+
         $this->readPaymentParams();
 
         // 🔴🔴🔴🔴Begining Transactions 🔴🔴🔴
@@ -539,30 +538,7 @@ class PostPropPaymentV2
             $spWaterCessPerc + $drainCessPerc + $lightCessPerc + $majorBuildingPerc
             + $openPloatTaxPerc;
 
-        // $taxBifurcation = [                                      // Tax Bifurcations for References
-        //     'generalTaxPerc' => $generalTaxPerc,
-        //     'roadTaxPerc' => $roadTaxPerc,
-        //     'firefightingTaxPerc' => $firefightingTaxPerc,
-        //     'educationTaxPerc' => $educationTaxPerc,
-        //     'waterTaxPerc' => $waterTaxPerc,
-        //     'cleanlinessTaxPerc' => $cleanlinessTaxPerc,
-        //     'sewarageTaxPerc' => $sewarageTaxPerc,
-        //     'treeTaxPerc' => $treeTaxPerc,
-        //     'professionalTaxPerc' => $professionalTaxPerc,
-        //     'tax1Perc' => $tax1Perc,
-        //     'tax2Perc' => $tax2Perc,
-        //     'tax3Perc' => $tax3Perc,
-        //     'stateEducationTaxPerc' => $stateEducationTaxPerc,
-        //     'waterBenefitPerc' => $waterBenefitPerc,
-        //     'waterBillPerc' => $waterBillPerc,
-        //     'spWaterCessPerc' => $spWaterCessPerc,
-        //     'drainCessPerc' => $drainCessPerc,
-        //     'lightCessPerc' => $lightCessPerc,
-        //     'majorBuildingPerc' => $majorBuildingPerc,
-        //     'totalTax' => $totaTax,
-        //     'percTax' => $perPecOfTax,
-        //     'totalPerc' => $totalPerc
-        // ];
+        
 
         /**
          * | 100 % = Payable Amount
@@ -647,30 +623,7 @@ class PostPropPaymentV2
             $spWaterCessPerc + $drainCessPerc + $lightCessPerc + $majorBuildingPerc
             + $openPloatTaxPerc;
 
-        // $taxBifurcation = [                                      // Tax Bifurcations for References
-        //     'generalTaxPerc' => $generalTaxPerc,
-        //     'roadTaxPerc' => $roadTaxPerc,
-        //     'firefightingTaxPerc' => $firefightingTaxPerc,
-        //     'educationTaxPerc' => $educationTaxPerc,
-        //     'waterTaxPerc' => $waterTaxPerc,
-        //     'cleanlinessTaxPerc' => $cleanlinessTaxPerc,
-        //     'sewarageTaxPerc' => $sewarageTaxPerc,
-        //     'treeTaxPerc' => $treeTaxPerc,
-        //     'professionalTaxPerc' => $professionalTaxPerc,
-        //     'tax1Perc' => $tax1Perc,
-        //     'tax2Perc' => $tax2Perc,
-        //     'tax3Perc' => $tax3Perc,
-        //     'stateEducationTaxPerc' => $stateEducationTaxPerc,
-        //     'waterBenefitPerc' => $waterBenefitPerc,
-        //     'waterBillPerc' => $waterBillPerc,
-        //     'spWaterCessPerc' => $spWaterCessPerc,
-        //     'drainCessPerc' => $drainCessPerc,
-        //     'lightCessPerc' => $lightCessPerc,
-        //     'majorBuildingPerc' => $majorBuildingPerc,
-        //     'totalTax' => $totaTax,
-        //     'percTax' => $perPecOfTax,
-        //     'totalPerc' => $totalPerc
-        // ];
+        
 
         /**
          * | 100 % = Payable Amount
@@ -703,8 +656,11 @@ class PostPropPaymentV2
 
         return $this->_paidArrearTaxesBifurcation = $this->readPaidTaxes($paidDemandBifurcation);
     }
-
     public function postPaymentV2()
+    {
+        return $this->postPayment();
+    }
+    public function postPayment()
     {
         $this->readPaymentParams();
 
@@ -719,15 +675,21 @@ class PostPropPaymentV2
         $this->_REQ['receiptNo'] = $paymentReceiptNo["receiptNo"];
         $isPartWisePaid = null;
         // Part Payment
-        if ($this->_REQ->paymentType == 'isPartPayment' && $this->_REQ->paidAmount < $this->_propCalculation->original['data']['payableAmt']) {                    // Adjust Demand on Part Payment
+        // Adjust Demand on Part Payment
+        if ($this->_REQ->paymentType == 'isPartPayment' && $this->_REQ->paidAmount < $this->_propCalculation->original['data']['payableAmt']) 
+        {                    
             $isPartWisePaid = true;                                                                                 // Flag has been kept for showing the partial payment receipt
             $this->_REQ->merge(['amount' => $this->_REQ->paidAmount]);
-            if ($this->_REQ->paidAmount > $this->_propCalculation->original['data']['arrearPayableAmt'])           // We have to adjust current demand
-                $this->currentDemandAdjust();
-            elseif ($this->_REQ->paidAmount < $this->_propCalculation->original['data']['arrearPayableAmt'] && $this->_REQ->paidAmount > $this->_propCalculation->original['data']['totalInterestPenalty'])           // We have to adjust Arrear demand
-                $this->arrearDemandAdjust();
-            else
+            // if ($this->_REQ->paidAmount > $this->_propCalculation->original['data']['arrearPayableAmt'])           // We have to adjust current demand
+            //     $this->currentDemandAdjust();
+            // elseif ($this->_REQ->paidAmount < $this->_propCalculation->original['data']['arrearPayableAmt'] && $this->_REQ->paidAmount > $this->_propCalculation->original['data']['totalInterestPenalty'])           // We have to adjust Arrear demand
+            //     $this->arrearDemandAdjust();
+            // else
+            //     throw new Exception("Part Payment in Monthly Interest Not Available");
+            if($this->_REQ->paidAmount < $this->_propCalculation->original['data']['totalInterestPenalty'])
+            {
                 throw new Exception("Part Payment in Monthly Interest Not Available");
+            }
         }
 
         // Adjust Demand on Part Payment
@@ -790,6 +752,12 @@ class PostPropPaymentV2
             $paidPenalty += $paymentDtl["payableAmountOfPenalty"];
             $paidDemands[] = $paymentDtl;
         }
+        
+        $arrearSetalAmount = collect($paidDemands)->where("fyear","<",getFY())->sum("paid_total_tax");
+        $this->_REQ->merge([
+            'demandAmt' => $arrearSetalAmount,                                            // Demandable Amount
+            'arrearSettledAmt' => $arrearSetalAmount > 0 ? true : false,
+        ]);
         
         $this->_fromFyear = ((collect($paidDemands)->sortBy("fyear"))->first())["fyear"] ?? $this->_fromFyear;
         $this->_uptoFyear = ((collect($paidDemands)->sortBy("fyear"))->last())["fyear"] ?? $this->_uptoFyear;
@@ -1045,6 +1013,7 @@ class PostPropPaymentV2
             'open_ploat_tax' => roundFigure(($payableAmountOfTax * $openPloatTaxPerc) / 100),
             'total_tax' => roundFigure(($payableAmountOfTax * $totalPerc) / 100),
         ];
+        $data["paid_total_tax"] =  $paidDemandBifurcation["total_tax"]??0;
         $data["paidCurrentTaxesBifurcation"] = $this->readPaidTaxes($paidDemandBifurcation);
         return $data;
     }
