@@ -3557,6 +3557,74 @@ class ReportController extends Controller
         // ->paginate($perPage);
     }
 
+    /**
+     * | Maker Checker Summary  
+     */
+    public function makerCheckerSummary(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "fromDate" => "required|date|date_format:Y-m-d",
+                "uptoDate" => "required|date|date_format:Y-m-d|after_or_equal:" . $request->fromDate,
+                "wardId"   => "nullable|digits_between:1,9223372036854775807",
+                "zoneId"   => "nullable|digits_between:1,9223372036854775807",
+                "userId"   => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+
+            $perPage  = $request->perPage;
+            $fromDate = $request->fromDate;
+            $uptoDate = $request->uptoDate;
+            $userId   = $wardId = $zoneId = null;
+
+            if ($request->wardId) {
+                $wardId = $request->wardId;
+            }
+            if ($request->zoneId) {
+                $zoneId = $request->zoneId;
+            }
+            if ($request->userId) {
+                $userId = $request->userId;
+            }
+
+            $checkerCount = PropPropertyUpdateRequest::selectRaw('user_id,name as user_name, COUNT(prop_property_update_requests.*) as count')
+                ->whereBetween('prop_property_update_requests.created_at', [$fromDate, $uptoDate])
+                ->join('users', 'users.id', 'prop_property_update_requests.user_id')
+                ->groupBy('user_id', 'name')
+                ->get();
+
+
+
+            DB::enableQueryLog();
+            $makerCount = PropPropertyUpdateRequest::selectRaw('user_id,name as user_name, COUNT(prop_property_update_requests.*) as count')
+                ->whereBetween('prop_property_update_requests.approval_date', [$fromDate, $uptoDate])
+                ->join('users', 'users.id', 'prop_property_update_requests.user_id')
+                ->groupBy('user_id', 'name')
+                ->get();
+            dd(DB::getQueryLog($makerCount));
+
+
+            if ($wardId) {
+                $data = $data->where("prop_property_update_requests.ward_mstr_id", $wardId);
+            }
+            if ($zoneId) {
+                $data = $data->where("prop_property_update_requests.zone_mstr_id", $zoneId);
+            }
+            $data = $data->paginate($perPage);
+
+            return responseMsgs(true, "Data Retreived", $data, "", "", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), []);
+        }
+
+        // ->paginate($perPage);
+    }
+
 
     /**
      * | Maker Checker List
@@ -3583,8 +3651,6 @@ class ReportController extends Controller
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), []);
         }
-
-        // ->paginate($perPage);
     }
 
 
