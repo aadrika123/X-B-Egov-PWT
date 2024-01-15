@@ -25,7 +25,7 @@ class newWaterRequest extends FormRequest
      */
     public function rules()
     {
-        $rules['Zone']                  = 'nullable';
+        $rules['zoneId']                  = 'nullable';
         $rules['ward']                  =  'nullable';
         $rule['ulbId']                  = 'required|numeric';
         $rules['PropertyNo']            = 'required';
