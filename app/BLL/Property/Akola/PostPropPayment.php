@@ -147,7 +147,8 @@ class PostPropPayment
     /**
      * | Beginning Transactions
      */
-    public function postPayment()
+    #this function is removed 
+    public function postPaymentOld()
     {
         $this->readPaymentParams();
 

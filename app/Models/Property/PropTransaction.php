@@ -199,9 +199,15 @@ class PropTransaction extends Model
         $propTrans->demand_amt = $req['demandAmt'];
         $propTrans->tran_by_type = $req['tranBy'];
         $propTrans->verify_status = $req['verifyStatus'];
-        $propTrans->arrear_settled_amt = $req['arrearSettledAmt'];
-        $propTrans->is_arrear_settled = $req['isArrearSettled'];
+        $propTrans->arrear_settled_amt = $req['arrearSettledAmt']??0;
+        $propTrans->is_arrear_settled = $req['isArrearSettled']??false;
         $propTrans->book_no = $req['bookNo'] ?? null;
+        if($req['isCitizen'])
+        {
+            $propTrans->user_id     = null;
+            $propTrans->citizen_id  = $req['CitizenId'] ?? (auth()->user() ? auth()->user()->id : null);
+            $propTrans->is_citizen  = $req['isCitizen'];
+        }
         $propTrans->save();
 
         return [
