@@ -2008,7 +2008,7 @@ class WaterConsumer extends Controller
                 "ward"           => $req->ward,
                 "ConnectionDate" => $req->connectionDate
             ];
-            $water = $mwaterConnection->saveCharges($refRequest);                                // save connection charges 
+            $water = $mwaterConnection->saveCharges($refRequest);                                    // save connection charges 
             $water = $mwaterConsumerOwner->saveConsumerOwner($req, $refRequest);                     // save owner detail
             $water = $mwaterConsumerInitial->saveConsumerReadings($refRequest);                      // meter reading
             $water = $mwaterConsumerMeter->saveInitialMeter($refRequest, $meta);                     // initail or final reading
