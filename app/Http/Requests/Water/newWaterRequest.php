@@ -26,18 +26,18 @@ class newWaterRequest extends FormRequest
     public function rules()
     {
         $rules['zoneId']                  = 'nullable';
-        $rules['ward']                  =  'nullable';
-        $rule['ulbId']                  = 'required|numeric';
+        $rules['wardId']                  =  'nullable';
+        $rule['ulbId']                  = 'nullable|numeric';
         $rules['PropertyNo']            = 'required';
         $rules['mobileNo']               = 'nullable|numeric';
         $rules['address']                = 'nullable';
         $rules['poleLandmark']           = "nullable";
         $rules['dtcCode']                = 'nullable';
         $rules['meterMake']              = 'nullable';
-        $rules['meterNo']                = "required";
+        $rules['meterNo']                = "nullable";
         $rules['meterDigit']             = 'nullable';
         $rules['meterCategory']          = "nullable";
-        $rule['tapSize']                 = "required|numeric";
+        $rule['tapSize']                 = "nullable|numeric";
         $rule['meterState']              = "nullable";
         $rule['meterReadig']             = 'nullable|numeric';
         $rule['readingDate']             = 'nullable';
@@ -60,7 +60,7 @@ class newWaterRequest extends FormRequest
         $rules['applicantName']               = 'nullable';
         $rules['guardianName']            = 'nullable';
         $rules['email']                   = 'nullable';
-        $rules['category']                = 'required';
+        $rules['category']                = 'nullable';
         $rules['propertyType']            = 'required';
         $rules['isMeterWorking']          = 'nullbale';
         $rules['connectionId']            = "nullable";
