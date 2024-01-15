@@ -15,6 +15,7 @@ use App\Models\Property\PropPropertyUpdateRequest;
 use App\Models\Property\PropSaf;
 use App\Models\Property\PropTransaction;
 use App\Models\Trade\TradeTransaction;
+use App\Models\User;
 use App\Models\Water\WaterTran;
 use App\Repository\Common\CommonFunction;
 use App\Repository\Property\Interfaces\IReport;
@@ -3557,6 +3558,34 @@ class ReportController extends Controller
     }
 
 
+    /**
+     * | Maker Checker List
+     */
+    public function makerCheckerUserList(Request $request)
+    {
+        try {
+
+            $mPropPropertyUpdateRequest =  new PropPropertyUpdateRequest();
+            $mUser =  new User();
+            $makerId = $mPropPropertyUpdateRequest
+                ->distinct()->pluck('user_id');
+
+            $checkerId = $mPropPropertyUpdateRequest
+                ->distinct()->pluck('approved_by');
+
+            $userId = collect($makerId)->merge($checkerId)->filter(function ($value) {
+                return $value !== null;
+            })->unique()->values()->all();
+
+            $data =  $mUser->select('id', 'name as user_name',  'user_type')->whereIn('id', $userId)->get();
+
+            return responseMsgs(true, "Data Retreived", $data, "", "", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), []);
+        }
+
+        // ->paginate($perPage);
+    }
 
 
     /*

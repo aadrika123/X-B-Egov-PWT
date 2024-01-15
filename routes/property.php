@@ -532,6 +532,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('reports/arrove-reject-lst', 'AprovedRejectList');
     Route::post('reports/tran-deactived-list', 'tranDeactivatedList');
     Route::post('reports/maker-checker', 'makerChecker');
+    Route::post('reports/maker-checker-user-list', 'makerCheckerUserList');
     Route::post('live-dashboard-update', 'liveDashboardUpdate');
 
     /**

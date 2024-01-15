@@ -86,6 +86,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use App\MicroServices\IdGenerator\HoldingNoGenerator;
+use App\Models\Property\Logs\PropSmsLog;
 use App\Models\Property\RefPropCategory;
 use App\Models\Property\SecondaryDocVerification;
 use App\Models\Workflows\WfMaster;
@@ -1759,6 +1760,7 @@ class ActiveSafController extends Controller
             $mPropActiveSafOwner = new PropActiveSafsOwner();
             $mPropActiveSafFloor = new PropActiveSafsFloor();
             $safApprovalBll = new SafApprovalBll;
+            $mPropSmsLog = new PropSmsLog();
             $holdingNo = null;
             $ptNo = null;
             $famNo = null;
