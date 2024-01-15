@@ -24,7 +24,8 @@ return [
         'CASH',
         'CHEQUE',
         'DD',
-        'NEFT'
+        'NEFT',
+        'RTGS'
     ],
 
     "VERIFICATION_PAYMENT_MODES" => [           // The Verification payment modes which needs the verification

@@ -120,6 +120,10 @@ class CitizenHoldingController extends Controller
             {
                 $request->merge(["userId"=>$user->id]);
             }
+            if($isCitizenUserType && $user)
+            {
+                $request->merge(["CitizenId"=>$user->id]);
+            }
             $respons = $this->_IciciPaymentController->getReferalUrl($request);
             if (!$respons->original["status"]) {
                 throw new Exception("Payment Not Initiate");
@@ -177,6 +181,13 @@ class CitizenHoldingController extends Controller
         {
             $newReqs->merge([
                 "userId"=>$reqDataRequest["userId"],
+            ]);
+        }
+        if(isset($reqDataRequest["CitizenId"]))
+        {
+            $newReqs->merge([
+                "CitizenId"=>$reqDataRequest["CitizenId"],
+                "isCitizen"=>true,
             ]);
         }
         if(isset($reqDataRequest["auth"]))
