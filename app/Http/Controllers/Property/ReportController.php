@@ -3615,16 +3615,14 @@ class ReportController extends Controller
             $data['checker_count']  = $checkerCount;
             $data['maker_count']    = $makerCount;
             $data['rejected_count'] = $rejectedCount;
-            $data['total']['maker'] = $checkerCount->count();
-            $data['total']['checker'] = $makerCount->count();
-            $data['total']['rejected'] = $rejectedCount->count();
+            $data['maker_total'] = $checkerCount->count();
+            $data['checker_total'] = $makerCount->count();
+            $data['rejected_total'] = $rejectedCount->count();
 
             return responseMsgs(true, "Data Retreived", $data, "", "", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), []);
         }
-
-        // ->paginate($perPage);
     }
 
 
@@ -3648,6 +3646,48 @@ class ReportController extends Controller
             })->unique()->values()->all();
 
             $data =  $mUser->select('id', 'name as user_name',  'user_type')->whereIn('id', $userId)->get();
+
+            return responseMsgs(true, "Data Retreived", $data, "", "", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), []);
+        }
+    }
+
+    /**
+     * | Paid Transfer Fee
+     */
+    public function paidTransferFee(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "fromDate" => "required|date|date_format:Y-m-d",
+                "uptoDate" => "required|date|date_format:Y-m-d|after_or_equal:" . $request->fromDate,
+                "wardId"   => "nullable|digits_between:1,9223372036854775807",
+                "zoneId"   => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        try {
+
+            $mPropTransaction =  new PropTransaction();
+            $fromDate = $request->fromDate;
+            $uptoDate = $request->uptoDate;
+            $bata = $mPropTransaction
+                // ->select('saf_id', 'amount', 'transfer_mode', 'transfer_mode_mstr_id')
+                ->select(DB::raw('SUM(amount) as amount'), 'transfer_mode_mstr_id', 'transfer_mode')
+                ->join('prop_safs', 'prop_safs.id', 'prop_transactions.saf_id')
+                ->join('ref_prop_transfer_modes', 'ref_prop_transfer_modes.id', 'prop_safs.transfer_mode_mstr_id')
+                ->whereBetween('prop_transactions.tran_date', [$fromDate, $uptoDate])
+                ->where('tran_type', 'Saf Proccess Fee')
+                ->where('prop_transactions.status', 1)
+                ->groupBy('transfer_mode_mstr_id', 'transfer_mode')
+                ->get();
+
+            // $data = collect($data)->groupBy('transfer_mode');
+            $data['data'] = $bata;
+            $data['total'] = collect($bata)->sum('amount');
 
             return responseMsgs(true, "Data Retreived", $data, "", "", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
