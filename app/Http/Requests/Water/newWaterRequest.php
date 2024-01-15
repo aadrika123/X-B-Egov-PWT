@@ -1,12 +1,12 @@
 <?php
 
-namespace App\Http\Requests\water;
+namespace App\Http\Requests\Water;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Contracts\Validation\Validator;
 
-class newWaterRequest extends FormRequest
+class newWaterRequest extends FormRequest 
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -25,7 +25,7 @@ class newWaterRequest extends FormRequest
      */
     public function rules()
     {
-        $rules['Zone']                  = 'nullable';
+        $rules['zoneId']                  = 'nullable';
         $rules['ward']                  =  'nullable';
         $rule['ulbId']                  = 'required|numeric';
         $rules['PropertyNo']            = 'required';
@@ -37,7 +37,7 @@ class newWaterRequest extends FormRequest
         $rules['meterNo']                = "required";
         $rules['meterDigit']             = 'nullable';
         $rules['meterCategory']          = "nullable";
-        $rule['tabSize']                 = "required|numeric";
+        $rule['tapSize']                 = "required|numeric";
         $rule['meterState']              = "nullable";
         $rule['meterReadig']             = 'nullable|numeric';
         $rule['readingDate']             = 'nullable';
@@ -57,7 +57,7 @@ class newWaterRequest extends FormRequest
         $rule['totalAmount']              = 'nullable';
         $rule['nearestConsumerNo']        = 'nullable';
         $rules['initialMeter']           = 'nullable';
-        $rules['ownerName']               = 'nullable';
+        $rules['applicantName']               = 'nullable';
         $rules['guardianName']            = 'nullable';
         $rules['email']                   = 'nullable';
         $rules['category']                = 'required';

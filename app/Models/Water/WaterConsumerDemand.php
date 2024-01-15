@@ -198,6 +198,7 @@ class WaterConsumerDemand extends Model
     public function saveNewConnectionDemand($req,$refRequest,$userDetails)
     {
         $mWaterConsumerDemand = new WaterConsumerDemand();
+        $currenDate                    = Carbon::now();
         $mWaterConsumerDemand->consumer_id              =  $refRequest['consumerId'];
         $mWaterConsumerDemand->ward_id                  =  $refRequest['ward'];
         $mWaterConsumerDemand->ulb_id                   =  2;
@@ -208,7 +209,7 @@ class WaterConsumerDemand extends Model
         $mWaterConsumerDemand->emp_details_id           =  $userDetails['emp_id'] ?? null;
         $mWaterConsumerDemand->citizen_id               =  $userDetails['citizen_id'] ?? null;
         $mWaterConsumerDemand->demand_from              =  $refRequest['ConnectionDate'];
-        // $mWaterConsumerDemand->demand_upto              =  $req['demand_upto'];
+        $mWaterConsumerDemand->demand_upto              =  $refRequest['ConnectionDate'];
         $mWaterConsumerDemand->penalty                  =   0;                                  // Static
         // $mWaterConsumerDemand->current_meter_reading    =  $req->finalRading;
         $mWaterConsumerDemand->unit_amount              =  0;

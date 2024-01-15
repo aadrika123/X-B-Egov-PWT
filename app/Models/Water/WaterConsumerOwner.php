@@ -29,7 +29,7 @@ class WaterConsumerOwner extends Model
     {
         $waterConsumerOwner   = new WaterConsumerOwner();
         $waterConsumerOwner->consumer_id         = $refRequest['consumerId'];
-        $waterConsumerOwner->applicant_name      = $req->ownerName;
+        $waterConsumerOwner->applicant_name      = $req->applicantName;
         $waterConsumerOwner->guardian_name       = $req->guardianName;
         $waterConsumerOwner->mobile_no           = $req->mobileNo;
         $waterConsumerOwner->email               = $req->email;

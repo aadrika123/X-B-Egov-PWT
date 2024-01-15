@@ -27,7 +27,7 @@ class WaterSecondConsumer extends Model
     {
         $waterSecondConsumer = new WaterSecondConsumer();
         $waterSecondConsumer->ulb_id                    = $req->ulbId;
-        $waterSecondConsumer->zone                      = $req->zone;
+        $waterSecondConsumer->zone                      = $req->zoneId;
         $waterSecondConsumer->cycle                     = $req->Cycle;
         $waterSecondConsumer->property_no               = $req->propertyNo;
         $waterSecondConsumer->consumer_no               = $applicationNo;
@@ -38,7 +38,7 @@ class WaterSecondConsumer extends Model
         $waterSecondConsumer->meter_make                = $req->meterMake;
         $waterSecondConsumer->meter_no                  = $req->meterNo;
         $waterSecondConsumer->meter_digit               = $req->meterDigit;
-        $waterSecondConsumer->tab_size                  = $req->tabSize;
+        $waterSecondConsumer->tab_size                  = $req->tapsize;
         $waterSecondConsumer->meter_state               = $req->meterState;
         $waterSecondConsumer->reading_date              = $req->ReadingDate;
         $waterSecondConsumer->connection_date           = $req->ConectionDate;
