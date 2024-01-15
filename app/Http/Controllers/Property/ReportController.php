@@ -3610,9 +3610,14 @@ class ReportController extends Controller
                 ->groupBy('user_id', 'name', 'pending_status')
                 ->get();
 
+            $rejectedCount = collect($rejectedCount)->where('pending_status', 4)->values();
+
             $data['checker_count']  = $checkerCount;
             $data['maker_count']    = $makerCount;
-            $data['rejected_count'] = collect($rejectedCount)->where('pending_status', 4)->values();
+            $data['rejected_count'] = $rejectedCount;
+            $data['total']['maker'] = $checkerCount->count();
+            $data['total']['checker'] = $makerCount->count();
+            $data['total']['rejected'] = $rejectedCount->count();
 
             return responseMsgs(true, "Data Retreived", $data, "", "", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
