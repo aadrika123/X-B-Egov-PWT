@@ -2767,16 +2767,19 @@ class WaterReportController extends Controller
 
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         try {
+        //   return $request;
             $docUrl                     = $this->_docUrl;
             $metertype      = null;
-            $refUser        = authUser($request);
-            $ulbId          = $refUser->ulb_id;
+            // $refUser        = authUser($request);
+            // $ulbId          = $refUser->ulb_id;
             $wardId = null;
             $userId = null;
             $zoneId = null;
             $paymentMode = null;
-            $perPage = $request->perPage ? $request->perPage : 5;
+            $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $limit = $perPage;
+            $offset =  $request->page && $request->page > 0 ? ($request->page * $perPage) : 0;
             $NowDate                    = Carbon::now()->format('Y-m-d');
             $bilDueDate                 = Carbon::now()->addDays(15)->format('Y-m-d');
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
@@ -2792,8 +2795,8 @@ class WaterReportController extends Controller
 
             if ($request->userId)
                 $userId = $request->userId;
-            else
-                $userId = auth()->user()->id;                   // In Case of any logged in TC User
+            // else
+            //     $userId = auth()->user()->id;                   // In Case of any logged in TC User
 
             if ($request->paymentMode) {
                 $paymentMode = $request->paymentMode;
@@ -2810,7 +2813,9 @@ class WaterReportController extends Controller
             if ($request->metertype == 2) {
                 $metertype = 'Fixed';
             }
-                $rawData = ("SELECT 
+        //    return  $offset;
+            DB::enableQueryLog();
+            $rawData = ("SELECT 
                     distinct(water_consumer_demands.consumer_id),
                     water_consumer_demands.generation_date,
                     ulb_ward_masters.ward_name AS ward_no,
@@ -2846,16 +2851,17 @@ class WaterReportController extends Controller
                     subquery.arrear_demand_date,
                     subquery.current_demand_date,
                     users.user_name
+                   
                 FROM (
                     SELECT  
-                        wd.genertation_date
+                        wd.generation_date,
                         wd.emp_details_id,
                         wd.consumer_id,
                         wd.connection_type,
                         wd.status,
                         wd.demand_no,
                         SUM(wd.due_balance_amount) AS sum_amount,
-                        MAX(wd.id) AS demand_id  
+                        MAX(wd.id) AS demand_id     
                     FROM water_consumer_demands wd
                     WHERE  
                         wd.status = TRUE
@@ -2866,7 +2872,9 @@ class WaterReportController extends Controller
                         wd.connection_type,
                         wd.status, 
                         wd.demand_no,
-                        wd.emp_details_id
+                        wd.emp_details_id,
+                        wd.generation_date
+                   
                 ) water_consumer_demands
                 JOIN water_second_consumers ON water_second_consumers.id = water_consumer_demands.consumer_id
                 LEFT JOIN water_consumer_owners ON water_consumer_owners.consumer_id = water_second_consumers.id
@@ -2886,13 +2894,15 @@ class WaterReportController extends Controller
                     max(case when water_consumer_demands.consumer_tax_id is null then water_consumer_demands.current_demand_date else null end ) as current_demand_date
                     FROM water_consumer_demands
                     GROUP BY consumer_id
-                    ORDER BY water_consumer_demands.consumer_id    
+                    ORDER BY water_consumer_demands.consumer_id 
+                      
             ) AS subquery ON subquery.consumer_id = water_consumer_demands.consumer_id
                 WHERE 
                     water_second_consumers.zone_mstr_id = $zoneId
                     " . ($wardId ? " AND water_second_consumers.ward_mstr_id = $wardId" : "") . "
                     " . ($metertype ? " AND water_consumer_demands.connection_type='$metertype'" : "") . "
                 GROUP BY 
+                    water_consumer_demands.generation_date,
                     water_consumer_demands.consumer_id,
                     water_meter_reading_docs.file_name,
                     water_meter_reading_docs.relative_path,
@@ -2921,15 +2931,24 @@ class WaterReportController extends Controller
                     subquery.arrear_demand_date,
                     subquery.current_demand_date, 
                     users.user_name
-                    ORDER BY water_consumer_demands.consumer_id    
-                    limit 100 
+                    ORDER BY water_consumer_demands.consumer_id   
+                    limit $limit offset $offset 
+                   
             ");
-            $data = DB::connection('pgsql_water')->select(DB::raw($rawData));
-            // return response()->json($data);
+// return $offset;
+        //   return  DB::connection('pgsql_water')->select($rawData);
+
+            // dd(($rawData));
+            $data = collect(DB::connection('pgsql_water')->select(DB::raw($rawData)));
+            $totalQuery = "SELECT COUNT(*) AS total FROM ($rawData) AS subquery_total";
+            $total = (collect(DB::SELECT($totalQuery))->first())->total ?? 0;
+            $lastPage = ceil($total / $perPage);
             $list = [
+                "current_page" => $page,
                 "data" => $data,
-                'billdate' => $NowDate,
-                'bilDueDate' => $bilDueDate,
+                "total" => $total,
+                "per_page" => $perPage,
+                "last_page" => $lastPage - 1
             ];
             return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime = NULL, $action, $deviceId);
         } catch (Exception $e) {
