@@ -3577,7 +3577,7 @@ class ReportController extends Controller
                 return $value !== null;
             })->unique()->values()->all();
 
-            $data =  $mUser->select('id', 'name',  'user_type')->whereIn('id', $userId)->get();
+            $data =  $mUser->select('id', 'name as user_name',  'user_type')->whereIn('id', $userId)->get();
 
             return responseMsgs(true, "Data Retreived", $data, "", "", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
