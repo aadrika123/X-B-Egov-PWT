@@ -6,7 +6,7 @@ use App\BLL\Water\WaterMonthelyCall;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Water\reqDeactivate;
 use App\Http\Requests\Water\reqMeterEntry;
-use App\Http\Requests\water\newWaterRequest;
+use App\Http\Requests\Water\newWaterRequest;
 use App\MicroServices\DocUpload;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Masters\RefRequiredDocument;
@@ -1980,7 +1980,7 @@ class WaterConsumer extends Controller
                 $connectionType = 3;
                 $connectionTypeString = 'Fixed';
             }
-            if ($req->Category == 'Slum' && $req->TabSize != 15) {
+            if ($req->Category == 'Slum' && $req->tapSize != 15) {
                 throw new Exception('Tab size must be 15 for Slum');
             }
             if ($req->PropertyType == '2' && $req->Category == 'Slum') {
