@@ -12,6 +12,7 @@ use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\reqApplySaf;
 use App\Http\Requests\ReqGBSaf;
+use App\Models\Property\Logs\PropSmsLog;
 use App\Models\Property\PropActiveGbOfficer;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
@@ -107,6 +108,7 @@ class ApplySafController extends Controller
             $metaReqs = array();
             $saf = new PropActiveSaf();
             $mOwner = new PropActiveSafsOwner();
+            $mPropSmsLog = new PropSmsLog();
             $prop   = new PropProperty();
             $taxCalculator = new TaxCalculator($request);
             if ($prop = PropProperty::find($request->previousHoldingId)) {
@@ -188,6 +190,9 @@ class ApplySafController extends Controller
             $sms = AkolaProperty(["owner_name" => $ownerName, "saf_no" => $safNo, "assessment_type" => $request->assessmentType, "holding_no" => $request->propertyNo ?? ""], ($request->assessmentType == "New Assessment" ? "New Assessment" : "Reassessment"));
             if (($sms["status"] !== false)) {
                 $respons = send_sms($ownerMobile, $sms["sms"], $sms["temp_id"]);
+                // $smsReqs= [];
+                // $mPropSmsLog->store();
+
             }
 
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
