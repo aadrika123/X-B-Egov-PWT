@@ -2293,8 +2293,9 @@ class ActiveSafController extends Controller
             $response = $safDocController->getUploadDocuments($request);
             $map = collect();
             if ($response->original["status"]) {
-                $map = collect($response->original["data"])->where("doc_category", "Layout sanction Map")->first();
-                $map["ext"] = strtolower(collect(explode(".", $map["doc_path"]))->last());
+                $map = collect($response->original["data"])->whereIn("doc_category", ["Layout sanction Map", "Layout sanction Mape"])->first();
+                if ($map)
+                    $map["ext"] = strtolower(collect(explode(".", $map["doc_path"]))->last());
             }
 
             $data["geoTagging"] = $geoTagging;
@@ -4537,14 +4538,12 @@ class ActiveSafController extends Controller
             $safTrans->save();
             $saf->update();
             # Activate new Property
-            if($property)
-            {
+            if ($property) {
                 $property->status = 1;
                 $property->update();
             }
             # Deactivate Old Property
-            if($Oldproperty)
-            {
+            if ($Oldproperty) {
                 $Oldproperty->status = 4;
                 $Oldproperty->update();
             }
