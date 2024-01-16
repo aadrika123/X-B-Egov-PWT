@@ -2891,10 +2891,10 @@ class WaterPaymentController extends Controller
             $popedDemand->paid_status = 2;                                       // Update Demand Paid Status // Static
             $mWaterTran->saveVerifyStatus($waterTrans['id']);
         } else {
-            $popedDemand->paid_status = 1;                                      // Update Demand Paid Status // Static
+            $popedDemand->paid_status = 1;                                       // Update Demand Paid Status // Static
         }
 
-        if ($refAmount <= $toatalArrearDemand) {
+        if ($refAmount <= $toatalArrearDemand) { 
             $leftArrearAmount = $toatalArrearDemand - $refAmount;
             $popedDemand->current_demand     = $totalCurrentDemand;
         } else {
@@ -2913,7 +2913,8 @@ class WaterPaymentController extends Controller
             $request->consumerId ?? $request->applicationId,
             $waterTrans['id'],
             $popedDemand->id,
-            $refAmount
+            $refAmount,
+            $arrearSettled ?? $leftArrearAmount ?? $leftAmount
         );
         $mWaterConsumerCollection->saveConsumerCollection($popedDemand, $waterTrans, $request->auth['id'] ?? null, $refAmount);
     }
@@ -2954,7 +2955,8 @@ class WaterPaymentController extends Controller
             $request->consumerId ?? $request->applicationId,
             $waterTrans['id'],
             $popedDemand->id,
-            $refPaidAmount
+            $refPaidAmount,
+
         );
         $mWaterConsumerCollection->saveConsumerCollection($popedDemand, $waterTrans, $request->auth['id'] ?? null, $refAmount);
     }
