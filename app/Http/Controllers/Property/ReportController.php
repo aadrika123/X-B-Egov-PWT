@@ -3661,10 +3661,11 @@ class ReportController extends Controller
         $validated = Validator::make(
             $request->all(),
             [
-                "fromDate" => "required|date|date_format:Y-m-d",
-                "uptoDate" => "required|date|date_format:Y-m-d|after_or_equal:" . $request->fromDate,
-                "wardId"   => "nullable|digits_between:1,9223372036854775807",
-                "zoneId"   => "nullable|digits_between:1,9223372036854775807",
+                "fromDate"    => "required|date|date_format:Y-m-d",
+                "uptoDate"    => "required|date|date_format:Y-m-d|after_or_equal:" . $request->fromDate,
+                "wardId"      => "nullable|digits_between:1,9223372036854775807",
+                "zoneId"      => "nullable|digits_between:1,9223372036854775807",
+                "paymentMode" => "nullable",
             ]
         );
         if ($validated->fails())
@@ -3674,20 +3675,46 @@ class ReportController extends Controller
             $mPropTransaction =  new PropTransaction();
             $fromDate = $request->fromDate;
             $uptoDate = $request->uptoDate;
+            $paymentMode = $wardId = $zoneId = null;
+
+            if ($request->wardId) {
+                $wardId = $request->wardId;
+            }
+            if ($request->zoneId) {
+                $zoneId = $request->zoneId;
+            }
+            if ($request->paymentMode) {
+                $paymentMode = strtoupper($request->paymentMode);
+            }
+
             $bata = $mPropTransaction
-                // ->select('saf_id', 'amount', 'transfer_mode', 'transfer_mode_mstr_id')
                 ->select(DB::raw('SUM(amount) as amount'), 'transfer_mode_mstr_id', 'transfer_mode')
                 ->join('prop_safs', 'prop_safs.id', 'prop_transactions.saf_id')
                 ->join('ref_prop_transfer_modes', 'ref_prop_transfer_modes.id', 'prop_safs.transfer_mode_mstr_id')
                 ->whereBetween('prop_transactions.tran_date', [$fromDate, $uptoDate])
                 ->where('tran_type', 'Saf Proccess Fee')
                 ->where('prop_transactions.status', 1)
-                ->groupBy('transfer_mode_mstr_id', 'transfer_mode')
-                ->get();
+                ->groupBy('transfer_mode_mstr_id', 'transfer_mode');
 
-            // $data = collect($data)->groupBy('transfer_mode');
+            if ($wardId) {
+                $bata = $bata->where("prop_safs.ward_mstr_id", $wardId);
+            }
+            if ($zoneId) {
+                $bata = $bata->where("prop_safs.zone_mstr_id", $zoneId);
+            }
+            if ($paymentMode) {
+                $bata = $bata->where("prop_transactions.payment_mode", $paymentMode);
+            }
+
+            $bata = $bata
+                ->get();
+            if (!$paymentMode)
+                $paymentMode = "Cash/Cheque/DD/Online";
+
             $data['data'] = $bata;
             $data['total'] = collect($bata)->sum('amount');
+            $data['payment_mode'] = $paymentMode;
+            $data['collection_date'] = Carbon::parse($fromDate)->format('d/m/Y') . " - " . Carbon::parse($uptoDate)->format('d/m/Y');
 
             return responseMsgs(true, "Data Retreived", $data, "", "", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
