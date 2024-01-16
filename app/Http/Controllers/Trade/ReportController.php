@@ -342,6 +342,7 @@ class ReportController extends Controller
             $response['amendment']   = $result['AMENDMENT'] ?? 0;
             $response['surrender']   = $result['SURRENDER'] ?? 0;
             $response['paid_amount'] = $paidAmount;
+            $response['date']        = ($todayDate)->format('d-m-Y');
 
             return responseMsgs(true, "Data Retreived", $response, "", "", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
