@@ -36,6 +36,7 @@ class WaterTranDetail extends Model
         $TradeDtl->total_demand     = $totalConnectionCharges;
         $TradeDtl->application_id   = $applicationId;
         $TradeDtl->paid_amount      = $refPaidAmount ?? $totalConnectionCharges;
+        // $TradeDtl->arrear_details   = $arrearSettled;
         $TradeDtl->created_at       = Carbon::now();
         $TradeDtl->save();
     }

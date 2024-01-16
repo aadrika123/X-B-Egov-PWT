@@ -2317,7 +2317,7 @@ class WaterReportController extends Controller
             //     $propertyType = 'Commercial';
 
             // }
-            
+
 
             // DB::connection('pgsql_water')->enableQueryLog();
 
@@ -2950,8 +2950,8 @@ class WaterReportController extends Controller
 
                    
             ");
-           // return $offset;
-           //   return  DB::connection('pgsql_water')->select($rawData);
+            // return $offset;
+            //   return  DB::connection('pgsql_water')->select($rawData);
 
             // dd(($rawData));
             $data = DB::connection('pgsql_water')->select(DB::raw($rawData));
@@ -2976,7 +2976,7 @@ class WaterReportController extends Controller
         $request->merge(["metaData" => ["pr1.1", 1.1, null, $request->getMethod(), null,]]);
         $metaData = collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
-        try{
+        try {
             $NowDate    = Carbon::now()->format('Y-m-d');
             $bilDueDate = Carbon::now()->addDays(15)->format('Y-m-d');
             $fromDate    = $uptoDate = Carbon::now()->format("Y-m-d");
@@ -2987,7 +2987,7 @@ class WaterReportController extends Controller
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $limit = $perPage;
             $offset =  $request->page && $request->page > 0 ? ($request->page * $perPage) : 0;
-            
+
             // if ($request->fromDate) {
             //     $fromDate = $request->fromDate;
             // }
@@ -3000,7 +3000,7 @@ class WaterReportController extends Controller
 
             if ($request->userId)
                 $userId = $request->userId;
-            
+
             if ($request->zoneId) {
                 $zoneId = $request->zoneId;
             }
@@ -3094,7 +3094,7 @@ class WaterReportController extends Controller
                     join last_connections on last_connections.last_id = water_consumer_meters.id
                 )
             ";
-            $select="
+            $select = "
                 SELECT
                     water_second_consumers.id as consumer_id,
                     ulb_ward_masters.ward_name AS ward_no, 
@@ -3152,7 +3152,7 @@ class WaterReportController extends Controller
                                     : " AND connection_types.current_meter_status IN($metertype)"
                     ) : "")."          
             ";
-        $dataSql = $with.$select.$from." 
+            $dataSql = $with . $select . $from . " 
                     ORDER BY water_second_consumers.id
                     LIMIT $limit OFFSET $offset ";
         $countSql = $with." SELECT COUNT(*) ".$from;
@@ -3489,6 +3489,7 @@ class WaterReportController extends Controller
 
             // DB::enableQueryLog();
             $data = ("SELECT 
+              subquery.tran_id,
               subquery.tran_no,
               subquery.arrear_collections,
               subquery.current_collections,
@@ -3506,8 +3507,9 @@ class WaterReportController extends Controller
               
      FROM (
          SELECT 
-             SUM(CASE WHEN water_consumer_demands.demand_upto <= '$previousUptoDate' THEN water_trans.amount ELSE 0 END) AS arrear_collections, 
-             SUM(CASE WHEN water_consumer_demands.demand_from >=  '$fromDates'   AND water_trans.tran_date <= '$uptoDates' THEN water_trans.amount ELSE 0 END) AS current_collections,
+             SUM(CASE WHEN water_consumer_collections.demand_upto <= '$fromDates' AND water_trans.tran_date>='$fromDates'  THEN water_consumer_collections.paid_amount ELSE 0 END) AS arrear_collections, 
+             SUM(CASE WHEN water_consumer_collections.demand_upto >=  '$fromDates'   AND water_trans.tran_date >= '$fromDates' THEN water_consumer_collections.paid_amount ELSE 0 END) AS current_collections,
+                water_trans.id as tran_id,
                 water_trans.tran_date,
                 water_trans.tran_no,
                 water_second_consumers.consumer_no,water_trans.payment_mode,
@@ -3528,6 +3530,7 @@ class WaterReportController extends Controller
         left JOIN water_consumer_owners ON water_consumer_owners.consumer_id=water_trans.related_id
         left JOIN water_consumer_demands ON water_consumer_demands.consumer_id=water_trans.related_id
         left Join zone_masters on zone_masters.id= water_second_consumers.zone_mstr_id
+        LEFT JOIN water_consumer_collections on water_consumer_collections.consumer_id = water_trans.related_id
         LEFT JOIN users ON users.id=water_trans.emp_dtl_id
         where water_trans.related_id is not null 
         and water_trans.status in (1, 2) 
@@ -3557,7 +3560,8 @@ class WaterReportController extends Controller
                 "sum_current_coll" => $refData->pluck('current_collections')->sum(),
                 "sum_arrear_coll" => $refData->pluck('arrear_collections')->sum(),
                 "sum_total_coll" => $refData->pluck('total_collections')->sum(),
-                "totalAmount"   =>  $refData->pluck('amount')->sum(),
+                "totalAmount"   =>  $refData->pluck('amount')->sum(),  
+                "totalColletion" => $refData->pluck('tran_id')->count(), 
                 "currentDate"  => $currentDate
             ];
             $queryRunTime = (collect(DB::connection('pgsql_water'))->sum("time"));
@@ -3638,12 +3642,21 @@ class WaterReportController extends Controller
             if ($request->zoneId) {
                 $zoneId = $request->zoneId;
             }
+            // -- round(water_consumer_demands.arrear_demands) as arrear_demand,
 
             // DB::enableQueryLog();
             $rawData = ("select 
                        final_data.*,readings.initial_reading,readings.final_reading,
                        (COALESCE(readings.final_reading,0) - COALESCE(readings.initial_reading,0)) as consumpsun_unit,  
-                         readings. created_on
+                       readings.created_on,
+                       subquery.generate_amount,
+                       subquery.arrear_demands,
+                       subquery.current_demands,
+                       subquery.demand_from,
+                       subquery.demand_upto,
+                       subquery.total_amount,
+                       subquery.arrear_demand_date,
+                       subquery.current_demand_date
                       from (
                           SELECT water_second_consumers.id as consumer_id,
                           water_second_consumers.consumer_no,
@@ -3651,7 +3664,7 @@ class WaterReportController extends Controller
                           water_second_consumers.meter_no,
                           water_second_consumers.mobile_no,
                           round(water_consumer_demands.current_demand) as current_demand,
-                          round(water_consumer_demands.arrear_demands) as arrear_demand,
+                         
                           round(water_consumer_demands.due_balance_amount) as due_balance_amount,
                           water_consumer_demands.demand_from,
                           water_consumer_demands.demand_upto,
@@ -3713,6 +3726,21 @@ class WaterReportController extends Controller
                " . ($userId ? " AND water_consumer_demands.emp_details_id = $userId" : "") . "
                GROUP BY water_consumer_demands.consumer_id, created_on
                ) AS readings ON readings.consumer_id = final_data.consumer_id
+               LEFT JOIN (
+                SELECT 
+                    distinct consumer_id,
+                    MIN(demand_from) AS demand_from,
+                    MAX(demand_upto) AS demand_upto,
+                    sum(water_consumer_demands.due_balance_amount) as total_amount,
+                    SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.arrear_demand ELSE 0 END) AS arrear_demands,
+                    SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.current_demand ELSE 0 END) AS current_demands,
+                    SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NOT NULL THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS generate_amount,
+                    max(case when water_consumer_demands.consumer_tax_id is null then water_consumer_demands.arrear_demand_date else null end ) as arrear_demand_date,
+                    max(case when water_consumer_demands.consumer_tax_id is null then water_consumer_demands.current_demand_date else null end ) as current_demand_date
+                FROM water_consumer_demands
+                GROUP BY consumer_id
+                ORDER BY water_consumer_demands.consumer_id 
+            ) AS subquery ON subquery.consumer_id = final_data.consumer_id;
              ");
 
             $data = DB::connection('pgsql_water')->select($rawData . " limit $limit offset $offset");
@@ -3822,13 +3850,21 @@ class WaterReportController extends Controller
             $rawData = ("select 
                        final_data.*,readings.initial_reading,readings.final_reading,
                        (COALESCE(readings.final_reading,0) - COALESCE(readings.initial_reading,0)) as consumpsun_unit,  
-                         readings. created_on
+                       readings.created_on,
+                       round(subquery.generate_amount)as generate_amount,
+                       round(subquery.arrear_demands) as arrear_demands,
+                       round(subquery.current_demands) as current_demands,
+                       subquery.demand_from,
+                       subquery.demand_upto,
+                       round(subquery.total_amount) as total_amount,
+                       subquery.arrear_demand_date,
+                       subquery.current_demand_date
                       from (
                           SELECT water_second_consumers.id as consumer_id,
                           water_second_consumers.consumer_no,
                           water_second_consumers.address,
                           water_second_consumers.mobile_no,
-                          water_consumer_demands.current_demand,water_consumer_demands.arrear_demands,
+                          water_consumer_demands.current_demand,
                           water_consumer_demands.due_balance_amount,
                           water_consumer_demands.demand_from,
                           water_consumer_demands.demand_upto,
@@ -3885,6 +3921,21 @@ class WaterReportController extends Controller
                " . ($userId ? " AND water_consumer_demands.emp_details_id = $userId" : "") . "
                GROUP BY water_consumer_demands.consumer_id, created_on
                ) AS readings ON readings.consumer_id = final_data.consumer_id
+               LEFT JOIN (
+                SELECT 
+                    distinct consumer_id,
+                    MIN(demand_from) AS demand_from,
+                    MAX(demand_upto) AS demand_upto,
+                    sum(water_consumer_demands.due_balance_amount) as total_amount,
+                    SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.arrear_demand ELSE 0 END) AS arrear_demands,
+                    SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.current_demand ELSE 0 END) AS current_demands,
+                    SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NOT NULL THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS generate_amount,
+                    max(case when water_consumer_demands.consumer_tax_id is null then water_consumer_demands.arrear_demand_date else null end ) as arrear_demand_date,
+                    max(case when water_consumer_demands.consumer_tax_id is null then water_consumer_demands.current_demand_date else null end ) as current_demand_date
+                FROM water_consumer_demands
+                GROUP BY consumer_id
+                ORDER BY water_consumer_demands.consumer_id 
+            ) AS subquery ON subquery.consumer_id = final_data.consumer_id;
              ");
             $data = DB::connection('pgsql_water')->select(DB::raw($rawData));
             $refData = collect($data);
@@ -3894,9 +3945,10 @@ class WaterReportController extends Controller
                 "sum_arrear_coll" => $refData->pluck('arrear_demand')->sum(),
                 "sum_total_coll" => $refData->pluck('total_collections')->sum(),
                 "totalAmount"   =>  round($refData->pluck('due_balance_amount')->sum()),
+                "totalCollection"=> $refData->pluck('consumer_id')->count(),
                 "currentDate"  => $currentDate
             ];
-            $queryRunTime = (collect(DB::connection('pgsql_water'))->sum("time"));
+            $queryRunTime = (collect(DB::connection(' pgsql_water'))->sum("time"));
             return responseMsgs(true, "visit Report", $refDetailsV2, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
