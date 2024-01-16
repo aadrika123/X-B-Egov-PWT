@@ -3618,6 +3618,21 @@ class ReportController extends Controller
             $checkerCount =  $checkerCount
                 ->get();
 
+            $rejectedCount = PropPropertyUpdateRequest::selectRaw('user_id,name as user_name, COUNT(prop_property_update_requests.*) as count,pending_status')
+                ->whereBetween('prop_property_update_requests.approval_date', [$fromDate, $uptoDate])
+                ->join('users', 'users.id', 'prop_property_update_requests.user_id')
+                ->groupBy('user_id', 'name', 'pending_status')
+                ->orderby('name');
+
+            if ($zoneId) {
+                $rejectedCount = $rejectedCount->where("prop_property_update_requests.zone_mstr_id", $zoneId);
+            }
+            if ($wardId) {
+                $rejectedCount = $rejectedCount->where("prop_property_update_requests.ward_mstr_id", $wardId);
+            }
+            $rejectedCount =  $rejectedCount
+                ->get();
+
             // $rejectedCount = PropPropertyUpdateRequest::selectRaw('user_id,name as user_name, COUNT(prop_property_update_requests.*) as count,pending_status')
             //     ->whereBetween('prop_property_update_requests.approval_date', [$fromDate, $uptoDate])
             //     ->join('users', 'users.id', 'prop_property_update_requests.user_id')

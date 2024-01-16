@@ -3081,12 +3081,13 @@ class WaterReportController extends Controller
                     group by water_consumer_owners.consumer_id
                 ),
                 last_connections AS (
-                    select max(water_consumer_meters.id) as last_id
+                    select max(water_consumer_meters.id) as last_id,water_consumer_meters.consumer_id
                     from water_consumer_meters
                     join demands on demands.consumer_id = water_consumer_meters.consumer_id
+                    group by water_consumer_meters.consumer_id
                 ),
                 connection_types AS (
-                    select consumer_id,water_consumer_meters.connection_type as current_meter_status,
+                    select water_consumer_meters.consumer_id,water_consumer_meters.connection_type as current_meter_status,
                         case when water_consumer_meters.connection_type in (1,2) then 'Metered' else 'Fixed' end as connection_type,
                         case when water_consumer_meters.connection_type in (1,2) then water_consumer_meters.meter_no else null end as meter_no
                     from water_consumer_meters
@@ -3125,6 +3126,7 @@ class WaterReportController extends Controller
                     final_demands.current_demand_date, 
                     final_demands.user_name ,
                     final_demands.demand_type, 
+                    final_demands.demand_no,
                     case when upto_reading < from_reading then from_reading else upto_reading end as finalreading,
                     case when from_reading < upto_reading  then from_reading else upto_reading end as initialreading,
                     CONCAT('$NowDate') AS billdate,
@@ -3162,7 +3164,7 @@ class WaterReportController extends Controller
             "data" => $data,
             "total" => $total,
             "per_page" => $perPage,
-            "last_page" => $lastPage - 1
+            "last_page" => ($total>0 ? $lastPage - 1 : 1),
         ];
         return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime = NULL, $action, $deviceId);
         }
@@ -3684,7 +3686,7 @@ class WaterReportController extends Controller
                   " . ($userId ? " AND water_consumer_demands.emp_details_id = $userId" : "") . "
                   GROUP BY consumer_id	      
               )water_consumer_demands ON water_second_consumers.id = water_consumer_demands.consumer_id	
-    -- 		   left JOIN users ON users.id = ANY(STRING_TO_ARRAY(water_consumer_demands.emp_details_id,',')::bigint[])
+            -- left JOIN users ON users.id = ANY(STRING_TO_ARRAY(water_consumer_demands.emp_details_id,',')::bigint[])
             left JOIN (
                   select string_agg(water_consumer_owners.applicant_name,',') AS applicant_name,
                       water_consumer_owners.consumer_id
@@ -3859,7 +3861,7 @@ class WaterReportController extends Controller
                   " . ($userId ? " AND water_consumer_demands.emp_details_id = $userId" : "") . "
                   GROUP BY consumer_id	      
               )water_consumer_demands ON water_second_consumers.id = water_consumer_demands.consumer_id	
-    -- 		   left JOIN users ON users.id = ANY(STRING_TO_ARRAY(water_consumer_demands.emp_details_id,',')::bigint[])
+            -- left JOIN users ON users.id = ANY(STRING_TO_ARRAY(water_consumer_demands.emp_details_id,',')::bigint[])
             left JOIN (
                   select string_agg(water_consumer_owners.applicant_name,',') AS applicant_name,
                       water_consumer_owners.consumer_id
