@@ -99,4 +99,8 @@ class ActiveTradeLicence extends Model
             ->first();
     }
 
+    /**
+     * | 
+     */
+
 }
