@@ -27,6 +27,7 @@ use App\Traits\Property\SAF;
 use App\Traits\Workflow\Workflow;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -190,9 +191,15 @@ class ApplySafController extends Controller
             $sms = AkolaProperty(["owner_name" => $ownerName, "saf_no" => $safNo, "assessment_type" => $request->assessmentType, "holding_no" => $request->propertyNo ?? ""], ($request->assessmentType == "New Assessment" ? "New Assessment" : "Reassessment"));
             if (($sms["status"] !== false)) {
                 $respons = send_sms($ownerMobile, $sms["sms"], $sms["temp_id"]);
-                // $smsReqs= [];
-                // $mPropSmsLog->store();
-
+            //     $smsReqs = new Request([
+            //         "appId" => $safId,
+            //         "refType" => 'SAF',
+            //         "mobileNo" => $ownerMobile,
+            //         "purpose" => $request->assessmentType,
+            //         "templateId" => $sms["temp_id"],
+            //         "sms" => $sms["sms"],
+            //     ]);
+            //     $mPropSmsLog->store($smsReqs);
             }
 
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [

@@ -16,10 +16,10 @@ class PropSmsLog extends Model
             "emp_id"         => $requst->userId??(Auth()->user()->id??0),
             "ref_id"         => $requst->appId,
             "ref_type"       => $requst->refType,
-            "mobile_no"      =>  $requst->mobileNo,
-            "purpose"        =>  $requst->purpose,
+            "mobile_no"      => $requst->mobileNo,
+            "purpose"        => $requst->purpose,
             "template_id"    => $requst->templateId,
-            "mesage"        => $requst->sms
+            "message"        => $requst->sms
         ];
         return PropSmsLog::create($data)->id;
     }
