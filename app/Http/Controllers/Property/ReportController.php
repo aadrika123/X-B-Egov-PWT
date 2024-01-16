@@ -3592,21 +3592,45 @@ class ReportController extends Controller
                 ->whereBetween('prop_property_update_requests.created_at', [$fromDate, $uptoDate])
                 ->join('users', 'users.id', 'prop_property_update_requests.user_id')
                 ->groupBy('user_id', 'name')
-                ->orderby('name')
+                ->orderby('name');
+
+            if ($zoneId) {
+                $makerCount = $makerCount->where("prop_property_update_requests.zone_mstr_id", $zoneId);
+            }
+            if ($wardId) {
+                $makerCount = $makerCount->where("prop_property_update_requests.ward_mstr_id", $wardId);
+            }
+            $makerCount =  $makerCount
                 ->get();
 
             $checkerCount = PropPropertyUpdateRequest::selectRaw('user_id,name as user_name, COUNT(prop_property_update_requests.*) as count')
                 ->whereBetween('prop_property_update_requests.approval_date', [$fromDate, $uptoDate])
                 ->join('users', 'users.id', 'prop_property_update_requests.user_id')
                 ->groupBy('user_id', 'name')
-                ->orderby('name')
+                ->orderby('name');
+
+            if ($zoneId) {
+                $checkerCount = $checkerCount->where("prop_property_update_requests.zone_mstr_id", $zoneId);
+            }
+            if ($wardId) {
+                $checkerCount = $checkerCount->where("prop_property_update_requests.ward_mstr_id", $wardId);
+            }
+            $checkerCount =  $checkerCount
                 ->get();
 
             $rejectedCount = PropPropertyUpdateRequest::selectRaw('user_id,name as user_name, COUNT(prop_property_update_requests.*) as count,pending_status')
                 ->whereBetween('prop_property_update_requests.approval_date', [$fromDate, $uptoDate])
                 ->join('users', 'users.id', 'prop_property_update_requests.user_id')
                 ->groupBy('user_id', 'name', 'pending_status')
-                ->orderby('name')
+                ->orderby('name');
+
+            if ($zoneId) {
+                $rejectedCount = $rejectedCount->where("prop_property_update_requests.zone_mstr_id", $zoneId);
+            }
+            if ($wardId) {
+                $rejectedCount = $rejectedCount->where("prop_property_update_requests.ward_mstr_id", $wardId);
+            }
+            $rejectedCount =  $rejectedCount
                 ->get();
 
             $rejectedCount = collect($rejectedCount)->where('pending_status', 4)->values();
