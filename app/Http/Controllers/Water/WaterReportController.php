@@ -3081,12 +3081,13 @@ class WaterReportController extends Controller
                     group by water_consumer_owners.consumer_id
                 ),
                 last_connections AS (
-                    select max(water_consumer_meters.id) as last_id
+                    select max(water_consumer_meters.id) as last_id,water_consumer_meters.consumer_id
                     from water_consumer_meters
                     join demands on demands.consumer_id = water_consumer_meters.consumer_id
+                    group by water_consumer_meters.consumer_id
                 ),
                 connection_types AS (
-                    select consumer_id,water_consumer_meters.connection_type as current_meter_status,
+                    select water_consumer_meters.consumer_id,water_consumer_meters.connection_type as current_meter_status,
                         case when water_consumer_meters.connection_type in (1,2) then 'Metered' else 'Fixed' end as connection_type,
                         case when water_consumer_meters.connection_type in (1,2) then water_consumer_meters.meter_no else null end as meter_no
                     from water_consumer_meters
