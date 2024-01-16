@@ -3569,7 +3569,6 @@ class ReportController extends Controller
                 "uptoDate" => "required|date|date_format:Y-m-d|after_or_equal:" . $request->fromDate,
                 "wardId"   => "nullable|digits_between:1,9223372036854775807",
                 "zoneId"   => "nullable|digits_between:1,9223372036854775807",
-                "userId"   => "nullable|digits_between:1,9223372036854775807",
             ]
         );
         if ($validated->fails())
@@ -3588,26 +3587,26 @@ class ReportController extends Controller
             if ($request->zoneId) {
                 $zoneId = $request->zoneId;
             }
-            if ($request->userId) {
-                $userId = $request->userId;
-            }
 
             $makerCount = PropPropertyUpdateRequest::selectRaw('user_id,name as user_name, COUNT(prop_property_update_requests.*) as count')
                 ->whereBetween('prop_property_update_requests.created_at', [$fromDate, $uptoDate])
                 ->join('users', 'users.id', 'prop_property_update_requests.user_id')
                 ->groupBy('user_id', 'name')
+                ->orderby('name')
                 ->get();
 
             $checkerCount = PropPropertyUpdateRequest::selectRaw('user_id,name as user_name, COUNT(prop_property_update_requests.*) as count')
                 ->whereBetween('prop_property_update_requests.approval_date', [$fromDate, $uptoDate])
                 ->join('users', 'users.id', 'prop_property_update_requests.user_id')
                 ->groupBy('user_id', 'name')
+                ->orderby('name')
                 ->get();
 
             $rejectedCount = PropPropertyUpdateRequest::selectRaw('user_id,name as user_name, COUNT(prop_property_update_requests.*) as count,pending_status')
                 ->whereBetween('prop_property_update_requests.approval_date', [$fromDate, $uptoDate])
                 ->join('users', 'users.id', 'prop_property_update_requests.user_id')
                 ->groupBy('user_id', 'name', 'pending_status')
+                ->orderby('name')
                 ->get();
 
             $rejectedCount = collect($rejectedCount)->where('pending_status', 4)->values();
@@ -3615,9 +3614,9 @@ class ReportController extends Controller
             $data['checker_count']  = $checkerCount;
             $data['maker_count']    = $makerCount;
             $data['rejected_count'] = $rejectedCount;
-            $data['maker_total'] = $checkerCount->count();
-            $data['checker_total'] = $makerCount->count();
-            $data['rejected_total'] = $rejectedCount->count();
+            $data['maker_total'] = $makerCount->sum('count');
+            $data['checker_total'] = $checkerCount->sum('count');
+            $data['rejected_total'] = $rejectedCount->sum('count');
 
             return responseMsgs(true, "Data Retreived", $data, "", "", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
