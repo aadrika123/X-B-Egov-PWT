@@ -2782,7 +2782,7 @@ class WaterReportController extends Controller
 
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         try {
-        //   return $request;
+            //   return $request;
             $docUrl                     = $this->_docUrl;
             $metertype      = null;
             // $refUser        = authUser($request);
@@ -2828,7 +2828,7 @@ class WaterReportController extends Controller
             if ($request->metertype == 2) {
                 $metertype = 'Fixed';
             }
-        //    return  $offset;
+            //    return  $offset;
             DB::enableQueryLog();
             $rawData = ("SELECT 
                     distinct(water_consumer_demands.consumer_id),
@@ -2950,8 +2950,8 @@ class WaterReportController extends Controller
 
                    
             ");
-// return $offset;
-        //   return  DB::connection('pgsql_water')->select($rawData);
+           // return $offset;
+           //   return  DB::connection('pgsql_water')->select($rawData);
 
             // dd(($rawData));
             $data = DB::connection('pgsql_water')->select(DB::raw($rawData));
@@ -2967,6 +2967,206 @@ class WaterReportController extends Controller
             ];
             return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime = NULL, $action, $deviceId);
         } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
+    }
+
+    public function waterBulkdemandV2(colllectionReport $request)
+    {
+        $request->merge(["metaData" => ["pr1.1", 1.1, null, $request->getMethod(), null,]]);
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try{
+            $NowDate    = Carbon::now()->format('Y-m-d');
+            $bilDueDate = Carbon::now()->addDays(15)->format('Y-m-d');
+            $fromDate    = $uptoDate = Carbon::now()->format("Y-m-d");
+            $docUrl      = $this->_docUrl;
+            $metertype   = $wardId = $userId = $zoneId = $paymentMode = null;
+
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $limit = $perPage;
+            $offset =  $request->page && $request->page > 0 ? ($request->page * $perPage) : 0;
+            
+            // if ($request->fromDate) {
+            //     $fromDate = $request->fromDate;
+            // }
+            // if ($request->uptoDate) {
+            //     $uptoDate = $request->uptoDate;
+            // }
+            if ($request->wardId) {
+                $wardId = $request->wardId;
+            }
+
+            if ($request->userId)
+                $userId = $request->userId;
+            
+            if ($request->zoneId) {
+                $zoneId = $request->zoneId;
+            }
+            if ($request->metertype == 1) {
+                $metertype = '1,2';
+            }
+            if ($request->metertype == 2) {
+                $metertype = '3';
+            }
+
+            $with = "
+                WITH demands AS (
+                    SELECT wd.consumer_id, count(wd.id)  , string_agg(wd.connection_type,', ') as demand_type,
+                        SUM(wd.due_balance_amount) AS sum_amount, 
+                        max(wd.generation_date) as generation_date,
+                        MAX(wd.id) AS demand_id ,
+                        max(case when water_consumer_taxes.id is null then wd.current_meter_reading else water_consumer_taxes.final_reading end) as upto_reading,
+                        min(case when water_consumer_taxes.id is null then wd.current_meter_reading else water_consumer_taxes.initial_reading end) as from_reading,
+                        MIN(wd.demand_from) AS demand_from, 
+                        MAX(wd.demand_upto) AS demand_upto, 
+                        sum(
+                            wd.due_balance_amount
+                        ) as total_amount, 
+                        SUM(
+                            CASE WHEN wd.consumer_tax_id IS NULL THEN wd.arrear_demand ELSE 0 END
+                        ) AS arrear_demands, 
+                        SUM(
+                            CASE WHEN wd.consumer_tax_id IS NULL THEN wd.current_demand ELSE 0 END
+                        ) AS current_demands, 
+                        SUM(
+                            CASE WHEN wd.consumer_tax_id IS NOT NULL THEN wd.due_balance_amount ELSE 0 END
+                        ) AS generate_amount, 
+                        max(
+                            case when wd.consumer_tax_id is null then wd.arrear_demand_date else null end
+                        ) as arrear_demand_date, 
+                        max(
+                            case when wd.consumer_tax_id is null then wd.current_demand_date else null end
+                        ) as current_demand_date 
+                    FROM water_consumer_demands wd 
+                    left join water_consumer_taxes on water_consumer_taxes.id=  wd.consumer_tax_id
+                    WHERE 
+                    wd.status = TRUE 
+                    AND wd.consumer_id IS NOT NULL 
+                    AND wd.due_balance_amount>0 
+                    GROUP BY 
+                    wd.consumer_id 
+                ),
+                final_demands AS(
+                    select demands.*,
+                        water_consumer_demands.emp_details_id, 
+                        water_consumer_demands.status, 
+                        water_consumer_demands.demand_no ,
+                        water_consumer_demands.connection_type ,
+                        CASE when trim(water_meter_reading_docs.relative_path)<>''  OR  trim(water_meter_reading_docs.file_name)<>'' then
+                            CONCAT(
+                                '$docUrl', '/', 
+                                water_meter_reading_docs.relative_path, 
+                                '/', water_meter_reading_docs.file_name
+                            )
+                            else '' 
+                            end AS meter_img, 
+                        water_meter_reading_docs.relative_path, 
+                        water_meter_reading_docs.file_name,
+                        users.user_name 
+                    FROM water_consumer_demands  
+                    join demands on demands.demand_id = water_consumer_demands.id
+                    LEFT JOIN users on users.id = water_consumer_demands.emp_details_id 
+                    left join water_meter_reading_docs on water_meter_reading_docs.demand_id = water_consumer_demands.id
+                ),
+                owners AS (
+                    select water_consumer_owners.consumer_id,
+                        string_agg(water_consumer_owners.applicant_name,', ') as applicant_name, 
+                        string_agg(water_consumer_owners.guardian_name,', ') as guardian_name, 
+                        string_agg(water_consumer_owners.mobile_no,', ') as mobile_no
+                    from water_consumer_owners
+                    join demands on demands.consumer_id = water_consumer_owners.consumer_id
+                    where status = true
+                    group by water_consumer_owners.consumer_id
+                ),
+                last_connections AS (
+                    select max(water_consumer_meters.id) as last_id
+                    from water_consumer_meters
+                    join demands on demands.consumer_id = water_consumer_meters.consumer_id
+                ),
+                connection_types AS (
+                    select consumer_id,water_consumer_meters.connection_type as current_meter_status,
+                        case when water_consumer_meters.connection_type in (1,2) then 'Metered' else 'Fixed' end as connection_type,
+                        case when water_consumer_meters.connection_type in (1,2) then water_consumer_meters.meter_no else null end as meter_no
+                    from water_consumer_meters
+                    join last_connections on last_connections.last_id = water_consumer_meters.id
+                )
+            ";
+            $select="
+                SELECT
+                    water_second_consumers.id as consumer_id,
+                    ulb_ward_masters.ward_name AS ward_no, 
+                    water_second_consumers.id, 
+                    'water' AS type, 
+                    water_second_consumers.consumer_no as consumerno, 
+                    water_second_consumers.user_type as usertype, 
+                    water_second_consumers.property_no as propertyno, 
+                    water_second_consumers.address, 
+                    water_second_consumers.tab_size, 
+                    water_second_consumers.zone, 
+                    water_second_consumers.category, 
+                    water_second_consumers.folio_no as foliono, 
+                    water_second_consumers.ward_mstr_id,
+                    owners.applicant_name as applicant_name, 
+                    owners.guardian_name, 
+                    owners.mobile_no, 
+                    
+                    final_demands.relative_path, 
+                    final_demands.file_name,
+                    final_demands.generation_date,
+                    final_demands.generate_amount, 
+                    final_demands.arrear_demands, 
+                    final_demands.current_demands, 
+                    final_demands.demand_from, 
+                    final_demands.demand_upto, 
+                    final_demands.total_amount, 
+                    final_demands.arrear_demand_date, 
+                    final_demands.current_demand_date, 
+                    final_demands.user_name ,
+                    final_demands.demand_type, 
+                    case when upto_reading < from_reading then from_reading else upto_reading end as finalreading,
+                    case when from_reading < upto_reading  then from_reading else upto_reading end as initialreading,
+                    CONCAT('$NowDate') AS billdate,
+                    CONCAT('$bilDueDate') AS bildueDate,
+                    case when final_demands.connection_type is null or final_demands.connection_type = 'Fixed' then null else connection_types.meter_no end as meter_no,
+                    case when final_demands.connection_type is null then 'Fixed' else final_demands.connection_type end as connection_type,
+                    case when final_demands.connection_type !='Fixed' then final_demands.meter_img else null end as meter_img,
+                    connection_types.current_meter_status,
+                    zone_masters.zone_name 
+            ";
+            $from = "
+                FROM water_second_consumers 
+                JOIN final_demands  ON final_demands.consumer_id = water_second_consumers.id 
+                LEFT JOIN owners ON owners.consumer_id = water_second_consumers.id 
+                LEFT JOIN zone_masters ON zone_masters.id = water_second_consumers.zone_mstr_id 
+                LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id = water_second_consumers.ward_mstr_id 
+                LEFT JOIN connection_types on connection_types.consumer_id = water_second_consumers.id  
+                WHERE  1=1
+                ".($wardId ? " AND water_second_consumers.ward_mstr_id = $wardId" : "")."    
+                ".($zoneId ? " AND water_second_consumers.zone_mstr_id = $zoneId" : "")."  
+                ".($metertype ? ( $metertype ==3 
+                                    ? " AND (connection_types.connection_type = IN($metertype) OR connection_types.consumer_id IS NULL )"
+                                    : " AND connection_types.connection_type = IN($metertype)"
+                    ) : "")."          
+            ";
+        $dataSql = $with.$select.$from." 
+                    ORDER BY water_second_consumers.id
+                    LIMIT $limit OFFSET $offset ";
+        $countSql = $with." SELECT COUNT(*) ".$from;
+        $data = DB::connection('pgsql_water')->select(DB::raw($dataSql));
+        $total = (collect(DB::connection('pgsql_water')->select(DB::raw($countSql)))->first())->count??0;
+        $lastPage = ceil($total / $perPage);
+        $list = [
+            "current_page" => $page,
+            "data" => $data,
+            "total" => $total,
+            "per_page" => $perPage,
+            "last_page" => $lastPage - 1
+        ];
+        return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime = NULL, $action, $deviceId);
+        }
+        catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
