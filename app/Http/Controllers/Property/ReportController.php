@@ -3714,7 +3714,8 @@ class ReportController extends Controller
             $data['data'] = $bata;
             $data['total'] = collect($bata)->sum('amount');
             $data['payment_mode'] = $paymentMode;
-            $data['collection_date'] = Carbon::parse($fromDate)->format('d/m/Y') . " - " . Carbon::parse($uptoDate)->format('d/m/Y');
+            $data['from_date'] = Carbon::parse($fromDate)->format('d-m-Y');
+            $data['upto_date'] = Carbon::parse($uptoDate)->format('d-m-Y');
 
             return responseMsgs(true, "Data Retreived", $data, "", "", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
