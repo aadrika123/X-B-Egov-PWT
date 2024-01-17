@@ -152,6 +152,7 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         Route::post('application/userwiselevelpending', 'userWiseLevelPending');
         Route::post('application/bulk-payment-recipt', 'bulkPaymentRecipt');
         Route::post('application/application-status', 'applicationStatus');
+        Route::post('application/today', 'todaysApplication');
         Route::post('ward-list', 'WardList');
         Route::post('tc-list', 'TcList');
     });

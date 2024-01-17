@@ -114,6 +114,7 @@ class Report implements IReport
                             ulb_ward_masters.ward_name AS ward_no,
                             licences.application_no AS application_no,
                             licences.zone_id AS zone_id,
+                            application_type,
                             zone_masters.zone_name AS zone,
                             (
                                 CASE WHEN licences.license_no='' OR licences.license_no IS NULL THEN 'N/A' 
@@ -146,6 +147,7 @@ class Report implements IReport
             ];
             $active = TradeTransaction::select($select)
                 ->JOIN("active_trade_licences AS licences", "licences.id", "trade_transactions.temp_id")
+                ->JOIN('trade_param_application_types as a', 'a.id', 'licences.application_type_id')
                 ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "licences.ward_id")
                 ->JOIN("zone_masters", "zone_masters.id", "licences.zone_id")
                 ->LEFTJOIN("trade_cheque_dtls", "trade_cheque_dtls.tran_id", "trade_transactions.id")
@@ -166,6 +168,7 @@ class Report implements IReport
 
             $approved = TradeTransaction::select($select)
                 ->JOIN("trade_licences AS licences", "licences.id", "trade_transactions.temp_id")
+                ->JOIN('trade_param_application_types as a', 'a.id', 'licences.application_type_id')
                 ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "licences.ward_id")
                 ->JOIN("zone_masters", "zone_masters.id", "licences.zone_id")
 
@@ -187,6 +190,7 @@ class Report implements IReport
 
             $rejected = TradeTransaction::select($select)
                 ->JOIN("rejected_trade_licences AS licences", "licences.id", "trade_transactions.temp_id")
+                ->JOIN('trade_param_application_types as a', 'a.id', 'licences.application_type_id')
                 ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "licences.ward_id")
                 ->JOIN("zone_masters", "zone_masters.id", "licences.zone_id")
 
@@ -207,6 +211,7 @@ class Report implements IReport
                 ->WHEREBETWEEN("trade_transactions.tran_date", [$fromDate, $uptoDate]);
             $old = TradeTransaction::select($select)
                 ->JOIN("trade_renewals AS licences", "licences.id", "trade_transactions.temp_id")
+                ->JOIN('trade_param_application_types as a', 'a.id', 'licences.application_type_id')
                 ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "licences.ward_id")
                 ->JOIN("zone_masters", "zone_masters.id", "licences.zone_id")
 

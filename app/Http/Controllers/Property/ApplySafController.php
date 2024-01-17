@@ -12,6 +12,7 @@ use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\reqApplySaf;
 use App\Http\Requests\ReqGBSaf;
+use App\Models\Property\Logs\PropSmsLog;
 use App\Models\Property\PropActiveGbOfficer;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
@@ -26,6 +27,7 @@ use App\Traits\Property\SAF;
 use App\Traits\Workflow\Workflow;
 use Carbon\Carbon;
 use Exception;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -107,6 +109,7 @@ class ApplySafController extends Controller
             $metaReqs = array();
             $saf = new PropActiveSaf();
             $mOwner = new PropActiveSafsOwner();
+            $mPropSmsLog = new PropSmsLog();
             $prop   = new PropProperty();
             $taxCalculator = new TaxCalculator($request);
             if ($prop = PropProperty::find($request->previousHoldingId)) {
@@ -188,6 +191,15 @@ class ApplySafController extends Controller
             $sms = AkolaProperty(["owner_name" => $ownerName, "saf_no" => $safNo, "assessment_type" => $request->assessmentType, "holding_no" => $request->propertyNo ?? ""], ($request->assessmentType == "New Assessment" ? "New Assessment" : "Reassessment"));
             if (($sms["status"] !== false)) {
                 $respons = send_sms($ownerMobile, $sms["sms"], $sms["temp_id"]);
+            //     $smsReqs = new Request([
+            //         "appId" => $safId,
+            //         "refType" => 'SAF',
+            //         "mobileNo" => $ownerMobile,
+            //         "purpose" => $request->assessmentType,
+            //         "templateId" => $sms["temp_id"],
+            //         "sms" => $sms["sms"],
+            //     ]);
+            //     $mPropSmsLog->store($smsReqs);
             }
 
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [
