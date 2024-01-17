@@ -203,6 +203,7 @@ class TaxCalculator
                 }
                 $this->_floorsTaxes[$key] = [
                     'usageType' => $item->usageType,
+                    'usageTypeName' => $item->usageTypeName ?? "",
                     'constructionType' => $item->constructionType ?? "",
                     'constructionTypeVal' => Config::get("PropertyConstaint.CONSTRUCTION-TYPE." . $item->constructionType ?? ""),
                     'occupancyType' => $item->occupancyType ?? "",
@@ -212,6 +213,7 @@ class TaxCalculator
                     'rate' => $rate,
                     'floorKey' => $key,
                     'floorNo' => $item->floorNo,
+                    'floorName' => $item->floorName ?? "",
                     'buildupAreaInSqmt' => $floorBuildupArea,
                     'alv' => $alv,
                     'maintancePerc' => $this->_maintancePerc,

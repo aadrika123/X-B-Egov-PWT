@@ -274,6 +274,7 @@ class IciciPaymentController extends Controller
             Storage::disk('public')->put('icici/callback/' . $req->Unique_Ref_Number . '.json', json_encode($req->all())); 
             $redirectUrl  = Config::get("payment-constants.FRONT_URL");  
             $mobilePropFailUrl =    Config::get("payment-constants.MOBI_PROPERTY_FRONT_FAIL_URL");  
+            $mobileWaterFailUrl =    Config::get("payment-constants.MOBI_WATER_FRONT_FAIL_URL");
             # Check if the payament is success 
             if ($req->Response_Code == "E000") {
                 # Check the transaction initials
@@ -319,13 +320,19 @@ class IciciPaymentController extends Controller
                             "redirectUrl"          => $mobilePropFailUrl . "/" . $paymentReqsData->application_id
                         ];                        
                         break;
-                        # For water 
+                        # For water
+                    case ($paymentReqsData->module_id == 2 && $paymentReqsData->user_id):
+                            $erroData = [
+                                "redirectUrl" => $mobileWaterFailUrl . "/" . $paymentReqsData->application_id
+                            ];
+                            break; 
                     case ($paymentReqsData->module_id == 2):
                         $redirectUrl = Config::get("payment-constants.WATER_FAIL_URL");
                         $erroData = [
                             "redirectUrl" => $redirectUrl . $paymentReqsData->application_id
                         ];
                         break;
+                    
                 } 
                 return view('icic_payment_erro', $erroData);
             }
