@@ -735,6 +735,14 @@ class ActiveSafController extends Controller
                 'tableHead' => ["#", "Floor", "Usage Type", "Occupancy Type", "Construction Type", "Build Up Area", "From Date", "Upto Date"],
                 'tableData' => $floorDetails
             ];
+            if ($data->assessment_type == 'Bifurcation') {
+                $floorDetails = $this->generateBiFloorDetails($getFloorDtls);
+                $floorElement = [
+                    'headerTitle' => 'Floor Details',
+                    'tableHead' => ["#", "Floor", "Usage Type", "Occupancy Type", "Construction Type", "Build Up Area", "Bifurcated Build Up Area", "From Date", "Upto Date"],
+                    'tableData' => $floorDetails
+                ];
+            }
             $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement, $floorElement]);
             // Card Detail Format
             $cardDetails = $this->generateCardDetails($data, $getOwnerDetails);
@@ -742,6 +750,14 @@ class ActiveSafController extends Controller
                 'headerTitle' => "About Property",
                 'data' => $cardDetails
             ];
+            if($data->assessment_type == 'Bifurcation'){
+            // Card Detail Format
+            $cardDetails = $this->generateBiCardDetails($data, $getOwnerDetails);
+            $cardElement = [
+                'headerTitle' => "About Property",
+                'data' => $cardDetails
+            ];
+            }
             $fullDetailsData['fullDetailsData']['cardArray'] = new Collection($cardElement);
             $data = json_decode(json_encode($data), true);
             $metaReqs['customFor'] = 'SAF';
