@@ -759,15 +759,15 @@ class TradeApplication extends Controller
 
             if ((($senderRole["serial_no"] ?? 0) < ($receiverRole["serial_no"] ?? 0)) && !$documents) {
                 if (($role->can_upload_document ?? false) && $licence->is_parked) {
-                    throw new Exception("Rejected Document Are Not Uploaded");
+                    throw new Exception("Rejected documents are not uploaded");
                 }
                 if (($role->can_upload_document ?? false)) {
-                    throw new Exception("No Every Madetry Documents are Uploaded");
+                    throw new Exception("No all mandatory documents are uploaded");
                 }
                 if ($role->can_verify_document ?? false) {
-                    throw new Exception("No Every Documents are Veryfied Or Madetory Document is Rejected");
+                    throw new Exception("Not all documents have been verified, or the mandatory document has been rejected.");
                 }
-                throw new Exception("Not Every Actoin Are Performed");
+                throw new Exception("Not all actions are performed");
             }
             if ($role->can_upload_document) {
                 if (($role->serial_no < $receiverRole["serial_no"] ?? 0)) {
