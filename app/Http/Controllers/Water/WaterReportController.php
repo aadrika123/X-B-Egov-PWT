@@ -3948,7 +3948,7 @@ class WaterReportController extends Controller
                 "totalCollection"=> $refData->pluck('consumer_id')->count(),
                 "currentDate"  => $currentDate
             ];
-            $queryRunTime = (collect(DB::connection(' pgsql_water'))->sum("time"));
+            $queryRunTime = (collect(DB::connection('pgsql_water'))->sum("time"));
             return responseMsgs(true, "visit Report", $refDetailsV2, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
