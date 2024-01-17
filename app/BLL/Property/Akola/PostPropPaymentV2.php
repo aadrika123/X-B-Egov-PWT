@@ -5,10 +5,12 @@ namespace App\BLL\Property\Akola;
 use App\MicroServices\DocumentUpload;
 use App\MicroServices\IdGeneration;
 use App\Models\Payment\TempTransaction;
+use App\Models\Property\Logs\PropSmsLog;
 use App\Models\Property\PropAdjustment;
 use App\Models\Property\PropAdvance;
 use App\Models\Property\PropChequeDtl;
 use App\Models\Property\PropDemand;
+use App\Models\Property\PropOwner;
 use App\Models\Property\PropPenaltyrebate;
 use App\Models\Property\PropPendingArrear;
 use App\Models\Property\PropProperty;
@@ -20,6 +22,7 @@ use Exception;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /**
  * | Created On-07-10-2023 
@@ -932,6 +935,37 @@ class PostPropPaymentV2
         $generatePaymentReceipt->generateReceipt("", $propTrans['id']);
         $receipt = $generatePaymentReceipt->_GRID;
         // dd($receipt,$this->_REQ["paidAmount"],$this->_REQ["amount"]);
+
+        // sendsms
+        // $propertyNo     = $this->_propDetails->property_no;
+        // $payableAmount  = $this->_REQ->paidAmount;
+
+        // $mPropOwner = new PropOwner();
+        // $mPropSmsLog = new PropSmsLog();
+        // $propOwners = $mPropOwner->getOwnerByPropId($this->_propDetails->id);
+        // $firstOwner = collect($propOwners)->first();
+        // if ($firstOwner) {
+        //     $ownerMobile = $firstOwner->mobileNo;
+        //     $ownerName = Str::limit(trim($firstOwner->ownerName), 30);;
+        //     if (strlen($ownerMobile) == 10) {
+        //         $sms      = "Thank you " . $ownerName . " for making payment of Rs. " . $payableAmount . " against Property No. " . $propertyNo . ". For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
+        //         $response = send_sms($ownerMobile, $sms, 1707169564199604962);
+
+        //         $smsReqs = [
+        //             "emp_id" => $user_id,
+        //             "ref_id" => $this->_propDetails->id,
+        //             "ref_type" => 'Property',
+        //             "mobile_no" => $ownerMobile,
+        //             "purpose" => 'Holding Payment',
+        //             "template_id" => 1707169564199604962,
+        //             "message" => $sms,
+        //             "response" => $response['status'],
+        //             "smgid" => $response['msg'],
+        //             "stampdate" => Carbon::now(),
+        //         ];
+        //         $mPropSmsLog->create($smsReqs);
+        //     }
+        // }
     }
     /**
      * | demand Adjust
