@@ -2467,10 +2467,10 @@ class WaterConsumer extends Controller
             }
 
             # Save the consumer replicate details 
-            $approvedWaterOwners->emp_dtl_id        = $userId;
+            $approvedWaterOwners->emp_details_id        = $userId;
             $approvedWaterOwners->user_type         = $usertype;
-            $approvedWaterOwners->reltive_path      = $relativePath;
-            $approvedWaterOwners->documet           = $imageName;
+            $approvedWaterOwners->relative_path      = $relativePath;
+            $approvedWaterOwners->document           = $imageName;
             $approvedWaterOwners->advance_amount    = $advanceAmount;
             $approvedWaterOwners->new_amount        = $request->amount;
             $approvedWaterOwners->new_reading       = $request->meterReading;
@@ -2489,11 +2489,4 @@ class WaterConsumer extends Controller
             return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
         }
     }
-    /**
-     * update new connection consumers
-     */
-    public function updateNewConnection(Request $request){
-
-    }
-
 }
