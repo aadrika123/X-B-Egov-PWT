@@ -3845,7 +3845,7 @@ class WaterReportController extends Controller
             if ($request->zoneId) {
                 $zoneId = $request->zoneId;
             }
-
+            // round(subquery.total_amount) as total_amount
             // DB::enableQueryLog();
             $rawData = ("select 
                        final_data.*,readings.initial_reading,readings.final_reading,
@@ -3854,9 +3854,9 @@ class WaterReportController extends Controller
                        round(subquery.generate_amount)as generate_amount,
                        round(subquery.arrear_demands) as arrear_demands,
                        round(subquery.current_demands) as current_demands,
+                       round(COALESCE(subquery.generate_amount, 0) + COALESCE(subquery.arrear_demands, 0) + COALESCE(subquery.current_demands,0)) AS total_amount,
                        subquery.demand_from,
                        subquery.demand_upto,
-                       round(subquery.total_amount) as total_amount,
                        subquery.arrear_demand_date,
                        subquery.current_demand_date
                       from (
@@ -3948,7 +3948,7 @@ class WaterReportController extends Controller
                 "totalCollection"=> $refData->pluck('consumer_id')->count(),
                 "currentDate"  => $currentDate
             ];
-            $queryRunTime = (collect(DB::connection(' pgsql_water'))->sum("time"));
+            $queryRunTime = (collect(DB::connection('pgsql_water'))->sum("time"));
             return responseMsgs(true, "visit Report", $refDetailsV2, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);

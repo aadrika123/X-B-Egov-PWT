@@ -15,9 +15,11 @@ class PropPendingArrear extends Model
     public function getInterestByPropId($propId)
     {
         return self::select(
+            "id",
             "prop_id",
             "fyear",
             "total_interest",
+            "due_total_interest",
             "status"
         )
             ->where('status', 1)
