@@ -10,6 +10,7 @@ use App\Models\Property\PropAdvance;
 use App\Models\Property\PropChequeDtl;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropPenaltyrebate;
+use App\Models\Property\PropPendingArrear;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropTranDtl;
 use App\Models\Property\PropTransaction;
@@ -56,7 +57,7 @@ class PostPropPaymentV2
     private $_fy;
     private $_PropAdvance ;
     private $_PropAdjustment;
-
+    private $_PropPendingArrear;
     /**
      * | Required @param Requests(propertyId as id)
      */
@@ -65,6 +66,7 @@ class PostPropPaymentV2
         $this->_COMMON_FUNCTION = new \App\Repository\Common\CommonFunction();
         $this->_PropAdvance = new PropAdvance();
         $this->_PropAdjustment = new PropAdjustment();
+        $this->_PropPendingArrear= new PropPendingArrear();
         $this->_REQ = $req;
         $this->readGenParams();
     }
@@ -685,10 +687,10 @@ class PostPropPaymentV2
             // elseif ($this->_REQ->paidAmount < $this->_propCalculation->original['data']['arrearPayableAmt'] && $this->_REQ->paidAmount > $this->_propCalculation->original['data']['totalInterestPenalty'])           // We have to adjust Arrear demand
             //     $this->arrearDemandAdjust();
             // else
-            //     throw new Exception("Part Payment in Monthly Interest Not Available");
+            //     throw new Exception("Part Payment in Monthly Interest Not Available");            
             if($this->_REQ->paidAmount < $this->_propCalculation->original['data']['totalInterestPenalty'])
             {
-                throw new Exception("Part Payment in Monthly Interest Not Available");
+                // throw new Exception("Part Payment in Monthly Interest Not Available");
             }
         }
 
@@ -696,9 +698,7 @@ class PostPropPaymentV2
         if ($this->_REQ->paymentType == 'isPartPayment' && $this->_REQ->paidAmount > $this->_propCalculation->original['data']['payableAmt']) {
             // throw new Exception("Amount should be less then the payable amount");
 
-        }                    
-
-        // return (["Full Payment"]);
+        }  
         
         if(!$this->_REQ->paidAmount){
             $this->_REQ->merge(['paidAmount' => $this->_REQ['amount']]);
@@ -706,8 +706,21 @@ class PostPropPaymentV2
         
 
         $addvanceAmt = $this->_propCalculation->original['data']["remainAdvance"]??0; 
-        $adjustAmt = 0;
+        
         $previousInterest = $this->_propCalculation->original['data']["previousInterest"]??0;
+        $previousInterestId = $this->_propCalculation->original['data']["previousInterestId"]??0;
+
+        $allDemands = $this->_propCalculation->original['data']["demandList"];
+        $arrearDemand = collect($allDemands)->where("fyear","<",getFY());
+        $arrearTotaTax = $arrearDemand->sum("total_tax");
+        $penalty = $arrearDemand->sum("monthlyPenalty");
+        $totalaAreaDemand = $previousInterest + $arrearTotaTax + $penalty;
+        $thertyPerOfpreviousInterest = ($this->_REQ->paidAmount /100 )* 30;
+        if(round($this->_REQ->paidAmount) < round($totalaAreaDemand) )
+        {
+            $previousInterest = $previousInterest > 0 ? ($thertyPerOfpreviousInterest<=$previousInterest ? $thertyPerOfpreviousInterest : $previousInterest ) : 0 ;
+        } 
+        $adjustAmt = 0;
         $payableAmount = $this->_REQ->paidAmount - $previousInterest ;
         if($this->_REQ["paymentMode"]!="ONLINE"){
             $adjustAmt = round($this->_REQ->paidAmount - $addvanceAmt) ;
@@ -740,7 +753,7 @@ class PostPropPaymentV2
         }
         
         $demands = collect($this->_propCalculation->original['data']["demandList"])->sortBy(["fyear", "id"]);
-        $paidPenalty = $this->_propCalculation->original['data']["previousInterest"];
+        $paidPenalty = $previousInterest;#$this->_propCalculation->original['data']["previousInterest"];
         $demandAmt = $this->_propCalculation->original['data']["payableAmt"];
         $paidDemands = [];
         foreach ($demands as $key => $val) {
@@ -769,6 +782,13 @@ class PostPropPaymentV2
         $d1 = [];
         $trDtl = [];
 
+        #update Pending Arrear Penalty
+        if($previousInterest>0 && $OldInterest = $this->_PropPendingArrear->find($previousInterestId))
+        {
+            $OldInterest->due_total_interest = $OldInterest->due_total_interest - $previousInterest > 0 ?  $OldInterest->due_total_interest - $previousInterest : 0 ;
+            $OldInterest->paid_status       = $OldInterest->due_total_interest ==0 ? 1 : $OldInterest->paid_status;
+            $OldInterest->save();                      
+        }        
         // Updation of payment status in demand table
         foreach ($paidDemands as $dtls) {
             $demand = collect($dtls["currentTax"]);
@@ -1017,6 +1037,7 @@ class PostPropPaymentV2
         $data["paidCurrentTaxesBifurcation"] = $this->readPaidTaxes($paidDemandBifurcation);
         return $data;
     }
+
 
     public function chakPayentAmount()
     {
