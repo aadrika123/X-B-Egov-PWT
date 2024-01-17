@@ -2446,7 +2446,9 @@ class WaterConsumer extends Controller
                 "is_full_paid"          => $fullPaid,
                 "balance_amount"        => $balanceAmount,
                 "demand_from"           => $refdemandFrom,
-                "demand_upto"           => $refdemandUpto
+                "demand_upto"           => $refdemandUpto,
+                "current_demand"        => $dueAmount,
+                "arrear_demand"         => $dueAmount
             ];
             $mWaterConsumerDemand->updateDemand($updateReq, $demandId);
 
