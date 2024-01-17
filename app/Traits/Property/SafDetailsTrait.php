@@ -123,6 +123,26 @@ trait SafDetailsTrait
     }
 
     /**
+     * | Generate Bi Floor Details
+     */
+    public function generateBiFloorDetails($floorDetails)
+    {
+        return collect($floorDetails)->map(function ($floorDetail, $key) {
+            return [
+                $key + 1,
+                $floorDetail->floor_name,
+                $floorDetail->usage_type,
+                $floorDetail->occupancy_type,
+                $floorDetail->construction_type,
+                $floorDetail->builtup_area,
+                $floorDetail->bifurcated_buildup_area,
+                $floorDetail->date_from,
+                $floorDetail->date_upto
+            ];
+        });
+    }
+
+    /**
      * | Generate Card Details
      */
     public function generateCardDetails($req, $ownerDetails)
@@ -137,6 +157,34 @@ trait SafDetailsTrait
             ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
             ['displayString' => 'Apply-Date', 'key' => 'applyDate', 'value' => $req->application_date],
             ['displayString' => 'Plot-Area(In Sqft)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
+            ['displayString' => 'Is-Water-Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
+            ['displayString' => 'Is-Hoarding-Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No'],
+            ['displayString' => 'Category', 'key' => 'category', 'value' => $req->category ]
+        ]);
+        if(trim($req->property_no))
+        {
+            $data->push(
+                ['displayString' => 'Property No', 'key' => 'properyNo', 'value' => $req->property_no]
+            );
+        }
+        return $data;
+    }
+
+    /**
+     * | Generate Bifurcated Card Details
+     */
+    public function generateBiCardDetails($req, $ownerDetails)
+    {
+        $owners = collect($ownerDetails)->implode('owner_name', ',');
+        $data = new Collection([
+            ['displayString' => 'Ward No', 'key' => 'wardNo', 'value' => $req->old_ward_no],
+            ['displayString' => 'SAF No.', 'key' => 'safNo', 'value' => $req->saf_no],
+            ['displayString' => 'Owners', 'key' => 'ownerName', 'value' => $owners],
+            ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $req->property_type],
+            ['displayString' => 'Assessment Type', 'key' => 'assessmentType', 'value' => $req->assessment_type],
+            ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
+            ['displayString' => 'Plot-Area(In Sqft)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
+            ['displayString' => 'Bifurcated Plot Area', 'key' => 'biPlotArea', 'value' => $req->bifurcated_plot_area],
             ['displayString' => 'Is-Water-Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
             ['displayString' => 'Is-Hoarding-Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No'],
             ['displayString' => 'Category', 'key' => 'category', 'value' => $req->category ]

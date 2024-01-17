@@ -95,7 +95,7 @@ class TaxCalculator
 
             if (isset($this->_REQUEST->assessmentType) && ($this->getAssestmentTypeStr() == 'Bifurcation')) {
                 $unPaidDemand = $priProperty->PropDueDemands()->get();
-                $this->_oldUnpayedAmount = collect($unPaidDemand)->sum("due_total_tax") ?? 0;
+                $this->_oldUnpayedAmount = round(collect($unPaidDemand)->sum("due_total_tax") ?? 0);
             }
 
             if ($this->_oldUnpayedAmount > 0) {
