@@ -70,6 +70,7 @@ use App\BLL\Payment\GetRefUrl;
 use App\Models\Payment\IciciPaymentReq;
 use App\Models\Payment\IciciPaymentResponse;
 use App\Models\Water\WaterIciciResponse;
+use App\Repository\Common\CommonFunction;
 
 /**
  * | ----------------------------------------------------------------------------------
@@ -98,6 +99,8 @@ class WaterPaymentController extends Controller
     protected $_DB_NAME;
     protected $_DB;
     protected $_ulb_logo_url;
+    protected $_callbackUrl;
+    protected $_COMONFUNCTION;
 
     public function __construct()
     {
@@ -111,6 +114,8 @@ class WaterPaymentController extends Controller
         $this->_ulb_logo_url        = Config::get('payment-constants.ULB_LOGO_URL');
         $this->_DB_NAME             = "pgsql_water";
         $this->_DB                  = DB::connection($this->_DB_NAME);
+        $this->_callbackUrl         = Config::get("payment-constants.WATER_FRONT_URL");
+        $this->_COMONFUNCTION       = new CommonFunction();
     }
 
     /**
@@ -1873,18 +1878,20 @@ class WaterPaymentController extends Controller
     public function initiateOnlineDemandPayment(reqDemandPayment $request)
     {
         try {
+            $refUser = Auth()->user()??null;
+            $isCitizenUserType = $refUser ? $this->_COMONFUNCTION->checkUsersWithtocken("active_citizens") : true;
+
             $mWaterConsumerDemand   = new WaterConsumerDemand();
             $iciciPaymentController = new IciciPaymentController();
             $mWaterIciciRequest     = new WaterIciciRequest();
-            $refUser                = null;
             $waterModuleId          = Config::get('module-constants.WATER_MODULE_ID');
             $paymentFor             = Config::get('waterConstaint.PAYMENT_FOR');
             $paymentMode            = Config::get('payment-constants.PAYMENT_OFFLINE_MODE');
             $endDate                = Carbon::createFromFormat('Y-m-d',  $request->demandUpto);
             $endDate                = $endDate->toDateString();
-            if ($request->auth) {
-                $refUser = authUser($request);
-            }
+            // if ($request->auth) {
+            //     $refUser = authUser($request);
+            // }
 
             # Restrict the online payment maide 
             if ($request->paymentMode != $paymentMode['5']) {
@@ -1925,10 +1932,18 @@ class WaterPaymentController extends Controller
                 'id'            => $request->consumerId,
                 'moduleId'      => $waterModuleId,
                 'ulbId'         => $refDetails['consumer']['ulb_id'],
-                'callbackUrl'   => "https://modernulb.com/water/payment-waterstatus/" . $request->consumerId,                   // Static
+                // 'callbackUrl'   => "https://modernulb.com/water/payment-waterstatus/" . $request->consumerId,
+                'callbackUrl'   => ($request->callbackUrl ? $request->callbackUrl : $this->_callbackUrl) ."/". $request->consumerId,                   // Static
                 'auth'          => $refUser
             ]);
-
+            if(!$isCitizenUserType)
+            {
+                $myRequest->merge(["userId"=>$refUser->id]);
+            }
+            if($isCitizenUserType && $refUser)
+            {
+                $myRequest->merge(["CitizenId"=>$refUser->id]);
+            }
             # Generate referal url
             $temp = $iciciPaymentController->getReferalUrl($myRequest);
             if ($temp->original['status'] == false) {
