@@ -3740,7 +3740,7 @@ class WaterReportController extends Controller
                 FROM water_consumer_demands
                 GROUP BY consumer_id
                 ORDER BY water_consumer_demands.consumer_id 
-            ) AS subquery ON subquery.consumer_id = final_data.consumer_id;
+            ) AS subquery ON subquery.consumer_id = final_data.consumer_id
              ");
 
             $data = DB::connection('pgsql_water')->select($rawData . " limit $limit offset $offset");
