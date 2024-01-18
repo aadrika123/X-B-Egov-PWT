@@ -184,7 +184,7 @@ trait SafDetailsTrait
             ['displayString' => 'Assessment Type', 'key' => 'assessmentType', 'value' => $req->assessment_type],
             ['displayString' => 'Ownership Type', 'key' => 'ownershipType', 'value' => $req->ownership_type],
             ['displayString' => 'Plot-Area(In Sqft)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
-            ['displayString' => 'Bifurcated Plot Area', 'key' => 'biPlotArea', 'value' => $req->bifurcated_plot_area],
+            ['displayString' => 'Bifurcated Plot Area(In Sqft)', 'key' => 'biPlotArea', 'value' => $req->bifurcated_plot_area],
             ['displayString' => 'Is-Water-Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
             ['displayString' => 'Is-Hoarding-Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No'],
             ['displayString' => 'Category', 'key' => 'category', 'value' => $req->category ]

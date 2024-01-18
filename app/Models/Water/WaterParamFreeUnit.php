@@ -17,6 +17,7 @@ class WaterParamFreeUnit extends Model
     {
         return WaterParamFreeUnit::where('property_type_id', $callParams->propertyType)
             ->where('catagory', $callParams->areaCatagory)
+            ->where('connection_size',$callParams->connectionSize)
             ->where('status', 1)
             ->first();
     }
