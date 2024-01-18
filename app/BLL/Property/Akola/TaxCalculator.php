@@ -290,7 +290,7 @@ class TaxCalculator
             $agingPerc = 0;                         // No Aging Percent for Vacant Land
             if ($this->_REQUEST->category == 1)
                 $rate = 11;
-            elseif ($this->_REQUEST->category == 1)
+            elseif ($this->_REQUEST->category == 2)
                 $rate = 10;
             else
                 $rate = 8;
