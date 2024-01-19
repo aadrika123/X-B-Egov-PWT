@@ -788,6 +788,9 @@ class PostPropPaymentV2
         #update Pending Arrear Penalty
         if($previousInterest>0 && $OldInterest = $this->_PropPendingArrear->find($previousInterestId))
         {
+            $payInterast = $OldInterest->due_total_interest_pay_json? json_decode($OldInterest->due_total_interest_pay_json):[];
+            array_push($payInterast,["tran_id"=>$propTrans['id'],"amount"=>$previousInterest]);
+            $OldInterest->due_total_interest_pay_json = json_encode($payInterast);
             $OldInterest->due_total_interest = $OldInterest->due_total_interest - $previousInterest > 0 ?  $OldInterest->due_total_interest - $previousInterest : 0 ;
             $OldInterest->paid_status       = $OldInterest->due_total_interest ==0 ? 1 : $OldInterest->paid_status;
             $OldInterest->save();                      
