@@ -739,7 +739,7 @@ class ActiveSafController extends Controller
                 $floorDetails = $this->generateBiFloorDetails($getFloorDtls);
                 $floorElement = [
                     'headerTitle' => 'Floor Details',
-                    'tableHead' => ["#", "Floor", "Usage Type", "Occupancy Type", "Construction Type", "Build Up Area", "Bifurcated Build Up Area", "From Date", "Upto Date"],
+                    'tableHead' => ["#", "Floor", "Usage Type", "Occupancy Type", "Construction Type", "Build Up Area", "Bifurcated From Build Up Area", "From Date", "Upto Date"],
                     'tableData' => $floorDetails
                 ];
             }

@@ -593,15 +593,15 @@ trait SAF
             $assessmentType = Config::get("PropertyConstaint.ASSESSMENT-TYPE." . $assessmentType);
         }
         $proccessFee = 15000;
-        if ($propertyType != $propertyTypeCon["VACANT LAND"] && !in_array($transferType, [$transferTypeCon["Gift"], $transferTypeCon["Will"], $transferTypeCon["Succession"], $transferTypeCon["Heridity/Will/Gift"]]) && $saleVal <= 1500000 && !$isLocateOnGovLan) {
+        if ($propertyType != $propertyTypeCon["VACANT LAND"] && $transferType == $transferTypeCon["Imla"]) {
+            $proccessFee = 2000;
+        } elseif ($propertyType != $propertyTypeCon["VACANT LAND"] && !in_array($transferType, [$transferTypeCon["Gift"], $transferTypeCon["Will"], $transferTypeCon["Succession"], $transferTypeCon["Heridity/Will/Gift"]]) && $saleVal <= 1500000 && !$isLocateOnGovLan) {
             $proccessFee = $saleVal * 0.01;
         } elseif ($propertyType != $propertyTypeCon["VACANT LAND"] && !in_array($transferType, [$transferTypeCon["Gift"], $transferTypeCon["Will"], $transferTypeCon["Succession"], $transferTypeCon["Heridity/Will/Gift"]]) && $saleVal > 1500000 && !$isLocateOnGovLan) {
             $proccessFee = 15000;
         } elseif ($propertyType != $propertyTypeCon["VACANT LAND"] && in_array($transferType, [$transferTypeCon["Gift"], $transferTypeCon["Will"], $transferTypeCon["Succession"], $transferTypeCon["Heridity/Will/Gift"]]) && !$isLocateOnGovLan) {
             $proccessFee = 500;
         } elseif ($propertyType != $propertyTypeCon["VACANT LAND"] && !$isLocateOnGovLan) {
-            $proccessFee = 2000;
-        } elseif ($propertyType != $propertyTypeCon["VACANT LAND"] && $transferType == $transferTypeCon["Imla"]) {
             $proccessFee = 2000;
         } elseif ($propertyType == $propertyTypeCon["VACANT LAND"]) {
             $proccessFee = 2000;
