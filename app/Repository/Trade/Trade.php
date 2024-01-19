@@ -523,6 +523,7 @@ class Trade implements ITrade
         $refActiveLicense->new_ward_id         = $request->firmDetails['newWardNo']??null;
         $refActiveLicense->holding_no          = $request->firmDetails['holdingNo'];
         $refActiveLicense->firm_name           = $request->firmDetails['firmName'];
+        $refActiveLicense->firm_name_marathi   = $request->firmDetails['firmNameMarathi'];
         $refActiveLicense->premises_owner_name = $request->firmDetails['premisesOwner'] ?? null;
         $refActiveLicense->brief_firm_desc     = $request->firmDetails['businessDescription'];
         $refActiveLicense->area_in_sqft        = $request->firmDetails['areaSqft'];
@@ -558,6 +559,7 @@ class Trade implements ITrade
         $refActiveLicense->holding_no          = $request->firmDetails['holdingNo'];
         $refActiveLicense->nature_of_bussiness = $refOldLicece->nature_of_bussiness;
         $refActiveLicense->firm_name           = $refOldLicece->firm_name;
+        $refActiveLicense->firm_name_marathi   = $refOldLicece->firm_name_marathi ? $refOldLicece->firm_name_marathi : $request->firmDetails['firmNameMarathi'];
         $refActiveLicense->premises_owner_name = $refOldLicece->premises_owner_name;
         $refActiveLicense->brief_firm_desc     = $request->firmDetails['businessDescription']; //$refOldLicece->brife_desp_firm;
         $refActiveLicense->area_in_sqft        = $request->firmDetails['areaSqft']; //$refOldLicece->area_in_sqft;
@@ -601,6 +603,7 @@ class Trade implements ITrade
         $refActiveLicense->holding_no          = $request->firmDetails['holdingNo'];
         $refActiveLicense->nature_of_bussiness = $refOldLicece->nature_of_bussiness;
         $refActiveLicense->firm_name           = $refOldLicece->firm_name;
+        $refActiveLicense->firm_name_marathi   = $refOldLicece->firm_name_marathi ? $refOldLicece->firm_name_marathi : $request->firmDetails['firmNameMarathi'];
         $refActiveLicense->premises_owner_name = $refOldLicece->premises_owner_name ? $refOldLicece->premises_owner_name : $request->firmDetails['premisesOwner'] ?? null;
         $refActiveLicense->brief_firm_desc     = $refOldLicece->brief_firm_desc ? $refOldLicece->brief_firm_desc : $request->firmDetails['businessDescription'];
         $refActiveLicense->area_in_sqft        = $request->firmDetails['areaSqft'] ? $request->firmDetails['areaSqft']: $refOldLicece->area_in_sqft;
