@@ -46,7 +46,7 @@ class WaterConsumerDemand extends Model
             DB::raw('ROUND(COALESCE(subquery.arrear_demands, 0), 2) as arrear_demands'),
             DB::raw('ROUND(COALESCE(subquery.current_demands, 0), 2) as current_demands'),
             'subquery.generation_dates',
-            DB::raw('ROUND(COALESCE(subquery.generate_amount, 0) + COALESCE(subquery.arrear_demands, 0) + COALESCE(subquery.current_demands,0), 2) as total_amount')
+            DB::raw('ROUND(COALESCE(subquery.generate_amount, 0) + COALESCE(subquery.arrear_demands, 0) + COALESCE(subquery.current_demands,0), 2) + COALESCE(subquery.previous_demand,0) as total_amount')
         )
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_consumer_demands.consumer_id')
             ->leftjoin('water_consumer_initial_meters', 'water_consumer_initial_meters.consumer_id', 'water_consumer_demands.consumer_id')
@@ -57,7 +57,8 @@ class WaterConsumerDemand extends Model
                 consumer_id,max(generation_date) as generation_dates,
                 SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.arrear_demand ELSE 0 END) AS arrear_demands,
                 SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.current_demand ELSE 0 END) AS current_demands,
-                SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NOT NULL THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS generate_amount
+                SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NOT NULL THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS generate_amount,
+                sum(case when water_consumer_demands.consumer_tax_id IS NULL  THEN  water_consumer_demands.due_balance_amount ELSE  0 END ) AS previous_demand
                 FROM water_consumer_demands
                 WHERE status=true
                  GROUP BY consumer_id) as subquery'),
