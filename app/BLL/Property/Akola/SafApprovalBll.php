@@ -190,8 +190,8 @@ class SafApprovalBll
         // ✅Replication of Verified Saf Details by Ulb TC
         $propProperties->prop_type_mstr_id = $this->_verifiedPropDetails[0]->prop_type_id;
         $propProperties->area_of_plot = $this->_verifiedPropDetails[0]->area_of_plot;
-        if ($this->_activeSaf->assessment_type == 'Bifurcation')
-            $propProperties->area_of_plot = $this->_activeSaf->bifurcated_plot_area;
+        // if ($this->_activeSaf->assessment_type == 'Bifurcation')
+        //     $propProperties->area_of_plot = $this->_activeSaf->bifurcated_plot_area;
 
         $propProperties->ward_mstr_id = $this->_verifiedPropDetails[0]->ward_id;
         $propProperties->zone_mstr_id = $this->_verifiedPropDetails[0]->zone_mstr_id ? $this->_verifiedPropDetails[0]->zone_mstr_id : $propProperties->zone_mstr_id;
@@ -216,7 +216,7 @@ class SafApprovalBll
                 "usage_type_mstr_id" => $floorDetail->usage_type_id,
                 "const_type_mstr_id" => $floorDetail->construction_type_id,
                 "occupancy_type_mstr_id" => $floorDetail->occupancy_type_id,
-                "builtup_area" => $floorDetail->builtup_area - $floorDetail->bifurcated_buildup_area ?? 0,
+                "builtup_area" => $floorDetail->builtup_area,
                 "date_from" => $floorDetail->date_from,
                 "date_upto" => $floorDetail->date_to,
                 "carpet_area" => $floorDetail->carpet_area,
@@ -625,7 +625,7 @@ class SafApprovalBll
             if (!$propProperties) {
                 throw new Exception("Old Property Not Found");
             }
-            $propProperties->update(["area_of_plot" => $propProperties->area_of_plot - $this->_activeSaf->bifurcated_plot_area]);
+            $propProperties->update(["area_of_plot" => $propProperties->area_of_plot - $this->_activeSaf->area_of_plot]);
 
             if ($this->_activeSaf->prop_type_mstr_id != 4) {               // Applicable Not for Vacant Land
 
@@ -636,7 +636,7 @@ class SafApprovalBll
                 foreach ($this->_floorDetails as $floorDetail) {
                     $propFloor =  collect($propFloors)->where('id', $floorDetail->prop_floor_details_id);
                     $propFloor =  collect($propFloor)->first();
-                    $propFloor->builtup_area = $propFloor->builtup_area - $floorDetail->bifurcated_buildup_area;
+                    $propFloor->builtup_area = $propFloor->builtup_area - $floorDetail->builtup_area;
                     $propFloor->save();
                 }
             }

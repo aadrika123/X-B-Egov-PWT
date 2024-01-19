@@ -44,7 +44,7 @@ class  PropActiveSaf extends Model
             'plot_no' => $req->plotNo,
             'village_mauja_name' => $req->villageMaujaName,
             'road_type_mstr_id' => $req->roadWidthType,
-            'area_of_plot' => $req->areaOfPlot,
+            'area_of_plot' => isset($req->bifurcatedPlot) ? $req->bifurcatedPlot : $req->areaOfPlot,
             'prop_address' => $req->propAddress,
             'prop_city' => $req->propCity,
             'prop_dist' => $req->propDist,
@@ -105,7 +105,7 @@ class  PropActiveSaf extends Model
             'proccess_fee' => (in_array($req->assessmentType, ['Mutation', 'Bifurcation'])) ? ($req->proccessFee ?? 0) : 0,
             'proccess_fee_paid' => (($req->proccessFee ?? 0) > 0 && (in_array($req->assessmentType, ['Mutation', 'Bifurcation']))) ? 0 : 1,
             "property_no" => ($req->propertyNo ?? null),
-            "bifurcated_plot_area" => ($req->bifurcatedPlot ?? null),
+            "bifurcated_from_plot_area" => isset($req->bifurcatedPlot) ? $req->areaOfPlot : null,
         ];
         $propActiveSafs = PropActiveSaf::create($reqs);                 // SAF No is Created Using Observer
         return response()->json([
@@ -197,7 +197,7 @@ class  PropActiveSaf extends Model
                 'zone_masters.zone_name as zone',
                 'cat.category',
                 'cat.description as category_description',
-                'bifurcated_plot_area',
+                'bifurcated_from_plot_area',
             )
             ->leftJoin('ulb_ward_masters as w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
             ->leftJoin('wf_roles as wr', 'wr.id', '=', 'prop_active_safs.current_role')
