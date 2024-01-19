@@ -601,7 +601,7 @@ trait SAF
             $proccessFee = 500;
         } elseif ($propertyType != $propertyTypeCon["VACANT LAND"] && !$isLocateOnGovLan) {
             $proccessFee = 2000;
-        } elseif ($propertyType != $propertyTypeCon["VACANT LAND"] && $transferType == $transferTypeCon["Imla"] && $isLocateOnGovLan) {
+        } elseif ($propertyType != $propertyTypeCon["VACANT LAND"] && $transferType == $transferTypeCon["Imla"]) {
             $proccessFee = 2000;
         } elseif ($propertyType == $propertyTypeCon["VACANT LAND"]) {
             $proccessFee = 2000;
