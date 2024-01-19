@@ -3643,18 +3643,19 @@ class WaterReportController extends Controller
                 $zoneId = $request->zoneId;
             }
             // -- round(water_consumer_demands.arrear_demands) as arrear_demand,
-
+            // subquery.total_amount,
             // DB::enableQueryLog();
             $rawData = ("select 
                        final_data.*,readings.initial_reading,readings.final_reading,
                        (COALESCE(readings.final_reading,0) - COALESCE(readings.initial_reading,0)) as consumpsun_unit,  
                        readings.created_on,
-                       subquery.generate_amount,
-                       subquery.arrear_demands,
-                       subquery.current_demands,
+                       round(subquery.generate_amount)as generate_amount,
+                       round(subquery.arrear_demands) as arrear_demands,
+                       round(subquery.current_demands) as current_demands,
+                       round(COALESCE(subquery.generate_amount, 0) + COALESCE(subquery.arrear_demands, 0) + COALESCE(subquery.current_demands,0)) AS total_amount,
                        subquery.demand_from,
                        subquery.demand_upto,
-                       subquery.total_amount,
+                      
                        subquery.arrear_demand_date,
                        subquery.current_demand_date
                       from (
@@ -3740,7 +3741,7 @@ class WaterReportController extends Controller
                 FROM water_consumer_demands
                 GROUP BY consumer_id
                 ORDER BY water_consumer_demands.consumer_id 
-            ) AS subquery ON subquery.consumer_id = final_data.consumer_id;
+            ) AS subquery ON subquery.consumer_id = final_data.consumer_id
              ");
 
             $data = DB::connection('pgsql_water')->select($rawData . " limit $limit offset $offset");
