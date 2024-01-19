@@ -46,7 +46,7 @@ class PropActiveSafsFloor extends Model
                         prop_active_safs.ulb_id ,	
                         prop_active_safs_floors.no_of_rooms	, 	
                         prop_active_safs_floors.no_of_toilets,
-                        prop_active_safs_floors.bifurcated_buildup_area
+                        prop_active_safs_floors.bifurcated_from_buildup_area
                 "))
             ->join("prop_active_safs", "prop_active_safs.id", "prop_active_safs_floors.saf_id")
             ->where("prop_active_safs_floors.saf_id", $safId)->get();
@@ -151,7 +151,7 @@ class PropActiveSafsFloor extends Model
         $floor->usage_type_mstr_id = $req['usageType'] ?? null;
         $floor->const_type_mstr_id = $req['constructionType'] ?? null;
         $floor->occupancy_type_mstr_id = $req['occupancyType'] ??  null;
-        $floor->builtup_area = $req['buildupArea'] ?? null;
+        $floor->builtup_area = isset($req['biBuildupArea']) ? $req['biBuildupArea'] : $req['buildupArea'];
         $floor->carpet_area = $carpetArea;
         $floor->date_from = $req['dateFrom'] ?? null;
         if ($assessmentType == "Bifurcation")
@@ -162,7 +162,7 @@ class PropActiveSafsFloor extends Model
         $floor->user_id = $userId;
         $floor->no_of_rooms = $req['noOfRooms'] ?? null;
         $floor->no_of_toilets = $req['noOfToilet'] ?? null;
-        $floor->bifurcated_buildup_area = $req['biBuildupArea'] ?? null;
+        $floor->bifurcated_from_buildup_area = isset($req['biBuildupArea']) ? $req['buildupArea'] : null;
         $floor->save();
     }
 

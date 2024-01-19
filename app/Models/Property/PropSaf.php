@@ -198,7 +198,7 @@ class PropSaf extends Model
                 'zone_masters.zone_name as zone',
                 'cat.category',
                 'cat.description as category_description',
-                'bifurcated_plot_area'
+                'bifurcated_from_plot_area'
             )
             ->leftJoin('ulb_ward_masters as w', 'w.id', '=', 'prop_safs.ward_mstr_id')
             ->leftJoin('wf_roles as wr', 'wr.id', '=', 'prop_safs.current_role')
