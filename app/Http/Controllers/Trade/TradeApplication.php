@@ -1052,8 +1052,7 @@ class TradeApplication extends Controller
      * 
      */
     public function uploadDocument(Request $req)
-    { 
-        
+    {  
         try {
             $rules= [
                 "applicationId" => "required|digits_between:1,9223372036854775807",
@@ -1063,16 +1062,10 @@ class TradeApplication extends Controller
                 "ownerId" => "nullable|digits_between:1,9223372036854775807"
             ];
             $validator = Validator::make($req->all(), $rules,);
-                if ($validator->fails()) {
-                    return responseMsg(false, $validator->errors(), "");
-                }
-            // $req->validate([
-            //     "applicationId" => "required|digits_between:1,9223372036854775807",
-            //     "document" => "required|mimes:pdf,jpeg,png,jpg,gif",
-            //     "docName" => "required",
-            //     "docCode" => "required",
-            //     "ownerId" => "nullable|digits_between:1,9223372036854775807"
-            // ]);
+            if ($validator->fails()) {
+                return responseMsg(false, $validator->errors(), "");
+            }
+            
             $tradC = $this->_CONTROLLER_TRADE;
             $docUpload = new DocUpload;
             $mWfActiveDocument = new WfActiveDocument();
@@ -1120,7 +1113,7 @@ class TradeApplication extends Controller
             $ownereDocCode = $particuler ? collect($particuler["doc"])->where("docName", $req->docName)->all() : "";
 
             $particulerDocCode = collect($ownereDocCode)->implode("documentCode", ",");
-            if (!(in_array($req->docName, explode(",", $applicationDocName)) == true || in_array($req->docName, explode(",", $ownerDocNames)) == true)) {
+            if (!(in_array($req->docName, explode(",", $applicationDocName)) == true || in_array($req->docName, explode(",", $ownerDocNames)) == true) && !in_array($req->docCode,["OTHER DOC"])) {
                 throw new Exception("Invalid Doc Name Pass");
             }
             if (in_array($req->docName, explode(",", $applicationDocName)) && (empty($applicationDocCode) || !(in_array($req->docCode, explode(",", $applicationCode))))) {
