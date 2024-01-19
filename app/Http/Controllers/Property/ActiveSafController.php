@@ -750,13 +750,13 @@ class ActiveSafController extends Controller
                 'headerTitle' => "About Property",
                 'data' => $cardDetails
             ];
-            if($data->assessment_type == 'Bifurcation'){
-            // Card Detail Format
-            $cardDetails = $this->generateBiCardDetails($data, $getOwnerDetails);
-            $cardElement = [
-                'headerTitle' => "About Property",
-                'data' => $cardDetails
-            ];
+            if ($data->assessment_type == 'Bifurcation') {
+                // Card Detail Format
+                $cardDetails = $this->generateBiCardDetails($data, $getOwnerDetails);
+                $cardElement = [
+                    'headerTitle' => "About Property",
+                    'data' => $cardDetails
+                ];
             }
             $fullDetailsData['fullDetailsData']['cardArray'] = new Collection($cardElement);
             $data = json_decode(json_encode($data), true);
@@ -4410,6 +4410,10 @@ class ActiveSafController extends Controller
                 ->leftJoin("ulb_ward_masters as ward", "ward.id", "p.ward_mstr_id")
                 ->where("p.proccess_fee_paid", 0)
                 ->where("p.proccess_fee", ">", 0);
+
+            if ($request->assessmentType)
+                $data = $data->where("p.assessment_type", $request->assessmentType);
+
             switch ($request->searchBy) {
                 case "applicationNo":
                     $data = $data->where("p.saf_no", $request->value);
