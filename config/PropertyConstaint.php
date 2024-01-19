@@ -49,7 +49,8 @@ return [
         "5" => "Partition",
         "6" => "Succession",
         "7" => "Heridity/Will/Gift",
-        "8" => "Sale/Purchase/Lease"
+        "8" => "Sale/Purchase/Lease",
+        "9" => "Imla"
     ],
     "OWNERSHIP-TYPE" => [
         "1"     => "INDIVIDUAL",
