@@ -837,7 +837,7 @@ class PostPropPaymentV2
                 {
                     if(is_numeric($testVal) && $testVal<0)
                     {
-                        throw new Exception($keys." Go On Nagative of fyear".$tblDemand->fyear);
+                        throw new Exception($keys." Go On Nagative of fyear ".$tblDemand->fyear." amount =>".$testVal);
                     }
                 }
             }
