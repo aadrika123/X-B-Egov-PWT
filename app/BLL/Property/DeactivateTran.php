@@ -85,10 +85,14 @@ class DeactivateTran
             foreach ($this->_tranDtls as $tranDtl) {
                 $demand = PropDemand::find($tranDtl->prop_demand_id);
                 if (collect($demand)->isEmpty())
+                {
                     throw new Exception("Demand Not Available for demand ID $tranDtl->prop_demand_id");
-                $demand->paid_status = 0;
-                $demand->balance = $demand->total_tax - $demand->adjust_amt;
-                $demand->save();
+                }
+                // $demand->paid_status = 0;
+                // $demand->balance = $demand->total_tax - $demand->adjust_amt;
+                $this->adjustPropDemand($demand,$tranDtl);
+                $oldD = PropDemand::find($tranDtl->prop_demand_id);
+                $demand->save();dd($demand,$oldD,$tranDtl);
 
                 // Tran Dtl Deactivation
                 $tranDtl = PropTranDtl::find($tranDtl->id);
@@ -98,44 +102,44 @@ class DeactivateTran
                 /**
                  * | Condition for Reverting in case of Part wise Payment
                  */
-                if ($demand->is_full_paid == false) {
-                    $demand->due_alv = $demand->due_alv + $tranDtl->paid_alv;
-                    $demand->due_maintanance_amt = $demand->due_maintanance_amt + $tranDtl->paid_maintanance_amt;
-                    $demand->due_aging_amt = $demand->due_aging_amt + $tranDtl->paid_aging_amt;
-                    $demand->due_general_tax = $demand->due_general_tax + $tranDtl->paid_general_tax;
-                    $demand->due_road_tax = $demand->due_road_tax + $tranDtl->paid_road_tax;
-                    $demand->due_firefighting_tax = $demand->due_firefighting_tax + $tranDtl->paid_firefighting_tax;
-                    $demand->due_education_tax = $demand->due_education_tax + $tranDtl->paid_education_tax;
-                    $demand->due_water_tax = $demand->due_water_tax + $tranDtl->paid_water_tax;
-                    $demand->due_cleanliness_tax = $demand->due_cleanliness_tax + $tranDtl->paid_cleanliness_tax;
-                    $demand->due_sewarage_tax = $demand->due_sewarage_tax + $tranDtl->paid_sewarage_tax;
-                    $demand->due_tree_tax = $demand->due_tree_tax + $tranDtl->paid_tree_tax;
-                    $demand->due_professional_tax = $demand->due_professional_tax + $tranDtl->paid_professional_tax;
-                    $demand->due_total_tax = $demand->due_total_tax + $tranDtl->paid_total_tax;
-                    $demand->due_balance = $demand->due_balance + $tranDtl->paid_balance;
-                    $demand->due_adjust_amt = $demand->due_adjust_amt + $tranDtl->paid_adjust_amt;
-                    $demand->due_tax1 = $demand->due_tax1 + $tranDtl->paid_tax1;
-                    $demand->due_tax2 = $demand->due_tax2 + $tranDtl->paid_tax2;
-                    $demand->due_tax3 = $demand->due_tax3 + $tranDtl->paid_tax3;
-                    $demand->due_sp_education_tax = $demand->due_sp_education_tax + $tranDtl->paid_sp_education_tax;
-                    $demand->due_water_benefit = $demand->due_water_benefit + $tranDtl->paid_water_benefit;
-                    $demand->due_water_bill = $demand->due_water_bill + $tranDtl->paid_water_bill;
-                    $demand->due_sp_water_cess = $demand->due_sp_water_cess + $tranDtl->paid_sp_water_cess;
-                    $demand->due_drain_cess = $demand->due_drain_cess + $tranDtl->paid_drain_cess;
-                    $demand->due_light_cess = $demand->due_light_cess + $tranDtl->paid_light_cess;
-                    $demand->due_major_building = $demand->due_major_building + $tranDtl->paid_major_building;
-                    $demand->paid_total_tax = $demand->paid_total_tax - $tranDtl->paid_total_tax;
-                    $demand->paid_status = 1;
+                // if ($demand->is_full_paid == false) {
+                //     $demand->due_alv = $demand->due_alv + $tranDtl->paid_alv;
+                //     $demand->due_maintanance_amt = $demand->due_maintanance_amt + $tranDtl->paid_maintanance_amt;
+                //     $demand->due_aging_amt = $demand->due_aging_amt + $tranDtl->paid_aging_amt;
+                //     $demand->due_general_tax = $demand->due_general_tax + $tranDtl->paid_general_tax;
+                //     $demand->due_road_tax = $demand->due_road_tax + $tranDtl->paid_road_tax;
+                //     $demand->due_firefighting_tax = $demand->due_firefighting_tax + $tranDtl->paid_firefighting_tax;
+                //     $demand->due_education_tax = $demand->due_education_tax + $tranDtl->paid_education_tax;
+                //     $demand->due_water_tax = $demand->due_water_tax + $tranDtl->paid_water_tax;
+                //     $demand->due_cleanliness_tax = $demand->due_cleanliness_tax + $tranDtl->paid_cleanliness_tax;
+                //     $demand->due_sewarage_tax = $demand->due_sewarage_tax + $tranDtl->paid_sewarage_tax;
+                //     $demand->due_tree_tax = $demand->due_tree_tax + $tranDtl->paid_tree_tax;
+                //     $demand->due_professional_tax = $demand->due_professional_tax + $tranDtl->paid_professional_tax;
+                //     $demand->due_total_tax = $demand->due_total_tax + $tranDtl->paid_total_tax;
+                //     $demand->due_balance = $demand->due_balance + $tranDtl->paid_balance;
+                //     $demand->due_adjust_amt = $demand->due_adjust_amt + $tranDtl->paid_adjust_amt;
+                //     $demand->due_tax1 = $demand->due_tax1 + $tranDtl->paid_tax1;
+                //     $demand->due_tax2 = $demand->due_tax2 + $tranDtl->paid_tax2;
+                //     $demand->due_tax3 = $demand->due_tax3 + $tranDtl->paid_tax3;
+                //     $demand->due_sp_education_tax = $demand->due_sp_education_tax + $tranDtl->paid_sp_education_tax;
+                //     $demand->due_water_benefit = $demand->due_water_benefit + $tranDtl->paid_water_benefit;
+                //     $demand->due_water_bill = $demand->due_water_bill + $tranDtl->paid_water_bill;
+                //     $demand->due_sp_water_cess = $demand->due_sp_water_cess + $tranDtl->paid_sp_water_cess;
+                //     $demand->due_drain_cess = $demand->due_drain_cess + $tranDtl->paid_drain_cess;
+                //     $demand->due_light_cess = $demand->due_light_cess + $tranDtl->paid_light_cess;
+                //     $demand->due_major_building = $demand->due_major_building + $tranDtl->paid_major_building;
+                //     $demand->paid_total_tax = $demand->paid_total_tax - $tranDtl->paid_total_tax;
+                //     $demand->paid_status = 1;
 
-                    // Check the condition of first part payment We have to make it revertable as previous
-                    if ($demand->paid_total_tax == 0) {
-                        $demand->paid_status = 0;
-                        $demand->is_full_paid = true;
-                        $demand->has_partwise_paid = false;
-                    }
+                //     // Check the condition of first part payment We have to make it revertable as previous
+                //     if ($demand->paid_total_tax == 0) {
+                //         $demand->paid_status = 0;
+                //         $demand->is_full_paid = true;
+                //         $demand->has_partwise_paid = false;
+                //     }
 
-                    $demand->save();
-                }
+                //     $demand->save();
+                // }
             }
         }
 
@@ -145,6 +149,40 @@ class DeactivateTran
 
         $property->balance = $this->_transaction->arrear_settled_amt;
         $property->save();
+    }
+
+    private function adjustPropDemand(PropDemand $propDemand,$tranDtl)
+    {
+        $propDemand->due_maintanance_amt    = $propDemand->due_maintanance_amt  + $tranDtl->paid_maintanance_amt;
+        $propDemand->due_aging_amt          = $propDemand->due_aging_amt        + $tranDtl->paid_aging_amt;
+        $propDemand->due_general_tax        = $propDemand->due_general_tax      + $tranDtl->paid_general_tax;
+        $propDemand->due_road_tax           = $propDemand->due_road_tax         + $tranDtl->paid_road_tax;
+        $propDemand->due_firefighting_tax   = $propDemand->due_firefighting_tax + $tranDtl->paid_firefighting_tax;
+        $propDemand->due_education_tax      = $propDemand->due_education_tax    + $tranDtl->paid_education_tax;
+        $propDemand->due_water_tax          = $propDemand->due_water_tax        + $tranDtl->paid_water_tax;
+        $propDemand->due_cleanliness_tax    = $propDemand->due_cleanliness_tax  + $tranDtl->paid_cleanliness_tax;
+        $propDemand->due_sewarage_tax       = $propDemand->due_sewarage_tax     + $tranDtl->paid_sewarage_tax;
+        $propDemand->due_tree_tax           = $propDemand->due_tree_tax         + $tranDtl->paid_tree_tax;
+        $propDemand->due_professional_tax   = $propDemand->due_professional_tax + $tranDtl->paid_professional_tax;
+        $propDemand->due_total_tax          = $propDemand->due_total_tax        + $tranDtl->paid_total_tax;
+        $propDemand->due_balance            = $propDemand->due_balance          + $tranDtl->paid_balance;
+        $propDemand->due_adjust_amt         = $propDemand->due_adjust_amt       + $tranDtl->paid_adjust_amt;
+        $propDemand->due_tax1               = $propDemand->due_tax1             + $tranDtl->paid_tax1;
+        $propDemand->due_tax2               = $propDemand->due_tax2             + $tranDtl->paid_tax2;
+        $propDemand->due_tax3               = $propDemand->due_tax3             + $tranDtl->paid_tax3;
+        $propDemand->due_sp_education_tax   = $propDemand->due_sp_education_tax + $tranDtl->paid_sp_education_tax;
+        $propDemand->due_water_benefit      = $propDemand->due_water_benefit    + $tranDtl->paid_water_benefit;
+        $propDemand->due_water_bill         = $propDemand->due_water_bill       + $tranDtl->paid_water_bill;
+        $propDemand->due_sp_water_cess      = $propDemand->due_sp_water_cess    + $tranDtl->paid_sp_water_cess;
+        $propDemand->due_drain_cess         = $propDemand->due_drain_cess       + $tranDtl->paid_drain_cess;
+        $propDemand->due_light_cess         = $propDemand->due_light_cess       + $tranDtl->paid_light_cess;
+        $propDemand->due_major_building     = $propDemand->due_major_building   + $tranDtl->paid_major_building;
+        $propDemand->due_open_ploat_tax     = $propDemand->due_open_ploat_tax   + $tranDtl->paid_open_ploat_tax;
+        $propDemand->paid_total_tax         = $propDemand->paid_total_tax - $tranDtl->paid_total_tax;
+
+        $propDemand->paid_status = $propDemand->paid_total_tax == 0 ? 0 :  $propDemand->paid_status;
+
+
     }
 
     /**

@@ -197,7 +197,8 @@ trait TradeTrait
             //         $documentList .= "";//$mRefReqDocs->getDocsByDocCode($moduleId, "NOC")->requirements;
             //         break;
             // }
-        }        
+        }  
+        $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "OTHER")->requirements??""; 
         $documentList = $this->filterDocument($documentList,$refApplication);
         return $documentList;
     }
