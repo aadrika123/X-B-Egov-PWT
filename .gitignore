@@ -34,3 +34,7 @@ public/Uploads/
 razorpay-php
 tests/Feature/
 public/public/Property/GeoTagging/
+public/Property/TranDeactivate/
+public/Water/TranDeactivate/
+public/Trade/TranDeactivate/
+public/Others/TranDeactivate/

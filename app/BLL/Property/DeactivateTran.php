@@ -3,10 +3,13 @@
 namespace App\BLL\Property;
 
 use App\Models\Payment\TempTransaction;
+use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropAdjustment;
 use App\Models\Property\PropAdvance;
 use App\Models\Property\PropDemand;
+use App\Models\Property\PropPendingArrear;
 use App\Models\Property\PropProperty;
+use App\Models\Property\PropSaf;
 use App\Models\Property\PropTranDtl;
 use App\Models\Property\PropTransaction;
 use Exception;
@@ -30,6 +33,7 @@ class DeactivateTran
     private $_mTempTrans;
     private $_PropAdvance ;
     private $_PropAdjustment;
+    private $_PropPendingArrear;
 
     public function __construct($tranId)
     {
@@ -38,6 +42,7 @@ class DeactivateTran
         $this->_mTempTrans = new TempTransaction();
         $this->_PropAdvance = new PropAdvance();
         $this->_PropAdjustment = new PropAdjustment();
+        $this->_PropPendingArrear= new PropPendingArrear();
     }
 
 
@@ -58,13 +63,14 @@ class DeactivateTran
         $this->deactivatePropTrans();                       // 1.1
 
         $this->deactivateSafTrans();                        // (1.2)  🔴🔴 Yet to complete
-
+        $this->deactivateSafProccessTrans();
         $this->_transaction->status = 0;                    // Deactivation
         $this->_transaction->save();
 
         $this->deactivateTempTrans();                       // (1.3) 
         $this->_PropAdvance->deactivateAdvanceByTrId($this->_transaction->id);
         $this->_PropAdjustment->deactivateAdjustmentAmtByTrId($this->_transaction->id);
+        $this->AdjustArreaInterast();
        
     }
 
@@ -150,6 +156,22 @@ class DeactivateTran
         }
     }
 
+    public function deactivateSafProccessTrans()
+    {
+        if ($this->_transaction->tran_type == 'Saf Proccess Fee') {
+            $saf = PropActiveSaf::find($this->_transaction->saf_id);
+            if(!$saf){
+                $saf = PropSaf::find($this->_transaction->saf_id);
+            }
+            if(!$saf)
+            {
+                throw new Exception("Saf Not Available for this Saf ID ".$this->_transaction->saf_id);
+            }
+            $saf->proccess_fee_paid = $saf->proccess_fee > 0 ? 0 :1;
+            $saf->save();
+        }
+    }
+
     /**
      * | Deactivate Temp Transactions
      */
@@ -158,5 +180,26 @@ class DeactivateTran
         $tempTrans = $this->_mTempTrans->getTempTranByTranId($this->_tranId, 1);                // 1 is the module id for property
         if ($tempTrans)
             $tempTrans->update(['status' => 0]);
+    }
+
+    #Adjust Arrea Interast
+
+    public function AdjustArreaInterast()
+    { 
+        if ($this->_transaction->tran_type == 'Property') 
+        {
+            $OldInterest = $this->_PropPendingArrear->where("prop_id",$this->_transaction->property_id)->where("status",1)->get();
+            foreach($OldInterest as $interast)
+            {
+                
+                $paymentHistory = collect(json_decode($interast->due_total_interest_pay_json))->where("tran_id",$this->_transaction->id);
+                $paiedAmount = $paymentHistory->sum("amount");
+                $newPaymentHistory = (collect(json_decode($interast->due_total_interest_pay_json))->where("tran_id","<>",$this->_transaction->id)->values());
+                $interast->due_total_interest = ($interast->due_total_interest + $paiedAmount);
+                $interast->due_total_interest_pay_json = json_encode($newPaymentHistory);
+                $interast->paid_status = $interast->due_total_interest > 0 ? 0 : 1 ;
+                $interast->save();
+            }
+        }
     }
 }
