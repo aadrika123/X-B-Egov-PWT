@@ -3750,7 +3750,7 @@ class ReportController extends Controller
                 ->get();
 
             if ($request->type)
-               $bata = collect($bata)->where('assessment_type', $request->type);
+               $bata = collect($bata)->where('assessment_type', $request->type)->values();
 
             if (!$paymentMode)
                 $paymentMode = "Cash/Cheque/DD/Online";
