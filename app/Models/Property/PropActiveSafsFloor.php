@@ -145,6 +145,9 @@ class PropActiveSafsFloor extends Model
         else
             $carpetArea =  $req['buildupArea'] * 0.80;
 
+        if ($assessmentType == "Bifurcation")
+            $carpetArea = $req['biBuildupArea'];
+
         $floor = new  PropActiveSafsFloor();
         $floor->saf_id = $safId;
         $floor->floor_mstr_id = $req['floorNo'] ?? null;
