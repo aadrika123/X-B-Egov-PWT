@@ -1237,59 +1237,97 @@ class TradeApplication extends Controller
                         DB::raw("TO_CHAR(CAST(trade_licences.application_date AS DATE), 'DD-MM-YYYY') as application_date"),
                     )
                     ->where("trade_licences.payment_status",1)
+                    ->where('trade_licences.application_type_id', '!=', 4)
                     ->WHERE("trade_licences.is_active",TRUE);
+    }
+
+    public function ReAmentSurrenderList(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            "applicationType" => "required|string|in:".collect(flipConstants($this->_TRADE_CONSTAINT["APPLICATION-TYPE"]))->implode(","),
+        ]);
+    
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validator->errors()
+            ], 200);
+        }
+        try{
+            $mApplicationTypeId = $this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType] ?? null;
+            $respons = "";
+            switch($mApplicationTypeId)
+            {
+                case 2 : $respons = $this->CRenewalList($request);
+                        break;
+                case 3 : $respons = $this->CAmendmentList($request);
+                        break;
+                case 4 : $respons = $this->CSurrenderList($request);
+                        break;
+                default : throw new Exception("Invalid Application Type Pass");
+            }
+            return $respons;
+        }catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $request->deviceId ?? "");
+        }
+
     }
     # Serial No
     public function CRenewalList(Request $request)
     {
-        $refUserId = Auth()->user()->id;
-        $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
-        $mWardPermission = $this->_COMMON_FUNCTION->WardPermission($refUserId);
-        $mWardIds = array_map(function ($val) {
-            return $val['id'];
-        }, $mWardPermission);
-        if ($request->wardNo && $request->wardNo != "ALL") {
-            $mWardIds = [$request->wardNo];
-        }
-        $data = $this->ReAmentSurrenderMetaList()
-            ->where('trade_licences.valid_upto', '<', $mNextMonth)
-            ->where('trade_licences.application_type_id', '!=', 4)
-            ->whereIn('trade_licences.ward_id', $mWardIds);
-        if (trim($request->key)) 
-        {
-            $key = trim($request->key);
-            $data = $data->where(function ($query) use ($key) {
-                $query->orwhere('trade_licences.holding_no', 'ILIKE', '%' . $key . '%')
-                    ->orwhere('trade_licences.application_no', 'ILIKE', '%' . $key . '%')
-                    ->orwhere("trade_licences.license_no", 'ILIKE', '%' . $key . '%')
-                    ->orwhere("trade_licences.provisional_license_no", 'ILIKE', '%' . $key . '%')
-                    ->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%')
-                    ->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%')
-                    ->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
-            });
-        }
-        $perPage = $request->perPage ? $request->perPage : 10;
-        $paginator = $data->paginate($perPage);
-        $list = [
-            "current_page" => $paginator->currentPage(),
-            "last_page" => $paginator->lastPage(),
-            "data" => $paginator->items(),
-            "total" => $paginator->total(),
-        ];
-        return responseMsg(true, "", remove_null($list));
-    }
-    # Serial No
-    public function CAmendmentList(Request $request)
-    {
-        try {
+        try{
+
             $refUserId = Auth()->user()->id;
             $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
             $mWardPermission = $this->_COMMON_FUNCTION->WardPermission($refUserId);
             $mWardIds = array_map(function ($val) {
                 return $val['id'];
             }, $mWardPermission);
+            if ($request->wardNo && $request->wardNo != "ALL") {
+                $mWardIds = [$request->wardNo];
+            }
             $data = $this->ReAmentSurrenderMetaList()
                 ->where('trade_licences.valid_upto', '<', $mNextMonth)
+                ->whereIn('trade_licences.ward_id', $mWardIds);
+            if (trim($request->key)) 
+            {
+                $key = trim($request->key);
+                $data = $data->where(function ($query) use ($key) {
+                    $query->orwhere('trade_licences.holding_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('trade_licences.application_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere("trade_licences.license_no", 'ILIKE', '%' . $key . '%')
+                        ->orwhere("trade_licences.provisional_license_no", 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
+                });
+            }
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $paginator = $data->paginate($perPage);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),            
+            ];
+            return responseMsg(true, "", remove_null($list));
+        }catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), '');
+        }
+    }
+    # Serial No
+    public function CAmendmentList(Request $request)
+    {
+        try {
+            $refUserId = Auth()->user()->id;
+            $mNextMonth = Carbon::now()->format('Y-m-d');
+            $mWardPermission = $this->_COMMON_FUNCTION->WardPermission($refUserId);
+            $mWardIds = array_map(function ($val) {
+                return $val['id'];
+            }, $mWardPermission);
+            $data = $this->ReAmentSurrenderMetaList()
+                ->where('trade_licences.valid_upto', '>', $mNextMonth)
                 ->whereIn('trade_licences.ward_id', $mWardIds);
 
             $perPage = $request->perPage ? $request->perPage : 10;
@@ -1311,14 +1349,14 @@ class TradeApplication extends Controller
     { 
         try {
             $refUserId = Auth()->user()->id;
-            $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
+            $mNextMonth = Carbon::now()->format('Y-m-d');
             $mWardPermission = $this->_COMMON_FUNCTION->WardPermission($refUserId);
             $mWardIds = array_map(function ($val) {
                 return $val['id'];
             }, $mWardPermission);
 
             $data = $this->ReAmentSurrenderMetaList()
-                ->where('trade_licences.valid_upto', '<', $mNextMonth)
+                ->where('trade_licences.valid_upto', '>', $mNextMonth)
                 ->whereIn('trade_licences.ward_id', $mWardIds);
 
             $perPage = $request->perPage ? $request->perPage : 10;

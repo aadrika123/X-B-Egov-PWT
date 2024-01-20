@@ -82,6 +82,8 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
 
         Route::post('application/get-independent-comment', 'readIndipendentComment');
 
+        Route::post('application/renewal-surrender-amend-list', 'ReAmentSurrenderList');
+
         Route::post('application/counter-renewable-list', 'CRenewalList');                  #id = c8
 
         Route::post('application/counter-amendable-list', 'CAmendmentList');                 #id = c9
