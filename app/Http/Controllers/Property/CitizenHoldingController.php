@@ -181,6 +181,7 @@ class CitizenHoldingController extends Controller
         {
             $newReqs->merge([
                 "userId"=>$reqDataRequest["userId"],
+                "deviceType"=>$reqDataRequest["deviceType"]??null,
             ]);
         }
         if(isset($reqDataRequest["CitizenId"]))
