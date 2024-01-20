@@ -179,7 +179,11 @@ class  PropActiveSaf extends Model
         return DB::table('prop_active_safs')
             ->select(
                 'prop_active_safs.*',
-                'prop_active_safs.assessment_type as assessment',
+                DB::raw(
+                    "case when prop_active_safs.workflow_id=202 then 'Direct Mutation'
+                          else assessment_type end
+                          as assessment"
+                ),
                 DB::raw("REPLACE(prop_active_safs.holding_type, '_', ' ') AS holding_type"),
                 'w.ward_name as old_ward_no',
                 'nw.ward_name as new_ward_no',
