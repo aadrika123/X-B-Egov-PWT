@@ -3704,6 +3704,7 @@ class ReportController extends Controller
                 "wardId"      => "nullable|digits_between:1,9223372036854775807",
                 "zoneId"      => "nullable|digits_between:1,9223372036854775807",
                 "paymentMode" => "nullable",
+                "type"        => "nullable|in:Mutation,Bifurcation",
             ]
         );
         if ($validated->fails())
@@ -3726,13 +3727,14 @@ class ReportController extends Controller
             }
 
             $bata = $mPropTransaction
-                ->select(DB::raw('SUM(amount) as amount'), 'transfer_mode_mstr_id', 'transfer_mode')
+                ->select(DB::raw('SUM(amount) as amount'), 'transfer_mode_mstr_id', 'transfer_mode', 'assessment_type')
                 ->join('prop_safs', 'prop_safs.id', 'prop_transactions.saf_id')
                 ->join('ref_prop_transfer_modes', 'ref_prop_transfer_modes.id', 'prop_safs.transfer_mode_mstr_id')
                 ->whereBetween('prop_transactions.tran_date', [$fromDate, $uptoDate])
                 ->where('tran_type', 'Saf Proccess Fee')
                 ->where('prop_transactions.status', 1)
-                ->groupBy('transfer_mode_mstr_id', 'transfer_mode');
+                ->groupBy('transfer_mode_mstr_id', 'transfer_mode', 'assessment_type');
+            // ->get();
 
             if ($wardId) {
                 $bata = $bata->where("prop_safs.ward_mstr_id", $wardId);
@@ -3746,6 +3748,10 @@ class ReportController extends Controller
 
             $bata = $bata
                 ->get();
+
+            if ($request->type)
+               $bata = collect($bata)->where('assessment_type', $request->type);
+
             if (!$paymentMode)
                 $paymentMode = "Cash/Cheque/DD/Online";
 
