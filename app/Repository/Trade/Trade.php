@@ -2561,9 +2561,9 @@ class Trade implements ITrade
                 });
             }
 
-            if (isset($mInputs['entityValue']) && trim($mInputs['entityValue']) && isset($mInputs['entityName']) && trim($mInputs['entityName'])) {
-                $key = trim($mInputs['entityValue']);
-                $column = strtoupper(trim($mInputs['entityName']));
+            if (isset($request->entityValue) && trim($request->entityValue) && isset($request->entityName) && trim($request->entityName)) {
+                $key = trim($request->entityValue);
+                $column = strtoupper(trim($request->entityName));
                 $ApprovedLicence = $ApprovedLicence->where(function ($query) use ($key, $column) {
                     if ($column == "FIRM") {
                         $query->orwhere('licences.firm_name', 'ILIKE', '%' . $key . '%');
