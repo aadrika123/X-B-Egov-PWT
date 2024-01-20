@@ -181,7 +181,7 @@ class PropSaf extends Model
             ->select(
                 'prop_safs.*',
                 DB::raw(
-                    "case when prop_active_safs.workflow_id=202 then 'Direct Mutation'
+                    "case when prop_safs.workflow_id=202 then 'Direct Mutation'
                           else assessment_type end
                           as assessment_type"
                 ),
