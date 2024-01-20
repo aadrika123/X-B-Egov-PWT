@@ -191,19 +191,19 @@ class ApplySafController extends Controller
             $sms = AkolaProperty(["owner_name" => $ownerName, "saf_no" => $safNo, "assessment_type" => $request->assessmentType, "holding_no" => $request->propertyNo ?? ""], ($request->assessmentType == "New Assessment" ? "New Assessment" : "Reassessment"));
             if (($sms["status"] !== false)) {
                 $response = send_sms($ownerMobile, $sms["sms"], $sms["temp_id"]);
-                // $smsReqs = [
-                //     "emp_id" => $user_id,
-                //     "ref_id" => $safId,
-                //     "ref_type" => 'SAF',
-                //     "mobile_no" => $ownerMobile,
-                //     "purpose" => $request->assessmentType.' Apply',
-                //     "template_id" => $sms["temp_id"],
-                //     "message" => $sms["sms"],
-                //     "response" => $response['status'],
-                //     "smgid" => $response['msg'],
-                //     "stampdate" => Carbon::now(),
-                // ];
-                // $mPropSmsLog->create($smsReqs);
+                $smsReqs = [
+                    "emp_id" => $user_id,
+                    "ref_id" => $safId,
+                    "ref_type" => 'SAF',
+                    "mobile_no" => $ownerMobile,
+                    "purpose" => $request->assessmentType.' Apply',
+                    "template_id" => $sms["temp_id"],
+                    "message" => $sms["sms"],
+                    "response" => $response['status'],
+                    "smgid" => $response['msg'],
+                    "stampdate" => Carbon::now(),
+                ];
+                $mPropSmsLog->create($smsReqs);
             }
 
             return responseMsgs(true, "Successfully Submitted Your Application Your SAF No. $safNo", [

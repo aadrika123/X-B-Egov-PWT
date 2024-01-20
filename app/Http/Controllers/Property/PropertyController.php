@@ -102,6 +102,7 @@ class PropertyController extends Controller
             $myRequest->request->add([
                 'mobileNo' => $ownerMobile,
                 'type'     => "Attach Holding",
+                'userId'   => authUser($req)->id ?? null,
             ]);
             $response = $ThirdPartyController->sendOtp($myRequest);
 

@@ -58,7 +58,7 @@ class PostPropPaymentV2
     private $_paidCurrentTaxesBifurcation;
     private $_paidArrearTaxesBifurcation;
     private $_fy;
-    private $_PropAdvance ;
+    private $_PropAdvance;
     private $_PropAdjustment;
     private $_PropPendingArrear;
     /**
@@ -69,7 +69,7 @@ class PostPropPaymentV2
         $this->_COMMON_FUNCTION = new \App\Repository\Common\CommonFunction();
         $this->_PropAdvance = new PropAdvance();
         $this->_PropAdjustment = new PropAdjustment();
-        $this->_PropPendingArrear= new PropPendingArrear();
+        $this->_PropPendingArrear = new PropPendingArrear();
         $this->_REQ = $req;
         $this->readGenParams();
     }
@@ -543,7 +543,7 @@ class PostPropPaymentV2
             $spWaterCessPerc + $drainCessPerc + $lightCessPerc + $majorBuildingPerc
             + $openPloatTaxPerc;
 
-        
+
 
         /**
          * | 100 % = Payable Amount
@@ -628,7 +628,7 @@ class PostPropPaymentV2
             $spWaterCessPerc + $drainCessPerc + $lightCessPerc + $majorBuildingPerc
             + $openPloatTaxPerc;
 
-        
+
 
         /**
          * | 100 % = Payable Amount
@@ -681,8 +681,7 @@ class PostPropPaymentV2
         $isPartWisePaid = null;
         // Part Payment
         // Adjust Demand on Part Payment
-        if ($this->_REQ->paymentType == 'isPartPayment' && $this->_REQ->paidAmount < $this->_propCalculation->original['data']['payableAmt']) 
-        {                    
+        if ($this->_REQ->paymentType == 'isPartPayment' && $this->_REQ->paidAmount < $this->_propCalculation->original['data']['payableAmt']) {
             $isPartWisePaid = true;                                                                                 // Flag has been kept for showing the partial payment receipt
             $this->_REQ->merge(['amount' => $this->_REQ->paidAmount]);
             // if ($this->_REQ->paidAmount > $this->_propCalculation->original['data']['arrearPayableAmt'])           // We have to adjust current demand
@@ -691,8 +690,7 @@ class PostPropPaymentV2
             //     $this->arrearDemandAdjust();
             // else
             //     throw new Exception("Part Payment in Monthly Interest Not Available");            
-            if($this->_REQ->paidAmount < $this->_propCalculation->original['data']['totalInterestPenalty'])
-            {
+            if ($this->_REQ->paidAmount < $this->_propCalculation->original['data']['totalInterestPenalty']) {
                 // throw new Exception("Part Payment in Monthly Interest Not Available");
             }
         }
@@ -701,62 +699,64 @@ class PostPropPaymentV2
         if ($this->_REQ->paymentType == 'isPartPayment' && $this->_REQ->paidAmount > $this->_propCalculation->original['data']['payableAmt']) {
             // throw new Exception("Amount should be less then the payable amount");
 
-        }  
-        
-        if(!$this->_REQ->paidAmount){
+        }
+
+        if (!$this->_REQ->paidAmount) {
             $this->_REQ->merge(['paidAmount' => $this->_REQ['amount']]);
         }
-        
 
-        $addvanceAmt = $this->_propCalculation->original['data']["remainAdvance"]??0; 
-        
-        $previousInterest = $this->_propCalculation->original['data']["previousInterest"]??0;
-        $previousInterestId = $this->_propCalculation->original['data']["previousInterestId"]??0;
+
+        $addvanceAmt = $this->_propCalculation->original['data']["remainAdvance"] ?? 0;
+
+        $previousInterest = $this->_propCalculation->original['data']["previousInterest"] ?? 0;
+        $previousInterestId = $this->_propCalculation->original['data']["previousInterestId"] ?? 0;
 
         $allDemands = $this->_propCalculation->original['data']["demandList"];
-        $arrearDemand = collect($allDemands)->where("fyear","<",getFY());
+        $arrearDemand = collect($allDemands)->where("fyear", "<", getFY());
         $arrearTotaTax = $arrearDemand->sum("total_tax");
         $penalty = $arrearDemand->sum("monthlyPenalty");
         $totalaAreaDemand = $previousInterest + $arrearTotaTax + $penalty;
-        $thertyPerOfpreviousInterest = ($this->_REQ->paidAmount /100 )* 30;
-        if(round($this->_REQ->paidAmount) < round($totalaAreaDemand) )
-        {
-            $previousInterest = $previousInterest > 0 ? ($thertyPerOfpreviousInterest<=$previousInterest ? $thertyPerOfpreviousInterest : $previousInterest ) : 0 ;
-        } 
+        $thertyPerOfpreviousInterest = ($this->_REQ->paidAmount / 100) * 30;
+        if (round($this->_REQ->paidAmount) < round($totalaAreaDemand)) {
+            $previousInterest = $previousInterest > 0 ? ($thertyPerOfpreviousInterest <= $previousInterest ? $thertyPerOfpreviousInterest : $previousInterest) : 0;
+        }
         $adjustAmt = 0;
-        $payableAmount = $this->_REQ->paidAmount - $previousInterest ;
-        if($this->_REQ["paymentMode"]!="ONLINE"){
-            $adjustAmt = round($this->_REQ->paidAmount - $addvanceAmt) ;
-            $adjustAmt = $adjustAmt > 0 ? $addvanceAmt : $this->_REQ->paidAmount;   
-            switch($this->_REQ->paymentType){
-                case "isPartPayment" : $payableAmount = $payableAmount + $addvanceAmt;
-                                    $this->_REQ->merge(
-                                        [
-                                            'amount' => $this->_REQ->paidAmount 
-                                        ]
-                                    );
-                                    break;
-                case "isFullPayment" : $payableAmount ;
-                                    $this->_REQ->merge(
-                                        [
-                                            'paidAmount' => ($this->_REQ->paidAmount - $addvanceAmt),
-                                            'amount' => ($this->_REQ->paidAmount - $addvanceAmt)
-                                        ]
-                                    );
-                                    break;
-                case "isArrearPayment" : $payableAmount ;
-                                    $this->_REQ->merge(
-                                        [
-                                            'paidAmount' => ($this->_REQ->paidAmount - $addvanceAmt),
-                                            'amount' => ($this->_REQ->paidAmount - $addvanceAmt)
-                                        ]
-                                    );
-                                    break;
+        $payableAmount = $this->_REQ->paidAmount - $previousInterest;
+        if ($this->_REQ["paymentMode"] != "ONLINE") {
+            $adjustAmt = round($this->_REQ->paidAmount - $addvanceAmt);
+            $adjustAmt = $adjustAmt > 0 ? $addvanceAmt : $this->_REQ->paidAmount;
+            switch ($this->_REQ->paymentType) {
+                case "isPartPayment":
+                    $payableAmount = $payableAmount + $addvanceAmt;
+                    $this->_REQ->merge(
+                        [
+                            'amount' => $this->_REQ->paidAmount
+                        ]
+                    );
+                    break;
+                case "isFullPayment":
+                    $payableAmount;
+                    $this->_REQ->merge(
+                        [
+                            'paidAmount' => ($this->_REQ->paidAmount - $addvanceAmt),
+                            'amount' => ($this->_REQ->paidAmount - $addvanceAmt)
+                        ]
+                    );
+                    break;
+                case "isArrearPayment":
+                    $payableAmount;
+                    $this->_REQ->merge(
+                        [
+                            'paidAmount' => ($this->_REQ->paidAmount - $addvanceAmt),
+                            'amount' => ($this->_REQ->paidAmount - $addvanceAmt)
+                        ]
+                    );
+                    break;
             }
         }
-        
+
         $demands = collect($this->_propCalculation->original['data']["demandList"])->sortBy(["fyear", "id"]);
-        $paidPenalty = $previousInterest;#$this->_propCalculation->original['data']["previousInterest"];
+        $paidPenalty = $previousInterest; #$this->_propCalculation->original['data']["previousInterest"];
         $demandAmt = $this->_propCalculation->original['data']["payableAmt"];
         $paidDemands = [];
         foreach ($demands as $key => $val) {
@@ -768,13 +768,13 @@ class PostPropPaymentV2
             $paidPenalty += $paymentDtl["payableAmountOfPenalty"];
             $paidDemands[] = $paymentDtl;
         }
-        
-        $arrearSetalAmount = collect($paidDemands)->where("fyear","<",getFY())->sum("paid_total_tax");
+
+        $arrearSetalAmount = collect($paidDemands)->where("fyear", "<", getFY())->sum("paid_total_tax");
         $this->_REQ->merge([
             'demandAmt' => $arrearSetalAmount,                                            // Demandable Amount
             'arrearSettledAmt' => $arrearSetalAmount > 0 ? true : false,
         ]);
-        
+
         $this->_fromFyear = ((collect($paidDemands)->sortBy("fyear"))->first())["fyear"] ?? $this->_fromFyear;
         $this->_uptoFyear = ((collect($paidDemands)->sortBy("fyear"))->last())["fyear"] ?? $this->_uptoFyear;
 
@@ -786,15 +786,14 @@ class PostPropPaymentV2
         $trDtl = [];
 
         #update Pending Arrear Penalty
-        if($previousInterest>0 && $OldInterest = $this->_PropPendingArrear->find($previousInterestId))
-        {
-            $payInterast = $OldInterest->due_total_interest_pay_json? json_decode($OldInterest->due_total_interest_pay_json):[];
-            array_push($payInterast,["tran_id"=>$propTrans['id'],"amount"=>$previousInterest]);
+        if ($previousInterest > 0 && $OldInterest = $this->_PropPendingArrear->find($previousInterestId)) {
+            $payInterast = $OldInterest->due_total_interest_pay_json ? json_decode($OldInterest->due_total_interest_pay_json) : [];
+            array_push($payInterast, ["tran_id" => $propTrans['id'], "amount" => $previousInterest]);
             $OldInterest->due_total_interest_pay_json = json_encode($payInterast);
-            $OldInterest->due_total_interest = $OldInterest->due_total_interest - $previousInterest > 0 ?  $OldInterest->due_total_interest - $previousInterest : 0 ;
-            $OldInterest->paid_status       = $OldInterest->due_total_interest ==0 ? 1 : $OldInterest->paid_status;
-            $OldInterest->save();                      
-        }        
+            $OldInterest->due_total_interest = $OldInterest->due_total_interest - $previousInterest > 0 ?  $OldInterest->due_total_interest - $previousInterest : 0;
+            $OldInterest->paid_status       = $OldInterest->due_total_interest == 0 ? 1 : $OldInterest->paid_status;
+            $OldInterest->save();
+        }
         // Updation of payment status in demand table
         foreach ($paidDemands as $dtls) {
             $demand = collect($dtls["currentTax"]);
@@ -810,37 +809,35 @@ class PostPropPaymentV2
              * | due taxes = paid_taxes-due Taxes
              */
             $tblDemand->paid_status         = 1;           // Paid Status Updation
-            $tblDemand->balance             = $tblDemand->balance - $paidTaxes->paidTotalTax                        > 0  ? $tblDemand->balance - $paidTaxes->paidTotalTax            : 0 ;
-            $tblDemand->due_general_tax     = $tblDemand->due_general_tax - $paidTaxes->paidGeneralTax              > 0  ? $tblDemand->due_general_tax - $paidTaxes->paidGeneralTax  : 0 ;
-            $tblDemand->due_road_tax        = $tblDemand->due_road_tax - $paidTaxes->paidRoadTax                    > 0  ? $tblDemand->due_road_tax - $paidTaxes->paidRoadTax        : 0 ;
-            $tblDemand->due_firefighting_tax = $tblDemand->due_firefighting_tax - $paidTaxes->paidFirefightingTax   > 0  ? $tblDemand->due_firefighting_tax - $paidTaxes->paidFirefightingTax : 0 ;
+            $tblDemand->balance             = $tblDemand->balance - $paidTaxes->paidTotalTax                        > 0  ? $tblDemand->balance - $paidTaxes->paidTotalTax            : 0;
+            $tblDemand->due_general_tax     = $tblDemand->due_general_tax - $paidTaxes->paidGeneralTax              > 0  ? $tblDemand->due_general_tax - $paidTaxes->paidGeneralTax  : 0;
+            $tblDemand->due_road_tax        = $tblDemand->due_road_tax - $paidTaxes->paidRoadTax                    > 0  ? $tblDemand->due_road_tax - $paidTaxes->paidRoadTax        : 0;
+            $tblDemand->due_firefighting_tax = $tblDemand->due_firefighting_tax - $paidTaxes->paidFirefightingTax   > 0  ? $tblDemand->due_firefighting_tax - $paidTaxes->paidFirefightingTax : 0;
             $tblDemand->due_education_tax   = $tblDemand->due_education_tax - $paidTaxes->paidEducationTax          > 0  ? $tblDemand->due_education_tax - $paidTaxes->paidEducationTax : 0;
-            $tblDemand->due_water_tax       = $tblDemand->due_water_tax - $paidTaxes->paidWaterTax                  > 0  ? $tblDemand->due_water_tax - $paidTaxes->paidWaterTax : 0 ;
+            $tblDemand->due_water_tax       = $tblDemand->due_water_tax - $paidTaxes->paidWaterTax                  > 0  ? $tblDemand->due_water_tax - $paidTaxes->paidWaterTax : 0;
             $tblDemand->due_cleanliness_tax = $tblDemand->due_cleanliness_tax - $paidTaxes->paidCleanlinessTax      > 0  ? $tblDemand->due_cleanliness_tax - $paidTaxes->paidCleanlinessTax : 0;
-            $tblDemand->due_sewarage_tax    = $tblDemand->due_sewarage_tax - $paidTaxes->paidSewarageTax            > 0  ? $tblDemand->due_sewarage_tax - $paidTaxes->paidSewarageTax : 0 ;
+            $tblDemand->due_sewarage_tax    = $tblDemand->due_sewarage_tax - $paidTaxes->paidSewarageTax            > 0  ? $tblDemand->due_sewarage_tax - $paidTaxes->paidSewarageTax : 0;
             $tblDemand->due_tree_tax        = $tblDemand->due_tree_tax - $paidTaxes->paidTreeTax                    > 0  ? $tblDemand->due_tree_tax - $paidTaxes->paidTreeTax : 0;
-            $tblDemand->due_professional_tax = $tblDemand->due_professional_tax - $paidTaxes->paidProfessionalTax   > 0  ? $tblDemand->due_professional_tax - $paidTaxes->paidProfessionalTax : 0 ;
-            $tblDemand->due_total_tax       = $tblDemand->due_total_tax - $paidTaxes->paidTotalTax                  > 0  ? $tblDemand->due_total_tax - $paidTaxes->paidTotalTax : 0 ;
-            $tblDemand->due_balance         = $tblDemand->due_total_tax                                             > 0  ? $tblDemand->due_total_tax : 0 ;
-            $tblDemand->due_tax1            = $tblDemand->due_tax1 - $paidTaxes->paidTax1                           > 0  ? $tblDemand->due_tax1 - $paidTaxes->paidTax1 : 0 ;
-            $tblDemand->due_tax2            = $tblDemand->due_tax2 - $paidTaxes->paidTax2                           > 0  ? $tblDemand->due_tax2 - $paidTaxes->paidTax2 : 0 ;
-            $tblDemand->due_tax3            = $tblDemand->due_tax3 - $paidTaxes->paidTax3                           > 0  ? $tblDemand->due_tax3 - $paidTaxes->paidTax3 : 0 ;
-            $tblDemand->due_sp_education_tax = $tblDemand->due_sp_education_tax - $paidTaxes->paidStateEducationTax > 0  ? $tblDemand->due_sp_education_tax - $paidTaxes->paidStateEducationTax : 0 ;
-            $tblDemand->due_water_benefit   = $tblDemand->due_water_benefit - $paidTaxes->paidWaterBenefit          > 0  ? $tblDemand->due_water_benefit - $paidTaxes->paidWaterBenefit : 0 ;
-            $tblDemand->due_water_bill      = $tblDemand->due_water_bill - $paidTaxes->paidWaterBill                > 0  ? $tblDemand->due_water_bill - $paidTaxes->paidWaterBill: 0 ;
-            $tblDemand->due_sp_water_cess   = $tblDemand->due_sp_water_cess - $paidTaxes->paidSpWaterCess           > 0  ? $tblDemand->due_sp_water_cess - $paidTaxes->paidSpWaterCess : 0 ;
-            $tblDemand->due_drain_cess      = $tblDemand->due_drain_cess - $paidTaxes->paidDrainCess                > 0  ? $tblDemand->due_drain_cess - $paidTaxes->paidDrainCess : 0 ;
-            $tblDemand->due_light_cess      = $tblDemand->due_light_cess - $paidTaxes->paidLightCess                > 0  ? $tblDemand->due_light_cess - $paidTaxes->paidLightCess : 0 ;
-            $tblDemand->due_major_building  = $tblDemand->due_major_building - $paidTaxes->paidMajorBuilding        > 0  ? $tblDemand->due_major_building - $paidTaxes->paidMajorBuilding : 0 ;
-            $tblDemand->due_open_ploat_tax  = $tblDemand->due_open_ploat_tax - ($paidTaxes->paidOpenPloatTax ?? 0)  > 0  ? $tblDemand->due_open_ploat_tax - ($paidTaxes->paidOpenPloatTax ?? 0): 0 ;
-            $tblDemand->paid_total_tax      = $paidTaxes->paidTotalTax + $tblDemand->paid_total_tax                 > 0  ? $paidTaxes->paidTotalTax + $tblDemand->paid_total_tax : 0 ;
+            $tblDemand->due_professional_tax = $tblDemand->due_professional_tax - $paidTaxes->paidProfessionalTax   > 0  ? $tblDemand->due_professional_tax - $paidTaxes->paidProfessionalTax : 0;
+            $tblDemand->due_total_tax       = $tblDemand->due_total_tax - $paidTaxes->paidTotalTax                  > 0  ? $tblDemand->due_total_tax - $paidTaxes->paidTotalTax : 0;
+            $tblDemand->due_balance         = $tblDemand->due_total_tax                                             > 0  ? $tblDemand->due_total_tax : 0;
+            $tblDemand->due_tax1            = $tblDemand->due_tax1 - $paidTaxes->paidTax1                           > 0  ? $tblDemand->due_tax1 - $paidTaxes->paidTax1 : 0;
+            $tblDemand->due_tax2            = $tblDemand->due_tax2 - $paidTaxes->paidTax2                           > 0  ? $tblDemand->due_tax2 - $paidTaxes->paidTax2 : 0;
+            $tblDemand->due_tax3            = $tblDemand->due_tax3 - $paidTaxes->paidTax3                           > 0  ? $tblDemand->due_tax3 - $paidTaxes->paidTax3 : 0;
+            $tblDemand->due_sp_education_tax = $tblDemand->due_sp_education_tax - $paidTaxes->paidStateEducationTax > 0  ? $tblDemand->due_sp_education_tax - $paidTaxes->paidStateEducationTax : 0;
+            $tblDemand->due_water_benefit   = $tblDemand->due_water_benefit - $paidTaxes->paidWaterBenefit          > 0  ? $tblDemand->due_water_benefit - $paidTaxes->paidWaterBenefit : 0;
+            $tblDemand->due_water_bill      = $tblDemand->due_water_bill - $paidTaxes->paidWaterBill                > 0  ? $tblDemand->due_water_bill - $paidTaxes->paidWaterBill : 0;
+            $tblDemand->due_sp_water_cess   = $tblDemand->due_sp_water_cess - $paidTaxes->paidSpWaterCess           > 0  ? $tblDemand->due_sp_water_cess - $paidTaxes->paidSpWaterCess : 0;
+            $tblDemand->due_drain_cess      = $tblDemand->due_drain_cess - $paidTaxes->paidDrainCess                > 0  ? $tblDemand->due_drain_cess - $paidTaxes->paidDrainCess : 0;
+            $tblDemand->due_light_cess      = $tblDemand->due_light_cess - $paidTaxes->paidLightCess                > 0  ? $tblDemand->due_light_cess - $paidTaxes->paidLightCess : 0;
+            $tblDemand->due_major_building  = $tblDemand->due_major_building - $paidTaxes->paidMajorBuilding        > 0  ? $tblDemand->due_major_building - $paidTaxes->paidMajorBuilding : 0;
+            $tblDemand->due_open_ploat_tax  = $tblDemand->due_open_ploat_tax - ($paidTaxes->paidOpenPloatTax ?? 0)  > 0  ? $tblDemand->due_open_ploat_tax - ($paidTaxes->paidOpenPloatTax ?? 0) : 0;
+            $tblDemand->paid_total_tax      = $paidTaxes->paidTotalTax + $tblDemand->paid_total_tax                 > 0  ? $paidTaxes->paidTotalTax + $tblDemand->paid_total_tax : 0;
             #it is testing purps only
-            if(strtoupper($this->_REQ['paymentMode'])!="ONLINE"){
-                foreach($tblDemand->toArray() as $keys=>$testVal)
-                {
-                    if(is_numeric($testVal) && $testVal<0)
-                    {
-                        throw new Exception($keys." Go On Nagative of fyear ".$tblDemand->fyear." amount =>".$testVal);
+            if (strtoupper($this->_REQ['paymentMode']) != "ONLINE") {
+                foreach ($tblDemand->toArray() as $keys => $testVal) {
+                    if (is_numeric($testVal) && $testVal < 0) {
+                        throw new Exception($keys . " Go On Nagative of fyear " . $tblDemand->fyear . " amount =>" . $testVal);
                     }
                 }
             }
@@ -908,67 +905,65 @@ class PostPropPaymentV2
         }
 
         #insert Advance Amount
-        if(round($payableAmount)>0)
-        {
+        if (round($payableAmount) > 0) {
             $advArr = [
-                "prop_id"=>$this->_propId,
-                "tran_id"=>$propTrans['id'],
-                "amount" =>round($payableAmount),
-                "user_id"=>$this->_REQ['userId'] ?? (auth()->user() ? auth()->user()->id : null),
-                "ulb_id"=>$this->_REQ['ulbId'] ?? (auth()->user() ? auth()->user()->ulbd_id : null),
-                "remarks"=>"Advance Payment",
+                "prop_id" => $this->_propId,
+                "tran_id" => $propTrans['id'],
+                "amount" => round($payableAmount),
+                "user_id" => $this->_REQ['userId'] ?? (auth()->user() ? auth()->user()->id : null),
+                "ulb_id" => $this->_REQ['ulbId'] ?? (auth()->user() ? auth()->user()->ulbd_id : null),
+                "remarks" => "Advance Payment",
             ];
             $this->_PropAdvance->store($advArr);
         }
 
         #insert Adjusted Amount
-        if(round($adjustAmt)>0)
-        {
+        if (round($adjustAmt) > 0) {
             $adjArr = [
-                "prop_id"=>$this->_propId,
-                "tran_id"=>$propTrans['id'],
-                "amount" =>round($adjustAmt),
-                "user_id"=>$this->_REQ['userId'] ?? (auth()->user() ? auth()->user()->id : null),
-                "ulb_id"=>$this->_REQ['ulbId'] ?? (auth()->user() ? auth()->user()->ulbd_id : null),                
+                "prop_id" => $this->_propId,
+                "tran_id" => $propTrans['id'],
+                "amount" => round($adjustAmt),
+                "user_id" => $this->_REQ['userId'] ?? (auth()->user() ? auth()->user()->id : null),
+                "ulb_id" => $this->_REQ['ulbId'] ?? (auth()->user() ? auth()->user()->ulbd_id : null),
             ];
             $this->_PropAdjustment->store($adjArr);
         }
-        
+
         $generatePaymentReceipt = new GeneratePaymentReceiptV2;                     // Version 2 Receipt
         $generatePaymentReceipt->generateReceipt("", $propTrans['id']);
         $receipt = $generatePaymentReceipt->_GRID;
         // dd($receipt,$this->_REQ["paidAmount"],$this->_REQ["amount"]);
 
         // sendsms
-        // $propertyNo     = $this->_propDetails->property_no;
-        // $payableAmount  = $this->_REQ->paidAmount;
+        $propertyNo  = $this->_propDetails->property_no;
+        $paidAmount  = $this->_REQ->paidAmount;
 
-        // $mPropOwner = new PropOwner();
-        // $mPropSmsLog = new PropSmsLog();
-        // $propOwners = $mPropOwner->getOwnerByPropId($this->_propDetails->id);
-        // $firstOwner = collect($propOwners)->first();
-        // if ($firstOwner) {
-        //     $ownerMobile = $firstOwner->mobileNo;
-        //     $ownerName = Str::limit(trim($firstOwner->ownerName), 30);;
-        //     if (strlen($ownerMobile) == 10) {
-        //         $sms      = "Thank you " . $ownerName . " for making payment of Rs. " . $payableAmount . " against Property No. " . $propertyNo . ". For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
-        //         $response = send_sms($ownerMobile, $sms, 1707169564199604962);
+        $mPropOwner = new PropOwner();
+        $mPropSmsLog = new PropSmsLog();
+        $propOwners = $mPropOwner->getOwnerByPropId($this->_propDetails->id);
+        $firstOwner = collect($propOwners)->first();
+        if ($firstOwner) {
+            $ownerMobile = $firstOwner->mobileNo;
+            $ownerName = Str::limit(trim($firstOwner->ownerName), 30);;
+            if (strlen($ownerMobile) == 10) {
+                $sms      = "Thank you " . $ownerName . " for making payment of Rs. " . $paidAmount . " against Property No. " . $propertyNo . ". For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
+                $response = send_sms($ownerMobile, $sms, 1707169564199604962);
 
-        //         $smsReqs = [
-        //             "emp_id" => $user_id,
-        //             "ref_id" => $this->_propDetails->id,
-        //             "ref_type" => 'Property',
-        //             "mobile_no" => $ownerMobile,
-        //             "purpose" => 'Holding Payment',
-        //             "template_id" => 1707169564199604962,
-        //             "message" => $sms,
-        //             "response" => $response['status'],
-        //             "smgid" => $response['msg'],
-        //             "stampdate" => Carbon::now(),
-        //         ];
-        //         $mPropSmsLog->create($smsReqs);
-        //     }
-        // }
+                $smsReqs = [
+                    "emp_id" => $this->_REQ['userId'] ?? (auth()->user() ? auth()->user()->id : null),
+                    "ref_id" => $this->_propDetails->id,
+                    "ref_type" => 'PROPERTY',
+                    "mobile_no" => $ownerMobile,
+                    "purpose" => 'Holding Payment',
+                    "template_id" => 1707169564199604962,
+                    "message" => $sms,
+                    "response" => $response['status'],
+                    "smgid" => $response['msg'],
+                    "stampdate" => Carbon::now(),
+                ];
+                $mPropSmsLog->create($smsReqs);
+            }
+        }
     }
     /**
      * | demand Adjust
@@ -1070,7 +1065,7 @@ class PostPropPaymentV2
             'open_ploat_tax' => roundFigure(($payableAmountOfTax * $openPloatTaxPerc) / 100),
             'total_tax' => roundFigure(($payableAmountOfTax * $totalPerc) / 100),
         ];
-        $data["paid_total_tax"] =  $paidDemandBifurcation["total_tax"]??0;
+        $data["paid_total_tax"] =  $paidDemandBifurcation["total_tax"] ?? 0;
         $data["paidCurrentTaxesBifurcation"] = $this->readPaidTaxes($paidDemandBifurcation);
         return $data;
     }

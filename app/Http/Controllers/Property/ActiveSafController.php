@@ -1860,6 +1860,20 @@ class ActiveSafController extends Controller
                     $currentDemand = $holdingDues->original['data']['currentDemand'];
                     $sms      = "Dear " . $ownerName . ", congratulations, your application Ref No. " . $applicationNo . " has been approved. Your Property ID is: " . $holdingNo . ". Please pay Rs. " . $currentDemand . " against Property Tax. For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
                     $response = send_sms($mobileNo, $sms, 1707169564214439001);
+
+                    $smsReqs = [
+                        "emp_id" => $userId,
+                        "ref_id" => $safId,
+                        "ref_type" => 'SAF',
+                        "mobile_no" => $mobileNo,
+                        "purpose" => 'Saf Approval',
+                        "template_id" => 1707169564214439001,
+                        "message" => $sms,
+                        "response" => $response['status'],
+                        "smgid" => $response['msg'],
+                        "stampdate" => Carbon::now(),
+                    ];
+                    $mPropSmsLog->create($smsReqs);
                 }
             }
 
@@ -1878,6 +1892,20 @@ class ActiveSafController extends Controller
                 if (strlen($mobileNo) == 10) {
                     $sms      = "Dear " . $ownerName . ", your application Ref No. " . $applicationNo . " has been returned by AMC due to incomplete Documents/Information for the Property having Holding No. " . $holdingNo . ". For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
                     $response = send_sms($mobileNo, $sms, 1707169564208638633);
+
+                    $smsReqs = [
+                        "emp_id" => $userId,
+                        "ref_id" => $safId,
+                        "ref_type" => 'SAF',
+                        "mobile_no" => $mobileNo,
+                        "purpose" => 'Saf Rejection',
+                        "template_id" => 1707169564208638633,
+                        "message" => $sms,
+                        "response" => $response['status'],
+                        "smgid" => $response['msg'],
+                        "stampdate" => Carbon::now(),
+                    ];
+                    $mPropSmsLog->create($smsReqs);
                 }
             }
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
@@ -2033,6 +2061,7 @@ class ActiveSafController extends Controller
             $safRefTableName = Config::get('PropertyConstaint.SAF_REF_TABLE');
             $saf = PropActiveSaf::findOrFail($req->applicationId);
             $track = new WorkflowTrack();
+            $mPropSmsLog = new PropSmsLog();
             $mWfActiveDocument = new WfActiveDocument();
             $senderRoleId = $saf->current_role;
 
@@ -2092,6 +2121,20 @@ class ActiveSafController extends Controller
                 if (strlen($mobileNo) == 10) {
                     $sms      = "Dear " . $ownerName . ", your application Ref No. " . $applicationNo . " has been returned by AMC due to incomplete Documents/Information for the Property having Holding No. " . $holdingNo . ". For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
                     $response = send_sms($mobileNo, $sms, 1707169564208638633);
+
+                    $smsReqs = [
+                        "emp_id" => authUser($req)->id,
+                        "ref_id" => $req->applicationId,
+                        "ref_type" => 'SAF',
+                        "mobile_no" => $mobileNo,
+                        "purpose" => 'Back to Citizen',
+                        "template_id" => 1707169564208638633,
+                        "message" => $sms,
+                        "response" => $response['status'],
+                        "smgid" => $response['msg'],
+                        "stampdate" => Carbon::now(),
+                    ];
+                    $mPropSmsLog->create($smsReqs);
                 }
             }
 

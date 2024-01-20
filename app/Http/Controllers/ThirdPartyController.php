@@ -6,6 +6,7 @@ use App\MicroServices\IdGeneration;
 use App\Models\ActiveCitizen;
 use App\Models\OtpMaster;
 use App\Models\OtpRequest;
+use App\Models\TblSmsLog;
 use App\Models\User;
 use Carbon\Carbon;
 use Seshac\Otp\Otp;
@@ -44,7 +45,8 @@ class ThirdPartyController extends Controller
         try {
             $refIdGeneration = new IdGeneration();
             $mOtpRequest = new OtpRequest();
-            $mobileNo    =  $request->mobileNo;
+            $mTblSmsLog = new TblSmsLog();
+            $mobileNo   =  $request->mobileNo;
             if ($request->type == "Register") {
                 $userDetails = ActiveCitizen::where('mobile', $request->mobileNo)
                     ->first();
@@ -83,6 +85,20 @@ class ThirdPartyController extends Controller
 
             $response = send_sms($mobileNo, $sms, 1707170367857263583);
             $mOtpRequest->saveOtp($request, $generateOtp);
+
+            $smsReqs = [
+                "emp_id" => $request->userId ?? authUser($request)->id ?? 0,
+                "ref_id" => isset($userDetails) ? $userDetails->id : 0,
+                "ref_type" => 'Active Citizen',
+                "mobile_no" => $mobileNo,
+                "purpose" => "OTP for " . $otpType,
+                "template_id" => 1707170367857263583,
+                "message" => $sms,
+                "response" => $response['status'],
+                "smgid" => $response['msg'],
+                "stampdate" => Carbon::now(),
+            ];
+            $mTblSmsLog->create($smsReqs);
 
             return responseMsgs(true, "OTP send to your mobile No!", $generateOtp, "", "01", ".ms", "POST", "");
         } catch (Exception $e) {
