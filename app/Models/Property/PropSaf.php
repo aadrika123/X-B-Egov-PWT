@@ -183,7 +183,7 @@ class PropSaf extends Model
                 DB::raw(
                     "case when prop_active_safs.workflow_id=202 then 'Direct Mutation'
                           else assessment_type end
-                          as assessment"
+                          as assessment_type"
                 ),
                 DB::raw("REPLACE(prop_safs.holding_type, '_', ' ') AS holding_type"),
                 'w.ward_name as old_ward_no',
