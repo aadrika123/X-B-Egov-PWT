@@ -637,6 +637,7 @@ class SafApprovalBll
                     $propFloor =  collect($propFloors)->where('id', $floorDetail->prop_floor_details_id);
                     $propFloor =  collect($propFloor)->first();
                     $propFloor->builtup_area = $propFloor->builtup_area - $floorDetail->builtup_area;
+                    $propFloor->carpet_area = $propFloor->builtup_area - $floorDetail->builtup_area;
                     $propFloor->save();
                 }
             }
