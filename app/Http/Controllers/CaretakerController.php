@@ -31,7 +31,7 @@ class CaretakerController extends Controller
     public function waterCaretakerOtp(Request $req)
     {
         try {
-            $user                       = authUser();
+            $user                       = authUser($req);
             $userId                     = $user->id;
             $mWaterApprovalApplicant    = new WaterApprovalApplicant();
             $ThirdPartyController       = new ThirdPartyController();
@@ -59,7 +59,10 @@ class CaretakerController extends Controller
             $applicantMobile = $approveApplicant->mobile_no;
             $myRequest = new \Illuminate\Http\Request();
             $myRequest->setMethod('POST');
-            $myRequest->request->add(['mobileNo' => $applicantMobile]);
+            $myRequest->request->add([
+                'mobileNo' => $applicantMobile,
+                "userId" => $userId
+            ]);
             $otpResponse = $ThirdPartyController->sendOtp($myRequest);
 
             $response = collect($otpResponse)->toArray();
@@ -89,7 +92,7 @@ class CaretakerController extends Controller
             return validationError($validated);
 
         try {
-            $userId                     = authUser()->id;
+            $userId                     = authUser($req)->id;
             $mWaterApprovalApplicant    = new WaterApprovalApplicant();
             $mActiveCitizenUndercare    = new ActiveCitizenUndercare();
             $mWaterConsumer             = new WaterConsumer();

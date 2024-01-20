@@ -6,6 +6,7 @@ use App\BLL\Property\Akola\SafApprovalBll;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Http\Requests\Property\reqApplySaf;
+use App\Models\Property\Logs\PropSmsLog;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Property\PropActiveMutation;
 use App\Models\Property\PropActiveApp;
@@ -150,6 +151,7 @@ class PropertyMutationController extends Controller
             $userId = authUser($request)->id;
             $track = new WorkflowTrack();
             $safApprovalBll = new SafApprovalBll();
+            $mPropSmsLog = new PropSmsLog();
             $newSafData = PropActiveSaf::find($request->applicationId);
             if (!$newSafData) {
                 throw new Exception("Data Not Found");
@@ -258,6 +260,20 @@ class PropertyMutationController extends Controller
                     $currentDemand = $holdingDues->original['data']['payableAmt'];
                     $sms      = "Dear " . $ownerName . ", congratulations, your application Ref No. " . $applicationNo . " has been approved. Your Property ID is: " . $holdingNo . ". Please pay Rs. " . $currentDemand . " against Property Tax. For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
                     $response = send_sms($mobileNo, $sms, 1707169564214439001);
+
+                    $smsReqs = [
+                        "emp_id" => $userId,
+                        "ref_id" => $request->applicationId,
+                        "ref_type" => 'SAF',
+                        "mobile_no" => $mobileNo,
+                        "purpose" => 'Mutation Approval',
+                        "template_id" => 1707169564214439001,
+                        "message" => $sms,
+                        "response" => $response['status'],
+                        "smgid" => $response['msg'],
+                        "stampdate" => Carbon::now(),
+                    ];
+                    $mPropSmsLog->create($smsReqs);
                 }
             } else {
 
@@ -293,6 +309,20 @@ class PropertyMutationController extends Controller
                 if (strlen($mobileNo) == 10) {
                     $sms      = "Dear " . $ownerName . ", your application Ref No. " . $applicationNo . " has been returned by AMC due to incomplete Documents/Information for the Property having Holding No. " . $holdingNo . ". For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
                     $response = send_sms($mobileNo, $sms, 1707169564208638633);
+
+                    $smsReqs = [
+                        "emp_id" => $userId,
+                        "ref_id" => $request->applicationId,
+                        "ref_type" => 'SAF',
+                        "mobile_no" => $mobileNo,
+                        "purpose" => 'Mutation Rejection',
+                        "template_id" => 1707169564208638633,
+                        "message" => $sms,
+                        "response" => $response['status'],
+                        "smgid" => $response['msg'],
+                        "stampdate" => Carbon::now(),
+                    ];
+                    $mPropSmsLog->create($smsReqs);
                 }
             }
 
