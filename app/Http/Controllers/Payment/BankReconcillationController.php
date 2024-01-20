@@ -139,6 +139,11 @@ class BankReconcillationController extends Controller
                 $data = (array_values(objtoarray($a)));
             }
 
+            if ($paymentMode == 'NEFT') {
+                $a =  collect($data)->where('payment_mode', 'NEFT');
+                $data = (array_values(objtoarray($a)));
+            }
+
             //search with verification status
             if ($verifyStatus == 'pending') {
                 $a =  collect($data)->where('status', '2');
