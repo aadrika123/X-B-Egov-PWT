@@ -202,6 +202,7 @@ class PropTransaction extends Model
         $propTrans->arrear_settled_amt = $req['arrearSettledAmt']??0;
         $propTrans->is_arrear_settled = $req['isArrearSettled']??false;
         $propTrans->book_no = $req['bookNo'] ?? null;
+        $propTrans->device_type = $req['deviceType'] ?? null;
         if($req['isCitizen'])
         {
             $propTrans->user_id     = null;

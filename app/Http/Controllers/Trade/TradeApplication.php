@@ -1195,4 +1195,148 @@ class TradeApplication extends Controller
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
+
+    public function WorkFlowMetaList()
+    {
+        return $this->_DB->table("trade_licences")
+                        ->JOIN("trade_param_application_types", "trade_param_application_types.id", "trade_licences.application_type_id")
+                        ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
+                                                    STRING_AGG(guardian_name,',') AS guardian_name,
+                                                    STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
+                                                    STRING_AGG(email_id,',') AS email_id,
+                                                    temp_id
+                                                FROM active_trade_owners 
+                                                WHERE is_active = TRUE
+                                                GROUP BY temp_id
+                                                )owner"), function ($join) {
+                            $join->on("owner.temp_id", "trade_licences.id");
+                        })
+                        ->leftjoin("trade_param_firm_types", "trade_param_firm_types.id", "trade_licences.firm_type_id")
+                    ->select(
+                        "trade_licences.id",
+                        "trade_licences.application_no",
+                        "trade_licences.provisional_license_no",
+                        "trade_licences.license_no",
+                        "trade_licences.document_upload_status",
+                        "trade_licences.payment_status",
+                        "trade_licences.firm_name",
+                        "trade_licences.apply_from",
+                        "trade_licences.workflow_id",
+                        "owner.owner_name",
+                        "owner.guardian_name",
+                        "owner.mobile_no",
+                        "owner.email_id",
+                        "trade_licences.application_type_id",
+                        "trade_param_application_types.application_type",
+                        "trade_param_firm_types.firm_type",
+                        "trade_licences.firm_type_id",
+                        DB::raw("TO_CHAR(CAST(trade_licences.application_date AS DATE), 'DD-MM-YYYY') as application_date"),
+                    )
+                    ->WHERE("trade_licences.is_active",TRUE);
+    }
+    # Serial No
+    public function CRenewalList(Request $request)
+    {
+        $refUserId = Auth()->user()->id;
+        $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
+        $mWardPermission = $this->_COMMON_FUNCTION->WardPermission($refUserId);
+        $mWardIds = array_map(function ($val) {
+            return $val['id'];
+        }, $mWardPermission);
+        if ($request->wardNo && $request->wardNo != "ALL") {
+            $mWardIds = [$request->wardNo];
+        }
+        $data = TradeLicence::select('trade_licences.*','ulb_ward_masters.ward_name','zone_maters.zone_name')
+            ->leftjoin("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
+            ->leftjoin("zone_maters", "zone_maters.id", "=", "trade_licences.zone_id")
+            ->where('trade_licences.is_active', TRUE)
+            ->where('trade_licences.valid_upto', '<', $mNextMonth)
+            ->where('trade_licences.application_type_id', '!=', 4)
+            ->whereIn('trade_licences.ward_id', $mWardIds);
+        if (trim($request->key)) 
+        {
+            $key = trim($request->key);
+            $data = $data->where(function ($query) use ($key) {
+                $query->orwhere('trade_licences.holding_no', 'ILIKE', '%' . $key . '%')
+                    ->orwhere('trade_licences.application_no', 'ILIKE', '%' . $key . '%')
+                    ->orwhere("trade_licences.license_no", 'ILIKE', '%' . $key . '%')
+                    ->orwhere("trade_licences.provisional_license_no", 'ILIKE', '%' . $key . '%')
+                    ->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%')
+                    ->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%')
+                    ->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
+            });
+        }
+        $perPage = $request->perPage ? $request->perPage : 10;
+        $paginator = $data->paginate($perPage);
+        $list = [
+            "current_page" => $paginator->currentPage(),
+            "last_page" => $paginator->lastPage(),
+            "data" => $paginator->items(),
+            "total" => $paginator->total(),
+        ];
+        return responseMsg(true, "", remove_null($list));
+    }
+    # Serial No
+    public function CAmendmentList(Request $request)
+    {
+        try {
+            $refUserId = Auth()->user()->id;
+            $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
+            $mWardPermission = $this->_COMMON_FUNCTION->WardPermission($refUserId);
+            $mWardIds = array_map(function ($val) {
+                return $val['id'];
+            }, $mWardPermission);
+            $data = TradeLicence::select('trade_licences.*','ulb_ward_masters.ward_name','zone_maters.zone_name')
+                ->leftjoin("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
+                ->leftjoin("zone_maters", "zone_maters.id", "=", "trade_licences.zone_id")
+                ->where('trade_licences.is_active', TRUE)
+                ->where('trade_licences.valid_upto', '<', $mNextMonth)
+                ->whereIn('trade_licences.ward_id', $mWardIds);
+
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $paginator = $data->paginate($perPage);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ];
+            return responseMsg(true, "", remove_null($list));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), '');
+        }
+    }
+
+    # Serial No
+    public function CSurrenderList(Request $request)
+    { 
+        try {
+            $refUserId = Auth()->user()->id;
+            $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
+            $mWardPermission = $this->_COMMON_FUNCTION->WardPermission($refUserId);
+            $mWardIds = array_map(function ($val) {
+                return $val['id'];
+            }, $mWardPermission);
+
+            $data = TradeLicence::select('trade_licences.*','ulb_ward_masters.ward_name','zone_maters.zone_name')
+                ->leftjoin("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
+                ->leftjoin("zone_maters", "zone_maters.id", "=", "trade_licences.zone_id")
+                ->where('trade_licences.is_active', TRUE)
+                ->where('trade_licences.valid_upto', '<', $mNextMonth)
+                ->whereIn('trade_licences.ward_id', $mWardIds);
+
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $paginator = $data->paginate($perPage);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ];
+            return responseMsg(true, "", remove_null($list));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), '');
+        }
+    }
+
 }
