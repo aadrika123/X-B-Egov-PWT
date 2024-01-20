@@ -579,8 +579,8 @@ class TradeApplication extends Controller
     public function approvedButNotPayment(ReqInbox $request)
     {
         $rules = [
-            "entityValue"   =>  "required",
-            "entityName"    =>  "required",
+            "entityName"    =>  "nullable",
+            "entityValue"   =>  "nullable|required_with:entityName",
         ];
         $validator = Validator::make($request->all(), $rules,);
         if ($validator->fails()) {
@@ -1196,7 +1196,7 @@ class TradeApplication extends Controller
         }
     }
 
-    public function WorkFlowMetaList()
+    public function ReAmentSurrenderMetaList()
     {
         return $this->_DB->table("trade_licences")
                         ->JOIN("trade_param_application_types", "trade_param_application_types.id", "trade_licences.application_type_id")
@@ -1205,13 +1205,15 @@ class TradeApplication extends Controller
                                                     STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
                                                     STRING_AGG(email_id,',') AS email_id,
                                                     temp_id
-                                                FROM active_trade_owners 
+                                                FROM trade_owners 
                                                 WHERE is_active = TRUE
                                                 GROUP BY temp_id
                                                 )owner"), function ($join) {
                             $join->on("owner.temp_id", "trade_licences.id");
                         })
                         ->leftjoin("trade_param_firm_types", "trade_param_firm_types.id", "trade_licences.firm_type_id")
+                        ->leftjoin("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
+                        ->leftjoin("zone_masters", "zone_masters.id", "=", "trade_licences.zone_id")
                     ->select(
                         "trade_licences.id",
                         "trade_licences.application_no",
@@ -1230,8 +1232,11 @@ class TradeApplication extends Controller
                         "trade_param_application_types.application_type",
                         "trade_param_firm_types.firm_type",
                         "trade_licences.firm_type_id",
+                        'ulb_ward_masters.ward_name',
+                        'zone_masters.zone_name',
                         DB::raw("TO_CHAR(CAST(trade_licences.application_date AS DATE), 'DD-MM-YYYY') as application_date"),
                     )
+                    ->where("trade_licences.payment_status",1)
                     ->WHERE("trade_licences.is_active",TRUE);
     }
     # Serial No
@@ -1246,10 +1251,7 @@ class TradeApplication extends Controller
         if ($request->wardNo && $request->wardNo != "ALL") {
             $mWardIds = [$request->wardNo];
         }
-        $data = TradeLicence::select('trade_licences.*','ulb_ward_masters.ward_name','zone_maters.zone_name')
-            ->leftjoin("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
-            ->leftjoin("zone_maters", "zone_maters.id", "=", "trade_licences.zone_id")
-            ->where('trade_licences.is_active', TRUE)
+        $data = $this->ReAmentSurrenderMetaList()
             ->where('trade_licences.valid_upto', '<', $mNextMonth)
             ->where('trade_licences.application_type_id', '!=', 4)
             ->whereIn('trade_licences.ward_id', $mWardIds);
@@ -1286,10 +1288,7 @@ class TradeApplication extends Controller
             $mWardIds = array_map(function ($val) {
                 return $val['id'];
             }, $mWardPermission);
-            $data = TradeLicence::select('trade_licences.*','ulb_ward_masters.ward_name','zone_maters.zone_name')
-                ->leftjoin("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
-                ->leftjoin("zone_maters", "zone_maters.id", "=", "trade_licences.zone_id")
-                ->where('trade_licences.is_active', TRUE)
+            $data = $this->ReAmentSurrenderMetaList()
                 ->where('trade_licences.valid_upto', '<', $mNextMonth)
                 ->whereIn('trade_licences.ward_id', $mWardIds);
 
@@ -1318,10 +1317,7 @@ class TradeApplication extends Controller
                 return $val['id'];
             }, $mWardPermission);
 
-            $data = TradeLicence::select('trade_licences.*','ulb_ward_masters.ward_name','zone_maters.zone_name')
-                ->leftjoin("ulb_ward_masters", "ulb_ward_masters.id", "=", "trade_licences.ward_id")
-                ->leftjoin("zone_maters", "zone_maters.id", "=", "trade_licences.zone_id")
-                ->where('trade_licences.is_active', TRUE)
+            $data = $this->ReAmentSurrenderMetaList()
                 ->where('trade_licences.valid_upto', '<', $mNextMonth)
                 ->whereIn('trade_licences.ward_id', $mWardIds);
 
