@@ -67,6 +67,7 @@ class WaterConsumerInitialMeter extends Model
     {
         return WaterConsumerInitialMeter::select('*')
             ->where('consumer_id', $consumerId)
+            ->where('status',1)
             ->orderByDesc('id')
             ->limit(2)
             ->get();

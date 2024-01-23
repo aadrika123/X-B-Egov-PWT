@@ -873,7 +873,7 @@ class WaterPaymentController extends Controller
         $allunpaidCharges = $mWaterConsumerDemand->getFirstConsumerDemandV2($consumerId)
             ->get();
 
-        $leftAmount = (collect($allunpaidCharges)->sum('due_balance_amount') - collect($allCharges)->sum('due_balance_amount')) + $duePaymentAmount;
+       $leftAmount = (collect($allunpaidCharges)->sum('due_balance_amount') - collect($allCharges)->sum('due_balance_amount')) + $duePaymentAmount;
         return [
             "consumer"          => $refConsumer,
             "consumerChages"    => $allCharges->sortBy('demand_upto'),
@@ -1878,7 +1878,7 @@ class WaterPaymentController extends Controller
     public function initiateOnlineDemandPayment(reqDemandPayment $request)
     {
         try {
-            $refUser = Auth()->user()??null;
+            $refUser = Auth()->user() ?? null;
             $isCitizenUserType = $refUser ? $this->_COMONFUNCTION->checkUsersWithtocken("active_citizens") : true;
 
             $mWaterConsumerDemand   = new WaterConsumerDemand();
@@ -1933,16 +1933,14 @@ class WaterPaymentController extends Controller
                 'moduleId'      => $waterModuleId,
                 'ulbId'         => $refDetails['consumer']['ulb_id'],
                 // 'callbackUrl'   => "https://modernulb.com/water/payment-waterstatus/" . $request->consumerId,
-                'callbackUrl'   => ($request->callbackUrl ? $request->callbackUrl : $this->_callbackUrl) ."/". $request->consumerId,                   // Static
+                'callbackUrl'   => ($request->callbackUrl ? $request->callbackUrl : $this->_callbackUrl) . "/" . $request->consumerId,                   // Static
                 'auth'          => $refUser
             ]);
-            if(!$isCitizenUserType)
-            {
-                $myRequest->merge(["userId"=>$refUser->id]);
+            if (!$isCitizenUserType) {
+                $myRequest->merge(["userId" => $refUser->id]);
             }
-            if($isCitizenUserType && $refUser)
-            {
-                $myRequest->merge(["CitizenId"=>$refUser->id]);
+            if ($isCitizenUserType && $refUser) {
+                $myRequest->merge(["CitizenId" => $refUser->id]);
             }
             # Generate referal url
             $temp = $iciciPaymentController->getReferalUrl($myRequest);
@@ -2761,10 +2759,10 @@ class WaterPaymentController extends Controller
             $refUserId                  = null;
             $userType                   = "Citizen";
             if ($request->auth) {
-                $user                   = authUser($request);
-                $refUlbId               = $user->ulb_id;
-                $refUserId              = $user->id;
-                $userType               = $user->user_type;
+                // $user                   = authUser($request);
+                // $refUlbId               = $user->ulb_id;
+                // $refUserId              = $user->id;
+                // $userType               = $user->user_type;
             }
 
             $midGeneration              = new IdGeneration;
@@ -2803,7 +2801,7 @@ class WaterPaymentController extends Controller
 
             $this->begin();
             $tranNo = $midGeneration->generateTransactionNo($refUlbId);
-            $request->merge([
+           $request->merge([
                 'userId'            => $refUserId,
                 'userType'          => $userType,
                 'todayDate'         => $todayDate->format('Y-m-d'),
@@ -2841,9 +2839,9 @@ class WaterPaymentController extends Controller
                 $this->savePenaltyDetails($waterTrans, $finalCharges['penaltyAmount']);
             }
             # Reflect on water Tran Details
-            $refConsumercharges = collect($finalCharges['consumerChages']);
-            $consumercharges = collect($finalCharges['consumerChages']);
-            $popedDemand = $refConsumercharges->pop();
+            $refConsumercharges = collect($finalCharges['consumerChages']);             // all demand except last demand 
+            $consumercharges = collect($finalCharges['consumerChages']);                // all demand 
+            $popedDemand = $refConsumercharges->pop();                                  // last demand 
 
             foreach ($refConsumercharges as $charges) {
                 $this->saveConsumerPaymentStatus($request, $offlinePaymentModes, $charges, $waterTrans);
@@ -2896,30 +2894,25 @@ class WaterPaymentController extends Controller
         $offlinePaymentModesV2      = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
         $refAmount                  = round($request->amount);
         $remaningAmount             = round($refConsumercharges->sum('due_balance_amount'));
-        $toatalArrearDemand         = round($consumercharges->sum('arrear_demand'));
-        $totalCurrentDemand         = round($consumercharges->sum('current_demand'));
-        $leftArrearAmount           = 0;
         if ($remaningAmount > $refAmount) {
             throw new Exception("please select the month properly for part payament!");
         }
+
         if (in_array($request['paymentMode'], $offlinePaymentModesV2)) {
             $popedDemand->paid_status = 2;                                       // Update Demand Paid Status // Static
             $mWaterTran->saveVerifyStatus($waterTrans['id']);
         } else {
-            $popedDemand->paid_status = 1;                                       // Update Demand Paid Status // Static
+            $popedDemand->paid_status = 1;                                      // Update Demand Paid Status // Static
         }
 
-        if ($refAmount <= $toatalArrearDemand) { 
-            $leftArrearAmount = $toatalArrearDemand - $refAmount;
-            $popedDemand->current_demand     = $totalCurrentDemand;
+        if (!$refConsumercharges->first()) { 
+            $refPaidAmount      = ($consumercharges->sum('due_balance_amount')) - $refAmount;
+            $remaningBalance    = $refPaidAmount;
         } else {
-            $leftAmount  = $refAmount - $toatalArrearDemand;
-            $leftCurrentAmount = $totalCurrentDemand - $leftAmount;
-            $popedDemand->current_demand    = $leftCurrentAmount;
+            $refPaidAmount      = $refAmount - $refConsumercharges->sum('balance_amount');
+            $remaningBalance    = $popedDemand->due_balance_amount - $refPaidAmount;
         }
-        $popedDemand->arrear_demand      = $leftArrearAmount;
-        $totalleftDemand = $popedDemand->arrear_demand + $popedDemand->current_demand;
-        $popedDemand->due_balance_amount = $totalleftDemand;
+        $popedDemand->due_balance_amount = $remaningBalance;
         $popedDemand->save();                                                   // Save Demand
 
         # Save transaction details 
@@ -2928,11 +2921,11 @@ class WaterPaymentController extends Controller
             $request->consumerId ?? $request->applicationId,
             $waterTrans['id'],
             $popedDemand->id,
-            $refAmount,
-            $arrearSettled ?? $leftArrearAmount ?? $leftAmount
+            $refAmount
         );
         $mWaterConsumerCollection->saveConsumerCollection($popedDemand, $waterTrans, $request->auth['id'] ?? null, $refAmount);
     }
+
 
 
     /**

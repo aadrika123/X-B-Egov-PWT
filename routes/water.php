@@ -117,7 +117,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         # for grievance
         Route::post('grievance/get-user-transactions', 'getUserTransactions');
         Route::post('application/citizen-application-list', 'getCitizenApplicationList');
-        Route::post('consumer/cheque-detail-update','chequeUpdetails');
+        Route::post('consumer/cheque-detail-update', 'chequeUpdetails');
 
         # test api
         Route::post('testv2', 'testv2');
@@ -204,11 +204,12 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('report/billing-summary', 'billingSummary');
         // Route::post('bill/demand-bill', 'waterBulkdemand');                                                   // demand bulk view bill
         Route::post('bill/demand-bill', 'waterBulkdemandV2');
+        Route::post('consumer/demand-bill', 'waterBulkdemandV3');
         Route::post('receipt/bulk-receipt', 'bulkReceipt');
-        Route::post('report/date-wise-collection','dateCollectuionReport');
-        Route::post('report/tc-collection-report','tcCollectionReport');
-        Route::post('report/tc-visit-records','tcvisitRecords');
-        Route::post('report/tc-visit','tcvisitRecordsv2');
+        Route::post('report/date-wise-collection', 'dateCollectuionReport');
+        Route::post('report/tc-collection-report', 'tcCollectionReport');
+        Route::post('report/tc-visit-records', 'tcvisitRecords');
+        Route::post('report/tc-visit', 'tcvisitRecordsv2');
     });
 
 
