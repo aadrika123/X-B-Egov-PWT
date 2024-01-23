@@ -873,7 +873,7 @@ class WaterPaymentController extends Controller
         $allunpaidCharges = $mWaterConsumerDemand->getFirstConsumerDemandV2($consumerId)
             ->get();
 
-       $leftAmount = (collect($allunpaidCharges)->sum('due_balance_amount') - collect($allCharges)->sum('due_balance_amount')) + $duePaymentAmount;
+        $leftAmount = (collect($allunpaidCharges)->sum('due_balance_amount') - collect($allCharges)->sum('due_balance_amount')) + $duePaymentAmount;
         return [
             "consumer"          => $refConsumer,
             "consumerChages"    => $allCharges->sortBy('demand_upto'),
@@ -1802,8 +1802,8 @@ class WaterPaymentController extends Controller
                 "logo"                  => $consumerDetails['logo'],
                 "towards"               => $mTowardsDemand,
                 "description"           => $mTowardsDemand,
-                "totalPaidAmount"       => $transactionDetails->amount,
-                "dueAmount"             => $transactionDetails->due_amount,
+                "totalPaidAmount"       => round($transactionDetails->amount),
+                "dueAmount"             => round($transactionDetails->due_amount),
                 "rebate"                => 0,                                                                       // Static
                 "meterNo"               => $consumerMeterDetails->meter_no ?? null,
                 "waterConsumed"         => (($finalReading ?? 0.00) - ($initialReading ?? 0.00)),
@@ -2801,7 +2801,7 @@ class WaterPaymentController extends Controller
 
             $this->begin();
             $tranNo = $midGeneration->generateTransactionNo($refUlbId);
-           $request->merge([
+            $request->merge([
                 'userId'            => $refUserId,
                 'userType'          => $userType,
                 'todayDate'         => $todayDate->format('Y-m-d'),
@@ -2905,7 +2905,7 @@ class WaterPaymentController extends Controller
             $popedDemand->paid_status = 1;                                      // Update Demand Paid Status // Static
         }
 
-        if (!$refConsumercharges->first()) { 
+        if (!$refConsumercharges->first()) {
             $refPaidAmount      = ($consumercharges->sum('due_balance_amount')) - $refAmount;
             $remaningBalance    = $refPaidAmount;
         } else {

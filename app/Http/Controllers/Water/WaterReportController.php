@@ -3064,7 +3064,8 @@ class WaterReportController extends Controller
                             end AS meter_img, 
                         water_meter_reading_docs.relative_path, 
                         water_meter_reading_docs.file_name,
-                        users.user_name 
+                        users.user_name,
+                        ROUND(COALESCE(demands.generate_amount, 0) + COALESCE(demands.arrear_demands, 0) + COALESCE(demands.current_demands, 0)) AS total_amount
                     FROM water_consumer_demands  
                     join demands on demands.demand_id = water_consumer_demands.id
                     LEFT JOIN users on users.id = water_consumer_demands.emp_details_id 
@@ -3095,48 +3096,48 @@ class WaterReportController extends Controller
                 )
             ";
             $select = "
-                SELECT
-                    water_second_consumers.id as consumer_id,
-                    ulb_ward_masters.ward_name AS ward_no, 
-                    water_second_consumers.id, 
-                    'water' AS type, 
-                    water_second_consumers.consumer_no as consumerno, 
-                    water_second_consumers.user_type as usertype, 
-                    water_second_consumers.property_no as propertyno, 
-                    water_second_consumers.address, 
-                    water_second_consumers.tab_size, 
-                    water_second_consumers.zone, 
-                    water_second_consumers.category, 
-                    water_second_consumers.folio_no as foliono, 
-                    water_second_consumers.ward_mstr_id,
-                    owners.applicant_name as applicant_name, 
-                    owners.guardian_name, 
-                    owners.mobile_no, 
-                    
-                    final_demands.relative_path, 
-                    final_demands.file_name,
-                    final_demands.generation_date,
-                    final_demands.generate_amount, 
-                    final_demands.arrear_demands, 
-                    final_demands.current_demands, 
-                    final_demands.demand_from, 
-                    final_demands.demand_upto, 
-                    final_demands.total_amount, 
-                    final_demands.arrear_demand_date, 
-                    final_demands.current_demand_date, 
-                    final_demands.user_name ,
-                    final_demands.demand_type, 
-                    final_demands.demand_no,
-                    case when upto_reading < from_reading then from_reading else upto_reading end as finalreading,
-                    case when from_reading < upto_reading  then from_reading else upto_reading end as initialreading,
-                    CONCAT('$NowDate') AS billdate,
-                    CONCAT('$bilDueDate') AS bildueDate,
-                    case when final_demands.connection_type is null or final_demands.connection_type = 'Fixed' then null else connection_types.meter_no end as meter_no,
-                    case when final_demands.connection_type is null then 'Fixed' else final_demands.connection_type end as connection_type,
-                    case when final_demands.connection_type !='Fixed' then final_demands.meter_img else null end as meter_img,
-                    connection_types.current_meter_status,
-                    zone_masters.zone_name 
-            ";
+            SELECT
+            water_second_consumers.id as consumer_id,
+            ulb_ward_masters.ward_name AS ward_no, 
+            water_second_consumers.id, 
+            'water' AS type, 
+            water_second_consumers.consumer_no as consumerno, 
+            water_second_consumers.user_type as usertype, 
+            water_second_consumers.property_no as propertyno, 
+            water_second_consumers.address, 
+            water_second_consumers.tab_size, 
+            water_second_consumers.zone, 
+            water_second_consumers.category, 
+            water_second_consumers.folio_no as foliono, 
+            water_second_consumers.ward_mstr_id,
+            owners.applicant_name as applicant_name, 
+            owners.guardian_name, 
+            owners.mobile_no, 
+    
+            final_demands.relative_path, 
+            final_demands.file_name,
+            final_demands.generation_date,
+            ROUND(final_demands.generate_amount) as generate_amount, 
+            ROUND(final_demands.arrear_demands) as arrear_demands, 
+            ROUND(final_demands.current_demands) as current_demands, 
+            final_demands.demand_from, 
+            final_demands.demand_upto, 
+            ROUND(final_demands.total_amount) as total_amount, 
+            final_demands.arrear_demand_date, 
+            final_demands.current_demand_date, 
+            final_demands.user_name ,
+            final_demands.demand_type, 
+            final_demands.demand_no,
+            CASE WHEN upto_reading < from_reading THEN ROUND(from_reading) ELSE ROUND(upto_reading) END as finalreading,
+            CASE WHEN from_reading < upto_reading THEN ROUND(from_reading) ELSE ROUND(upto_reading) END as initialreading,
+            CONCAT('$NowDate') AS billdate,
+            CONCAT('$bilDueDate') AS bildueDate,
+            CASE WHEN final_demands.connection_type is null or final_demands.connection_type = 'Fixed' THEN null ELSE connection_types.meter_no END as meter_no,
+            CASE WHEN final_demands.connection_type is null THEN 'Fixed' ELSE final_demands.connection_type END as connection_type,
+            CASE WHEN final_demands.connection_type != 'Fixed' THEN final_demands.meter_img ELSE null END as meter_img,
+            connection_types.current_meter_status,
+            zone_masters.zone_name 
+        ";
             $from = "
                 FROM water_second_consumers 
                 JOIN final_demands  ON final_demands.consumer_id = water_second_consumers.id 
