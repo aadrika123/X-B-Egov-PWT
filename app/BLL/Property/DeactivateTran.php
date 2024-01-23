@@ -92,7 +92,8 @@ class DeactivateTran
                 // $demand->balance = $demand->total_tax - $demand->adjust_amt;
                 $this->adjustPropDemand($demand,$tranDtl);
                 $oldD = PropDemand::find($tranDtl->prop_demand_id);
-                $demand->save();dd($demand,$oldD,$tranDtl);
+                $demand->save();
+                // dd($demand,$oldD,$tranDtl);
 
                 // Tran Dtl Deactivation
                 $tranDtl = PropTranDtl::find($tranDtl->id);
