@@ -257,7 +257,7 @@ class BankReconcillationController extends Controller
             DB::beginTransaction();
             DB::connection('pgsql_master')->beginTransaction();
             DB::connection('pgsql_water')->beginTransaction();
-            DB::connection('pgsql_trade')->beginTransaction();
+            // DB::connection('pgsql_trade')->beginTransaction();
 
             if ($moduleId == $propertyModuleId) {
                 $mChequeDtl =  PropChequeDtl::find($request->chequeId);
