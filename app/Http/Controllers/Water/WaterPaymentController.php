@@ -3245,6 +3245,7 @@ class WaterPaymentController extends Controller
             $mWaterConsumerCollection   = new WaterConsumerCollection();
             $mWaterConsumerDemand       = new WaterConsumerDemand();
             $mwaterChequeDtls           = new WaterChequeDtl();
+            $mTempTransaction           = new TempTransaction();
 
             $paidStatus         = 0;                                                                        // Static
             $transactionId      = $request->transactionId;
@@ -3286,6 +3287,7 @@ class WaterPaymentController extends Controller
             $deactivateReq = [
                 'status' => $paidStatus,
             ];
+            $mTempTransaction = $this->deactivateTempTrans($transactionId);
             $mWaterTran->updateTransatcion($transactionId, $deactivateReq);
             $mWaterTranDetail->updateTranDetails($transactionId, $deactivateReq);
             $mWaterConsumerCollection->updateConsumerCollection($transactionId, $deactivateReq);
@@ -3296,6 +3298,16 @@ class WaterPaymentController extends Controller
             $this->rollback();
             return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), "POST", $request->deviceId);
         }
+    }
+    /**
+     * | Deactivate Temp Transactions
+     */
+    public function deactivateTempTrans($transactionId)
+    {
+        $mTempTransaction           = new TempTransaction();
+        $mTempTransaction->getTempTranByTranId($transactionId, 2);                // 1 is the module id for property
+        if ($mTempTransaction)
+            $mTempTransaction->update(['status' => 0]);
     }
 
 
