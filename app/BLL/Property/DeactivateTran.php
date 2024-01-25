@@ -31,7 +31,7 @@ class DeactivateTran
     private $_transaction;
     private $_tranDtls;
     private $_mTempTrans;
-    private $_PropAdvance ;
+    private $_PropAdvance;
     private $_PropAdjustment;
     private $_PropPendingArrear;
 
@@ -42,7 +42,7 @@ class DeactivateTran
         $this->_mTempTrans = new TempTransaction();
         $this->_PropAdvance = new PropAdvance();
         $this->_PropAdjustment = new PropAdjustment();
-        $this->_PropPendingArrear= new PropPendingArrear();
+        $this->_PropPendingArrear = new PropPendingArrear();
     }
 
 
@@ -71,7 +71,6 @@ class DeactivateTran
         $this->_PropAdvance->deactivateAdvanceByTrId($this->_transaction->id);
         $this->_PropAdjustment->deactivateAdjustmentAmtByTrId($this->_transaction->id);
         $this->AdjustArreaInterast();
-       
     }
 
 
@@ -84,13 +83,12 @@ class DeactivateTran
             $propId = $this->_transaction->property_id;
             foreach ($this->_tranDtls as $tranDtl) {
                 $demand = PropDemand::find($tranDtl->prop_demand_id);
-                if (collect($demand)->isEmpty())
-                {
+                if (collect($demand)->isEmpty()) {
                     throw new Exception("Demand Not Available for demand ID $tranDtl->prop_demand_id");
                 }
                 // $demand->paid_status = 0;
                 // $demand->balance = $demand->total_tax - $demand->adjust_amt;
-                $this->adjustPropDemand($demand,$tranDtl);
+                $this->adjustPropDemand($demand, $tranDtl);
                 $oldD = PropDemand::find($tranDtl->prop_demand_id);
                 $demand->save();
                 // dd($demand,$oldD,$tranDtl);
@@ -152,7 +150,7 @@ class DeactivateTran
         $property->save();
     }
 
-    private function adjustPropDemand(PropDemand $propDemand,$tranDtl)
+    private function adjustPropDemand(PropDemand $propDemand, $tranDtl)
     {
         $propDemand->due_maintanance_amt    = $propDemand->due_maintanance_amt  + $tranDtl->paid_maintanance_amt;
         $propDemand->due_aging_amt          = $propDemand->due_aging_amt        + $tranDtl->paid_aging_amt;
@@ -166,6 +164,7 @@ class DeactivateTran
         $propDemand->due_tree_tax           = $propDemand->due_tree_tax         + $tranDtl->paid_tree_tax;
         $propDemand->due_professional_tax   = $propDemand->due_professional_tax + $tranDtl->paid_professional_tax;
         $propDemand->due_total_tax          = $propDemand->due_total_tax        + $tranDtl->paid_total_tax;
+        $propDemand->balance                = $propDemand->balance              + $tranDtl->paid_balance;
         $propDemand->due_balance            = $propDemand->due_balance          + $tranDtl->paid_balance;
         $propDemand->due_adjust_amt         = $propDemand->due_adjust_amt       + $tranDtl->paid_adjust_amt;
         $propDemand->due_tax1               = $propDemand->due_tax1             + $tranDtl->paid_tax1;
@@ -182,8 +181,6 @@ class DeactivateTran
         $propDemand->paid_total_tax         = $propDemand->paid_total_tax - $tranDtl->paid_total_tax;
 
         $propDemand->paid_status = $propDemand->paid_total_tax == 0 ? 0 :  $propDemand->paid_status;
-
-
     }
 
     /**
@@ -199,14 +196,13 @@ class DeactivateTran
     {
         if ($this->_transaction->tran_type == 'Saf Proccess Fee') {
             $saf = PropActiveSaf::find($this->_transaction->saf_id);
-            if(!$saf){
+            if (!$saf) {
                 $saf = PropSaf::find($this->_transaction->saf_id);
             }
-            if(!$saf)
-            {
-                throw new Exception("Saf Not Available for this Saf ID ".$this->_transaction->saf_id);
+            if (!$saf) {
+                throw new Exception("Saf Not Available for this Saf ID " . $this->_transaction->saf_id);
             }
-            $saf->proccess_fee_paid = $saf->proccess_fee > 0 ? 0 :1;
+            $saf->proccess_fee_paid = $saf->proccess_fee > 0 ? 0 : 1;
             $saf->save();
         }
     }
@@ -224,19 +220,17 @@ class DeactivateTran
     #Adjust Arrea Interast
 
     public function AdjustArreaInterast()
-    { 
-        if ($this->_transaction->tran_type == 'Property') 
-        {
-            $OldInterest = $this->_PropPendingArrear->where("prop_id",$this->_transaction->property_id)->where("status",1)->get();
-            foreach($OldInterest as $interast)
-            {
-                
-                $paymentHistory = collect(json_decode($interast->due_total_interest_pay_json))->where("tran_id",$this->_transaction->id);
+    {
+        if ($this->_transaction->tran_type == 'Property') {
+            $OldInterest = $this->_PropPendingArrear->where("prop_id", $this->_transaction->property_id)->where("status", 1)->get();
+            foreach ($OldInterest as $interast) {
+
+                $paymentHistory = collect(json_decode($interast->due_total_interest_pay_json))->where("tran_id", $this->_transaction->id);
                 $paiedAmount = $paymentHistory->sum("amount");
-                $newPaymentHistory = (collect(json_decode($interast->due_total_interest_pay_json))->where("tran_id","<>",$this->_transaction->id)->values());
+                $newPaymentHistory = (collect(json_decode($interast->due_total_interest_pay_json))->where("tran_id", "<>", $this->_transaction->id)->values());
                 $interast->due_total_interest = ($interast->due_total_interest + $paiedAmount);
                 $interast->due_total_interest_pay_json = json_encode($newPaymentHistory);
-                $interast->paid_status = $interast->due_total_interest > 0 ? 0 : 1 ;
+                $interast->paid_status = $interast->due_total_interest > 0 ? 0 : 1;
                 $interast->save();
             }
         }
