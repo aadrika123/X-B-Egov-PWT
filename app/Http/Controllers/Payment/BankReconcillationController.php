@@ -65,7 +65,7 @@ class BankReconcillationController extends Controller
                     'status' => false,
                     'message' => 'validation error',
                     'errors' => $validator->errors()
-                ]);                
+                ]);
             }
             $ulbId = authUser($request)->ulb_id;
             $moduleId = $request->moduleId;
@@ -82,10 +82,9 @@ class BankReconcillationController extends Controller
 
             if ($moduleId == $propertyModuleId) {
                 $chequeTranDtl  = $mPropTransaction->chequeTranDtl($ulbId);
-                if($request->verificationType!="bounce")
-                {
-                    $chequeTranDtl = $chequeTranDtl->where("prop_transactions.status",1);
-                }                
+                if ($request->verificationType != "bounce") {
+                    $chequeTranDtl = $chequeTranDtl->where("prop_transactions.status", 1);
+                }
                 if ($request->chequeNo) {
                     $data =  $chequeTranDtl
                         ->where('cheque_no', $request->chequeNo)
@@ -258,7 +257,7 @@ class BankReconcillationController extends Controller
             DB::beginTransaction();
             DB::connection('pgsql_master')->beginTransaction();
             DB::connection('pgsql_water')->beginTransaction();
-            DB::connection('pgsql_trade')->beginTransaction();
+            // DB::connection('pgsql_trade')->beginTransaction();
 
             if ($moduleId == $propertyModuleId) {
                 $mChequeDtl =  PropChequeDtl::find($request->chequeId);
@@ -420,7 +419,7 @@ class BankReconcillationController extends Controller
                             ->update([
                                 "status" => $applicationPaymentStatus
                             ]);
-                        $wardId = WaterConsumer::find($transaction->related_id)->ward_mstr_id;
+                        // $wardId = WaterConsumer::find($transaction->related_id)->ward_mstr_id;
                     }
 
                     # ❗❗❗ Unfinished code For application payment ❗❗❗
@@ -454,7 +453,7 @@ class BankReconcillationController extends Controller
                                     'paid_status' => $applicationPaymentStatus
                                 ]
                             );
-                        $wardId = WaterApplication::find($transaction->related_id)->ward_id;
+                        // $wardId = WaterApplication::find($transaction->related_id)->ward_id;
                     }
                 }
 
@@ -483,7 +482,7 @@ class BankReconcillationController extends Controller
                     'transactionNo' => $transaction->tran_no,
                     'transactionAmount' => $transaction->amount,
                     'transactionDate' => $transaction->tran_date,
-                    'wardId' => $wardId,
+                    // 'wardId' => $wardId,
                     'chequeNo' => $mChequeDtl->cheque_no,
                     'branchName' => $mChequeDtl->branch_name,
                     'bankName' => $mChequeDtl->bank_name,
@@ -516,7 +515,7 @@ class BankReconcillationController extends Controller
                         [
                             'is_verified' => 1,
                             'verify_date' => Carbon::now(),
-                            'verify_by' => $userId,
+                            // 'verify_by' => $userId,
                             'status' => $paymentStatus,
                         ]
                     );
@@ -553,8 +552,8 @@ class BankReconcillationController extends Controller
                     'clearanceDate' => $mChequeDtl->clear_bounce_date,
                     'chequeDate' => $mChequeDtl->cheque_date,
                     'moduleId' => $tradeModuleId,
-                    'ulbId' => $ulbId,
-                    'userId' => $userId,
+                    // 'ulbId' => $ulbId,
+                    // 'userId' => $userId,
                 ]);
 
                 // return $request;
@@ -591,6 +590,10 @@ class BankReconcillationController extends Controller
                 $mPropTransaction = new PropTransaction();
                 $transactionDtl = $mPropTransaction->getTransByTranNo($req->transactionNo);
             }
+            if ($req->tranType == "Water") {
+                $mWaterTransaction = new WaterTran();
+                $transactionDtl = $mWaterTransaction->getTransByTranNO($req->transactionNo);
+            }
 
             return responseMsgs(true, "Transaction No is", $transactionDtl, "", 01, responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -620,16 +623,16 @@ class BankReconcillationController extends Controller
             $document = $req->document;
             $refImageName = $req->id . "_" . $req->moduleId . "_" . (Carbon::now()->format("Y-m-d"));
             $relativePath = $req->moduleId == $propertyModuleId ? "Property/TranDeactivate" : ($req->moduleId == $waterModuleId ? "Water/TranDeactivate" : ($req->moduleId == $tradeModuleId ? "Trade/TranDeactivate" : "Others/TranDeactivate"));
-            $user = Auth()->user();
+            // $user = Auth()->user();
             DB::beginTransaction();
             DB::connection('pgsql_master')->beginTransaction();
             DB::connection('pgsql_water')->beginTransaction();
-            DB::connection('pgsql_trade')->beginTransaction();
+            // DB::connection('pgsql_trade')->beginTransaction();
 
-            $imageName = $req->document ? $relativePath."/".$docUpload->upload($refImageName, $document, $relativePath) : "";
+            $imageName = $req->document ? $relativePath . "/" . $docUpload->upload($refImageName, $document, $relativePath) : "";
             $deactivationArr = [
                 "tran_id" => $req->id,
-                "deactivated_by" => $user->id,
+                // "deactivated_by" => $user->id,
                 "reason" => $req->remarks,
                 "file_path" => $imageName,
                 "deactive_date" => $req->deactiveDate ?? Carbon::now()->format("Y-m-d"),

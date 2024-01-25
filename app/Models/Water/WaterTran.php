@@ -370,4 +370,21 @@ class WaterTran extends Model
             ->whereBetween('tran_date', [$fromDate, $toDate])
             ->get();
     }
+    /**
+     * | Get water Transaction by Transaction No
+     */
+    public function getTransByTranNo($tranNo)
+    {
+        return WaterTran::select(
+            'water_trans.id as transaction_id',
+            'water_trans.tran_no as transaction_no',
+            'water_trans.amount',
+            'water_trans.payment_mode',
+            'water_trans.tran_date',
+            'water_trans.tran_type'
+        )
+            ->where('water_trans.tran_no', $tranNo)
+            ->where('status', 1)
+            ->get();
+    }
 }

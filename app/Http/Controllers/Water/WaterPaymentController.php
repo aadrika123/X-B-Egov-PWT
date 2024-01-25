@@ -2759,10 +2759,10 @@ class WaterPaymentController extends Controller
             $refUserId                  = null;
             $userType                   = "Citizen";
             if ($request->auth) {
-                // $user                   = authUser($request);
-                // $refUlbId               = $user->ulb_id;
-                // $refUserId              = $user->id;
-                // $userType               = $user->user_type;
+                $user                   = authUser($request);
+                $refUlbId               = $user->ulb_id;
+                $refUserId              = $user->id;
+                $userType               = $user->user_type;
             }
 
             $midGeneration              = new IdGeneration;
@@ -2894,10 +2894,12 @@ class WaterPaymentController extends Controller
         $offlinePaymentModesV2      = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
         $refAmount                  = round($request->amount);
         $remaningAmount             = round($refConsumercharges->sum('due_balance_amount'));
+        $toatalArrearDemand         = round($consumercharges->sum('arrear_demand'));
+        $totalCurrentDemand         = round($consumercharges->sum('current_demand'));
+        $leftArrearAmount           = 0;
         if ($remaningAmount > $refAmount) {
             throw new Exception("please select the month properly for part payament!");
         }
-
         if (in_array($request['paymentMode'], $offlinePaymentModesV2)) {
             $popedDemand->paid_status = 2;                                       // Update Demand Paid Status // Static
             $mWaterTran->saveVerifyStatus($waterTrans['id']);
@@ -2905,14 +2907,17 @@ class WaterPaymentController extends Controller
             $popedDemand->paid_status = 1;                                      // Update Demand Paid Status // Static
         }
 
-        if (!$refConsumercharges->first()) {
-            $refPaidAmount      = ($consumercharges->sum('due_balance_amount')) - $refAmount;
-            $remaningBalance    = $refPaidAmount;
+        if ($refAmount <= $toatalArrearDemand) {
+            $leftArrearAmount = $toatalArrearDemand - $refAmount;
+            $popedDemand->current_demand     = $totalCurrentDemand;
         } else {
-            $refPaidAmount      = $refAmount - $refConsumercharges->sum('balance_amount');
-            $remaningBalance    = $popedDemand->due_balance_amount - $refPaidAmount;
+            $leftAmount  = $refAmount - $toatalArrearDemand;
+            $leftCurrentAmount = $totalCurrentDemand - $leftAmount;
+            $popedDemand->current_demand    = $leftCurrentAmount;
         }
-        $popedDemand->due_balance_amount = $remaningBalance;
+        $popedDemand->arrear_demand      = $leftArrearAmount;
+        $totalleftDemand = $popedDemand->arrear_demand + $popedDemand->current_demand;
+        $popedDemand->due_balance_amount = $totalleftDemand;  
         $popedDemand->save();                                                   // Save Demand
 
         # Save transaction details 
@@ -3245,6 +3250,7 @@ class WaterPaymentController extends Controller
             $mWaterConsumerCollection   = new WaterConsumerCollection();
             $mWaterConsumerDemand       = new WaterConsumerDemand();
             $mwaterChequeDtls           = new WaterChequeDtl();
+            $mTempTransaction           = new TempTransaction();
 
             $paidStatus         = 0;                                                                        // Static
             $transactionId      = $request->transactionId;
@@ -3286,6 +3292,7 @@ class WaterPaymentController extends Controller
             $deactivateReq = [
                 'status' => $paidStatus,
             ];
+            $mTempTransaction = $this->deactivateTempTrans($transactionId);
             $mWaterTran->updateTransatcion($transactionId, $deactivateReq);
             $mWaterTranDetail->updateTranDetails($transactionId, $deactivateReq);
             $mWaterConsumerCollection->updateConsumerCollection($transactionId, $deactivateReq);
@@ -3296,6 +3303,16 @@ class WaterPaymentController extends Controller
             $this->rollback();
             return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), "POST", $request->deviceId);
         }
+    }
+    /**
+     * | Deactivate Temp Transactions
+     */
+    public function deactivateTempTrans($transactionId)
+    {
+        $mTempTransaction           = new TempTransaction();
+        $mTempTransaction->getTempTranByTranId($transactionId, 2);                // 1 is the module id for property
+        if ($mTempTransaction)
+            $mTempTransaction->update(['status' => 0]);
     }
 
 
