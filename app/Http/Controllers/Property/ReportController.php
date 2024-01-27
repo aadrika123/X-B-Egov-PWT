@@ -531,7 +531,7 @@ class ReportController extends Controller
 
         if ($request->user == 'tc') {
             $userId = authUser($request)->id;
-            $request->merge(["userId" => $userId]);
+            $request->merge(["userId" => $userId, "userJoin" => "JOIN"]);
         }
 
         foreach ($collectionTypes as $collectionType) {
@@ -3750,7 +3750,7 @@ class ReportController extends Controller
                 ->get();
 
             if ($request->type)
-               $bata = collect($bata)->where('assessment_type', $request->type)->values();
+                $bata = collect($bata)->where('assessment_type', $request->type)->values();
 
             if (!$paymentMode)
                 $paymentMode = "Cash/Cheque/DD/Online";
