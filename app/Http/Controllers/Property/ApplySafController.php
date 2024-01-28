@@ -19,6 +19,7 @@ use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropProperty;
+use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
@@ -119,6 +120,7 @@ class ApplySafController extends Controller
             $ulbWorkflowId = $this->readAssessUlbWfId($request, $ulb_id);           // (2.1)
             $roadWidthType = $this->readRoadWidthType($request->roadType);          // Read Road Width Type
             $mutationProccessFee = $this->readProccessFee($request->assessmentType, $request->saleValue, $request->propertyType, $request->transferModeId);
+            // $a = $this->checkBifurcationCondition($prop);
 
             $request->request->add(['road_type_mstr_id' => $roadWidthType]);
 
@@ -306,6 +308,15 @@ class ApplySafController extends Controller
             ]);
         }
     }
+
+    /**
+     * | Check Bifurcation Condition
+     */
+    // public function checkBifurcationCondition($propDtls)
+    // {
+    //    $mPropActiveSaf = new PropActiveSaf();   
+    //    $mPropSaf = new PropSaf();   
+    // }
 
 
     /**
