@@ -181,6 +181,15 @@ class DeactivateTran
         $propDemand->paid_total_tax         = $propDemand->paid_total_tax - $tranDtl->paid_total_tax;
 
         $propDemand->paid_status = $propDemand->paid_total_tax == 0 ? 0 :  $propDemand->paid_status;
+
+        if( $propDemand->paid_status == 1)
+        {
+            $propDemand->is_full_paid = false;
+        }
+        elseif( $propDemand->paid_status == 0)
+        {
+            $propDemand->is_full_paid = true;
+        }
     }
 
     /**
