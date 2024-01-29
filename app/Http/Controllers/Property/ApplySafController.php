@@ -120,8 +120,8 @@ class ApplySafController extends Controller
             $ulbWorkflowId = $this->readAssessUlbWfId($request, $ulb_id);           // (2.1)
             $roadWidthType = $this->readRoadWidthType($request->roadType);          // Read Road Width Type
             $mutationProccessFee = $this->readProccessFee($request->assessmentType, $request->saleValue, $request->propertyType, $request->transferModeId);
-            if ($request->assessmentType == 'Bifurcation')
-                $request->areaOfPlot = $this->checkBifurcationCondition($saf, $prop, $request);
+            // if ($request->assessmentType == 'Bifurcation')
+            //     $request->areaOfPlot = $this->checkBifurcationCondition($saf, $prop, $request);
 
             $request->request->add(['road_type_mstr_id' => $roadWidthType]);
 
@@ -285,6 +285,10 @@ class ApplySafController extends Controller
                         'propDtl' => $propId
                     ]);
                     break;
+                case "Bifurcation":                                 // Bifurcation
+                    $req->dateOfPurchase = $req->biDateOfPurchase;
+                    $req->areaOfPlot     = $this->checkBifurcationCondition($property, $req);
+                    break;
             }
         }
 
@@ -313,8 +317,9 @@ class ApplySafController extends Controller
     /**
      * | Check Bifurcation Condition
      */
-    public function checkBifurcationCondition($mPropActiveSaf, $propDtls, $activeSafReqs)
+    public function checkBifurcationCondition($propDtls, $activeSafReqs)
     {
+        $mPropActiveSaf = new PropActiveSaf();
         $propertyId = $propDtls->id;
         $propertyPlotArea = $propDtls->area_of_plot;
         $currentSafPlotArea = $activeSafReqs->bifurcatedPlot;
