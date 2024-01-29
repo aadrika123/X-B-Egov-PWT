@@ -634,10 +634,12 @@ class SafApprovalBll
                     ->get();
 
                 foreach ($this->_verifiedFloors as $floorDetail) {
-                    $propFloor =  collect($propFloors)->where('id', $floorDetail->prop_floor_details_id);
+                    $activeSafFloorDtl = $this->_floorDetails->where('id',$floorDetail->saf_floor_id);
+
+                    $propFloor =  collect($propFloors)->where('id', $activeSafFloorDtl[0]->prop_floor_details_id);
                     $propFloor =  collect($propFloor)->first();
-                    $propFloor->builtup_area = $propFloor->builtup_area - $floorDetail->builtup_area;
-                    $propFloor->carpet_area = $propFloor->builtup_area - $floorDetail->builtup_area;
+                    $propFloor->builtup_area = $propFloor->builtup_area - $activeSafFloorDtl[0]->builtup_area;
+                    $propFloor->carpet_area = $propFloor->builtup_area - $activeSafFloorDtl[0]->builtup_area;
                     $propFloor->save();
                 }
             }
