@@ -322,7 +322,7 @@ class ApplySafController extends Controller
         $activeSafPlotArea = collect($activeSafDetail)->sum('area_of_plot');
         $newAreaOfPlot = $propertyPlotArea - $activeSafPlotArea;
         if (($activeSafPlotArea + $currentSafPlotArea) > $propertyPlotArea)
-            throw new Exception("You have excedeed the plot area. Please insert plot area below" . $newAreaOfPlot);
+            throw new Exception("You have excedeed the plot area. Please insert plot area below " . $newAreaOfPlot);
         return $newAreaOfPlot;
     }
 
