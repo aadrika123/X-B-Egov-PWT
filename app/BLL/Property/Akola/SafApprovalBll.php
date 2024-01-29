@@ -625,7 +625,7 @@ class SafApprovalBll
             if (!$propProperties) {
                 throw new Exception("Old Property Not Found");
             }
-            $propProperties->update(["area_of_plot" => $propProperties->area_of_plot - $this->_activeSaf->area_of_plot]);
+            $propProperties->update(["area_of_plot" => $propProperties->area_of_plot - $this->_verifiedPropDetails->area_of_plot]);
 
             if ($this->_activeSaf->prop_type_mstr_id != 4) {               // Applicable Not for Vacant Land
 
@@ -633,7 +633,7 @@ class SafApprovalBll
                     ->orderby('id')
                     ->get();
 
-                foreach ($this->_floorDetails as $floorDetail) {
+                foreach ($this->_verifiedFloors as $floorDetail) {
                     $propFloor =  collect($propFloors)->where('id', $floorDetail->prop_floor_details_id);
                     $propFloor =  collect($propFloor)->first();
                     $propFloor->builtup_area = $propFloor->builtup_area - $floorDetail->builtup_area;
