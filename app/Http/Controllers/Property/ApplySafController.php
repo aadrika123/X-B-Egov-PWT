@@ -320,9 +320,9 @@ class ApplySafController extends Controller
         $currentSafPlotArea = $activeSafReqs->bifurcatedPlot;
         $activeSafDetail = $mPropActiveSaf->where('previous_holding_id', $propertyId)->where('assessment_type', 'Bifurcation')->where('status', 1)->get();
         $activeSafPlotArea = collect($activeSafDetail)->sum('area_of_plot');
-        if (($activeSafPlotArea + $currentSafPlotArea) > $propertyPlotArea)
-            throw new Exception("You have excedeed the plot area");
         $newAreaOfPlot = $propertyPlotArea - $activeSafPlotArea;
+        if (($activeSafPlotArea + $currentSafPlotArea) > $propertyPlotArea)
+            throw new Exception("You have excedeed the plot area. Please insert plot area below" . $newAreaOfPlot);
         return $newAreaOfPlot;
     }
 
