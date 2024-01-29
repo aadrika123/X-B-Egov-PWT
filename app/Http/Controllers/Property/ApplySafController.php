@@ -120,7 +120,8 @@ class ApplySafController extends Controller
             $ulbWorkflowId = $this->readAssessUlbWfId($request, $ulb_id);           // (2.1)
             $roadWidthType = $this->readRoadWidthType($request->roadType);          // Read Road Width Type
             $mutationProccessFee = $this->readProccessFee($request->assessmentType, $request->saleValue, $request->propertyType, $request->transferModeId);
-            // $a = $this->checkBifurcationCondition($prop);
+            if ($request->assessmentType == 'Bifurcation')
+                $request->areaOfPlot = $this->checkBifurcationCondition($saf, $prop, $request);
 
             $request->request->add(['road_type_mstr_id' => $roadWidthType]);
 
@@ -198,7 +199,7 @@ class ApplySafController extends Controller
                     "ref_id" => $safId,
                     "ref_type" => 'SAF',
                     "mobile_no" => $ownerMobile,
-                    "purpose" => $request->assessmentType.' Apply',
+                    "purpose" => $request->assessmentType . ' Apply',
                     "template_id" => $sms["temp_id"],
                     "message" => $sms["sms"],
                     "response" => $response['status'],
@@ -312,11 +313,18 @@ class ApplySafController extends Controller
     /**
      * | Check Bifurcation Condition
      */
-    // public function checkBifurcationCondition($propDtls)
-    // {
-    //    $mPropActiveSaf = new PropActiveSaf();   
-    //    $mPropSaf = new PropSaf();   
-    // }
+    public function checkBifurcationCondition($mPropActiveSaf, $propDtls, $activeSafReqs)
+    {
+        $propertyId = $propDtls->id;
+        $propertyPlotArea = $propDtls->area_of_plot;
+        $currentSafPlotArea = $activeSafReqs->bifurcatedPlot;
+        $activeSafDetail = $mPropActiveSaf->where('previous_holding_id', $propertyId)->where('assessment_type', 'Bifurcation')->where('status', 1)->get();
+        $activeSafPlotArea = collect($activeSafDetail)->sum('area_of_plot');
+        if (($activeSafPlotArea + $currentSafPlotArea) > $propertyPlotArea)
+            throw new Exception("You have excedeed the plot area");
+        $newAreaOfPlot = $propertyPlotArea - $activeSafPlotArea;
+        return $newAreaOfPlot;
+    }
 
 
     /**

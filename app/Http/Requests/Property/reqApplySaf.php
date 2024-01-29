@@ -111,8 +111,8 @@ class reqApplySaf extends FormRequest
 
         $rules['isWaterHarvesting'] = "required|bool";
 
-        if ($this->isWaterHarvesting == 1)
-            $rules['rwhDateFrom'] = 'nullable|date|date_format:Y-m-d|before_or_equal:$mNowDate';
+        // if ($this->isWaterHarvesting == 1)
+        //     $rules['rwhDateFrom'] = 'nullable|date|date_format:Y-m-d|before_or_equal:$mNowDate';
 
         if (isset($this->assessmentType) && $this->assessmentType != 1 && $this->assessmentType != 5) {           // Holding No Required for Reassess,Mutation,Bifurcation,Amalgamation
             $rules['previousHoldingId'] = "required|numeric";

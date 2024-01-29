@@ -1020,13 +1020,13 @@ class PropertyController extends Controller
                         ->where('prop_active_safs.status', 1)
                         ->first();
                     break;
-                case 'Bifurcation':
-                    $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
-                        ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
-                        ->where('previous_holding_id', $propertyId)
-                        ->where('prop_active_safs.status', 1)
-                        ->first();
-                    break;
+                // case 'Bifurcation':
+                //     $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
+                //         ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
+                //         ->where('previous_holding_id', $propertyId)
+                //         ->where('prop_active_safs.status', 1)
+                //         ->first();
+                //     break;
                 case 'Concession':
                     $data = PropActiveConcession::select('prop_active_concessions.id', 'role_name', 'application_no')
                         ->join('wf_roles', 'wf_roles.id', 'prop_active_concessions.current_role')
