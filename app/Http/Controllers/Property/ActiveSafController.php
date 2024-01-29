@@ -3221,6 +3221,7 @@ class ActiveSafController extends Controller
                     ]);
                     $msg = "Site Successfully Verified";
                     $propActiveSaf->verifyAgencyFieldStatus($req->safId);                                         // Enable Fields Verify Status
+                    $this->checkBifurcationCondition($safDtls,$req);
                     break;
                 case $ulbTaxCollectorRole:                                                                // In Case of Ulb Tax Collector
                     // $req->agencyVerification = false;
@@ -3236,6 +3237,7 @@ class ActiveSafController extends Controller
                 default:
                     return responseMsg(false, "Forbidden Access", "");
             }
+            
             $req->merge(['userId' => $userId, 'ulbId' => $ulbId]);
             // Verification Store
             $verificationId = $verification->store($req);                            // Model function to store verification and get the id
@@ -3267,6 +3269,22 @@ class ActiveSafController extends Controller
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Check Bifurcation Condition
+     */
+    public function checkBifurcationCondition($safDtls,$req)
+    {
+        if($safDtls->assessment_type =='Bifurcation'){
+        $mPropProperties = new PropProperty();
+        $propertyId = $safDtls->previous_holding_id;
+        $propertyDtls = $mPropProperties::find($propertyId);
+        $propertyPlotArea = $propertyDtls->area_of_plot;
+        $safPlotArea = $req->areaOfPlot;
+        if ($safPlotArea > $propertyPlotArea)
+            throw new Exception("You have excedeed the plot area. Please insert plot area below " . $propertyPlotArea);
         }
     }
 

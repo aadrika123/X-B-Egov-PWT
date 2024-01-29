@@ -634,7 +634,7 @@ class SafApprovalBll
                     ->get();
 
                 foreach ($this->_verifiedFloors as $floorDetail) {
-                    $activeSafFloorDtl = $this->_floorDetails->where('id',$floorDetail->saf_floor_id);
+                    $activeSafFloorDtl = $this->_floorDetails->where('id', $floorDetail->saf_floor_id);
                     $activeSafFloorDtl = collect($activeSafFloorDtl)->first();
 
                     $propFloor =  collect($propFloors)->where('id', $activeSafFloorDtl->prop_floor_details_id);
