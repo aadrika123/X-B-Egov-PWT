@@ -1004,6 +1004,7 @@ class PropertyController extends Controller
         try {
             $type = $req->type;
             $propertyId = $req->propertyId;
+            $data = null;
 
             switch ($type) {
                 case 'Reassesment':
