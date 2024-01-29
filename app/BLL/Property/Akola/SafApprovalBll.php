@@ -625,7 +625,7 @@ class SafApprovalBll
             if (!$propProperties) {
                 throw new Exception("Old Property Not Found");
             }
-            $propProperties->update(["area_of_plot" => $propProperties->area_of_plot - $this->_verifiedPropDetails->area_of_plot]);
+            $propProperties->update(["area_of_plot" => $propProperties->area_of_plot - $this->_verifiedPropDetails[0]->area_of_plot]);
 
             if ($this->_activeSaf->prop_type_mstr_id != 4) {               // Applicable Not for Vacant Land
 
