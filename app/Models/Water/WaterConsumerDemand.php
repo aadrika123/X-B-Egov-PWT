@@ -46,6 +46,7 @@ class WaterConsumerDemand extends Model
             DB::raw('ROUND(COALESCE(subquery.arrear_demands, 0), 2) as arrear_demands'),
             DB::raw('ROUND(COALESCE(subquery.current_demands, 0), 2) as current_demands'),
             'subquery.generation_dates',
+            'subquery.previos_reading_date',
             DB::raw('ROUND(COALESCE(subquery.generate_amount, 0) + COALESCE(subquery.arrear_demands, 0) + COALESCE(subquery.current_demands,0), 2)  as total_amount')
         )
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_consumer_demands.consumer_id')
@@ -58,7 +59,9 @@ class WaterConsumerDemand extends Model
                 SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.arrear_demand ELSE 0 END) AS arrear_demands,
                 SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.current_demand ELSE 0 END) AS current_demands,
                 SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NOT NULL THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS generate_amount,
-                sum(case when water_consumer_demands.consumer_tax_id IS NULL  THEN  water_consumer_demands.due_balance_amount ELSE  0 END ) AS previous_demand
+                sum(case when water_consumer_demands.consumer_tax_id IS NULL  THEN  water_consumer_demands.due_balance_amount ELSE  0 END ) AS previous_demand,
+                min(generation_date)as previos_reading_date
+    
                 FROM water_consumer_demands
                 WHERE status=true
                  GROUP BY consumer_id) as subquery'),
@@ -189,7 +192,7 @@ class WaterConsumerDemand extends Model
         $mWaterConsumerDemand->balance_amount           =  $demands['penalty'] ?? 0 + $demands['amount'];
         $mWaterConsumerDemand->created_at               =  Carbon::now();
         $mWaterConsumerDemand->due_balance_amount       =  $demands['penalty'] ?? 0 + $demands['amount'];
-        $mWaterConsumerDemand->current_demand           =  $demands['penalty'] ?? 0 + $demands['amount'];
+        $mWaterConsumerDemand->current_demand           =  round($demands['penalty'] ?? 0 + $demands['amount']);
         $mWaterConsumerDemand->save();
 
         return $mWaterConsumerDemand->id;

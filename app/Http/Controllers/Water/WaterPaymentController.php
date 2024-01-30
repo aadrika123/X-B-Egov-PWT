@@ -1889,9 +1889,9 @@ class WaterPaymentController extends Controller
             $paymentMode            = Config::get('payment-constants.PAYMENT_OFFLINE_MODE');
             $endDate                = Carbon::createFromFormat('Y-m-d',  $request->demandUpto);
             $endDate                = $endDate->toDateString();
-            // if ($request->auth) {
-            //     $refUser = authUser($request);
-            // }
+            if ($request->auth) {
+                $refUser = authUser($request);
+            }
 
             # Restrict the online payment maide 
             if ($request->paymentMode != $paymentMode['5']) {
@@ -2042,7 +2042,7 @@ class WaterPaymentController extends Controller
             # calcullate demand
             $mDemands = $mWaterConsumerDemand->getFirstConsumerDemandV2($consumerId)
                 ->where('demand_from', '>=', $startingYear)
-                ->where('demand_upto', '<=', $endYear)
+                ->where('demand_upto', '<=', $endYear) 
                 ->get();
 
             # Destinguish according to partPayment and check amount
@@ -2759,10 +2759,10 @@ class WaterPaymentController extends Controller
             $refUserId                  = null;
             $userType                   = "Citizen";
             if ($request->auth) {
-                $user                   = authUser($request);
-                $refUlbId               = $user->ulb_id;
-                $refUserId              = $user->id;
-                $userType               = $user->user_type;
+                // $user                   = authUser($request);
+                // $refUlbId               = $user->ulb_id;
+                // $refUserId              = $user->id;
+                // $userType               = $user->user_type;
             }
 
             $midGeneration              = new IdGeneration;
@@ -2894,12 +2894,10 @@ class WaterPaymentController extends Controller
         $offlinePaymentModesV2      = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
         $refAmount                  = round($request->amount);
         $remaningAmount             = round($refConsumercharges->sum('due_balance_amount'));
-        $toatalArrearDemand         = round($consumercharges->sum('arrear_demand'));
-        $totalCurrentDemand         = round($consumercharges->sum('current_demand'));
-        $leftArrearAmount           = 0;
         if ($remaningAmount > $refAmount) {
             throw new Exception("please select the month properly for part payament!");
         }
+
         if (in_array($request['paymentMode'], $offlinePaymentModesV2)) {
             $popedDemand->paid_status = 2;                                       // Update Demand Paid Status // Static
             $mWaterTran->saveVerifyStatus($waterTrans['id']);
@@ -2907,17 +2905,14 @@ class WaterPaymentController extends Controller
             $popedDemand->paid_status = 1;                                      // Update Demand Paid Status // Static
         }
 
-        if ($refAmount <= $toatalArrearDemand) {
-            $leftArrearAmount = $toatalArrearDemand - $refAmount;
-            $popedDemand->current_demand     = $totalCurrentDemand;
+        if (!$refConsumercharges->first()) {
+            $refPaidAmount      = ($consumercharges->sum('due_balance_amount')) - $refAmount;
+            $remaningBalance    = $refPaidAmount;
         } else {
-            $leftAmount  = $refAmount - $toatalArrearDemand;
-            $leftCurrentAmount = $totalCurrentDemand - $leftAmount;
-            $popedDemand->current_demand    = $leftCurrentAmount;
+            $refPaidAmount      = $refAmount - $refConsumercharges->sum('balance_amount');
+            $remaningBalance    = $popedDemand->due_balance_amount - $refPaidAmount;
         }
-        $popedDemand->arrear_demand      = $leftArrearAmount;
-        $totalleftDemand = $popedDemand->arrear_demand + $popedDemand->current_demand;
-        $popedDemand->due_balance_amount = $totalleftDemand;  
+        $popedDemand->due_balance_amount = $remaningBalance;
         $popedDemand->save();                                                   // Save Demand
 
         # Save transaction details 
