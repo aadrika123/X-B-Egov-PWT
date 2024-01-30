@@ -810,6 +810,7 @@ class ActiveSafController extends Controller
             $mVerificationDtls = new PropSafVerificationDtl();
             $memoDtls = array();
             $data = array();
+            $prevOwnerDtls = array();
             $user = Auth()->user();
 
             // Derivative Assignments
