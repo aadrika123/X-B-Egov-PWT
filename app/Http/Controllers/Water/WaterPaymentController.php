@@ -2759,10 +2759,10 @@ class WaterPaymentController extends Controller
             $refUserId                  = null;
             $userType                   = "Citizen";
             if ($request->auth) {
-                // $user                   = authUser($request);
-                // $refUlbId               = $user->ulb_id;
-                // $refUserId              = $user->id;
-                // $userType               = $user->user_type;
+                $user                   = authUser($request);
+                $refUlbId               = $user->ulb_id;
+                $refUserId              = $user->id;
+                $userType               = $user->user_type;
             }
 
             $midGeneration              = new IdGeneration;
