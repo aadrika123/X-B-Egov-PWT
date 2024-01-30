@@ -845,10 +845,10 @@ class ActiveSafController extends Controller
             } else
                 $data->current_role_name2 = $data->current_role_name;
 
-            $data = json_decode(json_encode($data), true);
-
             if ($data->previous_holding_id)
                 $prevOwnerDtls = $mPropOwner->getOwnersByPropIdV2($data->previous_holding_id);
+
+            $data = json_decode(json_encode($data), true);
 
             $ownerDtls = $mPropActiveSafOwner->getOwnersBySafId($data['id']);
             if (collect($ownerDtls)->isEmpty())
