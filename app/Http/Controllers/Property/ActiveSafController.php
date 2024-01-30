@@ -848,13 +848,14 @@ class ActiveSafController extends Controller
             $data = json_decode(json_encode($data), true);
 
             if ($data->previous_holding_id)
-                $mPropOwner->getOwnersByPropIdV2($data->previous_holding_id);
+                $prevOwnerDtls = $mPropOwner->getOwnersByPropIdV2($data->previous_holding_id);
 
             $ownerDtls = $mPropActiveSafOwner->getOwnersBySafId($data['id']);
             if (collect($ownerDtls)->isEmpty())
                 $ownerDtls = $mPropSafOwner->getOwnersBySafId($data['id']);
 
             $data['owners'] = $ownerDtls;
+            $data['previous_owners'] = $prevOwnerDtls;
             $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data['id']);      // Model Function to Get Floor Details
             if (collect($getFloorDtls)->isEmpty())
                 $getFloorDtls = $mPropSafsFloors->getFloorsBySafId($data['id']);
