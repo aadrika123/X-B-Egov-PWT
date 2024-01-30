@@ -537,6 +537,8 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('reports/paid-transfer-fee', 'paidTransferFee');
     Route::post('live-dashboard-update', 'liveDashboardUpdate');
 
+    Route::post('reports/device-type/collection', 'deviceTypeCollection');
+
     /**
      * #==========created by Prity Pandey==========================     
      */
