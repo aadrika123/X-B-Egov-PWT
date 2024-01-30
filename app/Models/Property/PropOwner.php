@@ -58,6 +58,16 @@ class PropOwner extends Model
     }
 
     /**
+     * | Get all Owners
+     */
+    public function getOwnersByPropIdV2($propertyId)
+    {
+        return PropOwner::where('property_id', $propertyId)
+            ->orderBy('id')
+            ->get();
+    }
+
+    /**
      * | Get The Owner by Property Id
      */
     public function getOwnerByPropId($propId)
