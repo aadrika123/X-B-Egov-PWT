@@ -318,14 +318,19 @@ class GeneratePaymentReceiptV2
         $from =   explode('-',$this->_trans->from_fyear)[0];
         $to = explode('-',$this->_trans->to_fyear); 
         $to = $to[1]??($to[0]);        
-        $duration = "April-01-".($from) ." to "."March-31-".($to);
+        $duration = "01-April-".($from) ." to "."31-March-".($to);        
         $mobileDuration = ($from)." to ".($to);
         if($from==$to)
         {
-            $duration = "April-01-".($from-1) ." to "."March-31-".($to);
-            $mobileDuration = ($from-1)." to ".($to);
+            $from = $from-1;
+            $duration = "01-April-".($from) ." to "."31-March-".($to);
+            $mobileDuration = ($from)." to ".($to);            
         }
-        
+        if($from !=$to-1)
+        {
+            $duration = "01-April-".($from) ." to "."31-March-".($to-1)." and 01-April-".($to-1)." to "."31-March-".($to);
+        }
+        // dd($from,$to,$duration);
         $receiptDtls = [
             "departmentSection" => $this->_mDepartmentSection,
             "accountDescription" => $this->_mAccDescription,
