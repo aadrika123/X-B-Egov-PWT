@@ -54,7 +54,7 @@ class WaterConsumerDemand extends Model
                 COALESCE(subquery.current_demands, 0) +
                 CASE
                     WHEN COALESCE(subquery.arrear_demands, 0) = 0 AND COALESCE(subquery.current_demands, 0) = 0
-                    THEN COALESCE(water_consumer_demands.due_balance_amount, 0)
+                    THEN COALESCE(subquery.previous_demand, 0)
                     ELSE 0
                 END,
                 2
