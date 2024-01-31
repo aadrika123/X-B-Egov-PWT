@@ -389,7 +389,7 @@ class WaterConsumer extends Controller
                 $startDate  = Carbon::parse($lastDemand->generation_date);
             } else {
                 $refDemandUpto = Carbon::parse($lastDemand->demand_upto);
-            } 
+            }
 
             if ($refDemandUpto > $today) {
                 throw new Exception("the demand is generated till" . "" . $lastDemand->demand_upto);
@@ -1973,8 +1973,8 @@ class WaterConsumer extends Controller
             $refPropertyType       = Config::get("waterConstaint.PAYMENT_FOR_CONSUMER");
             $userDetails           = $this->checkUserType($req);
 
-            if ($req->connectionType==1) {
-                $connectionType = 1; 
+            if ($req->connectionType == 1) {
+                $connectionType = 1;
                 $connectionTypeString = 'Meter';
             } else {
                 $connectionType = 3;
@@ -1998,7 +1998,7 @@ class WaterConsumer extends Controller
                 "connectionType" => $connectionType
             ];
             $water = $mWaterSecondConsumer->saveConsumer($req, $meta, $applicationNo);  // save active consumer
-           $refRequest = [
+            $refRequest = [
                 "consumerId"     => $water->id,
                 "chargeCategory" => $refPropertyType['1'],
                 "InitialMeter"   => $water->meter_reading,
@@ -2012,7 +2012,7 @@ class WaterConsumer extends Controller
             $water = $mwaterConsumerOwner->saveConsumerOwner($req, $refRequest);                     // save owner detail
             $water = $mwaterConsumerInitial->saveConsumerReadings($refRequest);                      // meter reading
             $water = $mwaterConsumerMeter->saveInitialMeter($refRequest, $meta);                     // initail or final reading
-            $water = $mwaterConsumerDemand->saveNewConnectionDemand($req,$refRequest,$userDetails);
+            $water = $mwaterConsumerDemand->saveNewConnectionDemand($req, $refRequest, $userDetails);
             $returnData = [
                 'consumerNo' => $applicationNo,
                 "consumerId" => $refRequest['consumerId']
@@ -2294,7 +2294,7 @@ class WaterConsumer extends Controller
             [
                 'consumerId'        => 'required|integer',
                 'mobileNo'          => 'nullable|',
-                'email'             => 'nullable|email',
+                'email'             => 'nullable|',
                 'applicantName'     => 'nullable|',
                 'guardianName'      => 'nullable|',
                 'zoneId'            => 'nullable|',
@@ -2435,10 +2435,10 @@ class WaterConsumer extends Controller
                     $dueAmount = ($request->amount - $demandDetails->due_balance_amount) ?? 0;
                 }
             }
-            if ($dueAmount < 0) {
-                $advanceAmount  = abs($dueAmount);
-                $dueAmount      = 0;
-                $fullPaid       = true;
+            if ($dueAmount < 0 || $dueAmount == 0) {
+                $advanceAmount = abs($dueAmount);
+                $dueAmount = 0;
+                $fullPaid = true;
             }
 
             $updateReq = [
@@ -2468,14 +2468,14 @@ class WaterConsumer extends Controller
                 $imageName    = $docUpload->upload($refImageName, $document, $relativePath);
             }
 
-            # Save the consumer replicate details 
+            // # Save the consumer replicate details 
             $approvedWaterOwners->emp_details_id        = $userId;
-            $approvedWaterOwners->user_type         = $usertype;
-            $approvedWaterOwners->relative_path      = $relativePath;
-            $approvedWaterOwners->document           = $imageName;
-            $approvedWaterOwners->advance_amount    = $advanceAmount;
-            $approvedWaterOwners->new_amount        = $request->amount;
-            $approvedWaterOwners->new_reading       = $request->meterReading;
+            $approvedWaterOwners->user_type             = $usertype;
+            $approvedWaterOwners->relative_path         = $relativePath;
+            $approvedWaterOwners->document              = $imageName;
+            $approvedWaterOwners->advance_amount        = $advanceAmount;
+            $approvedWaterOwners->new_amount            = $request->amount;
+            $approvedWaterOwners->new_reading           = $request->meterReading;
             $approvedWaterOwners->save();
 
             # Save Details in advance table
