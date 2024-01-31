@@ -47,7 +47,20 @@ class WaterConsumerDemand extends Model
             DB::raw('ROUND(COALESCE(subquery.current_demands, 0), 2) as current_demands'),
             'subquery.generation_dates',
             'subquery.previos_reading_date',
-            DB::raw('ROUND(COALESCE(subquery.generate_amount, 0) + COALESCE(subquery.arrear_demands, 0) + COALESCE(subquery.current_demands,0), 2)  as total_amount')
+            DB::raw('
+            ROUND(
+                COALESCE(subquery.generate_amount, 0) +
+                COALESCE(subquery.arrear_demands, 0) +
+                COALESCE(subquery.current_demands, 0) +
+                CASE
+                    WHEN COALESCE(subquery.arrear_demands, 0) = 0 AND COALESCE(subquery.current_demands, 0) = 0
+                    THEN COALESCE(water_consumer_demands.due_balance_amount, 0)
+                    ELSE 0
+                END,
+                2
+            ) as total_amount'
+        )
+        
         )
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_consumer_demands.consumer_id')
             ->leftjoin('water_consumer_initial_meters', 'water_consumer_initial_meters.consumer_id', 'water_consumer_demands.consumer_id')
