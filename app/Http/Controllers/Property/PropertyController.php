@@ -1021,13 +1021,13 @@ class PropertyController extends Controller
                         ->where('prop_active_safs.status', 1)
                         ->first();
                     break;
-                // case 'Bifurcation':
-                //     $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
-                //         ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
-                //         ->where('previous_holding_id', $propertyId)
-                //         ->where('prop_active_safs.status', 1)
-                //         ->first();
-                //     break;
+                    // case 'Bifurcation':
+                    //     $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
+                    //         ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
+                    //         ->where('previous_holding_id', $propertyId)
+                    //         ->where('prop_active_safs.status', 1)
+                    //         ->first();
+                    //     break;
                 case 'Concession':
                     $data = PropActiveConcession::select('prop_active_concessions.id', 'role_name', 'application_no')
                         ->join('wf_roles', 'wf_roles.id', 'prop_active_concessions.current_role')
@@ -1051,28 +1051,28 @@ class PropertyController extends Controller
                     break;
             }
             $prop = PropProperty::find($propertyId);
-            if($prop && $prop->status==0)
-            {
-                switch($prop->status)
-                {
-                    case 0 : throw new Exception("Property Is Already Deactivated");
-                            break;
-                    case 2 : throw new Exception("Property Is Deactivated By Deactivated Request");
-                            break;
-                    case 3 : throw new Exception("Property Is Deactivated After Mutaion Fee Payment");
-                            break;
-                    case 4 : throw new Exception("Property Is Deactivated By Mutaion");
-                            break;
+            if ($prop && $prop->status == 0) {
+                switch ($prop->status) {
+                    case 0:
+                        throw new Exception("Property Is Already Deactivated");
+                        break;
+                    case 2:
+                        throw new Exception("Property Is Deactivated By Deactivated Request");
+                        break;
+                    case 3:
+                        throw new Exception("Property Is Deactivated After Mutaion Fee Payment");
+                        break;
+                    case 4:
+                        throw new Exception("Property Is Deactivated By Mutaion");
+                        break;
                 }
-                
             }
             if ($data) {
                 $msg['id'] = $data->id;
                 $msg['inWorkflow'] = true;
                 $msg['currentRole'] = $data->role_name;
                 $msg['message'] = "The application is still in workflow and pending at " . $data->role_name . ". Please Track your application with " . $data->application_no;
-            } 
-            else
+            } else
                 $msg['inWorkflow'] = false;
 
             return responseMsgs(true, 'Data Updated', $msg, '010801', '01', '', 'Post', '');
@@ -1323,6 +1323,9 @@ class PropertyController extends Controller
             $totalBuildupArea = $propFloors->pluck('builtup_area')->sum();
             $minFloorFromDate = $propFloors->min('date_from');
             $propUsageTypes = ($this->propHoldingType($propFloors) == 'PURE_RESIDENTIAL') ? 'निवासी' : 'अनिवासी';
+            if (collect($propFloors)->isEmpty())
+                $propUsageTypes = 'प्लॉट';
+
             $propDemand = $mPropDemands->getDemandByPropIdV2($req->propId)->first();
 
             if (collect($propDemand)->isNotEmpty()) {
@@ -1823,26 +1826,22 @@ class PropertyController extends Controller
             $perPage = $request->perPage ? $request->perPage : 10;
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
             $wardId = $zoneId = null;
-            if($request->fromDate)
-            {
+            if ($request->fromDate) {
                 $fromDate = $request->fromDate;
             }
-            if($request->uptoDate)
-            {
+            if ($request->uptoDate) {
                 $uptoDate = $request->uptoDate;
             }
-            if($request->wardId)
-            {
+            if ($request->wardId) {
                 $wardId = $request->wardId;
             }
-            if($request->zoneId)
-            {
+            if ($request->zoneId) {
                 $zoneId = $request->zoneId;
             }
             $data  = $mLocation->getTcDetails($tcId)
-                    ->whereBetween(DB::raw("Cast(locations.created_at As date)"),[$fromDate,$uptoDate])
-                    ->orderBy("locations.id","DESC");
-            
+                ->whereBetween(DB::raw("Cast(locations.created_at As date)"), [$fromDate, $uptoDate])
+                ->orderBy("locations.id", "DESC");
+
             $paginator = $data->paginate($perPage);
 
             $list = [
@@ -1882,8 +1881,7 @@ class PropertyController extends Controller
 
         try {
             $mlocations = new Location();
-            if(!$mlocations->store($req))
-            {
+            if (!$mlocations->store($req)) {
                 throw new Exception("tc location updated error");
             }
             return responseMsgs(true, "tc location Save", '', "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
