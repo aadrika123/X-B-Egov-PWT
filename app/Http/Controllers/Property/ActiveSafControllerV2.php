@@ -432,7 +432,7 @@ class ActiveSafControllerV2 extends Controller
 
                 case ("propertyNo"):
                     $data = $mPropProperty->searchPropertyV2($ulbId)
-                        ->where('prop_properties.property_no', 'LIKE',  $parameter );
+                        ->where('prop_properties.property_no', 'LIKE',  $parameter.'-' );
                     break;
                 default:
                     $data = $mPropProperty->searchPropertyV2($ulbId);
@@ -448,6 +448,7 @@ class ActiveSafControllerV2 extends Controller
             {
                 $data = $data->where("prop_properties.id", $request->propId);
             }
+            $data = $data->where("prop_properties.status", 1);
 
             if ($isLegacy == false) {
                 if ($key == 'ptn') {
