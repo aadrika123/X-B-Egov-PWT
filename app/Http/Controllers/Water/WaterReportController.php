@@ -3022,8 +3022,8 @@ class WaterReportController extends Controller
                         MAX(wd.id) AS demand_id ,
                         max(case when water_consumer_taxes.id is null then wd.current_meter_reading else water_consumer_taxes.final_reading end) as upto_reading,
                         min(case when water_consumer_taxes.id is null then wd.current_meter_reading else water_consumer_taxes.initial_reading end) as from_reading,
-                        MIN(wd.demand_from) AS demand_from, 
-                        MAX(wd.demand_upto) AS demand_upto, 
+                        MIN(case when wd.is_full_paid=false then wd.demand_from  end ) AS demand_from, 
+                        MAX(case when wd.is_full_paid=false then wd.demand_upto  end ) AS demand_upto, 
                     
                         SUM(
                             CASE WHEN wd.consumer_tax_id IS NULL THEN wd.arrear_demand ELSE 0 END
