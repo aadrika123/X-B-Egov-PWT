@@ -1889,9 +1889,9 @@ class WaterPaymentController extends Controller
             $paymentMode            = Config::get('payment-constants.PAYMENT_OFFLINE_MODE');
             $endDate                = Carbon::createFromFormat('Y-m-d',  $request->demandUpto);
             $endDate                = $endDate->toDateString();
-            // if ($request->auth) {
-            //     $refUser = authUser($request);
-            // }
+            if ($request->auth) {
+                $refUser = authUser($request);
+            }
 
             # Restrict the online payment maide 
             if ($request->paymentMode != $paymentMode['5']) {
@@ -2042,7 +2042,7 @@ class WaterPaymentController extends Controller
             # calcullate demand
             $mDemands = $mWaterConsumerDemand->getFirstConsumerDemandV2($consumerId)
                 ->where('demand_from', '>=', $startingYear)
-                ->where('demand_upto', '<=', $endYear)
+                ->where('demand_upto', '<=', $endYear) 
                 ->get();
 
             # Destinguish according to partPayment and check amount
@@ -2930,8 +2930,6 @@ class WaterPaymentController extends Controller
         );
         $mWaterConsumerCollection->saveConsumerCollection($popedDemand, $waterTrans, $request->auth['id'] ?? null, $refAmount);
     }
-
-
 
     /**
      * | Adjust the demand for part payament 

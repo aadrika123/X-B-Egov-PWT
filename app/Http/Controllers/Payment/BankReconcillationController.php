@@ -456,7 +456,7 @@ class BankReconcillationController extends Controller
                         // $wardId = WaterApplication::find($transaction->related_id)->ward_id;
                     }
                 }
-
+ 
                 # If the payment got clear
                 if ($paymentStatus == 1) {
                     # For demand payment 

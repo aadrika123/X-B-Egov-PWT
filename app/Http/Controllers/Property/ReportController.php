@@ -1363,6 +1363,45 @@ class ReportController extends Controller
         }
     }
 
+    public function deviceTypeCollection(Request $request)
+    {
+        try{
+            $fromDate = $uptoDate = Carbon::now()->format('Y-m-d');
+            $deviceType = 'android';
+            $paymentMode = null;
+            if($request->fromDate)
+            {
+                $fromDate = $request->fromDate;
+            }
+            if($request->uptoDate)
+            {
+                $uptoDate = $request->uptoDate;
+            }
+            if($request->deviceType)
+            {
+                $deviceType = $request->deviceType;
+            }
+            if($request->paymentMode)
+            {
+                $paymentMode = $request->paymentMode;
+            }
+            $data = PropTransaction::select(DB::raw("COALESCE(sum(amount),0) as total_amount,count(id)total_tran"))
+                    ->whereBetween("tran_date",[$fromDate,$uptoDate])
+                    ->whereIn("status",[1,2])
+                    ->whereNotNull("device_type")
+                    ->where("device_type",$deviceType);
+            if($paymentMode)
+            {
+                $data->where(DB::raw("upper(device_type)",strtoupper($paymentMode)));
+            }
+            $data = $data->first();
+            return responseMsgs(true, "data fetched", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+        }
+        catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
+
     /**
      * | Inserting Data in report table for live dashboard
      */
