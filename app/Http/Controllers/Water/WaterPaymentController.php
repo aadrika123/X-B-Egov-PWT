@@ -2042,7 +2042,7 @@ class WaterPaymentController extends Controller
             # calcullate demand
             $mDemands = $mWaterConsumerDemand->getFirstConsumerDemandV2($consumerId)
                 ->where('demand_from', '>=', $startingYear)
-                ->where('demand_upto', '<=', $endYear) 
+                ->where('demand_upto', '<=', $endYear)
                 ->get();
 
             # Destinguish according to partPayment and check amount
@@ -2809,7 +2809,7 @@ class WaterPaymentController extends Controller
                 'id'                => $request->consumerId,
                 'ulbId'             => $refUlbId,
                 'chargeCategory'    => "Demand Collection",                                 // Static
-                'leftDemandAmount'  => $finalCharges['leftDemandAmount'],
+                'leftDemandAmount'  => $finalCharges['leftDemandAmount'], 
                 'adjustedAmount'    => $finalCharges['adjustedAmount'],
                 'partPayment'       => 'part payment',
                 'isJsk'             => true                                                 // Static
@@ -2930,6 +2930,7 @@ class WaterPaymentController extends Controller
         );
         $mWaterConsumerCollection->saveConsumerCollection($popedDemand, $waterTrans, $request->auth['id'] ?? null, $refAmount);
     }
+
 
     /**
      * | Adjust the demand for part payament 

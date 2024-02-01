@@ -47,7 +47,20 @@ class WaterConsumerDemand extends Model
             DB::raw('ROUND(COALESCE(subquery.current_demands, 0), 2) as current_demands'),
             'subquery.generation_dates',
             'subquery.previos_reading_date',
-            DB::raw('ROUND(COALESCE(subquery.generate_amount, 0) + COALESCE(subquery.arrear_demands, 0) + COALESCE(subquery.current_demands,0), 2)  as total_amount')
+            DB::raw('
+            ROUND(
+                COALESCE(subquery.generate_amount, 0) +
+                COALESCE(subquery.arrear_demands, 0) +
+                COALESCE(subquery.current_demands, 0) +
+                CASE
+                    WHEN COALESCE(subquery.arrear_demands, 0) = 0 AND COALESCE(subquery.current_demands, 0) = 0
+                    THEN COALESCE(subquery.previous_demand, 0)
+                    ELSE 0
+                END,
+                2
+            ) as total_amount'
+        )
+        
         )
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_consumer_demands.consumer_id')
             ->leftjoin('water_consumer_initial_meters', 'water_consumer_initial_meters.consumer_id', 'water_consumer_demands.consumer_id')
@@ -68,17 +81,17 @@ class WaterConsumerDemand extends Model
                 'subquery.consumer_id','=','water_consumer_demands.consumer_id'
             )
             ->leftjoin(
-                DB::raw('(SELECT consumer_id, MIN(demand_from) as demand_from FROM water_consumer_demands where status=true  GROUP BY consumer_id) as min_demand_from'),
+                DB::raw('(SELECT consumer_id, MIN(demand_from) as demand_from FROM water_consumer_demands where status=true and is_full_paid=false  GROUP BY consumer_id) as min_demand_from'),
                 'min_demand_from.consumer_id',
                 '=',
                 'water_consumer_demands.consumer_id'
             )
             ->leftjoin(
-                DB::raw('(SELECT consumer_id, MAX(demand_upto) as demand_upto FROM water_consumer_demands where status=true GROUP BY consumer_id) as max_demand_upto'),
+                DB::raw('(SELECT consumer_id, MAX(demand_upto) as demand_upto FROM water_consumer_demands where status=true and is_full_paid=false  GROUP BY consumer_id) as max_demand_upto'),
                 'max_demand_upto.consumer_id',
                 '=',
                 'water_consumer_demands.consumer_id'
-            )
+            ) 
             // ->where('water_consumer_demands.paid_status', 0)
             ->where('water_consumer_demands.status',true )
             ->where('water_consumer_demands.is_full_paid', false)
