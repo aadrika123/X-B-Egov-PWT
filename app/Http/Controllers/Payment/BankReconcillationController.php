@@ -623,16 +623,16 @@ class BankReconcillationController extends Controller
             $document = $req->document;
             $refImageName = $req->id . "_" . $req->moduleId . "_" . (Carbon::now()->format("Y-m-d"));
             $relativePath = $req->moduleId == $propertyModuleId ? "Property/TranDeactivate" : ($req->moduleId == $waterModuleId ? "Water/TranDeactivate" : ($req->moduleId == $tradeModuleId ? "Trade/TranDeactivate" : "Others/TranDeactivate"));
-            // $user = Auth()->user();
+            $user = Auth()->user();
             DB::beginTransaction();
             DB::connection('pgsql_master')->beginTransaction();
             DB::connection('pgsql_water')->beginTransaction();
-            // DB::connection('pgsql_trade')->beginTransaction();
+            DB::connection('pgsql_trade')->beginTransaction();
 
             $imageName = $req->document ? $relativePath . "/" . $docUpload->upload($refImageName, $document, $relativePath) : "";
             $deactivationArr = [
                 "tran_id" => $req->id,
-                // "deactivated_by" => $user->id,
+                "deactivated_by" => $user->id,
                 "reason" => $req->remarks,
                 "file_path" => $imageName,
                 "deactive_date" => $req->deactiveDate ?? Carbon::now()->format("Y-m-d"),

@@ -140,14 +140,14 @@ class DeactivateTran
                 //     $demand->save();
                 // }
             }
+            $property = PropProperty::find($propId);
+            if (collect($property)->isEmpty())
+                throw new Exception("Property Not Available for this Property ID $propId");
+    
+            $property->balance = $this->_transaction->arrear_settled_amt;
+            $property->save();
         }
 
-        $property = PropProperty::find($propId);
-        if (collect($property)->isEmpty())
-            throw new Exception("Property Not Available for this Property ID $propId");
-
-        $property->balance = $this->_transaction->arrear_settled_amt;
-        $property->save();
     }
 
     private function adjustPropDemand(PropDemand $propDemand, $tranDtl)

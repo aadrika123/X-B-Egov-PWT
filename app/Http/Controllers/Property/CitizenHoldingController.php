@@ -438,4 +438,32 @@ class CitizenHoldingController extends Controller
     /**
      * | Update Icici Payment Manually
      */
+
+    public function getPendingPaymentList(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [       
+                "fromDate" =>"nullable|date" ,       
+                'uptoDate' => 'nullable|date',
+                'Response.ResponseMsg' => 'required|string',
+                'Response.ResponseCode' => 'required',
+            ]
+        );
+
+        if ($validated->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validated->errors()
+            ]);
+        }
+        try{
+
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false, $e->getMessage(), "", "1", "1.0", "", "", $request->deviceId ?? "");
+        }
+    }
 }
