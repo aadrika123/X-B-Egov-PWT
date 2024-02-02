@@ -37,7 +37,8 @@
         "files": [
             "app/Helpers/utility_helper.php",
             "app/Helpers/sms_helper.php" ,
-            "app/Helpers/whatsapp_helper.php" 
+            "app/Helpers/whatsapp_helper.php" ,
+            "app/Helpers/icici_payment_helper.php"
         ]
     },
     "autoload-dev": {
