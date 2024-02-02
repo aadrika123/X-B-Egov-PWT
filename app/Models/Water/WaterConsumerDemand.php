@@ -73,7 +73,7 @@ class WaterConsumerDemand extends Model
                 --SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.arrear_demand ELSE 0 END) AS arrear_demands,
                 --SUM(CASE WHEN last_generate_id is null THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS arrear_demands,
                 SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.current_demand ELSE 0 END) AS current_demands,
-                SUM(CASE WHEN last_generate_id is Not null THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS arrear_demands,
+                --SUM(CASE WHEN last_generate_id is Not null THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS current_demands,
                 --SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NOT NULL THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS generate_amount,
                 SUM(CASE WHEN last_generate_id is Not null THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS generate_amount,
                 sum(case when water_consumer_demands.consumer_tax_id IS NULL  THEN  water_consumer_demands.due_balance_amount ELSE  0 END ) AS previous_demand,
