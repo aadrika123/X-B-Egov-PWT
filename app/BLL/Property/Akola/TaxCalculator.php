@@ -372,7 +372,7 @@ class TaxCalculator
     public function readStateTaxes($floorBuildupArea, $isCommercial, $alv = 0)
     {
         // State Taxes
-        if (is_between($alv, 0, 150)) {
+        if (is_between(round($alv), 0, 150)) {
             $stateEducationTaxPerc = $isCommercial ? 4 : 2;
             // $stateEducationTax = roundFigure(($floorBuildupArea * $stateEducationTaxPerc) / 100);
             $stateEducationTax = roundFigure(($alv * $stateEducationTaxPerc) / 100);
@@ -381,7 +381,7 @@ class TaxCalculator
             $professionalTax = roundFigure(($alv * $professionalTaxPerc) / 100);
         }
 
-        if (is_between($alv, 151, 300)) {
+        if (is_between(round($alv), 151, 300)) {
             $stateEducationTaxPerc = $isCommercial ? 6 : 3;
             // $stateEducationTax = roundFigure(($floorBuildupArea * $stateEducationTaxPerc) / 100);
             $stateEducationTax = roundFigure(($alv * $stateEducationTaxPerc) / 100);
@@ -390,7 +390,7 @@ class TaxCalculator
             $professionalTax = roundFigure(($alv * $professionalTaxPerc) / 100);
         }
 
-        if (is_between($alv, 301, 3000)) {
+        if (is_between(round($alv), 301, 3000)) {
             $stateEducationTaxPerc = $isCommercial ? 8 : 4;
             // $stateEducationTax = roundFigure(($floorBuildupArea * $stateEducationTaxPerc) / 100);
             $stateEducationTax = roundFigure(($alv * $stateEducationTaxPerc) / 100);
@@ -399,7 +399,7 @@ class TaxCalculator
             $professionalTax = roundFigure(($alv * $professionalTaxPerc) / 100);
         }
 
-        if (is_between($alv, 3001, 6000)) {
+        if (is_between(round($alv), 3001, 6000)) {
             $stateEducationTaxPerc = $isCommercial ? 10 : 5;
             // $stateEducationTax = roundFigure(($floorBuildupArea * $stateEducationTaxPerc) / 100);
             $stateEducationTax = roundFigure(($alv * $stateEducationTaxPerc) / 100);
@@ -408,7 +408,7 @@ class TaxCalculator
             $professionalTax = roundFigure(($alv * $professionalTaxPerc) / 100);
         }
 
-        if ($alv > 6000) {
+        if (round($alv) > 6000) {
             $stateEducationTaxPerc = $isCommercial ? 12 : 6;
             // $stateEducationTax = roundFigure(($floorBuildupArea * $stateEducationTaxPerc) / 100);
             $stateEducationTax = roundFigure(($alv * $stateEducationTaxPerc) / 100);

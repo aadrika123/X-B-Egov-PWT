@@ -3227,7 +3227,8 @@ class ActiveSafController extends Controller
                     ]);
                     $msg = "Site Successfully Verified";
                     $propActiveSaf->verifyAgencyFieldStatus($req->safId);                                         // Enable Fields Verify Status
-                    $this->checkBifurcationCondition($safDtls, $req);
+                    $this->checkBifurcationCondition($safDtls, $req, $vacantLand);
+                    dd();
                     break;
                 case $ulbTaxCollectorRole:                                                                // In Case of Ulb Tax Collector
                     // $req->agencyVerification = false;
@@ -3281,7 +3282,7 @@ class ActiveSafController extends Controller
     /**
      * | Check Bifurcation Condition
      */
-    public function checkBifurcationCondition($safDtls, $req)
+    public function checkBifurcationCondition($safDtls, $req, $vacantLand)
     {
         if ($safDtls->assessment_type == 'Bifurcation') {
             $mPropProperties = new PropProperty();
@@ -3291,6 +3292,24 @@ class ActiveSafController extends Controller
             $safPlotArea = $req->areaOfPlot;
             if ($safPlotArea > $propertyPlotArea)
                 throw new Exception("You have excedeed the plot area. Please insert plot area below " . $propertyPlotArea);
+
+            if ($req->propertyType != $vacantLand) {
+                $requestFloors = $req->floor;
+                $mPropFloors = new PropFLoor();
+
+                foreach ($requestFloors as $requestFloor) {
+                    if (isset($requestFloor['floorId']))
+                        $safFloorDtls  = PropActiveSafsFloor::find($requestFloor['floorId']);
+
+                    if (isset($safFloorDtls))
+                        $propFloorDtls = $mPropFloors::find($safFloorDtls->prop_floor_details_id);
+
+                    if (isset($propFloorDtls)) {
+                        if ($requestFloor['buildupArea'] > $propFloorDtls->builtup_area)
+                            throw new Exception("Verification Floor Area Excedded the Property Floor. Please enter area below " . $propFloorDtls->builtup_area . ". You have entered " . $requestFloor['buildupArea']);
+                    }
+                }
+            }
         }
     }
 
