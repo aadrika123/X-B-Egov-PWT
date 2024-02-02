@@ -1847,7 +1847,6 @@ class ActiveSafController extends Controller
                 $safDetails->saf_pending_status = 0;
                 $safDetails->save();
                 $safApprovalBll->approvalProcess($safId);
-                dd('Application Approved Successfully');
                 $msg = "Application Approved Successfully";
                 $metaReqs['verificationStatus'] = 1;
                 $holdingNo = $safApprovalBll->_holdingNo;
