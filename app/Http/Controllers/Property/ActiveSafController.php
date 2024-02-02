@@ -3228,7 +3228,6 @@ class ActiveSafController extends Controller
                     $msg = "Site Successfully Verified";
                     $propActiveSaf->verifyAgencyFieldStatus($req->safId);                                         // Enable Fields Verify Status
                     $this->checkBifurcationCondition($safDtls, $req, $vacantLand);
-                    dd();
                     break;
                 case $ulbTaxCollectorRole:                                                                // In Case of Ulb Tax Collector
                     // $req->agencyVerification = false;
