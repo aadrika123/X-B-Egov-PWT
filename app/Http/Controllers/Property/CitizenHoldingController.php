@@ -621,7 +621,8 @@ class CitizenHoldingController extends Controller
             {
                 throw New Exception("Payment Already cleared");
             }
-            // $testPayment = 
+            $testPayment = checkPaymentStatus($reqData->req_ref_no);
+            dd($testPayment );
         }
         catch(Exception $e)
         {

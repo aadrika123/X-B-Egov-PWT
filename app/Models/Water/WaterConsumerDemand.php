@@ -70,14 +70,24 @@ class WaterConsumerDemand extends Model
             ->leftjoin(
                 DB::raw('(SELECT 
                 consumer_id,max(generation_date) as generation_dates,
-                SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.arrear_demand ELSE 0 END) AS arrear_demands,
-                SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.current_demand ELSE 0 END) AS current_demands,
-                SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NOT NULL THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS generate_amount,
+                --SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.arrear_demand ELSE 0 END) AS arrear_demands,
+                SUM(CASE WHEN last_generate_id is null THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS arrear_demands,
+                --SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.current_demand ELSE 0 END) AS current_demands,
+                SUM(CASE WHEN last_generate_id is Not null THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS current_demands,
+                --SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NOT NULL THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS generate_amount,
+                SUM(CASE WHEN last_generate_id is Not null THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS generate_amount,
                 sum(case when water_consumer_demands.consumer_tax_id IS NULL  THEN  water_consumer_demands.due_balance_amount ELSE  0 END ) AS previous_demand,
                 SUM(water_consumer_demands.due_balance_amount) total_due_amount,
                 min(generation_date)as previos_reading_date
     
                 FROM water_consumer_demands
+                left join (
+					select id last_generate_id ,generation_date as last_generation_date
+					from water_consumer_demands 
+					where status=true and consumer_id = '.$consumerId.' 
+					order by generation_date DESC 
+					limit 1
+				)last_demand on last_demand.last_generate_id = water_consumer_demands.id
                 WHERE status=true
                  GROUP BY consumer_id) as subquery'),
                 'subquery.consumer_id','=','water_consumer_demands.consumer_id'
