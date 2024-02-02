@@ -58,7 +58,8 @@ class WaterConsumerDemand extends Model
                     ELSE 0
                 END,
                 2
-            ) as total_amount'
+            ) as total_amount1,
+            ROUND(total_due_amount,2)as total_amount'
         )
         
         )
@@ -73,6 +74,7 @@ class WaterConsumerDemand extends Model
                 SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.current_demand ELSE 0 END) AS current_demands,
                 SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NOT NULL THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS generate_amount,
                 sum(case when water_consumer_demands.consumer_tax_id IS NULL  THEN  water_consumer_demands.due_balance_amount ELSE  0 END ) AS previous_demand,
+                SUM(water_consumer_demands.due_balance_amount) total_due_amount,
                 min(generation_date)as previos_reading_date
     
                 FROM water_consumer_demands

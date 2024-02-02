@@ -237,7 +237,7 @@ class CitizenHoldingController extends Controller
             return($respons);
         }
         catch (Exception $e) {
-            return responseMsgs(false, [$e->getMessage(),$e->getLine(),$e->getFile()], "", "011604", "2.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false,$e->getMessage(), "", "011604", "2.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -439,15 +439,17 @@ class CitizenHoldingController extends Controller
      * | Update Icici Payment Manually
      */
 
-    public function getPendingPaymentList(Request $request)
+    public function getIciciPendingPaymentList(Request $request)
     {
         $validated = Validator::make(
             $request->all(),
             [       
                 "fromDate" =>"nullable|date" ,       
                 'uptoDate' => 'nullable|date',
-                'Response.ResponseMsg' => 'required|string',
-                'Response.ResponseCode' => 'required',
+                'reqRefNo' => 'nullable|string',
+                'applicationNo' => 'nullable|string',
+                'appType' => 'nullable|in:Saf,Property',
+                'PaymentStatus' => 'nullable|in:Success,Failed,Payment initiated but not done',
             ]
         );
 
@@ -459,7 +461,167 @@ class CitizenHoldingController extends Controller
             ]);
         }
         try{
+            $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
+            $appType =  $reqRefNo = $applicationNo = null;
+            $PaymentStatus = 0;
+            if($request->fromDate)
+            {
+                $fromDate = $request->fromDate;
+            }
+            if($request->uptoDate)
+            {
+                $uptoDate = $request->uptoDate;
+            }
+            if($request->appType)
+            {
+                $appType = $request->appType;
+            }
+            if($request->PaymentStatus)
+            {
+                $PaymentStatus = $this->getIntPaymentStatus($request->PaymentStatus);
+            }
+            if($request->reqRefNo)
+            {
+                $reqRefNo = $request->reqRefNo;
+            }
+            if($request->applicationNo)
+            {
+                $applicationNo = $request->applicationNo;
+            }
+            $data = PropIciciPaymentsRequest::select(
+                DB::raw("
+                prop_icici_payments_requests.id,prop_icici_payments_requests.req_ref_no, prop_icici_payments_requests.saf_id,prop_icici_payments_requests.prop_id,
+                prop_icici_payments_requests.tran_type,prop_icici_payments_requests.demand_amt,prop_icici_payments_requests.payable_amount,
+                prop_icici_payments_requests.payment_status,prop_icici_payments_requests.created_at,
+                prop_icici_payments_requests.from_fyear,prop_icici_payments_requests.to_fyear,
+                case when prop_icici_payments_requests.saf_id is not null then 'saf' else 'property' end as app_type,
+                case when prop_icici_payments_requests.saf_id is not null then prop_icici_payments_requests.saf_id else prop_icici_payments_requests.prop_id end as app_id,
+                case when prop_icici_payments_requests.saf_id is not null then saf.saf_no else prop.holding_no end as app_no,
+                case when prop_icici_payments_requests.saf_id is not null then saf.ward_name else prop.ward_name end as ward_name,
+                case when prop_icici_payments_requests.saf_id is not null then saf.zone_name else prop.zone_name end as zone_name
+                    ")
+            )
+            ->leftJoin(DB::raw("
+                    (
+                        select prop_icici_payments_requests.id,prop_properties.holding_no,prop_properties.property_no,zone_masters.zone_name,ulb_ward_masters.ward_name
+                        from prop_icici_payments_requests
+                        join prop_properties on prop_properties.id = prop_icici_payments_requests.prop_id
+                        left join zone_masters on zone_masters.id = prop_properties.zone_mstr_id
+                        left join ulb_ward_masters on ulb_ward_masters.id = prop_properties.ward_mstr_id                        
+                    )prop
+            "),"prop.id","prop_icici_payments_requests.id")
+            ->leftJoin(DB::raw("
+                    (
+                        select prop_icici_payments_requests.id,saf.holding_no,saf.saf_no,zone_masters.zone_name,ulb_ward_masters.ward_name
+                        from prop_icici_payments_requests
+                        join (
+                            (
+                                select id,zone_mstr_id,ward_mstr_id,saf_no,holding_no
+                                from prop_active_safs
+                            )
+                            union(
+                                select id,zone_mstr_id,ward_mstr_id,saf_no,holding_no
+                                from prop_rejected_safs
+                            )
+                            union(
+                                select id,zone_mstr_id,ward_mstr_id,saf_no,holding_no
+                                from prop_safs
+                            )
+                        )saf on saf.id = prop_icici_payments_requests.saf_id
+                        left join zone_masters on zone_masters.id = saf.zone_mstr_id
+                        left join ulb_ward_masters on ulb_ward_masters.id = saf.ward_mstr_id	 
+                        
+                )saf
+            "),"saf.id","prop_icici_payments_requests.id")
+            ->whereBetween(DB::raw("CAST(prop_icici_payments_requests.created_at AS DATE)"),[$fromDate,$uptoDate])
+            ->where("prop_icici_payments_requests.status",1)
+            ->where("prop_icici_payments_requests.payment_status",$PaymentStatus);
 
+            switch($appType)
+            {
+                case 'Saf' : $data->whereNotNull("prop_icici_payments_requests.saf_id");
+                            break;
+                case 'Property' : $data->whereNotNull("prop_icici_payments_requests.prop_id");
+                            break;
+            }
+            if($reqRefNo)
+            {
+                $data->where("prop_icici_payments_requests.req_ref_no",$reqRefNo);
+            }
+            if($applicationNo)
+            {
+                $data->where(function($query)use($applicationNo){
+                    $query->where("saf.saf_no",$applicationNo)
+                          ->OrWhere("prop.holding_no",$applicationNo);
+                });
+            }
+            $data->OrderBy("prop_icici_payments_requests.id","ASC")
+                ->OrderBy("prop_icici_payments_requests.prop_id","ASC");
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $paginator = $data->paginate($perPage);
+
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => collect($paginator->items())->map(function ($val) {
+                    // $val->demand_list =  $val->demand_list ? json_decode($val->demand_list):$val->demand_list;
+                    // $val->request =  $val->request ? json_decode($val->request):$val->request;
+                    return $val;
+                }),
+                "total" => $paginator->total(),
+            ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true, "", $list);
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false, $e->getMessage(), "", "1", "1.0", "", "", $request->deviceId ?? "");
+        }
+    }
+
+    private function getIntPaymentStatus($PaymentStatus)
+    {   
+        $status = 0;
+        switch($PaymentStatus)
+        {
+            case "Success" : $status = 1;
+                            break;
+            case "Failed" : $status = 2;
+                            break;
+        }
+        return $status;
+    }
+
+    public function updateIciciPendingPayment(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [       
+                "id" =>"required",
+            ]
+        );
+
+        if ($validated->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validated->errors()
+            ]);
+        }
+        try{
+            $users = Auth()->user();
+            $requestId = $request->id;
+            $reqData = PropIciciPaymentsRequest::find($requestId);
+            if(!$reqData)
+            {
+                throw New Exception("Request Data Not Found");
+            }
+            if(!$reqData->payment_status==1)
+            {
+                throw New Exception("Payment Already cleared");
+            }
+            // $testPayment = 
         }
         catch(Exception $e)
         {
