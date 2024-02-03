@@ -253,7 +253,7 @@ class CitizenHoldingController extends Controller
             DB::beginTransaction();
             $reqData->update(['payment_status' => 2,"is_manual_update"=>$request->isManualUpdate]);
             DB::commit();
-            $respons = ["bankResponse"=>$request->Status];
+            $respons = ["bankResponse"=>$request->Status,"TransactionNo"=>"","transactionId"=>""];
             return responseMsgs(true, "", $respons, "1", "1.0", "", "", $request->deviceId ?? "");
         }
         catch(Exception $e)
