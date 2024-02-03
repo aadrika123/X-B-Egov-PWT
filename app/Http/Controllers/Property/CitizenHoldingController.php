@@ -658,7 +658,7 @@ class CitizenHoldingController extends Controller
             }
             $testPayment = checkPaymentStatus($reqData->req_ref_no);
             if(!$testPayment["status"]){
-                throw new Exception("Some Errors Occurs");
+                throw new Exception($testPayment["errors"]);
             }
             $respons = (object)$testPayment["response"];
             $PaymentStatus = $respons->status;             
