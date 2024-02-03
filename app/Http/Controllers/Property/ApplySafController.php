@@ -181,7 +181,6 @@ class ApplySafController extends Controller
                 if ($request['floor']) {
                     $floorDetail = $request['floor'];
                     $this->checkBifurcationFloorCondition($floorDetail);
-                    dd('OK');
                     foreach ($floorDetail as $floorDetails) {
                         $floor = new PropActiveSafsFloor();
                         $floor->addfloor($floorDetails, $safId, $user_id, $request->assessmentType, $request['biDateOfPurchase'] ?? null);
