@@ -1379,9 +1379,9 @@ class Report implements IReport
 
             $jsk[] = [
                 "transaction_mode" => "Total JSK",
-                "holding_count"    => $totalCollectionJsk,
-                "tran_count"       => $totalHoldingJsk,
-                "amount"           => $totalTranJsk
+                "holding_count"    => $totalHoldingJsk,
+                "tran_count"       => $totalTranJsk,
+                "amount"           => $totalCollectionJsk,
             ];
             $funal["jsk"] = $jsk;
             // $funal["query"] = DB::getQueryLog();

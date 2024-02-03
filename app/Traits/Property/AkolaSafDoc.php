@@ -15,14 +15,17 @@ use Illuminate\Support\Facades\Config;
  * | Created By-Sandeep Bara
  */
 
- trait AkolaSafDoc
- {
+trait AkolaSafDoc
+{
     use SafDoc;
 
     public function getPropTypeDocList($refSafs)
     {
         $propTypes = Config::get('PropertyConstaint.PROPERTY-TYPE');
+        $transferTypes = Config::get('PropertyConstaint.TRANSFER_MODES');
+        $flippedTransferMode = flipConstants($transferTypes);
         $propType = $refSafs->prop_type_mstr_id;
+        $transferType = $refSafs->transfer_mode_mstr_id;
         $flip = flipConstants($propTypes);
         $this->_refSafs = $refSafs;
         $this->_documentLists = "";
@@ -46,10 +49,15 @@ use Illuminate\Support\Facades\Config;
         // }
         // if ($refSafs->assessment_type == 'Mutation' && $propType!=$flip['VACANT LAND'])
         {
-            $this->_documentLists.= collect($this->_propDocList)->where('code', 'AKOLA_SALE')->first()->requirements;
-            $this->_documentLists.= collect($this->_propDocList)->where('code', 'AKOLA_BULDING')->first()->requirements;
-        } 
-        
+            $this->_documentLists .= collect($this->_propDocList)->where('code', 'AKOLA_SALE')->first()->requirements;
+            $this->_documentLists .= collect($this->_propDocList)->where('code', 'AKOLA_BULDING')->first()->requirements;
+        }
+        if ($flippedTransferMode['Imla'] == $transferType){
+            $this->_documentLists = collect($this->_propDocList)->where('code', 'AKOLA_APP_DOCS')->first()->requirements;
+            $this->_documentLists .= collect($this->_propDocList)->where('code', 'AKOLA_IMLA')->first()->requirements;
+        }
+
+
         return $this->_documentLists;
     }
 
@@ -61,33 +69,32 @@ use Illuminate\Support\Facades\Config;
         $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
         $uploadedDocs = $mWfActiveDocument->getDocByRefIds($applicationId, $workflowId, $moduleId);
         $explodeDocs = collect(explode('#', $documentList))->filter();
-        
+
         $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $ownerId) {
             $document = explode(',', $explodeDoc);
             $key = array_shift($document);
             $docName =  array_shift($document);
-            $docName = str_replace("{","",str_replace("}","",$docName));
+            $docName = str_replace("{", "", str_replace("}", "", $docName));
             $documents = collect();
-            collect($document)->map(function ($item) use ($uploadedDocs, $documents, $ownerId,$docName) {
-                
+            collect($document)->map(function ($item) use ($uploadedDocs, $documents, $ownerId, $docName) {
+
                 $uploadedDoc = $uploadedDocs->where('doc_code', $docName)
                     ->where('owner_dtl_id', $ownerId)
                     ->first();
-                if(!$uploadedDoc)
-                {
+                if (!$uploadedDoc) {
                     $uploadedDoc = $uploadedDocs->where('doc_code', $item)
-                    ->where('owner_dtl_id', $ownerId)
-                    ->first();
+                        ->where('owner_dtl_id', $ownerId)
+                        ->first();
                 }
                 if ($uploadedDoc) {
-                    $seconderyData = (new SecondaryDocVerification())->SeconderyWfActiveDocumentById($uploadedDoc->id??0);
+                    $seconderyData = (new SecondaryDocVerification())->SeconderyWfActiveDocumentById($uploadedDoc->id ?? 0);
                     $response = [
                         "uploadedDocId" => $uploadedDoc->id ?? "",
                         "documentCode" => $item,
                         "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
                         "docPath" => $uploadedDoc->doc_path ?? "",
                         "verifyStatus" => ($uploadedDoc->verify_status ?? ""),
-                        "remarks" =>  ($uploadedDoc->remarks ?? ""),
+                        "remarks" => ($uploadedDoc->remarks ?? ""),
                     ];
                     $documents->push($response);
                 }
@@ -112,8 +119,8 @@ use Illuminate\Support\Facades\Config;
             });
             return $reqDoc;
         });
-        
-        return collect($filteredDocs)->values()??[];
+
+        return collect($filteredDocs)->values() ?? [];
     }
     public function check($documentsList)
     {
@@ -148,9 +155,8 @@ use Illuminate\Support\Facades\Config;
             "docUploadStatus" => 0,
             "docVerifyStatus" => 0,
         ];
-        $data["docUploadStatus"] = (empty($is_ownerUploadedDoc->all()) && empty($is_appMandUploadedDoc->all()) && empty($is_ownerDocRejected->all()) && empty($is_appUploadedDocRejected->all()) );
+        $data["docUploadStatus"] = (empty($is_ownerUploadedDoc->all()) && empty($is_appMandUploadedDoc->all()) && empty($is_ownerDocRejected->all()) && empty($is_appUploadedDocRejected->all()));
         $data["docVerifyStatus"] =  (empty($is_ownerDocVerify->all()) && empty($is_appUploadedDocVerified->all()));
         return ($data);
     }
- }
-
+}

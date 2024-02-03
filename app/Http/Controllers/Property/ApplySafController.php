@@ -18,6 +18,7 @@ use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropDemand;
+use App\Models\Property\PropFloor;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafsDemand;
@@ -179,6 +180,7 @@ class ApplySafController extends Controller
             if ($request->propertyType != 4) {
                 if ($request['floor']) {
                     $floorDetail = $request['floor'];
+                    $this->checkBifurcationFloorCondition($floorDetail);
                     foreach ($floorDetail as $floorDetails) {
                         $floor = new PropActiveSafsFloor();
                         $floor->addfloor($floorDetails, $safId, $user_id, $request->assessmentType, $request['biDateOfPurchase'] ?? null);
@@ -331,6 +333,30 @@ class ApplySafController extends Controller
         if (($activeSafPlotArea + $currentSafPlotArea) == $propertyPlotArea)
             throw new Exception("You Can't apply for Bifurcation. Please Apply Mutation.");
         return $newAreaOfPlot;
+    }
+
+    /**
+     * | Check Bifurcation Floor Condition
+     */
+    public function checkBifurcationFloorCondition($floorDetail)
+    {
+        $req = $this->_REQUEST;
+        $mPropFloors = new PropFloor();
+        $assessmentType = $req->assessmentType;
+        if ($assessmentType == 'Bifurcation') {
+
+            foreach ($floorDetail as $requestFloor) {
+                $propFloorDtls = $mPropFloors::find($requestFloor['propFloorDetailId']);
+                $safFloorDtls  = PropActiveSafsFloor::where('prop_floor_details_id', $requestFloor['propFloorDetailId'])->where('status', 1)->get();
+                $currentFloorArea  = $requestFloor['biBuildupArea'];
+                $propFloorArea  = $propFloorDtls->builtup_area;
+                $safFloorArea   = $safFloorDtls->sum('builtup_area');
+                $newAreaOfPlot  = $propFloorArea - $safFloorArea;
+
+                if (($safFloorArea + $currentFloorArea) > $propFloorArea)
+                    throw new Exception("You have excedeed the floor area. Please insert plot area below " . $newAreaOfPlot . " of floor id" . $requestFloor['propFloorDetailId']);
+            }
+        }
     }
 
 
