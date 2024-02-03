@@ -812,7 +812,7 @@ class ActiveSafController extends Controller
             $data = array();
             $prevOwnerDtls = array();
             $user = Auth()->user();
-
+            $is_approved = false;
             // Derivative Assignments
             $data = $mPropActiveSaf->getActiveSafDtls()                         // <------- Model function Active SAF Details
                 ->where('prop_active_safs.id', $req->applicationId)
@@ -824,6 +824,7 @@ class ActiveSafController extends Controller
                 $data = $mPropSaf->getSafDtls()
                     ->where('prop_safs.id', $req->applicationId)
                     ->first();
+                $is_approved = true;
             }
 
             if (collect($data)->isEmpty())
@@ -895,9 +896,9 @@ class ActiveSafController extends Controller
             }
             $usertype = $this->_COMMONFUNCTION->getUserAllRoles();
             $testRole = collect($usertype)->whereIn("sort_name", Config::get("TradeConstant.CANE-CUTE-PAYMENT"));
-            $data["can_take_payment"] = (collect($testRole)->isNotEmpty() && ($data["proccess_fee_paid"] ?? 1) == 0) ? true : false;
+            $data["can_take_payment"] = ($is_approved && collect($testRole)->isNotEmpty() && ($data["proccess_fee_paid"] ?? 1) == 0) ? true : false;
             if ($this->_COMMONFUNCTION->checkUsersWithtocken("active_citizens")) {
-                $data["can_take_payment"] = (($data["proccess_fee_paid"] ?? 1) == 0) ? true : false;
+                $data["can_take_payment"] = (($data["proccess_fee_paid"] ?? 1) == 0 && $is_approved ) ? true : false;
             }
 
             return responseMsgs(true, "Saf Dtls", remove_null($data), "010127", "1.0", "", "POST", $req->deviceId ?? "");
