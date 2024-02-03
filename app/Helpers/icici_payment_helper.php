@@ -15,7 +15,8 @@ if(!function_exists("checkPaymentStatus")){
             $response["response"]["response"] = $data;
             $data = (explode("&",$data));            
             foreach($data as $val){
-                list($key,$values) = explode("=",$val);
+                $key = explode("=",$val)[0]??"";
+                $values = explode("=",$val)[1]??"";
                 $response["response"][$key] = $values;
                 if($key=="status")
                 {
