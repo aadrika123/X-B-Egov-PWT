@@ -240,13 +240,20 @@ class CitizenHoldingController extends Controller
             throw new Exception("No Transaction Found");
         }
         if ($request->Status == 'SUCCESS' || $request->ResponseCode == 'E000'){
-            return $this->ICICPaymentResponse($request);            
+            $responsData =  $this->ICICPaymentResponse($request);  
+            $respons =  $responsData->original["data"];
+            $respons["bankResponse"]=$request->Status;
+            if(!$responsData->original["status"])
+            {
+                throw new Exception($responsData->original["message"]) ;
+            }            
+            return responseMsgs(true, "", $respons, "1", "1.0", "", "", $request->deviceId ?? "");         
         }
         try{
             DB::beginTransaction();
             $reqData->update(['payment_status' => 2,"is_manual_update"=>$request->isManualUpdate]);
             DB::commit();
-            $respons = ["bankResponse"=>$request->Status];
+            $respons = ["bankResponse"=>$request->Status,"TransactionNo"=>"","transactionId"=>""];
             return responseMsgs(true, "", $respons, "1", "1.0", "", "", $request->deviceId ?? "");
         }
         catch(Exception $e)
@@ -651,7 +658,7 @@ class CitizenHoldingController extends Controller
             }
             $testPayment = checkPaymentStatus($reqData->req_ref_no);
             if(!$testPayment["status"]){
-                throw new Exception("Some Errors Occurs");
+                throw new Exception($testPayment["errors"]);
             }
             $respons = (object)$testPayment["response"];
             $PaymentStatus = $respons->status;             
