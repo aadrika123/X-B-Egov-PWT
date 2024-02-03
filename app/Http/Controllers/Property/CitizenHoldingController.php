@@ -240,7 +240,14 @@ class CitizenHoldingController extends Controller
             throw new Exception("No Transaction Found");
         }
         if ($request->Status == 'SUCCESS' || $request->ResponseCode == 'E000'){
-            return $this->ICICPaymentResponse($request);            
+            $responsData =  $this->ICICPaymentResponse($request);  
+            $respons =  $responsData->original["data"];
+            $respons["bankResponse"]=$request->Status;
+            if(!$responsData->original["status"])
+            {
+                throw new Exception($responsData->original["message"]) ;
+            }            
+            return responseMsgs(true, "", $respons, "1", "1.0", "", "", $request->deviceId ?? "");         
         }
         try{
             DB::beginTransaction();
