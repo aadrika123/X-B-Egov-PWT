@@ -558,8 +558,7 @@ class CitizenHoldingController extends Controller
                         left join ulb_ward_masters on ulb_ward_masters.id = saf.ward_mstr_id	 
                         
                 )saf
-            "),"saf.id","prop_icici_payments_requests.id")
-            ->whereBetween(DB::raw("CAST(prop_icici_payments_requests.created_at AS DATE)"),[$fromDate,$uptoDate])
+            "),"saf.id","prop_icici_payments_requests.id")            
             ->where("prop_icici_payments_requests.status",1)
             ->where("prop_icici_payments_requests.payment_status",$PaymentStatus);
 
@@ -580,6 +579,9 @@ class CitizenHoldingController extends Controller
                     $query->where("saf.saf_no",$applicationNo)
                           ->OrWhere("prop.holding_no",$applicationNo);
                 });
+            }
+            else{
+                $data->whereBetween(DB::raw("CAST(prop_icici_payments_requests.created_at AS DATE)"),[$fromDate,$uptoDate]);
             }
             $data->OrderBy("prop_icici_payments_requests.id","ASC")
                 ->OrderBy("prop_icici_payments_requests.prop_id","ASC");
