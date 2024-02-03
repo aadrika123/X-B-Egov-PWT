@@ -27,7 +27,7 @@ if(!function_exists("checkPaymentStatus")){
         }
         catch(Exception $e)
         {
-            $response["status"] = true;
+            $response["status"] = false;
             $response["errors"] = $e->getMessage();
             $response["response"] = [];
         }
