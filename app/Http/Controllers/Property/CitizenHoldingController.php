@@ -661,7 +661,7 @@ class CitizenHoldingController extends Controller
                 throw new Exception($testPayment["errors"]);
             }
             $respons = (object)$testPayment["response"];
-            $PaymentStatus = $respons->status;             
+            $PaymentStatus = $respons->status??null;             
             $mReqs = [
                 "RT"            => $respons->RT            ?? null,
                 "IcId"          => $respons->IcId          ?? null,
@@ -669,7 +669,7 @@ class CitizenHoldingController extends Controller
                 "PayMode"       => $respons->PaymentMode   ?? null,
                 "TrnDate"       => $respons->trandate      ?? null,
                 "SettleDT"      => $respons->sdt            ?? null,
-                "Status"        => strtoupper($respons->status) ?? null,
+                "Status"        => strtoupper($respons->status??null) ?? null,
                 "InitiateDT"    => $respons->InitiateDT    ?? null,
                 "TranAmt"       => $respons->amount       ?? null,
                 "BaseAmt"       => $respons->amount       ?? null,
@@ -687,7 +687,7 @@ class CitizenHoldingController extends Controller
                 "HashVal"       => $respons->HashVal       ?? null,
                 "reqRefNo"      => $reqData->req_ref_no    ?? null,
                 "isManualUpdate"=> true,
-                "reason"        => $respons->reason,
+                "reason"        => $respons->reason??"",
             ];
             $newRequest = new Request($mReqs);
             return $this->ICICPaymentFailSuccess($newRequest);
