@@ -168,7 +168,7 @@ class CitizenHoldingController extends Controller
         if (collect($reqData)->isEmpty())
             throw new Exception("No Transaction Found");
 
-        $reqData->update(['payment_status' => 1]);
+        $reqData->update(['payment_status' => 1,"is_manual_update"=>$req->has("isManualUpdate")?$req->isManualUpdate:false]);
 
         $newReqs = new ReqPayment([
             "paymentType" => $reqData->tran_type,
@@ -228,6 +228,32 @@ class CitizenHoldingController extends Controller
         $this->_PropIciciPaymentsRespone->store($mReqs);
 
         return $data;
+    }
+
+    public function ICICPaymentFailSuccess(Request $request)
+    {
+        $reqData  = $this->_PropIciciPaymentsRequest->where('req_ref_no', $request['reqRefNo'])
+            ->where('payment_status', 0)
+            ->first();
+              
+        if (collect($reqData)->isEmpty()){
+            throw new Exception("No Transaction Found");
+        }
+        if ($request->Status == 'SUCCESS' || $request->ResponseCode == 'E000'){
+            return $this->ICICPaymentResponse($request);            
+        }
+        try{
+            DB::beginTransaction();
+            $reqData->update(['payment_status' => 2,"is_manual_update"=>$request->isManualUpdate]);
+            DB::commit();
+            $respons = ["bankResponse"=>$request->Status];
+            return responseMsgs(true, "", $respons, "1", "1.0", "", "", $request->deviceId ?? "");
+        }
+        catch(Exception $e)
+        {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "1", "1.0", "", "", $request->deviceId ?? "");
+        }
     }
 
     public function testIcic(Request $req)
@@ -622,7 +648,40 @@ class CitizenHoldingController extends Controller
                 throw New Exception("Payment Already cleared");
             }
             $testPayment = checkPaymentStatus($reqData->req_ref_no);
-            return($testPayment );
+            if(!$testPayment["status"]){
+                throw new Exception("Some Errors Occurs");
+            }
+            $respons = (object)$testPayment["response"];
+            $PaymentStatus = $respons->status;             
+            $mReqs = [
+                "RT"            => $respons->RT            ?? null,
+                "IcId"          => $respons->IcId          ?? null,
+                "TrnId"         => $respons->TrnId         ?? null,
+                "PayMode"       => $respons->PaymentMode   ?? null,
+                "TrnDate"       => $respons->trandate      ?? null,
+                "SettleDT"      => $respons->sdt            ?? null,
+                "Status"        => strtoupper($respons->status) ?? null,
+                "InitiateDT"    => $respons->InitiateDT    ?? null,
+                "TranAmt"       => $respons->amount       ?? null,
+                "BaseAmt"       => $respons->amount       ?? null,
+                "ProcFees"      => $respons->ProcFees      ?? null,
+                "STax"          => $respons->STax          ?? null,
+                "M_SGST"        => $respons->M_SGST        ?? null,
+                "M_CGST"        => $respons->M_CGST        ?? null,
+                "M_UTGST"       => $respons->M_UTGST       ?? null,
+                "M_STCESS"      => $respons->M_STCESS      ?? null,
+                "M_CTCESS"      => $respons->M_CTCESS      ?? null,
+                "M_IGST"        => $respons->M_IGST        ?? null,
+                "GSTState"      => $respons->GSTState      ?? null,
+                "BillingState"  => $respons->BillingState  ?? null,
+                "Remarks"       => $respons->Remarks       ?? null,
+                "HashVal"       => $respons->HashVal       ?? null,
+                "reqRefNo"      => $reqData->req_ref_no    ?? null,
+                "isManualUpdate"=> true,
+                "reason"        => $respons->reason,
+            ];
+            $newRequest = new Request($mReqs);
+            return $this->ICICPaymentFailSuccess($newRequest);
         }
         catch(Exception $e)
         {
