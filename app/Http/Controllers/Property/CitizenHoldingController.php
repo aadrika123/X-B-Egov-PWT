@@ -617,12 +617,12 @@ class CitizenHoldingController extends Controller
             {
                 throw New Exception("Request Data Not Found");
             }
-            if(!$reqData->payment_status==1)
+            if($reqData->payment_status==1)
             {
                 throw New Exception("Payment Already cleared");
             }
             $testPayment = checkPaymentStatus($reqData->req_ref_no);
-            dd($testPayment );
+            return($testPayment );
         }
         catch(Exception $e)
         {

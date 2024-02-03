@@ -375,6 +375,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('citizen/icici-payment-response', 'ICICPaymentResponse');         // (02.3) unthicatd/Property/ payment response
     Route::post('citizen/test', 'testIcic');
     Route::post('citizen/icici-payment-status-list', 'getIciciPendingPaymentList');
+    Route::post('citizen/icici-payment-update-status', 'updateIciciPendingPayment');
 
     #========created by Sandeep===================
     Route::post('v1/init-pine-lab-payment', 'pinLabInitPement');                        // (16) For React And Posh Machine Pine Lab Get Reference No
