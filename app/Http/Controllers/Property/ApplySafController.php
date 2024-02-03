@@ -348,13 +348,13 @@ class ApplySafController extends Controller
             foreach ($floorDetail as $requestFloor) {
                 $propFloorDtls = $mPropFloors::find($requestFloor['propFloorDetailId']);
                 $safFloorDtls  = PropActiveSafsFloor::where('prop_floor_details_id', $requestFloor['propFloorDetailId'])->where('status', 1)->get();
-                $currentFloorArea  = $requestFloor['buildupArea'];
+                $currentFloorArea  = $requestFloor['biBuildupArea'];
                 $propFloorArea  = $propFloorDtls->builtup_area;
                 $safFloorArea   = $safFloorDtls->sum('builtup_area');
                 $newAreaOfPlot  = $propFloorArea - $safFloorArea;
 
                 if (($safFloorArea + $currentFloorArea) > $propFloorArea)
-                    throw new Exception("You have excedeed the floor area. Please insert plot area below " . $newAreaOfPlot . "of floor" . $requestFloor['propFloorDetailId']);
+                    throw new Exception("You have excedeed the floor area. Please insert plot area below " . $newAreaOfPlot . "of floor " . $requestFloor['propFloorDetailId']);
             }
         }
     }
