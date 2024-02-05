@@ -414,8 +414,13 @@ class Report implements IReport
             }
 
             $select = [
-                "licences.id", "licences.ward_id", "licences.application_type_id",
-                "licences.ulb_id", "licences.application_no", "licences.provisional_license_no",
+                "licences.id",
+                "licences.ward_id",
+                "licences.application_type_id",
+                "application_type",
+                "licences.ulb_id",
+                "licences.application_no",
+                "licences.provisional_license_no",
                 "licences.license_no",
                 "licences.firm_name",
                 "trade_param_firm_types.firm_type",
@@ -433,6 +438,7 @@ class Report implements IReport
             $data = $this->_DB->TABLE("trade_licences AS licences")
                 ->select($select1)
                 ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
+                ->join("trade_param_application_types", "trade_param_application_types.id", "licences.application_type_id")
                 ->leftjoin("ulb_ward_masters", "ulb_ward_masters.id", "licences.ward_id")
                 ->leftjoin("trade_param_firm_types", "trade_param_firm_types.id", "licences.firm_type_id");
 
@@ -463,6 +469,7 @@ class Report implements IReport
                 $old = $this->_DB->TABLE("trade_renewals AS licences")
                     ->select($select2)
                     ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
+                    ->join("trade_param_application_types", "trade_param_application_types.id", "licences.application_type_id")
                     ->leftjoin("ulb_ward_masters", "ulb_ward_masters.id", "licences.ward_id")
                     ->leftjoin("trade_param_firm_types", "trade_param_firm_types.id", "licences.firm_type_id");
                 if ($ulbId) {
@@ -2016,6 +2023,7 @@ class Report implements IReport
                 "licences.holding_no",
                 "licences.address",
                 "licences.application_type_id",
+                "application_type",
                 "owner.owner_name",
                 "owner.guardian_name",
                 "owner.mobile",
@@ -2031,6 +2039,7 @@ class Report implements IReport
             $active = $this->_DB->TABLE("active_trade_licences AS licences")
                 ->select($select)
                 ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
+                ->join("trade_param_application_types", "trade_param_application_types.id", "licences.application_type_id")
                 ->join("ulb_ward_masters", function ($join) {
                     $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
                 })
@@ -2054,6 +2063,7 @@ class Report implements IReport
             $approved = $this->_DB->TABLE("trade_licences AS licences")
                 ->select($select)
                 ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
+                ->join("trade_param_application_types", "trade_param_application_types.id", "licences.application_type_id")
                 ->join("ulb_ward_masters", function ($join) {
                     $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
                 })
@@ -2076,6 +2086,7 @@ class Report implements IReport
             $rejected = $this->_DB->TABLE("rejected_trade_licences AS licences")
                 ->select($select)
                 ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
+                ->join("trade_param_application_types", "trade_param_application_types.id", "licences.application_type_id")
                 ->join("ulb_ward_masters", function ($join) {
                     $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
                 })
