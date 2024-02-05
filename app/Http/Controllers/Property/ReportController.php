@@ -482,6 +482,29 @@ class ReportController extends Controller
         return $this->Repository->notPayedFrom($request);
     }
 
+    public function dueDemandPropList(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [                
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "wardMstrId" => "nullable|digits_between:1,9223372036854775807",
+                "zoneId"    => "nullable|digits_between:1,9223372036854775807",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        if ($validated->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validated->errors()
+            ]);
+        }
+        $request->merge(["metaData" => ["pr18.1", 1.1, null, $request->getMethod(), null,]]);
+        return $this->Repository->dueDemandPropList($request);
+    }
+
     /**
      * | Dcb Pie Chart
      */
