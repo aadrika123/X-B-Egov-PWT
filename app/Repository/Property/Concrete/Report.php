@@ -3342,6 +3342,140 @@ class Report implements IReport
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
+    
+    public function dueDemandPropList(Request $request)
+    {      
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;  
+        try{
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $limit = $perPage;
+            $offset =  $request->page && $request->page > 0 ? (($request->page - 1) * $perPage) : 0;
+            $zoneId = $wardMstrId = NULL;
+            $ulbId = authUser($request)->ulb_id;
+            $fiYear = getFY();
+            list($fromYear ,$uptoyear) = explode("-",$fiYear) ;
+            $fromDate = $fromYear."-04-01";
+            $uptoDate = $uptoyear."-03-31";
+            if ($request->wardMstrId) {
+                $wardMstrId = $request->wardMstrId;
+            }
+            if ($request->zoneId) {
+                $zoneId = $request->zoneId;
+            }
+            if ($request->ulbId) {
+                $ulbId = $request->ulbId;
+            }
+            $with = "
+                    with demands as(
+                        select prop_demands.property_id, prop_demands.total_tax, prop_demands.balance, prop_demands.fyear, prop_demands.due_total_tax,
+                            prop_demands.is_old, prop_demands.created_at,
+                            SPLIT_PART(prop_demands.fyear,'-',2) as upto_year,
+                            (
+                                case when prop_demands.paid_status = 1 then prop_demands.due_total_tax 			
+                                else total_tax end
+                            ) as actual_demand,
+                            (
+                                case when prop_demands.is_full_paid = false then prop_demands.due_total_tax else total_tax end
+                            ) /12 as monthly_tax,
+                            case when prop_properties.prop_type_mstr_id = 4 and  prop_demands.is_old != true and prop_demands.created_at is not null 
+                                    and (prop_demands.created_at::date between '$fromDate' and '$uptoDate')
+                                    then (0)
+                                when prop_demands.fyear < '$fiYear' and prop_demands.is_old != true
+                                    then (
+                                        (DATE_PART('YEAR', current_date) - DATE_PART('YEAR', concat(SPLIT_PART(prop_demands.fyear,'-',2),'-04-01') :: DATE)) * 12
+                                        + (DATE_PART('Month', current_date :: DATE) - DATE_PART('Month', concat(SPLIT_PART(prop_demands.fyear,'-',2),'-04-01') :: DATE))
+                                    )+1
+                                when prop_demands.fyear < '$fiYear' and prop_demands.is_old = true 
+                                    then (
+                                            (DATE_PART('YEAR', current_date) - DATE_PART('YEAR', concat(SPLIT_PART(prop_demands.fyear,'-',2),'-09-01') :: DATE)) * 12
+                                            + (DATE_PART('Month', current_date :: DATE) - DATE_PART('Month', concat(SPLIT_PART(prop_demands.fyear,'-',2),'-09-01') :: DATE))
+                                        )
+                                
+                                else 0 end AS month_diff,
+                            prop_properties.prop_type_mstr_id
+                        from prop_demands
+                        join prop_properties on prop_properties.id = prop_demands.property_id
+                        where prop_demands.status =1 
+                        order by prop_demands.property_id,prop_demands.fyear
+                    ),
+                    demand_with_penalty as (
+                        select property_id, sum(actual_demand) as actual_demand,min(fyear) as from_year,max(fyear)as upto_year,
+                            sum(case when fyear < '$fiYear' then actual_demand else 0 end)as arrear_demand,
+                            sum(case when fyear = '$fiYear' then actual_demand else 0 end)as current_demand,
+                            sum((actual_demand * month_diff *0.02)) as two_per_penalty 
+                        from demands 
+                        where actual_demand > 0
+                        group by property_id
+                    ),
+                    arrea_pending_penalty as (
+                        select prop_pending_arrears.prop_id,sum(prop_pending_arrears.due_total_interest) as priv_total_interest
+                        from prop_pending_arrears
+                        join demand_with_penalty on demand_with_penalty.property_id = prop_pending_arrears.prop_id
+                        where prop_pending_arrears.paid_status =0 and prop_pending_arrears.status =1
+                        group by prop_pending_arrears.prop_id
+                    ),
+                    owners as (
+                        select prop_owners.property_id,
+                            string_agg((case when trim(prop_owners.owner_name_marathi)='' then prop_owners.owner_name else owner_name_marathi end),', ') as owner_name,
+                            string_agg(prop_owners.mobile_no,', ') as mobile_no
+                        from prop_owners
+                        join demand_with_penalty on demand_with_penalty.property_id = prop_owners.property_id
+                        where prop_owners.status =1
+                        group by prop_owners.property_id
+                    )
+            ";
+            $select=" select prop_properties.id,zone_masters.zone_name,ulb_ward_masters.ward_name,prop_properties.holding_no,prop_properties.property_no,
+                        prop_properties.prop_address ,
+                        owners.owner_name, owners.mobile_no, 
+                        demand_with_penalty.from_year, demand_with_penalty.upto_year,                        
+                        demand_with_penalty.actual_demand,
+                        demand_with_penalty.arrear_demand,demand_with_penalty.current_demand,
+                        demand_with_penalty.two_per_penalty,arrea_pending_penalty.priv_total_interest,
+                        ( 
+                            coalesce(demand_with_penalty.two_per_penalty,0)
+                             + coalesce(arrea_pending_penalty.priv_total_interest,0)
+                        ) as total_intrest,
+                        (coalesce(demand_with_penalty.actual_demand,0)
+                        + coalesce(demand_with_penalty.two_per_penalty,0)
+                        + coalesce(arrea_pending_penalty.priv_total_interest,0)
+                        ) as total_demand
+            ";
+            $from=" from demand_with_penalty
+                    join prop_properties on prop_properties.id = demand_with_penalty.property_id
+                    left join owners on owners.property_id = demand_with_penalty.property_id
+                    left join arrea_pending_penalty on arrea_pending_penalty.prop_id = demand_with_penalty.property_id
+                    left join zone_masters on zone_masters.id = prop_properties.zone_mstr_id
+                    left join ulb_ward_masters on ulb_ward_masters.id = prop_properties.ward_mstr_id
+            ";
+            $where=" WHERE prop_properties.status IN(1,3)
+                    " . ($wardMstrId ? " AND ulb_ward_masters.id = $wardMstrId" : "") . "  
+                    " . ($zoneId ? " AND zone_masters.id = $zoneId" : "") . "
+                    " . ($ulbId ? " AND prop_properties.ulb_id = $ulbId" : "") . " 
+            ";
+            $orderBy = " ORDER BY prop_properties.ward_mstr_id,prop_properties.id";
+            $offsetLimit=" limit $limit offset $offset ";
+            $dataSql = $with.$select.$from.$where.$orderBy.$offsetLimit;
+            $countSql = $with." select count(*) AS total ".$from.$where;
+
+            $data = DB::SELECT($dataSql);
+
+            $total = (collect(DB::SELECT($countSql))->first())->total ?? 0;
+            $lastPage = ceil($total / $perPage);
+            $list = [
+                "current_page" => $page,
+                "data" => $data,
+                "total" => $total,
+                "per_page" => $perPage,
+                "last_page" => $lastPage
+            ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
+    }
 
     /**
      * | DCB Pie Chart

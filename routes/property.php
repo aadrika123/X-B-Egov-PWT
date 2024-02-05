@@ -512,6 +512,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('reports/not-paid-from-2016', 'notPaidFrom2016');       //done
     Route::post('reports/previous-year-paid-not-current-year', 'previousYearPaidButnotCurrentYear'); //done
     Route::post('reports/not-pay-from', 'notPayedFrom');
+    Route::post('reports/due-demand-prop-list', 'dueDemandPropList');
     Route::post('reports/dcb-piechart', 'dcbPieChart');                                             //done
     Route::post('reports/prop/saf/collection', 'propSafCollection');                          //done
     Route::post('reports/prop/saf/collection-tc', 'propSafCollectionTc');
