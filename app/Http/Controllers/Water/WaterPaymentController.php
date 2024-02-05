@@ -2809,7 +2809,7 @@ class WaterPaymentController extends Controller
                 'id'                => $request->consumerId,
                 'ulbId'             => $refUlbId,
                 'chargeCategory'    => "Demand Collection",                                 // Static
-                'leftDemandAmount'  => $finalCharges['leftDemandAmount'], 
+                'leftDemandAmount'  => $finalCharges['leftDemandAmount'],
                 'adjustedAmount'    => $finalCharges['adjustedAmount'],
                 'partPayment'       => 'part payment',
                 'isJsk'             => true                                                 // Static
@@ -2894,12 +2894,10 @@ class WaterPaymentController extends Controller
         $offlinePaymentModesV2      = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
         $refAmount                  = round($request->amount);
         $remaningAmount             = round($refConsumercharges->sum('due_balance_amount'));
-        $toatalArrearDemand         = round($consumercharges->sum('arrear_demand'));
-        $totalCurrentDemand         = round($consumercharges->sum('current_demand'));
-        $leftArrearAmount           = 0;
         if ($remaningAmount > $refAmount) {
             throw new Exception("please select the month properly for part payament!");
         }
+
         if (in_array($request['paymentMode'], $offlinePaymentModesV2)) {
             $popedDemand->paid_status = 2;                                       // Update Demand Paid Status // Static
             $mWaterTran->saveVerifyStatus($waterTrans['id']);
@@ -2907,17 +2905,14 @@ class WaterPaymentController extends Controller
             $popedDemand->paid_status = 1;                                      // Update Demand Paid Status // Static
         }
 
-        if ($refAmount <= $toatalArrearDemand) {
-            $leftArrearAmount = $toatalArrearDemand - $refAmount;
-            $popedDemand->current_demand     = $totalCurrentDemand;
+        if (!$refConsumercharges->first()) {
+            $refPaidAmount      = ($consumercharges->sum('due_balance_amount')) - $refAmount;
+            $remaningBalance    = $refPaidAmount;
         } else {
-            $leftAmount  = $refAmount - $toatalArrearDemand;
-            $leftCurrentAmount = $totalCurrentDemand - $leftAmount;
-            $popedDemand->current_demand    = $leftCurrentAmount;
+            $refPaidAmount      = $refAmount - $refConsumercharges->sum('balance_amount');
+            $remaningBalance    = $popedDemand->due_balance_amount - $refPaidAmount;
         }
-        $popedDemand->arrear_demand      = $leftArrearAmount;
-        $totalleftDemand = $popedDemand->arrear_demand + $popedDemand->current_demand;
-        $popedDemand->due_balance_amount = $totalleftDemand;  
+        $popedDemand->due_balance_amount = $remaningBalance;
         $popedDemand->save();                                                   // Save Demand
 
         # Save transaction details 
@@ -2930,7 +2925,6 @@ class WaterPaymentController extends Controller
         );
         $mWaterConsumerCollection->saveConsumerCollection($popedDemand, $waterTrans, $request->auth['id'] ?? null, $refAmount);
     }
-
 
     /**
      * | Adjust the demand for part payament 

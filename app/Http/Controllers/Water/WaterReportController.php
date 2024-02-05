@@ -1798,6 +1798,7 @@ class WaterReportController extends Controller
                             'water' as type,
                             water_second_consumers.saf_no,
                             water_second_consumers.user_type,
+                            water_second_consumers.consumer_no,
                             water_trans.id AS tran_id,
                             water_second_consumers.property_no,
                             water_second_consumers.address,
