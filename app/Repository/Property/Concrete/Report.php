@@ -981,6 +981,7 @@ class Report implements IReport
 
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $total = $data->get();
             $paginator = $data->paginate($perPage);
             $list = [
 
@@ -988,7 +989,7 @@ class Report implements IReport
                 "last_page" => $paginator->lastPage(),
                 "data" => $paginator->items(),
                 "total" => $paginator->total(),
-                "totalSAf" => collect($paginator->items())->sum("total"),
+                "totalSaf" => collect($total)->sum("total"),
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
