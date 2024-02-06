@@ -957,10 +957,10 @@ class Report implements IReport
             $mWardIds = $mWardPermission->implode("ward_id", ",");
             $mWardIds = explode(',', ($mWardIds ? $mWardIds : "0"));
 
-            $data = UlbWardMaster::SELECT(
+            $data = DB::table("ulb_ward_masters")->SELECT(
                 DB::RAW(" DISTINCT(ward_name) as ward_no, COUNT(prop_active_safs.id) AS total")
             )
-                ->LEFTJOIN("prop_active_safs", "ulb_ward_masters.id", "prop_active_safs.ward_mstr_id");
+                ->LEFTJOIN("prop_active_safs", "prop_active_safs.ward_mstr_id", "ulb_ward_masters.id");
             if ($roleId == 8) {
                 $data = $data->LEFTJOIN("wf_roles", "wf_roles.id", "prop_active_safs.current_role")
                     ->WHERENOTNULL("prop_active_safs.user_id")
@@ -987,6 +987,7 @@ class Report implements IReport
                 "last_page" => $paginator->lastPage(),
                 "data" => $paginator->items(),
                 "total" => $paginator->total(),
+                "totalSAf" => collect($paginator->items())->sum("total"),
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
