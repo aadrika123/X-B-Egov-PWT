@@ -733,18 +733,18 @@ class Report implements IReport
                         });
                 })
                 ->GROUPBY(["wf_roles.id", "wf_roles.role_name"])
-                ->UNION(
-                    PropActiveSaf::SELECT(
-                        DB::RAW("8 AS id, 'JSK' AS role_name,
-                                COUNT(prop_active_safs.id)")
-                    )
-                        ->WHERE("prop_active_safs.ulb_id", $ulbId)
-                        ->WHERENOTNULL("prop_active_safs.user_id")
-                        ->WHERE(function ($where) {
-                            $where->WHERE("prop_active_safs.payment_status", "=", 0)
-                                ->ORWHERENULL("prop_active_safs.payment_status");
-                        })
-                )
+                // ->UNION(
+                //     PropActiveSaf::SELECT(
+                //         DB::RAW("8 AS id, 'JSK' AS role_name,
+                //                 COUNT(prop_active_safs.id)")
+                //     )
+                //         ->WHERE("prop_active_safs.ulb_id", $ulbId)
+                //         ->WHERENOTNULL("prop_active_safs.user_id")
+                //         ->WHERE(function ($where) {
+                //             $where->WHERE("prop_active_safs.payment_status", "=", 0)
+                //                 ->ORWHERENULL("prop_active_safs.payment_status");
+                //         })
+                // )
                 ->GET();
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $data, $apiId, $version, $queryRunTime, $action, $deviceId);
@@ -873,7 +873,7 @@ class Report implements IReport
                 DB::RAW(
                     "count(prop_active_safs.id),
                     users_role.user_id ,
-                    users_role.user_name,
+                    users_role.name as user_name,
                     users_role.wf_role_id as role_id,
                     users_role.role_name"
                 )
