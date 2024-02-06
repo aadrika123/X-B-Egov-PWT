@@ -883,7 +883,7 @@ class Report implements IReport
                         select wf_role_id,user_id,user_name,role_name,concat('{',ward_ids,'}') as ward_ids
                         from (
                             select wf_roleusermaps.wf_role_id,wf_roleusermaps.user_id,
-                            users.user_name, wf_roles.role_name,
+                            users.user_name,users.name, wf_roles.role_name,
                             string_agg(wf_ward_users.ward_id::text,',') as ward_ids
                             from wf_roleusermaps 
                             join wf_roles on wf_roles.id = wf_roleusermaps.wf_role_id
