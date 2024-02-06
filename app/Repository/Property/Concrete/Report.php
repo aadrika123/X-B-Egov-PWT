@@ -892,7 +892,7 @@ class Report implements IReport
                             left join wf_ward_users on wf_ward_users.user_id = wf_roleusermaps.user_id and wf_ward_users.is_suspended = false
                             where wf_roleusermaps.wf_role_id =$roleId
                                 AND wf_roleusermaps.is_suspended = false
-                            group by wf_roleusermaps.wf_role_id,wf_roleusermaps.user_id,users.user_name,wf_roles.role_name
+                            group by wf_roleusermaps.wf_role_id,wf_roleusermaps.user_id,users.user_name,users.name,wf_roles.role_name
                         )role_user_ward
                     ) users_role
                     "),
@@ -906,7 +906,7 @@ class Report implements IReport
                     }
                 )
                 ->WHERE("prop_active_safs.ulb_id", $ulbId)
-                ->groupBy(["users_role.user_id", "users_role.user_name", "users_role.wf_role_id", "users_role.role_name"]);
+                ->groupBy(["users_role.user_id", "users_role.name", "users_role.wf_role_id", "users_role.role_name"]);
 
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
