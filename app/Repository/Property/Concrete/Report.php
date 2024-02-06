@@ -989,7 +989,7 @@ class Report implements IReport
                 "last_page" => $paginator->lastPage(),
                 "data" => $paginator->items(),
                 "total" => $paginator->total(),
-                "totalSaf" => collect($paginator)->sum("total"),
+                "totalSaf" => collect($paginator->items())->sum("total"),
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
