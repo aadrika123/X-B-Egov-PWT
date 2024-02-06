@@ -793,13 +793,14 @@ class Report implements IReport
 
             $data = PropActiveSaf::SELECT(
                 DB::RAW("wf_roles.id AS role_id, wf_roles.role_name,
-                    prop_active_safs.id, prop_active_safs.saf_no, prop_active_safs.prop_address,
+                    prop_active_safs.id, prop_active_safs.saf_no, prop_active_safs.prop_address,prop_type_mstr_id,property_type,
                     ward_name as ward_no, 
                     owner.owner_name, owner.mobile_no")
             )
                 ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "prop_active_safs.ward_mstr_id")
+                ->JOIN("ref_prop_types", "ref_prop_types.id", "prop_active_safs.prop_type_mstr_id")
                 ->LEFTJOIN(DB::RAW("( 
-                                SELECT DISTINCT(prop_active_safs_owners.saf_id) AS saf_id,STRING_AGG(owner_name,',') AS owner_name, 
+                                SELECT DISTINCT(prop_active_safs_owners.saf_id) AS saf_id,STRING_AGG(owner_name,',') AS owner_name,
                                     STRING_AGG(mobile_no::TEXT,',') AS mobile_no
                                 FROM prop_active_safs_owners
                                 JOIN prop_active_safs ON prop_active_safs.id = prop_active_safs_owners.saf_id
