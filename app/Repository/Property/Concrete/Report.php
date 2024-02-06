@@ -880,7 +880,7 @@ class Report implements IReport
             )
                 ->$joins(
                     DB::RAW("(
-                        select wf_role_id,user_id,user_name,role_name,concat('{',ward_ids,'}') as ward_ids
+                        select wf_role_id,user_id,user_name,name,role_name,concat('{',ward_ids,'}') as ward_ids
                         from (
                             select wf_roleusermaps.wf_role_id,wf_roleusermaps.user_id,
                             users.user_name,users.name, wf_roles.role_name,
@@ -906,7 +906,7 @@ class Report implements IReport
                     }
                 )
                 ->WHERE("prop_active_safs.ulb_id", $ulbId)
-                ->groupBy(["users_role.user_id", "users_role.name", "users_role.wf_role_id", "users_role.role_name"]);
+                ->groupBy(["users_role.user_id", "users_role.user_name","users_role.name", "users_role.wf_role_id", "users_role.role_name"]);
 
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
