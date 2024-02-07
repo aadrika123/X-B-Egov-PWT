@@ -205,6 +205,7 @@ class WaterTran extends Model
         $waterTrans->pg_id              = $req['pgId'] ?? null;
         $waterTrans->tran_time          = $nowTime;
         $waterTrans->payment_type       = $req['partPayment'];
+        $waterTrans->device_type        = $req['deviceType'] ?? null;
         if ($req->penaltyIds) {
             $waterTrans->penalty_ids    = $req->penaltyIds;
             $waterTrans->is_penalty     = $req->isPenalty;

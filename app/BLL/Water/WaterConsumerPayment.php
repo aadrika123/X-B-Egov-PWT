@@ -134,6 +134,10 @@ class WaterConsumerPayment
 
     public function readPaymentParams()
     {
+        if(!$this->waterDemands->original["status"])
+        {
+            throw new Exception($this->waterDemands->original["message"]);
+        }
         $demands = $this->waterDemands->original['data']['consumerDemands']; 
         $demands = collect($demands)->sortBy("demand_upto");
         $this->_demands = $demands; 
