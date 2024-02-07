@@ -204,14 +204,14 @@ class WaterConsumerPayment
                         ]
                     );
                     break;
-                case "isArrearPayment":
-                    $payableAmount;
-                    $this->_REQ->merge(
-                        [
-                            'amount' => ($this->_REQ->amount - $addvanceAmt)
-                        ]
-                    );
-                    break;
+                // case "isArrearPayment":
+                //     $payableAmount;
+                //     $this->_REQ->merge(
+                //         [
+                //             'amount' => ($this->_REQ->amount - $addvanceAmt)
+                //         ]
+                //     );
+                //     break;
             }
         }
         $paidPenalty = 0;

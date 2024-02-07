@@ -43,11 +43,10 @@ class ReqPayment extends AllRequest
         //     $rules['deviceId']  = "nullable";
         //     // $rules['document']  = "nullable|mimes:pdf,jpg,jpeg,png|max:2048";
         // }
-        $rules['paymentType'] = 'required|In:isFullPayment,isArrearPayment,isPartPayment';
+        $rules['paymentType'] = 'required|In:isFullPayment,isPartPayment';
         $rules['amount'] = 'nullable|required_if:paymentType,==,isPartPayment|numeric';
         $rules['consumerId']    = 'required';
         $rules['paymentMode']   = 'required';
-        $rules['paymentType']   = 'nullable';
 
         return $rules;
     }
