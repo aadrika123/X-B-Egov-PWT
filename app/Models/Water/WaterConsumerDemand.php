@@ -216,8 +216,8 @@ class WaterConsumerDemand extends Model
         $mWaterConsumerDemand->demand_no                =  "WCD" . random_int(100000, 999999) . "/" . random_int(1, 10);
         $mWaterConsumerDemand->balance_amount           =  $demands['penalty'] ?? 0 + $demands['amount'];
         $mWaterConsumerDemand->created_at               =  Carbon::now();
-        $mWaterConsumerDemand->due_balance_amount       =  $demands['penalty'] ?? 0 + $demands['amount'];
-        $mWaterConsumerDemand->current_demand           =  round($demands['penalty'] ?? 0 + $demands['amount']);
+        $mWaterConsumerDemand->due_balance_amount       = round(($demands['penalty'] ?? 0) + $demands['amount'], 2); 
+        $mWaterConsumerDemand->current_demand           = round(($demands['penalty'] ?? 0) + $demands['amount'], 2); 
         $mWaterConsumerDemand->save();
 
         return $mWaterConsumerDemand->id;
