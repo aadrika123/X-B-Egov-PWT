@@ -67,10 +67,15 @@ use Predis\Command\Redis\SELECT;
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\PDF;
 use App\BLL\Payment\GetRefUrl;
+use App\BLL\Water\WaterConsumerPayment;
+use App\Http\Controllers\Water\WaterConsumer as WaterWaterConsumer;
+use App\Http\Requests\Water\ReqPayment;
 use App\Models\Payment\IciciPaymentReq;
 use App\Models\Payment\IciciPaymentResponse;
 use App\Models\Water\WaterIciciResponse;
 use App\Repository\Common\CommonFunction;
+use App\Repository\Water\Interfaces\IConsumer;
+use Illuminate\Support\Facades\App;
 
 /**
  * | ----------------------------------------------------------------------------------
@@ -2877,6 +2882,25 @@ class WaterPaymentController extends Controller
         } catch (Exception $e) {
             $this->rollback();
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $request->deviceId);
+        }
+    }
+
+    public function partPaymentV2(ReqPayment $request)
+    {
+        try {
+            $request->merge(["ConsumerId"=>$request->consumerId,"original"=>true]);
+            # check the params for part payment
+            $ConsumerPayment = new WaterConsumerPayment($request);
+            $controller = App::makeWith(WaterWaterConsumer::class,["IConsumer"=>app(IConsumer::class)]);
+            $ConsumerPayment->waterDemands = $controller->listConsumerDemand($request);
+            $this->begin();
+            $ConsumerPayment->postPayment();
+            $this->commit();
+            $response = ['TransactionNo' => $ConsumerPayment->_tranNo, 'transactionId' => $ConsumerPayment->_tranId];
+            return responseMsgs(true, "payment Done!", $response, "", "01", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            $this->rollback();
+            return responseMsgs(false,$e->getMessage(),  "", "01", ".ms", "POST", $request->deviceId);
         }
     }
 
