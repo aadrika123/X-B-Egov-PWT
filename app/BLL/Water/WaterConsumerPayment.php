@@ -256,8 +256,9 @@ class WaterConsumerPayment
                 "demand_id" => $demand->id,
                 "total_demand" => $demand->due_balance_amount,
                 "paid_amount" => $paidTaxes->paidTotalTax,
-                "arrear_settled"=> $paidTaxes->paidArrearDemand > 0 ? true : false,
+                "arrear_settled"=> $paidTaxes->paidArrearDemand ,
             ];
+            
             $trDtl[] = $tranDtlReq;
             $this->_mConsumerCollection->create($collection);
             $this->_mWaterTranDtl->create($tranDtlReq);
@@ -394,9 +395,8 @@ class WaterConsumerPayment
             "balence" => round($balence) > 0 ? $balence : 0,
             "remaining" => $totaTax - $payableAmountOfTax > 0 ? $totaTax - $payableAmountOfTax : 0,
         ];
-        $paidArrearDemand = ($currentTax->sum('due_arrear_demand')) - roundFigure(($payableAmountOfTax)) <=0 ? roundFigure(($payableAmountOfTax)) : ($currentTax->sum('due_arrear_demand')) - roundFigure(($payableAmountOfTax)) ;
-        $currentPaid = $currentTax->sum('due_current_demand');
-        $paidCurrentDemand = $payableAmountOfTax > $currentTax->sum('due_arrear_demand') ? ($payableAmountOfTax - ($paidArrearDemand + $currentPaid)): 0 ;
+        $paidArrearDemand = ( roundFigure($payableAmountOfTax) >= $currentTax->sum('due_arrear_demand'))  ? $currentTax->sum('due_arrear_demand') : ($currentTax->sum('due_arrear_demand') - roundFigure($payableAmountOfTax)) ;
+        $paidCurrentDemand = $payableAmountOfTax > $currentTax->sum('due_arrear_demand') ? ($payableAmountOfTax - ($paidArrearDemand)): 0 ;
          
         $paidDemandBifurcation = [
             'total_tax' => roundFigure(($payableAmountOfTax)),
