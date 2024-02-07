@@ -189,7 +189,7 @@ class WaterConsumerPayment
         $addvanceAmt = $this->waterDemands->original['data']["remainAdvance"] ?? 0;
         $adjustAmt = 0;
         $payableAmount = $this->_REQ["amount"];
-        if ($this->_REQ["paymentMode"] != "ONLINE") {
+        if (strtoupper($this->_REQ["paymentMode"]) != "ONLINE") {
             $adjustAmt = round($this->_REQ->amount - $addvanceAmt);
             $adjustAmt = $adjustAmt > 0 ? $addvanceAmt : $this->_REQ->amount;
             switch ($this->_REQ->paymentType) {
