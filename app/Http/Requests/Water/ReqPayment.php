@@ -38,13 +38,14 @@ class ReqPayment extends AllRequest
             $rules['remarks'] = 'required|';
         }
 
-        # For Part payament 
-        if (isset($this['paymentType']) && $this['paymentType'] == "isPartPayment") {
-            $rules['deviceId']  = "nullable";
-            // $rules['document']  = "nullable|mimes:pdf,jpg,jpeg,png|max:2048";
-        }
+        // # For Part payament 
+        // if (isset($this['paymentType']) && $this['paymentType'] == "isPartPayment") {
+        //     $rules['deviceId']  = "nullable";
+        //     // $rules['document']  = "nullable|mimes:pdf,jpg,jpeg,png|max:2048";
+        // }
+        $rules['paymentType'] = 'required|In:isFullPayment,isArrearPayment,isPartPayment';
+        $rules['amount'] = 'nullable|required_if:paymentType,==,isPartPayment|numeric';
         $rules['consumerId']    = 'required';
-        $rules['amount']        = 'required|min:1';
         $rules['paymentMode']   = 'required';
         $rules['paymentType']   = 'nullable';
 
