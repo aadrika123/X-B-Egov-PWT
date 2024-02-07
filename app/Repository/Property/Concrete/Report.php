@@ -5439,7 +5439,7 @@ class Report implements IReport
                         prop_transactions.tran_date,
                         prop_transactions.payment_mode,
                         app.app_no,
-                        ulb_ward_masters.ward_name as ward_no,
+                        ulb_ward_masters.ward_name,
                         zone_masters.zone_name,
                         users.name as tran_by_user_name,
                         prop_transactions.amount,
