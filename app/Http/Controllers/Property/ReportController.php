@@ -3462,6 +3462,7 @@ class ReportController extends Controller
                             owners.guardian_name_marathi,
                             TO_CHAR(prop_safs.application_date, 'DD-MM-YYYY') as application_date,
                             TO_CHAR(workflow_tracks.track_date, 'DD-MM-YYYY') as approve_reject_date,
+                            workflow_tracks.message as reason,
                             users.name as user_name
                             ")
             )
