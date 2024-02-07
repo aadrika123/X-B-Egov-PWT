@@ -4,6 +4,7 @@ namespace App\Models\Water;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Config;
 
 class WaterAdvance extends Model
 {
@@ -46,5 +47,32 @@ class WaterAdvance extends Model
         $mWaterAdvance->advance_for     = $advanceFor;
         $mWaterAdvance->relative_path   = $docDetails['relaivePath'];
         $mWaterAdvance->save();
+    }
+
+    public function getAdvanceAmt($consumerId,$advance_for=null)
+    {
+        if(!$advance_for)
+        {
+            #for Consumer
+            $advance_for =Config::get("waterConstaint.ADVANCE_FOR.1");
+        }
+        return self::where("related_id",$consumerId)
+                ->where("advance_for",$advance_for)
+               ->where("status",1) 
+               ->get();
+    }
+
+    public function getAdvanceAmtByTrId($tranId)
+    {
+        return self::where("tran_id",$tranId)
+               ->where("status",1) 
+               ->get();
+    }
+
+    public function deactivateAdvanceByTrId($tranId)
+    {
+        return self::where("tran_id",$tranId)->update([
+            "status"=>0
+        ]);
     }
 }

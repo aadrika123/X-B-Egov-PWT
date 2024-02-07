@@ -14,6 +14,7 @@ use App\MicroServices\IdGeneration;
 use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\Citizen\ActiveCitizenUndercare;
 use App\Models\Payment\TempTransaction;
+use App\Models\Water\WaterAdjustment;
 use App\Models\Water\WaterAdvance;
 use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterApprovalApplicationDetail;
@@ -148,6 +149,8 @@ class WaterConsumer extends Controller
             $mWaterConsumerDemand   = new WaterConsumerDemand();
             $mWaterConsumerMeter    = new WaterConsumerMeter();
             $mWaterSecondConsumer   = new WaterSecondConsumer();
+            $mWaterAdvance          = new WaterAdvance();
+            $mWaterAdjustment       = new WaterAdjustment();
             $mNowDate               = carbon::now()->format('Y-m-d');
             $refConnectionName      = Config::get('waterConstaint.METER_CONN_TYPE');
             $refConsumerId          = $request->ConsumerId;
@@ -165,6 +168,10 @@ class WaterConsumer extends Controller
                 return responseMsgs(false, "consumer demands not found!", $consumerDemand, "", "01", responseTime(), $request->getMethod(), $request->deviceId);
             }
 
+            $totalAdvanceAmt = $mWaterAdvance->getAdvanceAmt($refConsumerId);
+            $totalAdjustmentAmt = $mWaterAdjustment->getAdjustmentAmt($refConsumerId);
+            $remainAdvance = $totalAdvanceAmt->sum("amount") - $totalAdjustmentAmt->sum("amount");
+
             $refConsumerDemand = collect($refConsumerDemand)->sortBy('id')->values();
             $consumerDemand['consumerDemands'] = $refConsumerDemand;
             $checkParam = collect($consumerDemand['consumerDemands'])->first();
@@ -175,6 +182,7 @@ class WaterConsumer extends Controller
                 $totalPenalty = collect($consumerDemand['consumerDemands'])->sum('due_penalty');
                 $consumerDemand['totalSumDemand'] = round($sumDemandAmount, 2);
                 $consumerDemand['totalPenalty'] = round($totalPenalty, 2);
+                $consumerDemand['remainAdvance'] = round($remainAdvance ?? 0);
                 # Meter Details 
                 $refMeterData = $mWaterConsumerMeter->getMeterDetailsByConsumerIdV2($refConsumerId)->first();
                 $refMeterData->ref_initial_reading = (float)($refMeterData->ref_initial_reading);

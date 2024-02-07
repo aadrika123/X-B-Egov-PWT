@@ -4,6 +4,7 @@ namespace App\Models\Water;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Config;
 
 class WaterAdjustment extends Model
 {
@@ -44,5 +45,31 @@ class WaterAdjustment extends Model
         $mWaterAdjustment->user_id          = $request->userId;
         $mWaterAdjustment->remarks          = $request->remarks;
         $mWaterAdjustment->save();
+    }
+
+    public function getAdjustmentAmt($consumerId,$adjustment_for=null)
+    {
+        if(!$adjustment_for)
+        {
+            #for Consumer
+            $adjustment_for =Config::get("waterConstaint.ADVANCE_FOR.1");
+        }
+        return self::where("related_id",$consumerId)
+                ->where("adjustment_for",$adjustment_for)
+               ->where("status",1)
+               ->get();
+    }
+    public function getAdjustmentAmtByTrId($tranId)
+    {
+        return self::where("tran_id",$tranId)
+               ->where("status",1) 
+               ->get();
+    }
+
+    public function deactivateAdjustmentAmtByTrId($tranId)
+    {
+        return self::where("tran_id",$tranId)->update([
+            "status"=>0
+        ]);
     }
 }
