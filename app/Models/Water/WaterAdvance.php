@@ -9,6 +9,12 @@ class WaterAdvance extends Model
 {
     use HasFactory;
     protected $connection = 'pgsql_water';
+    protected $guarded = [];
+
+    public function store($req)
+    {
+        WaterAdvance::create($req);
+    }
     
     /**
      * | Get Advance respective for consumer id

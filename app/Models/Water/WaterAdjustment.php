@@ -9,6 +9,12 @@ class WaterAdjustment extends Model
 {
     use HasFactory;
     protected $connection = 'pgsql_water';
+    protected $guarded = [];
+
+    public function store($req)
+    {
+        WaterAdjustment::create($req);
+    }
 
     /**
      * | Get the Adjusted amount for reslative id

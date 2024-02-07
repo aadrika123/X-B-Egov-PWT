@@ -197,7 +197,7 @@ class WaterConsumer extends Controller
                 $refMeterData['basicDetails']       = $WaterBasicDetails;
                 $consumerDemand['meterDetails']     = $refMeterData;
                 $consumerDemand['demandStatus']     = 1;                                // Static / to represent existence of demand
-                return responseMsgs(true, "List of Consumer Demand!", remove_null($consumerDemand), "", "01", "ms", "POST", "");
+                return responseMsgs(true, "List of Consumer Demand!", ($request->original ? $consumerDemand : remove_null($consumerDemand)), "", "01", "ms", "POST", "");
             }
             throw new Exception("There is no demand!");
         } catch (Exception $e) {
