@@ -256,7 +256,7 @@ class WaterConsumerPayment
                 "demand_id" => $demand->id,
                 "total_demand" => $demand->due_balance_amount,
                 "paid_amount" => $paidTaxes->paidTotalTax,
-                "arrear_settled"=> $paidTaxes->paidCurrentDemand > 0 ? true : false,
+                "arrear_settled"=> $paidTaxes->paidArrearDemand > 0 ? true : false,
             ];
             $trDtl[] = $tranDtlReq;
             $this->_mConsumerCollection->create($collection);
