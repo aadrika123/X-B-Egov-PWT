@@ -2692,6 +2692,8 @@ class Trade implements ITrade
             $license = TradeLicence::select(
                     "trade_licences.id",
                     "trade_licences.application_no",
+                    "trade_licences.application_type_id",
+                    "application_type",
                     "trade_licences.provisional_license_no",
                     "trade_licences.license_no",
                     "trade_licences.document_upload_status",
@@ -2720,6 +2722,7 @@ class Trade implements ITrade
                                 )owner"), function ($join) {
                     $join->on("owner.temp_id", "trade_licences.id");
                 })
+                ->join("trade_param_application_types", "trade_param_application_types.id", "trade_licences.application_type_id")
                 ->where("trade_licences.is_active", TRUE)
                 ->where("trade_licences.pending_status",5);
             if($refUlbId)

@@ -733,18 +733,18 @@ class Report implements IReport
                         });
                 })
                 ->GROUPBY(["wf_roles.id", "wf_roles.role_name"])
-                ->UNION(
-                    PropActiveSaf::SELECT(
-                        DB::RAW("8 AS id, 'JSK' AS role_name,
-                                COUNT(prop_active_safs.id)")
-                    )
-                        ->WHERE("prop_active_safs.ulb_id", $ulbId)
-                        ->WHERENOTNULL("prop_active_safs.user_id")
-                        ->WHERE(function ($where) {
-                            $where->WHERE("prop_active_safs.payment_status", "=", 0)
-                                ->ORWHERENULL("prop_active_safs.payment_status");
-                        })
-                )
+                // ->UNION(
+                //     PropActiveSaf::SELECT(
+                //         DB::RAW("8 AS id, 'JSK' AS role_name,
+                //                 COUNT(prop_active_safs.id)")
+                //     )
+                //         ->WHERE("prop_active_safs.ulb_id", $ulbId)
+                //         ->WHERENOTNULL("prop_active_safs.user_id")
+                //         ->WHERE(function ($where) {
+                //             $where->WHERE("prop_active_safs.payment_status", "=", 0)
+                //                 ->ORWHERENULL("prop_active_safs.payment_status");
+                //         })
+                // )
                 ->GET();
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $data, $apiId, $version, $queryRunTime, $action, $deviceId);
@@ -793,13 +793,14 @@ class Report implements IReport
 
             $data = PropActiveSaf::SELECT(
                 DB::RAW("wf_roles.id AS role_id, wf_roles.role_name,
-                    prop_active_safs.id, prop_active_safs.saf_no, prop_active_safs.prop_address,
+                    prop_active_safs.id, prop_active_safs.saf_no, prop_active_safs.prop_address,prop_type_mstr_id,property_type,
                     ward_name as ward_no, 
                     owner.owner_name, owner.mobile_no")
             )
                 ->JOIN("ulb_ward_masters", "ulb_ward_masters.id", "prop_active_safs.ward_mstr_id")
+                ->JOIN("ref_prop_types", "ref_prop_types.id", "prop_active_safs.prop_type_mstr_id")
                 ->LEFTJOIN(DB::RAW("( 
-                                SELECT DISTINCT(prop_active_safs_owners.saf_id) AS saf_id,STRING_AGG(owner_name,',') AS owner_name, 
+                                SELECT DISTINCT(prop_active_safs_owners.saf_id) AS saf_id,STRING_AGG(owner_name,',') AS owner_name,
                                     STRING_AGG(mobile_no::TEXT,',') AS mobile_no
                                 FROM prop_active_safs_owners
                                 JOIN prop_active_safs ON prop_active_safs.id = prop_active_safs_owners.saf_id
@@ -872,17 +873,17 @@ class Report implements IReport
                 DB::RAW(
                     "count(prop_active_safs.id),
                     users_role.user_id ,
-                    users_role.user_name,
+                    users_role.name as user_name,
                     users_role.wf_role_id as role_id,
                     users_role.role_name"
                 )
             )
                 ->$joins(
                     DB::RAW("(
-                        select wf_role_id,user_id,user_name,role_name,concat('{',ward_ids,'}') as ward_ids
+                        select wf_role_id,user_id,user_name,name,role_name,concat('{',ward_ids,'}') as ward_ids
                         from (
                             select wf_roleusermaps.wf_role_id,wf_roleusermaps.user_id,
-                            users.user_name, wf_roles.role_name,
+                            users.user_name,users.name, wf_roles.role_name,
                             string_agg(wf_ward_users.ward_id::text,',') as ward_ids
                             from wf_roleusermaps 
                             join wf_roles on wf_roles.id = wf_roleusermaps.wf_role_id
@@ -891,7 +892,9 @@ class Report implements IReport
                             left join wf_ward_users on wf_ward_users.user_id = wf_roleusermaps.user_id and wf_ward_users.is_suspended = false
                             where wf_roleusermaps.wf_role_id =$roleId
                                 AND wf_roleusermaps.is_suspended = false
-                            group by wf_roleusermaps.wf_role_id,wf_roleusermaps.user_id,users.user_name,wf_roles.role_name
+                            and users.id <> 76
+                            and users.id <> 175
+                            group by wf_roleusermaps.wf_role_id,wf_roleusermaps.user_id,users.user_name,users.name,wf_roles.role_name
                         )role_user_ward
                     ) users_role
                     "),
@@ -905,7 +908,7 @@ class Report implements IReport
                     }
                 )
                 ->WHERE("prop_active_safs.ulb_id", $ulbId)
-                ->groupBy(["users_role.user_id", "users_role.user_name", "users_role.wf_role_id", "users_role.role_name"]);
+                ->groupBy(["users_role.user_id", "users_role.user_name","users_role.name", "users_role.wf_role_id", "users_role.role_name"]);
 
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
@@ -916,6 +919,7 @@ class Report implements IReport
                 "data" => $paginator->items(),
                 "total" => $paginator->total(),
             ];
+            // dd(DB::getQueryLog());
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
@@ -956,10 +960,10 @@ class Report implements IReport
             $mWardIds = $mWardPermission->implode("ward_id", ",");
             $mWardIds = explode(',', ($mWardIds ? $mWardIds : "0"));
 
-            $data = UlbWardMaster::SELECT(
+            $data = DB::table("ulb_ward_masters")->SELECT(
                 DB::RAW(" DISTINCT(ward_name) as ward_no, COUNT(prop_active_safs.id) AS total")
             )
-                ->LEFTJOIN("prop_active_safs", "ulb_ward_masters.id", "prop_active_safs.ward_mstr_id");
+                ->LEFTJOIN("prop_active_safs", "prop_active_safs.ward_mstr_id", "ulb_ward_masters.id");
             if ($roleId == 8) {
                 $data = $data->LEFTJOIN("wf_roles", "wf_roles.id", "prop_active_safs.current_role")
                     ->WHERENOTNULL("prop_active_safs.user_id")
@@ -979,6 +983,9 @@ class Report implements IReport
 
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
+            
+            $data2 = $data;
+            $total = $data2->get();
             $paginator = $data->paginate($perPage);
             $list = [
 
@@ -986,6 +993,7 @@ class Report implements IReport
                 "last_page" => $paginator->lastPage(),
                 "data" => $paginator->items(),
                 "total" => $paginator->total(),
+                "totalSaf" => collect($total)->sum("total"),
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime, $action, $deviceId);

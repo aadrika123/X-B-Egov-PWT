@@ -71,11 +71,11 @@ class WaterConsumerDemand extends Model
                 DB::raw('(SELECT 
                 consumer_id,max(generation_date) as generation_dates,
                 SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.arrear_demand ELSE 0 END) AS arrear_demands,
-                SUM(CASE WHEN last_generate_id is null THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS current_demands,
-                --SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.current_demand ELSE 0 END) AS current_demands,
+               -- SUM(CASE WHEN last_generate_id is null THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS current_demands,
+                SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.current_demand ELSE 0 END) AS current_demands,
                 --SUM(CASE WHEN last_generate_id is Not null THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS current_demands,
-                --SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NOT NULL THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS generate_amount,
-                SUM(CASE WHEN last_generate_id is Not null THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS generate_amount,
+                SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NOT NULL THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS generate_amount,
+                --SUM(CASE WHEN last_generate_id is Not null THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS generate_amount,
                 sum(case when water_consumer_demands.consumer_tax_id IS NULL  THEN  water_consumer_demands.due_balance_amount ELSE  0 END ) AS previous_demand,
                 SUM(water_consumer_demands.due_balance_amount) total_due_amount,
                 min(generation_date)as previos_reading_date
@@ -216,8 +216,8 @@ class WaterConsumerDemand extends Model
         $mWaterConsumerDemand->demand_no                =  "WCD" . random_int(100000, 999999) . "/" . random_int(1, 10);
         $mWaterConsumerDemand->balance_amount           =  $demands['penalty'] ?? 0 + $demands['amount'];
         $mWaterConsumerDemand->created_at               =  Carbon::now();
-        $mWaterConsumerDemand->due_balance_amount       =  $demands['penalty'] ?? 0 + $demands['amount'];
-        $mWaterConsumerDemand->current_demand           =  round($demands['penalty'] ?? 0 + $demands['amount']);
+        $mWaterConsumerDemand->due_balance_amount       = round(($demands['penalty'] ?? 0) + $demands['amount'], 2); 
+        $mWaterConsumerDemand->current_demand           = round(($demands['penalty'] ?? 0) + $demands['amount'], 2); 
         $mWaterConsumerDemand->save();
 
         return $mWaterConsumerDemand->id;
