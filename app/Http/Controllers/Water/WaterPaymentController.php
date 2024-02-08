@@ -1773,13 +1773,13 @@ class WaterPaymentController extends Controller
             $adjustAmt  = $WaterAdjustment->getAdjustmentAmtByTrId($transactionDetails->id)->sum("amount");
             
             $returnValues = [
+                "transactionNo"         => $transactionDetails->tran_no,
                 "departmentSection"     => $mDepartmentSection,
                 "accountDescription"    => $mAccDescription,
                 "transactionDate"       => $transactionDate,
                 "transactionTime"       => $transactionTime,
                 "session"               => $yearRange,
                 "paymentType"           => $transactionDetails['payment_type'],
-                "transactionNo"         => $refTransactionNo,
                 "userType"              => $transactionDetails['user_type'],
                 "zoneName"              => $transactionDetails['zone_name'],
                 "empName"               => $transactionDetails['tcName'],
