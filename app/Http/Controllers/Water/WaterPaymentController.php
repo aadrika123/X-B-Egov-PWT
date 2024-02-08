@@ -68,6 +68,7 @@ use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\PDF;
 use App\BLL\Payment\GetRefUrl;
 use App\BLL\Water\WaterConsumerPayment;
+use App\BLL\Water\WaterConsumerPaymentReceipt;
 use App\Http\Controllers\Water\WaterConsumer as WaterWaterConsumer;
 use App\Http\Requests\Water\ReqPayment;
 use App\Models\Payment\IciciPaymentReq;
@@ -2901,6 +2902,33 @@ class WaterPaymentController extends Controller
         } catch (Exception $e) {
             $this->rollback();
             return responseMsgs(false,$e->getMessage(),  "", "01", ".ms", "POST", $request->deviceId);
+        }
+    }
+    
+    public function generateDemandPaymentReceiptV2(Request $request)
+    {
+        $rules = [
+            'transactionNo' => 'nullable',
+            "tranId"=>"required_without:transactionNo"
+        ];
+        
+        $validated = Validator::make($request->all(), $rules);
+
+        if ($validated->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validated->errors()
+            ], 401);
+        }
+        try{
+            $generatePaymentReceipt = new WaterConsumerPaymentReceipt();
+            $generatePaymentReceipt->generateReceipt($request->transactionNo,$request->tranId);
+            $receipt = $generatePaymentReceipt->_GRID;
+            return responseMsgs(true, "Payment Receipt", remove_null($receipt), "011605", "1.0", "", "POST", $request->deviceId ?? "");
+        }
+        catch (Exception $e) {
+            return responseMsgs(false, [$e->getMessage(), $e->getFile(),$e->getLine()], "", "01", "ms", "POST", "");
         }
     }
 

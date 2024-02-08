@@ -37,4 +37,11 @@ class WaterTranFineRebate extends Model
             ->where("apply_connection_id", $applicationId)
             ->where("head_name", $searchFor);
     }
+
+    public function getPenaltyRebatesHeads($transactionId)
+    {
+        return WaterTranFineRebate::where("transaction_id", $transactionId)
+                ->where("status",true)
+                ->get();
+    }
 }

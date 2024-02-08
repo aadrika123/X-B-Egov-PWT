@@ -256,6 +256,10 @@ class WaterConsumerPayment
                     }
                 }
             }
+            if($tblDemand->due_balance_amount <=0)
+            {
+                $tblDemand->is_full_paid = true;
+            }
             # end hear
             $tblDemand->save();
 

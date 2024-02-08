@@ -403,7 +403,7 @@ class WaterTran extends Model
         )
             ->where('water_trans.id', $tranId)
             ->leftJoin("water_cheque_dtls", "water_cheque_dtls.transaction_id", "water_trans.id")
-            ->leftJoin("users as u", "u.id", "water_trans.user_id")
+            ->leftJoin("users as u", "u.id", "water_trans.emp_dtl_id")
             ->where('water_trans.status', 1)
             ->first();
     }
@@ -421,7 +421,7 @@ class WaterTran extends Model
         )
             ->where('water_trans.tran_no', $tranNo)
             ->leftJoin("water_cheque_dtls", "water_cheque_dtls.transaction_id", "water_trans.id")
-            ->leftJoin("users as u", "u.id", "water_trans.user_id")
+            ->leftJoin("users as u", "u.id", "water_trans.emp_dtl_id")
             ->where('water_trans.status', 1)
             ->first();
     }
