@@ -58,8 +58,8 @@ class WaterConsumerDemand extends Model
                     ELSE 0
                 END,
                 2
-            ) as total_amount1,
-            ROUND(total_due_amount,2)as total_amount'
+            ) as total_amount,
+            ROUND(total_due_amount,2)as total_amount1'
         )
         
         )
