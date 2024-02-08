@@ -2300,22 +2300,21 @@ class WaterConsumer extends Controller
         $validated = Validator::make(
             $request->all(),
             [
-                'consumerId'        => 'required|integer',
-                'mobileNo'          => 'nullable|',
-                'email'             => 'nullable|',
-                'applicantName'     => 'nullable|',
-                'guardianName'      => 'nullable|',
-                'zoneId'            => 'nullable|',
-                'wardId'            => 'nullable|integer',
-                'address'           => 'nullable|',
-                'propertyNo'        => 'nullable',
-                'dtcCode'           => 'nullble',
-                'oldConsumerNo'     => 'nullable'
+                'consumerId'         => 'required|integer',
+                'mobile_no'          => 'nullable|',
+                'email'              => 'nullable|',
+                'applicant_name'     => 'nullable|',
+                'guardian_name'      => 'nullable|',
+                'zoneId'             => 'nullable|',
+                'wardId_number'      => 'nullable|integer',
+                'address'            => 'nullable|',
+                'property_no'        => 'nullable',
+                'dtcCode'            => 'nullble',
+                'oldConsumerNo'      => 'nullable'
             ]
         );
         if ($validated->fails())
             return validationError($validated);
-
         try {
             $now            = Carbon::now();
             $user           = authUser($request);

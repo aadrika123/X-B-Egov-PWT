@@ -40,11 +40,11 @@ class WaterConsumerOwner extends Model
     public function editConsumerOwnerDtls($request, $userId)
     {
         $waterConsumerOwner = WaterConsumerOwner::findorfail($request->consumerId);
-        $waterConsumerOwner->applicant_name       =  $request->applicantName      ?? $waterConsumerOwner->applicant_name;
-        $waterConsumerOwner->guardian_name        =  $request->guardianName       ?? $waterConsumerOwner->guardian_name;
-        $waterConsumerOwner->email                =  $request->email              ?? $waterConsumerOwner->email;
-        $waterConsumerOwner->mobile_no            =  $request->mobileNo           ?? $waterConsumerOwner->mobile_no;
-        $waterConsumerOwner->user_id              =  $userId;
+        $waterConsumerOwner->applicant_name       =  $request->applicant_name      ?? $waterConsumerOwner->applicant_name;
+        $waterConsumerOwner->guardian_name        =  $request->guardian_name       ?? $waterConsumerOwner->guardian_name;
+        $waterConsumerOwner->email                =  $request->email               ?? $waterConsumerOwner->email;
+        $waterConsumerOwner->mobile_no            =  $request->mobile_no           ?? $waterConsumerOwner->mobile_no;
+         $waterConsumerOwner->user_id              =  $userId;
         $waterConsumerOwner->save();
     }
 }
