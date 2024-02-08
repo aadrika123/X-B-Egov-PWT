@@ -18,6 +18,8 @@ return [
     "SAF_BIFURCATION_ID"        => "6",
     "SAF_AMALGAMATION_ID"       => "7",
 
+    "ULB_WORKFLOW_ID_OLD_MUTATION"    => "202",
+
     "PROPERTY_DEACTIVATION_MASTER_ID"   => "8",
     "PROPERTY_CONCESSION_ID"            => "9",
     "PROPERTY_OBJECTION_CLERICAL"       => "10",

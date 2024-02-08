@@ -153,7 +153,7 @@ class ApplySafController extends Controller
             $metaReqs['holdingType'] = $this->holdingType($request['floor']);
             $request->merge($metaReqs);
             $request->merge(["proccessFee" => $mutationProccessFee]);
-            if ($request->workflowId == Config::get('workflow-constants.SAF_OLD_MUTATION_ID')) {
+            if ($request->workflowId == Config::get('workflow-constants.ULB_WORKFLOW_ID_OLD_MUTATION')) {
                 $request->merge(["saleValue" => 0, "proccessFee" => 0]);
             }
             $this->_REQUEST = $request;
