@@ -1687,6 +1687,8 @@ class WaterPaymentController extends Controller
             $mWaterConsumerTax      = new WaterConsumerTax();
             $mWaterConsumerInitial  = new WaterConsumerInitialMeter();
             $mWaterConsumerOwners   = new WaterConsumerOwner();
+            $WaterAdvance           = new WaterAdvance();
+            $WaterAdjustment        = new WaterAdjustment();
 
             $mTowardsDemand     = Config::get("waterConstaint.TOWARDS_DEMAND");
             $mTranType          = Config::get("waterConstaint.PAYMENT_FOR");
@@ -1767,6 +1769,9 @@ class WaterPaymentController extends Controller
             $currentYear = date('Y');
             $nextYear = $currentYear + 1;
             $yearRange = $currentYear . '-' . $nextYear;
+            $advanceAmt = $WaterAdvance->getAdvanceAmtByTrId($transactionDetails->id)->sum("amount");
+            $adjustAmt  = $WaterAdjustment->getAdjustmentAmtByTrId($transactionDetails->id)->sum("amount");
+            
             $returnValues = [
                 "departmentSection"     => $mDepartmentSection,
                 "accountDescription"    => $mAccDescription,
@@ -1824,7 +1829,10 @@ class WaterPaymentController extends Controller
                 "paidAmtInWords"          => getIndianCurrency($transactionDetails->amount),
                 "chequeStatus"            => $chequeStatus,
                 "test"                    => 'testing for sms for akola ',
-                "ownerName"               => 'test'
+                "ownerName"               => 'test',
+                "advancePaidAmount"       => $advanceAmt,
+                "adjustAmount"            => $adjustAmt,
+                "netAdvance"              =>$advanceAmt - $adjustAmt,
             ];
             # sending pdf of demand rerceipt via whatsapp
             // $this->whatsAppSend($returnValues);
@@ -2904,7 +2912,7 @@ class WaterPaymentController extends Controller
             return responseMsgs(false,$e->getMessage(),  "", "01", ".ms", "POST", $request->deviceId);
         }
     }
-    
+
     public function generateDemandPaymentReceiptV2(Request $request)
     {
         $rules = [
