@@ -388,4 +388,41 @@ class WaterTran extends Model
             ->where('status', 1)
             ->get();
     }
+
+    public function getTranById($tranId)
+    {
+        return WaterTran::select(
+            'water_trans.*',
+            'water_cheque_dtls.bank_name',
+            'water_cheque_dtls.branch_name',
+            'water_cheque_dtls.cheque_no',
+            'water_cheque_dtls.cheque_date',
+            'u.name as tc_name',
+            'u.mobile as tc_mobile',
+            "water_cheque_dtls.status as cheque_status"
+        )
+            ->where('water_trans.id', $tranId)
+            ->leftJoin("water_cheque_dtls", "water_cheque_dtls.transaction_id", "water_trans.id")
+            ->leftJoin("users as u", "u.id", "water_trans.user_id")
+            ->where('water_trans.status', 1)
+            ->first();
+    }
+    public function getTranByTranNo($tranNo)
+    {
+        return WaterTran::select(
+            'water_trans.*',
+            'water_cheque_dtls.bank_name',
+            'water_cheque_dtls.branch_name',
+            'water_cheque_dtls.cheque_no',
+            'water_cheque_dtls.cheque_date',
+            'u.name as tc_name',
+            'u.mobile as tc_mobile',
+            "water_cheque_dtls.status as cheque_status"
+        )
+            ->where('water_trans.tran_no', $tranNo)
+            ->leftJoin("water_cheque_dtls", "water_cheque_dtls.transaction_id", "water_trans.id")
+            ->leftJoin("users as u", "u.id", "water_trans.user_id")
+            ->where('water_trans.status', 1)
+            ->first();
+    }
 }

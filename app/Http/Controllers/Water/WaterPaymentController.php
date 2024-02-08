@@ -1866,7 +1866,7 @@ class WaterPaymentController extends Controller
             // ));
             return responseMsgs(true, "Payment Receipt", remove_null($returnValues), "", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
+            return responseMsgs(false, [$e->getMessage(), $e->getFile(),$e->getLine()], "", "01", "ms", "POST", "");
         }
     }
 

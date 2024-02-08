@@ -44,7 +44,7 @@ class WaterConsumerPayment
     private $_idGeneration;
     private $_ulbWardMaster;
     private $_mTempTransaction   ;
-    private $_mPropChequeDtl     ;
+    private $_mWaterChequeDtl     ;
     private $_moduleId;
     private $_adjustmentFor;
     protected $_DB_NAME;
@@ -66,7 +66,7 @@ class WaterConsumerPayment
         $this->_mConsumerCollection = new WaterConsumerCollection();
         $this->_ulbWardMaster = new UlbWardMaster();
         $this->_mTempTransaction   = new TempTransaction();
-        $this->_mPropChequeDtl     = new WaterChequeDtl();
+        $this->_mWaterChequeDtl     = new WaterChequeDtl();
         $this->_REQ = $req;
         $this->readGenParams();
     }
@@ -190,7 +190,7 @@ class WaterConsumerPayment
         $adjustAmt = 0;
         $payableAmount = $this->_REQ["amount"];
         if (strtoupper($this->_REQ["paymentMode"]) != "ONLINE") {
-            $adjustAmt = round($this->_REQ['payableAmount'] - $addvanceAmt);
+            $adjustAmt= round($this->_REQ['payableAmount'] - $addvanceAmt);
             $adjustAmt = $adjustAmt >= 0 ? $addvanceAmt : $this->_REQ->amount;
             switch ($this->_REQ->paymentType) {
                 case "isPartPayment":
@@ -218,8 +218,13 @@ class WaterConsumerPayment
             $paidPenalty += $paymentDtl["payableAmountOfPenalty"];
             $paidDemands[] = $paymentDtl;
         }
+        if(!$paidDemands)
+        {
+            throw new Exception("Something went wrong");
+        }
         $d1 = [];
         $trDtl = [];
+        // dd(["paid amount"=>$this->_REQ->amount,"oldAdvanceAmt"=>$addvanceAmt,"newAdvanceAmt"=>$payableAmount,"adjustAmt"=>$adjustAmt,]);
         # Save the Details of the transaction
         $waterTrans = $this->_mWaterTrans->waterTransaction($this->_REQ, $this->_WaterConsumer);
         $this->_tranId = $waterTrans['id'];
@@ -276,12 +281,14 @@ class WaterConsumerPayment
                 "arrear_settled"=> $paidTaxes->paidArrearDemand ,
             ];
             
+            $collDtlId  = $this->_mConsumerCollection->create($collection)->id;            
+            $DtlId      = $this->_mWaterTranDtl->create($tranDtlReq)->id;
+            // $tranDtlReq["collDtlId"] =$collDtlId;
+            // $tranDtlReq["DtlId"]    =$DtlId;
             $trDtl[] = $tranDtlReq;
-            $this->_mConsumerCollection->create($collection);
-            $this->_mWaterTranDtl->create($tranDtlReq);
         }
         # Save the Details for the Cheque,DD,neft
-        if (in_array($this->_REQ['paymentMode'], $this->_offlinePaymentModes)) {
+        if (in_array(strtoupper($this->_REQ['paymentMode']), $this->_offlinePaymentModes)) {
             $this->_REQ->merge([
                 'tranId'        => $waterTrans['id'],
                 'applicationNo' => $this->_WaterConsumer->consumer_no, 
@@ -314,10 +321,6 @@ class WaterConsumerPayment
             ];
             $this->_WaterAdjustment->store($adjArr);
         }
-        # adjustment data saving
-        if (round($adjustAmt) > 0) {
-            $this->_WaterAdjustment->saveAdjustment($waterTrans, $this->_REQ, $this->_adjustmentFor);
-        }
             
     }
     public function postOtherPaymentModes($req)
@@ -347,7 +350,7 @@ class WaterConsumerPayment
                     'cheque_no'         => $req['chequeNo']
                 ];
             }
-            $this->_mPropChequeDtl->postChequeDtl($chequeReqs);
+            $this->_mWaterChequeDtl->postChequeDtl($chequeReqs);
         }
 
         $tranReqs = [
