@@ -569,4 +569,14 @@ class WaterConsumerDemand extends Model
             ->count('water_consumer_demands.id')
             ->get();
     }
+
+    /**
+     * | Get Demands list by Demand ids
+     */
+    public function getDemandsListByIds(array $demandIds)
+    {
+        return WaterConsumerDemand::whereIn('id', $demandIds)
+            ->where('status', 1)
+            ->get();
+    }
 }

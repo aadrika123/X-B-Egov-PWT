@@ -111,6 +111,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('consumer/part-payment', 'partPayment');                                             //status working
         Route::post('consumer/online-payment', 'getReferalUrl');
         Route::post('consumer/demand-payment', 'partPaymentV2');
+        Route::post('consumer/payment-receipt', 'generateDemandPaymentReceiptV2');
         Route::post('consumer/transaction-deactivation', 'transactionDeactivation');
         # for deactivation  consumer
         Route::post('admin/consumer/offline-request-payment', 'offlineConReqPayment');

@@ -367,6 +367,64 @@ class WaterSecondConsumer extends Model
                 'water_consumer_demands.balance_amount'
             );
     }
+
+    public function fullWaterDetailsV2($applicationId)
+    {
+        return WaterSecondConsumer::select(
+            DB::raw("
+            water_second_consumers.*,
+            water_second_consumers.consumer_no,
+            water_consumer_meters.meter_no,
+            water_consumer_meters.connection_type,
+            water_consumer_meters.initial_reading,
+            water_consumer_meters.final_meter_reading,
+            water_consumer_initial_meters.initial_reading as finalReading,
+            ulb_masters.ulb_name,
+            water_second_consumers.property_no,
+            water_property_type_mstrs.property_type,
+            zone_masters.zone_name,
+            water_consumer_demands.demand_from,
+            water_consumer_demands.demand_upto,
+            water_consumer_demands.balance_amount,
+            water_consumer_owners.applicant_name,
+            water_consumer_owners.mobile_no,
+            water_consumer_owners.guardian_name,
+            water_consumer_owners.email,
+            ulb_masters.association_with,
+            ulb_masters.current_website,
+            ulb_masters.logo,
+            ulb_ward_masters.ward_name as ward_number,           
+                CASE
+                    WHEN round(water_consumer_demands.amount) >= round(water_consumer_demands.paid_total_tax) THEN 'Paid'
+                    WHEN round(water_consumer_demands.amount) < round(water_consumer_demands.paid_total_tax) THEN 'Unpaid'
+                    ELSE 'unknown'
+                END AS payment_status
+            
+            ")
+        )
+            ->leftjoin(DB::raw("(
+                select string_agg(mobile_no::text,',') as mobile_no,
+                        string_agg(applicant_name,',') as applicant_name,
+                        string_agg(guardian_name,',') as guardian_name,   
+                        string_agg(email,',') as email,
+                        consumer_id
+                from water_consumer_owners
+                where status  =true AND consumer_id = $applicationId
+                group by consumer_id
+            )as water_consumer_owners"), 'water_consumer_owners.consumer_id', 'water_second_consumers.id')
+            ->leftjoin('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
+            ->leftjoin('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_second_consumers.property_type_id')
+            ->leftjoin('water_consumer_initial_meters', 'water_consumer_initial_meters.consumer_id', 'water_second_consumers.id')            
+            ->leftjoin('ulb_masters', 'ulb_masters.id', 'water_second_consumers.ulb_id')
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_second_consumers.ward_mstr_id')
+            ->leftjoin('water_consumer_meters', 'water_consumer_meters.consumer_id', 'water_second_consumers.id')
+            ->leftjoin('water_second_connection_charges', 'water_second_connection_charges.consumer_id', 'water_second_consumers.id')
+            ->join('water_consumer_demands', 'water_consumer_demands.consumer_id', '=', 'water_second_consumers.id')
+            ->where('water_second_consumers.id', $applicationId)
+            ->where('water_second_consumers.status', 1)
+            ->orderBy('water_consumer_initial_meters.id', 'DESC')
+            ->first();
+    }
     /**
      * | Get consumer 
      */
