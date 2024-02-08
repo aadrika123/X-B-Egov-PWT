@@ -190,8 +190,8 @@ class WaterConsumerPayment
         $adjustAmt = 0;
         $payableAmount = $this->_REQ["amount"];
         if (strtoupper($this->_REQ["paymentMode"]) != "ONLINE") {
-            $adjustAmt = round($this->_REQ->amount - $addvanceAmt);
-            $adjustAmt = $adjustAmt > 0 ? $addvanceAmt : $this->_REQ->amount;
+            $adjustAmt = round($this->_REQ['payableAmount'] - $addvanceAmt);
+            $adjustAmt = $adjustAmt >= 0 ? $addvanceAmt : $this->_REQ->amount;
             switch ($this->_REQ->paymentType) {
                 case "isPartPayment":
                     $payableAmount = $payableAmount + $addvanceAmt;                    
@@ -203,15 +203,7 @@ class WaterConsumerPayment
                             'amount' => ($this->_REQ->amount - $addvanceAmt)
                         ]
                     );
-                    break;
-                // case "isArrearPayment":
-                //     $payableAmount;
-                //     $this->_REQ->merge(
-                //         [
-                //             'amount' => ($this->_REQ->amount - $addvanceAmt)
-                //         ]
-                //     );
-                //     break;
+                    break;                
             }
         }
         $paidPenalty = 0;
