@@ -183,9 +183,7 @@ class WaterConsumerPayment
         if(!$this->_REQ->amount)
         {
             $this->_REQ->merge(['amount' => $this->_REQ['payableAmount']]);
-        }
-        $leftDemand = ($this->_REQ['payableAmount'] -$this->_REQ->amount)>0 ? $this->_REQ['payableAmount'] -$this->_REQ->amount : 0;
-        $this->_REQ->merge(["leftDemandAmount"=> $leftDemand]);
+        }        
         $addvanceAmt = $this->waterDemands->original['data']["remainAdvance"] ?? 0;
         $adjustAmt = 0;
         $payableAmount = $this->_REQ["amount"];
@@ -208,7 +206,8 @@ class WaterConsumerPayment
         }
         $paidPenalty = 0;
         $paidDemands = [];
-
+        $leftDemand = ($this->_REQ['payableAmount'] -$payableAmount)>0 ? $this->_REQ['payableAmount'] - $payableAmount : 0;
+        $this->_REQ->merge(["leftDemandAmount"=> $leftDemand]);
         foreach ($this->_demands as $key => $val) {
             if ($payableAmount <= 0) {
                 continue;
