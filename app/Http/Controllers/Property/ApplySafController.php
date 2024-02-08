@@ -153,6 +153,9 @@ class ApplySafController extends Controller
             $metaReqs['holdingType'] = $this->holdingType($request['floor']);
             $request->merge($metaReqs);
             $request->merge(["proccessFee" => $mutationProccessFee]);
+            if ($request->workflowId == Config::get('workflow-constants.SAF_OLD_MUTATION_ID')) {
+                $request->merge(["saleValue" => 0, "proccessFee" => 0]);
+            }
             $this->_REQUEST = $request;
             $this->mergeAssessedExtraFields();                                          // Merge Extra Fields for Property Reassessment,Mutation,Bifurcation & Amalgamation(2.2)
             // Generate Calculation
