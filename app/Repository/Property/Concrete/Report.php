@@ -4040,7 +4040,7 @@ class Report implements IReport
             ];
 
             $zoneWiseCollectionQuery = "SELECT z.id as zone_mstr_id,
-            COUNT(p.id) AS total_properties,
+                                           COUNT(p.id) AS total_properties,
                                            round(COALESCE(details.today_collections,0),2) as today_collections,
                                            round(COALESCE(details.neft_collection,0),2) as neft_collection,
                                            round(COALESCE(details.qr_collection,0),2) as qr_collection,
@@ -4070,15 +4070,18 @@ class Report implements IReport
                                            FROM prop_transactions AS t
                                            
                                            LEFT JOIN (
-                                               SELECT id, zone_mstr_id
-                                               FROM prop_properties
-                                                   UNION ALL
-                                               SELECT id, zone_mstr_id
-                                               FROM prop_safs
+                                                (   
+                                                    SELECT id,NULL AS saf_id, zone_mstr_id
+                                                    FROM prop_properties
+                                               )
+                                               UNION ALL(
+                                                    SELECT NULL AS id, id AS saf_id,zone_mstr_id
+                                                    FROM prop_safs
+                                               )
                                            ) AS p
                                            ON (
                                                (t.tran_type = 'Property' AND t.property_id = p.id) OR
-                                               (t.tran_type <> 'Property' AND t.saf_id = p.id)
+                                               (t.tran_type <> 'Property' AND t.saf_id = p.saf_id)
                                            )
                                            LEFT JOIN zone_masters AS z on z.id=p.zone_mstr_id
                                            WHERE t.tran_date BETWEEN '$fromDate' AND '$toDate' AND t.status = 1
@@ -4096,7 +4099,7 @@ class Report implements IReport
                                            details.card_collection,
                                            details.chque_collection,
                                            details.rtgs_collection";
-            $zoneWiseReport = DB::select($zoneWiseCollectionQuery);
+            $zoneWiseReport = DB::select($zoneWiseCollectionQuery);#print_var($query);print_var($zoneWiseCollectionQuery);die;
             $report[0]->zoneWiseReport = collect($zoneWiseReport);
             $report[0]->totalReport = [
                 "total_properties" => collect($zoneWiseReport)->sum("total_properties"),
