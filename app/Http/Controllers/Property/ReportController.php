@@ -3307,10 +3307,15 @@ class ReportController extends Controller
             $currentDate = Carbon::now()->format("Y-m-d");
 
             // PropTransaction Query
-            $propTransactionQuery = PropTransaction::select(DB::raw("SUM(prop_transactions.amount) AS total_amount, COUNT(distinct (prop_transactions.property_id)) AS total_hh, count(id) as total_tran"))
+            $propTransactionQuery = PropTransaction::select(DB::raw("
+                        SUM(prop_transactions.amount) AS total_amount, 
+                        COUNT(distinct (prop_transactions.property_id)) AS total_hh,
+                        COUNT(distinct (prop_transactions.saf_id)) AS total_saf,
+                        COUNT(id) as total_tran
+                    "))
                 ->wherein("status", [1, 2])
                 ->where("tran_date", $currentDate)
-                ->wherenotnull("property_id")
+                // ->wherenotnull("property_id")
                 ->get();
             $propTransactionQuery = ($propTransactionQuery
                 ->map(function ($val) {
