@@ -418,8 +418,16 @@ class WaterConsumerPayment
             "balence" => round($balence) > 0 ? $balence : 0,
             "remaining" => $totaTax - $payableAmountOfTax > 0 ? $totaTax - $payableAmountOfTax : 0,
         ];
-        $paidArrearDemand = ( roundFigure($payableAmountOfTax) >= $currentTax->sum('due_arrear_demand'))  ? $currentTax->sum('due_arrear_demand') : ($currentTax->sum('due_arrear_demand') - roundFigure($payableAmountOfTax)) ;
+        $paidArrearDemand = ( roundFigure($payableAmountOfTax) > $currentTax->sum('due_arrear_demand'))  ? $currentTax->sum('due_arrear_demand') : (roundFigure($payableAmountOfTax)) ;
+        if($paidArrearDemand > $currentTax->sum('due_arrear_demand') && roundFigure($payableAmountOfTax)== $totaTax)
+        {
+            $paidArrearDemand = $currentTax->sum('due_arrear_demand');
+        }
         $paidCurrentDemand = $payableAmountOfTax > $currentTax->sum('due_arrear_demand') ? ($payableAmountOfTax - ($paidArrearDemand)): 0 ;
+        if($paidCurrentDemand > $currentTax->sum('due_current_demand') && roundFigure($payableAmountOfTax)== $totaTax)
+        {
+            $paidCurrentDemand = $currentTax->sum('due_current_demand');
+        }
          
         $paidDemandBifurcation = [
             'total_tax' => roundFigure(($payableAmountOfTax)),
