@@ -986,7 +986,8 @@ class WaterPaymentController extends Controller
             }
             if ($refDemand->last()) {
                 $lastDemand = $refDemand->last();
-                $startingDate = Carbon::createFromFormat('Y-m-d', $lastDemand['demand_from']);
+                // $startingDate = Carbon::createFromFormat('Y-m-d', $lastDemand['demand_from']);
+                $startingDate = Carbon::createFromFormat('Y-m-d', $refDemand->min("demand_from"))??null;
             } else {
                 $startingDate = null;
             }
