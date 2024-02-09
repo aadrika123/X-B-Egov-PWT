@@ -690,6 +690,7 @@ class WaterPaymentController extends Controller
             $mwaterTran                 = new waterTran();
             $mWaterConsumerCollection   = new WaterConsumerCollection();
             $mWaterConsumerDemand       = new WaterConsumerDemand();
+            // return $request->all();
 
             $offlinePaymentModes    = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
             $checkOffline           = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
@@ -708,9 +709,12 @@ class WaterPaymentController extends Controller
             }
             if ($refDemand->last()) {
                 $lastDemand = $refDemand->last();
-                $startingDate = Carbon::createFromFormat('Y-m-d', $lastDemand['demand_from']);
+                // $startingDate = Carbon::createFromFormat('Y-m-d', $lastDemand['demand_from']);
+                $startingDate = Carbon::createFromFormat('Y-m-d', $refDemand->min("demand_from"))??null;
+            } else {
+                $startingDate = null;
             }
-
+            
             $endDate        = Carbon::createFromFormat('Y-m-d',  $request->demandUpto);
             $startingDate   = $startingDate->toDateString();
             $endDate        = $endDate->toDateString();
@@ -815,9 +819,9 @@ class WaterPaymentController extends Controller
         $totalPaymentAmount = (collect($allCharges)->sum('due_balance_amount')) - $refadvanceAmount['advanceAmount'];
         $totalPaymentAmount = round($totalPaymentAmount);
         $totalPenalty       = collect($allCharges)->sum('due_penalty');
-        // if ($totalPaymentAmount != $refAmount) {
-        //     throw new Exception("amount Not Matched!");
-        // }
+        if ($totalPaymentAmount != $refAmount) {
+            throw new Exception("amount Not Matched!");
+        }
 
         # checking the advance amount 
         $allunpaidCharges = $mWaterConsumerDemand->getFirstConsumerDemandV2($consumerId)->get();
