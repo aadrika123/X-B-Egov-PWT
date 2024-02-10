@@ -5520,7 +5520,7 @@ class Report implements IReport
                 "last_page" => $paginator->lastPage(),
                 "totalAmount" => $totalAmount,
                 "data" => collect($paginator->items())->map(function ($val) {
-                    $val->file =  trim($val->file) ? (Config::get('module-constants.DOC_URL') . "/" . $val->file) : "";
+                    $val->file =  trim($val->file_path) ? (Config::get('module-constants.DOC_URL') . "/" . $val->file_path) : "";
                     return $val;
                 }),
                 "total" => $paginator->total(),

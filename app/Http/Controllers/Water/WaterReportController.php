@@ -16,8 +16,9 @@ use App\Models\Water\WaterConsumerDemand;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Water\WaterSecondConsumer;
 use  App\Http\Requests\Water\colllectionReport;
+use App\Repository\Water\Concrete\Report;
 use App\Repository\Water\Interfaces\IConsumer;
-
+use Illuminate\Support\Facades\App;
 
 /**
  * | ----------------------------------------------------------------------------------
@@ -32,6 +33,7 @@ class WaterReportController extends Controller
 {
     use WaterTrait;
     private $Repository;
+    private $ReportRepository;
     private $_docUrl;
     protected $_DB_NAME;
     protected $_DB;
@@ -39,6 +41,7 @@ class WaterReportController extends Controller
     public function __construct(IConsumer $Repository)
     {
         $this->Repository = $Repository;
+        $this->ReportRepository = App::makeWith(Report::class);
         $this->_DB_NAME = "pgsql_water";
         $this->_DB = DB::connection($this->_DB_NAME);
         $this->_docUrl = Config::get("waterConstaint.DOC_URL");
@@ -4153,5 +4156,31 @@ class WaterReportController extends Controller
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
+    }
+
+    public function tranDeactivatedList(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "fromDate" => "nullable|date|date_format:Y-m-d",
+                "uptoDate" => "nullable|date|date_format:Y-m-d|after_or_equal:" . $request->fromDate,
+                "ulbId" => "nullable|digits_between:1,9223372036854775807",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "zoneId" => "nullable|digits_between:1,9223372036854775807",
+                "appType" => "nullable|in:PROPERTY,SAF",
+                "userId" => "nullable|digits_between:1,9223372036854775807",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        if ($validated->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validated->errors()
+            ]);
+        }
+        return $this->ReportRepository->tranDeactivatedList($request);
     }
 }
