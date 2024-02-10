@@ -38,7 +38,7 @@ class WaterConsumerDemand extends Model
             'water_second_consumers.*',
             'water_consumer_owners.applicant_name',
             'water_consumer_initial_meters.initial_reading',
-            'users.user_name',
+            'users.name as user_name',
             DB::raw("ROUND(water_consumer_demands.due_balance_amount, 2) as due_balance_amount"),
             'min_demand_from.demand_from as demand_from',
             'max_demand_upto.demand_upto as demand_upto',
@@ -210,7 +210,7 @@ class WaterConsumerDemand extends Model
         $mWaterConsumerDemand->demand_from              =  $demands['demand_from'];
         $mWaterConsumerDemand->demand_upto              =  $demands['demand_upto'];
         $mWaterConsumerDemand->penalty                  =  $demands['penalty'] ?? 0;            // Static
-        $mWaterConsumerDemand->current_meter_reading    =  $request->finalRading;
+        $mWaterConsumerDemand->current_meter_reading    =  $demands["current_reading"]??$request->finalRading;
         $mWaterConsumerDemand->unit_amount              =  $demands['unit_amount'];
         $mWaterConsumerDemand->connection_type          =  $demands['connection_type'];
         $mWaterConsumerDemand->demand_no                =  "WCD" . random_int(100000, 999999) . "/" . random_int(1, 10);

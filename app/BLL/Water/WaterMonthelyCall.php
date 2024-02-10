@@ -48,6 +48,7 @@ class WaterMonthelyCall
     private $_mWaterConsumerMeter;
     private $_ConsumerMeters;
     private $_consuemrMeterDetails;
+    private $lastRearding;
     # Class cons
     public function __construct(int $consumerId, $toDate, $unitConsumed)
     {
@@ -74,7 +75,7 @@ class WaterMonthelyCall
         $this->readParamsForCall();                     // 1
         $this->monthelyDemandCall();                    // 2
         $this->generateDemand();                        // 3
-        return $this->_tax;
+          return $this->_tax;
     }
 
     /**
@@ -219,10 +220,17 @@ class WaterMonthelyCall
                         $currentDate->addMonth();
                     }
                 }
-
+                $testcurruntDate =(collect($monthsArray)->filter(function($val){
+                    return(Carbon::parse($val)->between((Carbon::parse(Carbon::now()->format('Y-m-01'))),(Carbon::parse(Carbon::now()->lastOfMonth())))) ;
+                    
+                }));
+                if($testcurruntDate->isEmpty())
+                {
+                    $monthsArray[] = Carbon::now()->format("Y-m-01");
+                }
                 # daly consumed unit
                 $dalyUnitConsumed = ($this->_unitConsumed - ($this->_consumerLastMeterReding->initial_reading ?? $this->_consuemrMeterDetails->initial_reading)) / $dateDifference;
-
+                $this->lastRearding = ($this->_consumerLastMeterReding->initial_reading ?? $this->_consuemrMeterDetails->initial_reading);
                 # If the statrt day diff exist
                 if ($startDateCount > 0) {
                     $amount = $this->_consumerFeeUnits->unit_fee * ($startDateCount * $dalyUnitConsumed);
@@ -242,23 +250,41 @@ class WaterMonthelyCall
                 }
 
                 # Monthely demand generation 
+                
                 $returnData = collect($monthsArray)->map(function ($values, $key)
                 use ($dalyUnitConsumed) {
                     $lastDateOfMonth = Carbon::parse($values)->endOfMonth();
-                    $noOfDays = $lastDateOfMonth->day;
-                    $refCallMonthAmount = $this->_consumerFeeUnits->unit_fee * max(0, ($noOfDays * $dalyUnitConsumed) - 10);
-                    // Static the free amount per month
-                    if ($refCallMonthAmount < 0) {
-                        $refCallMonthAmount = 0;
+                    $totalDayOfmonth = $noOfDays = $lastDateOfMonth->day;
+                    if((Carbon::parse($values)->between((Carbon::parse(Carbon::now()->format('Y-m-01'))),(Carbon::parse(Carbon::now()->lastOfMonth())))))
+                    {
+                        $lastDateOfMonth = Carbon::now();
+                        $noOfDays = $lastDateOfMonth->day;
                     }
-                    $amount = $refCallMonthAmount + $this->_consumerCharges->amount;
+                    // $refCallMonthAmount = ($this->_consumerFeeUnits->unit_fee * (($noOfDays * $dalyUnitConsumed) - 10));                         // Static the free amount per month
+                    $refCallMonthAmount = ((($noOfDays * $dalyUnitConsumed) ));  
+                    $amount = round($this->_consumerFeeUnits->unit_fee * $refCallMonthAmount,2);
+                    if (round($refCallMonthAmount)  <=  10 && $totalDayOfmonth == $noOfDays) {
+                        // $refCallMonthAmount = 0;
+                        $amount = round($this->_consumerCharges->amount,2);
+                    }
+                    if((Carbon::parse($values)->between((Carbon::parse(Carbon::now()->format('Y-m-01'))),(Carbon::parse(Carbon::now()->lastOfMonth())))) 
+                        && $totalDayOfmonth != $noOfDays
+                        && ($totalDayOfmonth * $dalyUnitConsumed <=  10)
+                    )
+                    {
+                        $amount = round(($this->_consumerCharges->amount/$totalDayOfmonth) * $noOfDays,2);
+                    }
+                    // $amount = $refCallMonthAmount + $this->_consumerCharges->amount;
                     if ($amount < 0) { 
                         $amount = 0;
                     }
+                    $this->lastRearding = $this->lastRearding +$refCallMonthAmount;
                     return [
                         "generation_date"       => $this->_now,
                         "amount"                => $amount,
                         "current_meter_reading" => $this->_unitConsumed,
+                        "current_month_counsumen"=> $refCallMonthAmount,
+                        "current_reading"   =>$this->lastRearding,
                         "unit_amount"           => 1,                                           // Statisc
                         "demand_from"           => $values,                                     // Static
                         "demand_upto"           => $lastDateOfMonth->format('Y-m-d'),
@@ -272,24 +298,24 @@ class WaterMonthelyCall
                 }
 
                 # If the day diff exist
-                if ($dateCount > 0) {
-                    $demandFrom = $endDate->copy()->startOfMonth()->format('Y-m-d');
-                    $amount = $this->_consumerFeeUnits->unit_fee * ($dateCount * $dalyUnitConsumed);
-                    if ($amount < 0) {
-                        $amount = 0;
-                    }
-                    $dateWiseCall[] = [
-                        "generation_date"       => $this->_now,
-                        "amount"                => $amount,
-                        "current_meter_reading" => $this->_unitConsumed,
-                        "unit_amount"           => 1,                                               // Static
-                        "demand_from"           => $demandFrom,                                     // Static
-                        "demand_upto"           => $endDate->format('Y-m-d'),
-                        "connection_type"       => $this->_meterStatus,
-                    ];
-                    $returnData = $returnData->merge(collect($dateWiseCall));
-                }
-
+                // if ($dateCount > 0) {
+                //     $demandFrom = $endDate->copy()->startOfMonth()->format('Y-m-d');
+                //     $amount = $this->_consumerFeeUnits->unit_fee * ($dateCount * $dalyUnitConsumed);
+                //     if ($amount < 0) {
+                //         $amount = 0;
+                //     }
+                //     $dateWiseCall[] = [
+                //         "generation_date"       => $this->_now,
+                //         "amount"                => $amount,
+                //         "current_meter_reading" => $this->_unitConsumed,
+                //         "unit_amount"           => 1,                                               // Static
+                //         "demand_from"           => $demandFrom,                                     // Static
+                //         "demand_upto"           => $endDate->format('Y-m-d'),
+                //         "connection_type"       => $this->_meterStatus,
+                //     ];
+                //     $returnData = $returnData->merge(collect($dateWiseCall));
+                // }
+            
                 # show taxes
                 $this->_tax = [
                     "status" => true,
