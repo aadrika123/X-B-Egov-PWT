@@ -79,7 +79,7 @@ class WaterTranDeactivate
         if(strtoupper($this->_transaction->tran_type)==strtoupper("Demand Collection"))
         {
             $this->_tranDtls = $this->_mWaterTranDtl->getDetailByTranId($this->_transaction->id);
-            $this->_mConsumerCollection->where("transaction_id",$this->_transaction->id)->update(["status",0]);
+            $this->_mConsumerCollection->where("transaction_id",$this->_transaction->id)->update(["status"=>0]);
             foreach($this->_tranDtls as $key=>$tranDtl)
             {
                 $demand = $this->_WaterDemandsModel->find($tranDtl->demand_id);
@@ -87,7 +87,7 @@ class WaterTranDeactivate
                     throw new Exception("Demand Not Available for demand ID $tranDtl->demand_id");
                 }
                 $this->adjustPropDemand($demand, $tranDtl);
-                $oldD = $this->_WaterDemandsModel->find($tranDtl->prop_demand_id);
+                $oldD = $this->_WaterDemandsModel->find($tranDtl->demand_id);
                 $demand->save();
                 
                 # Tran Dtl Deactivation
@@ -100,10 +100,10 @@ class WaterTranDeactivate
 
     private function adjustPropDemand(WaterConsumerDemand $tblDemand, $paidTaxes)
     {
-        $tblDemand->due_balance_amount  = $tblDemand->due_balance_amount + $paidTaxes->sum("paid_amount") ;
-        $tblDemand->due_arrear_demand   = $tblDemand->due_arrear_demand + $paidTaxes->sum("arrear_settled");
-        $tblDemand->due_current_demand  = $tblDemand->due_current_demand +($paidTaxes->sum("paid_amount")-$paidTaxes->sum("arrear_settled")) ;        
-        $tblDemand->paid_total_tax      = $tblDemand->paid_total_tax - $paidTaxes->sum("paid_amount");
+        $tblDemand->due_balance_amount  = $tblDemand->due_balance_amount + ($paidTaxes->paid_amount ? $paidTaxes->paid_amount : 0) ;
+        $tblDemand->due_arrear_demand   = $tblDemand->due_arrear_demand + ($paidTaxes->arrear_settled ? $paidTaxes->arrear_settled : 0);
+        $tblDemand->due_current_demand  = $tblDemand->due_current_demand +(($paidTaxes->paid_amount ? $paidTaxes->paid_amount : 0 ) - ($paidTaxes->arrear_settled ? $paidTaxes->arrear_settled : 0)) ;        
+        $tblDemand->paid_total_tax      = $tblDemand->paid_total_tax - ($paidTaxes->paid_amount ? $paidTaxes->paid_amount : 0);
         if( $tblDemand->paid_status == 1)
         {
             $tblDemand->is_full_paid = false;
