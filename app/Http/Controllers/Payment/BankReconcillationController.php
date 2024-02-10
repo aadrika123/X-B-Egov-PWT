@@ -392,76 +392,76 @@ class BankReconcillationController extends Controller
 
                 # If the transaction bounce
                 if ($paymentStatus == 3) {
-                    // $waterDeactivateTran = new WaterTranDeactivate($transaction->id);
-                    // $waterDeactivateTran->deactivate(); 
+                    $waterDeactivateTran = new WaterTranDeactivate($transaction->id);
+                    $waterDeactivateTran->deactivate(); 
                     
-                    $waterTranDtls = WaterTranDetail::where('tran_id', $transaction->id)
-                        ->where('status', '<>', 0)
-                        ->get();
-                    $demandIds = $waterTranDtls->pluck('demand_id');
+                    // $waterTranDtls = WaterTranDetail::where('tran_id', $transaction->id)
+                    //     ->where('status', '<>', 0)
+                    //     ->get();
+                    // $demandIds = $waterTranDtls->pluck('demand_id');
 
-                    # For demand payment 
-                    if ($transaction->tran_type == 'Demand Collection') {
-                        # Map every demand data 
-                        $waterTranDtls->map(function ($values, $key)
-                        use ($applicationPaymentStatus, $transaction) {
-                            $conumserDemand = WaterConsumerDemand::where('id', $values->demand_id)->first();
-                            $conumserDemand->update(
-                                [
-                                    'paid_status'           => $applicationPaymentStatus,
-                                    'is_full_paid'          => false,
-                                    'due_balance_amount'    => (($conumserDemand->due_balance_amount ?? 0) + ($values->paid_amount ?? 0))
-                                ]
-                            );
+                    // # For demand payment 
+                    // if ($transaction->tran_type == 'Demand Collection') {
+                    //     # Map every demand data 
+                    //     $waterTranDtls->map(function ($values, $key)
+                    //     use ($applicationPaymentStatus, $transaction) {
+                    //         $conumserDemand = WaterConsumerDemand::where('id', $values->demand_id)->first();
+                    //         $conumserDemand->update(
+                    //             [
+                    //                 'paid_status'           => $applicationPaymentStatus,
+                    //                 'is_full_paid'          => false,
+                    //                 'due_balance_amount'    => (($conumserDemand->due_balance_amount ?? 0) + ($values->paid_amount ?? 0))
+                    //             ]
+                    //         );
 
-                            # Update the transaction details 
-                            $values->update([
-                                'status'     => $applicationPaymentStatus,
-                                'updated_at' => Carbon::now()
-                            ]);
-                        });
+                    //         # Update the transaction details 
+                    //         $values->update([
+                    //             'status'     => $applicationPaymentStatus,
+                    //             'updated_at' => Carbon::now()
+                    //         ]);
+                    //     });
 
-                        # Update water consumer collection details 
-                        WaterConsumerCollection::where('transaction_id', $transaction->id)
-                            ->update([
-                                "status" => $applicationPaymentStatus
-                            ]);
-                        // $wardId = WaterConsumer::find($transaction->related_id)->ward_mstr_id;
-                    }
+                    //     # Update water consumer collection details 
+                    //     WaterConsumerCollection::where('transaction_id', $transaction->id)
+                    //         ->update([
+                    //             "status" => $applicationPaymentStatus
+                    //         ]);
+                    //     // $wardId = WaterConsumer::find($transaction->related_id)->ward_mstr_id;
+                    // }
 
-                    # ❗❗❗ Unfinished code For application payment ❗❗❗
-                    if ($transaction->tran_type != 'Demand Collection') {
-                        WaterApplication::where('id', $mChequeDtl->application_id)
-                            ->update(
-                                [
-                                    'payment_status' => $applicationPaymentStatus
-                                ]
-                            );
-                        $connectionChargeDtl =  WaterConnectionCharge::find($demandIds);
-                        WaterConnectionCharge::whereIn('id', $demandIds)
-                            ->update(
-                                [
-                                    'paid_status' => $applicationPaymentStatus
-                                ]
-                            );
+                    // # ❗❗❗ Unfinished code For application payment ❗❗❗
+                    // if ($transaction->tran_type != 'Demand Collection') {
+                    //     WaterApplication::where('id', $mChequeDtl->application_id)
+                    //         ->update(
+                    //             [
+                    //                 'payment_status' => $applicationPaymentStatus
+                    //             ]
+                    //         );
+                    //     $connectionChargeDtl =  WaterConnectionCharge::find($demandIds);
+                    //     WaterConnectionCharge::whereIn('id', $demandIds)
+                    //         ->update(
+                    //             [
+                    //                 'paid_status' => $applicationPaymentStatus
+                    //             ]
+                    //         );
 
-                        WaterApplication::where('id', $connectionChargeDtl->application_id)
-                            ->update(
-                                [
-                                    'payment_status' => $applicationPaymentStatus,
+                    //     WaterApplication::where('id', $connectionChargeDtl->application_id)
+                    //         ->update(
+                    //             [
+                    //                 'payment_status' => $applicationPaymentStatus,
 
-                                ]
-                            );
+                    //             ]
+                    //         );
 
-                        //after penalty resolved
-                        WaterPenaltyInstallment::where('related_demand_id', $demandIds)
-                            ->update(
-                                [
-                                    'paid_status' => $applicationPaymentStatus
-                                ]
-                            );
-                        // $wardId = WaterApplication::find($transaction->related_id)->ward_id;
-                    }
+                    //     //after penalty resolved
+                    //     WaterPenaltyInstallment::where('related_demand_id', $demandIds)
+                    //         ->update(
+                    //             [
+                    //                 'paid_status' => $applicationPaymentStatus
+                    //             ]
+                    //         );
+                    //     // $wardId = WaterApplication::find($transaction->related_id)->ward_id;
+                    // }
                 }
  
                 # If the payment got clear
@@ -654,13 +654,13 @@ class BankReconcillationController extends Controller
 
             #_For Water Transaction Deactivation
             if ($req->moduleId == $waterModuleId) {
-                // $waterDeactivateTran = new WaterTranDeactivate($req->id);
-                // $waterDeactivateTran->deactivate();
-                $waterReq = new Request([
-                    "transactionId" => $req->id
-                ]);
-                $cWaterPaymentController = new WaterPaymentController();
-                $cWaterPaymentController->transactionDeactivation($waterReq);
+                $waterDeactivateTran = new WaterTranDeactivate($req->id);
+                $waterDeactivateTran->deactivate();
+                // $waterReq = new Request([
+                //     "transactionId" => $req->id
+                // ]);
+                // $cWaterPaymentController = new WaterPaymentController();
+                // $cWaterPaymentController->transactionDeactivation($waterReq);
                 $waterTranDeativetion = new WaterTransactionDeactivateDtl();
                 $waterTranDeativetion->create($deactivationArr);
             }
