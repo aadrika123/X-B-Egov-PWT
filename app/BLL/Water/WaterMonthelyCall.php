@@ -263,7 +263,7 @@ class WaterMonthelyCall
                     // $refCallMonthAmount = ($this->_consumerFeeUnits->unit_fee * (($noOfDays * $dalyUnitConsumed) - 10));                         // Static the free amount per month
                     $refCallMonthAmount = ((($noOfDays * $dalyUnitConsumed) ));  
                     $amount = round($this->_consumerFeeUnits->unit_fee * $refCallMonthAmount,2);
-                    if (round($refCallMonthAmount)  <=  10 && $totalDayOfmonth == $noOfDays) {
+                    if (($refCallMonthAmount)  <=  10 && $totalDayOfmonth == $noOfDays) {
                         // $refCallMonthAmount = 0;
                         $amount = round($this->_consumerCharges->amount,2);
                     }
