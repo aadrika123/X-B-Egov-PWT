@@ -203,7 +203,7 @@ class WaterMonthelyCall
                 $daysInEndMonth     = $endDate->copy()->endOfMonth()->day;
 
                 # If the end date is the last day of the month, don't count it
-                if ($endDate->day === $daysInEndMonth) {
+                if ($endDate->day == $daysInEndMonth) {
                     $monthsDifference--;
                     $dateCount = 0;
                 } else {
@@ -246,7 +246,8 @@ class WaterMonthelyCall
                 use ($dalyUnitConsumed) {
                     $lastDateOfMonth = Carbon::parse($values)->endOfMonth();
                     $noOfDays = $lastDateOfMonth->day;
-                    $refCallMonthAmount = ($this->_consumerFeeUnits->unit_fee * (($noOfDays * $dalyUnitConsumed) - 10));                         // Static the free amount per month
+                    $refCallMonthAmount = $this->_consumerFeeUnits->unit_fee * max(0, ($noOfDays * $dalyUnitConsumed) - 10);
+                    // Static the free amount per month
                     if ($refCallMonthAmount < 0) {
                         $refCallMonthAmount = 0;
                     }

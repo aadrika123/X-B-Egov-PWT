@@ -243,6 +243,7 @@ class WaterConsumer extends Controller
         );
         if ($validated->fails())
             return validationError($validated);
+        // return $request->all();
 
         try {
             $mWaterConsumerInitialMeter = new WaterConsumerInitialMeter();
