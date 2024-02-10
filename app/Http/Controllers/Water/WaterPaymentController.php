@@ -1776,9 +1776,10 @@ class WaterPaymentController extends Controller
             $yearRange = $currentYear . '-' . $nextYear;
             $advanceAmt = $WaterAdvance->getAdvanceAmtByTrId($transactionDetails->id)->sum("amount");
             $adjustAmt  = $WaterAdjustment->getAdjustmentAmtByTrId($transactionDetails->id)->sum("amount");
-            
+
             $returnValues = [
                 "transactionNo"         => $transactionDetails->tran_no,
+                "totalDemandAmt"        => ($transactionDetails->amount ? $transactionDetails->amount : 0) + ($transactionDetails->due_amount ? $transactionDetails->due_amount:0) ,
                 "departmentSection"     => $mDepartmentSection,
                 "accountDescription"    => $mAccDescription,
                 "transactionDate"       => $transactionDate,
