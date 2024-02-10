@@ -101,6 +101,9 @@ class BankReconcillationController extends Controller
             if ($moduleId == $waterModuleId) {
 
                 $chequeTranDtl  = $mWaterTran->chequeTranDtl($ulbId);
+                if ($request->verificationType != "bounce") {
+                    $chequeTranDtl = $chequeTranDtl->where("water_trans.status", 1);
+                }
 
                 if ($request->chequeNo) {
                     $data =  $chequeTranDtl

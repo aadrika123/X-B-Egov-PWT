@@ -175,7 +175,7 @@ class WaterTran extends Model
             ->leftjoin('water_cheque_dtls', 'water_cheque_dtls.transaction_id', 'water_trans.id')
             ->join('users', 'users.id', 'water_cheque_dtls.user_id')
             ->whereIn('payment_mode', ['Cheque', 'DD'])
-            ->where('water_trans.status', 1)
+            // ->where('water_trans.status', 1)
             ->where('water_trans.ulb_id', $ulbId);
     }
 
@@ -382,8 +382,10 @@ class WaterTran extends Model
             'water_trans.amount',
             'water_trans.payment_mode',
             'water_trans.tran_date',
-            'water_trans.tran_type'
-        )
+            'water_trans.tran_type',
+            DB::raw('2 as moduleId'),
+                'water_trans.status'
+            )
             ->where('water_trans.tran_no', $tranNo)
             ->where('status', 1)
             ->get();
