@@ -32,6 +32,7 @@ class WaterConsumerDemand extends Model
      */
     public function getDemandBydemandIds($consumerId)
     {
+        $qraterStringDate = calculateQuarterStartDate(Carbon::now()->format("y-m-d"));
         return WaterConsumerDemand::select(
             'water_consumer_demands.id AS ref_demand_id',
             'water_consumer_demands.*',
