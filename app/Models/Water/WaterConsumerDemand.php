@@ -32,8 +32,9 @@ class WaterConsumerDemand extends Model
      */
     public function getDemandBydemandIds($consumerId)
     {
-        $qraterStringDate = calculatePreviousYearLastQuarterStartDate(Carbon::now()->format("y-m-d"));
-        // dd($qraterStringDate);
+        $qraterStringDate = calculatePreviousYearLastQuarterStartDate(Carbon::now()->format("Y-m-d"));
+        $currrentQuareter = calculateQuarterStartDate(Carbon::now()->format("Y-m-d"));
+        // dd($currrentQuareter);
         return WaterConsumerDemand::select(
             'water_consumer_demands.id AS ref_demand_id',
             'water_consumer_demands.*',
@@ -42,16 +43,18 @@ class WaterConsumerDemand extends Model
             'water_consumer_initial_meters.initial_reading',
             'users.name as user_name',
             DB::raw("ROUND(water_consumer_demands.due_balance_amount, 2) as due_balance_amount"),
-            'min_demand_from.demand_from as demand_from',
-            'max_demand_upto.demand_upto as demand_upto',
-            DB::raw('ROUND(COALESCE(subquery.generate_amount, 0), 2) as generate_amount'),
+            DB::raw("TO_CHAR(min_demand_from.demand_from, 'DD-MM-YYYY') as demand_from"),
+            DB::raw("TO_CHAR(max_demand_upto.demand_upto, 'DD-MM-YYYY') as demand_upto"),
+            // DB::raw('ROUND(COALESCE(subquery.generate_amount, 0), 2) as generate_amount'),
             DB::raw('ROUND(COALESCE(subquery.arrear_demands, 0), 2) as arrear_demands'),
+            DB:: raw('ROUND(COALESCE(subquery.curernt_bill, 0), 2) as curernt_bill'),
             DB::raw('ROUND(COALESCE(subquery.current_demands, 0), 2) as current_demands'),
-            'subquery.generation_dates',
-            'subquery.previos_reading_date',
-            DB::raw('
+            DB::raw("TO_CHAR(subquery.generation_dates, 'DD-MM-YYYY') as generation_date"),
+            DB::raw("TO_CHAR(subquery.previos_reading_date, 'DD-MM-YYYY') as previos_reading_date"),
+            DB::raw(
+                '
             ROUND(
-                COALESCE(subquery.generate_amount, 0) +
+                COALESCE(subquery.curernt_bill,0) +
                 COALESCE(subquery.arrear_demands, 0) +
                 COALESCE(subquery.current_demands, 0) +
                 CASE
@@ -62,37 +65,29 @@ class WaterConsumerDemand extends Model
                 2
             ) as total_amount,
             ROUND(total_due_amount,2)as total_amount1'
-        )
-        
+            )
+
         )
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_consumer_demands.consumer_id')
             ->leftjoin('water_consumer_initial_meters', 'water_consumer_initial_meters.consumer_id', 'water_consumer_demands.consumer_id')
             ->join('water_second_consumers', 'water_second_consumers.id', '=', 'water_consumer_demands.consumer_id')
             ->leftjoin('users', 'users.id', '=', 'water_consumer_demands.emp_details_id')
             ->leftjoin(
-                DB::raw('(SELECT 
-                consumer_id,max(generation_date) as generation_dates,
-                SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.arrear_demand ELSE 0 END) AS arrear_demands,
-               -- SUM(CASE WHEN last_generate_id is null THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS current_demands,
-                SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NULL THEN water_consumer_demands.current_demand ELSE 0 END) AS current_demands,
-                --SUM(CASE WHEN last_generate_id is Not null THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS current_demands,
-                SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NOT NULL THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS generate_amount,
-                --SUM(CASE WHEN last_generate_id is Not null THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS generate_amount,
+                DB::raw("(SELECT 
+                consumer_id,max(CASE WHEN water_consumer_demands.consumer_tax_id is not null then water_consumer_demands.generation_date END ) as generation_dates,
+                SUM(CASE WHEN water_consumer_demands.demand_upto < '$qraterStringDate'  THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS arrear_demands,
+                SUM(CASE WHEN water_consumer_demands.demand_upto >= '$qraterStringDate' AND water_consumer_demands.demand_upto < '$currrentQuareter' THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS current_demands,
+                sum(case WHEN water_consumer_demands.demand_upto >= '$currrentQuareter' THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS curernt_bill,
+                --SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NOT NULL THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS generate_amount,
                 sum(case when water_consumer_demands.consumer_tax_id IS NULL  THEN  water_consumer_demands.due_balance_amount ELSE  0 END ) AS previous_demand,
                 SUM(water_consumer_demands.due_balance_amount) total_due_amount,
                 min(generation_date)as previos_reading_date
-    
-                FROM water_consumer_demands
-                left join (
-					select id last_generate_id ,generation_date as last_generation_date
-					from water_consumer_demands 
-					where status=true and consumer_id = '.$consumerId.' 
-					order by generation_date DESC 
-					limit 1
-				)last_demand on last_demand.last_generate_id = water_consumer_demands.id
+                from water_consumer_demands    
                 WHERE status=true
-                 GROUP BY consumer_id) as subquery'),
-                'subquery.consumer_id','=','water_consumer_demands.consumer_id'
+                 GROUP BY consumer_id) as subquery"),
+                'subquery.consumer_id',
+                '=',
+                'water_consumer_demands.consumer_id'
             )
             ->leftjoin(
                 DB::raw('(SELECT consumer_id, MIN(demand_from) as demand_from FROM water_consumer_demands where status=true and is_full_paid=false  GROUP BY consumer_id) as min_demand_from'),
@@ -105,15 +100,14 @@ class WaterConsumerDemand extends Model
                 'max_demand_upto.consumer_id',
                 '=',
                 'water_consumer_demands.consumer_id'
-            ) 
+            )
             // ->where('water_consumer_demands.paid_status', 0)
-            ->where('water_consumer_demands.status',true )
+            ->where('water_consumer_demands.status', true)
             ->where('water_consumer_demands.is_full_paid', false)
             ->where('water_consumer_demands.consumer_id', $consumerId)
             ->orderByDesc('water_consumer_demands.generation_date')
             ->first();
     }
-
     /**
      * | Get Demand According to consumerId and payment status false 
         | Here Changes
@@ -212,14 +206,14 @@ class WaterConsumerDemand extends Model
         $mWaterConsumerDemand->demand_from              =  $demands['demand_from'];
         $mWaterConsumerDemand->demand_upto              =  $demands['demand_upto'];
         $mWaterConsumerDemand->penalty                  =  $demands['penalty'] ?? 0;            // Static
-        $mWaterConsumerDemand->current_meter_reading    =  $demands["current_reading"]??$request->finalRading;
+        $mWaterConsumerDemand->current_meter_reading    =  $demands["current_reading"] ?? $request->finalRading;
         $mWaterConsumerDemand->unit_amount              =  $demands['unit_amount'];
         $mWaterConsumerDemand->connection_type          =  $demands['connection_type'];
         $mWaterConsumerDemand->demand_no                =  "WCD" . random_int(100000, 999999) . "/" . random_int(1, 10);
         $mWaterConsumerDemand->balance_amount           =  $demands['penalty'] ?? 0 + $demands['amount'];
         $mWaterConsumerDemand->created_at               =  Carbon::now();
-        $mWaterConsumerDemand->due_balance_amount       = round(($demands['penalty'] ?? 0) + $demands['amount'], 2); 
-        $mWaterConsumerDemand->current_demand           = round(($demands['penalty'] ?? 0) + $demands['amount'], 2); 
+        $mWaterConsumerDemand->due_balance_amount       = round(($demands['penalty'] ?? 0) + $demands['amount'], 2);
+        $mWaterConsumerDemand->current_demand           = round(($demands['penalty'] ?? 0) + $demands['amount'], 2);
         $mWaterConsumerDemand->save();
 
         return $mWaterConsumerDemand->id;
@@ -227,7 +221,7 @@ class WaterConsumerDemand extends Model
     /**
      * this function for new consumer entry 
      */
-    public function saveNewConnectionDemand($req,$refRequest,$userDetails)
+    public function saveNewConnectionDemand($req, $refRequest, $userDetails)
     {
         $mWaterConsumerDemand = new WaterConsumerDemand();
         $currenDate                    = Carbon::now();
