@@ -1605,7 +1605,7 @@ class HoldingTaxController extends Controller
         //     ]);
         // }
         $mPropSmsLog = new PropSmsLog();
-        $propDetails = PropDemand::select(
+      return  $propDetails = PropDemand::select(
             'prop_demands.property_id',
             DB::raw('SUM(due_total_tax) as total_tax, MAX(fyear) as max_fyear'),
             'owner_name',
