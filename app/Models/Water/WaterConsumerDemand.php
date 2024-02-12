@@ -49,7 +49,7 @@ class WaterConsumerDemand extends Model
             DB::raw('ROUND(COALESCE(subquery.arrear_demands, 0), 2) as arrear_demands'),
             DB:: raw('ROUND(COALESCE(subquery.curernt_bill, 0), 2) as curernt_bill'),
             DB::raw('ROUND(COALESCE(subquery.current_demands, 0), 2) as current_demands'),
-            DB::raw("TO_CHAR(subquery.generation_dates, 'DD-MM-YYYY') as generation_dates"),
+            DB::raw("TO_CHAR(subquery.generation_dates, 'DD-MM-YYYY') as generation_date"),
             DB::raw("TO_CHAR(subquery.previos_reading_date, 'DD-MM-YYYY') as previos_reading_date"),
             DB::raw(
                 '
