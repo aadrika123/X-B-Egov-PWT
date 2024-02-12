@@ -32,7 +32,7 @@ class WaterConsumerDemand extends Model
      */
     public function getDemandBydemandIds($consumerId)
     {
-        $qraterStringDate = calculatePreviousYearLastQuarterStartDate(Carbon::now()->format("Y-m-d"));
+        
         $currrentQuareter = calculateQuarterStartDate(Carbon::now()->format("Y-m-d"));
         // dd($currrentQuareter);
         return WaterConsumerDemand::select(
@@ -42,29 +42,23 @@ class WaterConsumerDemand extends Model
             'water_consumer_owners.applicant_name',
             'water_consumer_initial_meters.initial_reading',
             'users.name as user_name',
+            DB::raw("TO_CHAR('$currrentQuareter'::DATE, 'DD-MM-YYYY') as currrent_quarter"),
             DB::raw("ROUND(water_consumer_demands.due_balance_amount, 2) as due_balance_amount"),
             DB::raw("TO_CHAR(min_demand_from.demand_from, 'DD-MM-YYYY') as demand_from"),
             DB::raw("TO_CHAR(max_demand_upto.demand_upto, 'DD-MM-YYYY') as demand_upto"),
             // DB::raw('ROUND(COALESCE(subquery.generate_amount, 0), 2) as generate_amount'),
             DB::raw('ROUND(COALESCE(subquery.arrear_demands, 0), 2) as arrear_demands'),
-            DB:: raw('ROUND(COALESCE(subquery.curernt_bill, 0), 2) as curernt_bill'),
-            DB::raw('ROUND(COALESCE(subquery.current_demands, 0), 2) as current_demands'),
+            DB::raw('ROUND(COALESCE(subquery.curernt_bill, 0), 2) as curernt_bill'),
+            // DB::raw('ROUND(COALESCE(subquery.current_demands, 0), 2) as current_demands'),
             DB::raw("TO_CHAR(subquery.generation_dates, 'DD-MM-YYYY') as generation_date"),
             DB::raw("TO_CHAR(subquery.previos_reading_date, 'DD-MM-YYYY') as previos_reading_date"),
             DB::raw(
-                '
-            ROUND(
-                COALESCE(subquery.curernt_bill,0) +
-                COALESCE(subquery.arrear_demands, 0) +
-                COALESCE(subquery.current_demands, 0) +
-                CASE
-                    WHEN COALESCE(subquery.arrear_demands, 0) = 0 AND COALESCE(subquery.current_demands, 0) = 0
-                    THEN COALESCE(subquery.previous_demand, 0)
-                    ELSE 0
-                END,
-                2
-            ) as total_amount,
-            ROUND(total_due_amount,2)as total_amount1'
+                'ROUND(
+                    COALESCE(subquery.curernt_bill, 0) +
+                    COALESCE(subquery.arrear_demands, 0),
+                    2
+                ) as total_amount,
+                ROUND(subquery.total_due_amount, 2) as total_amount1'
             )
 
         )
@@ -75,11 +69,8 @@ class WaterConsumerDemand extends Model
             ->leftjoin(
                 DB::raw("(SELECT 
                 consumer_id,max(CASE WHEN water_consumer_demands.consumer_tax_id is not null then water_consumer_demands.generation_date END ) as generation_dates,
-                SUM(CASE WHEN water_consumer_demands.demand_upto < '$qraterStringDate'  THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS arrear_demands,
-                SUM(CASE WHEN water_consumer_demands.demand_upto >= '$qraterStringDate' AND water_consumer_demands.demand_upto < '$currrentQuareter' THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS current_demands,
                 sum(case WHEN water_consumer_demands.demand_upto >= '$currrentQuareter' THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS curernt_bill,
-                --SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NOT NULL THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS generate_amount,
-                sum(case when water_consumer_demands.consumer_tax_id IS NULL  THEN  water_consumer_demands.due_balance_amount ELSE  0 END ) AS previous_demand,
+                sum(Case WHEN water_consumer_demands.demand_upto < '$currrentQuareter'   THEN water_consumer_demands.due_balance_amount ELSE 0 END ) AS arrear_demands, 
                 SUM(water_consumer_demands.due_balance_amount) total_due_amount,
                 min(generation_date)as previos_reading_date
                 from water_consumer_demands    
