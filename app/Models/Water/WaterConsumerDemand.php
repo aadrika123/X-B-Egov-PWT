@@ -74,7 +74,7 @@ class WaterConsumerDemand extends Model
             ->leftjoin('users', 'users.id', '=', 'water_consumer_demands.emp_details_id')
             ->leftjoin(
                 DB::raw("(SELECT 
-                consumer_id,max(generation_date) as generation_dates,
+                consumer_id,max(CASE WHEN water_consumer_demands.consumer_tax_id is not null then water_consumer_demands.generation_date END ) as generation_dates,
                 SUM(CASE WHEN water_consumer_demands.demand_upto < '$qraterStringDate'  THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS arrear_demands,
                 SUM(CASE WHEN water_consumer_demands.demand_upto >= '$qraterStringDate' AND water_consumer_demands.demand_upto < '$currrentQuareter' THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS current_demands,
                 sum(case WHEN water_consumer_demands.demand_upto >= '$currrentQuareter' THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS curernt_bill,
@@ -108,7 +108,6 @@ class WaterConsumerDemand extends Model
             ->orderByDesc('water_consumer_demands.generation_date')
             ->first();
     }
-
     /**
      * | Get Demand According to consumerId and payment status false 
         | Here Changes
