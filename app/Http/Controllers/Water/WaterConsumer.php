@@ -2267,7 +2267,6 @@ class WaterConsumer extends Controller
             if (!$demandDetails) {
                 throw new Exception('demands not found ');
             }
-            // dd($demandDetails);
             $allDemandGenerated = $mWaterDemands->getConsumerDemandV3($ConsumerId);           // get all demands of consumer generated 
             # sum of amount
             $sumAmount = collect($allDemandGenerated)->sum('due_balance_amount');
