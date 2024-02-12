@@ -43,8 +43,8 @@ class WaterConsumerPayment
     private $_PropPendingArrear;
     private $_idGeneration;
     private $_ulbWardMaster;
-    private $_mTempTransaction   ;
-    private $_mWaterChequeDtl     ;
+    private $_mTempTransaction;
+    private $_mWaterChequeDtl;
     private $_moduleId;
     private $_adjustmentFor;
     protected $_DB_NAME;
@@ -60,7 +60,7 @@ class WaterConsumerPayment
         $this->_WaterAdvance = new WaterAdvance();
         $this->_WaterAdjustment = new WaterAdjustment();
         $this->_WaterDemandsModel = new WaterConsumerDemand();
-        $this->_idGeneration = new IdGeneration;   
+        $this->_idGeneration = new IdGeneration;
         $this->_mWaterTrans = new WaterTran();
         $this->_mWaterTranDtl = new WaterTranDetail();
         $this->_mConsumerCollection = new WaterConsumerCollection();
@@ -81,7 +81,7 @@ class WaterConsumerPayment
         DB::beginTransaction();
         if ($db1 != $db2)
             $this->_DB->beginTransaction();
-        if($db1!=$db3 && $db2!=$db3)
+        if ($db1 != $db3 && $db2 != $db3)
             $this->_DB_MASTER->beginTransaction();
     }
     /**
@@ -95,7 +95,7 @@ class WaterConsumerPayment
         DB::rollBack();
         if ($db1 != $db2)
             $this->_DB->rollBack();
-        if($db1!=$db3 && $db2!=$db3)
+        if ($db1 != $db3 && $db2 != $db3)
             $this->_DB_MASTER->rollBack();
     }
     /**
@@ -109,18 +109,18 @@ class WaterConsumerPayment
         DB::commit();
         if ($db1 != $db2)
             $this->_DB->commit();
-        if($db1!=$db3 && $db2!=$db3)
+        if ($db1 != $db3 && $db2 != $db3)
             $this->_DB_MASTER->commit();
     }
     public function readGenParams()
-    { 
+    {
         $this->_offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
         $this->_todayDate = Carbon::now();
         $this->_userId = auth()->user()->id ?? $this->_REQ['userId'];
         $this->_consumerId = $this->_REQ['consumerId'];
-        $this->_verifyPaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');   
-        $this->_moduleId           = Config::get('module-constants.WATER_MODULE_ID');  
-        $this->_adjustmentFor      = Config::get("waterConstaint.ADVANCE_FOR.1");   
+        $this->_verifyPaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
+        $this->_moduleId           = Config::get('module-constants.WATER_MODULE_ID');
+        $this->_adjustmentFor      = Config::get("waterConstaint.ADVANCE_FOR.1");
 
         $this->_WaterConsumer = WaterSecondConsumer::find($this->_consumerId);
         if (collect($this->_WaterConsumer)->isEmpty())
@@ -134,13 +134,12 @@ class WaterConsumerPayment
 
     public function readPaymentParams()
     {
-        if(!$this->waterDemands->original["status"])
-        {
+        if (!$this->waterDemands->original["status"]) {
             throw new Exception($this->waterDemands->original["message"]);
         }
-        $demands = $this->waterDemands->original['data']['consumerDemands']; 
+        $demands = $this->waterDemands->original['data']['consumerDemands'];
         $demands = collect($demands)->sortBy("demand_upto");
-        $this->_demands = $demands; 
+        $this->_demands = $demands;
 
         $payableAmount = $this->waterDemands->original['data']['totalSumDemand'];
 
@@ -158,15 +157,16 @@ class WaterConsumerPayment
             'tranNo' => $this->_tranNo,
             'payableAmount' => $payableAmount,                                                                         // Payable Amount with Arrear
             'demandAmt' => $payableAmount,                         // Demandable Amount
-            'tranBy' => $tranBy,
+            'userType' => $tranBy,
             'verifyStatus' => 1,
             'id'           => $this->_WaterConsumer->id,
-            'chargeCategory'=> "Demand Collection", 
+            'chargeCategory' => "Demand Collection",
             "wardMstrId" => $this->_WaterConsumer->ward_mstr_id,
-            'workflowId'    => 0, 
-            'wardNo'       => $wardDTls->ward_name??null,
+            'workflowId'    => 0,
+            'wardNo'       => $wardDTls->ward_name ?? null,
             'moduleId'     => $this->_moduleId,
             "ulbId"        => $this->_WaterConsumer->ulb_id,
+            'isJsk'        => true
         ]);
 
         if (in_array($this->_REQ['paymentMode'], $this->_verifyPaymentModes)) {
@@ -179,20 +179,19 @@ class WaterConsumerPayment
 
     public function postPayment()
     {
-        $this->readPaymentParams();        
-        if(!$this->_REQ->amount)
-        {
+        $this->readPaymentParams();
+        if (!$this->_REQ->amount) {
             $this->_REQ->merge(['amount' => $this->_REQ['payableAmount']]);
-        }        
+        }
         $addvanceAmt = $this->waterDemands->original['data']["remainAdvance"] ?? 0;
         $adjustAmt = 0;
         $payableAmount = $this->_REQ["amount"];
         if (strtoupper($this->_REQ["paymentMode"]) != "ONLINE") {
-            $adjustAmt= round($this->_REQ['payableAmount'] - $addvanceAmt);
+            $adjustAmt = round($this->_REQ['payableAmount'] - $addvanceAmt);
             $adjustAmt = $adjustAmt >= 0 ? $addvanceAmt : $this->_REQ->amount;
             switch ($this->_REQ->paymentType) {
                 case "isPartPayment":
-                    $payableAmount = $payableAmount + $addvanceAmt;                    
+                    $payableAmount = $payableAmount + $addvanceAmt;
                     break;
                 case "isFullPayment":
                     $payableAmount;
@@ -201,13 +200,13 @@ class WaterConsumerPayment
                             'amount' => ($this->_REQ->amount - $addvanceAmt)
                         ]
                     );
-                    break;                
+                    break;
             }
         }
         $paidPenalty = 0;
         $paidDemands = [];
-        $leftDemand = ($this->_REQ['payableAmount'] -$payableAmount)>0 ? $this->_REQ['payableAmount'] - $payableAmount : 0;
-        $this->_REQ->merge(["leftDemandAmount"=> $leftDemand]);
+        $leftDemand = ($this->_REQ['payableAmount'] - $payableAmount) > 0 ? $this->_REQ['payableAmount'] - $payableAmount : 0;
+        $this->_REQ->merge(["leftDemandAmount" => $leftDemand]);
         foreach ($this->_demands as $key => $val) {
             if ($payableAmount <= 0) {
                 continue;
@@ -217,8 +216,7 @@ class WaterConsumerPayment
             $paidPenalty += $paymentDtl["payableAmountOfPenalty"];
             $paidDemands[] = $paymentDtl;
         }
-        if(!$paidDemands)
-        {
+        if (!$paidDemands) {
             throw new Exception("Something went wrong");
         }
         $d1 = [];
@@ -243,9 +241,9 @@ class WaterConsumerPayment
              */
             $tblDemand->paid_status         = 1;           // Paid Status Updation
             $tblDemand->due_balance_amount  = round($tblDemand->due_balance_amount - $paidTaxes->paidTotalTax)      > 0  ? $tblDemand->due_balance_amount - $paidTaxes->paidTotalTax            : 0;
-            $tblDemand->due_arrear_demand   = $tblDemand->due_arrear_demand - $paidTaxes->paidArrearDemand          > 0  ?  ($tblDemand->due_balance_amount == 0 ? 0  : $tblDemand->due_arrear_demand - $paidTaxes->paidArrearDemand )  : 0;
+            $tblDemand->due_arrear_demand   = $tblDemand->due_arrear_demand - $paidTaxes->paidArrearDemand          > 0  ?  ($tblDemand->due_balance_amount == 0 ? 0  : $tblDemand->due_arrear_demand - $paidTaxes->paidArrearDemand)  : 0;
             $tblDemand->due_current_demand  = $tblDemand->due_current_demand - $paidTaxes->paidCurrentDemand       > 0  ?  ($tblDemand->due_balance_amount == 0 ? 0  : $tblDemand->due_current_demand - $paidTaxes->paidCurrentDemand)  : 0;
-            
+
             $tblDemand->paid_total_tax      = $paidTaxes->paidTotalTax + $tblDemand->paid_total_tax                 > 0  ?  ($paidTaxes->paidTotalTax + $tblDemand->paid_total_tax) : 0;
             #it is testing purps only
             if (strtoupper($this->_REQ['paymentMode']) != "ONLINE") {
@@ -255,8 +253,7 @@ class WaterConsumerPayment
                     }
                 }
             }
-            if($tblDemand->due_balance_amount <=0)
-            {
+            if ($tblDemand->due_balance_amount <= 0) {
                 $tblDemand->is_full_paid = true;
             }
             # end hear
@@ -265,11 +262,11 @@ class WaterConsumerPayment
             // ✅✅✅✅✅ Tran details insertion
             $collection = [
                 "transaction_id" => $waterTrans['id'],
-                "consumer_id"=>$demand->consumer_id,
-                "ward_mstr_id"=>$this->_REQ["wardMstrId"],
+                "consumer_id" => $demand->consumer_id,
+                "ward_mstr_id" => $this->_REQ["wardMstrId"],
                 "demand_id" => $demand->id,
                 "amount" => $demand->due_balance_amount,
-                "emp_details_id"=>$this->_REQ['userId'],
+                "emp_details_id" => $this->_REQ['userId'],
                 "demand_from" => $paidTaxes->demand_from,
                 "demand_upto" => $paidTaxes->demand_upto,
                 "connection_type" => $demand->connection_type,
@@ -277,14 +274,14 @@ class WaterConsumerPayment
             ];
             $tranDtlReq = [
                 "tran_id" => $waterTrans['id'],
-                "application_id"=>$demand->consumer_id,
+                "application_id" => $demand->consumer_id,
                 "demand_id" => $demand->id,
                 "total_demand" => $demand->due_balance_amount,
                 "paid_amount" => $paidTaxes->paidTotalTax,
-                "arrear_settled"=> $paidTaxes->paidArrearDemand ,
+                "arrear_settled" => $paidTaxes->paidArrearDemand,
             ];
-            
-            $collDtlId  = $this->_mConsumerCollection->create($collection)->id;            
+
+            $collDtlId  = $this->_mConsumerCollection->create($collection)->id;
             $DtlId      = $this->_mWaterTranDtl->create($tranDtlReq)->id;
             // $tranDtlReq["collDtlId"] =$collDtlId;
             // $tranDtlReq["DtlId"]    =$DtlId;
@@ -294,7 +291,7 @@ class WaterConsumerPayment
         if (in_array(strtoupper($this->_REQ['paymentMode']), $this->_offlinePaymentModes)) {
             $this->_REQ->merge([
                 'tranId'        => $waterTrans['id'],
-                'applicationNo' => $this->_WaterConsumer->consumer_no, 
+                'applicationNo' => $this->_WaterConsumer->consumer_no,
             ]);
             $this->postOtherPaymentModes($this->_REQ);
         }
@@ -317,14 +314,13 @@ class WaterConsumerPayment
             $adjArr = [
                 "related_id" => $this->_consumerId,
                 "tran_id" => $waterTrans['id'],
-                "adjustment_for"=>$this->_adjustmentFor,
+                "adjustment_for" => $this->_adjustmentFor,
                 "amount" => round($adjustAmt),
                 "user_id" => $this->_REQ['userId'] ?? (auth()->user() ? auth()->user()->id : null),
                 // "ulb_id" => $this->_REQ['ulbId'] ?? (auth()->user() ? auth()->user()->ulbd_id : null),
             ];
             $this->_WaterAdjustment->store($adjArr);
         }
-            
     }
     public function postOtherPaymentModes($req)
     {
@@ -386,7 +382,7 @@ class WaterConsumerPayment
 
     public function demandAdjust($currentPayableAmount, $demanId)
     {
-        $currentTax = collect($this->waterDemands->original['data']['consumerDemands'])->where("id", $demanId);        
+        $currentTax = collect($this->waterDemands->original['data']['consumerDemands'])->where("id", $demanId);
         $totaTax = $currentTax->sum("due_balance_amount");
         $penalty = $currentTax->sum("due_penalty");
         $demandPayableAmount = $totaTax + $penalty;
@@ -418,21 +414,19 @@ class WaterConsumerPayment
             "balence" => round($balence) > 0 ? $balence : 0,
             "remaining" => $totaTax - $payableAmountOfTax > 0 ? $totaTax - $payableAmountOfTax : 0,
         ];
-        $paidArrearDemand = ( roundFigure($payableAmountOfTax) > $currentTax->sum('due_arrear_demand'))  ? $currentTax->sum('due_arrear_demand') : (roundFigure($payableAmountOfTax)) ;
-        if($paidArrearDemand > $currentTax->sum('due_arrear_demand') && roundFigure($payableAmountOfTax)== $totaTax)
-        {
+        $paidArrearDemand = (roundFigure($payableAmountOfTax) > $currentTax->sum('due_arrear_demand'))  ? $currentTax->sum('due_arrear_demand') : (roundFigure($payableAmountOfTax));
+        if ($paidArrearDemand > $currentTax->sum('due_arrear_demand') && roundFigure($payableAmountOfTax) == $totaTax) {
             $paidArrearDemand = $currentTax->sum('due_arrear_demand');
         }
-        $paidCurrentDemand = $payableAmountOfTax > $currentTax->sum('due_arrear_demand') ? ($payableAmountOfTax - ($paidArrearDemand)): 0 ;
-        if($paidCurrentDemand > $currentTax->sum('due_current_demand') && roundFigure($payableAmountOfTax)== $totaTax)
-        {
+        $paidCurrentDemand = $payableAmountOfTax > $currentTax->sum('due_arrear_demand') ? ($payableAmountOfTax - ($paidArrearDemand)) : 0;
+        if ($paidCurrentDemand > $currentTax->sum('due_current_demand') && roundFigure($payableAmountOfTax) == $totaTax) {
             $paidCurrentDemand = $currentTax->sum('due_current_demand');
         }
-         
+
         $paidDemandBifurcation = [
             'total_tax' => roundFigure(($payableAmountOfTax)),
-            "arrear_demand"=> $paidArrearDemand,
-            "current_demand"=> $paidCurrentDemand,
+            "arrear_demand" => $paidArrearDemand,
+            "current_demand" => $paidCurrentDemand,
         ];
         $data["paid_total_tax"] =  $paidDemandBifurcation["total_tax"] ?? 0;
         $data["paidCurrentTaxesBifurcation"] = $this->readPaidTaxes($paidDemandBifurcation);

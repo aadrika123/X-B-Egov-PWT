@@ -202,6 +202,23 @@ if (!function_exists('calculateQuarterStartDate')) {
         if ($MM >= 1 && $MM <= 3) return ($YYYY) . "-01-01";
     }
 }
+// Get Previous Year Last Quarter Start Date
+if (!function_exists('calculatePreviousYearLastQuarterStartDate')) {
+    function calculatePreviousYearLastQuarterStartDate(String $date): String
+    {
+        $carbonDate = Carbon::createFromFormat("Y-m-d", $date);
+        $MM = (int) $carbonDate->format("m");
+        $YYYY = (int) $carbonDate->format("Y");
+
+        // Check if the current date is in the first quarter of the year
+        if ($MM >= 1 && $MM <= 3) {
+            return ($YYYY - 1) . "-10-01"; // Return October 1st of the previous year
+        }
+
+        // If not in the first quarter, return the start date of the current year's last quarter
+        return $YYYY . "-10-01";
+    }
+}
 
 /**
  * |
