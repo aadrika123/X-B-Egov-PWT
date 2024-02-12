@@ -898,7 +898,7 @@ class ActiveSafController extends Controller
             $testRole = collect($usertype)->whereIn("sort_name", Config::get("TradeConstant.CANE-CUTE-PAYMENT"));
             $data["can_take_payment"] = ($is_approved && collect($testRole)->isNotEmpty() && ($data["proccess_fee_paid"] ?? 1) == 0) ? true : false;
             if ($this->_COMMONFUNCTION->checkUsersWithtocken("active_citizens")) {
-                $data["can_take_payment"] = (($data["proccess_fee_paid"] ?? 1) == 0 && $is_approved ) ? true : false;
+                $data["can_take_payment"] = (($data["proccess_fee_paid"] ?? 1) == 0 && $is_approved) ? true : false;
             }
 
             return responseMsgs(true, "Saf Dtls", remove_null($data), "010127", "1.0", "", "POST", $req->deviceId ?? "");
@@ -1302,7 +1302,7 @@ class ActiveSafController extends Controller
             if (!$forwardBackwardIds) {
                 throw new Exception("You Are Noth Authorize For This Workflow");
             }
-            $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id);
+            $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id)->wf_master_id ?? null;
             DB::beginTransaction();
             DB::connection('pgsql_master')->beginTransaction();
             if ($request->action == 'forward') {
@@ -1344,7 +1344,7 @@ class ActiveSafController extends Controller
                     $saf->update();
                     $forwardBackwardIds->forward_role_id = $wfLevels['DA'];
                 }
-                if (!$geotagExist && $saf->current_role == $wfLevels['DA'] && in_array($wfMstrId, $this->_SkipFiledWorkWfMstrId)) {
+                if (!$geotagExist && $saf->current_role == $wfLevels['DA'] && !in_array($wfMstrId, $this->_SkipFiledWorkWfMstrId)) {
                     $forwardBackwardIds->forward_role_id = $wfLevels['UTC'];
                     if ($saf->prop_type_mstr_id == 4) {
                         $forwardBackwardIds->forward_role_id = $wfLevels['TC'];
