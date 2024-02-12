@@ -24,6 +24,7 @@ use App\MicroServices\DocUpload;
 use App\MicroServices\IdGeneration;
 use App\Models\Cluster\Cluster;
 use App\Models\Payment\TempTransaction;
+use App\Models\Property\Logs\PropSmsLog;
 use App\Models\Property\OldChequeTranEntery;
 use App\Models\Property\PropAdjustment;
 use App\Models\Property\PropAdvance;
@@ -1585,5 +1586,71 @@ class HoldingTaxController extends Controller
         $penaltyrebates->tran_date =  $tran->tran_date;
         $penaltyrebates->prop_id =  $tran->property_id;
         $penaltyrebates->app_type =  $tran->tran_type;
+    }
+
+    /**
+     * | Send Bulk Sms
+     */
+    public function propertyBulkSms(Request $req)
+    {
+        // $validator = Validator::make(
+        //     $req->all(),
+        //     ['propId' => 'required']
+        // );
+        // if ($validator->fails()) {
+        //     return response()->json([
+        //         'status'  => false,
+        //         'message' => 'validation error',
+        //         'errors'  => $validator->errors()
+        //     ]);
+        // }
+        $mPropSmsLog = new PropSmsLog();
+        $propDetails = PropDemand::select(
+            'prop_demands.property_id',
+            DB::raw('SUM(due_total_tax) as total_tax, MAX(fyear) as max_fyear'),
+            'owner_name',
+            'mobile_no',
+        )
+            ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_demands.property_id')
+            ->where('due_total_tax', '>', 0.9)
+            ->where(DB::raw('LENGTH(mobile_no)'), '=', 10)
+            ->groupBy('prop_demands.property_id', 'owner_name', 'mobile_no')
+            ->orderBy('prop_demands.property_id')
+            ->limit(2)
+            ->get();
+
+        //    $data =  DB::select("SELECT usage_type,COUNT(property_id) FROM prop_floors
+        //     JOIN ref_prop_usage_types ON ref_prop_usage_types.id = prop_floors.usage_type_mstr_id
+        //     GROUP BY prop_floors.usage_type_mstr_id,usage_type");
+
+        //   return collect( $data)->sum('count');
+
+        foreach ($propDetails as $propDetail) {
+
+            $ownerName   = Str::limit(trim($propDetail->owner_name), 30);
+            $ownerMobile = $propDetail->mobile_no;
+            $totalTax    = $propDetail->total_tax;
+            $fyear       = $propDetail->max_fyear;
+            $propertyId  = $propDetail->property_id;
+
+            $sms      = "Dear " . $ownerName . ",  your Property Tax Demand of Rs " . $totalTax . " has been generated upto FY " . $fyear . ". Please pay on time to avoid any late fine. Please ignore if already paid. For more details visit www.amcakola.in /call us at:8069493299 AMC";
+            $response = send_sms($ownerMobile, $sms, 1707169564203481769);
+
+            $smsReqs = [
+                "emp_id" => 1,
+                "ref_id" => $propertyId,
+                "ref_type" => 'PROPERTY',
+                "mobile_no" => $ownerMobile,
+                "purpose" => 'Demand Reminder',
+                "template_id" => 1707169564203481769,
+                "message" => $sms,
+                "response" => $response['status'],
+                "smgid" => $response['msg'],
+                "stampdate" => Carbon::now(),
+            ];
+            $mPropSmsLog->create($smsReqs);
+        }
+
+        return responseMsgs(true, "SMS Send Successfully", [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
     }
 }
