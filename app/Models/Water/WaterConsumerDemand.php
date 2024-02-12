@@ -33,6 +33,8 @@ class WaterConsumerDemand extends Model
     public function getDemandBydemandIds($consumerId)
     {
         $qraterStringDate = calculatePreviousYearLastQuarterStartDate(Carbon::now()->format("Y-m-d"));
+        $currrentQuareter = calculateQuarterStartDate(Carbon::now()->format("Y-m-d"));
+        // dd($currrentQuareter);
         return WaterConsumerDemand::select(
             'water_consumer_demands.id AS ref_demand_id',
             'water_consumer_demands.*',
@@ -45,12 +47,14 @@ class WaterConsumerDemand extends Model
             DB::raw("TO_CHAR(max_demand_upto.demand_upto, 'DD-MM-YYYY') as demand_upto"),
             // DB::raw('ROUND(COALESCE(subquery.generate_amount, 0), 2) as generate_amount'),
             DB::raw('ROUND(COALESCE(subquery.arrear_demands, 0), 2) as arrear_demands'),
+            DB:: raw('ROUND(COALESCE(subquery.curernt_bill, 0), 2) as curernt_bill'),
             DB::raw('ROUND(COALESCE(subquery.current_demands, 0), 2) as current_demands'),
             DB::raw("TO_CHAR(subquery.generation_dates, 'DD-MM-YYYY') as generation_dates"),
             DB::raw("TO_CHAR(subquery.previos_reading_date, 'DD-MM-YYYY') as previos_reading_date"),
             DB::raw(
                 '
             ROUND(
+                COALESCE(subquery.curernt_bill,0) +
                 COALESCE(subquery.arrear_demands, 0) +
                 COALESCE(subquery.current_demands, 0) +
                 CASE
@@ -72,7 +76,8 @@ class WaterConsumerDemand extends Model
                 DB::raw("(SELECT 
                 consumer_id,max(generation_date) as generation_dates,
                 SUM(CASE WHEN water_consumer_demands.demand_upto < '$qraterStringDate'  THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS arrear_demands,
-                SUM(CASE WHEN water_consumer_demands.demand_upto >= '$qraterStringDate'  THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS current_demands,
+                SUM(CASE WHEN water_consumer_demands.demand_upto >= '$qraterStringDate' AND water_consumer_demands.demand_upto < '$currrentQuareter' THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS current_demands,
+                sum(case WHEN water_consumer_demands.demand_upto >= '$currrentQuareter' THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS curernt_bill,
                 --SUM(CASE WHEN water_consumer_demands.consumer_tax_id IS NOT NULL THEN water_consumer_demands.due_balance_amount ELSE 0 END) AS generate_amount,
                 sum(case when water_consumer_demands.consumer_tax_id IS NULL  THEN  water_consumer_demands.due_balance_amount ELSE  0 END ) AS previous_demand,
                 SUM(water_consumer_demands.due_balance_amount) total_due_amount,
