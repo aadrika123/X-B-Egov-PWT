@@ -722,7 +722,7 @@ class ActiveSafController extends Controller
             $ownerDetails = $this->generateOwnerDetails($getOwnerDetails);
             $ownerElement = [
                 'headerTitle' => 'Owner Details',
-                'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
+                'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
                 'tableData' => $ownerDetails
             ];
 
@@ -730,7 +730,7 @@ class ActiveSafController extends Controller
             if ($data->transfer_mode_mstr_id == $transferMode['Imla'] || $data->ownership_type_mstr_id == $ownershipTypes['OCCUPIER'])
                 $ownerElement = [
                     'headerTitle' => 'Owner Details',
-                    'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Bhogwatdar/ Occupant Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
+                    'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Bhogwatdar/ Occupant Name", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
                     'tableData' => $ownerDetails
                 ];
 

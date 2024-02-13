@@ -93,7 +93,7 @@ trait SafDetailsTrait
                 $ownerDetail['gender'],
                 $ownerDetail['dob'],
                 $ownerDetail['guardian_name'],
-                $ownerDetail['relation_type'],
+                // $ownerDetail['relation_type'],
                 $ownerDetail['mobile_no'],
                 $ownerDetail['aadhar_no'],
                 $ownerDetail['pan_no'],
