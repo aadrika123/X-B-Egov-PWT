@@ -109,6 +109,7 @@ class WaterApplication extends Controller
 
             $returnTransactionDetails = collect($transactionDetails)->map(function ($value) {
                 return [
+                    'id'            => $value['id'],
                     'tran_no'       => $value['tran_no'],
                     'payment_mode'  => $value['payment_mode'],
                     'amount'        => $value['amount'],

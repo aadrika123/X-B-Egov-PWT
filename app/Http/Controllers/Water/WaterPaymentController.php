@@ -1815,7 +1815,7 @@ class WaterPaymentController extends Controller
                 "demandAmount"          => $refDemandAmount,
                 "ulbId"                 => $consumerDetails['ulb_id'],
                 "ulbName"               => $consumerDetails['ulb_name'],
-                "WardNo"                => $consumerDetails['ward_name'],
+                "WardNo"                => $consumerDetails['ward_number'],
                 "logo"                  => $consumerDetails['logo'],
                 "towards"               => $mTowardsDemand,
                 "description"           => $mTowardsDemand,

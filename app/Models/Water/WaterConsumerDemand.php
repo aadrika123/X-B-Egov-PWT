@@ -42,14 +42,14 @@ class WaterConsumerDemand extends Model
             'water_consumer_owners.applicant_name',
             'water_consumer_initial_meters.initial_reading',
             'users.name as user_name',
+            'users.name as empName',
+            'users.mobile as empMobile',
             DB::raw("TO_CHAR('$currrentQuareter'::DATE, 'DD-MM-YYYY') as currrent_quarter"),
             DB::raw("ROUND(water_consumer_demands.due_balance_amount, 2) as due_balance_amount"),
             DB::raw("TO_CHAR(min_demand_from.demand_from, 'DD-MM-YYYY') as demand_from"),
             DB::raw("TO_CHAR(max_demand_upto.demand_upto, 'DD-MM-YYYY') as demand_upto"),
-            // DB::raw('ROUND(COALESCE(subquery.generate_amount, 0), 2) as generate_amount'),
             DB::raw('ROUND(COALESCE(subquery.arrear_demands, 0), 2) as arrear_demands'),
             DB::raw('ROUND(COALESCE(subquery.curernt_bill, 0), 2) as curernt_bill'),
-            // DB::raw('ROUND(COALESCE(subquery.current_demands, 0), 2) as current_demands'),
             DB::raw("TO_CHAR(subquery.generation_dates, 'DD-MM-YYYY') as generation_date"),
             DB::raw("TO_CHAR(subquery.previos_reading_date, 'DD-MM-YYYY') as previos_reading_date"),
             DB::raw(
@@ -60,7 +60,6 @@ class WaterConsumerDemand extends Model
                 ) as total_amount,
                 ROUND(subquery.total_due_amount, 2) as total_amount1'
             )
-
         )
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_consumer_demands.consumer_id')
             ->leftjoin('water_consumer_initial_meters', 'water_consumer_initial_meters.consumer_id', 'water_consumer_demands.consumer_id')

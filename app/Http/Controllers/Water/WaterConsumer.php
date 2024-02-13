@@ -411,7 +411,7 @@ class WaterConsumer extends Controller
                 throw new Exception("demand should be generated generate in next month!");
             }
             $diffMonth = $startDate->diffInMonths($today);
-            if ($diffMonth < 4) {
+            if ($diffMonth < 3) {
                 throw new Exception("there should be a difference of 4  month!");
             }
         } else {
