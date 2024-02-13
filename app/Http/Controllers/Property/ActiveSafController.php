@@ -632,6 +632,11 @@ class ActiveSafController extends Controller
             $verificationDtl = collect();
             $mVerificationDtls = new PropSafVerificationDtl();
             $mRefTable = Config::get('PropertyConstaint.SAF_REF_TABLE');
+            $ownershipTypes = Config::get('PropertyConstaint.OWNERSHIP-TYPE');
+            $transferMode   = Config::get('PropertyConstaint.TRANSFER_MODES');
+            $ownershipTypes = collect($ownershipTypes)->flip();
+            $transferMode   = collect($transferMode)->flip();
+
             // Saf Details
             $data = array();
             $fullDetailsData = array();
@@ -720,6 +725,15 @@ class ActiveSafController extends Controller
                 'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
                 'tableData' => $ownerDetails
             ];
+
+            //Bhagwatdar In the case of Imla and Occupier
+            if ($data->transfer_mode_mstr_id == $transferMode['Imla'] || $data->ownership_type_mstr_id == $ownershipTypes['OCCUPIER'])
+                $ownerElement = [
+                    'headerTitle' => 'Owner Details',
+                    'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Bhogwatdar/ Occupant Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
+                    'tableData' => $ownerDetails
+                ];
+
             // Floor Details            
             $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data->id)->map(function ($val) use ($verificationDtl) {
                 $new = $verificationDtl->where("saf_floor_id", $val->id)->first();
