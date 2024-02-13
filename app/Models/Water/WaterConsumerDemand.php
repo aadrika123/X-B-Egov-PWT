@@ -42,6 +42,7 @@ class WaterConsumerDemand extends Model
             'water_consumer_owners.applicant_name',
             'water_consumer_initial_meters.initial_reading',
             'users.name as user_name',
+            'users.mobile as empMobile',
             DB::raw("TO_CHAR('$currrentQuareter'::DATE, 'DD-MM-YYYY') as currrent_quarter"),
             DB::raw("ROUND(water_consumer_demands.due_balance_amount, 2) as due_balance_amount"),
             DB::raw("TO_CHAR(min_demand_from.demand_from, 'DD-MM-YYYY') as demand_from"),
