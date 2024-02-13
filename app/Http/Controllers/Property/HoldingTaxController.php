@@ -1593,19 +1593,8 @@ class HoldingTaxController extends Controller
      */
     public function propertyBulkSms(Request $req)
     {
-        // $validator = Validator::make(
-        //     $req->all(),
-        //     ['propId' => 'required']
-        // );
-        // if ($validator->fails()) {
-        //     return response()->json([
-        //         'status'  => false,
-        //         'message' => 'validation error',
-        //         'errors'  => $validator->errors()
-        //     ]);
-        // }
         $mPropSmsLog = new PropSmsLog();
-       return $propDetails = PropDemand::select(
+        $propDetails = PropDemand::select(
             'prop_demands.property_id',
             DB::raw('SUM(due_total_tax) as total_tax, MAX(fyear) as max_fyear'),
             'owner_name',
@@ -1613,18 +1602,11 @@ class HoldingTaxController extends Controller
         )
             ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_demands.property_id')
             ->where('due_total_tax', '>', 0.9)
-            // ->where('fyear', '2022-2023')
+            ->where('fyear', '2022-2023')
             ->where(DB::raw('LENGTH(mobile_no)'), '=', 10)
             ->groupBy('prop_demands.property_id', 'owner_name', 'mobile_no')
             ->orderBy('prop_demands.property_id')
-            ->limit(100)
             ->get();
-
-        //    $data =  DB::select("SELECT usage_type,COUNT(property_id) FROM prop_floors
-        //     JOIN ref_prop_usage_types ON ref_prop_usage_types.id = prop_floors.usage_type_mstr_id
-        //     GROUP BY prop_floors.usage_type_mstr_id,usage_type");
-
-        //   return collect( $data)->sum('count');
 
         foreach ($propDetails as $propDetail) {
 
@@ -1634,7 +1616,7 @@ class HoldingTaxController extends Controller
             $fyear       = $propDetail->max_fyear;
             $propertyId  = $propDetail->property_id;
 
-            $sms      = "Dear " . $ownerName . ",  your Property Tax Demand of Rs " . $totalTax . " has been generated upto FY 23-24. Please pay on time to avoid any late fine. Please ignore if already paid. For more details visit www.amcakola.in /call us at:8069493299 AMC";
+            $sms      = "Dear " . $ownerName . ",  your Property Tax Demand of Rs " . $totalTax . " has been generated upto FY 23-24. Please pay on time to avoid any late fine. Please ignore if already paid. For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
             $response = send_sms($ownerMobile, $sms, 1707169564203481769);
 
             $smsReqs = [
@@ -1652,6 +1634,6 @@ class HoldingTaxController extends Controller
             $mPropSmsLog->create($smsReqs);
         }
 
-        return responseMsgs(true, "SMS Send Successfully", [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+        return responseMsgs(true, "SMS Send Successfully of ".$propDetails->count()."Property", [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
     }
 }
