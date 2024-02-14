@@ -162,31 +162,32 @@ class WaterSecondConsumer extends Model
     public function getConsumerByItsDetailsV2($req, $key, $refNo, $wardId, $zoneId, $zone)
     {
         return WaterSecondConsumer::select([
-            DB::raw("
-          water_consumer_demands.id AS demand_id,
+                DB::raw("
+                water_consumer_demands.id AS demand_id,
+                    water_consumer_demands.consumer_id,
+                    water_consumer_demands.due_balance_amount,
+                CASE
+                    WHEN water_consumer_demands.due_balance_amount <=0  THEN true
+                    else false
+                    END AS paid_status,
+                CASE
+                    WHEN water_consumer_demands.due_balance_amount >0  THEN 'Unpaid'
+                    else 'Paid'
+                    END AS payment_status,
                 water_consumer_demands.consumer_id,
-                water_consumer_demands.due_balance_amount,
-            CASE
-                   WHEN water_consumer_demands.due_balance_amount <=0  THEN true
-                   else false
-                   END AS paid_status,
-            CASE
-                   WHEN water_consumer_demands.due_balance_amount >0  THEN 'Unpaid'
-                   else 'Paid'
-                END AS payment_status,
-            water_consumer_demands.consumer_id,
-            ROUND(water_consumer_demands.due_balance_amount, 2) as balance_amount,
-            water_second_consumers.id AS id,
-            water_second_consumers.consumer_no,
-            water_second_consumers.folio_no as property_no,
-            water_second_consumers.address,
-            water_second_consumers.folio_no,
-            zone_masters.zone_name,
-            wco.applicant_name as owner_name,
-            wco.mobile_no as mobile_no               
-            "),
+                ROUND(water_consumer_demands.due_balance_amount, 2) as balance_amount,
+                water_second_consumers.id AS id,
+                water_second_consumers.consumer_no,
+                water_second_consumers.folio_no as property_no,
+                water_second_consumers.address,
+                water_second_consumers.folio_no,
+                zone_masters.zone_name,
+                ulb_ward_masters.ward_name,
+                wco.applicant_name as owner_name,
+                wco.mobile_no as mobile_no               
+                "),
 
-        ])
+            ])
             ->leftJoin(
                 DB::raw("(
                             SELECT consumer_id,
@@ -249,17 +250,21 @@ class WaterSecondConsumer extends Model
             "water_consumer_demands.balance_amount",
             "water_consumer_demands.amount",
             DB::raw("
-        CASE
-            WHEN water_consumer_demands.paid_status = 1  THEN 'paid'
-            WHEN water_consumer_demands.paid_status = 0 THEN 'unpaid'
-            WHEN water_consumer_demands.paid_status = 2 THEN 'pending'
-            ELSE 'unknown'
-        END AS payment_status
-    ")
-        )
+                    CASE
+                        WHEN water_consumer_demands.paid_status = 1  THEN 'paid'
+                        WHEN water_consumer_demands.paid_status = 0 THEN 'unpaid'
+                        WHEN water_consumer_demands.paid_status = 2 THEN 'pending'
+                        ELSE 'unknown'
+                    END AS payment_status,
+                    zone_masters.zone_name,
+                    ulb_ward_masters.ward_name,
+                ")
+            )
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_second_consumers.id')
             ->where('water_consumer_owners.' . $key, 'ILIKE', '%' . $refVal . '%')
             ->join('water_consumer_demands', 'water_consumer_demands.consumer_id', 'water_second_consumers.id')
+            ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
+            ->leftjoin('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
             ->where('water_second_consumers.status', 1);
     }
     /**
@@ -589,10 +594,15 @@ class WaterSecondConsumer extends Model
             'water_consumer_owners.applicant_name as applicant_name',
             'water_consumer_owners.mobile_no as mobile_no',
             'water_consumer_owners.guardian_name as guardian_name',
-        )
+            DB::raw("
+                zone_masters.zone_name,
+                ulb_ward_masters.ward_name,
+            ")
+            )
             ->join('water_approval_application_details', 'water_approval_application_details.id', 'water_second_consumers.apply_connection_id')
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_second_consumers.id')
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
+            ->leftjoin('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
             ->where('water_approval_application_details.application_no', 'LIKE', '%' . $refVal . '%')
             ->where('water_second_consumers.status', 1);
         // ->where('ulb_ward_masters.status', true);
