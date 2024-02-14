@@ -2679,7 +2679,8 @@ class ReportController extends Controller
 
         $updateReqs = [
             "total_assessment" => $data->total_assessed_props,
-            "total_prop_vacand" => $propdata->total_vacant_land + $propdata->null_prop_data + $propdata->null_floor_data,            "total_prop_residential" => $data->total_residential_props,
+            "total_prop_vacand" => $propdata->total_vacant_land + $propdata->null_prop_data + $propdata->null_floor_data,            
+            "total_prop_residential" => $data->total_residential_props,
             "total_prop_commercial"  => $data->total_commercial_props,
             "total_prop_industrial" => $data->total_industrial_props,
             "total_prop_gbsaf" => $data->total_govt_props,
