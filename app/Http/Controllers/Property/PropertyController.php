@@ -1008,26 +1008,27 @@ class PropertyController extends Controller
 
             switch ($type) {
                 case 'Reassesment':
-                    $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
+                    $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no', 'assessment_type')
                         ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
                         ->where('previous_holding_id', $propertyId)
                         ->where('prop_active_safs.status', 1)
                         ->first();
                     break;
                 case 'Mutation':
-                    $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
+                    $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no', 'assessment_type')
                         ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
                         ->where('previous_holding_id', $propertyId)
                         ->where('prop_active_safs.status', 1)
                         ->first();
                     break;
-                    // case 'Bifurcation':
-                    //     $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no')
-                    //         ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
-                    //         ->where('previous_holding_id', $propertyId)
-                    //         ->where('prop_active_safs.status', 1)
-                    //         ->first();
-                    //     break;
+                case 'Bifurcation':
+                    $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no', 'assessment_type')
+                        ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
+                        ->where('assessment_type', 'Mutation')
+                        ->where('previous_holding_id', $propertyId)
+                        ->where('prop_active_safs.status', 1)
+                        ->first();
+                    break;
                 case 'Concession':
                     $data = PropActiveConcession::select('prop_active_concessions.id', 'role_name', 'application_no')
                         ->join('wf_roles', 'wf_roles.id', 'prop_active_concessions.current_role')
@@ -1071,7 +1072,7 @@ class PropertyController extends Controller
                 $msg['id'] = $data->id;
                 $msg['inWorkflow'] = true;
                 $msg['currentRole'] = $data->role_name;
-                $msg['message'] = "The application is still in workflow and pending at " . $data->role_name . ". Please Track your application with " . $data->application_no;
+                $msg['message'] = "Your " . $data->assessment_type . " application is still in workflow and pending at " . $data->role_name . ". Please Track your application with " . $data->application_no;
             } else
                 $msg['inWorkflow'] = false;
 
