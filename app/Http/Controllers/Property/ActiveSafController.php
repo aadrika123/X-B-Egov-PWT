@@ -1296,6 +1296,9 @@ class ActiveSafController extends Controller
 
             // Derivative Assignments
             $senderRoleId = $saf->current_role;
+            if ($saf->parked)
+                $senderRoleId = $saf->initiator_role_id;
+
             if (!$senderRoleId)
                 throw new Exception("Current Role Not Available");
 
