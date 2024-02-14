@@ -357,7 +357,7 @@ class ApplySafController extends Controller
                 $newAreaOfPlot  = $propFloorArea - $safFloorArea;
 
                 if (($safFloorArea + $currentFloorArea) > $propFloorArea)
-                    throw new Exception("You have excedeed the floor area. Please insert plot area below " . $newAreaOfPlot . " of floor id" . $requestFloor['propFloorDetailId']);
+                    throw new Exception("You have excedeed the floor area. Please insert plot area below " . $newAreaOfPlot . " of floor id " . $requestFloor['propFloorDetailId']);
             }
         }
     }
