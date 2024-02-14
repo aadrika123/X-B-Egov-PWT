@@ -894,6 +894,7 @@ class Report implements IReport
                                 AND wf_roleusermaps.is_suspended = false
                             and users.id <> 76
                             and users.id <> 175
+                            and users.suspended = false
                             group by wf_roleusermaps.wf_role_id,wf_roleusermaps.user_id,users.user_name,users.name,wf_roles.role_name
                         )role_user_ward
                     ) users_role
