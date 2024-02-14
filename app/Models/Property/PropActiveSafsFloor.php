@@ -157,8 +157,8 @@ class PropActiveSafsFloor extends Model
         $floor->builtup_area = isset($req['biBuildupArea']) ? $req['biBuildupArea'] : $req['buildupArea'];
         $floor->carpet_area = $carpetArea;
         $floor->date_from = $req['dateFrom'] ?? null;
-        if ($assessmentType == "Bifurcation")
-            $floor->date_from = $biDateOfPurchase;
+        // if ($assessmentType == "Bifurcation")
+        //     $floor->date_from = $biDateOfPurchase;
 
         $floor->date_upto = $req['dateUpto'] ?? null;
         $floor->prop_floor_details_id = $req['propFloorDetailId'] ?? null;
