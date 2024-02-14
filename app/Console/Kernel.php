@@ -21,7 +21,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('telescope:prune')->daily();
         // $schedule->command('whatsapp:send --hours=24')->daily();
         // $schedule->command('trade:auto-forward --hours=24')->daily();
-        $schedule->command('liveDashboard:update')->everySixHours();         #_php artisan schedule:work
+        $schedule->command('liveDashboard:update')->everyMinute();         #_php artisan schedule:work
     }
 
     /**
