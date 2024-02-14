@@ -280,8 +280,8 @@ class SafDocController extends Controller
             $docUploadStatus = $this->checkFullDocUpload($req->applicationId);
             if ($docUploadStatus == 1) {                                        // Doc Upload Status Update
                 $getSafDtls->doc_upload_status = 1;
-                if ($getSafDtls->parked == true)                                // Case of Back to Citizen
-                    $getSafDtls->parked = false;
+                // if ($getSafDtls->parked == true)                                // Case of Back to Citizen
+                    // $getSafDtls->parked = false;
 
                 $getSafDtls->save();
             }

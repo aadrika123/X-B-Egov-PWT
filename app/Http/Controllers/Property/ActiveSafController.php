@@ -1370,6 +1370,11 @@ class ActiveSafController extends Controller
                     $saf->is_bt_da = false;
                 }
 
+                if ($saf->parked == true) {
+                    $saf->parked = false;
+                    $forwardBackwardIds->forward_role_id =  $saf->current_role;
+                }
+
                 $saf->current_role = $forwardBackwardIds->forward_role_id;
                 $saf->last_role_id =  $forwardBackwardIds->forward_role_id;                     // Update Last Role Id
                 $saf->parked = false;
@@ -2104,12 +2109,12 @@ class ActiveSafController extends Controller
             if (collect($getRejectedDocument)->isEmpty())
                 throw new Exception("Document Not Rejected You Can't back to citizen this application");
 
-            if (is_null($saf->citizen_id)) {                // If the Application has been applied from Jsk or Ulb Employees
-                $initiatorRoleId = $saf->initiator_role_id;
-                $saf->current_role = $initiatorRoleId;
-                $saf->parked = true;                        //<------ SAF Pending Status true
-            } else
-                $saf->parked = true;                        // If the Application has been applied from Citizen
+            // if (is_null($saf->citizen_id)) {                // If the Application has been applied from Jsk or Ulb Employees
+            //     $initiatorRoleId = $saf->initiator_role_id;
+            //     $saf->current_role = $initiatorRoleId;
+            //     $saf->parked = true;                        //<------ SAF Pending Status true
+            // } else
+            $saf->parked = true;                        // If the Application has been applied from Citizen
 
             DB::beginTransaction();
             DB::connection('pgsql_master');
