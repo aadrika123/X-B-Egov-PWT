@@ -632,6 +632,11 @@ class ActiveSafController extends Controller
             $verificationDtl = collect();
             $mVerificationDtls = new PropSafVerificationDtl();
             $mRefTable = Config::get('PropertyConstaint.SAF_REF_TABLE');
+            $ownershipTypes = Config::get('PropertyConstaint.OWNERSHIP-TYPE');
+            $transferMode   = Config::get('PropertyConstaint.TRANSFER_MODES');
+            $ownershipTypes = collect($ownershipTypes)->flip();
+            $transferMode   = collect($transferMode)->flip();
+
             // Saf Details
             $data = array();
             $fullDetailsData = array();
@@ -717,9 +722,18 @@ class ActiveSafController extends Controller
             $ownerDetails = $this->generateOwnerDetails($getOwnerDetails);
             $ownerElement = [
                 'headerTitle' => 'Owner Details',
-                'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
+                'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
                 'tableData' => $ownerDetails
             ];
+
+            //Bhagwatdar In the case of Imla and Occupier
+            if ($data->transfer_mode_mstr_id == $transferMode['Imla'] || $data->ownership_type_mstr_id == $ownershipTypes['OCCUPIER'])
+                $ownerElement = [
+                    'headerTitle' => 'Owner Details',
+                    'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Bhogwatdar/ Occupant Name", "Mobile No", "Aadhar", "PAN", "Email", "IsArmedForce", "isSpeciallyAbled"],
+                    'tableData' => $ownerDetails
+                ];
+
             // Floor Details            
             $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data->id)->map(function ($val) use ($verificationDtl) {
                 $new = $verificationDtl->where("saf_floor_id", $val->id)->first();
@@ -898,7 +912,7 @@ class ActiveSafController extends Controller
             $testRole = collect($usertype)->whereIn("sort_name", Config::get("TradeConstant.CANE-CUTE-PAYMENT"));
             $data["can_take_payment"] = ($is_approved && collect($testRole)->isNotEmpty() && ($data["proccess_fee_paid"] ?? 1) == 0) ? true : false;
             if ($this->_COMMONFUNCTION->checkUsersWithtocken("active_citizens")) {
-                $data["can_take_payment"] = (($data["proccess_fee_paid"] ?? 1) == 0 && $is_approved ) ? true : false;
+                $data["can_take_payment"] = (($data["proccess_fee_paid"] ?? 1) == 0 && $is_approved) ? true : false;
             }
 
             return responseMsgs(true, "Saf Dtls", remove_null($data), "010127", "1.0", "", "POST", $req->deviceId ?? "");
@@ -1302,7 +1316,7 @@ class ActiveSafController extends Controller
             if (!$forwardBackwardIds) {
                 throw new Exception("You Are Noth Authorize For This Workflow");
             }
-            $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id);
+            $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id)->wf_master_id ?? null;
             DB::beginTransaction();
             DB::connection('pgsql_master')->beginTransaction();
             if ($request->action == 'forward') {
@@ -1344,7 +1358,7 @@ class ActiveSafController extends Controller
                     $saf->update();
                     $forwardBackwardIds->forward_role_id = $wfLevels['DA'];
                 }
-                if (!$geotagExist && $saf->current_role == $wfLevels['DA'] && in_array($wfMstrId, $this->_SkipFiledWorkWfMstrId)) {
+                if (!$geotagExist && $saf->current_role == $wfLevels['DA'] && !in_array($wfMstrId, $this->_SkipFiledWorkWfMstrId)) {
                     $forwardBackwardIds->forward_role_id = $wfLevels['UTC'];
                     if ($saf->prop_type_mstr_id == 4) {
                         $forwardBackwardIds->forward_role_id = $wfLevels['TC'];
@@ -4768,7 +4782,8 @@ class ActiveSafController extends Controller
                 "applicationNo" => $saf->application_no ?? "",
                 "customerName" => $saf->applicant_marathi ?? "",
                 "ownerName" => $saf->owner_name_marathi ?? "",
-                "guardianName" => trim($saf->guardian_name ?? "") ? $saf->guardian_name : $saf->guardian_name_marathi ?? "",
+                "guardianName"        => trim($saf->guardian_name ?? "") ? $saf->guardian_name : $saf->guardian_name ?? "",
+                "guardianNameMarathi" => trim($saf->guardian_name_marathi ?? "") ? $saf->guardian_name_marathi : $saf->guardian_name_marathi ?? "",
                 "mobileNo" => $saf->mobile_no ?? "",
                 "address" => $saf->prop_address ?? "",
                 "zone_name" => $saf->zone_name ?? "",

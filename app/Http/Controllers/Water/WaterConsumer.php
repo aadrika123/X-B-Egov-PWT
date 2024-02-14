@@ -411,7 +411,7 @@ class WaterConsumer extends Controller
                 throw new Exception("demand should be generated generate in next month!");
             }
             $diffMonth = $startDate->diffInMonths($today);
-            if ($diffMonth < 4) {
+            if ($diffMonth < 3) {
                 throw new Exception("there should be a difference of 4  month!");
             }
         } else {
@@ -2267,7 +2267,6 @@ class WaterConsumer extends Controller
             if (!$demandDetails) {
                 throw new Exception('demands not found ');
             }
-            // dd($demandDetails);
             $allDemandGenerated = $mWaterDemands->getConsumerDemandV3($ConsumerId);           // get all demands of consumer generated 
             # sum of amount
             $sumAmount = collect($allDemandGenerated)->sum('due_balance_amount');
