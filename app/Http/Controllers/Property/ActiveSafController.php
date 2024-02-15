@@ -4018,7 +4018,7 @@ class ActiveSafController extends Controller
         ]);
         try {
             $data = array();
-            return $verifications = PropSafVerification::select(
+            $verifications = PropSafVerification::select(
                 'id',
                 // DB::raw("(created_at,'dd-mm-YYYY') as created_at"),
                 'agency_verification',
