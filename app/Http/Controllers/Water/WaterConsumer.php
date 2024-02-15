@@ -183,6 +183,9 @@ class WaterConsumer extends Controller
                 $consumerDemand['totalSumDemand'] = round($sumDemandAmount, 2);
                 $consumerDemand['totalPenalty'] = round($totalPenalty, 2);
                 $consumerDemand['remainAdvance'] = round($remainAdvance ?? 0);
+                if ($consumerDemand['totalSumDemand'] == 0) 
+                    unset($consumerDemand['consumerDemands']);
+
                 # Meter Details 
                 $refMeterData = $mWaterConsumerMeter->getMeterDetailsByConsumerIdV2($refConsumerId)->first();
                 $refMeterData->ref_initial_reading = (float)($refMeterData->ref_initial_reading);
@@ -505,7 +508,7 @@ class WaterConsumer extends Controller
             case ($request->connectionType != $refMeterConnType['Meter/Fixed']):
                 if (!is_null($consumerMeterDetails)) {
                     if ($consumerMeterDetails->final_meter_reading >= $request->oldMeterFinalReading) {
-                        throw new Exception("Rading Should be Greater Than last Reading!");
+                        throw new Exception("Reading Should be Greater Than last Reading!");
                     }
                 }
                 break;
@@ -525,12 +528,12 @@ class WaterConsumer extends Controller
                 if ($consumerDemand) {
                     throw new Exception("Please pay the old Demand Amount! as per rule to change fixed connection to meter!");
                 }
-                throw new Exception("Please apply for regularization as per rule 16 your connection shoul be in meter!");
+                throw new Exception("Please apply for regularization as per rule 16 your connection should be in meter!");
             }
             # If there is previous meter detail exist
             $reqConnectionDate = $request->connectionDate;
             if (strtotime($consumerMeterDetails->connection_date) > strtotime($reqConnectionDate)) {
-                throw new Exception("Connection Date should be grater than previous Connection date!");
+                throw new Exception("Connection Date should be greater than previous Connection date!");
             }
             # Check the Conversion of the Connection
             $this->checkConnectionTypeUpdate($request, $consumerMeterDetails, $refMeterConnType);
@@ -596,7 +599,7 @@ class WaterConsumer extends Controller
                 break;
                 # Default
             default:
-                throw new Exception("invalid Meter Connection!");
+                throw new Exception("Invalid Meter Connection!");
                 break;
         }
     }
@@ -618,7 +621,7 @@ class WaterConsumer extends Controller
                 throw new Exception("You can not update same connection type as before!");
             }
             if ($request->meterNo != $consumerMeterDetails->meter_no) {
-                throw new Exception("You Can Meter/Fixed The Connection On Priviuse Meter");
+                throw new Exception("You Can Meter/Fixed The Connection On Previous Meter");
             }
         }
     }
