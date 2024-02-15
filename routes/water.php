@@ -213,6 +213,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('report/tc-visit-records', 'tcvisitRecords');
         Route::post('report/tc-visit', 'tcvisitRecordsv2');
         Route::post('reports/tran-deactived-list', 'tranDeactivatedList');
+        Route::post('reports/device-type/collection', 'deviceTypeCollection');
     });
 
 

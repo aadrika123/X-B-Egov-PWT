@@ -1415,7 +1415,7 @@ class ReportController extends Controller
                     ->where("device_type",$deviceType);
             if($paymentMode)
             {
-                $data->where(DB::raw("upper(device_type)",strtoupper($paymentMode)));
+                $data->where(DB::raw("upper(payment_mode)",strtoupper($paymentMode)));
             }
             $data = $data->first();
             return responseMsgs(true, "data fetched", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
