@@ -117,7 +117,8 @@ class WaterMonthelyCall
         # Assigning the global var 
         $this->_consumerCharges         = $this->_mWaterParamDemandCharge->getConsumerCharges($chargesParams);
         $this->_consumerFeeUnits        = $this->_mWaterParamFreeUnit->getFeeUnits($chargesParams);
-        $this->_consumerLastDemand      = $this->_mWaterConsumerDemand->akolaCheckConsumerDemand($this->_consumerId)->first();
+        // $this->_consumerLastDemand      = $this->_mWaterConsumerDemand->akolaCheckConsumerDemand($this->_consumerId)->first();
+        $this->_consumerLastDemand      = ($this->_mWaterConsumerDemand->akolaCheckConsumerDemand($this->_consumerId)->get())->sortByDesc("demand_upto")->first();
         $this->_consumerLastMeterReding = $this->_mWaterConsumerInitialMeter->getmeterReadingAndDetails($this->_consumerId)->orderByDesc('id')->first();
         $this->_consuemrMeterDetails    = $this->_mWaterConsumerMeter->getMeterDetailsByConsumerId($this->_consumerId)->first();
         $this->_testMeterFixeRateCondition = ($this->_consumerFeeUnits->condition_unit??0)/30;
