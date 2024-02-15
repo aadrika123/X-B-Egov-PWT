@@ -4020,9 +4020,10 @@ class ActiveSafController extends Controller
             $data = array();
             $verifications = PropSafVerification::select(
                 'id',
-                DB::raw("TO_CHAR(created_at,'dd-mm-YYYY') as created_at"),
+                // DB::raw("(created_at,'dd-mm-YYYY') as created_at"),
                 'agency_verification',
-                "ulb_verification"
+                "ulb_verification",
+                "created_at",
             )
                 // ->where("prop_saf_verifications.status", 1)     #_removed beacuse not showing data after approval
                 ->where("prop_saf_verifications.saf_id", $request->applicationId)
