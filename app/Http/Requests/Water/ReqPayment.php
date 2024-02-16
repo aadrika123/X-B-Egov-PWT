@@ -47,6 +47,7 @@ class ReqPayment extends AllRequest
         $rules['amount'] = 'nullable|required_if:paymentType,==,isPartPayment|numeric';
         $rules['consumerId']    = 'required';
         $rules['paymentMode']   = 'required';
+        $this->merge(["ConsumerId"=>$this->consumerId,"id"=>$this->consumerId,"original"=>true]);
 
         return $rules;
     }

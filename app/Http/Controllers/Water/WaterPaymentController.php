@@ -2902,8 +2902,7 @@ class WaterPaymentController extends Controller
 
     public function partPaymentV2(ReqPayment $request)
     {
-        try {
-            $request->merge(["ConsumerId"=>$request->consumerId,"original"=>true]);
+        try {            
             # check the params for part payment
             $ConsumerPayment = new WaterConsumerPayment($request);
             $controller = App::makeWith(WaterWaterConsumer::class,["IConsumer"=>app(IConsumer::class)]);
@@ -2915,7 +2914,7 @@ class WaterPaymentController extends Controller
             return responseMsgs(true, "payment Done!", $response, "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             $this->rollback();
-            return responseMsgs(false,$e->getMessage(),  "", "01", ".ms", "POST", $request->deviceId);
+            return responseMsgs(false,[$e->getMessage(),$e->getFile()],  "", "01", ".ms", "POST", $request->deviceId);
         }
     }
 

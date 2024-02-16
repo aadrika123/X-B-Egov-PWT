@@ -53,16 +53,17 @@ class WaterMonthelyCall
     private $_meterFixeRate ;
     private $_meterFixeRateF;
     private $_testMeterFixeRateConditionF;
-    private $_fromdate;
+    private $_fromDate;
     private $_uptoDate;
     private $_monthsArray;
     private $_dateDifference;
+    private $_dalyUnitConsumed;
     # Class cons
     public function __construct(int $consumerId, $toDate, $unitConsumed)
     {
         $this->_unitConsumed            = $unitConsumed ?? 0;
         $this->_consumerId              = $consumerId;
-        $this->_toDate                  = $toDate;
+        $this->_toDate                  = Carbon::parse($toDate);
         $this->_now                     = Carbon::now();
         $this->_catagoryType            = Config::get('waterConstaint.AKOLA_CATEGORY');
         $this->_mWaterConsumer          = new WaterSecondConsumer();
@@ -84,6 +85,7 @@ class WaterMonthelyCall
         $this->monthelyDemandCall();                    // 2
         // $this->generateDemand();                        // 3
         $this->generateDemandV2();
+        // dd($this->_tax,$this->_dalyUnitConsumed);
         return $this->_tax;
     }
 
@@ -127,6 +129,22 @@ class WaterMonthelyCall
         $this->_testMeterFixeRateConditionF = ($this->_consumerFeeUnits->condition_unit??0);
         $this->_meterFixeRate = ($this->_consumerCharges->amount??0)/30;
         $this->_meterFixeRateF = ($this->_consumerCharges->amount??0);
+        $this->_meterStatus = "Fixed";
+        if ($this->_consuemrMeterDetails->connection_type == 1) {
+            $this->_meterStatus = "Meter"; 
+        }
+
+        $useStartDate       = $this->_consumerLastDemand ? $this->_consumerLastDemand->demand_upto : $this->_consuemrDetails->connection_date;
+        $startDate          = (Carbon::parse($useStartDate))->addDay();
+
+        $this->_fromDate = $startDate->copy()->format("Y-m-d");         
+        $uptoDate = $this->_toDate->copy()->format("Y-m-d");        
+        if($this->_meterStatus=="Fixed" && $uptoDate!=$this->_toDate->copy()->endOfMonth())
+        {
+            $uptoDate = Carbon::parse($uptoDate)->subMonth()->endOfMonth()->format("Y-m-d");
+        }
+        $this->_uptoDate = $uptoDate;
+        $this->_toDate = Carbon::parse($this->_uptoDate);
     }
 
     /**
@@ -168,15 +186,15 @@ class WaterMonthelyCall
         if (!$this->_consuemrMeterDetails) {
             throw new Exception("update Connection detials!");
         }
-        if ($this->_consuemrMeterDetails->connection_type == 1) {
-            $this->_meterStatus = "Meter";                                                                                                          // Static
-            if ($this->_unitConsumed < ($this->_consumerLastMeterReding->initial_reading ?? $this->_consuemrMeterDetails->initial_reading)) {                                   // Static
+        if ($this->_consuemrMeterDetails->connection_type == 1 && $this->_unitConsumed < ($this->_consumerLastMeterReding->initial_reading ?? $this->_consuemrMeterDetails->initial_reading))
+        {   
                 throw new Exception("finalRading should be grater than previous reading!");
-            }
         }
-        if ($this->_consuemrMeterDetails->connection_type == 3) {
-            $this->_meterStatus = "Fixed";                                                                                                          // Static
+        if($this->_fromDate>$this->_uptoDate)
+        {
+            throw new Exception("from Date can't smaller than up to date!");
         }
+
     }
 
     /**
@@ -412,27 +430,29 @@ class WaterMonthelyCall
         $useStartDate       = $this->_consumerLastDemand ? $this->_consumerLastDemand->demand_upto : $this->_consuemrDetails->connection_date;
         $endDate            = Carbon::parse($this->_now->copy()->subMonth())->endOfMonth();
         $startDate          = (Carbon::parse($useStartDate))->addDay();
-        $currentDate = $startDate->copy();
-        while ($currentDate->lt($endDate)) {
+        // $currentDate = $startDate->copy();
+        $currentDate = Carbon::parse($this->_fromDate);        
+        while ($currentDate->lt($this->_toDate)) {
             $monthsArray[] = $startDate->format('Y-m-d') !=$currentDate->format('Y-m-d') ? $currentDate->format('Y-m-01'):$startDate->format('Y-m-d');
             $currentDate->addMonth();
         }
+        
         $testcurruntDate =(collect($monthsArray)->filter(function($val){
-            return(Carbon::parse($val)->between((Carbon::parse(Carbon::now()->format('Y-m-01'))),(Carbon::parse(Carbon::now()->lastOfMonth())))) ;
+            // return(Carbon::parse($val)->between((Carbon::parse(Carbon::now()->format('Y-m-01'))),(Carbon::parse(Carbon::now()->lastOfMonth())))) ;
+            return(Carbon::parse($val)->between((Carbon::parse($this->_toDate->format('Y-m-01'))),(Carbon::parse($this->_toDate->lastOfMonth())))) ;
             
         }));
         
         if($this->_meterStatus=="Meter" && $testcurruntDate->isEmpty())
         {
-            $monthsArray[] = Carbon::now()->format("Y-m-01");
-        }        
-        $fromDate = Carbon::parse(collect($monthsArray)->min());
-        $uptoDate = Carbon::parse($this->_meterStatus=="Meter" ? Carbon::now()->format('Y-m-d'): Carbon::parse(collect($monthsArray)->max())->endOfMonth());        
+            $monthsArray[] = ($this->_toDate->copy())->format("Y-m-01");
+        }      
+        $fromDate = Carbon::parse($this->_fromDate);
+        $uptoDate = Carbon::parse($this->_uptoDate);;        
         $dateDifference     = $fromDate->diffInDays($uptoDate)+1;
-        $this->_fromdate = $fromDate->format("Y-m-d"); 
-        $this->_uptoDate = $uptoDate->format("Y-m-d");
         $this->_monthsArray = $monthsArray;
-        $this->_dateDifference = $dateDifference;
+        $this->_dateDifference = $dateDifference; 
+        $this->_dalyUnitConsumed = ($this->_unitConsumed - ($this->_consumerLastMeterReding->initial_reading ?? $this->_consuemrMeterDetails->initial_reading)) / $this->_dateDifference;      
     }
 
     private function generateMeterDemand()
@@ -441,7 +461,7 @@ class WaterMonthelyCall
         if($this->_meterStatus=="Meter")
         {  
             # daly consumed unit
-            $dalyUnitConsumed = ($this->_unitConsumed - ($this->_consumerLastMeterReding->initial_reading ?? $this->_consuemrMeterDetails->initial_reading)) / $this->_dateDifference;
+            $dalyUnitConsumed = $this->_dalyUnitConsumed;
             $this->lastRearding = ($this->_consumerLastMeterReding->initial_reading ?? $this->_consuemrMeterDetails->initial_reading);
             // dd($this->_dateDifference,$dalyUnitConsumed,$this->_dateDifference*$dalyUnitConsumed,($this->_unitConsumed - ($this->_consumerLastMeterReding->initial_reading ?? $this->_consuemrMeterDetails->initial_reading)));
             # Monthely demand generation             
@@ -452,7 +472,7 @@ class WaterMonthelyCall
                 $fromDate = Carbon::parse($values);
                 $uptoDate = Carbon::parse($values)->endOfMonth();
                 $noOfDays = $fromDate->diffInDays($uptoDate)+1;
-                if((Carbon::parse($values)->between((Carbon::parse(Carbon::now()->format('Y-m-01'))),(Carbon::parse(Carbon::now()->lastOfMonth())))))
+                if((Carbon::parse($values)->between((Carbon::parse(Carbon::parse($this->_uptoDate)->format('Y-m-01'))),(Carbon::parse(Carbon::parse($this->_uptoDate)->lastOfMonth())))))
                 {
                     $lastDateOfMonth = Carbon::now();
                     $noOfDays = $fromDate->diffInDays($lastDateOfMonth)+1;
@@ -516,7 +536,7 @@ class WaterMonthelyCall
                         "fee_unit"          => $this->_consumerFeeUnits->unit_fee,                              // the fee unit 
                         "charge_type"       => $this->_meterStatus,
                         "rate_id"           => $this->_consumerCharges->id,
-                        "effective_from"    => $this->_fromdate,
+                        "effective_from"    => $this->_fromDate,
                         "initial_reading"   => $this->_consumerLastMeterReding->initial_reading ?? $this->_consuemrMeterDetails->initial_reading,
                         "final_reading"     => $this->_unitConsumed,
                         "amount"            => $returnData->sum('amount'),
@@ -525,7 +545,6 @@ class WaterMonthelyCall
                 ]
             ];            
         }
-        // dd($this->_tax,$dalyUnitConsumed,$this->_meterFixeRate,$this->_testMeterFixeRateConditionF);
     }
 
     private function generateFixedDemand()
@@ -554,7 +573,7 @@ class WaterMonthelyCall
                     [
                         "charge_type"       => $this->_meterStatus,
                         "rate_id"           => $this->_consumerCharges->id,
-                        "effective_from"    => $this->_fromdate,
+                        "effective_from"    => $this->_fromDate,
                         "initial_reading"   => $this->_consumerLastMeterReding->initial_reading ?? $this->_consuemrMeterDetails->initial_reading,
                         "final_reading"     => $this->_unitConsumed,
                         "amount"            => $returnData->sum('amount'),
