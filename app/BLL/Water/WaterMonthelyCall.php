@@ -51,6 +51,8 @@ class WaterMonthelyCall
     private $lastRearding;
     private $_testMeterFixeRateCondition ;
     private $_meterFixeRate ;
+    private $_meterFixeRateF;
+    private $_testMeterFixeRateConditionF;
     private $_fromdate;
     private $_uptoDate;
     private $_monthsArray;
@@ -122,7 +124,9 @@ class WaterMonthelyCall
         $this->_consumerLastMeterReding = $this->_mWaterConsumerInitialMeter->getmeterReadingAndDetails($this->_consumerId)->orderByDesc('id')->first();
         $this->_consuemrMeterDetails    = $this->_mWaterConsumerMeter->getMeterDetailsByConsumerId($this->_consumerId)->first();
         $this->_testMeterFixeRateCondition = ($this->_consumerFeeUnits->condition_unit??0)/30;
+        $this->_testMeterFixeRateConditionF = ($this->_consumerFeeUnits->condition_unit??0);
         $this->_meterFixeRate = ($this->_consumerCharges->amount??0)/30;
+        $this->_meterFixeRateF = ($this->_consumerCharges->amount??0);
     }
 
     /**
@@ -457,9 +461,10 @@ class WaterMonthelyCall
                 $refCallMonthAmount = ((($noOfDays * $dalyUnitConsumed) ));  
                 $amount = round($this->_consumerFeeUnits->unit_fee * $refCallMonthAmount,2);    
                 $unitAmount =  $this->_consumerFeeUnits->unit_fee;
-                if (($dalyUnitConsumed)  <=  $this->_testMeterFixeRateCondition)
+                /* 
+                if (($dalyUnitConsumed)  <=  $this->_testMeterFixeRateCondition)                
                 {
-                    $amount = $totalDayOfmonth < 30 ? $this->_consumerCharges->amount : $totalDayOfmonth * $this->_meterFixeRate;//round($this->_consumerCharges->amount,2);
+                    $amount = $totalDayOfmonth < 30 ? $this->_consumerCharges->amount : $totalDayOfmonth * $this->_meterFixeRate;                    
                     $unitAmount =  $this->_meterFixeRate;
                 }
                 if($totalDayOfmonth != $noOfDays && ($dalyUnitConsumed  <=  $this->_testMeterFixeRateCondition)
@@ -467,7 +472,22 @@ class WaterMonthelyCall
                 {
                     $amount = round(($this->_consumerCharges->amount/$totalDayOfmonth) * $noOfDays,2);
                     $unitAmount =  $this->_consumerCharges->amount/$totalDayOfmonth;
-                }         
+                }
+                */
+                $this->_testMeterFixeRateCondition = $this->_testMeterFixeRateConditionF/$totalDayOfmonth;
+                $this->_meterFixeRate = $this->_meterFixeRateF/$totalDayOfmonth;
+                if (($dalyUnitConsumed)  <=  $this->_testMeterFixeRateCondition)
+                {
+                    $amount = $totalDayOfmonth < 30 ? $this->_consumerCharges->amount : $totalDayOfmonth * $this->_meterFixeRate;                    
+                    $unitAmount =  $this->_meterFixeRate;
+                }
+                if($totalDayOfmonth != $noOfDays && ($dalyUnitConsumed  <=  $this->_testMeterFixeRateCondition)
+                )
+                {
+                    $amount = round(($this->_consumerCharges->amount/$totalDayOfmonth) * $noOfDays,2);
+                    $unitAmount =  $this->_consumerCharges->amount/$totalDayOfmonth;
+                }
+                         
                 if ($amount < 0) { 
                     $amount = 0;
                 }                
@@ -505,6 +525,7 @@ class WaterMonthelyCall
                 ]
             ];            
         }
+        // dd($this->_tax,$dalyUnitConsumed,$this->_meterFixeRate,$this->_testMeterFixeRateConditionF);
     }
 
     private function generateFixedDemand()
