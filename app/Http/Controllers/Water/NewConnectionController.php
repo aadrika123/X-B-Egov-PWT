@@ -1832,7 +1832,7 @@ class NewConnectionController extends Controller
             $mWaterConsumerDemand = new WaterConsumerDemand();
             $key            = $request->filterBy;
             $paramenter     = $request->parameter;
-            $pages          = $request->pages ? $request->pages : 10;
+            $pages          = $request->perPage ? $request->perPage : 10;
             $string         = preg_replace("/([A-Z])/", "_$1", $key);
             $refstring      = strtolower($string);
             $wardId         = $request->wardId;
