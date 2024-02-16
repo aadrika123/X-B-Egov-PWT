@@ -1832,7 +1832,7 @@ class NewConnectionController extends Controller
             $mWaterConsumerDemand = new WaterConsumerDemand();
             $key            = $request->filterBy;
             $paramenter     = $request->parameter;
-            $pages          = $request->pages ?? 10;
+            $pages          = $request->pages ? $request->pages : 10;
             $string         = preg_replace("/([A-Z])/", "_$1", $key);
             $refstring      = strtolower($string);
             $wardId         = $request->wardId;
@@ -1879,7 +1879,13 @@ class NewConnectionController extends Controller
                 default:
                     throw new Exception("Data provided in filterBy is not valid!");
             }
-            return responseMsgs(true, "Water Consumer Data According To Parameter!", remove_null($waterReturnDetails), "", "01", "652 ms", "POST", "");
+            $list = [
+                "current_page" => $waterReturnDetails->currentPage(),
+                "last_page" => $waterReturnDetails->lastPage(),
+                "data" => $waterReturnDetails->items(),
+                "total" => $waterReturnDetails->total(),
+            ]; 
+            return responseMsgs(true, "Water Consumer Data According To Parameter!", remove_null($list), "", "01", "652 ms", "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
