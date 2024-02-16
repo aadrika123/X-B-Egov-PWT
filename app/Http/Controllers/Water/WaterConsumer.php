@@ -272,7 +272,7 @@ class WaterConsumer extends Controller
             }
             # Save demand details 
             $this->begin();
-            $userDetails = $this->checkUserType($request);
+            $userDetails = [];//$this->checkUserType($request);
             if (isset($calculatedDemand)) {
                 $demandDetails = collect($calculatedDemand['consumer_tax']['0']);
                 switch ($demandDetails['charge_type']) {
@@ -307,6 +307,10 @@ class WaterConsumer extends Controller
                 //     $respons = SMSAKGOVT(6206998554, $sms["sms"], $sms["temp_id"]);
                 // }
                 $this->commit();
+                // $taxId = WaterConsumerTax::select(Db::raw("max(id)id"))->where("consumer_id",$request->consumerId)->first();
+                // $tax = WaterConsumerTax::select("*")->where("id",$taxId->id)->get();
+                // $demand = WaterConsumerDemand::select("*")->where("consumer_tax_id",$taxId->id)->get();
+                // dd($taxId,$tax,$demand,collect($demand)->sum("amount"));
                 return responseMsgs(true, "Demand Generated! for" . " " . $request->consumerId, "", "", "02", ".ms", "POST", "");
             }
         } catch (Exception $e) {

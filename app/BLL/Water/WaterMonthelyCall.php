@@ -424,7 +424,7 @@ class WaterMonthelyCall
         }        
         $fromDate = Carbon::parse(collect($monthsArray)->min());
         $uptoDate = Carbon::parse($this->_meterStatus=="Meter" ? Carbon::now()->format('Y-m-d'): Carbon::parse(collect($monthsArray)->max())->endOfMonth());        
-        $dateDifference     = $fromDate->diffInDays($uptoDate);
+        $dateDifference     = $fromDate->diffInDays($uptoDate)+1;
         $this->_fromdate = $fromDate->format("Y-m-d"); 
         $this->_uptoDate = $uptoDate->format("Y-m-d");
         $this->_monthsArray = $monthsArray;
@@ -439,7 +439,7 @@ class WaterMonthelyCall
             # daly consumed unit
             $dalyUnitConsumed = ($this->_unitConsumed - ($this->_consumerLastMeterReding->initial_reading ?? $this->_consuemrMeterDetails->initial_reading)) / $this->_dateDifference;
             $this->lastRearding = ($this->_consumerLastMeterReding->initial_reading ?? $this->_consuemrMeterDetails->initial_reading);
-            
+            // dd($this->_dateDifference,$dalyUnitConsumed,$this->_dateDifference*$dalyUnitConsumed,($this->_unitConsumed - ($this->_consumerLastMeterReding->initial_reading ?? $this->_consuemrMeterDetails->initial_reading)));
             # Monthely demand generation             
             $returnData = collect($this->_monthsArray)->map(function ($values, $key)
             use ($dalyUnitConsumed) {
@@ -471,7 +471,7 @@ class WaterMonthelyCall
                 if ($amount < 0) { 
                     $amount = 0;
                 }                
-                $this->lastRearding = $this->lastRearding +$refCallMonthAmount;
+                $this->lastRearding = $this->lastRearding + $refCallMonthAmount;
                 return [
                     "generation_date"       => $this->_now,
                     "amount"                => $amount,
