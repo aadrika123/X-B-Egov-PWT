@@ -85,7 +85,7 @@ class WaterMonthelyCall
         $this->monthelyDemandCall();                    // 2
         // $this->generateDemand();                        // 3
         $this->generateDemandV2();
-        // dd($this->_monthsArray,$this->_tax,$this->_dalyUnitConsumed);
+        // dd($this->_tax,$this->_dalyUnitConsumed);
         return $this->_tax;
     }
 
@@ -481,7 +481,7 @@ class WaterMonthelyCall
                 $noOfDays = $fromDate->diffInDays($uptoDate)+1;
                 if((Carbon::parse($values)->between((Carbon::parse(Carbon::parse($this->_uptoDate)->format('Y-m-01'))),(Carbon::parse(Carbon::parse($this->_uptoDate)->lastOfMonth())))))
                 {
-                    $lastDateOfMonth = Carbon::now();
+                    $lastDateOfMonth = Carbon::parse($this->_uptoDate);
                     $noOfDays = $fromDate->diffInDays($lastDateOfMonth)+1;
                 }
 
@@ -512,7 +512,7 @@ class WaterMonthelyCall
                 )
                 {
                     $amount = round(($this->_consumerCharges->amount/$totalDayOfmonth) * $noOfDays,2);
-                    $unitAmount =  $this->_consumerCharges->amount/$totalDayOfmonth;
+                    $unitAmount =  $this->_consumerCharges->amount/$totalDayOfmonth;                    
                 }
                          
                 if ($amount < 0) { 
