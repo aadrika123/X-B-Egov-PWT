@@ -85,7 +85,7 @@ class WaterMonthelyCall
         $this->monthelyDemandCall();                    // 2
         // $this->generateDemand();                        // 3
         $this->generateDemandV2();
-        // dd($this->_tax,$this->_dalyUnitConsumed);
+        // dd($this->_monthsArray,$this->_tax,$this->_dalyUnitConsumed);
         return $this->_tax;
     }
 
@@ -433,8 +433,15 @@ class WaterMonthelyCall
         // $currentDate = $startDate->copy();
         $currentDate = Carbon::parse($this->_fromDate);        
         while ($currentDate->lt($this->_toDate)) {
-            $monthsArray[] = $startDate->format('Y-m-d') !=$currentDate->format('Y-m-d') ? $currentDate->format('Y-m-01'):$startDate->format('Y-m-d');
-            $currentDate->addMonth();
+            $monthsArray[] = ($startDate->copy())->format('Y-m-d') !=($currentDate->copy())->format('Y-m-d') ? ($currentDate->copy())->format('Y-m-01'):($startDate->copy())->format('Y-m-d');            
+            if(Carbon::parse($currentDate->copy())->day == Carbon::parse($currentDate->copy())->endOfMonth()->day)
+            {
+                $currentDate->addDay();
+            }
+            else
+            {
+                $currentDate->addMonth();
+            }
         }
         
         $testcurruntDate =(collect($monthsArray)->filter(function($val){
