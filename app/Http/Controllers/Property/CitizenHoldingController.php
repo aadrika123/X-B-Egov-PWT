@@ -176,6 +176,12 @@ class CitizenHoldingController extends Controller
             "id"         => $reqData->prop_id,
             "paymentMode" => "ONLINE",
         ]);
+        if(isset($req->TrnDate))
+        {
+            $newReqs->merge([
+                "TrnDate"=>$req->TrnDate,
+            ]);
+        }
         $reqDataRequest = json_decode($reqData->request,true);
         if(isset($reqDataRequest["userId"]))
         {
