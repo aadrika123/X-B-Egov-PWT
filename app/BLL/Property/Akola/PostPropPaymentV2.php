@@ -132,7 +132,7 @@ class PostPropPaymentV2
 
         $this->_REQ->merge([
             'userId' => $this->_userId,
-            'todayDate' => $this->_todayDate->format('Y-m-d'),
+            'todayDate' => $this->_REQ->trandate ? Carbon::parse($this->_REQ->trandate)->format('Y-m-d') : $this->_todayDate->format('Y-m-d'),
             'tranNo' => $this->_tranNo,
             'amount' => $payableAmount,                                                                         // Payable Amount with Arrear
             'demandAmt' => $this->_propCalculation->original['data']['grandTaxes']['balance'],                         // Demandable Amount
