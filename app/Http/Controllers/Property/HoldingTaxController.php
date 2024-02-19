@@ -1589,6 +1589,39 @@ class HoldingTaxController extends Controller
     }
 
     /**
+     * | Send Bulk List
+     */
+    public function propertyBulkSmsList(Request $req)
+    {
+        $perPage = $req->perPage ?? 10;
+        $currentFYear = getFY();
+        $propDetails = PropDemand::select(
+            'prop_demands.property_id',
+            DB::raw('SUM(due_total_tax) as total_tax, MAX(fyear) as max_fyear'),
+            'owner_name',
+            'mobile_no',
+            'holding_no',
+            'prop_address',
+            'property_no',
+            'ward_name',
+            'zone_name',
+        )
+            ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_demands.property_id')
+            ->join('prop_properties', 'prop_properties.id', '=', 'prop_demands.property_id')
+            ->join('zone_masters', 'zone_masters.id', '=', 'prop_properties.zone_mstr_id')
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'prop_properties.ward_mstr_id')
+            ->where('due_total_tax', '>', 0.9)
+            ->where('fyear', $currentFYear)
+            ->where('paid_status', 0)
+            ->where(DB::raw('LENGTH(mobile_no)'), '=', 10)
+            ->groupBy('prop_demands.property_id', 'owner_name', 'mobile_no','prop_properties.id','zone_name','ward_name')
+            ->orderBy('prop_demands.property_id')
+            ->paginate($perPage);
+
+        return responseMsgs(true, "Bulk SMS List" , $propDetails, "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+    }
+
+    /**
      * | Send Bulk Sms
      */
     public function propertyBulkSms(Request $req)
@@ -1607,6 +1640,7 @@ class HoldingTaxController extends Controller
             ->where(DB::raw('LENGTH(mobile_no)'), '=', 10)
             ->groupBy('prop_demands.property_id', 'owner_name', 'mobile_no')
             ->orderBy('prop_demands.property_id')
+            ->limit(2)
             ->get();
 
         foreach ($propDetails as $propDetail) {
@@ -1635,6 +1669,6 @@ class HoldingTaxController extends Controller
             $mPropSmsLog->create($smsReqs);
         }
 
-        return responseMsgs(true, "SMS Send Successfully of ".$propDetails->count()."Property", [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+        return responseMsgs(true, "SMS Send Successfully of " . $propDetails->count() . " Property", [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
     }
 }
