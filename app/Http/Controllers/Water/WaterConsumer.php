@@ -266,6 +266,7 @@ class WaterConsumer extends Controller
 
             # Calling BLL for call
             $returnData = new WaterMonthelyCall($request->consumerId, $request->demandUpto, $request->finalRading); #WaterSecondConsumer::get();
+            // $returnData->checkDemandGenerationCondition();
             $calculatedDemand = $returnData->parentFunction($request);
             if ($calculatedDemand['status'] == false) {
                 throw new Exception($calculatedDemand['errors']);

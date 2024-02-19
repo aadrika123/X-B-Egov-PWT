@@ -192,7 +192,7 @@ class WaterMonthelyCall
         }
         if($this->_fromDate>$this->_uptoDate)
         {
-            throw new Exception("from Date can't smaller than up to date!");
+            throw new Exception("from Date can't smaller than up to date!(from date = $this->_fromDate, upto date = $this->_uptoDate");
         }
 
     }
@@ -589,6 +589,38 @@ class WaterMonthelyCall
                 ]
             ]; 
         }
+    }
+
+    public function checkDemandGenerationCondition()
+    {
+        $this->readParamsForCall();
+        $today                  = ($this->_now->copy())->format("Y-m-d");
+        $lastDemand = $this->_consumerLastDemand;
+        $lastDemandUpto = Carbon::parse($this->_fromDate)->subDay()->format('Y-m-d');
+        $lastDemandQuater = calculateQtr($lastDemandUpto);
+        $lastDemandYear = Carbon::parse($lastDemandUpto)->format("Y");
+        $lastDemandGenerationQuater = calculateQtr($lastDemand->generation_date ? $lastDemand->generation_date : $lastDemandUpto);
+        $lastDemandGenerationYear = Carbon::parse($lastDemand->generation_date ? $lastDemand->generation_date : $lastDemandUpto)->format("Y");
+        $currentDateQuater = calculateQtr($today);
+        $currentDateYear =  Carbon::parse($today)->format("Y");
+        $totalDayDiff = Carbon::parse($lastDemand->generation_date ? $lastDemand->generation_date : $lastDemandUpto)->diffInDays($this->_now->copy());
+        if($lastDemandUpto >= $today)
+        {
+            throw new Exception("the demand is generated till ".$this->_fromDate);
+        }
+        if($this->_meterStatus=="Meter" && $currentDateYear == $lastDemandYear && $lastDemandQuater == $currentDateYear)
+        {
+            throw new Exception("the demand is generated Of this Quater ");
+        }
+        if($this->_meterStatus!="Meter" && $currentDateYear == $lastDemandGenerationYear && $lastDemandGenerationQuater == $currentDateYear)
+        {
+            throw new Exception("the demand is generated Of this Quater ");
+        }
+        if($totalDayDiff<30)
+        {
+            throw new Exception("Total Deference Between prevues demand and current date should be mini 30 days ");
+        } 
+        $this->monthelyDemandCall();       
     }
     
 }
