@@ -85,7 +85,7 @@ class WaterMonthelyCall
         $this->monthelyDemandCall();                    // 2
         // $this->generateDemand();                        // 3
         $this->generateDemandV2();
-        // dd($this->_tax,$this->_dalyUnitConsumed);
+        // dd($this->_tax,$this->_dalyUnitConsumed,($this->_consumerLastMeterReding->initial_reading ?? $this->_consuemrMeterDetails->initial_reading));
         return $this->_tax;
     }
 
@@ -550,7 +550,7 @@ class WaterMonthelyCall
                         "consumer_demand"   => $returnData->toArray(),
                     ]
                 ]
-            ];            
+            ];           
         }
     }
 
