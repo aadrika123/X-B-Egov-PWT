@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Water;
 
+use App\BLL\Water\WaterConsumerDemandReceipt;
 use App\BLL\Water\WaterMonthelyCall;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Water\reqDeactivate;
@@ -2300,6 +2301,30 @@ class WaterConsumer extends Controller
         }
     }
 
+    public function getConsumerDemandsV2(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'consumerId' => 'required'
+            ]
+        );
+
+        if ($validated->fails()) {
+            return validationError($validated);
+        }
+        try{
+            $waterConsumerDemandReceipt = new WaterConsumerDemandReceipt($request->consumerId);
+            $waterConsumerDemandReceipt->generateDemandReceipts();
+            $demandReciept = $waterConsumerDemandReceipt->_GRID;
+            return responseMsgs(true,"Demand Recipt",remove_null($demandReciept));
+        }
+        catch(Exception $e)
+        {
+            dd($e->getMessage(),$e->getFile(),$e->getLine());
+        }
+    }
+
     /**
      * update consumer details
      */
@@ -2510,6 +2535,118 @@ class WaterConsumer extends Controller
         } catch (Exception $e) {
             $this->rollback();
             return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
+        }
+    }
+
+    public function AutoCorrectDemand(Request $request)
+    {
+        try{
+            $dataSql = "
+                        select water_consumer_taxes.*,demands.*
+                        from water_consumer_taxes
+                        join(
+                            select consumer_tax_id,
+                                min(demand_from) as demand_from,
+                                max(demand_upto) as demand_upto,
+                                string_agg(id::text,',') as demand_ids,
+                            (
+                                json_agg(
+                                        json_build_object('id',id,
+                                                        'consumer_id',consumer_id,
+                                                        'ward_id',ward_id,
+                                                        'ulb_id',ulb_id,
+                                                        'consumer_tax_id',consumer_tax_id,
+                                                        'generation_date',generation_date,
+                                                        'amount',amount,
+                                                        'emp_details_id',emp_details_id,
+                                                        'paid_status',paid_status,
+                                                        'status',status,
+                                                        'demand_from',demand_from,
+                                                        'demand_upto',demand_upto,
+                                                        'penalty',penalty,
+                                                        'current_meter_reading',current_meter_reading,
+                                                        'adv_amount',adv_amount,
+                                                        'last_payment_id',last_payment_id,
+                                                        'spr_last_payment_id',spr_last_payment_id,
+                                                        'unit_amount',unit_amount,
+                                                        'connection_type',connection_type,
+                                                        'demand_no',demand_no,
+                                                        'balance_amount',balance_amount,
+                                                        'panelty_updated_on',panelty_updated_on,
+                                                        'created_at',created_at,
+                                                        'updated_at',updated_at,
+                                                        'old_id',old_id,
+                                                        'citizen_id',citizen_id,
+                                                        'user_id',user_id,
+                                                        'due_amount',due_amount,
+                                                        'due_penalty',due_penalty,
+                                                        'due_balance_amount',due_balance_amount,
+                                                        'due_adv_amount',due_adv_amount,
+                                                        'is_full_paid',is_full_paid,
+                                                        'arrear_demand',arrear_demand,
+                                                        'current_demand',current_demand,
+                                                        'arrear_demand_date',arrear_demand_date,
+                                                        'current_demand_date',current_demand_date,
+                                                        'outstanding_demand',outstanding_demand,
+                                -- 						  'paid_arrear_demands',paid_arrear_demands,
+                                -- 						  'arrear_amount',arrear_amount,
+                                                        'due_arrear_demand',due_arrear_demand,
+                                                        'due_current_demand',due_current_demand,
+                                                        'paid_total_tax',paid_total_tax
+                        
+                                                        )
+                                            ) 
+                                )as demand_json
+                            from water_consumer_demands 
+                            where water_consumer_demands.status =true
+                            group by consumer_tax_id
+                            Order by demand_upto ASC
+                        )demands on demands.consumer_tax_id = water_consumer_taxes.id
+                        left join demand_currection_logs on demand_currection_logs.tax_id =  water_consumer_taxes.id
+                        where demand_currection_logs.id is null
+                        order by water_consumer_taxes.id
+                        limit 100
+            ";
+            $data = $this->_DB->select($dataSql);
+            // print_var($data);
+            foreach($data as $val)
+            {
+                $taxId =  $val->id;
+                $consumerId = $val->consumer_id;
+                $demandUpto = $val->demand_upto;
+                $finalRading = $val->final_reading;
+                $demandIds = explode(',',$val->demand_ids);
+                
+                try{
+                    $this->begin();
+                    $oldDemands = WaterConsumerDemand::whereIn("id",$demandIds)->orderby("demand_upto",'ASC')->get();
+                    $updates  = WaterConsumerDemand::whereIn("id",$demandIds)->update(['status'=>false]);
+                    $returnData = new WaterMonthelyCall($consumerId, $demandUpto, $finalRading); 
+                    $calculatedDemand = $returnData->parentFunction();
+                    dd($val,$oldDemands,$calculatedDemand,$demandIds);
+                    if ($calculatedDemand['status'] == false) {
+                        throw new Exception($calculatedDemand['errors']);
+                    }
+                    $newTax = $calculatedDemand["consumer_tax"];
+                    $newDemandLogs = collect();
+                    foreach($newTax["consumer_demand"] as $newDemands)
+                    {
+                        $demands = WaterConsumerDemand::where("consumer_tax_id",$taxId)
+                                    ->where("demand_from",$newDemands["demand_from"])
+                                    ->where("demand_upto",$newDemands["demand_from"])
+                                    ->first();
+                    }
+                }
+                catch(Exception $e)
+                {
+                    $this->rollback();
+                    dd($e->getMessage(),$e->getFile(),$e->getLine());
+                }
+            }
+        }
+        catch(Exception $e)
+        {
+            dd($e->getMessage(),$e->getFile(),$e->getLine());
         }
     }
 }
