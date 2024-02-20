@@ -1618,7 +1618,7 @@ class HoldingTaxController extends Controller
                 $join->on('prop_sms_logs.ref_id', '=', 'prop_properties.id')
                     ->where('prop_sms_logs.ref_type', 'PROPERTY')
                     ->where('prop_sms_logs.purpose', 'Demand Reminder')                    
-                    // ->whereDate('prop_sms_logs.created_at', $todayDate)
+                    ->whereDate('prop_sms_logs.created_at', $todayDate)
                 ;
             })
             ->whereNull('prop_sms_logs.id')
