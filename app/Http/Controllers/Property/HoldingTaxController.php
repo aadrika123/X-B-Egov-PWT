@@ -1593,9 +1593,22 @@ class HoldingTaxController extends Controller
      */
     public function propertyBulkSmsList(Request $req)
     {
+
+
+        $zoneId = $wardId = $amount = NULL;
+        if ($req->zoneId)
+            $zoneId = $req->zoneId;
+
+        if ($req->wardId)
+            $wardId = $req->wardId;
+
+        if ($req->amount)
+            $amount = $req->amount;
+
         $todayDate = Carbon::now()->today();
         $perPage = $req->perPage ?? 10;
-        $currentFYear = getFY();DB::enableQueryLog();
+        $currentFYear = getFY();
+        DB::enableQueryLog();
         $propDetails = PropDemand::select(
             'prop_sms_logs.id as sms_log_id',
             'prop_properties.id as property_id',
@@ -1617,9 +1630,8 @@ class HoldingTaxController extends Controller
             ->leftJoin('prop_sms_logs', function ($join) use ($todayDate) {
                 $join->on('prop_sms_logs.ref_id', '=', 'prop_properties.id')
                     ->where('prop_sms_logs.ref_type', 'PROPERTY')
-                    ->where('prop_sms_logs.purpose', 'Demand Reminder')                    
-                    ->whereDate('prop_sms_logs.created_at', $todayDate)
-                ;
+                    ->where('prop_sms_logs.purpose', 'Demand Reminder')
+                    ->whereDate('prop_sms_logs.created_at', $todayDate);
             })
             ->whereNull('prop_sms_logs.id')
             ->where('due_total_tax', '>', 0.9)
@@ -1635,9 +1647,19 @@ class HoldingTaxController extends Controller
                 'ward_name',
                 'prop_sms_logs.id'
             )
-            ->orderBy('prop_demands.property_id')
-            ->paginate($perPage);
-            // dd(DB::getQueryLog());
+            ->orderBy('prop_demands.property_id');
+
+        if ($zoneId)
+            $propDetails = $propDetails->where("prop_properties.zone_mstr_id", $zoneId);
+
+        if ($wardId)
+            $propDetails = $propDetails->where("prop_properties.ward_mstr_id", $wardId);
+
+        if ($amount)
+            $propDetails = $propDetails->where("due_total_tax", '>', $amount);
+
+        $propDetails =  $propDetails->paginate($perPage);
+        // dd(DB::getQueryLog());
 
         return responseMsgs(true, "Bulk SMS List", $propDetails, "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
     }
