@@ -42,6 +42,7 @@ class WaterConsumerDemandReceipt
     private $_currentDemandUpto;
     private $_connectionType;
     private $_categoryType;
+    private $_currentBillDays;
     private $_meterStatus;
     private $_lastTowReading;
     private $_lastFiveTax;
@@ -108,13 +109,24 @@ class WaterConsumerDemandReceipt
         $this->_demandUpto = $this->_dueDemandsList->max("demand_upto");        
         $lastDemands  = collect($this->_dueDemandsList)->where("demand_upto",$this->_demandUpto)->sortBy("generation_date")->first();
         $lastTaxId = $lastDemands->consumer_tax_id??null;
-        $this->_demandNo = $lastDemands->demand_no;        
+        $prevuesReadingDemand = collect();        
+        $this->_demandNo = $lastDemands->demand_no;
+        $prevuesReadingDemand = $this->_mWaterConsumerDemands->where("consumer_id",$this->_consumerId)->where(function($where) use($lastTaxId){
+            $where->OrWhere("consumer_tax_id","<>",$lastTaxId)
+            ->orWhereNull("consumer_tax_id");
+        })
+        ->orderBy("consumer_tax_id","DESC")
+        ->first();        
         if($lastTaxId)
-        {
+        {            
             $this->_demandFrom = collect($this->_dueDemandsList)->where("consumer_tax_id",$lastTaxId)->min("demand_from");
             $this->_demandUpto = collect($this->_dueDemandsList)->where("consumer_tax_id",$lastTaxId)->max("demand_upto");
         }
         $this->_currentDemand = collect(collect($this->_dueDemandsList)->where("consumer_tax_id",$lastTaxId)->values());
+
+        $currenBillDemadFrom = collect($this->_currentDemand)->min("demand_from");
+        $currenBillDemadUpto = collect($this->_currentDemand)->max("demand_upto");
+
         $this->_arrearDemand = collect(collect($this->_dueDemandsList)->where("consumer_tax_id","<>",$lastTaxId)->values());
         $this->_currentDemandAmount = round($this->_currentDemand->sum("due_balance_amount"),2);
         $this->_arrearDemandAmount = round($this->_arrearDemand->sum("due_balance_amount"),2);
@@ -123,12 +135,13 @@ class WaterConsumerDemandReceipt
         $this->_totalDemand         = round($this->_totalDemand,2);
 
         $this->_currentReadingDate = collect($this->_currentDemand)->max("generation_date");
-        $this->_prevuesReadingDate = collect($this->_arrearDemand)->max("generation_date");
+        $this->_prevuesReadingDate = $prevuesReadingDemand->generation_date??null;
         $this->_currentReadingDate = $this->_currentReadingDate ? Carbon::parse($this->_currentReadingDate)->format("d-m-Y") : "";
         $this->_prevuesReadingDate = $this->_prevuesReadingDate ? Carbon::parse($this->_prevuesReadingDate)->format("d-m-Y") : "";
 
         $this->_demandFrom = Carbon::parse($this->_demandFrom)->format("d-m-Y");
         $this->_demandUpto = Carbon::parse($this->_demandUpto)->format("d-m-Y");
+        $this->_currentBillDays = $currenBillDemadFrom && $currenBillDemadUpto ? (Carbon::parse($currenBillDemadFrom)->diffInDays(Carbon::parse($currenBillDemadUpto))+1):null;
         
     }
 
@@ -227,6 +240,7 @@ class WaterConsumerDemandReceipt
             "meterStatus"           => $this->_meterStatus,
             "meterImage"            => $this->_meterStatus=="Meter" ? $this->_meterImg : "",
             "previousReadingDtls"   => $this->_lastFiveTax,
+            "billPeriodInDay"       => $this->_currentBillDays,
             "billOutstandingDetails"=> [
                                             "currentBillAmount" => $this->_currentDemandAmount,
                                             "arrearBillAmount"  => $this->_arrearDemandAmount,
