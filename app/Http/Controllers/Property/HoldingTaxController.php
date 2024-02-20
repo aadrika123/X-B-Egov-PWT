@@ -1660,7 +1660,7 @@ class HoldingTaxController extends Controller
             $propDetails = $propDetails->where("due_total_tax", '>', $amount);
 
         $propDetails =  $propDetails->paginate($perPage);
-        dd(DB::getQueryLog());
+        // dd(DB::getQueryLog());
 
         return responseMsgs(true, "Bulk SMS List", $propDetails, "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
     }
