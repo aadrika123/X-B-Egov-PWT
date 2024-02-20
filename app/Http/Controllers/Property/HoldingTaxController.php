@@ -1593,38 +1593,119 @@ class HoldingTaxController extends Controller
      */
     public function propertyBulkSmsList(Request $req)
     {
+        $todayDate = Carbon::now()->today();
         $perPage = $req->perPage ?? 10;
-        $currentFYear = getFY();
+        $currentFYear = getFY();DB::enableQueryLog();
         $propDetails = PropDemand::select(
-            'prop_demands.property_id',
+            'prop_sms_logs.id as sms_log_id',
+            'prop_properties.id as property_id',
             DB::raw('SUM(due_total_tax) as total_tax, MAX(fyear) as max_fyear'),
-            'owner_name',
-            'mobile_no',
+            'prop_owners.owner_name',
+            'prop_owners.mobile_no',
             'holding_no',
             'prop_address',
             'property_no',
-            'ward_name',
             'zone_name',
+            'ward_name',
+            // 'prop_sms_logs.created_at'
         )
             ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_demands.property_id')
             ->join('prop_properties', 'prop_properties.id', '=', 'prop_demands.property_id')
-            ->join('zone_masters', 'zone_masters.id', '=', 'prop_properties.zone_mstr_id')
+            ->leftjoin('zone_masters', 'zone_masters.id', '=', 'prop_properties.zone_mstr_id')
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'prop_properties.ward_mstr_id')
+
+            ->leftJoin('prop_sms_logs', function ($join) use ($todayDate) {
+                $join->on('prop_sms_logs.ref_id', '=', 'prop_properties.id')
+                    ->where('prop_sms_logs.ref_type', 'PROPERTY')
+                    ->where('prop_sms_logs.purpose', 'Demand Reminder')                    
+                    ->whereDate('prop_sms_logs.created_at', $todayDate)
+                ;
+            })
+            ->whereNull('prop_sms_logs.id')
             ->where('due_total_tax', '>', 0.9)
             ->where('fyear', $currentFYear)
             ->where('paid_status', 0)
-            ->where(DB::raw('LENGTH(mobile_no)'), '=', 10)
-            ->groupBy('prop_demands.property_id', 'owner_name', 'mobile_no','prop_properties.id','zone_name','ward_name')
+            ->where(DB::raw('LENGTH(prop_owners.mobile_no)'), '=', 10)
+            ->groupBy(
+                'prop_demands.property_id',
+                'prop_owners.owner_name',
+                'prop_owners.mobile_no',
+                'prop_properties.id',
+                'zone_name',
+                'ward_name',
+                'prop_sms_logs.id'
+            )
             ->orderBy('prop_demands.property_id')
             ->paginate($perPage);
+            // dd(DB::getQueryLog());
 
-        return responseMsgs(true, "Bulk SMS List" , $propDetails, "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+        return responseMsgs(true, "Bulk SMS List", $propDetails, "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
     }
+
 
     /**
      * | Send Bulk Sms
      */
     public function propertyBulkSms(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            ['propertyIds' => 'required|array']
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        $userId = authUser($req)->id;
+        $mPropSmsLog = new PropSmsLog();
+        $propDetails = PropDemand::select(
+            'prop_demands.property_id',
+            DB::raw('SUM(due_total_tax) as total_tax, MAX(fyear) as max_fyear'),
+            'owner_name',
+            'mobile_no',
+        )
+            ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_demands.property_id')
+            ->where('due_total_tax', '>', 0.9)
+            ->where('fyear', '2023-2024')
+            ->where('paid_status', 0)
+            ->where(DB::raw('LENGTH(mobile_no)'), '=', 10)
+            ->whereIn('prop_demands.property_id', $req->propertyIds)
+            ->groupBy('prop_demands.property_id', 'owner_name', 'mobile_no')
+            ->orderByDesc('prop_demands.property_id')
+            ->get();
+
+        foreach ($propDetails as $propDetail) {
+
+            $ownerName   = Str::limit(trim($propDetail->owner_name), 30);
+            $ownerMobile = $propDetail->mobile_no;
+            $totalTax    = $propDetail->total_tax;
+            $fyear       = $propDetail->max_fyear;
+            $propertyId  = $propDetail->property_id;
+
+            $sms      = "Dear " . $ownerName . ",  your Property Tax Demand of Rs " . $totalTax . " has been generated upto FY 23-24. Please pay on time to avoid any late fine. Please ignore if already paid. For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
+            $response = send_sms($ownerMobile, $sms, 1707169564203481769);
+
+            $smsReqs = [
+                "emp_id" => $userId,
+                "ref_id" => $propertyId,
+                "ref_type" => 'PROPERTY',
+                "mobile_no" => $ownerMobile,
+                "purpose" => 'Demand Reminder',
+                "template_id" => 1707169564203481769,
+                "message" => $sms,
+                "response" => $response['status'],
+                "smgid" => $response['msg'],
+                "stampdate" => Carbon::now(),
+            ];
+            $mPropSmsLog->create($smsReqs);
+        }
+
+        return responseMsgs(true, "SMS Send Successfully of " . $propDetails->count() . " Property", [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+    }
+
+    /**
+     * | Send Bulk Sms
+     */
+    public function propertyBulkSms2(Request $req)
     {
         $mPropSmsLog = new PropSmsLog();
         $propDetails = PropDemand::select(
