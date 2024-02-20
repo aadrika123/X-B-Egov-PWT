@@ -2309,12 +2309,12 @@ class WaterConsumer extends Controller
             $request->all(),
             [
                 'consumerId'         => 'required|integer',
-                'mobile_no'          => 'nullable|',
-                'email'              => 'nullable|',
+                'mobile_no'          => 'nullable|digits:10|regex:/[0-9]{10}/',
+                'email'              => 'nullable|email',
                 'applicant_name'     => 'nullable|',
                 'guardian_name'      => 'nullable|',
                 'zoneId'             => 'nullable|',
-                'wardId_number'      => 'nullable|integer',
+                'wardId'             => 'nullable|integer',
                 'address'            => 'nullable|',
                 'property_no'        => 'nullable',
                 'dtcCode'            => 'nullble',
@@ -2324,6 +2324,12 @@ class WaterConsumer extends Controller
         if ($validated->fails())
             return validationError($validated);
         try {
+            $request->merge([
+                "propertyNo"=>$request->property_no,
+                "mobileNo"=>$request->mobile_no,
+                "applicantName"=>$request->applicant_name,
+                "guardianName"=>$request->guardian_name,
+            ]);
             $now            = Carbon::now();
             $user           = authUser($request);
             $userId         = $user->id;
