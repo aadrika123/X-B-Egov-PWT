@@ -4,6 +4,7 @@ namespace App\BLL\Water;
 
 use App\Models\Property\ZoneMaster;
 use App\Models\UlbMaster;
+use App\Models\User;
 use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterConsumerInitialMeter;
 use App\Models\Water\WaterConsumerMeter;
@@ -21,6 +22,7 @@ class WaterConsumerDemandReceipt
     public $_GRID;
     public $_mTowards;
 
+    private $_userDtl;
     private $_consumerId;
     private $_dueDemandsList;
     private $_consumerDtls;
@@ -68,6 +70,7 @@ class WaterConsumerDemandReceipt
     private $_mWaterConsumerMeter;
     private $_mWaterConsumerInitialMeter;
     private $_mWaterMeterReadingDoc ;
+    private $_mUsers;
 
     public function __construct($consumerId)
     {
@@ -84,6 +87,7 @@ class WaterConsumerDemandReceipt
         $this->_mWaterMeterReadingDoc    = new WaterMeterReadingDoc();
         $this->_mUlbWards                = new UlbMaster();
         $this->_mZones                   = new ZoneMaster();
+        $this->_mUsers                   = new User();
     }
 
     private function setConsumerDtl()
@@ -108,6 +112,9 @@ class WaterConsumerDemandReceipt
         
         $this->_demandUpto = $this->_dueDemandsList->max("demand_upto");        
         $lastDemands  = collect($this->_dueDemandsList)->where("demand_upto",$this->_demandUpto)->sortBy("generation_date")->first();
+
+        $this->_userDtl = $this->_mUsers->find($lastDemands->emp_details_id);
+
         $lastTaxId = $lastDemands->consumer_tax_id??null;
         $prevuesReadingDemand = collect();        
         $this->_demandNo = $lastDemands->demand_no;
@@ -218,7 +225,9 @@ class WaterConsumerDemandReceipt
             "billDueDate"           => $this->_billDueDate ,
             "billDueDate"           => $this->_billDueDate ,
             "currentDemand"         => $this->_currentDemand,
-            "arrearDemand"         => $this->_arrearDemand, 
+            "arrearDemand"         => $this->_arrearDemand,
+            "userDtl"              => $this->_userDtl,
+            "userName"             => $this->_userDtl->name??"",
             "consumerDtl"          => $this->_consumerDtls,
             "ownersDtl"            => $this->_ownersDtls,
             "consumerName"         => collect($this->_ownersDtls)->implode("applicant_name",", "),

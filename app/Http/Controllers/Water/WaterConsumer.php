@@ -274,7 +274,7 @@ class WaterConsumer extends Controller
             }
             # Save demand details 
             $this->begin();
-            $userDetails = [];//$this->checkUserType($request);
+            $userDetails = $this->checkUserType($request);
             if (isset($calculatedDemand)) {
                 $demandDetails = collect($calculatedDemand['consumer_tax']['0']);
                 switch ($demandDetails['charge_type']) {
