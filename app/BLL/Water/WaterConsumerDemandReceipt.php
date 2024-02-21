@@ -135,11 +135,11 @@ class WaterConsumerDemandReceipt
         $currenBillDemadUpto = collect($this->_currentDemand)->max("demand_upto");
 
         $this->_arrearDemand = collect(collect($this->_dueDemandsList)->where("consumer_tax_id","<>",$lastTaxId)->values());
-        $this->_currentDemandAmount = round($this->_currentDemand->sum("due_balance_amount"),2);
-        $this->_arrearDemandAmount = round($this->_arrearDemand->sum("due_balance_amount"),2);
+        $this->_currentDemandAmount = round($this->_currentDemand->sum("due_balance_amount"));
+        $this->_arrearDemandAmount = round($this->_arrearDemand->sum("due_balance_amount"));
 
         $this->_totalDemand         = collect($this->_dueDemandsList)->sum('due_balance_amount');
-        $this->_totalDemand         = round($this->_totalDemand,2);
+        $this->_totalDemand         = round($this->_totalDemand);
 
         $this->_currentReadingDate = collect($this->_currentDemand)->max("generation_date");
         $this->_prevuesReadingDate = $prevuesReadingDemand->generation_date??null;
