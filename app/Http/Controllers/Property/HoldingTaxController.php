@@ -1636,7 +1636,6 @@ class HoldingTaxController extends Controller
             })
             ->whereNull('prop_sms_logs.id')
             ->where('due_total_tax', '>', 0.9)
-            ->where('fyear', $currentFYear)
             ->where('paid_status', 0)
             ->where(DB::raw('LENGTH(prop_owners.mobile_no)'), '=', 10)
             ->groupBy(
@@ -1688,7 +1687,6 @@ class HoldingTaxController extends Controller
         )
             ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_demands.property_id')
             ->where('due_total_tax', '>', 0.9)
-            ->where('fyear', '2023-2024')
             ->where('paid_status', 0)
             ->where(DB::raw('LENGTH(mobile_no)'), '=', 10)
             ->whereIn('prop_demands.property_id', $req->propertyIds)
