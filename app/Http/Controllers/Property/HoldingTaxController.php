@@ -1679,6 +1679,7 @@ class HoldingTaxController extends Controller
 
         $userId = authUser($req)->id;
         $mPropSmsLog = new PropSmsLog();
+        $getHoldingDues = new GetHoldingDuesV2;
         $propDetails = PropDemand::select(
             'prop_demands.property_id',
             DB::raw('SUM(due_total_tax) as total_tax, MAX(fyear) as max_fyear'),
@@ -1695,10 +1696,12 @@ class HoldingTaxController extends Controller
             ->get();
 
         foreach ($propDetails as $propDetail) {
+            $newReq = new Request(['propId' => $propDetail->property_id]);
+            $demand = $getHoldingDues->getDues($newReq);
 
             $ownerName   = Str::limit(trim($propDetail->owner_name), 30);
             $ownerMobile = $propDetail->mobile_no;
-            $totalTax    = $propDetail->total_tax;
+            $totalTax    = $demand['payableAmt'];
             $fyear       = $propDetail->max_fyear;
             $propertyId  = $propDetail->property_id;
 
@@ -1721,6 +1724,68 @@ class HoldingTaxController extends Controller
         }
 
         return responseMsgs(true, "SMS Send Successfully of " . $propDetails->count() . " Property", [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+    }
+
+    /**
+     * | Bulk Sms Report
+     */
+    public function bulkSmsReport(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                "fromDate" => "required|date",
+                "uptoDate" => "required|date"
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        $mPropSmsLog = new PropSmsLog();
+        $fromDate = $req->fromDate;
+        $uptoDate = $req->uptoDate;
+        $perPage = $req->perPage ?? 10;
+        $propDetails = $mPropSmsLog::
+            // select(
+            //     'prop_demands.property_id',
+            //     DB::raw('SUM(due_total_tax) as total_tax, MAX(fyear) as max_fyear'),
+            //     'owner_name',
+            //     'mobile_no',
+            // )
+            where('purpose', '=', 'Demand Reminder')
+            // ->join('prop_properties', 'prop_properties.id', '=', 'prop_sms_logs.ref_id')
+            // ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
+            // ->join('users', 'users.id', 'prop_sms_logs.emp_id')
+            ->whereBetween('prop_sms_logs.created_at', [$fromDate . ' 00:00:01', $uptoDate . ' 23:59:59'])
+            ->paginate($perPage);
+
+        return responseMsgs(true, "Sent SMS List", $propDetails, "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+    }
+
+
+    public function testSms(Request $req)
+    {
+        $mPropSmsLog = new PropSmsLog();
+
+        $sms      = "Dear {#var#}, your Property Tax of amount Rs {#var#} is due. Please pay your tax on time to avoid penalties and interest. Please ignore if already paid. For details visit www.amcakola.in or call us at:18008907909. SWATI INDUSTRIES";
+        $response = send_sms("Ram Kumar", $sms, 1707170832840649671);
+
+        $smsReqs = [
+            "emp_id" => 1,
+            "ref_id" => 1,
+            "ref_type" => 'PROPERTY',
+            "mobile_no" => 8797770238,
+            "purpose" => 'Demand Reminder',
+            "template_id" => 1707169564203481769,
+            "message" => $sms,
+            "response" => $response['status'],
+            "smgid" => $response['msg'],
+            "stampdate" => Carbon::now(),
+        ];
+        $mPropSmsLog->create($smsReqs);
+
+
+        return responseMsgs(true, "SMS Send Successfully", [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
     }
 
     /**
