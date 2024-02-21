@@ -113,11 +113,11 @@ class WaterConsumerDemandReceipt
         $this->_demandUpto = $this->_dueDemandsList->max("demand_upto");        
         $lastDemands  = collect($this->_dueDemandsList)->where("demand_upto",$this->_demandUpto)->sortBy("generation_date")->first();
 
-        $this->_userDtl = $this->_mUsers->find($lastDemands->emp_details_id);
+        $this->_userDtl = $this->_mUsers->find($lastDemands->emp_details_id??0);
 
         $lastTaxId = $lastDemands->consumer_tax_id??null;
         $prevuesReadingDemand = collect();        
-        $this->_demandNo = $lastDemands->demand_no;
+        $this->_demandNo = $lastDemands->demand_no??"";
         $prevuesReadingDemand = $this->_mWaterConsumerDemands->where("consumer_id",$this->_consumerId)->where(function($where) use($lastTaxId){
             $where->OrWhere("consumer_tax_id","<>",$lastTaxId)
             ->orWhereNull("consumer_tax_id");
@@ -135,11 +135,11 @@ class WaterConsumerDemandReceipt
         $currenBillDemadUpto = collect($this->_currentDemand)->max("demand_upto");
 
         $this->_arrearDemand = collect(collect($this->_dueDemandsList)->where("consumer_tax_id","<>",$lastTaxId)->values());
-        $this->_currentDemandAmount = round($this->_currentDemand->sum("due_balance_amount"),2);
-        $this->_arrearDemandAmount = round($this->_arrearDemand->sum("due_balance_amount"),2);
+        $this->_currentDemandAmount = round($this->_currentDemand->sum("due_balance_amount"));
+        $this->_arrearDemandAmount = round($this->_arrearDemand->sum("due_balance_amount"));
 
         $this->_totalDemand         = collect($this->_dueDemandsList)->sum('due_balance_amount');
-        $this->_totalDemand         = round($this->_totalDemand,2);
+        $this->_totalDemand         = round($this->_totalDemand);
 
         $this->_currentReadingDate = collect($this->_currentDemand)->max("generation_date");
         $this->_prevuesReadingDate = $prevuesReadingDemand->generation_date??null;
@@ -183,7 +183,7 @@ class WaterConsumerDemandReceipt
     {
         $this->_lastTax = $this->_lastFiveTax->first();
         $this->_meterStatus = ($this->_lastTax->charge_type??"Fixed");
-        if($this->_consumptionUnit != ($this->_lastTax->final_reading -$this->_lastTax->initial_reading))
+        if($this->_consumptionUnit != (($this->_lastTax->final_reading??0) - ($this->_lastTax->initial_reading??0)))
         {
             $this->_lastFiveTax[0]["initial_reading"] = $this->_fromUnit; 
             $this->_lastFiveTax[0]["final_reading"]   = $this->_uptoUnit;
@@ -213,14 +213,14 @@ class WaterConsumerDemandReceipt
 
     public function setReceipts()
     {
-        $this->setParams();        
+        $this->setParams();     
         $this->_GRID = [
             "demandType"            => $this->_mTowards,
             "consumerNo"            => $this->_connectionDtls->consumer_no,
             "fromDate"              => $this->_demandFrom,
             "uptoDate"              => $this->_demandUpto,
             "demandNo"              => $this->_demandNo,
-            "taxNo"                 => 0 ,
+            "taxNo"                 => $this->_connectionDtls->property_no ,
             "billDate"              => $this->_billDate ,
             "billDueDate"           => $this->_billDueDate ,
             "billDueDate"           => $this->_billDueDate ,
@@ -242,9 +242,9 @@ class WaterConsumerDemandReceipt
             "newPropertyNo"     => $this->_connectionDtls->holding_no , 
             "meterNo"           => $this->_meterReadingDocuments->meter_no??"",
             "currentReadingDate"    => $this->_currentReadingDate,
-            "currentReading"        => $this->_fromUnit,
+            "currentReading"        => $this->_uptoUnit,
             "previousReadingDate"   => $this->_prevuesReadingDate,
-            "previousReading"       => $this->_uptoUnit,
+            "previousReading"       => $this->_fromUnit,
             "totalUnitUsed"         => $this->_consumptionUnit,
             "meterStatus"           => $this->_meterStatus,
             "meterImage"            => $this->_meterStatus=="Meter" ? $this->_meterImg : "",

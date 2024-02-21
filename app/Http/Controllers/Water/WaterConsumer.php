@@ -15,6 +15,7 @@ use App\MicroServices\IdGeneration;
 use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\Citizen\ActiveCitizenUndercare;
 use App\Models\Payment\TempTransaction;
+use App\Models\User;
 use App\Models\Water\WaterAdjustment;
 use App\Models\Water\WaterAdvance;
 use App\Models\Water\WaterApplication;
@@ -181,6 +182,8 @@ class WaterConsumer extends Controller
             if (isset($checkParam)) {
                 $sumDemandAmount = collect($consumerDemand['consumerDemands'])->sum('due_balance_amount');
                 $totalPenalty = collect($consumerDemand['consumerDemands'])->sum('due_penalty');
+                $consumerDemand['fromDate'] = Carbon::parse(collect($consumerDemand['consumerDemands'])->min("demand_from"))->format("d-m-Y");
+                $consumerDemand['uptoDate'] = Carbon::parse(collect($consumerDemand['consumerDemands'])->max("demand_upto"))->format("d-m-Y");
                 $consumerDemand['totalSumDemand'] = round($sumDemandAmount, 2);
                 $consumerDemand['totalPenalty'] = round($totalPenalty, 2);
                 $consumerDemand['remainAdvance'] = round($remainAdvance ?? 0);
@@ -2603,39 +2606,123 @@ class WaterConsumer extends Controller
                             Order by demand_upto ASC
                         )demands on demands.consumer_tax_id = water_consumer_taxes.id
                         left join demand_currection_logs on demand_currection_logs.tax_id =  water_consumer_taxes.id
-                        where demand_currection_logs.id is null
-                        order by water_consumer_taxes.id
+                        where demand_currection_logs.id is null AND water_consumer_taxes.created_on::date <='2024-02-19' and water_consumer_taxes.charge_type !='Fixed'
+                            --AND water_consumer_taxes.id = 180127
+                        order by water_consumer_taxes.id ASC
                         limit 100
             ";
             $data = $this->_DB->select($dataSql);
             // print_var($data);
-            foreach($data as $val)
+            foreach($data as $key=>$val)
             {
                 $taxId =  $val->id;
                 $consumerId = $val->consumer_id;
                 $demandUpto = $val->demand_upto;
                 $finalRading = $val->final_reading;
                 $demandIds = explode(',',$val->demand_ids);
+                $oldTax = WaterConsumerTax::find($taxId);
+                $consumerDetails = WaterSecondConsumer::find($consumerId);
+                $userDetails  = User::find($val->emp_details_id);
+                $lastMeterReading = (new WaterConsumerInitialMeter())->getmeterReadingAndDetails($consumerId)->orderByDesc('id')->first();
+                $demand_currection_logs["tax_log"] = json_encode($oldTax->toArray(), JSON_UNESCAPED_UNICODE); 
+                $excelData["tax_Id"] = $val->id;               
                 
                 try{
                     $this->begin();
+                    if($val->charge_type!="Fixed" && $lastMeterReading)
+                    {
+                        $lastMeterReading->status = 0;
+                        $lastMeterReading->save();
+
+                    }
                     $oldDemands = WaterConsumerDemand::whereIn("id",$demandIds)->orderby("demand_upto",'ASC')->get();
+
+                    $demand_currection_logs["demand_log"] = json_encode($oldDemands->toArray(), JSON_UNESCAPED_UNICODE);
+
                     $updates  = WaterConsumerDemand::whereIn("id",$demandIds)->update(['status'=>false]);
+
                     $returnData = new WaterMonthelyCall($consumerId, $demandUpto, $finalRading); 
+
                     $calculatedDemand = $returnData->parentFunction();
-                    dd($val,$oldDemands,$calculatedDemand,$demandIds);
+                    
+                    $insertSql = "insert Into demand_currection_logs (tax_id,tax_log,demand_log) values( $taxId,'".$demand_currection_logs["tax_log"]."','".$demand_currection_logs["demand_log"]."')";
+                    $insertId = $this->_DB->select($insertSql);
                     if ($calculatedDemand['status'] == false) {
                         throw new Exception($calculatedDemand['errors']);
                     }
-                    $newTax = $calculatedDemand["consumer_tax"];
-                    $newDemandLogs = collect();
+                    
+                    $newTax = $calculatedDemand["consumer_tax"][0];
+
+                    $oldTax->charge_type = $newTax["charge_type"];
+                    $oldTax->effective_from = $newTax["effective_from"];
+                    $oldTax->amount         = $newTax["amount"];
+                    $oldTax->save();
+                    $advance = 0;
                     foreach($newTax["consumer_demand"] as $newDemands)
-                    {
+                    {                        
                         $demands = WaterConsumerDemand::where("consumer_tax_id",$taxId)
                                     ->where("demand_from",$newDemands["demand_from"])
-                                    ->where("demand_upto",$newDemands["demand_from"])
-                                    ->first();
+                                    ->where("demand_upto",$newDemands["demand_upto"])
+                                    ->first();                        
+                        if(!$demands)
+                        {
+                            $mWaterConsumerDemand = new WaterConsumerDemand();
+                            $refDemands = $newDemands;
+                            $mWaterConsumerDemand->saveConsumerDemand($refDemands, $consumerDetails, $request, $taxId, $userDetails);
+                        }
+                        else{                            
+                            if($demands->amount > $newDemands["amount"])
+                            {
+                                $newAmount = $newDemands["amount"];
+                                $newDue = $demands->paid_status == 0 ? $newDemands["amount"] : $newAmount - $demands->paid_total_tax;
+                            }
+                            else
+                            {
+                                $oldAmount = $demands->amount;
+                                $oldDueAmount = $demands->due_balance_amount;
+                                $diffAmount = $newDemands["amount"] - $oldAmount ; 
+
+                                $newAmount = $newDemands["amount"];
+                                $newDue = $demands->paid_status == 0 ? $newDemands["amount"] : $demands->due_balance_amount + $diffAmount;
+                            }
+                            if($newDue<0)
+                            {
+                                $advance = $advance + (-1 * $newDue);
+                                $newDue = 0;
+                            }
+                            if($newDue>1)
+                            {
+                                $demands->is_full_paid = false;
+                            }
+
+                            // if($diffAmount!=0)
+                            // {
+                            //     dd($advance,$newAmount,$newDue,$diffAmount,$demands,$newDemands,$calculatedDemand);                          
+
+                            // }
+
+                            $demands->amount = $newAmount;
+                            $demands->current_demand = $newAmount;
+                            $demands->due_balance_amount = $newDue ;
+                            $demands->due_current_demand = $newDue ;
+                            $demands->connection_type = $newDemands["connection_type"];
+                            $demands->current_meter_reading = $newDemands["current_reading"]??null;
+                            $demands->status = true;
+                            $demands->save();
+                        }
                     }
+                    if($val->charge_type!="Fixed" && $lastMeterReading)
+                    {
+                        $lastMeterReading->status = 1;
+                        $lastMeterReading->save();
+
+                    }
+                    if($advance>0)
+                    {
+                        dd($val);
+                    }
+                    print_var($key);
+                    // $this->commit();
                 }
                 catch(Exception $e)
                 {
