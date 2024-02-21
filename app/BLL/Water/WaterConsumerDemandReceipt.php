@@ -113,11 +113,11 @@ class WaterConsumerDemandReceipt
         $this->_demandUpto = $this->_dueDemandsList->max("demand_upto");        
         $lastDemands  = collect($this->_dueDemandsList)->where("demand_upto",$this->_demandUpto)->sortBy("generation_date")->first();
 
-        $this->_userDtl = $this->_mUsers->find($lastDemands->emp_details_id);
+        $this->_userDtl = $this->_mUsers->find($lastDemands->emp_details_id??0);
 
         $lastTaxId = $lastDemands->consumer_tax_id??null;
         $prevuesReadingDemand = collect();        
-        $this->_demandNo = $lastDemands->demand_no;
+        $this->_demandNo = $lastDemands->demand_no??"";
         $prevuesReadingDemand = $this->_mWaterConsumerDemands->where("consumer_id",$this->_consumerId)->where(function($where) use($lastTaxId){
             $where->OrWhere("consumer_tax_id","<>",$lastTaxId)
             ->orWhereNull("consumer_tax_id");
@@ -183,7 +183,7 @@ class WaterConsumerDemandReceipt
     {
         $this->_lastTax = $this->_lastFiveTax->first();
         $this->_meterStatus = ($this->_lastTax->charge_type??"Fixed");
-        if($this->_consumptionUnit != ($this->_lastTax->final_reading -$this->_lastTax->initial_reading))
+        if($this->_consumptionUnit != (($this->_lastTax->final_reading??0) - ($this->_lastTax->initial_reading??0)))
         {
             $this->_lastFiveTax[0]["initial_reading"] = $this->_fromUnit; 
             $this->_lastFiveTax[0]["final_reading"]   = $this->_uptoUnit;

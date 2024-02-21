@@ -2605,7 +2605,8 @@ class WaterConsumer extends Controller
                         )demands on demands.consumer_tax_id = water_consumer_taxes.id
                         left join demand_currection_logs on demand_currection_logs.tax_id =  water_consumer_taxes.id
                         where demand_currection_logs.id is null AND water_consumer_taxes.created_on::date <='2024-02-19' and water_consumer_taxes.charge_type !='Fixed'
-                        order by water_consumer_taxes.id
+                            AND water_consumer_taxes.id = 179168
+                        order by water_consumer_taxes.id DESC
                         limit 100
             ";
             $data = $this->_DB->select($dataSql);
@@ -2640,26 +2641,26 @@ class WaterConsumer extends Controller
                     $returnData = new WaterMonthelyCall($consumerId, $demandUpto, $finalRading); 
 
                     $calculatedDemand = $returnData->parentFunction();
-
-                    dd($val,$oldDemands,$calculatedDemand,$demandIds,$oldTax,$demand_currection_logs);
-                    $insertSql = "insert Into demand_currection_logs (tax_log,demand_log) values('".$demand_currection_logs["tax_log"]."','".$demand_currection_logs["demand_log"]."')";
+                    
+                    $insertSql = "insert Into demand_currection_logs (tax_id,tax_log,demand_log) values( $taxId,'".$demand_currection_logs["tax_log"]."','".$demand_currection_logs["demand_log"]."')";
                     $insertId = $this->_DB->select($insertSql);
                     if ($calculatedDemand['status'] == false) {
                         throw new Exception($calculatedDemand['errors']);
                     }
+                    
                     $newTax = $calculatedDemand["consumer_tax"][0];
 
                     $oldTax->charge_type = $newTax["charge_type"];
                     $oldTax->effective_from = $newTax["effective_from"];
-                    $oldTax->amount         = $newTax["effective_from"];
+                    $oldTax->amount         = $newTax["amount"];
                     $oldTax->save();
                     $advance = 0;
                     foreach($newTax["consumer_demand"] as $newDemands)
-                    {
+                    {                        
                         $demands = WaterConsumerDemand::where("consumer_tax_id",$taxId)
                                     ->where("demand_from",$newDemands["demand_from"])
-                                    ->where("demand_upto",$newDemands["demand_from"])
-                                    ->first();
+                                    ->where("demand_upto",$newDemands["demand_upto"])
+                                    ->first();                        
                         if(!$demands)
                         {
                             $mWaterConsumerDemand = new WaterConsumerDemand();
@@ -2675,8 +2676,16 @@ class WaterConsumer extends Controller
                             $demands->due_balance_amount = $newDemands["amount"];
                             $demands->connection_type = $newDemands["connection_type"];
                             $demands->current_meter_reading = $newDemands["current_reading"]??null;
-                            $demands->current_meter_reading = $newDemands["current_reading"]??null;
+                            $demands->status = true;
+                            $demands->save();
                         }
+                        dd($val,$oldDemands,$oldTax,$demands,$calculatedDemand,$demand_currection_logs);
+                    }
+                    if($val->charge_type!="Fixed" && $lastMeterReading)
+                    {
+                        $lastMeterReading->status = 1;
+                        $lastMeterReading->save();
+
                     }
                 }
                 catch(Exception $e)
