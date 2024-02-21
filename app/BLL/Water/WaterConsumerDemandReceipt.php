@@ -213,14 +213,14 @@ class WaterConsumerDemandReceipt
 
     public function setReceipts()
     {
-        $this->setParams();        
+        $this->setParams();     
         $this->_GRID = [
             "demandType"            => $this->_mTowards,
             "consumerNo"            => $this->_connectionDtls->consumer_no,
             "fromDate"              => $this->_demandFrom,
             "uptoDate"              => $this->_demandUpto,
             "demandNo"              => $this->_demandNo,
-            "taxNo"                 => 0 ,
+            "taxNo"                 => $this->_connectionDtls->property_no ,
             "billDate"              => $this->_billDate ,
             "billDueDate"           => $this->_billDueDate ,
             "billDueDate"           => $this->_billDueDate ,
@@ -242,9 +242,9 @@ class WaterConsumerDemandReceipt
             "newPropertyNo"     => $this->_connectionDtls->holding_no , 
             "meterNo"           => $this->_meterReadingDocuments->meter_no??"",
             "currentReadingDate"    => $this->_currentReadingDate,
-            "currentReading"        => $this->_fromUnit,
+            "currentReading"        => $this->_uptoUnit,
             "previousReadingDate"   => $this->_prevuesReadingDate,
-            "previousReading"       => $this->_uptoUnit,
+            "previousReading"       => $this->_fromUnit,
             "totalUnitUsed"         => $this->_consumptionUnit,
             "meterStatus"           => $this->_meterStatus,
             "meterImage"            => $this->_meterStatus=="Meter" ? $this->_meterImg : "",
