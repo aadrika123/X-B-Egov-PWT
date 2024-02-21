@@ -167,7 +167,7 @@ class WaterConsumerDemandReceipt
                                     ->first();
                 $val->demand_from = $demandFromUpto->demand_from ? Carbon::parse($demandFromUpto->demand_from)->format("d-m-Y"):"";
                 $val->demand_upto = $demandFromUpto->demand_upto ? Carbon::parse($demandFromUpto->demand_upto)->format("d-m-Y"):"";
-                $val->unit_consume = $val->final_reading - $val->initial_reading;
+                $val->unit_consume = round($val->final_reading - $val->initial_reading,2);
                 return $val;
 
         });

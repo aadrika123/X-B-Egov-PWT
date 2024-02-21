@@ -56,6 +56,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\CssSelector\Node\FunctionNode;
 
@@ -2551,6 +2552,9 @@ class WaterConsumer extends Controller
                             select consumer_tax_id,
                                 min(demand_from) as demand_from,
                                 max(demand_upto) as demand_upto,
+                                sum(amount) as amount,
+                                sum(due_balance_amount) as due_balance_amount,
+                                sum(paid_total_tax) as paid_total_tax,
                                 string_agg(id::text,',') as demand_ids,
                             (
                                 json_agg(
@@ -2609,12 +2613,17 @@ class WaterConsumer extends Controller
                         where demand_currection_logs.id is null AND water_consumer_taxes.created_on::date <='2024-02-19' and water_consumer_taxes.charge_type !='Fixed'
                             --AND water_consumer_taxes.id = 180127
                         order by water_consumer_taxes.id ASC
-                        limit 100
+                        limit 2
             ";
             $data = $this->_DB->select($dataSql);
-            // print_var($data);
+            print_var($this->_DB->select("select count(*) 
+                                        from water_consumer_taxes 
+                                        left join demand_currection_logs on demand_currection_logs.tax_id =  water_consumer_taxes.id
+                                        where demand_currection_logs.id is null AND water_consumer_taxes.created_on::date <='2024-02-19'
+                                        "));
             foreach($data as $key=>$val)
             {
+                print_var("==================================");
                 $taxId =  $val->id;
                 $consumerId = $val->consumer_id;
                 $demandUpto = $val->demand_upto;
@@ -2625,7 +2634,9 @@ class WaterConsumer extends Controller
                 $userDetails  = User::find($val->emp_details_id);
                 $lastMeterReading = (new WaterConsumerInitialMeter())->getmeterReadingAndDetails($consumerId)->orderByDesc('id')->first();
                 $demand_currection_logs["tax_log"] = json_encode($oldTax->toArray(), JSON_UNESCAPED_UNICODE); 
-                $excelData["tax_Id"] = $val->id;               
+                $newDemands =[];
+                $oldDemand  = [];
+                $newCreatedDemand = [];            
                 
                 try{
                     $this->begin();
@@ -2645,8 +2656,6 @@ class WaterConsumer extends Controller
 
                     $calculatedDemand = $returnData->parentFunction();
                     
-                    $insertSql = "insert Into demand_currection_logs (tax_id,tax_log,demand_log) values( $taxId,'".$demand_currection_logs["tax_log"]."','".$demand_currection_logs["demand_log"]."')";
-                    $insertId = $this->_DB->select($insertSql);
                     if ($calculatedDemand['status'] == false) {
                         throw new Exception($calculatedDemand['errors']);
                     }
@@ -2670,16 +2679,20 @@ class WaterConsumer extends Controller
                             $refDemands = $newDemands;
                             $mWaterConsumerDemand->saveConsumerDemand($refDemands, $consumerDetails, $request, $taxId, $userDetails);
                         }
-                        else{                            
+                        else{  
+                            $paidTotalTax = 0;
+                            if($demands->paid_status != 0 )
+                            {
+                                $paidTotalTax = $demands->amount - ($demands->due_balance_amount>=0 ? $demands->due_balance_amount :0);   
+                            }
                             if($demands->amount > $newDemands["amount"])
                             {
                                 $newAmount = $newDemands["amount"];
-                                $newDue = $demands->paid_status == 0 ? $newDemands["amount"] : $newAmount - $demands->paid_total_tax;
+                                $newDue = $demands->paid_status == 0 ? $newDemands["amount"] : $newAmount - $demands->paid_total_tax;                                
                             }
                             else
                             {
                                 $oldAmount = $demands->amount;
-                                $oldDueAmount = $demands->due_balance_amount;
                                 $diffAmount = $newDemands["amount"] - $oldAmount ; 
 
                                 $newAmount = $newDemands["amount"];
@@ -2687,19 +2700,20 @@ class WaterConsumer extends Controller
                             }
                             if($newDue<0)
                             {
-                                $advance = $advance + (-1 * $newDue);
                                 $newDue = 0;
                             }
+                            
                             if($newDue>1)
                             {
                                 $demands->is_full_paid = false;
                             }
-
-                            // if($diffAmount!=0)
-                            // {
-                            //     dd($advance,$newAmount,$newDue,$diffAmount,$demands,$newDemands,$calculatedDemand);                          
-
-                            // }
+                            if($paidTotalTax > $newAmount)
+                            {
+                                $demands->is_full_paid = true;
+                                $demands->paid_status = 1;
+                                $newDue = 0;
+                                $advance = $advance + $paidTotalTax;
+                            }                            
 
                             $demands->amount = $newAmount;
                             $demands->current_demand = $newAmount;
@@ -2719,14 +2733,28 @@ class WaterConsumer extends Controller
                     }
                     if($advance>0)
                     {
-                        dd($val);
+                        print_var("Advand=====>".$advance);
                     }
+                    $newUpdDemand = WaterConsumerDemand::where("consumer_tax_id",$taxId)->where("status",true)->orderby("demand_upto",'ASC')->get();
                     print_var($key);
-                    // $this->commit();
+                    print_var($val);
+                    $excelData[$key]["status"] = "Success";
+                    $demand_currection_logs["new_tax_log"] = json_encode($oldTax->toArray(), JSON_UNESCAPED_UNICODE); 
+                    $demand_currection_logs["new_demand_log"] = json_encode($newUpdDemand->toArray(), JSON_UNESCAPED_UNICODE); 
+                    $insertSql = "insert Into demand_currection_logs (tax_id,tax_log,new_tax_log,demand_log,new_demand_log,advance_amt) 
+                                values( $taxId,'".$demand_currection_logs["tax_log"]."','".$demand_currection_logs["new_tax_log"]."',
+                                        '".$demand_currection_logs["demand_log"]."','".$demand_currection_logs["new_demand_log"]."',
+                                        ".$advance.")";
+                    $insertId = $this->_DB->select($insertSql);
+                    $seql = "select count(*) from demand_currection_logs";
+                    print_var("=============inserData===========");
+                    print_Var($this->_DB->select($seql));
+                    $this->commit();
                 }
                 catch(Exception $e)
                 {
                     $this->rollback();
+                    $excelData[$key]["status"] = "Fail";
                     dd($e->getMessage(),$e->getFile(),$e->getLine());
                 }
             }
