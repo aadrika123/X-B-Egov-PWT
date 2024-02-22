@@ -2724,6 +2724,7 @@ class WaterConsumer extends Controller
                             }                            
 
                             $demands->amount = $newAmount;
+                            $demands->balance_amount = $demands->amount;
                             $demands->current_demand = $newAmount;
                             $demands->due_balance_amount = $newDue ;
                             $demands->due_current_demand = $newDue ;
@@ -2766,7 +2767,7 @@ class WaterConsumer extends Controller
                         $lastTran->due_amount = (collect($newUpdDemand)->sum("amount") - $paidTotalAmount) > 0 ?  (collect($newUpdDemand)->sum("amount") - $paidTotalAmount) : 0 ;
                         $lastTran->save();
                     }
-                    $this->commit();
+                    // $this->commit();
                     dd($newTax);
                 }
                 catch(Exception $e)
