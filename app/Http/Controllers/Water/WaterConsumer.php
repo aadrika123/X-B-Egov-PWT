@@ -2613,7 +2613,7 @@ class WaterConsumer extends Controller
                         where demand_currection_logs.id is null AND water_consumer_taxes.created_on::date <='2024-02-19' and water_consumer_taxes.charge_type !='Fixed'
                             --AND water_consumer_taxes.id = 180127
                         order by water_consumer_taxes.id ASC
-                        limit 2
+                        limit 5
             ";
             $data = $this->_DB->select($dataSql);
             print_var($this->_DB->select("select count(*) 
@@ -2624,8 +2624,13 @@ class WaterConsumer extends Controller
             foreach($data as $key=>$val)
             {
                 print_var("==================================");
+                print_var($val);
+                
                 $taxId =  $val->id;
                 $consumerId = $val->consumer_id;
+                $paidTotalAmount = $this->_DB->select("SELECT COALESCE(SUM(amount),0) AS paid_tax FROM water_trans WHERE water_trans.related_id = $consumerId AND status =1");
+                $paidTotalAmount = $paidTotalAmount[0]->paid_tax??-1;
+                $lastTran = WaterTran::where("related_id",$consumerId)->where("status",1)->orderBy("id",'DESC')->first();
                 $demandUpto = $val->demand_upto;
                 $finalRading = $val->final_reading;
                 $demandIds = explode(',',$val->demand_ids);
@@ -2667,12 +2672,15 @@ class WaterConsumer extends Controller
                     $oldTax->amount         = $newTax["amount"];
                     $oldTax->save();
                     $advance = 0;
+                    $newTotalTax = 0;
+                    print_var($newTax);dd($newTax);
                     foreach($newTax["consumer_demand"] as $newDemands)
                     {                        
                         $demands = WaterConsumerDemand::where("consumer_tax_id",$taxId)
                                     ->where("demand_from",$newDemands["demand_from"])
                                     ->where("demand_upto",$newDemands["demand_upto"])
-                                    ->first();                        
+                                    ->first(); 
+                        $newTotalTax +=  $newDemands["amount"];                     
                         if(!$demands)
                         {
                             $mWaterConsumerDemand = new WaterConsumerDemand();
@@ -2741,14 +2749,23 @@ class WaterConsumer extends Controller
                     $excelData[$key]["status"] = "Success";
                     $demand_currection_logs["new_tax_log"] = json_encode($oldTax->toArray(), JSON_UNESCAPED_UNICODE); 
                     $demand_currection_logs["new_demand_log"] = json_encode($newUpdDemand->toArray(), JSON_UNESCAPED_UNICODE); 
+                    $newAdvand = $paidTotalAmount - collect($newUpdDemand)->sum("amount");
+                    $newAdvand = $newAdvand >0?$newAdvand :0;
+                    print_var("newAdv=====>".$newAdvand."  %%%%%%%%% paid_total_tax".$paidTotalAmount - collect($newUpdDemand)->sum("amount"));
+                    print_var("new Total tax=======>".$newTotalTax);
                     $insertSql = "insert Into demand_currection_logs (tax_id,tax_log,new_tax_log,demand_log,new_demand_log,advance_amt) 
                                 values( $taxId,'".$demand_currection_logs["tax_log"]."','".$demand_currection_logs["new_tax_log"]."',
                                         '".$demand_currection_logs["demand_log"]."','".$demand_currection_logs["new_demand_log"]."',
-                                        ".$advance.")";
+                                        ".$newAdvand.")";
                     $insertId = $this->_DB->select($insertSql);
                     $seql = "select count(*) from demand_currection_logs";
                     print_var("=============inserData===========");
                     print_Var($this->_DB->select($seql));
+                    if($lastTran)
+                    {
+                        $lastTran->due_amount = (collect($newUpdDemand)->sum("amount") - $paidTotalAmount) > 0 ?  (collect($newUpdDemand)->sum("amount") - $paidTotalAmount) : 0 ;
+                        $lastTran->save();
+                    }
                     $this->commit();
                 }
                 catch(Exception $e)
@@ -2761,6 +2778,7 @@ class WaterConsumer extends Controller
         }
         catch(Exception $e)
         {
+            $this->rollback();
             dd($e->getMessage(),$e->getFile(),$e->getLine());
         }
     }

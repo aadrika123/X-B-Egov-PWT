@@ -206,6 +206,10 @@ class WaterConsumerDemandReceipt
         $this->_lastTowReading  = $this->_mWaterConsumerInitialMeter->calculateUnitsConsumed($this->_consumerId);
         $this->_fromUnit            = $this->_lastTowReading->min("initial_reading");
         $this->_uptoUnit            = $this->_lastTowReading->max("initial_reading");
+        if($this->_fromUnit==$this->_uptoUnit)
+        {            
+            $this->_fromUnit = ($this->_lastTowReading[1])->initial_reading??0;
+        }
         $this->_consumptionUnit     = $this->_uptoUnit - $this->_fromUnit;
 
         $this->setLastUnitConsume();
