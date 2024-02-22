@@ -2745,30 +2745,33 @@ class WaterConsumer extends Controller
                         print_var("Advand=====>".$advance);
                     }
                     $newUpdDemand = WaterConsumerDemand::where("consumer_tax_id",$taxId)->where("status",true)->orderby("demand_upto",'ASC')->get();
+                    $allActiveDemands = WaterConsumerDemand::where("consumer_id",$consumerId)->where("status",true)->orderby("demand_upto",'ASC')->get();
                     print_var($key);
                     print_var($val);
                     $excelData[$key]["status"] = "Success";
                     $demand_currection_logs["new_tax_log"] = json_encode($oldTax->toArray(), JSON_UNESCAPED_UNICODE); 
                     $demand_currection_logs["new_demand_log"] = json_encode($newUpdDemand->toArray(), JSON_UNESCAPED_UNICODE); 
-                    $newAdvand = $paidTotalAmount - collect($newUpdDemand)->sum("amount");
-                    $newAdvand = $newAdvand >0?$newAdvand :0;
-                    print_var("newAdv=====>".$newAdvand."  %%%%%%%%% paid_total_tax".$paidTotalAmount - collect($newUpdDemand)->sum("amount"));
-                    print_var("new Total tax=======>".$newTotalTax);
-                    $insertSql = "insert Into demand_currection_logs (tax_id,tax_log,new_tax_log,demand_log,new_demand_log,advance_amt) 
+                    $newAdvand = $paidTotalAmount - collect($allActiveDemands)->sum("amount");
+                    $is_full_paid = $newAdvand < 0 ? false: true;
+                    $newAdvand = $newAdvand > 0 ? $newAdvand :0;
+                    print_var("newAdv=====>".$newAdvand."  %%%%%%%%% ".$paidTotalAmount - collect($allActiveDemands)->sum("amount"));
+                    print_var("new Total tax=======>".$newTotalTax."++++++ full Tax=====>".collect($allActiveDemands)->sum("amount") );
+                    print_var("Paid Total tax=======>".$paidTotalAmount);
+                    $insertSql = "insert Into demand_currection_logs (tax_id,tax_log,new_tax_log,demand_log,new_demand_log,advance_amt,is_full_paid) 
                                 values( $taxId,'".$demand_currection_logs["tax_log"]."','".$demand_currection_logs["new_tax_log"]."',
                                         '".$demand_currection_logs["demand_log"]."','".$demand_currection_logs["new_demand_log"]."',
-                                        ".$newAdvand.")";
+                                        ".$newAdvand.",".($is_full_paid).")";
                     $insertId = $this->_DB->select($insertSql);
                     $seql = "select count(*) from demand_currection_logs";
-                    print_var("=============inserData===========");
+                    print_var("=============inserData======$newAdvand==========");
                     print_Var($this->_DB->select($seql));
                     if($lastTran)
                     {
-                        $lastTran->due_amount = (collect($newUpdDemand)->sum("amount") - $paidTotalAmount) > 0 ?  (collect($newUpdDemand)->sum("amount") - $paidTotalAmount) : 0 ;
+                        $lastTran->due_amount = (collect($allActiveDemands)->sum("amount") - $paidTotalAmount) > 0 ?  (collect($allActiveDemands)->sum("amount") - $paidTotalAmount) : 0 ;
                         $lastTran->save();
                     }
-                    // $this->commit();
-                    dd($newTax);
+                    $this->commit();
+                    // dd($newTax);
                 }
                 catch(Exception $e)
                 {
