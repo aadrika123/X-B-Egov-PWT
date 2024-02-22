@@ -1739,6 +1739,7 @@ class WaterPaymentController extends Controller
             }
 
             $fromDate           = collect($consumerDemands)->last()->demand_from;
+            $fromDate           = !$fromDate  ? collect($consumerDemands)->last()->generation_date : $fromDate ;
             $startingDate       = Carbon::createFromFormat('Y-m-d',  $fromDate)->startOfMonth();
             $uptoDate           = collect($consumerDemands)->first()->demand_upto;
             $endingDate         = Carbon::createFromFormat('Y-m-d',  $uptoDate)->endOfMonth();
