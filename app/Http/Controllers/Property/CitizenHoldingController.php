@@ -501,7 +501,7 @@ class CitizenHoldingController extends Controller
         }
         try{
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
-            $appType =  $reqRefNo = $applicationNo = null;
+            $wardId = $zoneId = $appType =  $reqRefNo = $applicationNo = null;
             $PaymentStatus = 0;
             if($request->fromDate)
             {
@@ -514,6 +514,14 @@ class CitizenHoldingController extends Controller
             if($request->appType)
             {
                 $appType = $request->appType;
+            }
+            if($request->wardId)
+            {
+                $wardId = $request->wardId;
+            }
+            if($request->zoneId)
+            {
+                $zoneId = $request->zoneId;
             }
             if($request->PaymentStatus)
             {
@@ -542,7 +550,9 @@ class CitizenHoldingController extends Controller
             )
             ->leftJoin(DB::raw("
                     (
-                        select prop_icici_payments_requests.id,prop_properties.holding_no,prop_properties.property_no,zone_masters.zone_name,ulb_ward_masters.ward_name
+                        select prop_icici_payments_requests.id,prop_properties.holding_no,prop_properties.property_no,
+                            zone_masters.zone_name,ulb_ward_masters.ward_name,
+                            prop_properties.zone_mstr_id,prop_properties.ward_mstr_id
                         from prop_icici_payments_requests
                         join prop_properties on prop_properties.id = prop_icici_payments_requests.prop_id
                         left join zone_masters on zone_masters.id = prop_properties.zone_mstr_id
@@ -551,7 +561,9 @@ class CitizenHoldingController extends Controller
             "),"prop.id","prop_icici_payments_requests.id")
             ->leftJoin(DB::raw("
                     (
-                        select prop_icici_payments_requests.id,saf.holding_no,saf.saf_no,zone_masters.zone_name,ulb_ward_masters.ward_name
+                        select prop_icici_payments_requests.id,saf.holding_no,saf.saf_no,
+                            zone_masters.zone_name,ulb_ward_masters.ward_name,
+                            saf.zone_mstr_id,saf.ward_mstr_id
                         from prop_icici_payments_requests
                         join (
                             (
@@ -585,6 +597,20 @@ class CitizenHoldingController extends Controller
             if($reqRefNo)
             {
                 $data->where("prop_icici_payments_requests.req_ref_no",$reqRefNo);
+            }
+            if($wardId)
+            {
+                $data->where(function($query) use($wardId){
+                    $query->OrWhere("saf.ward_mstr_id",$wardId)
+                    ->OrWhere("prop.ward_mstr_id",$wardId);
+                });
+            }
+            if($zoneId)
+            {
+                $data->where(function($query) use($zoneId){
+                    $query->OrWhere("saf.zone_mstr_id",$zoneId)
+                    ->OrWhere("prop.zone_mstr_id",$zoneId);
+                });
             }
             if($applicationNo)
             {

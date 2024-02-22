@@ -2673,7 +2673,7 @@ class WaterConsumer extends Controller
                     $oldTax->save();
                     $advance = 0;
                     $newTotalTax = 0;
-                    print_var($newTax);dd($newTax);
+                    print_var($newTax);
                     foreach($newTax["consumer_demand"] as $newDemands)
                     {                        
                         $demands = WaterConsumerDemand::where("consumer_tax_id",$taxId)
@@ -2767,6 +2767,7 @@ class WaterConsumer extends Controller
                         $lastTran->save();
                     }
                     $this->commit();
+                    dd($newTax);
                 }
                 catch(Exception $e)
                 {
