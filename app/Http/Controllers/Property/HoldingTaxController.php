@@ -1745,18 +1745,18 @@ class HoldingTaxController extends Controller
      */
     public function bulkSmsReport(Request $req)
     {
-        $validated = Validator::make(
-            $req->all(),
-            [
-                "fromDate" => "required|date",
-                "uptoDate" => "required|date"
-            ]
-        );
-        if ($validated->fails())
-            return validationError($validated);
+        // $validated = Validator::make(
+        //     $req->all(),
+        //     [
+        //         "fromDate" => "required|date",
+        //         "uptoDate" => "required|date"
+        //     ]
+        // );
+        // if ($validated->fails())
+        //     return validationError($validated);
 
-        $fromDate = $req->fromDate;
-        $uptoDate = $req->uptoDate;
+        $fromDate = Carbon::now()->today();
+        $uptoDate = Carbon::now()->addWeek(-1);
         $perPage  = $req->perPage ?? 10;
         $zoneId   = $wardId = NULL;
         if ($req->zoneId)
