@@ -2610,10 +2610,11 @@ class WaterConsumer extends Controller
                             Order by demand_upto ASC
                         )demands on demands.consumer_tax_id = water_consumer_taxes.id
                         left join demand_currection_logs on demand_currection_logs.tax_id =  water_consumer_taxes.id
-                        where demand_currection_logs.id is null AND water_consumer_taxes.created_on::date <='2024-02-19' and water_consumer_taxes.charge_type !='Fixed'
+                        where demand_currection_logs.id is null AND water_consumer_taxes.created_on::date <='2024-02-19' --and water_consumer_taxes.charge_type !='Fixed'
                             --AND water_consumer_taxes.id = 180127
+                            --AND water_consumer_taxes.consumer_id = 55159
                         order by water_consumer_taxes.id ASC
-                        limit 5
+                        limit 15
             ";
             $data = $this->_DB->select($dataSql);
             print_var($this->_DB->select("select count(*) 
@@ -2692,6 +2693,8 @@ class WaterConsumer extends Controller
                             $refDemands = $newDemands;                            
                             $newDid = $mWaterConsumerDemand->saveConsumerDemand($refDemands, $consumerDetails, $newRequst, $taxId, $userDetails);
                             $f = ($mWaterConsumerDemand->find($newDid));
+                            $f->generation_date = Carbon::parse($val->created_on)->format("Y-m-d");
+                            $f->save();
                             $f->gen_type = "NEW" ;                           
                             $n->push($f->toArray());
                         }
@@ -2770,7 +2773,7 @@ class WaterConsumer extends Controller
                     print_var("Paid Total tax=======>".$paidTotalAmount);
                     $insertSql = "insert Into demand_currection_logs (tax_id ".($is_full_paid ? (",is_full_paid"):"").",tax_log,new_tax_log,
                                                                         demand_log,new_demand_log,advance_amt,tax_calculation_log) 
-                                values( $taxId ".($is_full_paid ? (",$is_full_paid"):"").",'".$demand_currection_logs["tax_log"]."','".$demand_currection_logs["new_tax_log"]."',
+                                values( $taxId ".($is_full_paid ? (",true"):"").",'".$demand_currection_logs["tax_log"]."','".$demand_currection_logs["new_tax_log"]."',
                                         '".$demand_currection_logs["demand_log"]."','".$demand_currection_logs["new_demand_log"]."',
                                         ".$newAdvand.",'".$demand_currection_logs["tax_calculation_log"]."')";
                                         
@@ -2784,14 +2787,30 @@ class WaterConsumer extends Controller
                         $lastTran->save();
                     }
                     print_var($n);
+                    $new = collect($n->where("gen_type","NEW"));
+                    if($new->isNotEmpty() && $lastTran && $is_full_paid)
+                    {
+                        foreach($new as $newD)
+                        {                            
+                            WaterConsumerDemand::where("id",$newD["id"])->update(["paid_status"=>1,"due_balance_amount"=>0,"is_full_paid"=>true,"due_current_demand"=>0]);
+                            $newTranDtls = new WaterTranDetail();
+                            $newTranDtls->tran_id = $lastTran->id;
+                            $newTranDtls->application_id = $newD["consumer_id"];
+                            $newTranDtls->demand_id = $newD["id"];
+                            $newTranDtls->total_demand = $newD["amount"];
+                            $newTranDtls->paid_amount = $newD["amount"];
+                            $newTranDtls->save();
+                        }
+                    }
                     $this->commit();
-                    dd($newTax);
+                    // dd($newTax);
+                    print_var("Success");
                 }
                 catch(Exception $e)
                 {
                     $this->rollback();
-                    $excelData[$key]["status"] = "Fail";
-                    dd($e->getMessage(),$e->getFile(),$e->getLine());
+                    print_var("Fail");
+                    // dd($e->getMessage(),$e->getFile(),$e->getLine());
                 }
             }
         }
