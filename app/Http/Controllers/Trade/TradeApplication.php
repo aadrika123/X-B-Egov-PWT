@@ -219,7 +219,7 @@ class TradeApplication extends Controller
             $data["natureOfBusiness"]   =  $this->_MODEL_AkolaTradeParamItemType->List(); #$this->_MODEL_TradeParamItemType->List(true);
             if (isset($request->licenseId) && $request->licenseId  && $mApplicationTypeId != 1) {
                 $mOldLicenceId = $request->licenseId;
-                $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
+                $nextMonth = Carbon::now()->addMonths(3)->format('Y-m-d');
                 $refOldLicece = $this->_REPOSITORY->getLicenceById($mOldLicenceId); //TradeLicence::find($mOldLicenceId)
                 if (!$refOldLicece) {
                     throw new Exception("Old Licence Not Found");

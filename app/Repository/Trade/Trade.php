@@ -305,7 +305,7 @@ class Trade implements ITrade
                 if ($mApplicationTypeId != 1) 
                 {
                     $mOldLicenceId = $request->licenseId;
-                    $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
+                    $nextMonth = Carbon::now()->addMonths(3)->format('Y-m-d');
                     $refOldLicece = TradeLicence::find($mOldLicenceId);
                     if (!$refOldLicece) {
                         throw new Exception("Old Licence Not Found");
@@ -1609,7 +1609,7 @@ class Trade implements ITrade
             $rules = [
                 "holdingNo" => "required|string",
             ];
-            if (strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""]) {
+            if (strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""] && !$refUlbId) {
                 $rules["ulbId"] = "required|digits_between:1,92";
             }
             $validator = Validator::make($request->all(), $rules,);
