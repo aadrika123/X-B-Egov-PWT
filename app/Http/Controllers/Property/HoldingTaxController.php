@@ -1699,14 +1699,16 @@ class HoldingTaxController extends Controller
             $newReq = new Request(['propId' => $propDetail->property_id]);
             $demand = $getHoldingDues->getDues($newReq);
 
-            $ownerName   = Str::limit(trim($propDetail->owner_name), 30);
-            $ownerMobile = $propDetail->mobile_no;
-            $totalTax    = $demand['payableAmt'];
-            $fyear       = $propDetail->max_fyear;
-            $propertyId  = $propDetail->property_id;
+            $ownerName       = Str::limit(trim($propDetail->owner_name), 30);
+            $ownerMobile     = $propDetail->mobile_no;
+            $totalTax        = $demand['payableAmt'];
+            $fyear           = $propDetail->max_fyear;
+            $propertyId      = $propDetail->property_id;
+            $propertyNo      = $demand['basicDetails']['property_no'];
+            $akolaContactNo  = "08069493299";
 
-            $sms      = "Dear " . $ownerName . ",  your Property Tax Demand of Rs " . $totalTax . " has been generated upto FY 23-24. Please pay on time to avoid any late fine. Please ignore if already paid. For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
-            $response = send_sms($ownerMobile, $sms, 1707169564203481769);
+            $sms      = "Dear " . $ownerName . ", your Property Tax of amount Rs " . $totalTax . " for property no. " . $propertyNo . " is due. Please pay your tax on time to avoid penalties and interest. Please ignore if already paid. For details visit amcakola.in or call us at:" . $akolaContactNo . ". SWATI INDUSTRIES";
+            $response = send_sms($ownerMobile, $sms, 1707170858405361648);
 
             $smsReqs = [
                 "emp_id" => $userId,
@@ -1714,7 +1716,7 @@ class HoldingTaxController extends Controller
                 "ref_type" => 'PROPERTY',
                 "mobile_no" => $ownerMobile,
                 "purpose" => 'Demand Reminder',
-                "template_id" => 1707169564203481769,
+                "template_id" => 1707170858405361648,
                 "message" => $sms,
                 "response" => $response['status'],
                 "smgid" => $response['msg'],
