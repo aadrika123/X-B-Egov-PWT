@@ -1755,8 +1755,8 @@ class HoldingTaxController extends Controller
         // if ($validated->fails())
         //     return validationError($validated);
 
-        $fromDate = Carbon::now()->today();
-        $uptoDate = Carbon::now()->addWeek(-1);
+        $fromDate = Carbon::now()->addWeek(-1)->format('Y-m-d');
+        $uptoDate = Carbon::now()->today()->format('Y-m-d');
         $perPage  = $req->perPage ?? 10;
         $zoneId   = $wardId = NULL;
         if ($req->zoneId)
