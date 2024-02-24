@@ -2611,10 +2611,10 @@ class WaterConsumer extends Controller
                         )demands on demands.consumer_tax_id = water_consumer_taxes.id
                         left join demand_currection_logs on demand_currection_logs.tax_id =  water_consumer_taxes.id
                         where demand_currection_logs.id is null AND water_consumer_taxes.created_on::date <='2024-02-19' --and water_consumer_taxes.charge_type !='Fixed'
-                            --AND water_consumer_taxes.id = 180127
+                            --AND water_consumer_taxes.id = 179158
                             --AND water_consumer_taxes.consumer_id = 55159
                         order by water_consumer_taxes.id ASC
-                        limit 15
+                        limit 2
             ";
             $data = $this->_DB->select($dataSql);
             print_var($this->_DB->select("select count(*) 
@@ -2810,7 +2810,7 @@ class WaterConsumer extends Controller
                 {
                     $this->rollback();
                     print_var("Fail");
-                    // dd($e->getMessage(),$e->getFile(),$e->getLine());
+                    //dd($e->getMessage(),$e->getFile(),$e->getLine());
                 }
             }
         }
