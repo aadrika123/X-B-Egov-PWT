@@ -198,7 +198,7 @@ class SafDocController extends Controller
         $extention = $req->document->getClientOriginalExtension();
         $rules = [
             "applicationId" => "required|numeric",
-            "document" => "required|mimes:pdf,jpeg,png,jpg" . (strtolower($extention) == 'pdf' ? 'max:10240' : 'max:1024'),
+            "document" => "required|mimes:pdf,jpeg,png,jpg|" . (strtolower($extention) == 'pdf' ? 'max:10240' : 'max:5120'),
             "docCode" => "required",
             "docCategory" => "required|string",
             "ownerId" => "nullable|numeric"
@@ -224,7 +224,7 @@ class SafDocController extends Controller
         ]);
         $extention = $req->document->getClientOriginalExtension();
         $req->validate([
-            'document' => $extention == 'pdf' ? 'max:10240' : 'max:1024',
+            'document' => $extention == 'pdf' ? 'max:10240' : 'max:5120',
         ]);
 
         try {

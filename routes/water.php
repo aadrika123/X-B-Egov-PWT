@@ -161,6 +161,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('consumer/demands-correction', 'updateConsumerDemands');
         Route::post("consumer/demands-correct","AutoCorrectDemand");
         Route::post("consumer/get-consumer-demandV2","getConsumerDemandsV2");
+        Route::post("consumer/get-demand-history","getConsumerDemandsHistory");
     });
 
 

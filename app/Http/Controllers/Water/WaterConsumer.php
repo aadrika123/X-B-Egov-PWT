@@ -2837,4 +2837,24 @@ class WaterConsumer extends Controller
             dd($e->getMessage(),$e->getFile(),$e->getLine());
         }
     }
+
+    public function getConsumerDemandsHistory(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'consumerId' => 'required'
+            ]
+        );
+
+        if ($validated->fails()) {
+            return validationError($validated);
+        }
+        try{
+            
+        }
+        catch(Exception $e){
+
+        }
+    }
 }
