@@ -2542,7 +2542,7 @@ class WaterConsumer extends Controller
         }
     }
 
-    public function AutoCorrectDemand(Request $request)
+    public function AutoCorrectDemand()
     {
         try{
             $dataSql = "
@@ -2610,11 +2610,11 @@ class WaterConsumer extends Controller
                             Order by demand_upto ASC
                         )demands on demands.consumer_tax_id = water_consumer_taxes.id
                         left join demand_currection_logs on demand_currection_logs.tax_id =  water_consumer_taxes.id
-                        where demand_currection_logs.id is null AND water_consumer_taxes.created_on::date <='2024-02-19' --and water_consumer_taxes.charge_type !='Fixed'
+                        where demand_currection_logs.id is null AND water_consumer_taxes.created_on::date <='2024-02-19' and water_consumer_taxes.charge_type !='Fixed'
                             --AND water_consumer_taxes.id = 179158
-                            --AND water_consumer_taxes.consumer_id = 55159
+                            --AND water_consumer_taxes.consumer_id = 6100
                         order by water_consumer_taxes.id ASC
-                        limit 2
+                        --limit 2
             ";
             $data = $this->_DB->select($dataSql);
             print_var($this->_DB->select("select count(*) 
@@ -2624,7 +2624,7 @@ class WaterConsumer extends Controller
                                         "));
             foreach($data as $key=>$val)
             {
-                print_var("==================================");
+                print_var("==============INDEX=>$key====================\n");
                 print_var($val);
                 
                 $taxId =  $val->id;
@@ -2697,6 +2697,17 @@ class WaterConsumer extends Controller
                             $f->save();
                             $f->gen_type = "NEW" ;                           
                             $n->push($f->toArray());
+                            $meterImag = new WaterMeterReadingDoc();
+                            $OldmeterImag = WaterMeterReadingDoc::whereIn("demand_id",$demandIds)->orderBy("id","DESC")->first();
+                            if($val->charge_type!="Fixed" && $OldmeterImag)
+                            {
+                                $meterImag->demand_id = $newDid;
+                                $meterImag->file_name = $OldmeterImag->file_name;
+                                $meterImag->meter_no = $OldmeterImag->meter_no;
+                                $meterImag->relative_path = $OldmeterImag->relative_path;
+                                $meterImag->created_at = $OldmeterImag->created_at;
+                                $meterImag->save();
+                            }
                         }
                         else{  
                             $paidTotalTax = 0;
@@ -2771,16 +2782,7 @@ class WaterConsumer extends Controller
                     print_var("newAdv=====>".$newAdvand."  %%%%%%%%% ".$paidTotalAmount - collect($allActiveDemands)->sum("amount"));
                     print_var("new Total tax=======>".$newTotalTax."++++++ full Tax=====>".collect($allActiveDemands)->sum("amount") );
                     print_var("Paid Total tax=======>".$paidTotalAmount);
-                    $insertSql = "insert Into demand_currection_logs (tax_id ".($is_full_paid ? (",is_full_paid"):"").",tax_log,new_tax_log,
-                                                                        demand_log,new_demand_log,advance_amt,tax_calculation_log) 
-                                values( $taxId ".($is_full_paid ? (",true"):"").",'".$demand_currection_logs["tax_log"]."','".$demand_currection_logs["new_tax_log"]."',
-                                        '".$demand_currection_logs["demand_log"]."','".$demand_currection_logs["new_demand_log"]."',
-                                        ".$newAdvand.",'".$demand_currection_logs["tax_calculation_log"]."')";
-                                        
-                    $insertId = $this->_DB->select($insertSql);
-                    $seql = "select count(*) from demand_currection_logs";
-                    print_var("=============inserData======$newAdvand==========");
-                    print_Var($this->_DB->select($seql));
+                    
                     if($lastTran)
                     {
                         $lastTran->due_amount = (collect($allActiveDemands)->sum("amount") - $paidTotalAmount) > 0 ?  (collect($allActiveDemands)->sum("amount") - $paidTotalAmount) : 0 ;
@@ -2788,6 +2790,9 @@ class WaterConsumer extends Controller
                     }
                     print_var($n);
                     $new = collect($n->where("gen_type","NEW"));
+                    $newIds = (collect($new)->implode("id",","));
+                    $old = collect($n->where("gen_type","<>","NEW"));
+                    $oldIds = (collect($old)->implode("id",","));
                     if($new->isNotEmpty() && $lastTran && $is_full_paid)
                     {
                         foreach($new as $newD)
@@ -2802,6 +2807,18 @@ class WaterConsumer extends Controller
                             $newTranDtls->save();
                         }
                     }
+                    $insertSql = "insert Into demand_currection_logs (tax_id ,consumer_id,old_demand_ids,new_demand_added_ids 
+                                                                        ".($is_full_paid ? (",is_full_paid"):"").",
+                                                                        tax_log,new_tax_log,
+                                                                        demand_log,new_demand_log,advance_amt,tax_calculation_log) 
+                                values( $taxId,$consumerId,'$oldIds','$newIds' ".($is_full_paid ? (",true"):"").",'".$demand_currection_logs["tax_log"]."','".$demand_currection_logs["new_tax_log"]."',
+                                        '".$demand_currection_logs["demand_log"]."','".$demand_currection_logs["new_demand_log"]."',
+                                        ".$newAdvand.",'".$demand_currection_logs["tax_calculation_log"]."')";
+                                        
+                    $insertId = $this->_DB->select($insertSql);
+                    $seql = "select count(*) from demand_currection_logs";
+                    print_var("=============inserData======$newAdvand==========");
+                    print_Var($this->_DB->select($seql));
                     $this->commit();
                     // dd($newTax);
                     print_var("Success");

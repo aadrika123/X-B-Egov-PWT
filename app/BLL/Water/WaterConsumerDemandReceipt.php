@@ -188,7 +188,8 @@ class WaterConsumerDemandReceipt
 
     private function setMeterReadingImage()
     {
-        $this->_meterReadingDocuments   = $this->_mWaterMeterReadingDoc->getDocByDemandId($this->_dueDemandsList->max("id"));
+        $lastDemands = $this->_dueDemandsList->sortByDesc("demand_upto")->first();
+        $this->_meterReadingDocuments   = $this->_mWaterMeterReadingDoc->getDocByDemandId($lastDemands->id??0);
         $this->_meterImg = ($this->_meterReadingDocuments ? ($this->_docUrl . "/" . $this->_meterReadingDocuments->relative_path . "/" . $this->_meterReadingDocuments->file_name) : "");
         $this->_meterNo = $this->_meterReadingDocuments->meter_no??null;
     }
