@@ -1657,7 +1657,7 @@ class Trade implements ITrade
         try {
             $refUser    = Auth()->user();
             $refUlbId   = $refUser->ulb_id ?? $request->ulbId;
-            $mNextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
+            $mNextMonth = Carbon::now()->addMonths(3)->format('Y-m-d');
             $refWorkflowId      = $this->_WF_MASTER_Id;
             $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
             $request->request->add(['ulbId'=>$refUlbId]);
