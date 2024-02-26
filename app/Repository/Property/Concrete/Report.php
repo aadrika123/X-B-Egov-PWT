@@ -3244,7 +3244,9 @@ class Report implements IReport
                 $ulbId = $request->ulbId;
             }
 
-            $sql = "SELECT prop.*, (COALESCE(balance_amount,0) + COALESCE(monthly_penalty,0) + COALESCE(arrear_interest,0)) AS total_demand
+            $sql = "SELECT prop.*, (COALESCE(balance_amount,0) 
+            -- + COALESCE(monthly_penalty,0) 
+            + COALESCE(arrear_interest,0)) AS total_demand
                     FROM(
                         SELECT prop_properties.id AS property_id ,holding_no,
                                 property_no, prop_address,
@@ -3253,10 +3255,10 @@ class Report implements IReport
                                 SUM (prop_demands.total_tax) AS total_tax,
                                 SUM(prop_demands.balance)AS balance_amount,
                                 SUM(prop_demands.total_tax - prop_demands.balance)AS paid_amount,
-                                SUM(CASE WHEN prop_demands.fyear ='" . getFy() . "' THEN 0 
-                                        WHEN prop_demands.fyear !='" . getFy() . "' AND prop_demands.is_old IS true THEN prop_demands.balance *3*0.02 
-                                        WHEN prop_demands.fyear !='" . getFy() . "' AND prop_demands.is_old IS false THEN prop_demands.balance *12*0.02 
-                                    end )as monthly_penalty,
+                                -- SUM(CASE WHEN prop_demands.fyear ='" . getFy() . "' THEN 0 
+                                --         WHEN prop_demands.fyear !='" . getFy() . "' AND prop_demands.is_old IS true THEN prop_demands.balance *3*0.02 
+                                --         WHEN prop_demands.fyear !='" . getFy() . "' AND prop_demands.is_old IS false THEN prop_demands.balance *12*0.02 
+                                --     end )as monthly_penalty,
                                 SUM(prive_penalty.arrear_interest) AS arrear_interest ,
                                 MIN(fyear) as from_year,
                                 MAX(fyear) as upto_year

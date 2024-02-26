@@ -486,7 +486,7 @@ class ReportController extends Controller
     {
         $validated = Validator::make(
             $request->all(),
-            [                
+            [
                 "ulbId" => "nullable|digits_between:1,9223372036854775807",
                 "wardMstrId" => "nullable|digits_between:1,9223372036854775807",
                 "zoneId"    => "nullable|digits_between:1,9223372036854775807",
@@ -1233,6 +1233,18 @@ class ReportController extends Controller
             $data['Trade']['trade_renewal_more_then_1_year']    = $currentYearData->trade_renewal_more_then_1_year;
             $data['Trade']['trade_renewal_more_then_1_year_and_less_then_5_years']    = $currentYearData->trade_renewal_more_then_1_year_and_less_then_5_years;
             $data['Trade']['trade_renewal_more_then_5_year']    = $currentYearData->trade_renewal_more_then_5_year;
+            $data['Trade']['a_trade_zone_name']    = $currentYearData->a_trade_zone_name;
+            $data['Trade']['a_trade_total_hh']    = $currentYearData->a_trade_total_hh;
+            $data['Trade']['a_trade_total_amount']    = $currentYearData->a_trade_total_amount;
+            $data['Trade']['b_trade_zone_name']    = $currentYearData->b_trade_zone_name;
+            $data['Trade']['b_trade_total_hh']    = $currentYearData->b_trade_total_hh;
+            $data['Trade']['b_trade_total_amount']    = $currentYearData->b_trade_total_amount;
+            $data['Trade']['c_trade_zone_name']    = $currentYearData->c_trade_zone_name;
+            $data['Trade']['c_trade_total_hh']    = $currentYearData->c_trade_total_hh;
+            $data['Trade']['c_trade_total_amount']    = $currentYearData->c_trade_total_amount;
+            $data['Trade']['d_trade_zone_name']    = $currentYearData->d_trade_zone_name;
+            $data['Trade']['d_trade_total_hh']    = $currentYearData->d_trade_total_hh;
+            $data['Trade']['d_trade_total_amount']    = $currentYearData->d_trade_total_amount;
 
             #water
             $data['Water']['water_connection_underprocess']    = $currentYearData->water_connection_underprocess;
@@ -1249,6 +1261,32 @@ class ReportController extends Controller
             $data['Water']['water_total_collection']    = round(($currentYearData->water_total_collection ?? 0) / 10000000, 2); # in cr
             $data['Water']['water_current_collection_efficiency']    = $currentYearData->water_current_collection_efficiency;
             $data['Water']['water_arrear_collection_efficiency']    = $currentYearData->water_arrear_collection_efficiency;
+
+            $data['Water']['a_water_zone_name']    = $currentYearData->a_water_zone_name;
+            $data['Water']['a_water_total_hh']    = $currentYearData->a_water_total_hh;
+            $data['Water']['a_water_total_amount']    = $currentYearData->a_water_total_amount;
+            $data['Water']['b_water_zone_name']    = $currentYearData->b_water_zone_name;
+            $data['Water']['b_water_total_hh']    = $currentYearData->b_water_total_hh;
+            $data['Water']['b_water_total_amount']    = $currentYearData->b_water_total_amount;
+            $data['Water']['c_water_zone_name']    = $currentYearData->c_water_zone_name;
+            $data['Water']['c_water_total_hh']    = $currentYearData->c_water_total_hh;
+            $data['Water']['c_water_total_amount']    = $currentYearData->c_water_total_amount;
+            $data['Water']['d_water_zone_name']    = $currentYearData->d_water_zone_name;
+            $data['Water']['d_water_total_hh']    = $currentYearData->d_water_total_hh;
+            $data['Water']['d_water_total_amount']    = $currentYearData->d_water_total_amount;
+
+            $data['Market']['a_market_zone_name']    = $currentYearData->a_market_zone_name;
+            $data['Market']['a_market_total_hh']    = $currentYearData->a_market_total_hh;
+            $data['Market']['a_market_total_amount']    = $currentYearData->a_market_total_amount;
+            $data['Market']['b_market_zone_name']    = $currentYearData->b_market_zone_name;
+            $data['Market']['b_market_total_hh']    = $currentYearData->b_market_total_hh;
+            $data['Market']['b_market_total_amount']    = $currentYearData->b_market_total_amount;
+            $data['Market']['c_market_zone_name']    = $currentYearData->c_market_zone_name;
+            $data['Market']['c_market_total_hh']    = $currentYearData->c_market_total_hh;
+            $data['Market']['c_market_total_amount']    = $currentYearData->c_market_total_amount;
+            $data['Market']['d_market_zone_name']    = $currentYearData->d_market_zone_name;
+            $data['Market']['d_market_total_hh']    = $currentYearData->d_market_total_hh;
+            $data['Market']['d_market_total_amount']    = $currentYearData->d_market_total_amount;
 
             #property_new
             $data['Property']['a_zone_name']    = $currentYearData->a_zone_name;
@@ -1388,39 +1426,33 @@ class ReportController extends Controller
 
     public function deviceTypeCollection(Request $request)
     {
-        try{
+        try {
             $fromDate = $uptoDate = Carbon::now()->format('Y-m-d');
             $deviceType = 'android';
             $paymentMode = null;
-            if($request->fromDate)
-            {
+            if ($request->fromDate) {
                 $fromDate = $request->fromDate;
             }
-            if($request->uptoDate)
-            {
+            if ($request->uptoDate) {
                 $uptoDate = $request->uptoDate;
             }
-            if($request->deviceType)
-            {
+            if ($request->deviceType) {
                 $deviceType = $request->deviceType;
             }
-            if($request->paymentMode)
-            {
+            if ($request->paymentMode) {
                 $paymentMode = $request->paymentMode;
             }
             $data = PropTransaction::select(DB::raw("COALESCE(sum(amount),0) as total_amount,count(id)total_tran"))
-                    ->whereBetween("tran_date",[$fromDate,$uptoDate])
-                    ->whereIn("status",[1,2])
-                    ->whereNotNull("device_type")
-                    ->where("device_type",$deviceType);
-            if($paymentMode)
-            {
-                $data->where(DB::raw("upper(payment_mode)",strtoupper($paymentMode)));
+                ->whereBetween("tran_date", [$fromDate, $uptoDate])
+                ->whereIn("status", [1, 2])
+                ->whereNotNull("device_type")
+                ->where("device_type", $deviceType);
+            if ($paymentMode) {
+                $data->where(DB::raw("upper(payment_mode)", strtoupper($paymentMode)));
             }
             $data = $data->first();
             return responseMsgs(true, "data fetched", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
@@ -2754,7 +2786,7 @@ class ReportController extends Controller
 
         $updateReqs = [
             "total_assessment" => $data->total_assessed_props,
-            "total_prop_vacand" => $propdata->total_vacant_land + $propdata->null_prop_data + $propdata->null_floor_data,            
+            "total_prop_vacand" => $propdata->total_vacant_land + $propdata->null_prop_data + $propdata->null_floor_data,
             "total_prop_residential" => $data->total_residential_props,
             "total_prop_commercial"  => $data->total_commercial_props,
             "total_prop_industrial" => $data->total_industrial_props,
@@ -2791,9 +2823,9 @@ class ReportController extends Controller
             "last_year_payment_count" => $data->lastyr_pmt_cnt,
             "this_year_payment_count" => $data->currentyr_pmt_cnt,
             "this_year_payment_amount" => $data->currentyr_pmt_amt,
-    
-          "collection_against_current_demand" => $data->current_collection,
-        "collection_againt_arrear_demand" => $data->arrear_collection,
+
+            "collection_against_current_demand" => $data->current_collection,
+            "collection_againt_arrear_demand" => $data->arrear_collection,
             // "mutation_this_year_count" => $data->current_yr_mutation_count,
             // "assessed_property_this_year_achievement" => $data->outstanding_amt_lastyear,
             // "assessed_property_this_year_achievement" => $data->outstanding_cnt_lastyear,
@@ -2940,7 +2972,7 @@ class ReportController extends Controller
             'water_current_collection_efficiency'  => $waterdata->water_current_collection_efficiency,
             'water_current_outstanding'  => $waterdata->water_current_outstanding,
             'water_arrear_outstanding'  => $waterdata->water_arrear_outstanding,
-                        
+
             'a_water_zone_name'  => $waterdata->a_water_zone_name,
             'a_water_total_hh'  => $waterdata->a_water_total_hh,
             'a_water_total_amount'  => $waterdata->a_water_total_amount,
@@ -2954,7 +2986,7 @@ class ReportController extends Controller
             'd_water_total_hh'  => $waterdata->d_water_total_hh,
             'd_water_total_amount'  => $waterdata->d_water_total_amount,
 
-                        
+
             // #market
             'a_market_zone_name'  => $marketdata->a_market_zone_name,
             'a_market_total_hh'  => $marketdata->a_market_total_hh,
@@ -3215,10 +3247,9 @@ class ReportController extends Controller
         $respons["d_trade_total_hh"] = (collect($data)->where("id", 4)->first()->trade_consumer_count) ?? 0;
         $respons["d_trade_total_amount"] = (collect($data)->where("id", 4)->first()->trade_total_amount) ?? 0;
         return (object)$respons;
-
     }
 
-    
+
     public function propertydetails()
     {
         # total trade licences
@@ -3460,7 +3491,7 @@ class ReportController extends Controller
                         GROUP BY 
                             zone_masters.id 
                         ";
-    
+
         $respons = [];
         $data = collect(DB::connection("pgsql_water")->select($sql_water_application_underprocess))->first();
         $respons["water_connection_underprocess"] = $data->water_connection_underprocess ?? 0;
@@ -3502,7 +3533,7 @@ class ReportController extends Controller
 
     public function marketdetails()
     {
-        
+
         $sql_market_zonal = "
                     select m_circle.id AS id,
                         CASE 
@@ -3531,11 +3562,11 @@ class ReportController extends Controller
                     GROUP BY 
                         m_circle.id 
                 ";
-                
 
-    
+
+
         $respons = [];
-        
+
 
         $data = collect(DB::connection("pgsql_advertisements")->select($sql_market_zonal));
         $respons["a_market_zone_name"] = (collect($data)->where("id", 1)->first()->market_zone_name) ?? 0;
@@ -3635,8 +3666,8 @@ class ReportController extends Controller
             $ulbId = $request->ulbId ?? 2;
             $currentDate = Carbon::now()->format("Y-m-d");
             $currentfyear = getFY();
-            $fromDate = explode("-",$currentfyear)[0]."-04-01";
-            $uptoDate = explode("-",$currentfyear)[1]."-03-31";
+            $fromDate = explode("-", $currentfyear)[0] . "-04-01";
+            $uptoDate = explode("-", $currentfyear)[1] . "-03-31";
             $propTransactionQuery = DB::select(DB::raw("
                             SELECT  
                                 assessment_types.assessment_type, 
@@ -3663,7 +3694,7 @@ class ReportController extends Controller
                                 assessment_types.assessment_type
                         "), [$currentDate]);
 
-                        $propTax = DB::select(DB::raw("
+            $propTax = DB::select(DB::raw("
                                     SELECT  
                                         count(prop_transactions.id) as total_tran,
                                         count(distinct prop_transactions.property_id) as total_hh,
@@ -3722,10 +3753,10 @@ class ReportController extends Controller
                                     )prop_adjustments ON prop_adjustments.tran_id = prop_transactions.id
                                     WHERE prop_transactions.status IN (1,2)
                                         AND tran_date = ?
-                                        "), [$currentDate, $currentDate, $currentDate,$currentDate,$currentDate]);
-                                            
-                                        
-                        $waterTransactionQuery = DB::connection("pgsql_water")->select(DB::raw("
+                                        "), [$currentDate, $currentDate, $currentDate, $currentDate, $currentDate]);
+
+
+            $waterTransactionQuery = DB::connection("pgsql_water")->select(DB::raw("
                         select *
                         from (
                             select count(water_trans.id) as total_tran,
@@ -3774,7 +3805,7 @@ class ReportController extends Controller
                         )application
                         "));
 
-                        $tradeTransactionQuery = DB::connection("pgsql_trade")->select(DB::raw("
+            $tradeTransactionQuery = DB::connection("pgsql_trade")->select(DB::raw("
                             SELECT  
                                 license_types.application_type,
                                 COALESCE(SUM(trade_count), 0) AS trade_count,
@@ -3798,9 +3829,9 @@ class ReportController extends Controller
                             GROUP BY 
                                 license_types.application_type
                         "));
-                        
-                        
-                        $marketTransactionQuery =  DB::connection("pgsql_advertisements")->select(DB::raw("
+
+
+            $marketTransactionQuery =  DB::connection("pgsql_advertisements")->select(DB::raw("
                             SELECT --id,
                                 COUNT(mar_shop_payments.id) AS total_tran,
                                 COUNT(DISTINCT mar_shop_payments.shop_id) AS total_shop,
@@ -3833,27 +3864,27 @@ class ReportController extends Controller
                                 where mar_shop_payments.payment_date = '$currentDate'
 
                         "));
-                       
 
 
-                        
+
+
             $data = [
                 "propDetails" => $propTransactionQuery,
-              
+
                 "waterDetails" => $waterTransactionQuery,
                 "tradeDetails" => $tradeTransactionQuery,
                 "propTax" => $propTax,
                 "marketDeatails" => $marketTransactionQuery,
-                "date" =>$currentDate
+                "date" => $currentDate
             ];
-         
+
             return responseMsgs(true, "Mpl Report Today Coll", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
         } catch (\Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
 
-    
+
     /**
      * | written by Prity Pandey 
      * / code for akola livedashboard overall  collection
@@ -3866,8 +3897,8 @@ class ReportController extends Controller
             $ulbId = $request->ulbId ?? 2;
             $currentDate = Carbon::now()->format("Y-m-d");
             $currentfyear = getFY();
-            $fromDate = explode("-",$currentfyear)[0]."-04-01";
-            $uptoDate = explode("-",$currentfyear)[1]."-03-31";
+            $fromDate = explode("-", $currentfyear)[0] . "-04-01";
+            $uptoDate = explode("-", $currentfyear)[1] . "-03-31";
 
             $propTransactionQuery = DB::select(DB::raw("
                             SELECT  
@@ -3895,7 +3926,7 @@ class ReportController extends Controller
                                 assessment_types.assessment_type
                         "));
 
-                        $propTax = DB::select(DB::raw("
+            $propTax = DB::select(DB::raw("
                                 SELECT  
                                     count(prop_transactions.id) as total_tran,
                                     count(distinct prop_transactions.property_id) as total_hh,
@@ -3969,9 +4000,9 @@ class ReportController extends Controller
                                   
                 
                         "));
-                            
-                                        
-                        $waterTransactionQuery = DB::connection("pgsql_water")->select(DB::raw("
+
+
+            $waterTransactionQuery = DB::connection("pgsql_water")->select(DB::raw("
                                 select *
                                 from(
                                     select count(water_trans.id) as total_tran,
@@ -4020,7 +4051,7 @@ class ReportController extends Controller
                                 )application
                         "));
 
-                        $tradeTransactionQuery = DB::connection("pgsql_trade")->select(DB::raw("
+            $tradeTransactionQuery = DB::connection("pgsql_trade")->select(DB::raw("
                             
                                 SELECT  
                                     license_types.application_type,
@@ -4046,9 +4077,9 @@ class ReportController extends Controller
                                 GROUP BY 
                                     license_types.application_type
                         "));
-                        
-                        
-                        $marketTransactionQuery =  DB::connection("pgsql_advertisements")->select(DB::raw("
+
+
+            $marketTransactionQuery =  DB::connection("pgsql_advertisements")->select(DB::raw("
                             SELECT 
                                 COUNT(mar_shop_payments.id) AS total_tran,
                                 COUNT(DISTINCT mar_shop_payments.shop_id) AS total_shop,
@@ -4081,20 +4112,20 @@ class ReportController extends Controller
                                
 
                         "));
-                       
 
 
-                        
+
+
             $data = [
                 "propDetails" => $propTransactionQuery,
-              
+
                 "waterDetails" => $waterTransactionQuery,
                 "tradeDetails" => $tradeTransactionQuery,
                 "propTax" => $propTax,
                 "marketDeatails" => $marketTransactionQuery,
-                "date" =>$currentDate
+                "date" => $currentDate
             ];
-         
+
             return responseMsgs(true, "Mpl Report Today Coll", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
         } catch (\Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);

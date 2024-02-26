@@ -128,7 +128,13 @@ class PropSaf extends Model
                       as current_role
                 "
             ),
-            'role_name as currentRole',
+            // 'role_name as currentRole',
+            DB::raw(
+                "case when prop_safs.parked = true then CONCAT('BTC BY ',role_name)
+                    else CONCAT('At ',role_name) end
+                as currentRole
+                "
+            ),
             'u.ward_name as old_ward_no',
             'uu.ward_name as new_ward_no',
             'prop_address',
