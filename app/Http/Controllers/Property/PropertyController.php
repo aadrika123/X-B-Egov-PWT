@@ -1800,6 +1800,12 @@ class PropertyController extends Controller
             $mlocations->longitude = $req->longitude;
             $mlocations->altitude  = $req->altitude;
             $mlocations->time      = $nowTime;
+            $mlocations->ref_id    = $req->refId;
+            $mlocations->module_id = $req->moduleId;
+            if($req->actionType)
+            {
+                $mlocations->locations = strtoupper(trim($req->actionType));
+            }
             $mlocations->save();
 
             return responseMsgs(true, "tc location updated", [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
