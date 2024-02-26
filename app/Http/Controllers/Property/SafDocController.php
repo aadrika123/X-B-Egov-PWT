@@ -366,9 +366,9 @@ class SafDocController extends Controller
             if(!$response->original["status"])
             {
                 return $response;
-            }
+            }            
             $map = collect($response->original["data"])->where("doc_category","Layout sanction Map")->first(); 
-            $roughMap = collect($response->original["data"])->where("doc_category","Layout sanction Map")->first();           
+            $roughMap = collect($response->original["data"])->where("doc_category","naksha")->first();           
             if($map)
             {
                 $map["ext"] = strtolower(collect(explode(".",$map["doc_path"]))->last());

@@ -3451,7 +3451,7 @@ class ActiveSafController extends Controller
             $req->merge([
                 "directionType" => "naksha",
                 "docCategory" => "naksha",
-                "docCode" => "naksha",
+                "docCode" => "Measurment Sheet",
                 "safId" => $req->applicationId,
                 "imagePath" => $req->document,
             ]);
