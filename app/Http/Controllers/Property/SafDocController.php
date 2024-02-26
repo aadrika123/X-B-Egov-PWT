@@ -378,9 +378,9 @@ class SafDocController extends Controller
                 $roughMap["ext"] = strtolower(collect(explode(".",$roughMap["doc_path"]))->last());
             }
             $saf["is_naksha_uploaded"] = $map? true: false;
-            $saf["is_rough_naksha_uploaded"] = $roughMap? true: false;
+            $saf["is_measurement_sheet_uploaded"] = $roughMap? true: false;
             $saf["naksha"] = $map;
-            $saf["rough_naksha"] = $roughMap;
+            $saf["measurement_sheet"] = $roughMap;
             return responseMsgs(true, "date fetched", $saf, "010202", "1.1", "", "POST", $req->deviceId ?? "");
         }
         catch (Exception $e) {
