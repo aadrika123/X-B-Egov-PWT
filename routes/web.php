@@ -31,6 +31,10 @@ Route::get('/water-pdf', [\App\Http\Controllers\Water\WaterPaymentController::cl
 //     return view('property_payment_reciept');
 // });
 
+Route::get('property/saf/jahirnama-receipt', function () {
+        return view('prop_jahirnama');
+    });
+
 // Route::get('property/payment-receipt',WhatsappReceiptController::class)
 Route::controller(WhatsappReceiptController::class)->group(function () {
     Route::get('property/payment-receipt/{tranId}', 'sendPaymentReceipt');

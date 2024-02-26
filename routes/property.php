@@ -589,6 +589,7 @@ Route::controller(ActiveSafController::class)->group(function () {
   Route::post('saf/payment-receipt', 'generatePaymentReceipt');                                       // Generate payment Receipt(16)
   #created by Sandeep Akola fme
   Route::post('saf/akola-fam', 'AkolaFam');
+  Route::post('saf/genrate-jahirnama', 'genrateJahirnamaPDF'); 
 });
 
 /**

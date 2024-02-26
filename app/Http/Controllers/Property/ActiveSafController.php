@@ -92,9 +92,11 @@ use App\Models\Property\SecondaryDocVerification;
 use App\Models\Workflows\WfMaster;
 use App\Models\Workflows\WfRole;
 use App\Repository\Common\CommonFunction;
+use Barryvdh\DomPDF\Facade\PDF;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 
 class ActiveSafController extends Controller
 {
@@ -4869,5 +4871,55 @@ class ActiveSafController extends Controller
             'receiptNo' => $counter,
             'wardNo' => $wardNo,
         ];
+    }
+
+
+    /**
+     * ===============generate saf jahirnama===============
+     *                create by : Sandeep  Bara
+     *                Date      : 2024-0-24
+     */
+    public function genrateJahirnamaPDF(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "applicationId" => "required|digits_between:1,9223372036854775807",
+            ]
+        );
+        if ($validated->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validated->errors()
+            ]);
+        }
+        try{
+            $request->merge(['id'=>$request->applicationId]);
+            $user = Auth()->user();
+            $safData = $this->getStaticSafDetails($request);
+            $filename = $request->applicationId."-jahirnama".'.' . 'pdf';
+            $url = "Property/Saf/Jhirnama/".$filename;
+            if(!$safData->original["status"])
+            {
+                throw new Exception($safData->original["message"]);
+            }
+            $safData = $safData->original["data"];
+            $safData["previousOwnerName"] = $safData["previous_owners"]->implode("owner_name",",");
+            $safData["newOwnerName"] = $safData["owners"]->implode("owner_name",",");
+            $safData["jahirnamaDate"] = Carbon::now()->format("d/m/Y"); 
+            $safData["jahirnamaNo"] = $safData["saf_no"];          
+            $pdf = PDF::loadView('prop_jahirnama',["safData"=>$safData]); 
+            $file = $pdf->download($filename . '.' . 'pdf');
+            // $docUpload = (new DocUpload())->upload($filename,$file,"Uploads/Property/Saf/Jhirnama");
+            $pdf = Storage::put('public' . '/' . $url, $file);
+            $docUpload = move_uploaded_file("../storage/Uploads/Property/Saf/Jhirnama","../public/Uploads/Property/Saf/Jhirnama");
+            dd($docUpload);
+            
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 }
