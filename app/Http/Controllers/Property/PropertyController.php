@@ -1820,7 +1820,7 @@ class PropertyController extends Controller
         $validated = Validator::make(
             $request->all(),
             [
-                "tcId"       => "required",
+                "tcId"       => "nullable|digits_between:1,9223372036854775807",
                 'perPage'     =>  'nullable',
                 'perPage'     =>  'nullable',
             ]
@@ -1845,9 +1845,16 @@ class PropertyController extends Controller
             if ($request->zoneId) {
                 $zoneId = $request->zoneId;
             }
-            $data  = $mLocation->getTcDetails($tcId)
-                ->whereBetween(DB::raw("Cast(locations.created_at As date)"), [$fromDate, $uptoDate])
-                ->orderBy("locations.id", "DESC");
+            // $data  = $mLocation->getTcDetails($tcId)
+            //     ->whereBetween(DB::raw("Cast(locations.created_at As date)"), [$fromDate, $uptoDate])
+            //     ->orderBy("locations.id", "DESC");
+
+            $data  = $mLocation->getTcVisitingListORM()
+                ->whereBetween(DB::raw("Cast(locations.created_at As date)"), [$fromDate, $uptoDate]);
+            if($tcId)
+            {
+                $data->where("users.id",$tcId);
+            }
 
             $paginator = $data->paginate($perPage);
 
