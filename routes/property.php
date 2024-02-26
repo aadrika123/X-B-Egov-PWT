@@ -558,6 +558,8 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('report/saf-applied-types-details-report', 'safAppliedTypesDetailsReport');
     Route::post('report/saf-demand-collection-report', 'safDemandCollectionReport');
     Route::post('report/mpl-totdayCollection-new', 'mplReportCollectionnew');
+    Route::post('report/mpl-totdayOverallCollection', 'mplReportOverallCollection');
+
   });
 
   /**

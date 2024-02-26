@@ -82,6 +82,26 @@ return [
             ],
         ],
 
+         #_For market Service
+         'pgsql_advertisements' => [
+            'driver' => 'pgsql',
+            'url' => env('DATABASE_URL'),
+            'host' => env('DB_ADVERTISEMENTS_HOST', '127.0.0.1'),
+            'port' => env('DB_ADVERTISEMENTS_PORT', '5432'),
+            'database' => env('DB_ADVERTISEMENTS_DATABASE', 'forge'),
+            'username' => env('DB_ADVERTISEMENTS_USERNAME', 'forge'),
+            'password' => env('DB_ADVERTISEMENTS_PASSWORD', ''),
+            'charset' => 'utf8',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'schema' => 'public',
+            'sslmode' => 'prefer',
+            'options'   => [
+                PDO::ATTR_PERSISTENT => true,
+            ],
+        ],
+
+
         #_For Master
         'pgsql_master' => [
             'driver' => 'pgsql',
