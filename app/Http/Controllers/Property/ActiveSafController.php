@@ -5113,4 +5113,30 @@ class ActiveSafController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    public function updateJahirnama(Request $request)
+    {
+        $extention = ($request->document) instanceof UploadedFile ? $request->document->getClientOriginalExtension() : "";
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "applicationId" => "required|digits_between:1,9223372036854775807",
+                "document" => "required|mimes:pdf,jpeg,png,jpg|" . (strtolower($extention) == 'pdf' ? 'max:10240' : 'max:5120'),
+            ]
+        );
+        if ($validated->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validated->errors()
+            ]);
+        }
+        try{
+            
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
 }
