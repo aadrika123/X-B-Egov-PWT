@@ -2158,8 +2158,9 @@ class ReportController extends Controller
                         top_area_safs.*,
                         area_wise_defaulter.*,
                         payment_modes.*,
-                        current_demand_collection.*,
-                        arrear_demand_collection.*
+                        -- current_demand_collection.*,
+                        -- arrear_demand_collection.*
+                        dcb_collection.*
         
                 FROM 
                     (
@@ -2336,20 +2337,93 @@ class ReportController extends Controller
                 --     p.prop_type_mstr_id = 4 
                 --     AND status = 1 AND ulb_id=2
                 -- ) AS total_vacant_land, 
+                -- (
+                --     SELECT SUM(total_tax-adjust_amt) AS arrear_demand_collection 
+                --             FROM prop_transactions t
+                --         JOIN prop_tran_dtls td ON td.tran_id=t.id AND td.status=1
+                --         JOIN prop_demands d ON d.id=td.prop_demand_id AND d.status=1
+                --         WHERE t.status=1 AND d.fyear<'2023-2024' AND t.tran_date BETWEEN '2023-04-01' AND '2024-03-31'
+                -- ) AS arrear_demand_collection, 
+                -- (
+                --     SELECT SUM(total_tax-adjust_amt) AS current_demand_collection
+                --         FROM prop_transactions t
+                --     JOIN prop_tran_dtls td ON td.tran_id=t.id AND td.status=1
+                --     JOIN prop_demands d ON d.id=td.prop_demand_id AND d.status=1
+                --     WHERE t.status=1 AND d.fyear='2023-2024' AND t.tran_date BETWEEN '2023-04-01' AND '2024-03-31'
+                -- ) AS current_demand_collection, 
+
                 (
-                    SELECT SUM(total_tax-adjust_amt) AS arrear_demand_collection 
-                            FROM prop_transactions t
-                        JOIN prop_tran_dtls td ON td.tran_id=t.id AND td.status=1
-                        JOIN prop_demands d ON d.id=td.prop_demand_id AND d.status=1
-                        WHERE t.status=1 AND d.fyear<'2023-2024' AND t.tran_date BETWEEN '2023-04-01' AND '2024-03-31'
-                ) AS arrear_demand_collection, 
-                (
-                    SELECT SUM(total_tax-adjust_amt) AS current_demand_collection
-                        FROM prop_transactions t
-                    JOIN prop_tran_dtls td ON td.tran_id=t.id AND td.status=1
-                    JOIN prop_demands d ON d.id=td.prop_demand_id AND d.status=1
-                    WHERE t.status=1 AND d.fyear='2023-2024' AND t.tran_date BETWEEN '2023-04-01' AND '2024-03-31'
-                ) AS current_demand_collection, 
+                    SELECT  
+                                    count(prop_transactions.id) as total_tran,
+                                    count(distinct prop_transactions.property_id) as total_hh,
+                                    COALESCE(sum(prop_transactions.amount),0)as total_tran_amount,
+                                    COALESCE(sum(prop_advances.advance_amount),0)as advance_amount,
+                                    COALESCE(sum(prop_adjustments.adjust_amount),0)as adjust_amount,
+                                    sum(penalty_rebate.penalty) as penalty,
+                                    sum(penalty_rebate.rebate) as rebate,
+                                    (COALESCE(sum(dtls.arrear_collection),0) 
+                                     + COALESCE(sum(penalty_rebate.penalty),0) 
+                                    - COALESCE(sum(adjust_amount),0) ) as arrear_collection,
+                                    (COALESCE(sum(dtls.arrear_hh),0) ) as arrear_hh,
+                                    (COALESCE(sum(dtls.current_hh),0) ) as current_hh,
+                                    ((COALESCE(sum(dtls.current_collection),0)+COALESCE(sum(prop_advances.advance_amount),0)) -  COALESCE(sum(penalty_rebate.rebate),0))as current_collection
+                                FROM prop_transactions
+                                LEFT JOIN (
+                                    SELECT 
+                                        prop_transactions.id,
+                                        count(distinct prop_transactions.property_id) as total_prop,
+                                        sum(CASE WHEN prop_demands.fyear < '$currentFy' THEN prop_tran_dtls.paid_total_tax ELSE 0 END) as arrear_collection,
+                                        count(distinct CASE WHEN prop_demands.fyear < '$currentFy' THEN prop_demands.property_id ELSE null END) as arrear_hh,
+                                        sum(CASE WHEN prop_demands.fyear = '$currentFy' THEN prop_tran_dtls.paid_total_tax ELSE 0 END) as current_collection,
+                                        count(distinct CASE WHEN prop_demands.fyear = '$currentFy' THEN prop_demands.property_id ELSE null END) as current_hh,
+                                        sum(prop_tran_dtls.paid_total_tax) as paid_total_tax 
+                                    FROM prop_transactions
+                                    JOIN prop_tran_dtls ON prop_tran_dtls.tran_id = prop_transactions.id
+                                    JOIN prop_demands ON prop_demands.id = prop_tran_dtls.prop_demand_id
+                                    WHERE prop_transactions.status IN (1,2) 
+                                        AND prop_transactions.tran_type = 'Property'
+                                        and prop_transactions.tran_date  between '$currentfyStartDate' and '$currentfyEndDate'
+                                      
+                
+                                    GROUP BY  prop_transactions.id			
+                                ) dtls ON dtls.id = prop_transactions.id
+                                LEFT JOIN (
+                                    SELECT 
+                                        tran_id,
+                                        sum(CASE WHEN is_rebate != true THEN prop_penaltyrebates.amount ELSE 0 END) as penalty,
+                                        sum(CASE WHEN is_rebate = true THEN prop_penaltyrebates.amount ELSE 0 END) as rebate
+                                    FROM prop_penaltyrebates
+                                    JOIN prop_transactions ON prop_transactions.id = prop_penaltyrebates.tran_id
+                                    WHERE prop_transactions.status IN (1,2) 
+                                        AND prop_transactions.tran_type =  'Property'
+                                        and prop_transactions.tran_date between '$currentfyStartDate' and '$currentfyEndDate'
+                                        
+                
+                                    GROUP BY prop_penaltyrebates.tran_id
+                                ) penalty_rebate ON penalty_rebate.tran_id = prop_transactions.id
+                                left join(
+                                    select tran_id, sum(prop_advances.amount)as advance_amount
+                                    from prop_advances
+                                    JOIN prop_transactions ON prop_transactions.id = prop_advances.tran_id
+                                    WHERE prop_transactions.status IN (1,2)
+                                        and prop_transactions.tran_date between '$currentfyStartDate' and '$currentfyEndDate'
+                                     
+                
+                                    GROUP BY prop_advances.tran_id
+                                )prop_advances ON prop_advances.tran_id = prop_transactions.id
+                                left join(
+                                    select tran_id, sum(prop_adjustments.amount)as adjust_amount
+                                    from prop_adjustments
+                                    JOIN prop_transactions ON prop_transactions.id = prop_adjustments.tran_id
+                                    WHERE prop_transactions.status IN (1,2)
+                                        and prop_transactions.tran_date  between '$currentfyStartDate' and '$currentfyEndDate'
+                                        
+                
+                                    GROUP BY prop_adjustments.tran_id
+                                )prop_adjustments ON prop_adjustments.tran_id = prop_transactions.id
+                                WHERE prop_transactions.status IN (1,2)
+                                    and prop_transactions.tran_date  between '$currentfyStartDate' and '$currentfyEndDate'
+                ) as dcb_collection,
 
                 (
                     SELECT 
@@ -2676,6 +2750,7 @@ class ReportController extends Controller
         $tradedata = $this->tradedetails();
         $propdata = $this->propertydetails();
         $waterdata = $this->waterdetails();
+        $marketdata = $this->marketdetails();
 
         $updateReqs = [
             "total_assessment" => $data->total_assessed_props,
@@ -2716,8 +2791,9 @@ class ReportController extends Controller
             "last_year_payment_count" => $data->lastyr_pmt_cnt,
             "this_year_payment_count" => $data->currentyr_pmt_cnt,
             "this_year_payment_amount" => $data->currentyr_pmt_amt,
-            "collection_against_current_demand" => $data->current_demand_collection,
-            "collection_againt_arrear_demand" => $data->arrear_demand_collection,
+    
+          "collection_against_current_demand" => $data->current_collection,
+        "collection_againt_arrear_demand" => $data->arrear_collection,
             // "mutation_this_year_count" => $data->current_yr_mutation_count,
             // "assessed_property_this_year_achievement" => $data->outstanding_amt_lastyear,
             // "assessed_property_this_year_achievement" => $data->outstanding_cnt_lastyear,
@@ -2811,6 +2887,18 @@ class ReportController extends Controller
             'trade_renewal_more_then_1_year' => $tradedata->trade_renewal_more_then_1_year,
             'trade_renewal_more_then_1_year_and_less_then_5_years' => $tradedata->trade_renewal_more_then_1_year_and_less_then_5_years,
             'trade_renewal_more_then_5_year' => $tradedata->trade_renewal_more_then_5_year,
+            'a_trade_zone_name'  => $tradedata->a_trade_zone_name,
+            'a_trade_total_hh'  => $tradedata->a_trade_total_hh,
+            'a_trade_total_amount'  => $tradedata->a_trade_total_amount,
+            'b_trade_zone_name'  => $tradedata->b_trade_zone_name,
+            'b_trade_total_hh'  => $tradedata->b_trade_total_hh,
+            'b_trade_total_amount'  => $tradedata->b_trade_total_amount,
+            'c_trade_zone_name'  => $tradedata->c_trade_zone_name,
+            'c_trade_total_hh'  => $tradedata->c_trade_total_hh,
+            'c_trade_total_amount'  => $tradedata->c_trade_total_amount,
+            'd_trade_zone_name'  => $tradedata->d_trade_zone_name,
+            'd_trade_total_hh'  => $tradedata->d_trade_total_hh,
+            'd_trade_total_amount'  => $tradedata->d_trade_total_amount,
 
             // #property_new
             'a_zone_name'  => $propdata->a_zone_name,
@@ -2852,6 +2940,34 @@ class ReportController extends Controller
             'water_current_collection_efficiency'  => $waterdata->water_current_collection_efficiency,
             'water_current_outstanding'  => $waterdata->water_current_outstanding,
             'water_arrear_outstanding'  => $waterdata->water_arrear_outstanding,
+                        
+            'a_water_zone_name'  => $waterdata->a_water_zone_name,
+            'a_water_total_hh'  => $waterdata->a_water_total_hh,
+            'a_water_total_amount'  => $waterdata->a_water_total_amount,
+            'b_water_zone_name'  => $waterdata->b_water_zone_name,
+            'b_water_total_hh'  => $waterdata->b_water_total_hh,
+            'b_water_total_amount'  => $waterdata->b_water_total_amount,
+            'c_water_zone_name'  => $waterdata->c_water_zone_name,
+            'c_water_total_hh'  => $waterdata->c_water_total_hh,
+            'c_water_total_amount'  => $waterdata->c_water_total_amount,
+            'd_water_zone_name'  => $waterdata->d_zone_name,
+            'd_water_total_hh'  => $waterdata->d_water_total_hh,
+            'd_water_total_amount'  => $waterdata->d_water_total_amount,
+
+                        
+            // #market
+            'a_market_zone_name'  => $marketdata->a_market_zone_name,
+            'a_market_total_hh'  => $marketdata->a_market_total_hh,
+            'a_market_total_amount'  => $marketdata->a_market_total_amount,
+            'b_market_zone_name'  => $marketdata->b_market_zone_name,
+            'b_market_total_hh'  => $marketdata->b_market_total_hh,
+            'b_market_total_amount'  => $marketdata->b_market_total_amount,
+            'c_market_zone_name'  => $marketdata->c_market_zone_name,
+            'c_market_total_hh'  => $marketdata->c_market_total_hh,
+            'c_market_total_amount'  => $marketdata->c_market_total_amount,
+            'd_market_zone_name'  => $marketdata->d_market_zone_name,
+            'd_market_total_hh'  => $marketdata->d_market_total_hh,
+            'd_market_total_amount'  => $marketdata->d_market_total_amount
         ];
 
         $mMplYearlyReport->where('fyear', $currentFy)
@@ -2978,6 +3094,48 @@ class ReportController extends Controller
                                 group by ulb_id
             ";
 
+        $sql_trade_zonal = "
+                            SELECT 
+                                zone_masters.id AS id,
+                                CASE 
+                                    WHEN zone_masters.id = 1 THEN 'East Zone'
+                                    WHEN zone_masters.id = 2 THEN 'West Zone'
+                                    WHEN zone_masters.id = 3 THEN 'North Zone'
+                                    WHEN zone_masters.id = 4 THEN 'South Zone'
+                                    ELSE 'NA' 
+                                END AS trade_zone_name, 
+                                COUNT(DISTINCT trade_transactions.temp_id) AS trade_consumer_count,
+                                COALESCE(SUM(trade_transactions.paid_amount),0) AS trade_total_amount
+                            FROM 
+                                zone_masters
+                            LEFT JOIN (
+                                (
+                                    SELECT id, ward_id, zone_id, 'pending' AS app_types
+                                    FROM active_trade_licences
+                                )
+                                UNION
+                                (
+                                    SELECT id, ward_id, zone_id, 'rejected' AS app_types
+                                    FROM rejected_trade_licences
+                                )
+                                UNION
+                                (
+                                    SELECT id, ward_id, zone_id, 'active' AS app_types
+                                    FROM trade_licences
+                                )
+                                UNION
+                                (
+                                    SELECT id, ward_id, zone_id, 'old' AS app_types
+                                    FROM trade_renewals
+                                )
+                                ) AS trade_licences ON trade_licences.zone_id = zone_masters.id
+                            LEFT JOIN trade_transactions ON trade_transactions.temp_id = trade_licences.id
+                                AND trade_transactions.status IN (1, 2) 
+                                AND trade_transactions.tran_date BETWEEN '2023-04-01' AND '2024-03-31' 
+                            GROUP BY 
+                                zone_masters.id
+        ";
+
         # Renewal pending  
         $sql_renewal_pending_trade = "    
                                 select 
@@ -3040,9 +3198,27 @@ class ReportController extends Controller
         $respons["trade_renewal_more_then_1_year_and_less_then_5_years"] = $data->more_then_1_year_and_less_then_5_years ?? 0;
         $respons["trade_renewal_more_then_5_year"] = $data->more_then_5_year ?? 0;
 
+        $data = collect(DB::connection("pgsql_trade")->select($sql_trade_zonal))->first();
+        $respons["a_trade_zone_name"] = (collect($data)->where("id", 1)->first()->trade_zone_name) ?? 0;
+        $respons["a_trade_total_hh"] = (collect($data)->where("id", 1)->first()->trade_consumer_count) ?? 0;
+        $respons["a_trade_total_amount"] = (collect($data)->where("id", 1)->first()->trade_total_amount) ?? 0;
+
+        $respons["b_trade_zone_name"] = (collect($data)->where("id", 2)->first()->trade_zone_name) ?? 0;
+        $respons["b_trade_total_hh"] = (collect($data)->where("id", 2)->first()->trade_consumer_count) ?? 0;
+        $respons["b_trade_total_amount"] = (collect($data)->where("id", 2)->first()->trade_total_amount) ?? 0;
+
+        $respons["c_trade_zone_name"] = (collect($data)->where("id", 3)->first()->trade_zone_name) ?? 0;
+        $respons["c_trade_total_hh"] = (collect($data)->where("id", 3)->first()->trade_consumer_count) ?? 0;
+        $respons["c_trade_total_amount"] = (collect($data)->where("id", 3)->first()->trade_total_amount) ?? 0;
+
+        $respons["d_trade_zone_name"] = (collect($data)->where("id", 4)->first()->trade_zone_name) ?? 0;
+        $respons["d_trade_total_hh"] = (collect($data)->where("id", 4)->first()->trade_consumer_count) ?? 0;
+        $respons["d_trade_total_amount"] = (collect($data)->where("id", 4)->first()->trade_total_amount) ?? 0;
         return (object)$respons;
+
     }
 
+    
     public function propertydetails()
     {
         # total trade licences
@@ -3055,43 +3231,25 @@ class ReportController extends Controller
         #license_underprocess
         $sql_property_zonal = "
                                     
-                                    select zone_masters.id,
-                                    case when zone_masters.id =1 then 'A-East Zone'
-                                        when zone_masters.id = 2 then 'B-West Zone'
-                                        when zone_masters.id = 3 then 'C-North Zone'
-                                        when zone_masters.id = 4 then 'D-South Zone'
-                                        else 'NA' end as prop_zone_name, 
-                                    count(distinct(prop_properties.id)) as prop_total_hh, sum(amount) as prop_total_amount
-                                    from zone_masters
-                                    join prop_properties on  prop_properties.zone_mstr_id =zone_masters.id 
-                                    join (
-                                        select property_id,sum(amount) as amount
-                                        from prop_transactions
-                                        JOIN (
-                                                                            
-                                                SELECT DISTINCT wf_roleusermaps.user_id as role_user_id
-                                                FROM wf_roles
-                                                JOIN wf_roleusermaps ON wf_roleusermaps.wf_role_id = wf_roles.id 
-                                                    AND wf_roleusermaps.is_suspended = FALSE
-                                                JOIN wf_workflowrolemaps ON wf_workflowrolemaps.wf_role_id = wf_roleusermaps.wf_role_id
-                                                    AND wf_workflowrolemaps.is_suspended = FALSE
-                                                JOIN wf_workflows ON wf_workflows.id = wf_workflowrolemaps.workflow_id AND wf_workflows.is_suspended = FALSE 
-                                                JOIN ulb_masters ON ulb_masters.id = wf_workflows.ulb_id
-                                                WHERE wf_roles.is_suspended = FALSE 
-                                                    AND wf_workflows.ulb_id = 2
-                                                    AND wf_roles.id not in (8,108)
-                                                    --AND wf_workflows.id in (3,4,5)
-                                                GROUP BY wf_roleusermaps.user_id
-                                                ORDER BY wf_roleusermaps.user_id
-                                         ) collecter on prop_transactions.user_id  = collecter.role_user_id
-                                        where status in (1,2)
-                                        and UPPER (payment_mode) != 'ONLINE'
-                                        and tran_date between '2023-04-01' and '2024-03-31'
-                                        and property_id is not null
-                                        group by property_id
-                                    ) transactions on transactions.property_id = prop_properties.id
-                                    group by zone_masters.id 
-                                    order by zone_masters.id 
+                SELECT 
+                    zone_masters.id AS id,
+                    CASE 
+                        WHEN zone_masters.id = 1 THEN 'East Zone'
+                        WHEN zone_masters.id = 2 THEN 'West Zone'
+                        WHEN zone_masters.id = 3 THEN 'North Zone'
+                        WHEN zone_masters.id = 4 THEN 'South Zone'
+                        ELSE 'NA' 
+                    END AS prop_zone_name, 
+                    COUNT(DISTINCT prop_transactions.property_id) AS prop_total_hh,
+                    SUM(prop_transactions.amount) AS prop_total_amount
+                FROM 
+                    zone_masters
+                left join prop_properties on prop_properties.zone_mstr_id = zone_masters.id
+                left JOIN prop_transactions on prop_transactions.property_id = prop_properties.id
+                and prop_transactions.status IN (1, 2) 
+                    AND prop_transactions.tran_date between '2023-04-01' and '2024-03-31' 
+                GROUP BY 
+                    zone_masters.id 
         ";
         # total demands
         $sql_property_demand = "
@@ -3181,6 +3339,7 @@ class ReportController extends Controller
         $respons["null_prop_data"] = $data->null_prop_data ?? 0;
         $data = collect(DB::connection("pgsql")->select($sql_prop_null_floor_data))->first();
         $respons["null_floor_data"] = $data->null_floor_data ?? 0;
+        // dd($respons);
         return (object)$respons;
     }
 
@@ -3215,6 +3374,7 @@ class ReportController extends Controller
         ";
         #water_demand
         $sql_water_demand = "
+
                         with demand as (
                             select ulb_id,sum(case when demand_from >='2023-04-01' and demand_upto <='2024-03-31' then amount else 0 end) as current_demand,
                             sum(case when demand_upto <'2023-04-01'then amount else 0 end) as arrear_demand,
@@ -3278,6 +3438,29 @@ class ReportController extends Controller
                         left join prev_collection on prev_collection.ulb_id = demand.ulb_id
                         group by demand.ulb_id";
 
+        $sql_water_zonal = "
+                        SELECT 
+                            zone_masters.id AS id,
+                            CASE 
+                                WHEN zone_masters.id = 1 THEN 'East Zone'
+                                WHEN zone_masters.id = 2 THEN 'West Zone'
+                                WHEN zone_masters.id = 3 THEN 'North Zone'
+                                WHEN zone_masters.id = 4 THEN 'South Zone'
+                                ELSE 'NA' 
+                            END AS water_zone_name, 
+                            COUNT(DISTINCT water_trans.related_id) AS water_total_customer, 
+                            SUM(water_trans.amount) AS water_total_amount
+                        FROM 
+                            zone_masters
+                        left JOIN 
+                            water_second_consumers ON water_second_consumers.zone_mstr_id = zone_masters.id 
+                        left join water_trans on water_trans.related_id = water_second_consumers.id
+                        and water_trans.status in (1,2)
+                        AND water_trans.tran_type = 'Demand Collection' and water_trans.tran_date  between '2023-04-01' and '2024-03-31' 
+                        GROUP BY 
+                            zone_masters.id 
+                        ";
+    
         $respons = [];
         $data = collect(DB::connection("pgsql_water")->select($sql_water_application_underprocess))->first();
         $respons["water_connection_underprocess"] = $data->water_connection_underprocess ?? 0;
@@ -3297,10 +3480,84 @@ class ReportController extends Controller
         $respons["water_current_outstanding"] = $data->water_current_outstanding ?? 0;
         $respons["water_arrear_outstanding"] = $data->water_arrear_outstanding ?? 0;
 
+        $data = collect(DB::connection("pgsql_water")->select($sql_water_zonal));
+        $respons["a_water_zone_name"] = (collect($data)->where("id", 1)->first()->water_zone_name) ?? 0;
+        $respons["a_water_total_hh"] = (collect($data)->where("id", 1)->first()->water_total_customer) ?? 0;
+        $respons["a_water_total_amount"] = (collect($data)->where("id", 1)->first()->water_total_amount) ?? 0;
+
+        $respons["b_water_zone_name"] = (collect($data)->where("id", 2)->first()->water_zone_name) ?? 0;
+        $respons["b_water_total_hh"] = (collect($data)->where("id", 2)->first()->water_total_customer) ?? 0;
+        $respons["b_water_total_amount"] = (collect($data)->where("id", 2)->first()->water_total_amount) ?? 0;
+
+        $respons["c_water_zone_name"] = (collect($data)->where("id", 3)->first()->water_zone_name) ?? 0;
+        $respons["c_water_total_hh"] = (collect($data)->where("id", 3)->first()->water_total_customer) ?? 0;
+        $respons["c_water_total_amount"] = (collect($data)->where("id", 3)->first()->water_total_amount) ?? 0;
+
+        $respons["d_water_zone_name"] = (collect($data)->where("id", 4)->first()->water_zone_name) ?? 0;
+        $respons["d_water_total_hh"] = (collect($data)->where("id", 4)->first()->water_total_customer) ?? 0;
+        $respons["d_water_total_amount"] = (collect($data)->where("id", 4)->first()->water_total_amount) ?? 0;
+
         return (object)$respons;
     }
 
-    public function mplReportCollectionnew(Request $request)
+    public function marketdetails()
+    {
+        
+        $sql_market_zonal = "
+                    select m_circle.id AS id,
+                        CASE 
+                            WHEN m_circle.id = 1 THEN 'East Zone'
+                            WHEN m_circle.id = 2 THEN 'West Zone'
+                            WHEN m_circle.id = 3 THEN 'North Zone'
+                            WHEN m_circle.id = 4 THEN 'South Zone'
+                            ELSE 'NA' 
+                        END AS market_zone_name, 
+                        COUNT(DISTINCT mar_shops.shop_id) AS market_shop_count,
+                        COALESCE(SUM(mar_shops.amount),0) AS market_total_amount
+                    FROM m_circle    
+                    left join (
+                            select case when mar_shops.circle_id is null then 1 else mar_shops.circle_id end as circle_id,
+                                    --mar_shops.circle_id, 
+                                mar_shops.id,
+                                mar_shop_payments.shop_id,mar_shop_payments.amount
+                            from mar_shops
+                            JOIN mar_shop_payments on mar_shop_payments.shop_id = mar_shops.id
+                                where mar_shop_payments.shop_id = mar_shops.id
+                                and mar_shop_payments.is_active = '1'
+                                    AND mar_shop_payments.payment_date between '2023-04-01' and '2024-03-31'
+                                    --and mar_shops.circle_id is null
+                            ) mar_shops
+                            on mar_shops.circle_id = m_circle.id
+                    GROUP BY 
+                        m_circle.id 
+                ";
+                
+
+    
+        $respons = [];
+        
+
+        $data = collect(DB::connection("pgsql_advertisements")->select($sql_market_zonal));
+        $respons["a_market_zone_name"] = (collect($data)->where("id", 1)->first()->market_zone_name) ?? 0;
+        $respons["a_market_total_hh"] = (collect($data)->where("id", 1)->first()->market_shop_count) ?? 0;
+        $respons["a_market_total_amount"] = (collect($data)->where("id", 1)->first()->market_total_amount) ?? 0;
+
+        $respons["b_market_zone_name"] = (collect($data)->where("id", 2)->first()->market_zone_name) ?? 0;
+        $respons["b_market_total_hh"] = (collect($data)->where("id", 2)->first()->market_shop_count) ?? 0;
+        $respons["b_market_total_amount"] = (collect($data)->where("id", 2)->first()->market_total_amount) ?? 0;
+
+        $respons["c_market_zone_name"] = (collect($data)->where("id", 3)->first()->market_zone_name) ?? 0;
+        $respons["c_market_total_hh"] = (collect($data)->where("id", 3)->first()->market_shop_count) ?? 0;
+        $respons["c_market_total_amount"] = (collect($data)->where("id", 3)->first()->market_total_amount) ?? 0;
+
+        $respons["d_market_zone_name"] = (collect($data)->where("id", 4)->first()->market_zone_name) ?? 0;
+        $respons["d_market_total_hh"] = (collect($data)->where("id", 4)->first()->market_shop_count) ?? 0;
+        $respons["d_market_total_amount"] = (collect($data)->where("id", 4)->first()->market_total_amount) ?? 0;
+
+        return (object)$respons;
+    }
+
+    public function mplReportCollectionnew1(Request $request)
     {
         try {
             $request->merge(["metaData" => ["pr111.1", 1.1, null, $request->getMethod(), null]]);
@@ -3366,6 +3623,484 @@ class ReportController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
+
+    /**
+     * | written by Prity Pandey 
+     * / code for akola livedashboard today collection
+     */
+    public function mplReportCollectionnew(Request $request)
+    {
+        try {
+            $request->merge(["metaData" => ["pr111.1", 1.1, null, $request->getMethod(), null]]);
+            $ulbId = $request->ulbId ?? 2;
+            $currentDate = Carbon::now()->format("Y-m-d");
+            $currentfyear = getFY();
+            $fromDate = explode("-",$currentfyear)[0]."-04-01";
+            $uptoDate = explode("-",$currentfyear)[1]."-03-31";
+            $propTransactionQuery = DB::select(DB::raw("
+                            SELECT  
+                                assessment_types.assessment_type, 
+                                COALESCE(SUM(t.total_hh), 0) AS total_hh,
+                                COALESCE(SUM(t.total_amount), 0) AS total_amount,  
+                                COALESCE(SUM(t.total_tran), 0) AS total_tran
+                            FROM
+                                (SELECT DISTINCT assessment_type FROM prop_safs) AS assessment_types  
+                            LEFT JOIN 
+                                (
+                                    SELECT 
+                                        DISTINCT(assessment_type) AS assessment_type,
+                                        COUNT(DISTINCT(prop_transactions.saf_id)) AS total_hh,
+                                        SUM(prop_transactions.amount) AS total_amount,
+                                        COUNT(prop_transactions.id) AS total_tran
+                                    FROM prop_safs
+                                    JOIN prop_transactions ON prop_transactions.saf_id = prop_safs.id
+                                    WHERE prop_transactions.status IN (1, 2) 
+                                    AND DATE(prop_transactions.tran_date) = ?
+                                    GROUP BY assessment_type
+                                ) AS t
+                                ON t.assessment_type = assessment_types.assessment_type
+                            GROUP BY 
+                                assessment_types.assessment_type
+                        "), [$currentDate]);
+
+                        $propTax = DB::select(DB::raw("
+                                    SELECT  
+                                        count(prop_transactions.id) as total_tran,
+                                        count(distinct prop_transactions.property_id) as total_hh,
+                                        COALESCE(sum(prop_transactions.amount),0)as total_tran_amount,
+                                        COALESCE(sum(advance_amount),0)as advance_amount,
+                                        COALESCE(sum(adjust_amount),0)as adjust_amount,
+                                        (COALESCE(sum(dtls.arrear_collection),0) + COALESCE(sum(penalty_rebate.penalty),0) - COALESCE(sum(adjust_amount),0)) as arrear_collection,
+                                        (COALESCE(sum(dtls.arrear_hh),0) ) as arrear_hh,
+                                        (COALESCE(sum(dtls.current_hh),0) ) as current_hh,
+                                        (COALESCE(sum(dtls.current_collection),0) -  COALESCE(sum(penalty_rebate.rebate),0)+COALESCE(sum(advance_amount),0))as current_collection
+                                    FROM prop_transactions
+                                    LEFT JOIN (
+                                        SELECT 
+                                            prop_transactions.id,
+                                            count(distinct prop_transactions.property_id) as total_prop,
+                                            sum(CASE WHEN prop_demands.fyear < '$currentfyear' THEN prop_tran_dtls.paid_total_tax ELSE 0 END) as arrear_collection,
+                                            count(distinct CASE WHEN prop_demands.fyear < '$currentfyear' THEN prop_demands.property_id ELSE null END) as arrear_hh,
+                                            sum(CASE WHEN prop_demands.fyear = '$currentfyear' THEN prop_tran_dtls.paid_total_tax ELSE 0 END) as current_collection,
+                                            count(distinct CASE WHEN prop_demands.fyear = '$currentfyear' THEN prop_demands.property_id ELSE null END) as current_hh,
+                                            sum(prop_tran_dtls.paid_total_tax) as paid_total_tax 
+                                        FROM prop_transactions
+                                        JOIN prop_tran_dtls ON prop_tran_dtls.tran_id = prop_transactions.id
+                                        JOIN prop_demands ON prop_demands.id = prop_tran_dtls.prop_demand_id
+                                        WHERE prop_transactions.status IN (1,2) 
+                                            AND prop_transactions.tran_type = 'Property'
+                                            AND tran_date = ?
+                                        GROUP BY  prop_transactions.id			
+                                    ) dtls ON dtls.id = prop_transactions.id
+                                    LEFT JOIN (
+                                        SELECT 
+                                            tran_id,
+                                            sum(CASE WHEN is_rebate != true THEN prop_penaltyrebates.amount ELSE 0 END) as penalty,
+                                            sum(CASE WHEN is_rebate = true THEN prop_penaltyrebates.amount ELSE 0 END) as rebate
+                                        FROM prop_penaltyrebates
+                                        JOIN prop_transactions ON prop_transactions.id = prop_penaltyrebates.tran_id
+                                        WHERE prop_transactions.status IN (1,2) 
+                                            AND prop_transactions.tran_type =  'Property'
+                                            AND prop_transactions.tran_date = ?
+                                        GROUP BY prop_penaltyrebates.tran_id
+                                    ) penalty_rebate ON penalty_rebate.tran_id = prop_transactions.id
+                                    left join(
+                                        select tran_id, sum(prop_advances.amount)as advance_amount
+                                        from prop_advances
+                                        JOIN prop_transactions ON prop_transactions.id = prop_advances.tran_id
+                                        WHERE prop_transactions.status IN (1,2)
+                                            AND prop_transactions.tran_date = ?
+                                        GROUP BY prop_advances.tran_id
+                                    )prop_advances ON prop_advances.tran_id = prop_transactions.id
+                                    left join(
+                                        select tran_id, sum(prop_adjustments.amount)as adjust_amount
+                                        from prop_adjustments
+                                        JOIN prop_transactions ON prop_transactions.id = prop_adjustments.tran_id
+                                        WHERE prop_transactions.status IN (1,2)
+                                            AND prop_transactions.tran_date = ?
+                                        GROUP BY prop_adjustments.tran_id
+                                    )prop_adjustments ON prop_adjustments.tran_id = prop_transactions.id
+                                    WHERE prop_transactions.status IN (1,2)
+                                        AND tran_date = ?
+                                        "), [$currentDate, $currentDate, $currentDate,$currentDate,$currentDate]);
+                                            
+                                        
+                        $waterTransactionQuery = DB::connection("pgsql_water")->select(DB::raw("
+                        select *
+                        from (
+                            select count(water_trans.id) as total_tran,
+                            sum(fixed_demand_collection) as fixed_demand_collection,
+                            sum(fixed_hh) as fixed_hh,
+                            sum(meter_demand_collection) as meter_demand_collection,
+                            sum(meter_hh) as meter_hh
+                            from water_trans
+                            join (
+                                select water_trans.id as tran_id ,
+                                    sum(
+                                    case when upper(water_consumer_demands.connection_type) = upper('Fixed') or water_consumer_demands.connection_type is null 
+                                        then water_tran_details.paid_amount else 0 end 
+                                    )as fixed_demand_collection,
+                                count(distinct(
+                                    case when upper(water_consumer_demands.connection_type) = upper('Fixed') or water_consumer_demands.connection_type is null 
+                                        then water_consumer_demands.consumer_id else null end 
+                                    ))as fixed_hh,
+                                sum(
+                                    case when upper(water_consumer_demands.connection_type) = upper('Meter') 
+                                        then water_tran_details.paid_amount else 0 end 
+                                    )as meter_demand_collection,
+                                count(distinct(
+                                    case when upper(water_consumer_demands.connection_type) = upper('Meter') 
+                                        then water_consumer_demands.consumer_id else null end 
+                                    ))as meter_hh
+                                from water_tran_details	
+                                join water_trans on water_trans.id = water_tran_details.tran_id
+                                left join water_consumer_demands  on water_consumer_demands.id = water_tran_details.demand_id
+                                where water_trans.status in (1,2) 
+                                    and water_trans.tran_date = '$currentDate'
+                                    and water_tran_details.status = 1 
+                                    and water_trans.tran_type = 'Demand Collection'
+                                group by water_trans.id 
+                            )detls on detls.tran_id = water_trans.id
+                            where status in (1,2) 
+                                and tran_date = '$currentDate'
+                        )counsumers,
+                        (
+                            select count(water_trans.id) as total_app_tran,
+                            count(distinct(related_id)) as app_hh,
+                            COALESCE(sum(amount),0) as total_app_amount
+                            from water_trans	
+                            where status in (1,2) 
+                                AND water_trans.tran_type != 'Demand Collection'
+                        )application
+                        "));
+
+                        $tradeTransactionQuery = DB::connection("pgsql_trade")->select(DB::raw("
+                            SELECT  
+                                license_types.application_type,
+                                COALESCE(SUM(trade_count), 0) AS trade_count,
+                                COALESCE(SUM(total_amount), 0) AS total_amount
+                            FROM  
+                                (SELECT DISTINCT application_type FROM trade_param_application_types) AS license_types
+                            LEFT JOIN 
+                                (SELECT DISTINCT 
+                                    trade_param_application_types.application_type AS license_type,
+                                    COUNT(DISTINCT trade_transactions.id) AS trade_count,
+                                    SUM(trade_transactions.paid_amount) AS total_amount
+                                FROM 
+                                    trade_param_application_types
+                                JOIN trade_transactions ON trade_transactions.tran_type = trade_param_application_types.application_type
+                                WHERE 
+                                    trade_transactions.status IN (1, 2) 
+                                AND trade_transactions.tran_date = '$currentDate'
+                                GROUP BY 
+                                    license_type
+                                ) AS trans ON trans.license_type = license_types.application_type
+                            GROUP BY 
+                                license_types.application_type
+                        "));
+                        
+                        
+                        $marketTransactionQuery =  DB::connection("pgsql_advertisements")->select(DB::raw("
+                            SELECT --id,
+                                COUNT(mar_shop_payments.id) AS total_tran,
+                                COUNT(DISTINCT mar_shop_payments.shop_id) AS total_shop,
+                                COALESCE(SUM(mar_shop_payments.amount), 0) AS total_tran_amount,
+                                COALESCE(SUM(dtls.arrear_collection), 0) AS arrear_collection,
+                                COALESCE(SUM(dtls.arrear_count), 0) AS arrear_count,
+                                COALESCE(SUM(dtls.current_count), 0) AS current_count,
+                                COALESCE(SUM(dtls.current_collection), 0) AS current_collection
+                            FROM 
+                                mar_shop_payments
+                            JOIN 
+                                (
+                                SELECT 
+                                    --mar_shop_payments.id,
+                                    mar_shop_payments.id as tran_id,
+                                    COUNT(DISTINCT mar_shop_payments.shop_id) AS total_shop,
+                                    COALESCE(SUM(CASE WHEN mar_shop_demands.financial_year < '$currentfyear' THEN mar_shop_demands.amount ELSE 0 END),0) AS arrear_collection,
+                                    COUNT(DISTINCT CASE WHEN mar_shop_demands.financial_year < '$currentfyear' THEN mar_shop_payments.shop_id ELSE NULL END) AS arrear_count,
+                                    COALESCE(SUM(CASE WHEN mar_shop_demands.financial_year = '$currentfyear' THEN mar_shop_demands.amount ELSE 0 END),0) AS current_collection,
+                                    COUNT(DISTINCT CASE WHEN mar_shop_demands.financial_year = '$currentfyear' THEN mar_shop_payments.shop_id ELSE NULL END) AS current_count,
+                                    COALESCE(SUM(mar_shop_payments.amount),0) AS paid_total_amount 
+                                FROM 
+                                    mar_shop_payments
+                                JOIN 
+                                    mar_shop_demands ON mar_shop_demands.tran_id = mar_shop_payments.id
+                                WHERE mar_shop_payments.is_active = '1' 
+                                GROUP BY 
+                                    mar_shop_payments.id
+                                ) AS dtls ON dtls.tran_id = mar_shop_payments.id
+                                where mar_shop_payments.payment_date = '$currentDate'
+
+                        "));
+                       
+
+
+                        
+            $data = [
+                "propDetails" => $propTransactionQuery,
+              
+                "waterDetails" => $waterTransactionQuery,
+                "tradeDetails" => $tradeTransactionQuery,
+                "propTax" => $propTax,
+                "marketDeatails" => $marketTransactionQuery,
+                "date" =>$currentDate
+            ];
+         
+            return responseMsgs(true, "Mpl Report Today Coll", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
+
+    
+    /**
+     * | written by Prity Pandey 
+     * / code for akola livedashboard overall  collection
+     */
+
+    public function mplReportOverallCollection(Request $request)
+    {
+        try {
+            $request->merge(["metaData" => ["pr111.1", 1.1, null, $request->getMethod(), null]]);
+            $ulbId = $request->ulbId ?? 2;
+            $currentDate = Carbon::now()->format("Y-m-d");
+            $currentfyear = getFY();
+            $fromDate = explode("-",$currentfyear)[0]."-04-01";
+            $uptoDate = explode("-",$currentfyear)[1]."-03-31";
+
+            $propTransactionQuery = DB::select(DB::raw("
+                            SELECT  
+                                assessment_types.assessment_type, 
+                                COALESCE(SUM(t.total_hh), 0) AS total_hh,
+                                COALESCE(SUM(t.total_amount), 0) AS total_amount,  
+                                COALESCE(SUM(t.total_tran), 0) AS total_tran
+                            FROM
+                                (SELECT DISTINCT assessment_type FROM prop_safs) AS assessment_types  
+                            LEFT JOIN 
+                                (
+                                    SELECT 
+                                        DISTINCT(assessment_type) AS assessment_type,
+                                        COUNT(DISTINCT(prop_transactions.saf_id)) AS total_hh,
+                                        SUM(prop_transactions.amount) AS total_amount,
+                                        COUNT(prop_transactions.id) AS total_tran
+                                    FROM prop_safs
+                                    JOIN prop_transactions ON prop_transactions.saf_id = prop_safs.id
+                                    WHERE prop_transactions.status IN (1, 2) 
+                                    and prop_transactions.tran_date between '$fromDate' and '$uptoDate'
+                                    GROUP BY assessment_type
+                                ) AS t
+                                ON t.assessment_type = assessment_types.assessment_type
+                            GROUP BY 
+                                assessment_types.assessment_type
+                        "));
+
+                        $propTax = DB::select(DB::raw("
+                                SELECT  
+                                    count(prop_transactions.id) as total_tran,
+                                    count(distinct prop_transactions.property_id) as total_hh,
+                                    COALESCE(sum(prop_transactions.amount),0)as total_tran_amount,
+                                    COALESCE(sum(prop_advances.advance_amount),0)as advance_amount,
+                                    COALESCE(sum(prop_adjustments.adjust_amount),0)as adjust_amount,
+                                    sum(penalty_rebate.penalty) as penalty,
+                                    sum(penalty_rebate.rebate) as rebate,
+                                    (COALESCE(sum(dtls.arrear_collection),0) 
+                                     + COALESCE(sum(penalty_rebate.penalty),0) 
+                                    - COALESCE(sum(adjust_amount),0) ) as arrear_collection,
+                                    (COALESCE(sum(dtls.arrear_hh),0) ) as arrear_hh,
+                                    (COALESCE(sum(dtls.current_hh),0) ) as current_hh,
+                                    ((COALESCE(sum(dtls.current_collection),0)+COALESCE(sum(prop_advances.advance_amount),0)) -  COALESCE(sum(penalty_rebate.rebate),0))as current_collection
+                                FROM prop_transactions
+                                LEFT JOIN (
+                                    SELECT 
+                                        prop_transactions.id,
+                                        count(distinct prop_transactions.property_id) as total_prop,
+                                        sum(CASE WHEN prop_demands.fyear < '$currentfyear' THEN prop_tran_dtls.paid_total_tax ELSE 0 END) as arrear_collection,
+                                        count(distinct CASE WHEN prop_demands.fyear < '$currentfyear' THEN prop_demands.property_id ELSE null END) as arrear_hh,
+                                        sum(CASE WHEN prop_demands.fyear = '$currentfyear' THEN prop_tran_dtls.paid_total_tax ELSE 0 END) as current_collection,
+                                        count(distinct CASE WHEN prop_demands.fyear = '$currentfyear' THEN prop_demands.property_id ELSE null END) as current_hh,
+                                        sum(prop_tran_dtls.paid_total_tax) as paid_total_tax 
+                                    FROM prop_transactions
+                                    JOIN prop_tran_dtls ON prop_tran_dtls.tran_id = prop_transactions.id
+                                    JOIN prop_demands ON prop_demands.id = prop_tran_dtls.prop_demand_id
+                                    WHERE prop_transactions.status IN (1,2) 
+                                        AND prop_transactions.tran_type = 'Property'
+                                        and prop_transactions.tran_date  between '$fromDate' and '$uptoDate'
+                                      
+                
+                                    GROUP BY  prop_transactions.id			
+                                ) dtls ON dtls.id = prop_transactions.id
+                                LEFT JOIN (
+                                    SELECT 
+                                        tran_id,
+                                        sum(CASE WHEN is_rebate != true THEN prop_penaltyrebates.amount ELSE 0 END) as penalty,
+                                        sum(CASE WHEN is_rebate = true THEN prop_penaltyrebates.amount ELSE 0 END) as rebate
+                                    FROM prop_penaltyrebates
+                                    JOIN prop_transactions ON prop_transactions.id = prop_penaltyrebates.tran_id
+                                    WHERE prop_transactions.status IN (1,2) 
+                                        AND prop_transactions.tran_type =  'Property'
+                                        and prop_transactions.tran_date between '$fromDate' and '$uptoDate'
+                                        
+                
+                                    GROUP BY prop_penaltyrebates.tran_id
+                                ) penalty_rebate ON penalty_rebate.tran_id = prop_transactions.id
+                                left join(
+                                    select tran_id, sum(prop_advances.amount)as advance_amount
+                                    from prop_advances
+                                    JOIN prop_transactions ON prop_transactions.id = prop_advances.tran_id
+                                    WHERE prop_transactions.status IN (1,2)
+                                        and prop_transactions.tran_date between '$fromDate' and '$uptoDate'
+                                     
+                
+                                    GROUP BY prop_advances.tran_id
+                                )prop_advances ON prop_advances.tran_id = prop_transactions.id
+                                left join(
+                                    select tran_id, sum(prop_adjustments.amount)as adjust_amount
+                                    from prop_adjustments
+                                    JOIN prop_transactions ON prop_transactions.id = prop_adjustments.tran_id
+                                    WHERE prop_transactions.status IN (1,2)
+                                        and prop_transactions.tran_date  between '$fromDate' and '$uptoDate'
+                                        
+                
+                                    GROUP BY prop_adjustments.tran_id
+                                )prop_adjustments ON prop_adjustments.tran_id = prop_transactions.id
+                                WHERE prop_transactions.status IN (1,2)
+                                    and prop_transactions.tran_date  between '$fromDate' and '$uptoDate'
+                                  
+                
+                        "));
+                            
+                                        
+                        $waterTransactionQuery = DB::connection("pgsql_water")->select(DB::raw("
+                                select *
+                                from(
+                                    select count(water_trans.id) as total_tran,
+                                    sum(fixed_demand_collection) as fixed_demand_collection,
+                                    sum(fixed_hh) as fixed_hh,
+                                    sum(meter_demand_collection) as meter_demand_collection,
+                                    sum(meter_hh) as meter_hh
+                                from water_trans
+                                join (
+                                    select water_trans.id as tran_id ,
+                                        sum(
+                                        case when upper(water_consumer_demands.connection_type) = upper('Fixed') or water_consumer_demands.connection_type is null 
+                                            then water_tran_details.paid_amount else 0 end 
+                                        )as fixed_demand_collection,
+                                    count(distinct(
+                                        case when upper(water_consumer_demands.connection_type) = upper('Fixed') or water_consumer_demands.connection_type is null 
+                                            then water_consumer_demands.consumer_id else null end 
+                                        ))as fixed_hh,
+                                    sum(
+                                        case when upper(water_consumer_demands.connection_type) = upper('Meter') 
+                                            then water_tran_details.paid_amount else 0 end 
+                                        )as meter_demand_collection,
+                                    count(distinct(
+                                        case when upper(water_consumer_demands.connection_type) = upper('Meter') 
+                                            then water_consumer_demands.consumer_id else null end 
+                                        ))as meter_hh
+                                    from water_tran_details	
+                                    join water_trans on water_trans.id = water_tran_details.tran_id
+                                    left join water_consumer_demands  on water_consumer_demands.id = water_tran_details.demand_id
+                                    where water_trans.status in (1,2) and water_trans.tran_date   between '$fromDate' and '$uptoDate'
+                                    
+                                        and water_tran_details.status =1 and water_trans.tran_type = 'Demand Collection'
+                                    group by water_trans.id 
+                                )detls on detls.tran_id = water_trans.id
+                                where status in (1,2) and water_trans.tran_date  between '$fromDate' and '$uptoDate'
+                               
+                                )counsumers,
+                                (
+                                    select count(water_trans.id) as total_app_tran,
+                                    count(distinct(related_id)) as app_hh,
+                                    COALESCE(sum(amount),0) as total_app_amount
+                                    from water_trans	
+                                    where status in (1,2) and water_trans.tran_date   between '$fromDate' and '$uptoDate'
+                                    
+                                        AND water_trans.tran_type != 'Demand Collection'
+                                )application
+                        "));
+
+                        $tradeTransactionQuery = DB::connection("pgsql_trade")->select(DB::raw("
+                            
+                                SELECT  
+                                    license_types.application_type,
+                                    COALESCE(SUM(trade_count), 0) AS trade_count,
+                                    COALESCE(SUM(total_amount), 0) AS total_amount
+                                FROM  
+                                    (SELECT DISTINCT application_type FROM trade_param_application_types) AS license_types
+                                LEFT JOIN 
+                                    (SELECT DISTINCT 
+                                        trade_param_application_types.application_type AS license_type,
+                                        COUNT(DISTINCT trade_transactions.id) AS trade_count,
+                                        SUM(trade_transactions.paid_amount) AS total_amount
+                                    FROM 
+                                        trade_param_application_types
+                                    JOIN trade_transactions ON trade_transactions.tran_type = trade_param_application_types.application_type
+                                    WHERE 
+                                        trade_transactions.status IN (1, 2) 
+                                    AND trade_transactions.tran_date  between '$fromDate' and '$uptoDate'
+                                 
+                                    GROUP BY 
+                                        license_type
+                                    ) AS trans ON trans.license_type = license_types.application_type
+                                GROUP BY 
+                                    license_types.application_type
+                        "));
+                        
+                        
+                        $marketTransactionQuery =  DB::connection("pgsql_advertisements")->select(DB::raw("
+                            SELECT 
+                                COUNT(mar_shop_payments.id) AS total_tran,
+                                COUNT(DISTINCT mar_shop_payments.shop_id) AS total_shop,
+                                COALESCE(SUM(mar_shop_payments.amount), 0) AS total_tran_amount,
+                                COALESCE(SUM(dtls.arrear_collection), 0) AS arrear_collection,
+                                COALESCE(SUM(dtls.arrear_count), 0) AS arrear_count,
+                                COALESCE(SUM(dtls.current_count), 0) AS current_count,
+                                COALESCE(SUM(dtls.current_collection), 0) AS current_collection
+                            FROM 
+                                mar_shop_payments
+                            JOIN 
+                                (
+                                SELECT 
+                                    mar_shop_payments.id as tran_id,
+                                    COUNT(DISTINCT mar_shop_payments.shop_id) AS total_shop,
+                                    COALESCE(SUM(CASE WHEN mar_shop_demands.financial_year < '$currentfyear' THEN mar_shop_demands.amount ELSE 0 END),0) AS arrear_collection,
+                                    COUNT(DISTINCT CASE WHEN mar_shop_demands.financial_year < '$currentfyear' THEN mar_shop_payments.shop_id ELSE NULL END) AS arrear_count,
+                                    COALESCE(SUM(CASE WHEN mar_shop_demands.financial_year = '$currentfyear' THEN mar_shop_demands.amount ELSE 0 END),0) AS current_collection,
+                                    COUNT(DISTINCT CASE WHEN mar_shop_demands.financial_year = '$currentfyear' THEN mar_shop_payments.shop_id ELSE NULL END) AS current_count,
+                                    COALESCE(SUM(mar_shop_payments.amount),0) AS paid_total_amount 
+                                FROM 
+                                    mar_shop_payments
+                                JOIN 
+                                    mar_shop_demands ON mar_shop_demands.tran_id = mar_shop_payments.id
+                                WHERE mar_shop_payments.is_active = '1' 
+                                GROUP BY 
+                                    mar_shop_payments.id
+                                ) AS dtls ON dtls.tran_id = mar_shop_payments.id
+                                where mar_shop_payments.payment_date  between '$fromDate' and '$uptoDate'
+                               
+
+                        "));
+                       
+
+
+                        
+            $data = [
+                "propDetails" => $propTransactionQuery,
+              
+                "waterDetails" => $waterTransactionQuery,
+                "tradeDetails" => $tradeTransactionQuery,
+                "propTax" => $propTax,
+                "marketDeatails" => $marketTransactionQuery,
+                "date" =>$currentDate
+            ];
+         
+            return responseMsgs(true, "Mpl Report Today Coll", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (\Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
+
 
     /**
      * | End of Prity Pandey Code
