@@ -339,6 +339,14 @@ class SafDocController extends Controller
                 }
                 return $val;
             });
+            #======getjahinama Doc=======#
+            $ActiveSafController = App::makeWith(ActiveSafController::class,["iSafRepository"=>iSafRepository::class]);
+            $jahirnamaDoc = $ActiveSafController->getJahirnamaDoc($req);
+            if($jahirnamaDoc->original["status"])
+            {
+                $jahirnamaDoc = collect($jahirnamaDoc->original["data"])->first();
+                $documents->push($jahirnamaDoc );
+            }
 
             return responseMsgs(true, ["docVerifyStatus" => $safDetails->doc_verify_status], remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {

@@ -87,6 +87,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use App\MicroServices\IdGenerator\HoldingNoGenerator;
 use App\Models\Property\Logs\PropSmsLog;
+use App\Models\Property\PropSafJahirnamaDoc;
 use App\Models\Property\RefPropCategory;
 use App\Models\Property\SecondaryDocVerification;
 use App\Models\Workflows\WfMaster;
@@ -4916,7 +4917,9 @@ class ActiveSafController extends Controller
             ]);
         }
         try{
-            $request->merge(['id'=>$request->applicationId]);
+            $jahirnamaDoc = new PropSafJahirnamaDoc();           
+            $request->merge(['id'=>$request->applicationId,"safId"=>$request->applicationId]);
+            
             $user = Auth()->user();
             $safData = $this->getStaticSafDetails($request);
             $filename = $request->applicationId."-jahirnama".'.' . 'pdf';
@@ -4937,6 +4940,173 @@ class ActiveSafController extends Controller
             $docUpload = move_uploaded_file("../storage/Uploads/Property/Saf/Jhirnama","../public/Uploads/Property/Saf/Jhirnama");
             dd($docUpload);
             
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    public function getJahirnamaDocList(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "applicationId" => "required|digits_between:1,9223372036854775807",
+            ]
+        );
+        if ($validated->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validated->errors()
+            ]);
+        }
+        try{
+            $jahirnamaDoc = new PropSafJahirnamaDoc(); 
+            $activeSaf = PropActiveSaf::find($request->applicationId);
+            if(!$activeSaf)
+            {
+                throw new Exception("data not found");
+            }
+            
+            $jahirnama = $jahirnamaDoc->getjahirnamaDoc($request->applicationId);
+            
+            $data = [
+                "listDocs"=> [
+                    [
+                        "docType"=>"R",
+                        "docName"=>"Jahirnama",
+                        "uploadedDoc"=>$jahirnama,
+                        "masters"=>[
+                            "documentCode"=>"Jahirnama",
+                            "docVal"    =>"Jahirnama",
+                            "uploadedDoc"=>$jahirnama->doc_path??"",
+                            "uploadedDocId"=>$jahirnama->id??"",
+                            "verifyStatus"=>$jahirnama->verify_status??"",
+                            "remarks"   =>$jahirnama->remarks??"",
+                        ]
+
+                    ]
+                ],
+            ]; 
+            return responseMsgs(true,"Jahirnama Doc list",$data);
+
+        }
+        catch(Exception $e)
+        {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    public function uploadJahirnama(Request $request)
+    {
+        $extention = ($request->document) instanceof UploadedFile ? $request->document->getClientOriginalExtension() : "";
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "applicationId" => "required|digits_between:1,9223372036854775807",
+                "document" => "required|mimes:pdf,jpeg,png,jpg|" . (strtolower($extention) == 'pdf' ? 'max:10240' : 'max:5120'),
+            ]
+        );
+        if ($validated->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validated->errors()
+            ]);
+        }
+        try{
+            $request->merge(['id'=>$request->applicationId,"safId"=>$request->applicationId]);
+            $wfContent = Config::get('workflow-constants');
+            $alowWorckflows = [
+                $wfContent["SAF_MUTATION_ID"],
+                $wfContent["SAF_BIFURCATION_ID"],
+            ];
+
+            $jahirnamaDoc = new PropSafJahirnamaDoc(); 
+            $docUpload = new DocUpload;            
+            $user = Auth()->user();
+            $document = $request->document;
+
+            $filename = $request->applicationId."-jahirnama";
+            $relativePath = Config::get("PropertyConstaint.SAF_JARINAMA_RELATIVE_PATH");
+            $mutationOwrkfowId = Config::get("PropertyConstaint.SAF_JARINAMA_RELATIVE_PATH");
+
+            $safData = $this->getStaticSafDetails($request); 
+            $activeSaf = PropActiveSaf::find($request->applicationId);  
+            if(!$safData->original["status"])
+            {
+                throw new Exception($safData->original["message"]);
+            }
+            if(!$activeSaf)
+            {
+                throw new Exception("data not found");
+            }
+            if(!in_array($activeSaf->workflow_id ,$alowWorckflows))
+            {
+                throw new Exception("can not allow generate jahirnama for this type of property");
+            }
+            $oldjahirnamaDoc = $jahirnamaDoc->getJahirnamaBysafIdOrm($activeSaf->id)->first();
+            if($activeSaf->is_jahirnama_genrated && $oldjahirnamaDoc)
+            {
+                throw new Exception("jahirnama already genrated on ".Carbon::parse($oldjahirnamaDoc->generation_date)->format("d-m-Y"));
+            }
+            $safData = $safData->original["data"];
+            $imageName = $docUpload->upload($filename, $document, $relativePath);
+            $request->merge([
+                "docName"       => $imageName,
+                "relativePath"  => $relativePath,
+                "userId"        => $user->id??null,       
+            ]);
+
+
+            DB::beginTransaction();
+            $id = $jahirnamaDoc->store($request);
+            $activeSaf->is_jahirnama_genrated = true;
+            $activeSaf->save();
+            DB::commit();
+            $jahirnamaDocList = $this->getJahirnamaDoc($request);
+            $data = $jahirnamaDocList->original["data"];
+            return responseMsg(true,"jahirnama genrated",$data);
+            
+        }
+        catch(Exception $e)
+        {
+            DB::rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    public function getJahirnamaDoc(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "applicationId" => "required|digits_between:1,9223372036854775807",
+            ]
+        );
+        if ($validated->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validated->errors()
+            ]);
+        }
+        try{
+            $jahirnamaDoc = new PropSafJahirnamaDoc(); 
+            $jahirnama = $jahirnamaDoc->getjahirnamaDoc($request->applicationId);
+            if(!$jahirnama)
+            {
+                throw new Exception("jahirnama not genrated");
+            }
+            $jahirnama->doc_category = $jahirnama->doc_code;
+            $jahirnama->verify_status = $jahirnama->status;
+            $jahirnama->remarks       ="";
+            $listDocs = collect();
+            $listDocs->push($jahirnama->toArray());
+            return responseMsg(true, "jahirnama doc", $listDocs);
+
         }
         catch(Exception $e)
         {

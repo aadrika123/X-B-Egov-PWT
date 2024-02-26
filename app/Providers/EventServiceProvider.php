@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropPropertyUpdateRequest;
+use App\Models\Property\PropSafJahirnamaDoc;
+use App\Observers\Property\JahirnamaObserver;
 use App\Observers\Property\PropActiveSafObserver;
 use App\Observers\PropUpdateRequestObserver;
 use Illuminate\Auth\Events\Registered;
@@ -33,5 +35,6 @@ class EventServiceProvider extends ServiceProvider
     {
         PropActiveSaf::observe(PropActiveSafObserver::class);
         PropPropertyUpdateRequest::observe(PropUpdateRequestObserver::class);
+        PropSafJahirnamaDoc::observe(JahirnamaObserver::class);
     }
 }

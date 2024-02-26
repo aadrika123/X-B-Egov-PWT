@@ -433,6 +433,8 @@ return [
     "WAIVER_RELATIVE_PATH"     => "Uploads/Property/Waiver",
     "CUSTOM_RELATIVE_PATH"     => "Uploads/Custom",
     "PROP_UPDATE_RELATIVE_PATH" => "Uploads/Property/UpdateRequest",
+    "SAF_JARINAMA_RELATIVE_PATH" => "Uploads/Property/Saf/Jhirnama",
+    "SAF_JARINAMA_HOLD_DAYS"     => "15",
 
     // Rebates
     "REBATES" => [
@@ -478,6 +480,7 @@ return [
     "DEACTIV_PARAM_ID"  => 24,
     "CASH_VERIFICATION_PARAM_ID"  => 33,
     "WAIVER_PARAM_ID"  => 40,
+    "JAHIRNAMA_ID"  => 51,
 
 
     /**
