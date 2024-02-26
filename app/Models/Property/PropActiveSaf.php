@@ -814,7 +814,7 @@ class  PropActiveSaf extends Model
             // 'role_name as currentRole',
             DB::raw(
                 "case when prop_active_safs.parked = true then CONCAT('BTC BY ',role_name)
-                    else role_name end
+                    else CONCAT('At ',role_name) end
                 as currentRole
                 "
             ),
