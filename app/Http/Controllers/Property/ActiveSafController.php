@@ -3434,7 +3434,7 @@ class ActiveSafController extends Controller
             $extention = ($req->document) instanceof UploadedFile ? $req->document->getClientOriginalExtension() : "";
             $rules = [
                 "applicationId" => "required|numeric",
-                "document" => "required|mimes:pdf,jpeg,png,jpg" . (strtolower($extention) == 'pdf' ? 'max:10240' : 'max:1024'),
+                "document" => "required|mimes:pdf,jpeg,png,jpg|" . (strtolower($extention) == 'pdf' ? 'max:10240' : 'max:5120'),
 
             ];
             $validated = Validator::make(
@@ -3450,11 +3450,16 @@ class ActiveSafController extends Controller
             }
             $req->merge([
                 "directionType" => "naksha",
+                "docCategory" => "naksha",
+                "docCode" => "naksha",
                 "safId" => $req->applicationId,
                 "imagePath" => $req->document,
             ]);
-
+            $relativePath = Config::get('PropertyConstaint.SAF_RELATIVE_PATH');
+            $propModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs = array();
             $docUpload = new DocUpload;
+            $mWfActiveDocument = new WfActiveDocument();
             $geoTagging = new PropSafGeotagUpload();
             $relativePath = Config::get('PropertyConstaint.GEOTAGGING_RELATIVE_PATH');
             $safDtls = PropActiveSaf::find($req->safId);
@@ -3491,13 +3496,29 @@ class ActiveSafController extends Controller
                 'relative_path' => $relativePath,
                 'user_id' => $userId
             ];
+            $metaReqs['module_id'] = $propModuleId;
+            $metaReqs['active_id'] = $safDtls->id;
+            $metaReqs['workflow_id'] = $safDtls->workflow_id;
+            $metaReqs['ulb_id'] = $safDtls->ulb_id;
+            $metaReqs['relative_path'] = $relativePath;
+            $metaReqs['document'] = $imageName;
+            $metaReqs['doc_code'] = $req->docCode;
+            $metaReqs['doc_category'] = $req->docCategory;
+            $metaReqs['verify_status'] = 1;
+
+            $documents = $mWfActiveDocument->isDocCategoryExists($safDtls->id, $safDtls->workflow_id, $propModuleId, $req->docCategory, $req->ownerId)
+                        ->orderBy("id","DESC")
+                        ->first();
+            
             DB::beginTransaction();
             $sms = "Naksha Uploaded Successfully";
-            if ($isDocExist) {
+            if ($documents) {
                 $sms =  "Naksha Update Successfully";
-                $geoTagging->edit($isDocExist, $docReqs);
+                // $geoTagging->edit($isDocExist, $docReqs);
+                $mWfActiveDocument->edit($documents, $metaReqs);
             } else {
-                $geoTagging->store($docReqs);
+                // $geoTagging->store($docReqs);
+                $mWfActiveDocument->create($metaReqs);
             }
             DB::commit();
             return responseMsgs(true, $sms, "", "010119.1", "1.0", responseTime(), "POST", $req->deviceId);

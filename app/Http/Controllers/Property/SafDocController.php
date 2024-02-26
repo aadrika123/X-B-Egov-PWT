@@ -367,13 +367,20 @@ class SafDocController extends Controller
             {
                 return $response;
             }
-            $map = collect($response->original["data"])->where("doc_category","Layout sanction Map")->first();            
+            $map = collect($response->original["data"])->where("doc_category","Layout sanction Map")->first(); 
+            $roughMap = collect($response->original["data"])->where("doc_category","Layout sanction Map")->first();           
             if($map)
             {
                 $map["ext"] = strtolower(collect(explode(".",$map["doc_path"]))->last());
             }
+            if($roughMap)
+            {
+                $roughMap["ext"] = strtolower(collect(explode(".",$roughMap["doc_path"]))->last());
+            }
             $saf["is_naksha_uploaded"] = $map? true: false;
+            $saf["is_rough_naksha_uploaded"] = $roughMap? true: false;
             $saf["naksha"] = $map;
+            $saf["rough_naksha"] = $roughMap;
             return responseMsgs(true, "date fetched", $saf, "010202", "1.1", "", "POST", $req->deviceId ?? "");
         }
         catch (Exception $e) {
