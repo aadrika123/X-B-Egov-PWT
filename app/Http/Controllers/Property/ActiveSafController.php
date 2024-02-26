@@ -4978,14 +4978,14 @@ class ActiveSafController extends Controller
                         "docType"=>"R",
                         "docName"=>"Jahirnama",
                         "uploadedDoc"=>$jahirnama,
-                        "masters"=>[
+                        "masters"=>[[
                             "documentCode"=>"Jahirnama",
                             "docVal"    =>"Jahirnama",
                             "uploadedDoc"=>$jahirnama->doc_path??"",
                             "uploadedDocId"=>$jahirnama->id??"",
                             "verifyStatus"=>$jahirnama->verify_status??"",
                             "remarks"   =>$jahirnama->remarks??"",
-                        ]
+                        ]]
 
                     ]
                 ],
