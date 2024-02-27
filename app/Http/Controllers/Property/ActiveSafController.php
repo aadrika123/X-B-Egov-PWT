@@ -5025,7 +5025,7 @@ class ActiveSafController extends Controller
                     ]
                 ],
             ]; 
-            return responseMsgs(true,"Jahirnama Doc list",$data);
+            return responseMsgs(true,"Jahirnama Doc list",remove_null($data));
 
         }
         catch(Exception $e)
