@@ -1804,7 +1804,7 @@ class PropertyController extends Controller
             $mlocations->module_id = $req->moduleId;
             if($req->actionType)
             {
-                $mlocations->locations = strtoupper(trim($req->actionType));
+                $mlocations->action_type = strtoupper(trim($req->actionType));
             }
             $mlocations->save();
 
