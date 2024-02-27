@@ -5136,7 +5136,7 @@ class ActiveSafController extends Controller
                     "doc_code"=>$jahirnama->doc_code."-Objection",
                     "doc_category"=>$jahirnama->doc_code."-Objection",
                     "verify_status" => $jahirnama->status,
-                    "remarks" => $jahirnama->status,
+                    "remarks" => $jahirnama->objection_comment,
                 ];
                 $listDocs->push($jhirnamaObjection);
             }
