@@ -644,6 +644,8 @@ class ActiveSafController extends Controller
             $transferMode   = Config::get('PropertyConstaint.TRANSFER_MODES');
             $ownershipTypes = collect($ownershipTypes)->flip();
             $transferMode   = collect($transferMode)->flip();
+            $jahirnamaDoc = new PropSafJahirnamaDoc();
+            
 
             // Saf Details
             $data = array();
@@ -715,10 +717,13 @@ class ActiveSafController extends Controller
                 'headerTitle' => 'Electricity & Water Details',
                 'data' => $electDetails
             ];
+            $jahirnama = $jahirnamaDoc->getJahirnamaBysafIdOrm($data->id)->first();
             $fullDetailsData['application_no'] = $data->saf_no;
             $fullDetailsData['apply_date'] = $data->application_date;
             $fullDetailsData['ward_mstr_id'] = $data->ward_mstr_id;
             $fullDetailsData['property_no'] = (!$data->property_no) ? true : false;
+            $fullDetailsData['can_jahirnama_genrate'] = (!$data->is_jahirnama_genrated || !$jahirnama) ? true : false;
+            $fullDetailsData['can_jahirnama_update'] = (!$data->is_jahirnama_genrated || !$jahirnama || !($jahirnama->is_update_objection??false)) ? true : false;
 
             $fullDetailsData['doc_verify_status'] = $data->doc_verify_status;
             $fullDetailsData['doc_upload_status'] = $data->doc_upload_status;
