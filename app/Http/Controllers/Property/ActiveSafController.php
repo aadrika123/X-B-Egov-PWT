@@ -1615,16 +1615,16 @@ class ActiveSafController extends Controller
 
         if($saf->current_role == $wfLevels["SI"] && in_array($saf->workflow_id,$this->_alowJahirnamaWorckflows) && !$jahirnama)
         {
-            throw new Exception("Pleas Generate Jahirnama First");
+            throw new Exception("Please Generate Jahirnama First");
         }
         if($saf->current_role == $wfLevels["SI"] && in_array($saf->workflow_id,$this->_alowJahirnamaWorckflows) && Carbon::parse($this->_todayDate->copy())->lte($jahirnamaHoldsDays))
         {
             $diffDay = Carbon::parse($this->_todayDate->copy())->diffInDays($jahirnamaHoldsDays)+1;                
-            throw new Exception("Pleas wait for $diffDay ".($diffDay>1?"days":"day"));
+            throw new Exception("Please wait for $diffDay ".($diffDay>1?"days":"day"));
         }
         if($saf->current_role == $wfLevels["SI"] && in_array($saf->workflow_id,$this->_alowJahirnamaWorckflows) && Carbon::parse($this->_todayDate->copy())->gt($jahirnamaHoldsDays) && !($jahirnama->is_update_objection??false))
         {             
-            throw new Exception("Pleas update objection in jarinama and remarks of this property for further proccess");
+            throw new Exception("Please update objection in jarinama and remarks of this property for further proccess");
         }
     }
 
@@ -5131,12 +5131,14 @@ class ActiveSafController extends Controller
             }
             $jahirnama->doc_category = $jahirnama->doc_code;
             $jahirnama->verify_status = $jahirnama->status;
-            $jahirnama->remarks       ="";
+            $jahirnama->remarks       = "";
+            $jahirnama->owner_name    =  "";
             $listDocs = collect();
             $listDocs->push($jahirnama->toArray());
             if($jahirnama->is_update_objection)
             {
                 $jhirnamaObjection = [
+                    "owner_name" => $jahirnama->owner_name,
                     "doc_path" => $jahirnama->objection_doc_path,
                     "doc_code"=>$jahirnama->doc_code."-Objection",
                     "doc_category"=>$jahirnama->doc_code."-Objection",
