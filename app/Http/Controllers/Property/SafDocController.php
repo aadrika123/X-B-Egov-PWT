@@ -344,8 +344,11 @@ class SafDocController extends Controller
             $jahirnamaDoc = $ActiveSafController->getJahirnamaDoc($req);
             if($jahirnamaDoc->original["status"])
             {
-                $jahirnamaDoc = collect($jahirnamaDoc->original["data"])->first();
-                $documents->push($jahirnamaDoc );
+                $jahirnamaDoc = collect($jahirnamaDoc->original["data"])->sortByDesc("id");
+                foreach($jahirnamaDoc as $val)
+                {
+                    $documents->push($val );
+                }
             }
 
             return responseMsgs(true, ["docVerifyStatus" => $safDetails->doc_verify_status], remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");

@@ -48,6 +48,29 @@ class PropSafJahirnamaDoc extends Model
         return self::where("saf_id",$safId)->where("status",1)->update(["status"=>0]);
     } 
 
+    public function edit($id,$data)
+    {
+        $data = (object)$data;
+        $old = self::find($id);
+        $update["saf_id"]               = isset($data->safId) ? $data->safId : $old->saf_id;
+        $update["jhirnama_no"]          = isset($data->jhirnamaNo) ? $data->jhirnamaNo : $old->jhirnama_no;
+        $update["doc_code"]             = isset($data->docCode) ? $data->docCode : $old->doc_code;
+        $update["doc_name"]             = isset($data->docName) ? $data->docName : $old->doc_name;
+        $update["relative_path"]        = isset($data->relativePath) ? $data->relativePath : $old->relative_path;
+        $update["user_id"]              = isset($data->userId) ? $data->userId : $old->user_id;
+        $update["min_holds_period_in_days"] = isset($data->minimumHoldDays) ? $data->minimumHoldDays : $old->min_holds_period_in_days;
+        $update["generation_date"]      = isset($data->generationDate) ? $data->generationDate : $old->generation_date;
+        $update["is_update_objection"]  = isset($data->isUpdateObjection) ? $data->isUpdateObjection : $old->is_update_objection;
+        $update["objection_updated_by"]  = isset($data->objectionUserId) ? $data->objectionUserId : $old->objection_updated_by;
+        $update["has_any_objection"]    = isset($data->hasAnyObjection) ? $data->hasAnyObjection : $old->has_any_objection;
+        $update["objection_comment"]    = isset($data->objectionComment) ? $data->objectionComment : $old->objection_comment;
+        $update["objection_doc"]        = isset($data->objectionDocName) ? $data->objectionDocName : $old->objection_doc;
+        $update["objection_doc_relative_path"]    = isset($data->objectionRelativePath) ? $data->objectionRelativePath : $old->objection_doc_relative_path;
+        $update["status"]               = isset($data->status) ? $data->status : $old->status;
+        return $old->update($update);
+        
+    }
+
     public function getJahirnamaBysafIdOrm($safId)
     {
         return self::where("saf_id",$safId)->where("status",1)->orderBy("id","DESC");
@@ -55,6 +78,16 @@ class PropSafJahirnamaDoc extends Model
 
     public function getjahirnamaDoc($safId)
     {
-        return $this->getJahirnamaBysafIdOrm($safId)->select(DB::raw("concat('".$this->_docUrl."/',relative_path,'/',doc_name) as doc_path"),"*")->first();
+        return $this->getJahirnamaBysafIdOrm($safId)
+                ->select(
+                    "*",
+                    DB::raw("
+                    concat('".$this->_docUrl."/',relative_path,'/',doc_name) as doc_path,
+                    TRIM('/ ' FROM CASE WHEN TRIM(objection_doc_relative_path) <>'' OR TRIM(objection_doc) <> '' THEN(
+                            concat('".$this->_docUrl."/',objection_doc_relative_path,'/',objection_doc)
+                        )ELSE NULL END
+                    ) AS objection_doc_path
+                    ")
+                )->first();
     }
 }

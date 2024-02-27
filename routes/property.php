@@ -595,6 +595,7 @@ Route::controller(ActiveSafController::class)->group(function () {
   Route::post('saf/get-jahirnama-doc-list', 'getJahirnamaDocList');
   Route::post('saf/upload-jahirnama', 'uploadJahirnama');
   Route::post('saf/get-jahirnama', 'getJahirnamaDoc');
+  Route::post('saf/update-jahirnama-objection', 'updateJahirnama');
 });
 
 /**

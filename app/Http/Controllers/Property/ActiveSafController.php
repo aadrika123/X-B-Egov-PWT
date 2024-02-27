@@ -138,6 +138,7 @@ class ActiveSafController extends Controller
     public $_replicatedPropId;
     protected $_COMMONFUNCTION;
     protected $_SkipFiledWorkWfMstrId = [];
+    protected $_alowJahirnamaWorckflows = [];
     public function __construct(iSafRepository $saf_repository)
     {
         $this->Repository = $saf_repository;
@@ -146,6 +147,10 @@ class ActiveSafController extends Controller
         $this->_COMMONFUNCTION = new CommonFunction();
         $wfContent = Config::get('workflow-constants');
         $this->_SkipFiledWorkWfMstrId = [
+            $wfContent["SAF_MUTATION_ID"],
+            $wfContent["SAF_BIFURCATION_ID"],
+        ];
+        $this->_alowJahirnamaWorckflows = [
             $wfContent["SAF_MUTATION_ID"],
             $wfContent["SAF_BIFURCATION_ID"],
         ];
@@ -1322,6 +1327,10 @@ class ActiveSafController extends Controller
             if (!$forwardBackwardIds) {
                 throw new Exception("You Are Noth Authorize For This Workflow");
             }
+            if(in_array($saf->workflow_id,$this->_alowJahirnamaWorckflows))
+            {
+                $this->checkMutionCondition($wfLevels, $saf);
+            }
             $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id)->wf_master_id ?? null;
             DB::beginTransaction();
             DB::connection('pgsql_master')->beginTransaction();
@@ -1590,6 +1599,27 @@ class ActiveSafController extends Controller
                 $mPropSafGeotagUpload->where('saf_id', $saf->id)
                     ->update(['status' => 0]);
                 break;
+        }
+    }
+
+    public function checkMutionCondition($wfLevels,$saf)
+    {
+        $jahirnamaDoc = new PropSafJahirnamaDoc();
+        $jahirnama = $jahirnamaDoc->getJahirnamaBysafIdOrm($saf->id)->first();
+        $jahirnamaHoldsDays = Carbon::parse($jahirnama->generation_date??null)->addDays(($jahirnama->min_holds_period_in_days??0));
+
+        if($saf->current_role == $wfLevels["SI"] && in_array($saf->workflow_id,$this->_alowJahirnamaWorckflows) && !$jahirnama)
+        {
+            throw new Exception("Pleas Generate Jahirnama First");
+        }
+        if($saf->current_role == $wfLevels["SI"] && in_array($saf->workflow_id,$this->_alowJahirnamaWorckflows) && Carbon::parse($this->_todayDate->copy())->lte($jahirnamaHoldsDays))
+        {
+            $diffDay = Carbon::parse($this->_todayDate->copy())->diffInDays($jahirnamaHoldsDays)+1;                
+            throw new Exception("Pleas wait for $diffDay ".($diffDay>1?"days":"day"));
+        }
+        if($saf->current_role == $wfLevels["SI"] && in_array($saf->workflow_id,$this->_alowJahirnamaWorckflows) && Carbon::parse($this->_todayDate->copy())->gt($jahirnamaHoldsDays) && !($jahirnama->is_update_objection??false))
+        {             
+            throw new Exception("Pleas update objection in jarinama and remarks of this property for further proccess");
         }
     }
 
@@ -5017,12 +5047,7 @@ class ActiveSafController extends Controller
             ]);
         }
         try{
-            $request->merge(['id'=>$request->applicationId,"safId"=>$request->applicationId]);
-            $wfContent = Config::get('workflow-constants');
-            $alowWorckflows = [
-                $wfContent["SAF_MUTATION_ID"],
-                $wfContent["SAF_BIFURCATION_ID"],
-            ];
+            $request->merge(['id'=>$request->applicationId,"safId"=>$request->applicationId]);  
 
             $jahirnamaDoc = new PropSafJahirnamaDoc(); 
             $docUpload = new DocUpload;            
@@ -5031,7 +5056,6 @@ class ActiveSafController extends Controller
 
             $filename = $request->applicationId."-jahirnama";
             $relativePath = Config::get("PropertyConstaint.SAF_JARINAMA_RELATIVE_PATH");
-            $mutationOwrkfowId = Config::get("PropertyConstaint.SAF_JARINAMA_RELATIVE_PATH");
 
             $safData = $this->getStaticSafDetails($request); 
             $activeSaf = PropActiveSaf::find($request->applicationId);  
@@ -5043,7 +5067,7 @@ class ActiveSafController extends Controller
             {
                 throw new Exception("data not found");
             }
-            if(!in_array($activeSaf->workflow_id ,$alowWorckflows))
+            if(!in_array($activeSaf->workflow_id ,$this->_alowJahirnamaWorckflows))
             {
                 throw new Exception("can not allow generate jahirnama for this type of property");
             }
@@ -5105,6 +5129,17 @@ class ActiveSafController extends Controller
             $jahirnama->remarks       ="";
             $listDocs = collect();
             $listDocs->push($jahirnama->toArray());
+            if($jahirnama->is_update_objection)
+            {
+                $jhirnamaObjection = [
+                    "doc_path" => $jahirnama->objection_doc_path,
+                    "doc_code"=>$jahirnama->doc_code."-Objection",
+                    "doc_category"=>$jahirnama->doc_code."-Objection",
+                    "verify_status" => $jahirnama->status,
+                    "remarks" => $jahirnama->status,
+                ];
+                $listDocs->push($jhirnamaObjection);
+            }
             return responseMsg(true, "jahirnama doc", $listDocs);
 
         }
@@ -5121,7 +5156,9 @@ class ActiveSafController extends Controller
             $request->all(),
             [
                 "applicationId" => "required|digits_between:1,9223372036854775807",
-                "document" => "required|mimes:pdf,jpeg,png,jpg|" . (strtolower($extention) == 'pdf' ? 'max:10240' : 'max:5120'),
+                "hasAnyObjection" => "required|bool",
+                "document" => "nullable|required_if:hasAnyObjection,==,true,1|mimes:pdf,jpeg,png,jpg|" . (strtolower($extention) == 'pdf' ? 'max:10240' : 'max:5120'),
+                "comment"  => "nullable|required_if:hasAnyObjection,==,true,1" ,
             ]
         );
         if ($validated->fails()) {
@@ -5132,10 +5169,40 @@ class ActiveSafController extends Controller
             ]);
         }
         try{
-            
+            $safId          = $request->applicationId;
+            $jahirnamaDoc   = new PropSafJahirnamaDoc();
+            $docUpload      = new DocUpload(); 
+            $relativePath   = Config::get("PropertyConstaint.SAF_JARINAMA_RELATIVE_PATH");
+            $user = Auth()->user();
+
+            $jahirnama = $jahirnamaDoc->getJahirnamaBysafIdOrm($safId)->first();
+            if(!$jahirnama)
+            {
+                throw new Exception("Jahirnama Not Uploaded");
+            }
+            $updateJahirnama = [
+                "hasAnyObjection"=>$request->hasAnyObjection,
+                "objectionComment"=>$request->comment,
+                "objectionUserId"=>$user->id??null,  
+                "isUpdateObjection"=>true,  
+            ];
+            $filename = $jahirnama->id."-objection";
+            $document = $request->document;
+            if($document)
+            {
+                $imageName = $docUpload->upload($filename, $document, $relativePath);
+                $updateJahirnama["objectionDocName"] = $imageName;
+                $updateJahirnama["objectionRelativePath"] = $relativePath;
+            }
+            $updateJahirnama = (object)$updateJahirnama;
+            DB::beginTransaction();
+            $t = $jahirnama->edit($jahirnama->id,$updateJahirnama);
+            DB::commit();
+            return responseMsg(true,"jahirnama objection updated",$t);
         }
         catch(Exception $e)
         {
+            DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
