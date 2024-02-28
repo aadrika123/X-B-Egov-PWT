@@ -57,7 +57,7 @@ class SafApprovalBll
     public $_ptNo;
     public $_famNo;
     public $_famId;
-    protected $_SkipFiledWorkWfMstrId = [];
+    public $_SkipFiledWorkWfMstrId = [];
     // Initializations
     public function __construct()
     {

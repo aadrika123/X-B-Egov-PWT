@@ -800,7 +800,7 @@ class  PropActiveSaf extends Model
     public function searchSafs()
     {
         return PropActiveSaf::select(
-            'prop_active_safs.id',
+            'prop_active_safs.id',"prop_active_safs.proccess_fee_paid",
             DB::raw("'active' as status"),
             'prop_active_safs.saf_no',
             'prop_active_safs.assessment_type',
@@ -840,7 +840,7 @@ class  PropActiveSaf extends Model
     public function searchGbSafs()
     {
         return PropActiveSaf::select(
-            'prop_active_safs.id',
+            'prop_active_safs.id',"prop_active_safs.proccess_fee_paid",
             DB::raw("'active' as status"),
             'prop_active_safs.saf_no',
             'prop_active_safs.assessment_type',

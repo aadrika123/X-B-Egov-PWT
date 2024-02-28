@@ -374,6 +374,11 @@ class PropertyDetailsController extends Controller
                 }
             }
             $details = $approved->union($active)->paginate($perPage);
+            $transFeeWorkflowType  = (new \App\BLL\Property\Akola\SafApprovalBll())->_SkipFiledWorkWfMstrId;
+            (collect($details->items())->map(function($val) use($transFeeWorkflowType){
+                $val->current_role = in_array($val->assessment_type,$transFeeWorkflowType) ?( $val->proccess_fee_paid==0 ? "Transfer Fee Not Paid" : "Transfer Fee Paid") : "Payment Not Required";
+                return $val;
+            }));
 
             return responseMsgs(true, "Application Details", remove_null($details), "010501", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {

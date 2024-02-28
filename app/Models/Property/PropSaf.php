@@ -117,7 +117,7 @@ class PropSaf extends Model
     public function searchSafs()
     {
         return PropSaf::select(
-            'prop_safs.id',
+            'prop_safs.id',"prop_safs.proccess_fee_paid",
             DB::raw("'approved' as status"),
             'prop_safs.saf_no',
             'prop_safs.assessment_type',
@@ -157,7 +157,7 @@ class PropSaf extends Model
     public function searchGbSafs()
     {
         return PropSaf::select(
-            'prop_safs.id',
+            'prop_safs.id',"prop_safs.proccess_fee_paid",
             DB::raw("'approved' as status"),
             'prop_safs.saf_no',
             'prop_safs.assessment_type',
