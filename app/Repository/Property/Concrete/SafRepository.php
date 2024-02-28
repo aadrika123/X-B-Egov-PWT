@@ -151,14 +151,18 @@ class SafRepository implements iSafRepository
         
         if($application->gettable()==(new PropSaf)->gettable())
         {
-            $status="Application is Aprroved";
+            $status="Application is Approved";
+        }
+        elseif($application->gettable()==('prop_rejected_safs'))
+        {
+            $status="Application is Rejected";
+        }
+        elseif($application->parked && $application->current_role!=$application->initiator_role_id)
+        {
+            $status = "Application back to citizen by ". ($rols->role_name??"");
         }
         elseif ($application->saf_pending_status==1 && (($application->current_role != $application->finisher_role_id) || ($application->current_role == $application->finisher_role_id))) {            
             $status = "Application pending at " . ($rols->role_name??"");
-        }
-        elseif($application->parked)
-        {
-            $status = "Application back to citizen by ". ($rols->role_name??"");
         }
         elseif ($docChequ2 && strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""] && $application->citizen_id == $refUserId && $application->document_upload_status == 0) {
             $request = new Request(["applicationId" => $applicationId, "ulb_id" => $refUlbId, "user_id" => $refUserId]);
