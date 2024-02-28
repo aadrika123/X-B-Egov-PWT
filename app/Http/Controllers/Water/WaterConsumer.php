@@ -2610,9 +2610,10 @@ class WaterConsumer extends Controller
                             Order by demand_upto ASC
                         )demands on demands.consumer_tax_id = water_consumer_taxes.id
                         left join demand_currection_logs on demand_currection_logs.tax_id =  water_consumer_taxes.id
-                        where demand_currection_logs.id is null AND water_consumer_taxes.created_on::date <='2024-02-19' and water_consumer_taxes.charge_type !='Fixed'
+                        where demand_currection_logs.id is null AND water_consumer_taxes.created_on::date <='2024-02-19' 
+                            --and water_consumer_taxes.charge_type !='Fixed'
                             --AND water_consumer_taxes.id = 179158
-                            --AND water_consumer_taxes.consumer_id = 6100
+                            --AND water_consumer_taxes.consumer_id = 196
                         order by water_consumer_taxes.id ASC
                         --limit 2
             ";
