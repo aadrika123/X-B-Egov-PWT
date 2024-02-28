@@ -16,4 +16,23 @@ class DemoController extends Controller
             ->get();
         return $data;
     }
+
+    /**
+     * | This is for whatsaap testing purpose
+     */
+    public function testWhatsaap(Request $req)
+    {
+        # Send Message behalf of registration
+        $whatsaapResponse = (Whatsapp_Send(
+            "8797770238",
+            "coco_cola",                     // Set at env or database and 
+            [
+                "conten_type" => "text",
+                [
+                    "Mrinal",                    // Static
+                ]
+            ]
+        ));
+        return $whatsaapResponse;
+    }
 }

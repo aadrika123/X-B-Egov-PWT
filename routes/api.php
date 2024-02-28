@@ -450,6 +450,7 @@ Route::controller(ReferenceController::class)->group(function () {
  */
 Route::controller(DemoController::class)->group(function () {
     Route::post('water-connection', 'waterConnection');
+    Route::post('whatsaap-test', 'testWhatsaap');
 });
 #-------------------------- document read ------------------------------
 Route::get('/getImageLink', function () {
