@@ -102,7 +102,8 @@ class WaterMonthelyCall
             ->where('status', 1)                                                                            // Static
             ->first();
         $this->_ConsumerMeters = $this->_mWaterConsumerMeter->getConsumerMeterDetails($this->_consumerId)
-            ->where('status', 1)                                                                            // Static
+            ->where('status', 1)
+            ->orderBy("id","DESC")                                                                            // Static
             ->first();;
         if ($this->_consuemrDetails->category == $catagory['1']) {
             $catagoryId = $this->_catagoryType['Slum'];

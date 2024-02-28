@@ -89,6 +89,8 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         Route::post('application/counter-amendable-list', 'CAmendmentList');                 #id = c9
 
         Route::post('application/counter-surrenderable-list', 'CSurrenderList');             #id = c10
+
+        Route::post('application/old-app-edit', 'editOldApp');
     });
 
     Route::controller(TradeNoticeController::class)->group(function () {

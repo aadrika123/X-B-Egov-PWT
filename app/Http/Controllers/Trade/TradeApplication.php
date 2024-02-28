@@ -1373,4 +1373,21 @@ class TradeApplication extends Controller
         }
     }
 
+    public function editOldApp(ApplicationId $request)
+    {
+        try{
+            $appId = $request->applicationId;
+            $oldData = TradeLicence::find($appId);
+            if(!$oldData){
+                throw new Exception("Data not found");
+            }
+            if($oldData->update_counter>0){
+                throw new Exception("You Are ".$oldData->update_counter." Attempt Updation On This App");
+            }
+        }
+        catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), '');
+        }
+    }
+
 }
