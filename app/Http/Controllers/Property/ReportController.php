@@ -2982,7 +2982,7 @@ class ReportController extends Controller
             'c_water_zone_name'  => $waterdata->c_water_zone_name,
             'c_water_total_hh'  => $waterdata->c_water_total_hh,
             'c_water_total_amount'  => $waterdata->c_water_total_amount,
-            'd_water_zone_name'  => $waterdata->d_zone_name,
+            'd_water_zone_name'  => $waterdata->d_water_zone_name,
             'd_water_total_hh'  => $waterdata->d_water_total_hh,
             'd_water_total_amount'  => $waterdata->d_water_total_amount,
 
