@@ -2555,8 +2555,8 @@ class WaterConsumer extends Controller
                                 sum(amount) as amount,
                                 sum(due_balance_amount) as due_balance_amount,
                                 sum(paid_total_tax) as paid_total_tax,
-                                string_agg(id::text,',') as demand_ids,
-                            (
+                                string_agg(id::text,',') as demand_ids --,
+                            /*(
                                 json_agg(
                                         json_build_object('id',id,
                                                         'consumer_id',consumer_id,
@@ -2603,7 +2603,7 @@ class WaterConsumer extends Controller
                         
                                                         )
                                             ) 
-                                )as demand_json
+                                )as demand_json*/
                             from water_consumer_demands 
                             where water_consumer_demands.status =true
                             group by consumer_tax_id
