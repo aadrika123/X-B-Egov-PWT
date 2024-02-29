@@ -337,9 +337,9 @@ class TaxCalculator
             }
 
             $this->_floorsTaxes[0] = [
-                'dateFrom' => $this->_REQUEST->dateOfPurchase,
+                'dateFrom' => $this->_REQUEST->applyDate ? Carbon::parse($this->_REQUEST->applyDate)->addYears(-5)->format('Y-m-d'):Carbon::now()->addYears(-5)->format('Y-m-d'),
                 'dateUpto' => null,
-                'appliedFrom' => getFY($this->_REQUEST->dateOfPurchase),
+                'appliedFrom' => getFY($this->_REQUEST->applyDate ? Carbon::parse($this->_REQUEST->applyDate)->addYears(-5)->format('Y-m-d'):Carbon::now()->addYears(-5)->format('Y-m-d')),
                 'appliedUpto' => getFY(),
                 'rate' => $rate,
                 'floorKey' => "Vacant Land",
