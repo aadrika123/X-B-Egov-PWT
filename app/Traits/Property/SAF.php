@@ -662,7 +662,7 @@ trait SAF
         $floor->occupancy_type_mstr_id      = $verifyFloor ? ($verifyFloor->occupancy_type_id ?? $floor->occupancy_type_mstr_id) : $floor->occupancy_type_mstr_id;
         $floor->builtup_area                = $verifyFloor ? ($verifyFloor->builtup_area ?? $floor->builtup_area) : $floor->builtup_area;
         $floor->date_from                   = $verifyFloor ? ($verifyFloor->date_from ?? $floor->date_from) : $floor->date_from;
-        $floor->date_upto                   = $verifyFloor ? ($verifyFloor->date_to ?? $floor->date_upto) : $floor->date_upto;
+        $floor->date_upto                   = $verifyFloor ? ($verifyFloor->date_to ?? null) : $floor->date_upto;
         $floor->carpet_area                 = $verifyFloor ? ($verifyFloor->carpet_area ?? $floor->carpet_area) : $floor->carpet_area;
         return $floor;
     }
