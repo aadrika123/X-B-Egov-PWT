@@ -171,6 +171,7 @@ class GetHoldingDuesV2
             'property_no',
             "plot_no",
             "area_of_plot",
+            "building_name",
         ]);
         $basicDtls['moduleId'] = 1;
         $basicDtls['workflowId'] = 0;
