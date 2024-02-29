@@ -94,7 +94,8 @@ class CalculateTaxByUlb extends TaxCalculator
                     "occupancyType" =>  $floor->occupancy_type_mstr_id??"",
                     "usageType" => $floor->usage_type_id,
                     "buildupArea" =>  $floor->builtup_area,
-                    "dateFrom" =>  $floor->date_from
+                    "dateFrom" =>  $floor->date_from,
+                    "dateUpto" =>  $floor->date_to
                 ];
                 array_push($calculationReq['floor'], $floorReq);
             }

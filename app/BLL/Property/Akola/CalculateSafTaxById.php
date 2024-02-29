@@ -89,7 +89,8 @@ class CalculateSafTaxById extends TaxCalculator
                     "usageType" => $floor->usage_type_mstr_id,
                     "usageTypeName" => $floor->usage_type, #name value
                     "buildupArea" =>  $floor->builtup_area,
-                    "dateFrom" =>  $floor->date_from
+                    "dateFrom" =>  $floor->date_from,
+                    "dateUpto" =>  $floor->date_upto
                 ];
                 array_push($calculationReq['floor'], $floorReq);
             }
@@ -106,7 +107,8 @@ class CalculateSafTaxById extends TaxCalculator
                     "usageType" => $floor->usage_type_mstr_id,
                     "usageTypeName" => $floor->usage_type, #name value
                     "buildupArea" =>  $floor->builtup_area,
-                    "dateFrom" =>  $floor->date_from
+                    "dateFrom" =>  $floor->date_from,
+                    "dateUpto" =>  $floor->date_upto
                 ];
                 array_push($calculationReq['floor'], $floorReq);
             }
