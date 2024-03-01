@@ -15,6 +15,7 @@ use App\BLL\Property\UpdateSafDemand;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Property\ReqEditSaf;
 use App\Http\Requests\Property\ReqPayment;
 use App\Http\Requests\Property\ReqSiteVerification;
 use App\MicroServices\DocUpload;
@@ -286,7 +287,7 @@ class ActiveSafController extends Controller
      * | Edit Applied Saf by SAF Id for BackOffice
      * | @param request $req
      */
-    public function editSaf(Request $req)
+    public function editSafOld(Request $req)
     {
         $rules = [
             'id'                        => 'required|numeric',
@@ -334,6 +335,93 @@ class ActiveSafController extends Controller
                 $owner["safOwnerId"] = $owner["propOwnerDetailId"];
                 $mPropSafOwners->edit($owner);
             });
+
+            DB::commit();
+            return responseMsgs(true, "Successfully Updated the Data", "", 010124, 1.0, "308ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", 010124, 1.0, "308ms", "POST", $req->deviceId);
+        }
+    }
+
+    public function editSaf(ReqEditSaf $req)
+    {
+        try {
+
+            $applysafController = new ApplySafController();
+            $mPropSaf           = new PropActiveSaf();
+            $mPropSafOwners     = new PropActiveSafsOwner();
+            $mFloors              = new PropActiveSafsFloor();
+            $safId              = $req->id;
+            $oldSaf             = $mPropSaf->find($safId);
+            $user               = Auth()->user();
+            $userId             = $user->id??null;
+            $assessmentType     = $req->assessmentType;
+            if($oldSaf->current_role!=$oldSaf->initiator_role_id && !$oldSaf->parked)
+            {
+                throw new Exception("Can not edit this application");
+            }
+            
+            $roadWidthType = $applysafController->readRoadWidthType($req->roadType);
+            $mutationProccessFee = $applysafController->readProccessFee($req->assessmentType, $req->saleValue, $req->propertyType, $req->transferModeId);
+            $metaReqs['holdingType'] = $applysafController->holdingType($req['floor']);
+            $metaReqs["road_type_mstr_id"] = $roadWidthType;
+            $req->merge($metaReqs);
+            $req->merge(["proccessFee" => $mutationProccessFee]);
+            if ($oldSaf->workflow_id == Config::get('workflow-constants.ULB_WORKFLOW_ID_OLD_MUTATION')) {
+                $req->merge(["saleValue" => 0, "proccessFee" => 0]);
+            }            
+            $mOwners = $req->owner;
+            $floars = $req->floor;
+            $updateOwnerId = collect($mOwners)->whereNotNull("propOwnerDetailId")->unique("propOwnerDetailId")->pluck("propOwnerDetailId");
+            $updateFloorId = collect($floars)->whereNotNull("propFloorDetailId")->unique("propFloorDetailId")->pluck("propFloorDetailId");
+
+            DB::beginTransaction();
+            $mPropSaf->edit($req);                                                      // Updation SAF Basic Details
+
+            #deactivateOldOwners
+            $deactivateOwner = $mPropSafOwners->where("saf_id",$safId)->update(["status"=>0]);    
+            #deactivateOldFloors  
+            $deactivateFloor = $mFloors->where("saf_id",$safId)->update(["status"=>0]);
+
+            collect($mOwners)->map(function ($owner) use ($mPropSafOwners,$safId) {            // Updation of Owner Basic Details
+                $owner["safOwnerId"] = $owner["propOwnerDetailId"];
+                $owner["safId"] = $safId;
+                if($owner["safOwnerId"])
+                {     
+                    $oldOwners = $mPropSafOwners->find($owner["safOwnerId"]);
+                    $owner["status"] = 1;
+                    $owner["propOwnerDetailId"] = $oldOwners ? $oldOwners->prop_owner_id : null;              
+                    $mPropSafOwners->editOwnerById($owner["safOwnerId"],$owner);
+                }
+                else
+                {
+                    $owner["propOwnerDetailId"]=null;
+                    $mPropSafOwners->addOwner($owner,$safId,null);
+                }
+
+            });  
+            if($req->propertyType != 4)
+            {
+                collect($floars)->map(function ($floar) use ($mFloors,$safId,$userId,$assessmentType) {            // Updation of Owner Basic Details
+                    $floar["propFloorId"] = $floar["propFloorDetailId"];
+                    $floar["assessmentType"] = $assessmentType;
+                    $floar["safId"] = $safId;
+                    if($floar["propFloorId"])
+                    {   
+                        $oldFloors = $mFloors->find($floar["propFloorId"]);
+                        $floar["status"] = 1;
+                        $floar["propFloorDetailId"] = $oldFloors ? $oldFloors->prop_floor_details_id : null;             
+                        $mFloors->editFloorById($floar["propFloorId"],$floar);
+                    }
+                    else
+                    {
+                        $floar["propFloorDetailId"]=null;
+                        $mFloors->addfloor($floar, $safId, $userId, $assessmentType, null);
+                    }
+    
+                });
+            }
 
             DB::commit();
             return responseMsgs(true, "Successfully Updated the Data", "", 010124, 1.0, "308ms", "POST", $req->deviceId);

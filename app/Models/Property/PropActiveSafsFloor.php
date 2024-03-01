@@ -138,6 +138,45 @@ class PropActiveSafsFloor extends Model
         $floor->update($reqs);
     }
 
+    public function metaDataFields($req)
+    {
+        if ($req['usageType'] == 1)
+            $carpetArea =  $req['buildupArea'] * 0.70;
+        else
+            $carpetArea =  $req['buildupArea'] * 0.80;
+
+        if ($req["assessmentType"] == "Bifurcation")
+            $carpetArea = $req['biBuildupArea'];
+        
+        $floor = [
+            "saf_id"                =>$req["safId"],
+            "floor_mstr_id"         =>$req['floorNo']??null,
+            "usage_type_mstr_id"    =>$req['usageType']  ?? null,
+            "const_type_mstr_id"    =>$req['constructionType'] ?? null,
+            "occupancy_type_mstr_id"=>$req['occupancyType'] ?? null,
+            "builtup_area"          =>(in_array($req["assessmentType"], ['Bifurcation'])) ? ($req['biBuildupArea'] ?? $req['buildupArea']) : $req['buildupArea'],
+            "carpet_area"           =>$carpetArea,
+            "date_from"             =>$req['dateFrom'] ?? null,
+            "date_upto"             =>$req['dateUpto'] ?? null,
+            "rent_agreement_date"   =>$req['rentAgreementDate'] ?? null,
+            "prop_floor_details_id" =>$req['propFloorDetailId'] ?? null,
+            "user_id"               =>$req['userId'] ?? null,
+            "no_of_rooms"           =>$req['noOfRooms'] ?? null,
+            "no_of_toilets"         =>$req['noOfToilet'] ?? null,
+            "bifurcated_from_buildup_area" =>isset($req['biBuildupArea']) ? $req['buildupArea'] : null,
+        ];
+        if(isset($req["status"]))
+        {
+            $floor["status"] =1;
+        }
+        return $floor;
+    }
+
+    public function editFloorById($id,$req)
+    {
+        return self::where("id",$id)->update($this->metaDataFields($req));
+    }
+
     public function addfloor($req, $safId, $userId, $assessmentType, $biDateOfPurchase)
     {
         if ($req['usageType'] == 1)

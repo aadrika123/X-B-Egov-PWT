@@ -118,6 +118,31 @@ class PropActiveSafsOwner extends Model
 
         $owner->update($reqs);
     }
+    public function metaDataFields($req):array
+    {        
+        $owner = [
+            "saf_id"        =>$req["safId"],
+            "owner_name"    =>strtoupper($req['ownerName']),
+            "guardian_name" =>strtoupper($req['guardianName'])  ?? null,
+            "relation_type" =>$req['relation'] ?? null,
+            "mobile_no"     =>$req['mobileNo'] ?? null,
+            "aadhar_no"     =>$req['aadhar'] ?? null,
+            "pan_no"        =>$req['pan'] ?? null,
+            "email"         =>$req['email'] ?? null,
+            "gender"        =>$req['dob'] ?? null,
+            "is_armed_force" =>$req['isArmedForce'] ?? null,
+            "is_specially_abled" =>$req['isSpeciallyAbled'] ?? null,
+            "user_id"       =>$req['citizenId'] ?? null,
+            "prop_owner_id" =>$req['propOwnerDetailId'] ?? null,
+            "owner_name_marathi" =>$req['ownerNameMarathi'] ?? null,
+            "guardian_name_marathi" =>$req['guardianNameMarathi'] ?? null,
+        ];
+        if(isset($req["status"]))
+        {
+            $owner["status"] =1;
+        }
+        return $owner;
+    }
 
     public function addOwner($req, $safId, $citizenId)
     {
@@ -140,6 +165,11 @@ class PropActiveSafsOwner extends Model
         $owner->owner_name_marathi = $req['ownerNameMarathi'] ?? null;
         $owner->guardian_name_marathi = $req['guardianNameMarathi'] ?? null;
         $owner->save();
+    }
+
+    public function editOwnerById($id,$req)
+    {
+        return self::where("id",$id)->update($this->metaDataFields($req));
     }
 
     /**
