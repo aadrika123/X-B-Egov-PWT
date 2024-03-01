@@ -1413,6 +1413,8 @@ class ActiveSafController extends Controller
                 }
                 if($saf->current_role == $wfLevels['UTC'])
                 {
+                    $saf->is_agency_verified = $saf->is_agency_verified==true ? false:  $saf->is_agency_verified;
+                    $saf->is_geo_tagged = $saf->is_geo_tagged==true ? false:  $saf->is_geo_tagged;
                     $saf->is_field_verified = $saf->is_field_verified==true ? false:  $saf->is_field_verified;
                 }
                 if ($request->isBtd == true) {
