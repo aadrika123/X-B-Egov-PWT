@@ -957,6 +957,7 @@ class PropProperty extends Model
                 'p.property_no',
                 'p.plot_no',
                 'p.area_of_plot',
+                'p.building_name',
 
                 'z.zone_name',
                 'o.owner_name as eng_owner_name',
