@@ -374,6 +374,7 @@ class GeneratePaymentReceiptV2
             "bookNo" => $this->_trans->book_no ?? "",
             "plot_no"=>$this->_propertyDtls->plot_no??"",
             "area_of_plot"=>$this->_propertyDtls->area_of_plot??"",
+            "building_name"=>$this->_propertyDtls->building_name??"",
 
             "receiptNo" => isset($this->_trans->book_no) ? (explode('-', $this->_trans->book_no)[1]??"0") : "",                  
            'duration' => ($duration) ,
