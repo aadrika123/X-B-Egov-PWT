@@ -312,11 +312,7 @@ class WaterConsumer extends Controller
                 // if (($sms["status"] !== false)) {
                 //     $respons = SMSAKGOVT(6206998554, $sms["sms"], $sms["temp_id"]);
                 // }
-                $this->commit();
-                // $taxId = WaterConsumerTax::select(Db::raw("max(id)id"))->where("consumer_id",$request->consumerId)->first();
-                // $tax = WaterConsumerTax::select("*")->where("id",$taxId->id)->get();
-                // $demand = WaterConsumerDemand::select("*")->where("consumer_tax_id",$taxId->id)->get();
-                // dd($taxId,$tax,$demand,collect($demand)->sum("amount"));
+                $this->commit();                
                 return responseMsgs(true, "Demand Generated! for" . " " . $request->consumerId, "", "", "02", ".ms", "POST", "");
             }
         } catch (Exception $e) {
