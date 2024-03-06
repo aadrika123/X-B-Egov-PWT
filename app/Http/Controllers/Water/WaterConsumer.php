@@ -409,6 +409,7 @@ class WaterConsumer extends Controller
             // here we check the demand from date is present then do this or that
             if (!$lastDemand->demand_upto) {
                 $startDate  = Carbon::parse($lastDemand->generation_date);
+                $refDemandUpto =  $startDate;
             } else {
                 $refDemandUpto = Carbon::parse($lastDemand->demand_upto);
             }

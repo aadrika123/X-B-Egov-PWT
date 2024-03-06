@@ -135,7 +135,7 @@ class WaterMonthelyCall
             $this->_meterStatus = "Meter"; 
         }
 
-        $useStartDate       = $this->_consumerLastDemand ? $this->_consumerLastDemand->demand_upto : $this->_consuemrDetails->connection_date;
+        $useStartDate       = $this->_consumerLastDemand &&  $this->_consumerLastDemand->demand_upto ? $this->_consumerLastDemand->demand_upto : ($this->_consuemrDetails && $this->_consuemrDetails->connection_date ? $this->_consuemrDetails->connection_date : $this->_consuemrMeterDetails->connection_date);
         $startDate          = (Carbon::parse($useStartDate))->addDay();
 
         $this->_fromDate = $startDate->copy()->format("Y-m-d");         
@@ -170,7 +170,7 @@ class WaterMonthelyCall
         }
 
         # Charges for month 
-        $lastDemandDate = $this->_consumerLastDemand->demand_upto ?? $this->_consuemrDetails->connection_date;
+        $lastDemandDate = $this->_consumerLastDemand->demand_upto ?? ($this->_consuemrDetails->connection_date?$this->_consuemrDetails->connection_date:$this->_consuemrMeterDetails->connection_date);
         if (!$lastDemandDate) {
             throw new Exception("Demand date not Found!");
         }
