@@ -1056,6 +1056,7 @@ class ReportController extends Controller
             $data['member_count']['eo']  = $currentYearData->eo_count ?? 0;
             $data['member_count']['jsk'] = $currentYearData->jsk_count ?? 0;
             $data['member_count']['utc'] = $currentYearData->utc_count ?? 0;
+            $data['member_count']['sh_count'] = $currentYearData->sh_count ?? 0;
 
             $data['citizen']["Engagement"] = [
                 "apr" => [
@@ -2192,7 +2193,8 @@ class ReportController extends Controller
                         payment_modes.*,
                         -- current_demand_collection.*,
                         -- arrear_demand_collection.*
-                        dcb_collection.*
+                        dcb_collection.*,
+                        member_count.*
         
                 FROM 
                     (
@@ -2228,6 +2230,23 @@ class ReportController extends Controller
                         AND '$currentfyEndDate'								-- Parameterise this
                     ) AS a
                 ) AS total_assessment, 
+                (
+                    select 
+                                
+                                count(case when  wf_roles.id = 8 then users.id end)as tc_count,
+                                count(case when  wf_roles.id = 11 then users.id end)as da_count,
+                                count(case when  wf_roles.id = 6 then users.id end)as si_count,
+                                count(case when  wf_roles.id = 5 then users.id end)as eo_count,
+                                count(case when  wf_roles.id = 7 then users.id end)as jsk_count,
+                                count(case when  wf_roles.id = 9 then users.id end)as utc_count,
+                                count(case when  wf_roles.id = 10 then users.id end)as sh_count
+                                
+                            from ulb_masters
+                            left join users on users.ulb_id = ulb_masters.id and users.suspended = false
+                            left join wf_roleusermaps on wf_roleusermaps.user_id = users.id and wf_roleusermaps.is_suspended = false
+                            left join wf_roles on wf_roles.id = wf_roleusermaps.wf_role_id and wf_roles.is_suspended = false
+                            where ulb_id = 2
+                )as member_count,
                 (
                   SELECT 
                     SUM(a.applied_comm_safs) AS applied_comm_safs, 
@@ -2807,6 +2826,14 @@ class ReportController extends Controller
             "current_year_rtgs_collection" => $data->current_rtgs_payment,
             "current_year_upi_collection" => $data->current_qr_payment,
             "current_year_online_collection" => $data->current_online_payment,
+            "tc_count" => $data->tc_count,
+            "da_count" => $data->da_count,
+            "si_count" => $data->si_count,
+            "eo_count" => $data->eo_count,
+            "jsk_count" => $data->jsk_count,
+            "utc_count" => $data->utc_count,
+            "sh_count" => $data->sh_count,
+            
 
 
             // "count_not_paid_3yrs" => $data->pending_cnt_3yrs,
