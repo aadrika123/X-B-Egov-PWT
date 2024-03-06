@@ -30,7 +30,8 @@ class TaxCalculator
     private $_maintancePerc;
     private $_refPropConstTypes;
     private $_mRefPropConsTypes;
-    private $_calculationDateFrom;
+    public $_calculationDateFrom;
+    public $_updateCalculationDateFrom;
     private $_agingPercs;
     private $_currentFyear;
     private $_residentialUsageType;

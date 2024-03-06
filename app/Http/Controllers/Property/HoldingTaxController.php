@@ -1884,4 +1884,21 @@ class HoldingTaxController extends Controller
 
         return responseMsgs(true, "SMS Send Successfully of " . $propDetails->count() . " Property", [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
     }
+
+    public function genratePropNewTax(Request $request)
+    {
+        try{
+            $propList = PropProperty::where("status",1)->orderBy("id","DESC")->where("id",171749)->limit(10)->get();
+            foreach($propList as $prop)
+            {
+                $propId = $prop->id;
+                $calculateByPropId = new \App\BLL\Property\Akola\CalculatePropNewTaxByPropId($propId);
+                dd($calculateByPropId->_GRID,$calculateByPropId->_lastDemand,Carbon::now()->format('Y-m-d'),Carbon::now()->endOfYear()->addMonths(3)->format('Y-m-d'),getFY());
+            }
+
+        }catch (Exception $e) {
+            return responseMsgs(false, [$e->getMessage(),$e->getFile(),$e->getLine()], "", "011613", "1.0", "", "POST", $request->deviceId ?? "");
+        }
+
+    }
 }

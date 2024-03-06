@@ -628,6 +628,7 @@ Route::controller(HoldingTaxController::class)->group(function () {
   Route::post('prop-comparative-demand', 'comparativeDemand');                              // (10) Property Comparative Demand
   Route::post('cluster/payment-history', 'clusterPaymentHistory');                           // (13) Cluster Payment History
   Route::post('cluster/payment-receipt', 'clusterPaymentReceipt');                           // (14) Generate Cluster Payment Receipt for Saf and Property
+  Route::post('prop/generate-new-demand', 'genratePropNewTax');
 
   //unauthenticated api for prop-payment-history created by prity pandey
   Route::post('prop-payment-history-direct', 'propPaymentHistory')->withoutMiddleware(['request_logger', 'expireBearerToken']);
