@@ -716,7 +716,7 @@ class PostPropPaymentV2
         $arrearTotaTax = $arrearDemand->sum("total_tax");
         $penalty = $arrearDemand->sum("monthlyPenalty");
         $totalaAreaDemand = $previousInterest + $arrearTotaTax + $penalty;
-        $thertyPerOfpreviousInterest = $arrearTotaTax > 0 ? ($this->_REQ->paidAmount / 100) * 30 : $this->_REQ->paidAmount;
+        $thertyPerOfpreviousInterest = $arrearTotaTax > 0 ? (($this->_REQ->paidAmount / 100) * 30) : $this->_REQ->paidAmount;
         if (round($this->_REQ->paidAmount) < round($totalaAreaDemand)) {
             $previousInterest = $previousInterest > 0 ? ($thertyPerOfpreviousInterest <= $previousInterest ? $thertyPerOfpreviousInterest : $previousInterest) : 0;
         }
