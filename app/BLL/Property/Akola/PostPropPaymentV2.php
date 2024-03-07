@@ -716,7 +716,7 @@ class PostPropPaymentV2
         $arrearTotaTax = $arrearDemand->sum("total_tax");
         $penalty = $arrearDemand->sum("monthlyPenalty");
         $totalaAreaDemand = $previousInterest + $arrearTotaTax + $penalty;
-        $thertyPerOfpreviousInterest = ($this->_REQ->paidAmount / 100) * 30;
+        $thertyPerOfpreviousInterest = $arrearTotaTax > 0 ? ($this->_REQ->paidAmount / 100) * 30 : $this->_REQ->paidAmount;
         if (round($this->_REQ->paidAmount) < round($totalaAreaDemand)) {
             $previousInterest = $previousInterest > 0 ? ($thertyPerOfpreviousInterest <= $previousInterest ? $thertyPerOfpreviousInterest : $previousInterest) : 0;
         }
@@ -759,8 +759,9 @@ class PostPropPaymentV2
         $paidPenalty = $previousInterest; #$this->_propCalculation->original['data']["previousInterest"];
         $demandAmt = $this->_propCalculation->original['data']["payableAmt"];
         $paidDemands = [];
+        $totalDemandAmt = collect($demands)->sum("due_total_tax");
         foreach ($demands as $key => $val) {
-            if ($payableAmount <= 0) {
+            if ($payableAmount <= 0 && $totalDemandAmt!=0) {
                 continue;
             }
             $paymentDtl = ($this->demandAdjust($payableAmount, $val["id"]));
@@ -905,7 +906,7 @@ class PostPropPaymentV2
         }
 
         #insert Advance Amount
-        if (round($payableAmount) > 0) {
+        if (round($payableAmount) > 0 && $totalDemandAmt!=0) {
             $advArr = [
                 "prop_id" => $this->_propId,
                 "tran_id" => $propTrans['id'],
@@ -932,7 +933,7 @@ class PostPropPaymentV2
         $generatePaymentReceipt = new GeneratePaymentReceiptV2;                     // Version 2 Receipt
         $generatePaymentReceipt->generateReceipt("", $propTrans['id']);
         $receipt = $generatePaymentReceipt->_GRID;
-        // dd($receipt,$this->_REQ["paidAmount"],$this->_REQ["amount"]);
+        // dd($receipt,$this->_REQ["paidAmount"],$this->_REQ["amount"],$thertyPerOfpreviousInterest);
 
         // sendsms
         $propertyNo  = $this->_propDetails->property_no;
