@@ -1745,6 +1745,10 @@ class WaterPaymentController extends Controller
             $endingDate         = Carbon::createFromFormat('Y-m-d',  $uptoDate)->endOfMonth();
             $penaltyAmount      = collect($consumerDemands)->sum('penalty');
             $refDemandAmount    = collect($consumerDemands)->sum('balance_amount');
+            $paidFrom           = collect($consumerDemands)->min("demand_from");
+            $paidUpto           = collect($consumerDemands)->min("demand_upto");
+            $paidFrom           = $paidFrom ? Carbon::parse($paidFrom)->format("Y-m-d") : $paidFrom;
+            $paidUpto           = $paidUpto ? Carbon::parse($paidUpto)->format("Y-m-d") : $paidUpto;
 
             # consumer meter details 
             $consumerMeterDetails = $mWaterConsumerMeter->getMeterDetailsByConsumerId($consumerDetails->id)
@@ -1800,8 +1804,8 @@ class WaterPaymentController extends Controller
                 'initialReading'        => (int)$initialReading,
                 'finalReading'          => (int)$finalReading,
                 "address"               => $consumerDetails['address'],
-                "paidFrom"              => $startingDate->format('Y-m-d'),
-                "paidUpto"              => $endingDate->format('Y-m-d'),
+                "paidFrom"              => $paidFrom, #$startingDate->format('Y-m-d'),
+                "paidUpto"              => $paidUpto , #$endingDate->format('Y-m-d'),
                 "holdingNo"             => $consumerDetails['holding_no'],
                 "propertyNo"            => $consumerDetails['property_no'],
                 "safNo"                 => $consumerDetails['saf_no'],
@@ -1841,45 +1845,7 @@ class WaterPaymentController extends Controller
                 "adjustAmount"            => $adjustAmt,
                 "netAdvance"              =>$advanceAmt - $adjustAmt,
             ];
-            # sending pdf of demand rerceipt via whatsapp
-            // $this->whatsAppSend($returnValues);
-            // $sms = AkolaProperty(
-            //     [
-            //         "owner_name" => $returnValues['customerName'],
-            //         "saf_no"     => $returnValues['transactionNo']
-            //     ], 
-            //     'New Assessment'
-            // );
-            // if (($sms["status"] !== false)) {
-            //     $respons = SMSAKGOVT(7319867430, $sms["sms"], $sms["temp_id"]);
-            // }
-
-            // $sms = AkolaProperty(
-            //     [
-            //         "owner_name" => $ownerName,
-            //         "saf_no" => $safNo,
-            //         "assessment_type" => $request->assessmentType,
-            //         "holding_no" => $request->propertyNo ?? ""
-            //     ],
-            //     ($request->assessmentType == "New Assessment" ? "New Assessment" : "Reassessment")
-            // );
-            // if (($sms["status"] !== false)) {
-            //     $respons = send_sms($ownerMobile, $sms["sms"], $sms["temp_id"]);
-            // }
-            # watsapp message   
-            // Register_message
-            // return  $whatsapp2 = (Whatsapp_Send(
-            //     7319867430,
-            //     "trn_2_var",
-            //     [
-            //         "content_type" => "text",
-            //         [
-            //             $returnValues["customerName"],
-            //             $returnValues['transactionNo'],
-            //             $returnValues['consumerNo'],
-            //         ]
-            //     ]
-            // ));
+            
             return responseMsgs(true, "Payment Receipt", remove_null($returnValues), "", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, [$e->getMessage(), $e->getFile(),$e->getLine()], "", "01", "ms", "POST", "");
