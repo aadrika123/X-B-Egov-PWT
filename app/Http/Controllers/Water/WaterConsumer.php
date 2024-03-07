@@ -2322,7 +2322,7 @@ class WaterConsumer extends Controller
         }
         catch(Exception $e)
         {
-            dd($e->getMessage(),$e->getFile(),$e->getLine());
+            responseMsgs(false,$e->getMessage(),"");
         }
     }
 

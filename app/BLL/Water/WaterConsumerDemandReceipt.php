@@ -148,8 +148,8 @@ class WaterConsumerDemandReceipt
         $this->_currentReadingDate = $this->_currentReadingDate ? Carbon::parse($this->_currentReadingDate)->format("d-m-Y") : "";
         $this->_prevuesReadingDate = $this->_prevuesReadingDate ? Carbon::parse($this->_prevuesReadingDate)->format("d-m-Y") : "";
 
-        $this->_demandFrom = Carbon::parse($this->_demandFrom)->format("d-m-Y");
-        $this->_demandUpto = Carbon::parse($this->_demandUpto)->format("d-m-Y");
+        $this->_demandFrom = $this->_demandFrom ? Carbon::parse($this->_demandFrom)->format("d-m-Y"): $this->_demandFrom ;
+        $this->_demandUpto = $this->_demandUpto ? Carbon::parse($this->_demandUpto)->format("d-m-Y") : $this->_demandUpto;
         $this->_currentBillDays = $currenBillDemadFrom && $currenBillDemadUpto ? (Carbon::parse($currenBillDemadFrom)->diffInDays(Carbon::parse($currenBillDemadUpto))+1):null;
         
     }
@@ -258,7 +258,7 @@ class WaterConsumerDemandReceipt
             "fromDate"              => $this->_demandFrom,
             "uptoDate"              => $this->_demandUpto,
             "demandNo"              => $this->_demandNo,
-            "taxNo"                 => $this->_connectionDtls->property_no ,
+            "taxNo"                 => $this->_connectionDtls->folio_no ,
             "billDate"              => $this->_billDate ,
             "billDueDate"           => $this->_billDueDate ,
             "billDueDate"           => $this->_billDueDate ,
@@ -276,7 +276,7 @@ class WaterConsumerDemandReceipt
             "connectionDate"    => $this->_connectionDtls->connection_date ? Carbon::parse($this->_connectionDtls->connection_date)->format("d-m-Y"):"",  
             "connectionType"    => $this->_connectionDtls->category ? $this->_connectionDtls->category:"General",    
             "tabSize"           => $this->_connectionDtls->tab_size ,    
-            "oldPropertyNo"     => $this->_connectionDtls->property_no , 
+            "oldPropertyNo"     => $this->_connectionDtls->folio_no , 
             "newPropertyNo"     => $this->_connectionDtls->holding_no , 
             "meterNo"           => !$this->_meterNo ? ($this->_meterReadingDocuments->meter_no??""): $this->_meterNo,
             "currentReadingDate"    => $this->_currentReadingDate,
