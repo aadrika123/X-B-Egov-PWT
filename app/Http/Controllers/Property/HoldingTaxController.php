@@ -476,7 +476,7 @@ class HoldingTaxController extends Controller
             return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $postPropPayment->_tranNo, 'transactionId' => $postPropPayment->_tranId], "011604", "2.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
-            return responseMsgs(false, $e->getMessage(), "", "011604", "2.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "Module", "011604", "2.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
