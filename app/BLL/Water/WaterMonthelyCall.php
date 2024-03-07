@@ -179,9 +179,13 @@ class WaterMonthelyCall
 
         # Check if the last demand is generated for the month
         if (!$lastDemandDate) {
-            if ($lastDemandMonth >= $currentMonth) {
-                throw new Exception("demand is generated till $lastDemandDate!");
-            }
+            // if ($lastDemandMonth >= $currentMonth) {
+            //     throw new Exception("demand is generated till $lastDemandDate!");
+            // }
+        }
+        if($this->_consumerLastDemand && $this->_meterStatus!="Meter" && $lastDemandMonth >= $currentMonth)
+        {
+            throw new Exception("demand is generated till this month $lastDemandDate");
         }
         # ❗❗ Check the connection type for the consumer ❗❗
         if (!$this->_consuemrMeterDetails) {
@@ -191,9 +195,9 @@ class WaterMonthelyCall
         {   
                 throw new Exception("finalRading should be grater than previous reading!");
         }
-        if($this->_fromDate>$this->_uptoDate)
+        if($this->_fromDate > $this->_uptoDate)
         {
-            throw new Exception("from Date can't smaller than up to date!(from date = $this->_fromDate, upto date = $this->_uptoDate");
+            throw new Exception("from Date can't smaller than up to date!(from date = $this->_fromDate, upto date = $this->_uptoDate )");
         }
 
     }
@@ -609,11 +613,11 @@ class WaterMonthelyCall
         {
             throw new Exception("the demand is generated till ".$this->_fromDate);
         }
-        if($this->_meterStatus=="Meter" && $currentDateYear == $lastDemandYear && $lastDemandQuater == $currentDateYear)
-        {
-            throw new Exception("the demand is generated Of this Quater ");
-        }
-        if($this->_meterStatus!="Meter" && $currentDateYear == $lastDemandGenerationYear && $lastDemandGenerationQuater == $currentDateYear)
+        // if($this->_meterStatus=="Meter" && $currentDateYear == $lastDemandYear && $lastDemandQuater == $currentDateQuater)
+        // {
+        //     throw new Exception("the demand is generated Of this Quater ");
+        // }
+        if($this->_meterStatus!="Meter" && $currentDateYear == $lastDemandGenerationYear && $lastDemandGenerationQuater == $currentDateQuater)
         {
             throw new Exception("the demand is generated Of this Quater ");
         }

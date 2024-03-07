@@ -267,11 +267,11 @@ class WaterConsumer extends Controller
             if (!$consumerDetails) {
                 throw new Exception("Consumer detail not found!");
             }
-            $this->checkDemandGeneration($request, $consumerDetails);                                       // unfinished function
+            // $this->checkDemandGeneration($request, $consumerDetails);                                       // unfinished function
 
             # Calling BLL for call
             $returnData = new WaterMonthelyCall($request->consumerId, $request->demandUpto, $request->finalRading); #WaterSecondConsumer::get();
-            // $returnData->checkDemandGenerationCondition();
+            $returnData->checkDemandGenerationCondition();
             $calculatedDemand = $returnData->parentFunction($request);
             if ($calculatedDemand['status'] == false) {
                 throw new Exception($calculatedDemand['errors']);
@@ -398,40 +398,33 @@ class WaterConsumer extends Controller
         $refConsumerId          = $request->consumerId;
         $mWaterConsumerDemand   = new WaterConsumerDemand();
         $mWaterSecondConsumer   = new WaterSecondConsumer();
+        $mWaterConsumerMeter    = new WaterConsumerMeter();
 
         $lastDemand = $mWaterConsumerDemand->akolaCheckConsumerDemand($refConsumerId)->first();
         if ($lastDemand) {
-
             // here we check the demand from date is present then do this or that
             if (!$lastDemand->demand_upto) {
                 $startDate  = Carbon::parse($lastDemand->generation_date);
-                $refDemandUpto =  $startDate;
+                $refDemandUpto =  $lastDemand->generation_date ? $startDate : $lastDemand->generation_date;
             } else {
-                $refDemandUpto = Carbon::parse($lastDemand->demand_upto);
+                $refDemandUpto = $lastDemand->demand_upto ? Carbon::parse($lastDemand->demand_upto) : $lastDemand->demand_upto;
             }
 
-            if ($refDemandUpto > $today) {
+            if ($refDemandUpto && $refDemandUpto > $today) {
                 throw new Exception("the demand is generated till" . "" . $lastDemand->demand_upto);
             }
 
             $startDate  = Carbon::parse($refDemandUpto);
             $uptoMonth  = $startDate;
             $todayMonth = $today;
-            if ($uptoMonth->greaterThan($todayMonth)) {
+            if ($refDemandUpto && $uptoMonth->greaterThan($todayMonth)) {
                 throw new Exception("demand should be generated generate in next month!");
             }
             $diffMonth = $startDate->diffInMonths($today);
-            if ($diffMonth < 3) {
-                throw new Exception("there should be a difference of 4  month!");
+            if ($refDemandUpto && $diffMonth < 3) {
+                throw new Exception("there should be a difference of 3  month!");
             }
-        } else {
-            // $uptoMonth  = $startDate;
-            // $todayMonth = $today;
-            // $diffMonth = $startDate->diffInMonths($today);
-            // if ($diffMonth < 4) {
-            //     throw new Exception("there should be a difference of 4  month!");
-            // }
-        }
+        } 
         # write the code to check the first meter reading exist and the other 
     }
 
