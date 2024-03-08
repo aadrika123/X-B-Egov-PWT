@@ -120,6 +120,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('grievance/get-user-transactions', 'getUserTransactions');
         Route::post('application/citizen-application-list', 'getCitizenApplicationList');
         Route::post('consumer/cheque-detail-update', 'chequeUpdetails');
+        Route::post('old-payment-entry', 'oldPaymentEntry');
 
         # test api
         Route::post('testv2', 'testv2');
