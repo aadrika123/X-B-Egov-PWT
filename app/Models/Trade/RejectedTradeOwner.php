@@ -2,6 +2,7 @@
 
 namespace App\Models\Trade;
 
+use App\Models\Advertisements\WfActiveDocument;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 

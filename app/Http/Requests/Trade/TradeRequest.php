@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Trade;
 
+use App\Models\Trade\ActiveTradeLicence;
 use App\Repository\Common\CommonFunction;
 use Carbon\Carbon;
 use Illuminate\Foundation\Http\FormRequest;
@@ -11,7 +12,7 @@ use Illuminate\Support\Facades\Config;
 
 class TradeRequest extends FormRequest
 {
-   
+    protected $_DB_CON_NAME;
     protected $_COMMON_FUNCTION;
     protected $_WF_MASTER_Id;
     protected $_WF_NOTICE_MASTER_Id;
@@ -39,7 +40,7 @@ class TradeRequest extends FormRequest
 
     public function __construct()
     {
-        
+        $this->_DB_CON_NAME = (new ActiveTradeLicence())->getConnection();
         $this->_COMMON_FUNCTION = new CommonFunction();
 
         $this->_WF_MASTER_Id = Config::get('workflow-constants.TRADE_MASTER_ID');
