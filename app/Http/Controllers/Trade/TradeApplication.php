@@ -1404,7 +1404,7 @@ class TradeApplication extends Controller
                 throw new Exception("Data not found");
             }
             if($oldData->update_counter>0){
-                throw new Exception("You Are ".$oldData->update_counter." Attempt Updation On This App");
+                throw new Exception("You Are Attempted Updation On This App ".getNumberToSentence($oldData->update_counter). ($oldData->update_counter >99 ? "times" : "time"));
             }
             if(strtoupper($oldData->apply_from)	!=strtoupper("Existing"))
             {
@@ -1430,7 +1430,8 @@ class TradeApplication extends Controller
             $oldData->update_counter+=1;
             $oldData->update();            
             $this->commit();
-            return responseMsg(true, "data update", '');
+            $message = "Application Update ".getNumberToSentence($oldData->update_counter). ($oldData->update_counter >99 ? "times" : "time");            
+            return responseMsg(true, $message, '');
         }
         catch (Exception $e) {
             $this->rollback();
