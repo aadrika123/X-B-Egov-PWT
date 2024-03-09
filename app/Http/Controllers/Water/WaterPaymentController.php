@@ -3389,4 +3389,42 @@ class WaterPaymentController extends Controller
             return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
+
+    public function oldPaymentEntry(Request $request)
+    {
+        try{
+            $paymentMode = Config::get("payment-constants.PAYMENT_OFFLINE_MODE");
+            $paymentMode = (collect($paymentMode)->implode(","));
+            $offlinePaymentModes = Config::get('payment-constants.PAYMENT_OFFLINE_MODE');
+            $cash = Config::get('payment-constants.PAYMENT_OFFLINE_MODE.1');
+            $online = Config::get('payment-constants.PAYMENT_OFFLINE_MODE.5');
+            $rules = [
+                "consumerId" => "required|digits_between:1,9223372036854775807",
+                "tranDate" => "required|date|before:".(Carbon::now()->format("Y-m-d")),
+                "paymentMode" => "required|string|in:".$paymentMode,
+                "amount" => "required|numeric|min:0.1|max:9999999",
+            ];
+            if (isset($request['paymentMode']) &&  in_array($request['paymentMode'], $offlinePaymentModes) && ($request['paymentMode'] != $cash && $request['paymentMode'] != $online)) {
+                $rules['chequeDate'] = "required|date|date_format:Y-m-d";
+                $rules['bankName'] = "required";
+                $rules['branchName'] = "required";
+                $rules['chequeNo'] = "required";
+            }
+            $validated = Validator::make(
+                $request->all(),
+                $rules
+            );
+            if ($validated->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'validation error',
+                    'errors' => $validated->errors()
+                ], 200);
+            }
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
 }

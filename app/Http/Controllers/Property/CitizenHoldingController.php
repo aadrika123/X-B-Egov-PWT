@@ -89,6 +89,10 @@ class CitizenHoldingController extends Controller
             if ($request->paymentType != "isPartPayment") {
                 $request->merge(["paidAmount" => $request->paymentType == "isFullPayment" ? $payableAmt : $arrear]);
             }
+            if(round($request->paidAmount) > round($payableAmt))
+            {
+                throw new Exception("Can not pay advance amount throw online");
+            }
 
             $newReqs = new ReqPayment($request->all());
             $newReqs->merge([

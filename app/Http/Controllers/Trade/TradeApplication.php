@@ -1375,6 +1375,28 @@ class TradeApplication extends Controller
 
     public function editOldApp(ApplicationId $request)
     {
+        $db_connection_name = ((new ActiveTradeLicence())->getConnectionName());
+        $mFramNameRegex = "/^[a-zA-Z0-9][a-zA-Z0-9\'\.\-\,\&\s\/]+$/i";
+        $mOwnerName = "/^([a-zA-Z0-9]+)(\s[a-zA-Z0-9\.\,\']+)*$/i";
+        $mMobileNo  = "/[0-9]{10}/";
+        $validator = Validator::make($request->all(), [
+            "validFrom"             =>"required|date|date_format:Y-m-d",
+            "validUpto"             => "required|date|date_format:Y-m-d|after:".$request->validFrom,            
+            "firmEstdDate"          => "required|date|before_or_equal:".$request->validFrom,
+            "zoneId"                => "required|digits_between:1,9223372036854775807",
+            "wardNo"                => "required|digits_between:1,9223372036854775807",            
+            "firmName"              => "required|regex:$mFramNameRegex",
+            "firmType"              => "required|digits_between:1,9223372036854775807",
+            "ownershipType"         => "required|digits_between:1,9223372036854775807",
+        ]);
+    
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validator->errors()
+            ], 200);
+        }
         try{
             $appId = $request->applicationId;
             $oldData = TradeLicence::find($appId);
@@ -1382,10 +1404,37 @@ class TradeApplication extends Controller
                 throw new Exception("Data not found");
             }
             if($oldData->update_counter>0){
-                throw new Exception("You Are ".$oldData->update_counter." Attempt Updation On This App");
+                throw new Exception("You Are Attempted Updation On This App ".getNumberToSentence($oldData->update_counter). ($oldData->update_counter >99 ? "times" : "time"));
             }
+            if(strtoupper($oldData->apply_from)	!=strtoupper("Existing"))
+            {
+                throw new Exception("this is new application. You can not update form hear");
+            }
+            // $owners = $oldData->owneres()->where("is_active",true)->get();
+            $request->merge(["ulbId"=>$oldData->ulb_id]); 
+            $validFrom = $request->validFrom ? $request->validFrom : $oldData->valid_from;
+            $validUpto = $request->validUpto ? $request->validUpto : $oldData->valid_upto;
+            $yearDiff = (int)round(Carbon::parse($validFrom)->diffInDays(Carbon::parse($validUpto))/365);            
+            $this->begin();
+            #application update 
+            $oldData->valid_from            = $validFrom;
+            $oldData->valid_upto            = $validUpto;
+            $oldData->zone_id               = $request->zoneId ? $request->zoneId : $oldData->zone_id;
+            $oldData->ward_id               = $request->wardNo ? $request->wardNo : $oldData->ward_id;            
+            $oldData->establishment_date    = $request->firmEstdDate ? $request->firmEstdDate : $oldData->establishment_date;
+            $oldData->firm_name             = $request->firmName ? $request->firmName : $oldData->firm_name ;
+            $oldData->firm_name_marathi     = $request->firmNameMarathi ? $request->firmNameMarathi : $oldData->firm_name_marathi;
+            $oldData->firm_type_id          = $request->firmType ? $request->firmType : $oldData->firm_type_id;
+            $oldData->ownership_type_id     = $request->ownershipType ? $request->ownershipType : $oldData->ownership_type_id;
+            $oldData->licence_for_years     = $yearDiff;
+            $oldData->update_counter+=1;
+            $oldData->update();            
+            $this->commit();
+            $message = "Application Update ".getNumberToSentence($oldData->update_counter). ($oldData->update_counter >99 ? "times" : "time");            
+            return responseMsg(true, $message, '');
         }
         catch (Exception $e) {
+            $this->rollback();
             return responseMsg(false, $e->getMessage(), '');
         }
     }

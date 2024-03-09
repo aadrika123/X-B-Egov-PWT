@@ -1420,7 +1420,7 @@ class ActiveSafController extends Controller
             if (!$forwardBackwardIds) {
                 throw new Exception("You Are Noth Authorize For This Workflow");
             }
-            if(in_array($saf->workflow_id,$this->_alowJahirnamaWorckflows))
+            if(in_array($saf->workflow_id,$this->_alowJahirnamaWorckflows)&& $request->action == 'forward')
             {
                 $this->checkMutionCondition($wfLevels, $saf);
             }
@@ -1444,7 +1444,7 @@ class ActiveSafController extends Controller
                         $fieldVerifiedSaf = $propSafVerification->getVerifications2($safId);
                     }
                 }
-                if (collect($fieldVerifiedSaf)->isNotEmpty()) {
+                if (collect($fieldVerifiedSaf)->isNotEmpty() && $saf->current_role == $wfLevels['UTC']) {
                     $saf->is_field_verified = true;
                 }
                 if (!$gioTag->isEmpty()) {

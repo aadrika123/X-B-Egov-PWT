@@ -450,6 +450,59 @@ if (!function_exists('getIndianCurrency')) {
     }
 }
 
+if (!function_exists('getNumberToSentence')) {
+    function getNumberToSentence(float $number)
+    {
+        $decimal = round($number - ($no = floor($number)), 2) * 100;
+        $hundred = null;
+        $digits_length = strlen($no);
+        $i = 0;
+        $str = array();
+        $words = array(
+            0 => 'Zero', 1 => 'First', 2 => 'Second',
+            3 => 'Third', 4 => 'Fourth', 5 => 'Fifth', 6 => 'Sixth',
+            7 => 'Seventh', 8 => 'Eighth', 9 => 'Ninth',
+            10 => 'Tenth', 11 => 'Eleventh', 12 => 'Twelve',
+            13 => 'Thirteenth', 14 => 'Fourteenth', 15 => 'Fifteenth',
+            16 => 'Sixteenth', 17 => 'Seventeenth', 18 => 'Eighteenth',
+            19 => 'Nineteenth', 20 => 'Twentieth', 30 => 'Thirtieth',
+            40 => 'Fortieths', 50 => 'Fiftieth', 60 => 'Sixtieth',
+            70 => 'Seventieth', 80 => 'Eightieth', 90 => 'Ninetieth'
+        );
+        $swords = array(
+            0 => '', 1 => 'One', 2 => 'Two',
+            3 => 'Three', 4 => 'Four', 5 => 'Five', 6 => 'Six',
+            7 => 'Seven', 8 => 'Eight', 9 => 'Nine',
+            10 => 'Ten', 11 => 'Eleven', 12 => 'Twelve',
+            13 => 'Thirteen', 14 => 'Fourteen', 15 => 'Fifteen',
+            16 => 'Sixteen', 17 => 'Seventeen', 18 => 'Eighteen',
+            19 => 'Nineteen', 20 => 'Twenty', 30 => 'Thirty',
+            40 => 'Forty', 50 => 'Fifty', 60 => 'Sixty',
+            70 => 'Seventy', 80 => 'Eighty', 90 => 'Ninety'
+        );
+        $digits = array('', 'Hundred', 'Thousand', 'Lakh', 'Crore'); 
+        if($number>99) 
+        {
+            $words = $swords;
+        }      
+        while ($i < $digits_length) {
+            $divider = ($i == 2) ? 10 : 100;
+            $number = floor($no % $divider);
+            $no = floor($no / $divider);
+            $i += $divider == 10 ? 1 : 2;
+            if ($number) {
+                $plural = (($counter = count($str)) && $number > 9) ? '' : null;
+                $hundred = ($counter == 1 && $str[0]) ? ' ' : null;
+                $str[] = ($number < 21) ? $words[$number] . ' ' . $digits[$counter] . $plural . ' ' . $hundred : $words[floor($number / 10) * 10] . ' ' . $words[$number % 10] . ' ' . $digits[$counter] . $plural . ' ' . $hundred;
+            } 
+            else $str[] = null;
+        }
+        $Rupees = implode('', array_reverse($str));
+        $paise = ($decimal > 0) ? "Pont" . ($words[$decimal / 10] . " " . $words[$decimal % 10]) . ' ' : '';
+        return ($Rupees) . $paise;
+    }
+}
+
 // Decimal to SqMt Conversion
 if (!function_exists('decimalToSqMt')) {
     function decimalToSqMt(float $num)

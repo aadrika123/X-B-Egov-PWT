@@ -526,7 +526,7 @@ class PropertyController extends Controller
             if (!$mRole) {
                 throw new Exception("You Are Not Authorized For This Action");
             }
-            if ($mRole->is_initiator) {
+            if ($mRole->is_initiator || in_array(strtoupper($mUserType), Config::get("TradeConstant.CANE-NO-HAVE-WARD"))) {
                 $mWardPermission = $ModelWard->getAllWard($refUlbId)->map(function ($val) {
                     $val->ward_no = $val->ward_name;
                     return $val;
@@ -540,9 +540,12 @@ class PropertyController extends Controller
 
             $mRoleId = $mRole->role_id;
 
-            $data = (new PropPropertyUpdateRequest)->WorkFlowMetaList()
-                ->where("current_role_id", $mRoleId)
+            $data = (new PropPropertyUpdateRequest)->WorkFlowMetaList()                
                 ->where("prop_properties.ulb_id", $refUlbId);
+            if(!in_array(strtoupper($mUserType), Config::get("TradeConstant.CANE-NO-HAVE-WARD")))
+            {
+                $data = $data->where("current_role_id", $mRoleId);
+            }
             if ($request->wardNo && $request->wardNo != "ALL") {
                 $mWardIds = [$request->wardNo];
             }
