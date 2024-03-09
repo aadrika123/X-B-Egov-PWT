@@ -25,7 +25,7 @@ class DemoController extends Controller
         # Send Message behalf of registration
         $whatsaapResponse = (Whatsapp_Send(
             "8797770238",
-            "coco_cola",                     // Set at env or database and 
+            "hello_world",                     // Set at env or database and 
             [
                 "conten_type" => "text",
                 [
