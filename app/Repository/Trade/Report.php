@@ -1428,23 +1428,23 @@ class Report implements IReport
                     $join->ON("active_trade_licences.current_role", "roles.wf_role_id")
                         ->WHERE("active_trade_licences.ulb_id", $ulbId)
                         ->WHERE("active_trade_licences.is_parked", FALSE)
-                        ->WHERE("active_trade_licences.is_active", TRUE)
-                        ->WHEREIN("active_trade_licences.payment_status", [1, 2]);
+                        ->WHERE("active_trade_licences.is_active", TRUE);
+                        // ->WHEREIN("active_trade_licences.payment_status", [1, 2]);
                 })
                 ->GROUPBY(["wf_roles.id", "wf_roles.role_name"])
-                ->UNION(
-                    ActiveTradeLicence::SELECT(
-                        DB::RAW("8 AS id, 'JSK' AS role_name,
-                                COUNT(active_trade_licences.id)")
-                    )
-                        ->WHERE("active_trade_licences.ulb_id", $ulbId)
-                        ->WHERE("active_trade_licences.is_parked", FALSE)
-                        ->WHERE("active_trade_licences.is_active", TRUE)
-                        ->WHERE(function ($where) {
-                            $where->WHERE("active_trade_licences.payment_status", "=", 0)
-                                ->ORWHERENULL("active_trade_licences.payment_status");
-                        })
-                )
+                // ->UNION(
+                //     ActiveTradeLicence::SELECT(
+                //         DB::RAW("8 AS id, 'JSK' AS role_name,
+                //                 COUNT(active_trade_licences.id)")
+                //     )
+                //         ->WHERE("active_trade_licences.ulb_id", $ulbId)
+                //         ->WHERE("active_trade_licences.is_parked", FALSE)
+                //         ->WHERE("active_trade_licences.is_active", TRUE)
+                //         ->WHERE(function ($where) {
+                //             $where->WHERE("active_trade_licences.payment_status", "=", 0)
+                //                 ->ORWHERENULL("active_trade_licences.payment_status");
+                //         })
+                // )
                 ->GET();
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, ["header" => "LEVEL PENDING REPORT"], $data, $apiId, $version, $queryRunTime, $action, $deviceId);
