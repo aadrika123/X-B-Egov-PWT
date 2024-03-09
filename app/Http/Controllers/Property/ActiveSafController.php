@@ -1444,7 +1444,7 @@ class ActiveSafController extends Controller
                         $fieldVerifiedSaf = $propSafVerification->getVerifications2($safId);
                     }
                 }
-                if (collect($fieldVerifiedSaf)->isNotEmpty()) {
+                if (collect($fieldVerifiedSaf)->isNotEmpty() && $saf->current_role == $wfLevels['UTC']) {
                     $saf->is_field_verified = true;
                 }
                 if (!$gioTag->isEmpty()) {
