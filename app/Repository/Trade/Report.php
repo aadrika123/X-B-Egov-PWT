@@ -1539,7 +1539,7 @@ class Report implements IReport
                 ->WHERE("active_trade_licences.ulb_id", $ulbId)
                 ->groupBy(["users_role.user_id", "users_role.user_name", "users_role.wf_role_id", "users_role.role_name"]);
             if (!in_array($roleId, [8])) {
-                $data  = $data->WHEREIN("active_trade_licences.payment_status", [1, 2]);
+                // $data  = $data->WHEREIN("active_trade_licences.payment_status", [1, 2]);
             }
             if (in_array($roleId, [8])) {
                 $data  = $data->WHERE(function ($where) {
