@@ -1605,8 +1605,8 @@ class HoldingTaxController extends Controller
         if ($req->amount)
             $amount = $req->amount;
 
-        $fromDate = Carbon::now()->today();
-        $uptoDate = Carbon::now()->addWeek(-1);
+        $fromDate = Carbon::now()->addWeek(-1)->format('Y-m-d');
+        $uptoDate = Carbon::now()->format('Y-m-d');
         $perPage = $req->perPage ?? 10;
         $currentFYear = getFY();
         DB::enableQueryLog();
@@ -1632,7 +1632,7 @@ class HoldingTaxController extends Controller
                 $join->on('prop_sms_logs.ref_id', '=', 'prop_properties.id')
                     ->where('prop_sms_logs.ref_type', 'PROPERTY')
                     ->where('prop_sms_logs.purpose', 'Demand Reminder')
-                    ->whereBetween('prop_sms_logs.created_at', [$fromDate, $uptoDate]);
+                    ->whereBetween(DB::raw('cast(prop_sms_logs.created_at as date)'), [$fromDate, $uptoDate]);
             })
             ->whereNull('prop_sms_logs.id')
             ->where('due_total_tax', '>', 0.9)
@@ -1671,7 +1671,7 @@ class HoldingTaxController extends Controller
             }),
             "total" => $propDetails->total(),
         ];
-        // dd(DB::getQueryLog());
+        // dd($propDetails->total(),DB::getQueryLog());
 
         return responseMsgs(true, "Bulk SMS List", $list, "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
     }
