@@ -387,10 +387,10 @@ class Trade implements ITrade
                     foreach ($refOldowners as $owners) {
                         $owner = new ActiveTradeOwner();
                         $owner->temp_id      = $licenceId;
-                        $this->transerOldOwneres($owner, $owners);
+                        $this->transerOldOwneres($owner, $owners,$request);
                         $owner->user_id  = $refUserId;
                         $owner->save();
-                    }
+                    }                    
                 } elseif ($mApplicationTypeId == 3) # code for Amendment
                 {
                     $this->amedmentLicense($licence, $refOldLicece, $request);
@@ -401,7 +401,7 @@ class Trade implements ITrade
                     {
                         $owner = new ActiveTradeOwner();
                         $owner->temp_id      = $licenceId;
-                        $this->transerOldOwneres($owner, $owners);
+                        $this->transerOldOwneres($owner, $owners,$request);
                         $owner->user_id  = $refUserId;
                         $owner->save();
                     }
@@ -645,8 +645,13 @@ class Trade implements ITrade
     }
 
     # Serial No : 01.05
-    public function transerOldOwneres($refOwner, $owners)
+    public function transerOldOwneres($refOwner, $owners,$request)
     {
+        $newData = collect($request->ownerDetails)->where("ownerId",$owners->id)->first();
+        if($newData)
+        {
+             return($this->addNewOwners($refOwner,$newData));
+        }
         $refOwner->owner_name      = $owners->owner_name;
         $refOwner->guardian_name   = $owners->guardian_name;
         $refOwner->owner_name_marathi      = $owners->owner_name_marathi;
