@@ -1591,7 +1591,7 @@ class HoldingTaxController extends Controller
     /**
      * | Send Bulk List
      */
-    public function propertyBulkSmsList(Request $req)
+    public function propertyBulkSmsListV2(Request $req)
     {
 
 
@@ -1647,6 +1647,7 @@ class HoldingTaxController extends Controller
                 'ward_name',
                 'prop_sms_logs.id'
             )
+            ->orderBy(DB::raw("SUM(due_total_tax)"),'DESC')
             ->orderBy('prop_demands.property_id');
 
         if ($zoneId)
@@ -1666,7 +1667,7 @@ class HoldingTaxController extends Controller
             "data" => collect($propDetails->items())->map(function ($val) use ($getHoldingDues) {
                 $newReq = new Request(['propId' => $val->property_id]);
                 $demand = $getHoldingDues->getDues($newReq);
-                $val->total_tax = $demand["payableAmt"] ?? $val->total_tax;
+                $val->total_tax1 = $demand["payableAmt"] ?? $val->total_tax;
                 return $val;
             }),
             "total" => $propDetails->total(),
@@ -1674,6 +1675,100 @@ class HoldingTaxController extends Controller
         // dd($propDetails->total(),DB::getQueryLog());
 
         return responseMsgs(true, "Bulk SMS List", $list, "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+    }
+
+    /**
+     *       modifyed by sandeep
+     */
+    public function propertyBulkSmsList(Request $req)
+    {
+        try{
+            $zoneId = $wardId = $amount = NULL;
+            if ($req->zoneId)
+                $zoneId = $req->zoneId;
+    
+            if ($req->wardId)
+                $wardId = $req->wardId;
+    
+            if ($req->amount)
+                $amount = $req->amount;
+    
+            $fromDate = Carbon::now()->addWeek(-1)->format('Y-m-d');
+            $uptoDate = Carbon::now()->format('Y-m-d');
+            $perPage = $req->perPage ?? 10;
+            $currentFYear = getFY();
+            DB::enableQueryLog();
+            $propDetails = DB::table(DB::raw("(
+                select property_id,SUM(due_total_tax) as total_tax,MAX(fyear) as max_fyear 
+                from prop_demands
+                where  due_total_tax > 0.9
+                    and status =1
+                group by property_id
+                )prop_demands
+            "))
+            ->join("prop_properties","prop_properties.id","prop_demands.property_id")
+            ->join(DB::raw("(
+                select property_id,string_agg(owner_name,',')owner_name,
+                    string_agg(mobile_no::text,',')mobile_no 
+                from prop_owners
+                where status =1
+                    and LENGTH(prop_owners.mobile_no) = 10
+                group by property_id
+            )prop_owners"),"prop_owners.property_id","prop_demands.property_id")
+            ->leftjoin('zone_masters', 'zone_masters.id', '=', 'prop_properties.zone_mstr_id')
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'prop_properties.ward_mstr_id')
+
+            ->leftJoin('prop_sms_logs', function ($join) use ($fromDate, $uptoDate) {
+                $join->on('prop_sms_logs.ref_id', '=', 'prop_properties.id')
+                    ->where('prop_sms_logs.ref_type', 'PROPERTY')
+                    ->where('prop_sms_logs.purpose', 'Demand Reminder')
+                    ->whereBetween(DB::raw('cast(prop_sms_logs.created_at as date)'), [$fromDate, $uptoDate]);
+            })
+            ->whereNull('prop_sms_logs.id')
+            ->orderBy("total_tax",'DESC')
+            ->select(
+                'prop_sms_logs.id as sms_log_id',
+                'prop_properties.id as property_id',
+                'total_tax', 
+                'max_fyear',
+                'prop_owners.owner_name',
+                'prop_owners.mobile_no',
+                'holding_no',
+                'prop_address',
+                'property_no',
+                'zone_name',
+                'ward_name',
+            );
+
+            if ($zoneId)
+                $propDetails = $propDetails->where("prop_properties.zone_mstr_id", $zoneId);
+
+            if ($wardId)
+                $propDetails = $propDetails->where("prop_properties.ward_mstr_id", $wardId);
+
+            if ($amount)
+                $propDetails = $propDetails->where("due_total_tax", '>', $amount);
+            $propDetails =  $propDetails->paginate($perPage);
+            $getHoldingDues = new GetHoldingDuesV2();
+            $list = [
+                "current_page" => $propDetails->currentPage(),
+                "last_page" => $propDetails->lastPage(),
+                "data" => collect($propDetails->items())->map(function ($val) use ($getHoldingDues) {
+                    $newReq = new Request(['propId' => $val->property_id]);
+                    $demand = $getHoldingDues->getDues($newReq);
+                    $val->total_tax1 = $demand["payableAmt"] ?? $val->total_tax;
+                    return $val;
+                }),
+                "total" => $propDetails->total(),
+            ];
+            // dd($propDetails->total(),DB::getQueryLog());
+            return responseMsgs(true, "Bulk SMS List", $list, "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false, $e->getMessage(), "", "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+        }
+        
     }
 
 
