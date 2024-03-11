@@ -832,8 +832,8 @@ class Trade implements ITrade
             if ($refLecenceData->tobacco_status == 1 && $request->licenseFor > 1) {
                 throw new Exception("Tobaco Application Not Take Licence More Than One Year");
             }
-            if ($refLecenceData->licence_for_years < $request->licenseFor) {
-                throw new Exception("After Application Approved you can not increaces the priode");
+            if ($refLecenceData->licence_for_years != $request->licenseFor) {
+                throw new Exception("After Application Approved you can not change the priode");
             }
             if ($refLecenceData->denial_id && $refNoticeDetails = $this->_NOTICE->getNoticDtlById($refLecenceData->denial_id)) {
                 $refDenialId = $refNoticeDetails->id;
