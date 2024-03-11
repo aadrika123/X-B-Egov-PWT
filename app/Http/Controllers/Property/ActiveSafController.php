@@ -1459,6 +1459,10 @@ class ActiveSafController extends Controller
                 $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $userId);          // Check Post Next level condition
 
                 $geotagExist = $saf->is_field_verified == true;
+                if($saf->prop_type_mstr_id==4)
+                {
+                    $geotagExist = $saf->is_agency_verified;
+                }
 
                 if ($saf->prop_type_mstr_id == 4 && $saf->current_role == $wfLevels['TC']) #only for Vacant Land
                 {
@@ -1548,8 +1552,8 @@ class ActiveSafController extends Controller
                     'forward_time' => $this->_todayDate->format('H:i:s')
                 ]);
             }
-            DB::commit();
-            DB::connection('pgsql_master')->commit();
+            // DB::commit();
+            // DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Successfully " . $request->action . " The Application!!", $samHoldingDtls, "010109", "1.0", "", "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
