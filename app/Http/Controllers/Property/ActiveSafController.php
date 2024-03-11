@@ -1552,8 +1552,8 @@ class ActiveSafController extends Controller
                     'forward_time' => $this->_todayDate->format('H:i:s')
                 ]);
             }
-            // DB::commit();
-            // DB::connection('pgsql_master')->commit();
+            DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Successfully " . $request->action . " The Application!!", $samHoldingDtls, "010109", "1.0", "", "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
