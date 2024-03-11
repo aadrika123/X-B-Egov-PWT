@@ -1746,7 +1746,7 @@ class WaterPaymentController extends Controller
             $penaltyAmount      = collect($consumerDemands)->sum('penalty');
             $refDemandAmount    = collect($consumerDemands)->sum('balance_amount');
             $paidFrom           = collect($consumerDemands)->min("demand_from");
-            $paidUpto           = collect($consumerDemands)->min("demand_upto");
+            $paidUpto           = collect($consumerDemands)->max("demand_upto");
             $paidFrom           = $paidFrom ? Carbon::parse($paidFrom)->format("Y-m-d") : $paidFrom;
             $paidUpto           = $paidUpto ? Carbon::parse($paidUpto)->format("Y-m-d") : $paidUpto;
 
