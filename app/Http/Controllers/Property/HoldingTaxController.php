@@ -1646,8 +1646,7 @@ class HoldingTaxController extends Controller
                 'zone_name',
                 'ward_name',
                 'prop_sms_logs.id'
-            )
-            ->orderBy(DB::raw("SUM(due_total_tax)"),'DESC')
+            )            
             ->orderBy('prop_demands.property_id');
 
         if ($zoneId)

@@ -355,7 +355,7 @@ trait TradeTrait
                     $priv_m_d = date('m-d', strtotime($valid_from));
                     $date = date('Y', strtotime($valid_from)) . '-' . $priv_m_d;
                     $licence_for_years2 = $licence_for_years + $year_diff;
-                    list($valid_from,$valid_upto) = FyearFromUptoDate();
+                    // list($valid_from,$valid_upto) = FyearFromUptoDate();
                     $valid_upto = date('Y-m-d', strtotime("-1 days",strtotime($date . "+" . $licence_for_years2 . " years")));
                     $data['valid_upto'] = $valid_upto;
                     $this->addReniwalLicense($prive_licence);
@@ -378,7 +378,7 @@ trait TradeTrait
                 else
                     $valid_upto = $oneYear_validity;
                 $valid_from = date('Y-m-d');
-                list($valid_from,$valid_upto) = FyearFromUptoDate();
+                // list($valid_from,$valid_upto) = FyearFromUptoDate();
                 $this->addReniwalLicense($prive_licence);
             }
 

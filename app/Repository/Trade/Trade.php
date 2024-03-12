@@ -3732,7 +3732,7 @@ class Trade implements ITrade
 
             if ($count) 
             {
-                $response = ['response' => true, 'rate' => $rate, 'penalty' => $denial_amount_month, 'total_charge' => $total_denial_amount, 'rate_id' => $count->ids, 'arear_amount' => $pre_app_amount, "notice_amount" => $notice_amount,"months"=>$vMonths,"year"=>$diff_year??0,"Dtl"=>$count,];
+                $response = ['response' => true, 'rate' => $rate, 'penalty' => $denial_amount_month, 'total_charge' => $total_denial_amount, 'rate_id' => $count->ids, 'arear_amount' => $pre_app_amount, "curdate" => $data['curdate'],"notice_amount" => $notice_amount,"months"=>$vMonths,"year"=>$diff_year??0,"Dtl"=>$count,];
             } 
             else 
             {
