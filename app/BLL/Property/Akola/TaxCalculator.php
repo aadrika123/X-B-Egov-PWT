@@ -100,10 +100,10 @@ class TaxCalculator
                 $this->_oldUnpayedAmount = collect($unPaidDemand)->sum("due_total_tax") ?? 0;
             }
 
-            if (isset($this->_REQUEST->assessmentType) && ($this->getAssestmentTypeStr() == 'Bifurcation')) {
-                $unPaidDemand = $priProperty->PropDueDemands()->get();
-                $this->_oldUnpayedAmount = round(collect($unPaidDemand)->sum("due_total_tax") ?? 0);
-            }
+            // if (isset($this->_REQUEST->assessmentType) && ($this->getAssestmentTypeStr() == 'Bifurcation')) {
+            //     $unPaidDemand = $priProperty->PropDueDemands()->get();
+            //     $this->_oldUnpayedAmount = round(collect($unPaidDemand)->sum("due_total_tax") ?? 0);
+            // }
 
             if ($this->_oldUnpayedAmount > 0) {
                 // throw new Exception("Old Demand Not Cleard");

@@ -2046,7 +2046,6 @@ class ActiveSafController extends Controller
                     $mPropSmsLog->create($smsReqs);
                 }
             }
-
             // Rejection
             if ($req->status == 0) {
                 $this->finalRejectionSafReplica($activeSaf, $ownerDetails, $floorDetails);

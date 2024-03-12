@@ -626,7 +626,7 @@ class SafApprovalBll
             if (!$propProperties) {
                 throw new Exception("Old Property Not Found");
             }
-            // $this->transferPropertyBifurcationDemand();
+            $this->transferPropertyBifurcationDemand();
 
             #_Save in Assessment History Table
             $oldFloor = PropFloor::where("property_id", $propProperties->id)->get();
@@ -690,7 +690,7 @@ class SafApprovalBll
             $totalArea = $propProperties->area_of_plot;
             $onePercOfArea = $totalArea /100;
             $bifurcatedArea = $this->_verifiedPropDetails[0]->area_of_plot;
-            $percOfBifurcatedArea = $bifurcatedArea/$onePercOfArea;
+            $percOfBifurcatedArea = round(($bifurcatedArea/$onePercOfArea),2);
             $unPaidDemand = $propProperties->PropDueDemands()->get();
             $previousInterest = ($previousInterest/100)*$percOfBifurcatedArea;
             foreach($unPaidDemand as $val)
@@ -759,14 +759,10 @@ class SafApprovalBll
                     $oldDemand->update();
                     continue;
                 }
-                $demand->store($arr);
                 $this->testDemand($arr);
+                $demand->store($arr);
                 $this->adjustOldDemand($val,$arr);
                 $val->update();
-            }
-            if(round($previousInterest)>0)
-            {
-                // $mPropPendingArrear->id
             }
         }
     }
@@ -816,6 +812,11 @@ class SafApprovalBll
             "due_cleanliness_tax","due_sewarage_tax","due_tree_tax","due_professional_tax","due_tax1","due_tax2","due_tax3","due_sp_education_tax",
             "due_water_benefit","due_water_bill","due_sp_water_cess","due_drain_cess","due_light_cess","due_major_building","due_open_ploat_tax"
         ]);
+        // $diff=round($newDemand["total_tax"])-round($newDemand1->sum());
+        // if(round($newDemand["total_tax"])!=round($newDemand1->sum())&& !is_between(round($diff), -1, 1.1))
+        // {
+        //     throw new Exception("Demand not adjusted properly");
+        // }
         if(round($newDemand["total_tax"])!=round($newDemand1->sum()))
         {
             throw new Exception("Demand not adjusted properly");
