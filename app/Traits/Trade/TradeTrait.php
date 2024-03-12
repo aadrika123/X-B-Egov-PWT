@@ -7,6 +7,7 @@ use App\Models\Workflows\WfActiveDocument;
 use App\Models\Masters\RefRequiredDocument;
 use App\Models\Trade\AkolaTradeParamItemType;
 use App\Models\Trade\TradeLicence;
+use App\Models\Trade\TradeOwner;
 use App\Models\Trade\TradeRenewal;
 use App\Models\Trade\TradeTransaction;
 use App\Models\UlbMaster;
@@ -294,8 +295,34 @@ trait TradeTrait
         $moduleId = Config::get('module-constants.TRADE_MODULE_ID');
         $applicationTypeId = $refApplication->application_type_id;
         $flip = flipConstants($applicationTypes);
+
+        $parentIds = trim($refApplication->parent_ids.",".$refApplication->id,","); 
+        $parentIds = explode(",",$parentIds?$parentIds:$refApplication->id); 
+        $oldOwnersId = TradeOwner::whereIN("temp_id",$parentIds)
+                        ->where("is_active",true)
+                        ->orderby("id","ASC")
+                        ->first();
+        $owner_doc = WfActiveDocument::whereIn("active_id",$parentIds)
+                    ->where("workflow_id",$refApplication->workflow_id)
+                    ->where("owner_dtl_id",$oldOwnersId->id??0)
+                    ->where("doc_code","Owner Image")
+                    ->where("status","<>",0)
+                    ->first();
+                    
         switch ($applicationTypeId) {
             case $flip['NEW LICENSE']:
+                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PHOTO")->requirements;
+                $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "New_Licences_Owneres")->requirements;
+                break;
+            case $flip['RENEWAL'] && !$owner_doc:
+                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PHOTO")->requirements;
+                $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "New_Licences_Owneres")->requirements;
+                break;
+            case $flip['AMENDMENT']:
+                $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PHOTO")->requirements;
+                $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "New_Licences_Owneres")->requirements;
+                break;
+            case $flip['SURRENDER']:
                 $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PHOTO")->requirements;
                 $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "New_Licences_Owneres")->requirements;
                 break;

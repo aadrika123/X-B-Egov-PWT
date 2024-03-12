@@ -3404,21 +3404,17 @@ class Trade implements ITrade
             $transaction->rate = number_format(($transaction->paid_amount - $pen), 2);
             $transaction->delay_fee = number_format($delay_fee, 2);
             $transaction->denial_fee = number_format($denial_fee, 2);
-            $transaction->paid_amount_in_words = getIndianCurrency($transaction->paid_amount);            
-            $oldLicense = TradeRenewal::whereIn("id",explode(",",$application->parent_ids?$application->parent_ids:$application->id))
-                            ->where("application_type_id",1)
-                            ->first();
-            if(!$oldLicense)
-            {
-                $oldLicense=$application;
-            }
-            $oldOwnersId = TradeOwner::where("temp_id",$oldLicense->id)
+            $transaction->paid_amount_in_words = getIndianCurrency($transaction->paid_amount); 
+            $application->parent_ids = trim($application->parent_ids.",".$application->id,","); 
+            $parentIds =   explode(",",$application->parent_ids?$application->parent_ids:$application->id);        
+            
+            $oldOwnersId = TradeOwner::whereIN("temp_id",$parentIds)
                             ->where("is_active",true)
                             ->orderby("id","ASC")
                             ->first();
-            $owner_doc = WfActiveDocument::where("active_id",$application->id)
+            $owner_doc = WfActiveDocument::whereIn("active_id",$parentIds)
                         ->where("workflow_id",$application->workflow_id)
-                        ->where("owner_dtl_id",$application->licensee_id)
+                        ->where("owner_dtl_id",$oldOwnersId->id)
                         ->where("doc_code","Owner Image")
                         ->where("status","<>",0)
                         ->first();
