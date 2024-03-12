@@ -889,7 +889,7 @@ class PropertyController extends Controller
             if ($application->pending_status == 5) {
                 throw new Exception("Application Already Approved On " . $application->approval_date);
             }
-            if (!$role || ($application->finisher_role_id != $role->role_id ?? 0)) {
+            if (!$role ||  (!$role->is_finisher && $application->finisher_role_id != $role->role_id)) {
                 throw new Exception("Forbidden Access");
             }
             if (!$request->senderRoleId) {

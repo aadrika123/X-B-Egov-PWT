@@ -837,7 +837,10 @@ class  PropActiveSaf extends Model
             ->leftjoin('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
             ->join('ulb_ward_masters as u', 'u.id', 'prop_active_safs.ward_mstr_id')
             ->leftjoin('ulb_ward_masters as uu', 'uu.id', 'prop_active_safs.new_ward_mstr_id')
-            ->join('prop_active_safs_owners as so', 'so.saf_id', 'prop_active_safs.id');
+            ->join('prop_active_safs_owners as so', function($join){
+                $join->on('so.saf_id', 'prop_active_safs.id')
+                ->where("so.status",1);
+            });
     }
 
     /**
