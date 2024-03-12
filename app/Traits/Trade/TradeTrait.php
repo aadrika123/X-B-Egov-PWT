@@ -296,7 +296,7 @@ trait TradeTrait
         $applicationTypeId = $refApplication->application_type_id;
         $flip = flipConstants($applicationTypes);
 
-        $parentIds = trim($refApplication->parent_ids.",".$refApplication->id,","); 
+        $parentIds = trim($refApplication->parent_ids.",".$refApplication->id,",");
         $parentIds = explode(",",$parentIds?$parentIds:$refApplication->id); 
         $oldOwnersId = TradeOwner::whereIN("temp_id",$parentIds)
                         ->where("is_active",true)
@@ -308,7 +308,7 @@ trait TradeTrait
                     ->where("doc_code","Owner Image")
                     ->where("status","<>",0)
                     ->first();
-                    
+
         switch ($applicationTypeId) {
             case $flip['NEW LICENSE']:
                 $documentList = $mRefReqDocs->getDocsByDocCode($moduleId, "PHOTO")->requirements;
