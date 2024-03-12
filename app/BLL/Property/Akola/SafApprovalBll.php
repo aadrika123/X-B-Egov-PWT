@@ -305,7 +305,7 @@ class SafApprovalBll
                     "saf_floor_id" => $floorDetail->saf_floor_id
                 ];
                 $safFloor = PropActiveSafsFloor::find($floorDetail->saf_floor_id);
-                $oldPFloorUpdate = PropFloor::find($safFloor->prop_floor_details_id ? $safFloor->prop_floor_details_id : 0);
+                $oldPFloorUpdate = PropFloor::find($safFloor ? $safFloor->prop_floor_details_id : 0);
                 if ($oldPFloorUpdate) {
                     $floorReq["status"] = 1;
                     $oldPFloorUpdate->update($floorReq);
