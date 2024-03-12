@@ -38,6 +38,7 @@ class TaxCalculator
     private $_newForm;
     public $_oldUnpayedAmount;
     public $_lastDemand;
+    public $_isSingleManArmedForce = false;
     private $_LESS_PERSENTAGE_APPLY_WARD_IDS;
 
     /**
@@ -82,6 +83,11 @@ class TaxCalculator
         if ($this->_REQUEST->propertyType != 4) {                                               // If the property is not vacand land it means the property is a independent building
             $oldestFloor = collect($this->_REQUEST->floor)->sortBy('dateFrom')->first();
             $this->_propFyearFrom = Carbon::parse($oldestFloor['dateFrom'])->format('Y');                // For Vacant Land Only
+        }
+        $armedForceOwners = collect($this->_REQUEST->owner)->where("isArmedForce",1);
+        if($armedForceOwners->isNotEmpty() && collect($this->_REQUEST->owner)->count()==1)
+        {
+            $this->_isSingleManArmedForce =true;
         }
 
         if (isset($this->_REQUEST->assessmentType) && ($this->getAssestmentTypeStr() != 'New Assessment') && ($this->getAssestmentTypeStr() != 'Amalgamation')) {
@@ -170,7 +176,7 @@ class TaxCalculator
                 $taxValue = roundFigure($valueAfterMaintanance - $aging);               // Tax value is the amount in which all the tax will be calculated
 
                 // Municipal Taxes
-                $generalTax = roundFigure($taxValue * 0.30);
+                $generalTax = $this->_isSingleManArmedForce ? 0 : roundFigure($taxValue * 0.30);
                 $roadTax = roundFigure($taxValue * 0.03);
                 $firefightingTax = roundFigure($taxValue * 0.02);
                 $educationTax = roundFigure($taxValue * 0.02);

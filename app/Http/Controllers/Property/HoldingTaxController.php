@@ -1591,7 +1591,7 @@ class HoldingTaxController extends Controller
     /**
      * | Send Bulk List
      */
-    public function propertyBulkSmsListV2(Request $req)
+    public function propertyBulkSmsList(Request $req)
     {
 
 
@@ -1680,7 +1680,7 @@ class HoldingTaxController extends Controller
     /**
      *       modifyed by sandeep
      */
-    public function propertyBulkSmsList(Request $req)
+    public function propertyBulkSmsListV2(Request $req)
     {
         try{
             $zoneId = $wardId = $amount = NULL;
