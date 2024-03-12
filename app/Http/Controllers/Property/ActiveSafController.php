@@ -2112,8 +2112,8 @@ class ActiveSafController extends Controller
                 'famId' => $famId,
                 'propId' => $safApprovalBll->_replicatedPropId
             ];
-            // DB::commit();
-            // DB::connection('pgsql_master')->commit();
+            DB::commit();
+            DB::connection('pgsql_master')->commit();
             return responseMsgs(true, $msg, $responseFields, "010110", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
