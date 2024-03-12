@@ -176,7 +176,8 @@ class TaxCalculator
                 $taxValue = roundFigure($valueAfterMaintanance - $aging);               // Tax value is the amount in which all the tax will be calculated
 
                 // Municipal Taxes
-                $generalTax = $this->_isSingleManArmedForce ? 0 : roundFigure($taxValue * 0.30);
+                // $generalTax = $this->_isSingleManArmedForce ? 0 : roundFigure($taxValue * 0.30);
+                $generalTax = roundFigure($taxValue * 0.30);
                 $roadTax = roundFigure($taxValue * 0.03);
                 $firefightingTax = roundFigure($taxValue * 0.02);
                 $educationTax = roundFigure($taxValue * 0.02);
