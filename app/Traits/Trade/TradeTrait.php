@@ -7,6 +7,7 @@ use App\Models\Workflows\WfActiveDocument;
 use App\Models\Masters\RefRequiredDocument;
 use App\Models\Trade\AkolaTradeParamItemType;
 use App\Models\Trade\TradeLicence;
+use App\Models\Trade\TradeRenewal;
 use App\Models\Trade\TradeTransaction;
 use App\Models\UlbMaster;
 use App\Models\UlbWardMaster;
@@ -408,6 +409,7 @@ trait TradeTrait
         $ReniwalLicence = $refTradeLicense->replicate();
         $ReniwalLicence->setTable('trade_renewals');
         $ReniwalLicence->id = $refTradeLicense->id;
+        $ReniwalLicence->save();
         $transection = TradeTransaction::select("*")
                     ->where("temp_id",$refTradeLicense->id)
                     ->orderBy("tran_date","DESC")
@@ -424,6 +426,7 @@ trait TradeTrait
         $ReniwalLicence->total_taxable_amount = null;
         $ReniwalLicence->payable_amount = null;
         $ReniwalLicence->pmt_amount     = null;
+        $ReniwalLicence->update();
         $refTradeLicense->forceDelete();
 
     }
