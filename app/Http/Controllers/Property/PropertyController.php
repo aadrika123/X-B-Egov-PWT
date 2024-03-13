@@ -542,10 +542,9 @@ class PropertyController extends Controller
 
             $mRoleId = $mRole->role_id;
 
-            $data = (new PropPropertyUpdateRequest)->WorkFlowMetaList()                
+            $data = (new PropPropertyUpdateRequest)->WorkFlowMetaList()
                 ->where("prop_properties.ulb_id", $refUlbId);
-            if(!in_array(strtoupper($mUserType), Config::get("TradeConstant.CANE-NO-HAVE-WARD")))
-            {
+            if (!in_array(strtoupper($mUserType), Config::get("TradeConstant.CANE-NO-HAVE-WARD"))) {
                 $data = $data->where("current_role_id", $mRoleId);
             }
             if ($request->wardNo && $request->wardNo != "ALL") {
@@ -1078,20 +1077,18 @@ class PropertyController extends Controller
                 $msg['inWorkflow'] = true;
                 $msg['currentRole'] = $data->role_name;
                 $msg['message'] = "Your " . $data->assessment_type . " application is still in workflow and pending at " . $data->role_name . ". Please Track your application with " . $data->application_no;
-            }
-            elseif (!$data){
-                $req->merge(["propId"=>$propertyId]);
+            } elseif (!$data) {
+                $req->merge(["propId" => $propertyId]);
                 $getHoldingDues = new GetHoldingDuesV2;
                 $demand = $getHoldingDues->getDues($req);
-                if (($demand['arrear'] ?? 0) > 0 )
-                    $sms = "Arrear Demand Amount Of " . $demand['arrear'] . " Not Cleard";
-                if (($demand['previousInterest'] ?? 0) > 0 )
-                    $sms = "Previous Intrest Amount Of " . $demand['previousInterest'] . " Not Cleard";
+                if (($demand['previousInterest'] ?? 0) > 0)
+                    $sms = "Previous Intrest Amount Of " . $demand['previousInterest'] . " Not Cleared";
+                if (($demand['arrear'] ?? 0) > 0)
+                    $sms = "Arrear Demand Amount Of " . $demand['arrear'] . " Not Cleared";
 
                 $msg['inWorkflow'] = true;
                 $msg['message']    = $sms;
-            }
-             else
+            } else
                 $msg['inWorkflow'] = false;
 
             return responseMsgs(true, 'Data Updated', $msg, '010801', '01', '', 'Post', '');
@@ -1820,8 +1817,7 @@ class PropertyController extends Controller
             $mlocations->time      = $nowTime;
             $mlocations->ref_id    = $req->refId;
             $mlocations->module_id = $req->moduleId;
-            if($req->actionType)
-            {
+            if ($req->actionType) {
                 $mlocations->action_type = strtoupper(trim($req->actionType));
             }
             $mlocations->save();
@@ -1869,9 +1865,8 @@ class PropertyController extends Controller
 
             $data  = $mLocation->getTcVisitingListORM()
                 ->whereBetween(DB::raw("Cast(locations.created_at As date)"), [$fromDate, $uptoDate]);
-            if($tcId)
-            {
-                $data->where("users.id",$tcId);
+            if ($tcId) {
+                $data->where("users.id", $tcId);
             }
 
             $paginator = $data->paginate($perPage);
