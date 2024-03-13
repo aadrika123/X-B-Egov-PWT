@@ -400,6 +400,10 @@ class SafApprovalBll
 
     public function generatTaxAccUlTc()
     {
+        if(in_array($this->_activeSaf->assessment_type, ['Bifurcation']))
+        {
+            return;
+        }
         $fyDemand = collect($this->_calculateTaxByUlb->_GRID['fyearWiseTaxes'])->sortBy("fyear");
         $user = Auth()->user();
         $ulbId = $this->_activeSaf->ulb_id;
@@ -680,6 +684,7 @@ class SafApprovalBll
     public function transferPropertyBifurcationDemand()
     {
         if (in_array($this->_activeSaf->assessment_type, ['Bifurcation'])) {
+            $test = PropProperty::find($this->_replicatedPropId);
             $user = Auth()->user();
             $ulbId = $this->_activeSaf->ulb_id;
             $demand = new PropDemand();
@@ -754,12 +759,13 @@ class SafApprovalBll
                     "due_major_building" => ($val["due_major_building"] / 100) * $percOfBifurcatedArea,
                     "due_open_ploat_tax" => ($val["due_open_ploat_tax"] / 100) * $percOfBifurcatedArea,
                 ];
+                $this->testDemand($arr);
                 if ($oldDemand = $demand->where("fyear", $arr["fyear"])->where("property_id", $arr["property_id"])->where("status", 1)->first()) {
                     $oldDemand = $this->updateOldDemands($oldDemand, $arr);
                     $oldDemand->update();
                     continue;
                 }
-                $this->testDemand($arr);
+                
                 $demand->store($arr);
                 $this->adjustOldDemand($val, $arr);
                 $val->update();
