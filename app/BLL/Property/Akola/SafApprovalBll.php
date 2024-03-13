@@ -661,11 +661,13 @@ class SafApprovalBll
 
                     $propFloor =  collect($propFloors)->where('id', $activeSafFloorDtl->prop_floor_details_id);
                     $propFloor =  collect($propFloor)->first();
-                    $propFloor->builtup_area = $propFloor->builtup_area - $floorDetail->builtup_area;
-                    $propFloor->carpet_area = $propFloor->builtup_area - $floorDetail->builtup_area;
-                    if ($propFloor->builtup_area == 0)
-                        $propFloor->status = 0;
-                    $propFloor->save();
+                    if ($propFloor) {
+                        $propFloor->builtup_area = $propFloor->builtup_area - $floorDetail->builtup_area;
+                        $propFloor->carpet_area = $propFloor->builtup_area;
+                        if ($propFloor->builtup_area == 0)
+                            $propFloor->status = 0;
+                        $propFloor->save();
+                    }
                 }
                 $newPropFloors = $mPropFloors->getFloorsByPropId($propProperties->id);
 
@@ -677,8 +679,7 @@ class SafApprovalBll
 
     public function transferPropertyBifurcationDemand()
     {
-        if (in_array($this->_activeSaf->assessment_type, ['Bifurcation']))
-        {
+        if (in_array($this->_activeSaf->assessment_type, ['Bifurcation'])) {
             $user = Auth()->user();
             $ulbId = $this->_activeSaf->ulb_id;
             $demand = new PropDemand();
@@ -686,73 +687,72 @@ class SafApprovalBll
             $propProperties = PropProperty::find($this->_activeSaf->previous_holding_id);
             $oldIntrest = $mPropPendingArrear->getInterestByPropId($propProperties->id);
             $previousInterest = $oldIntrest->due_total_interest ?? 0;
-            
+
             $totalArea = $propProperties->area_of_plot;
-            $onePercOfArea = $totalArea /100;
+            $onePercOfArea = $totalArea / 100;
             $bifurcatedArea = $this->_verifiedPropDetails[0]->area_of_plot;
-            $percOfBifurcatedArea = round(($bifurcatedArea/$onePercOfArea),2);
+            $percOfBifurcatedArea = round(($bifurcatedArea / $onePercOfArea), 2);
             $unPaidDemand = $propProperties->PropDueDemands()->get();
-            $previousInterest = ($previousInterest/100)*$percOfBifurcatedArea;
-            foreach($unPaidDemand as $val)
-            {
+            $previousInterest = ($previousInterest / 100) * $percOfBifurcatedArea;
+            foreach ($unPaidDemand as $val) {
                 $arr = [
                     "property_id"   => $this->_replicatedPropId,
-                    "alv"           => ($val["alv"]/100)*$percOfBifurcatedArea,
-                    "maintanance_amt" => ($val["due_maintanance_amt"]/100)*$percOfBifurcatedArea,
-                    "aging_amt"     => ($val["due_aging_amt"]/100)*$percOfBifurcatedArea,
-                    "general_tax"   => ($val["due_general_tax"]/100)*$percOfBifurcatedArea,
-                    "road_tax"      => ($val["due_road_tax"] /100)*$percOfBifurcatedArea,
-                    "firefighting_tax" => ($val["due_firefighting_tax"] /100)*$percOfBifurcatedArea,
-                    "education_tax" => ($val["due_education_tax"] /100)*$percOfBifurcatedArea,
-                    "water_tax"     => ($val["due_water_tax"] /100)*$percOfBifurcatedArea,
-                    "cleanliness_tax" => ($val["due_cleanliness_tax"] /100)*$percOfBifurcatedArea,
-                    "sewarage_tax"  => ($val["due_sewarage_tax"] /100)*$percOfBifurcatedArea,
-                    "tree_tax"      => ($val["due_tree_tax"] /100)*$percOfBifurcatedArea,
-                    "professional_tax" => ($val["due_professional_tax"] /100)*$percOfBifurcatedArea,
-                    "tax1"      => ($val["due_tax1"] /100)*$percOfBifurcatedArea,
-                    "tax2"      => ($val["due_tax2"] /100)*$percOfBifurcatedArea,
-                    "tax3"      => ($val["due_tax3"] /100)*$percOfBifurcatedArea,
-                    "sp_education_tax" => ($val["due_sp_education_tax"] /100)*$percOfBifurcatedArea,
-                    "water_benefit" => ($val["due_water_benefit"] /100)*$percOfBifurcatedArea,
-                    "water_bill"    => ($val["due_water_bill"] /100)*$percOfBifurcatedArea,
-                    "sp_water_cess" => ($val["due_sp_water_cess"] /100)*$percOfBifurcatedArea,
-                    "drain_cess"    => ($val["due_drain_cess"] /100)*$percOfBifurcatedArea,
-                    "light_cess"    => ($val["due_light_cess"] /100)*$percOfBifurcatedArea,
-                    "major_building" => ($val["due_major_building"] /100)*$percOfBifurcatedArea,
-                    "total_tax"     => ($val["due_total_tax"]/100)*$percOfBifurcatedArea,
-                    "open_ploat_tax" => ($val["due_open_ploat_tax"] /100)*$percOfBifurcatedArea,
-    
-                    "is_arrear"     => $val["is_arrear"] ,
+                    "alv"           => ($val["alv"] / 100) * $percOfBifurcatedArea,
+                    "maintanance_amt" => ($val["due_maintanance_amt"] / 100) * $percOfBifurcatedArea,
+                    "aging_amt"     => ($val["due_aging_amt"] / 100) * $percOfBifurcatedArea,
+                    "general_tax"   => ($val["due_general_tax"] / 100) * $percOfBifurcatedArea,
+                    "road_tax"      => ($val["due_road_tax"] / 100) * $percOfBifurcatedArea,
+                    "firefighting_tax" => ($val["due_firefighting_tax"] / 100) * $percOfBifurcatedArea,
+                    "education_tax" => ($val["due_education_tax"] / 100) * $percOfBifurcatedArea,
+                    "water_tax"     => ($val["due_water_tax"] / 100) * $percOfBifurcatedArea,
+                    "cleanliness_tax" => ($val["due_cleanliness_tax"] / 100) * $percOfBifurcatedArea,
+                    "sewarage_tax"  => ($val["due_sewarage_tax"] / 100) * $percOfBifurcatedArea,
+                    "tree_tax"      => ($val["due_tree_tax"] / 100) * $percOfBifurcatedArea,
+                    "professional_tax" => ($val["due_professional_tax"] / 100) * $percOfBifurcatedArea,
+                    "tax1"      => ($val["due_tax1"] / 100) * $percOfBifurcatedArea,
+                    "tax2"      => ($val["due_tax2"] / 100) * $percOfBifurcatedArea,
+                    "tax3"      => ($val["due_tax3"] / 100) * $percOfBifurcatedArea,
+                    "sp_education_tax" => ($val["due_sp_education_tax"] / 100) * $percOfBifurcatedArea,
+                    "water_benefit" => ($val["due_water_benefit"] / 100) * $percOfBifurcatedArea,
+                    "water_bill"    => ($val["due_water_bill"] / 100) * $percOfBifurcatedArea,
+                    "sp_water_cess" => ($val["due_sp_water_cess"] / 100) * $percOfBifurcatedArea,
+                    "drain_cess"    => ($val["due_drain_cess"] / 100) * $percOfBifurcatedArea,
+                    "light_cess"    => ($val["due_light_cess"] / 100) * $percOfBifurcatedArea,
+                    "major_building" => ($val["due_major_building"] / 100) * $percOfBifurcatedArea,
+                    "total_tax"     => ($val["due_total_tax"] / 100) * $percOfBifurcatedArea,
+                    "open_ploat_tax" => ($val["due_open_ploat_tax"] / 100) * $percOfBifurcatedArea,
+
+                    "is_arrear"     => $val["is_arrear"],
                     "fyear"         => $val["fyear"],
                     "user_id"       => $user->id ?? null,
                     "ulb_id"        => $ulbId ?? $user->ulb_id,
-    
-                    "balance" => ($val["due_total_tax"]/100)*$percOfBifurcatedArea,
-                    "due_total_tax" => ($val["due_total_tax"]/100)*$percOfBifurcatedArea,
-                    "due_balance" => ($val["due_balance"]/100)*$percOfBifurcatedArea,
-                    "due_alv" => ($val["alv"]/100)*$percOfBifurcatedArea,
-                    "due_maintanance_amt" => ($val["due_maintanance_amt"] /100)*$percOfBifurcatedArea,
-                    "due_aging_amt"     => ($val["due_aging_amt"] /100)*$percOfBifurcatedArea,
-                    "due_general_tax"   => ($val["due_general_tax"] /100)*$percOfBifurcatedArea,
-                    "due_road_tax"      => ($val["due_road_tax"] /100)*$percOfBifurcatedArea,
-                    "due_firefighting_tax" => ($val["due_firefighting_tax"] /100)*$percOfBifurcatedArea,
-                    "due_education_tax" => ($val["due_education_tax"] /100)*$percOfBifurcatedArea,
-                    "due_water_tax"     => ($val["due_water_tax"] /100)*$percOfBifurcatedArea,
-                    "due_cleanliness_tax" => ($val["due_cleanliness_tax"] /100)*$percOfBifurcatedArea,
-                    "due_sewarage_tax"  => ($val["due_sewarage_tax"] /100)*$percOfBifurcatedArea,
-                    "due_tree_tax"      => ($val["due_tree_tax"] /100)*$percOfBifurcatedArea,
-                    "due_professional_tax" => ($val["due_professional_tax"] /100)*$percOfBifurcatedArea,
-                    "due_tax1"      => ($val["due_tax1"] /100)*$percOfBifurcatedArea,
-                    "due_tax2"      => ($val["due_tax2"] /100)*$percOfBifurcatedArea,
-                    "due_tax3"      => ($val["due_tax3"] /100)*$percOfBifurcatedArea,
-                    "due_sp_education_tax" => ($val["due_sp_education_tax"] /100)*$percOfBifurcatedArea,
-                    "due_water_benefit" => ($val["due_water_benefit"] /100)*$percOfBifurcatedArea,
-                    "due_water_bill"    => ($val["due_water_bill"] /100)*$percOfBifurcatedArea,
-                    "due_sp_water_cess" => ($val["due_sp_water_cess"] /100)*$percOfBifurcatedArea,
-                    "due_drain_cess"    => ($val["due_drain_cess"] /100)*$percOfBifurcatedArea,
-                    "due_light_cess"    => ($val["due_light_cess"] /100)*$percOfBifurcatedArea,
-                    "due_major_building" => ($val["due_major_building"] /100)*$percOfBifurcatedArea,
-                    "due_open_ploat_tax" => ($val["due_open_ploat_tax"] /100)*$percOfBifurcatedArea,
+
+                    "balance" => ($val["due_total_tax"] / 100) * $percOfBifurcatedArea,
+                    "due_total_tax" => ($val["due_total_tax"] / 100) * $percOfBifurcatedArea,
+                    "due_balance" => ($val["due_balance"] / 100) * $percOfBifurcatedArea,
+                    "due_alv" => ($val["alv"] / 100) * $percOfBifurcatedArea,
+                    "due_maintanance_amt" => ($val["due_maintanance_amt"] / 100) * $percOfBifurcatedArea,
+                    "due_aging_amt"     => ($val["due_aging_amt"] / 100) * $percOfBifurcatedArea,
+                    "due_general_tax"   => ($val["due_general_tax"] / 100) * $percOfBifurcatedArea,
+                    "due_road_tax"      => ($val["due_road_tax"] / 100) * $percOfBifurcatedArea,
+                    "due_firefighting_tax" => ($val["due_firefighting_tax"] / 100) * $percOfBifurcatedArea,
+                    "due_education_tax" => ($val["due_education_tax"] / 100) * $percOfBifurcatedArea,
+                    "due_water_tax"     => ($val["due_water_tax"] / 100) * $percOfBifurcatedArea,
+                    "due_cleanliness_tax" => ($val["due_cleanliness_tax"] / 100) * $percOfBifurcatedArea,
+                    "due_sewarage_tax"  => ($val["due_sewarage_tax"] / 100) * $percOfBifurcatedArea,
+                    "due_tree_tax"      => ($val["due_tree_tax"] / 100) * $percOfBifurcatedArea,
+                    "due_professional_tax" => ($val["due_professional_tax"] / 100) * $percOfBifurcatedArea,
+                    "due_tax1"      => ($val["due_tax1"] / 100) * $percOfBifurcatedArea,
+                    "due_tax2"      => ($val["due_tax2"] / 100) * $percOfBifurcatedArea,
+                    "due_tax3"      => ($val["due_tax3"] / 100) * $percOfBifurcatedArea,
+                    "due_sp_education_tax" => ($val["due_sp_education_tax"] / 100) * $percOfBifurcatedArea,
+                    "due_water_benefit" => ($val["due_water_benefit"] / 100) * $percOfBifurcatedArea,
+                    "due_water_bill"    => ($val["due_water_bill"] / 100) * $percOfBifurcatedArea,
+                    "due_sp_water_cess" => ($val["due_sp_water_cess"] / 100) * $percOfBifurcatedArea,
+                    "due_drain_cess"    => ($val["due_drain_cess"] / 100) * $percOfBifurcatedArea,
+                    "due_light_cess"    => ($val["due_light_cess"] / 100) * $percOfBifurcatedArea,
+                    "due_major_building" => ($val["due_major_building"] / 100) * $percOfBifurcatedArea,
+                    "due_open_ploat_tax" => ($val["due_open_ploat_tax"] / 100) * $percOfBifurcatedArea,
                 ];
                 if ($oldDemand = $demand->where("fyear", $arr["fyear"])->where("property_id", $arr["property_id"])->where("status", 1)->first()) {
                     $oldDemand = $this->updateOldDemands($oldDemand, $arr);
@@ -761,16 +761,16 @@ class SafApprovalBll
                 }
                 $this->testDemand($arr);
                 $demand->store($arr);
-                $this->adjustOldDemand($val,$arr);
+                $this->adjustOldDemand($val, $arr);
                 $val->update();
             }
         }
     }
 
-    public function adjustOldDemand($oldDemand,$newDemand)
+    public function adjustOldDemand($oldDemand, $newDemand)
     {
         $oldDemand->balance         = $oldDemand->balance - $newDemand["total_tax"];
-        
+
         $oldDemand->due_maintanance_amt  = $oldDemand->due_maintanance_amt - $newDemand["due_maintanance_amt"];
         $oldDemand->due_aging_amt  = $oldDemand->due_aging_amt - $newDemand["due_aging_amt"];
         $oldDemand->due_general_tax  = $oldDemand->due_general_tax - $newDemand["due_general_tax"];
@@ -808,17 +808,16 @@ class SafApprovalBll
     {
         $newDemand = collect($newDemand);
         $newDemand1 = collect($newDemand)->only([
-            "due_maintanance_amt","due_general_tax","due_road_tax","due_firefighting_tax","due_education_tax","due_water_tax",
-            "due_cleanliness_tax","due_sewarage_tax","due_tree_tax","due_professional_tax","due_tax1","due_tax2","due_tax3","due_sp_education_tax",
-            "due_water_benefit","due_water_bill","due_sp_water_cess","due_drain_cess","due_light_cess","due_major_building","due_open_ploat_tax"
+            "due_maintanance_amt", "due_general_tax", "due_road_tax", "due_firefighting_tax", "due_education_tax", "due_water_tax",
+            "due_cleanliness_tax", "due_sewarage_tax", "due_tree_tax", "due_professional_tax", "due_tax1", "due_tax2", "due_tax3", "due_sp_education_tax",
+            "due_water_benefit", "due_water_bill", "due_sp_water_cess", "due_drain_cess", "due_light_cess", "due_major_building", "due_open_ploat_tax"
         ]);
         // $diff=round($newDemand["total_tax"])-round($newDemand1->sum());
         // if(round($newDemand["total_tax"])!=round($newDemand1->sum())&& !is_between(round($diff), -1, 1.1))
         // {
         //     throw new Exception("Demand not adjusted properly");
         // }
-        if(round($newDemand["total_tax"])!=round($newDemand1->sum()))
-        {
+        if (round($newDemand["total_tax"]) != round($newDemand1->sum())) {
             throw new Exception("Demand not adjusted properly");
         }
     }
