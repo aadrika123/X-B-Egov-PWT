@@ -172,7 +172,7 @@ class ApplySafController extends Controller
             // SAF Owner Details
             if ($request['owner']) {
                 $ownerDetail = $request['owner'];
-                if ($request->assessmentType == 'Mutation')                             // In Case of Mutation Avert Existing Owner Detail
+                if ($request->assessmentType == 'Mutation')                             // In Case of Mutation Abort Existing Owner Detail
                     $ownerDetail = collect($ownerDetail)->where('propOwnerDetailId', null);
                 foreach ($ownerDetail as $ownerDetails) {
                     $mOwner->addOwner($ownerDetails, $safId, $user_id);
@@ -347,6 +347,7 @@ class ApplySafController extends Controller
         $mPropFloors = new PropFloor();
         $assessmentType = $req->assessmentType;
         if ($assessmentType == 'Bifurcation') {
+            $floorDetail = collect($floorDetail)->whereNotNull('propFloorDetailId');
 
             foreach ($floorDetail as $requestFloor) {
                 $propFloorDtls = $mPropFloors::find($requestFloor['propFloorDetailId']);
