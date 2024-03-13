@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Property;
 
+use App\BLL\Property\Akola\GetHoldingDuesV2;
+use App\BLL\Property\Akola\TaxCalculator;
 use App\EloquentModels\Common\ModelWard;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\ThirdPartyController;
@@ -1076,7 +1078,20 @@ class PropertyController extends Controller
                 $msg['inWorkflow'] = true;
                 $msg['currentRole'] = $data->role_name;
                 $msg['message'] = "Your " . $data->assessment_type . " application is still in workflow and pending at " . $data->role_name . ". Please Track your application with " . $data->application_no;
-            } else
+            }
+            elseif (!$data){
+                $req->merge(["propId"=>$propertyId]);
+                $getHoldingDues = new GetHoldingDuesV2;
+                $demand = $getHoldingDues->getDues($req);
+                if (($demand['arrear'] ?? 0) > 0 )
+                    $sms = "Arrear Demand Amount Of " . $demand['arrear'] . " Not Cleard";
+                if (($demand['previousInterest'] ?? 0) > 0 )
+                    $sms = "Previous Intrest Amount Of " . $demand['previousInterest'] . " Not Cleard";
+
+                $msg['inWorkflow'] = true;
+                $msg['message']    = $sms;
+            }
+             else
                 $msg['inWorkflow'] = false;
 
             return responseMsgs(true, 'Data Updated', $msg, '010801', '01', '', 'Post', '');
