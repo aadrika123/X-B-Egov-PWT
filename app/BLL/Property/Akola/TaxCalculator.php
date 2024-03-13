@@ -147,7 +147,7 @@ class TaxCalculator
             $this->_calculationDateFrom = $this->_newForm ? $this->_newForm : $this->_calculationDateFrom;
             // $this->_calculationDateFrom =  Carbon::now()->format('Y-m-d');         
         }
-        if (isset($this->_REQUEST->assessmentType) && ($this->getAssestmentTypeStr() == 'Reassessment')) {
+        if (isset($this->_REQUEST->assessmentType) && (in_array($this->getAssestmentTypeStr(),['Reassessment','Bifurcation']))) {
             $this->_calculationDateFrom =  Carbon::now()->format('Y-m-d');
         }
         $this->_currentFyear = calculateFYear(Carbon::now()->format('Y-m-d'));
