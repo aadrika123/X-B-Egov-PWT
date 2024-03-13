@@ -1403,7 +1403,7 @@ class TradeApplication extends Controller
             if(!$oldData){
                 throw new Exception("Data not found");
             }
-            if($oldData->update_counter>0){
+            if($oldData->update_counter>1){
                 throw new Exception("You Are Attempted Updation On This App ".getNumberToSentence($oldData->update_counter). ($oldData->update_counter >99 ? "times" : "time"));
             }
             if(strtoupper($oldData->apply_from)	!=strtoupper("Existing"))
