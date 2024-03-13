@@ -1082,9 +1082,9 @@ class PropertyController extends Controller
                 $getHoldingDues = new GetHoldingDuesV2;
                 $demand = $getHoldingDues->getDues($req);
                 if (($demand['previousInterest'] ?? 0) > 0)
-                    $sms = "Previous Intrest Amount Of ₹" . $demand['previousInterest'] . " is Not Cleared";
+                    $sms = "Please Clear The Previous Interest Amount Of ₹" . $demand['previousInterest'] . " Before Applying The Application.";
                 if (($demand['arrear'] ?? 0) > 0)
-                    $sms = "Arrear Demand Amount Of ₹" . $demand['arrear'] . " is Not Cleared";
+                    $sms = "Please Clear The Arrear Demand Amount Of ₹" . $demand['arrear'] . " Before Applying The Application.";
 
                 $msg['inWorkflow'] = true;
                 $msg['message']    = $sms;
