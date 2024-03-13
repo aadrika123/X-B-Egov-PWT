@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Dashboard\JskController;
+use App\Http\Controllers\Mdm\PropertyController as MdmPropertyController;
 use App\Http\Controllers\Payment\BankReconcillationController;
 use App\Http\Controllers\Payment\CashVerificationController;
 use Illuminate\Support\Facades\Route;
@@ -571,6 +572,16 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('get-user-transaction-details', 'getUserPropTransactions');
     Route::post('get-user-active-applications', 'getActiveApplications');
   });
+
+  /**
+   * =============MDM Crud===============
+   *              created by : sandeep Bara
+   *              date       : 2023/03/13
+   */
+  Route::controller(MdmPropertyController::class)->group(function(){
+    Route::post('apartment/add', 'addApartment');
+  });
+
 });
 
 

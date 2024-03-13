@@ -385,7 +385,7 @@ class ActiveSafController extends Controller
             $deactivateFloor = $mFloors->where("saf_id",$safId)->update(["status"=>0]);
 
             collect($mOwners)->map(function ($owner) use ($mPropSafOwners,$safId) {            // Updation of Owner Basic Details
-                $owner["safOwnerId"] = $owner["propOwnerDetailId"];
+                $owner["safOwnerId"] = $owner["propOwnerDetailId"]??null;
                 $owner["safId"] = $safId;
                 if($owner["safOwnerId"])
                 {     
@@ -404,7 +404,7 @@ class ActiveSafController extends Controller
             if($req->propertyType != 4)
             {
                 collect($floars)->map(function ($floar) use ($mFloors,$safId,$userId,$assessmentType) {            // Updation of Owner Basic Details
-                    $floar["propFloorId"] = $floar["propFloorDetailId"];
+                    $floar["propFloorId"] = $floar["propFloorDetailId"]??null;
                     $floar["assessmentType"] = $assessmentType;
                     $floar["safId"] = $safId;
                     if($floar["propFloorId"])
