@@ -185,7 +185,7 @@ class PropActiveSafsFloor extends Model
             $carpetArea =  $req['buildupArea'] * 0.80;
 
         if ($assessmentType == "Bifurcation")
-            $carpetArea = $req['biBuildupArea'];
+            $carpetArea = $req['biBuildupArea']??$req['buildupArea'];
 
         $floor = new  PropActiveSafsFloor();
         $floor->saf_id = $safId;
@@ -193,8 +193,8 @@ class PropActiveSafsFloor extends Model
         $floor->usage_type_mstr_id = $req['usageType'] ?? null;
         $floor->const_type_mstr_id = $req['constructionType'] ?? null;
         $floor->occupancy_type_mstr_id = $req['occupancyType'] ??  null;
-        // $floor->builtup_area = isset($req['biBuildupArea']) ? $req['biBuildupArea'] : $req['buildupArea'];F
-        $floor->builtup_area = (in_array($assessmentType, ['Bifurcation'])) ? ($req['biBuildupArea'] ?? $req['buildupArea']) : $req['buildupArea'];
+        // $floor->builtup_area = isset($req['biBuildupArea']) ? $req['biBuildupArea'] : $req['buildupArea'];
+        $floor->builtup_area = ( in_array($assessmentType, ['Bifurcation']) && isset($req['propFloorDetailId']) ) ? ($req['biBuildupArea'] ?? $req['buildupArea']) : $req['buildupArea'];
         $floor->carpet_area = $carpetArea;
         $floor->date_from = $req['dateFrom'] ?? null;
         // if ($assessmentType == "Bifurcation")

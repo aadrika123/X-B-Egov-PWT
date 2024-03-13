@@ -104,8 +104,8 @@ class reqApplySaf extends FormRequest
                 $rules["floor.*.dateUpto"]          =   "nullable|date|date_format:Y-m-d|before_or_equal:$mNowDate|before:$this->dateFrom";
                 // $rules["floor.*.dateFrom"]          =   "required|date|date_format:Y-m-d|before_or_equal:$mNowDate|after_or_equal:$this->dateOfPurchase";
 
-                if ($this->assessmentType == 4)
-                    $rules["floor.*.biBuildupArea"] =   "required|numeric";
+                // if ($this->assessmentType == 4)
+                //     $rules["floor.*.biBuildupArea"] =   "required|numeric";
             }
         }
 
