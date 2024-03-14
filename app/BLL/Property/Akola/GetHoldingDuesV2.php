@@ -148,9 +148,9 @@ class GetHoldingDuesV2
 
         // if($firstOwner->is_armed_force)
         //     // $rebate=
-        $demand['remainAdvance'] = round($remainAdvance ?? 0);
-        $demand['arrearPayableAmt'] = round($demand['arrear'] + $demand['arrearMonthlyPenalty']);
-        $demand['payableAmt'] = round($grandTaxes['balance'] + $demand['totalInterestPenalty']);
+        $demand['remainAdvance'] = roundFigure($remainAdvance ?? 0);
+        $demand['arrearPayableAmt'] = roundFigure($demand['arrear'] + $demand['arrearMonthlyPenalty']);
+        $demand['payableAmt'] = roundFigure($grandTaxes['balance'] + $demand['totalInterestPenalty']);
         
         $demand["rebates"] = $this->_SpecialOffers->map(function($val)use($demand){
             $rebateAmt = 0;
