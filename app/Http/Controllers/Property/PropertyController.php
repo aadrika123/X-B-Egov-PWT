@@ -1084,7 +1084,7 @@ class PropertyController extends Controller
                 if (($demand['previousInterest']) > 0)
                     $sms = "Please Clear The Previous Arrear Amount Of ₹" . $demand['arrearPayableAmt'] . " Before Applying The Application.";
                 if (($demand['arrear']) > 0)
-                    $sms = "Please Clear The Arrear Demand Amount Of ₹" . $demand['arrearPayableAmt'] . " Before Applying The Application.";
+                    $sms = "Please Clear The Previous Arrear Amount Of ₹" . $demand['arrearPayableAmt'] . " Before Applying The Application.";
 
                 $msg['inWorkflow'] = true;
                 $msg['message']    = $sms??"";
