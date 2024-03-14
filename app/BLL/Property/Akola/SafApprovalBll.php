@@ -868,7 +868,7 @@ class SafApprovalBll
             "previousHoldingId"=>$this->_activeSaf->previous_holding_id,
             "areaOfPlot"=>$this->_activeSaf->area_of_plot,
             "category"=>$this->_activeSaf->category_id,
-            "owner"=> $ownerDtls,
+            "owner"=> $ownerReqs,
             "floor"=> $floorReqs,
         ]);
         $taxCalculator = new TaxCalculator($request);
