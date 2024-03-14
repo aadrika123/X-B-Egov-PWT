@@ -5181,7 +5181,7 @@ class ActiveSafController extends Controller
             $oldjahirnamaDoc = $jahirnamaDoc->getJahirnamaBysafIdOrm($activeSaf->id)->first();
             if($activeSaf->is_jahirnama_genrated && $oldjahirnamaDoc)
             {
-                throw new Exception("jahirnama already genrated on ".Carbon::parse($oldjahirnamaDoc->generation_date)->format("d-m-Y"));
+                // throw new Exception("jahirnama already genrated on ".Carbon::parse($oldjahirnamaDoc->generation_date)->format("d-m-Y"));
             }
             $safData = $safData->original["data"];
             $imageName = $docUpload->upload($filename, $document, $relativePath);
