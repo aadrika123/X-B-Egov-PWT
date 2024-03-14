@@ -1081,13 +1081,13 @@ class PropertyController extends Controller
                 $req->merge(["propId" => $propertyId]);
                 $getHoldingDues = new GetHoldingDuesV2;
                 $demand = $getHoldingDues->getDues($req);
-                if (($demand['previousInterest'] ?? 0) > 0)
-                    $sms = "Please Clear The Previous Interest Amount Of ₹" . $demand['previousInterest'] . " Before Applying The Application.";
-                if (($demand['arrear'] ?? 0) > 0)
-                    $sms = "Please Clear The Arrear Demand Amount Of ₹" . $demand['arrear'] . " Before Applying The Application.";
+                if (($demand['previousInterest']) > 0)
+                    $sms = "Please Clear The Previous Arrear Amount Of ₹" . $demand['arrearPayableAmt'] . " Before Applying The Application.";
+                if (($demand['arrear']) > 0)
+                    $sms = "Please Clear The Arrear Demand Amount Of ₹" . $demand['arrearPayableAmt'] . " Before Applying The Application.";
 
                 $msg['inWorkflow'] = true;
-                $msg['message']    = $sms;
+                $msg['message']    = $sms??"";
             } else
                 $msg['inWorkflow'] = false;
 
