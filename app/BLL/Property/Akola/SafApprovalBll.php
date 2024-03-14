@@ -833,32 +833,34 @@ class SafApprovalBll
     public function generateBiNewFloorDemand()
     {
         $floorReqs = [];
+        $ownerReqs = [];
         $safDtls   = $this->_activeSaf;
         $floorDtls = collect($this->_floorDetails)->whereNull('prop_floor_details_id');
 
         foreach ($floorDtls as $floor) {
+
+            $floor = $this->_verifiedFloors->where('saf_floor_id',$floor->id);
+            $floor = $floor->first();
+
             $floorReq =  [
-                "floorNo" => $floor->floor_mstr_id,
-                "constructionType" =>  $floor->const_type_mstr_id,
-                "occupancyType" =>  $floor->occupancy_type_mstr_id??"",
-                "usageType" => $floor->usage_type_mstr_id,
-                "buildupArea" =>  $floor->builtup_area,
-                "dateFrom" =>  $floor->date_from ,
-                "dateUpto" =>  $floor->date_upto
+                "floorNo" => $floor['floor_mstr_id'],
+                "constructionType" =>  $floor['construction_type_id'],
+                "occupancyType" =>  $floor['occupancy_type_id']??"",
+                "usageType" => $floor['usage_type_id'],
+                "buildupArea" =>  $floor['builtup_area'],
+                "dateFrom" =>  $floor['date_from'],
+                "dateUpto" =>  $floor['date_upto']
             ];
             array_push($floorReqs, $floorReq);
         }
-        $ownerDtls = $this->_ownerDetails;
 
-        // $propFirstOwners = $this->_mPropOwners->firstOwner($this->_propDtls->id);
-        // if (collect($propFirstOwners)->isEmpty())
-        //     throw new Exception("Owner Details not Available");
+        $ownerDtls = ($this->_ownerDetails->sortBy('id'));
+        foreach ($ownerDtls as $ownerDtl){
 
-        // $ownerReq = [
-        //     "isArmedForce" => $ownerDtls->is_armed_force
-        // ];
-        // array_push($calculationReq['owner'], $ownerReq);
-        
+            $ownerReq = ["isArmedForce" => $ownerDtl->is_armed_force];
+            array_push($ownerReqs, $ownerReq);
+        }
+
         $request   = new Request([
             "propertyType"=> $this->_activeSaf->property_type,
             "assessmentType"=>$this->_activeSaf->assessment_type ,
@@ -866,7 +868,7 @@ class SafApprovalBll
             "previousHoldingId"=>$this->_activeSaf->previous_holding_id,
             "areaOfPlot"=>$this->_activeSaf->area_of_plot,
             "category"=>$this->_activeSaf->category_id,
-            "owner"=>$this->_ownerDetails,
+            "owner"=> $ownerDtls,
             "floor"=> $floorReqs,
         ]);
         $taxCalculator = new TaxCalculator($request);
