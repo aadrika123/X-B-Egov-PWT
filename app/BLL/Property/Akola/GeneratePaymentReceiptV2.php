@@ -313,7 +313,7 @@ class GeneratePaymentReceiptV2
                 "advanceAmt" => roundFigure(0),
                 "totalPayableAfterAdvance" => $totalPayableAmt,
                 "noticeFee" => roundFigure(0),
-                "FinalTax" => $totalPayableAmt
+                "FinalTax" => roundFigure($totalPayableAmt,2)
             ];
         }); 
         return collect($aggregate);
