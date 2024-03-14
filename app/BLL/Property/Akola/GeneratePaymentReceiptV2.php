@@ -200,7 +200,7 @@ class GeneratePaymentReceiptV2
             $this->_overDueDemand["advancePaidAmount"]    = 0;
             $this->_overDueDemand["netAdvance"] = 0;
 
-            $this->_currentDemand["FinalTax"] =   $this->_currentDemand["FinalTax"] + (($this->_advanceAmt??0) - ($this->_adjustAmt??0) );    
+            $this->_currentDemand["FinalTax"] =   roundFigure($this->_currentDemand["FinalTax"] + (($this->_advanceAmt??0) - ($this->_adjustAmt??0) ));    
             $this->_currentDemand["advancePaidAmount"]    =  ($this->_adjustAmt??0) ;
             $this->_currentDemand["advancePaidAmount"]    =  ($this->_advanceAmt??0) ;
             $this->_currentDemand["netAdvance"] =  (($this->_advanceAmt??0) - ($this->_adjustAmt??0)) ;
@@ -313,7 +313,7 @@ class GeneratePaymentReceiptV2
                 "advanceAmt" => roundFigure(0),
                 "totalPayableAfterAdvance" => $totalPayableAmt,
                 "noticeFee" => roundFigure(0),
-                "FinalTax" => roundFigure($totalPayableAmt,2)
+                "FinalTax" => $totalPayableAmt
             ];
         }); 
         return collect($aggregate);
