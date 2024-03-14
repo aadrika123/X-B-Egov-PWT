@@ -175,7 +175,7 @@ class GetHoldingDuesV2
                 $rebate = $val->rebates_in_perc ? ($demand['previousInterest']/100) * $val->rebates : $val->rebates;
                 $rebateAmt += $rebate;
             }
-            $val->rebates_amt = $rebateAmt;
+            $val->rebates_amt = roundFigure($rebateAmt);
             return $val;
         });
 
