@@ -121,6 +121,7 @@ class GeneratePaymentReceiptV2
         $this->_ulbDetails = $this->_mUlbMasters->getUlbDetails($this->_propertyDtls->ulb_id);
 
         $this->_GRID['penaltyRebates'] = [];
+        $this->_GRID['tranDtls'] = $tranDtls;
         if (collect($tranDtls)->isNotEmpty()) {
             $this->_isArrearReceipt = false;
             if ($this->_tranType == 'Property') {                                   // Get Property Demands by demand ids
@@ -186,9 +187,11 @@ class GeneratePaymentReceiptV2
             }
 
             $this->_GRID['arrearPenalty'] = collect($this->_GRID['penaltyRebates'])->where('head_name', 'Monthly Penalty')->first()->amount ?? 0;
+            $this->_GRID['arrearPenaltyRebate'] = collect($this->_GRID['penaltyRebates'])->where('head_name', 'Shasti Abhay Yojana')->where("is_rebate",true)->first()->amount ?? 0;
             $currentDemand = $demandsList->where('fyear', $currentFyear);
             $this->_currentDemand = $this->aggregateDemand($currentDemand, true);       // Current Demand true
             $this->_currentDemand['arrearPenalty'] = 0;
+            $this->_currentDemand['arearPenaltyRebate'] = 0;
 
             $overdueDemand = $demandsList->where('fyear', '<>', $currentFyear);
             $this->_overDueDemand = $this->aggregateDemand($overdueDemand);
@@ -197,7 +200,7 @@ class GeneratePaymentReceiptV2
             $this->_overDueDemand["advancePaidAmount"]    = 0;
             $this->_overDueDemand["netAdvance"] = 0;
 
-            $this->_currentDemand["FinalTax"] =   $this->_currentDemand["FinalTax"] + (($this->_advanceAmt??0) - ($this->_adjustAmt??0) );    
+            $this->_currentDemand["FinalTax"] =   roundFigure($this->_currentDemand["FinalTax"] + (($this->_advanceAmt??0) - ($this->_adjustAmt??0) ));    
             $this->_currentDemand["advancePaidAmount"]    =  ($this->_adjustAmt??0) ;
             $this->_currentDemand["advancePaidAmount"]    =  ($this->_advanceAmt??0) ;
             $this->_currentDemand["netAdvance"] =  (($this->_advanceAmt??0) - ($this->_adjustAmt??0)) ;
@@ -245,10 +248,15 @@ class GeneratePaymentReceiptV2
             $majorBuilding = roundFigure($item->sum('major_building'));
             $openPloatTax = roundFigure($item->sum('open_ploat_tax'));
 
-            if ($isCurrent == 0)
+            if ($isCurrent == 0){
                 $arrearPenalty = roundFigure($this->_GRID['arrearPenalty']);              // 🔴🔴🔴 Condition Handled in case of other payments Receipt Purpose
+                $arrearPenaltyRebate = roundFigure($this->_GRID['arrearPenaltyRebate']);
+            }
             else
+            {
                 $arrearPenalty = roundFigure(0);
+                $arrearPenaltyRebate = roundFigure(0);
+            }
 
             $totalPayableAmt = $generalTax +
                 $roadTax +
@@ -269,7 +277,7 @@ class GeneratePaymentReceiptV2
                 $spWaterCess +
                 $drainCess +
                 $lightCess +
-                $majorBuilding + $arrearPenalty +$openPloatTax;
+                $majorBuilding + $arrearPenalty +$openPloatTax - $arrearPenaltyRebate;
 
             $totalPayableAmt = roundFigure($totalPayableAmt);
 
@@ -295,6 +303,7 @@ class GeneratePaymentReceiptV2
                 "light_cess" => $lightCess,
                 "major_building" => $majorBuilding,
                 "arrearPenalty" => $arrearPenalty,
+                "arrearPenaltyRebate" => $arrearPenaltyRebate,
                 "totalPayableAmt" => $totalPayableAmt,
                 "open_ploat_tax"=>$openPloatTax,
                 "total_tax" => $totalTax,

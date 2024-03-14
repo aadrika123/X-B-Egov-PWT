@@ -8,6 +8,7 @@ use App\Models\Property\PropDemand;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropPendingArrear;
 use App\Models\Property\PropProperty;
+use App\Models\Property\RefPropSpecialRebateType;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -21,8 +22,16 @@ use Illuminate\Support\Facades\DB;
  */
 class GetHoldingDuesV2
 {
+    private $_SpecialOffers;
+    private $_TotalDisccountPer;
+    private $_TotalDisccontAmt;
+    public function setParams()
+    {
+        $this->_SpecialOffers = (new RefPropSpecialRebateType())->specialRebate();
+    }
     public function getDues($req)
     {
+        $this->setParams();
         $mPropDemand = new PropDemand();
         $mPropProperty = new PropProperty();
         $mPropOwners = new PropOwner();
@@ -142,6 +151,33 @@ class GetHoldingDuesV2
         $demand['remainAdvance'] = round($remainAdvance ?? 0);
         $demand['arrearPayableAmt'] = round($demand['arrear'] + $demand['arrearMonthlyPenalty']);
         $demand['payableAmt'] = round($grandTaxes['balance'] + $demand['totalInterestPenalty']);
+        
+        $demand["rebates"] = $this->_SpecialOffers->map(function($val)use($demand){
+            $rebateAmt = 0;
+            $rebate = 0;
+            if($val->apply_on_total_tax){
+                $rebate = $val->rebates_in_perc ? ($demand['payableAmt']/100) * $val->rebates : $val->rebates;
+                $rebateAmt += $rebate;
+            }
+            if($val->apply_on_arear_tax){
+                $rebate = $val->rebates_in_perc ? ($demand['arrear']/100) * $val->rebates : $val->rebates;
+                $rebateAmt += $rebate;
+            }
+            if($val->apply_on_total_intrest){
+                $rebate = $val->rebates_in_perc ? ($demand['arrearMonthlyPenalty']/100) * $val->rebates : $val->rebates;
+                $rebateAmt += $rebate;
+            }
+            if($val->apply_on_arear_intrest){
+                $rebate = $val->rebates_in_perc ? ($demand['arrearInterest']/100) * $val->rebates : $val->rebates;
+                $rebateAmt += $rebate;
+            }
+            if($val->apply_on_priv_intrest){
+                $rebate = $val->rebates_in_perc ? ($demand['previousInterest']/100) * $val->rebates : $val->rebates;
+                $rebateAmt += $rebate;
+            }
+            $val->rebates_amt = roundFigure($rebateAmt);
+            return $val;
+        });
 
         if ($demand['payableAmt'] > 0)
             $paymentStatus = 0;
