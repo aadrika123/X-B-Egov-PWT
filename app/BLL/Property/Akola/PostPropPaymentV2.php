@@ -791,7 +791,7 @@ class PostPropPaymentV2
             if($val["apply_on_arear_tax"] && $specialRebaApply && (round(collect($paidDemands)->where("fyear", "<", getFY())->sum("paid_total_tax")) >= round($demandData['arrear'])) ){               
                 $isApplicatbel = true;
             }
-            if($val["apply_on_total_intrest"]  && $specialRebaApply  && ( round($paidPenalty,2) >= round($demandData['arrearMonthlyPenalty'],2)  || is_between(round($paidPenalty,2) - round($demandData['arrearMonthlyPenalty'],2),-0.1,0.1)))
+            if($val["apply_on_total_intrest"]  && $specialRebaApply  && ( round($paidPenalty+$previousInterest,2) >= round($demandData['arrearMonthlyPenalty'],2)  || is_between(round($paidPenalty,2) - round($demandData['arrearMonthlyPenalty'],2),-0.1,0.1)))
             {                
                 $isApplicatbel = true;
             }
@@ -1147,5 +1147,55 @@ class PostPropPaymentV2
             else
                 throw new Exception("Part Payment in Monthly Interest Not Available");
         }
+    }
+
+    public function testSpecialRebates($demandData,$reqPaidAmount)
+    {
+        $totalDemandAmt = $demandData["payableAmt"];
+        $allDemands = $demandData["demandList"];
+        $demandPrivInterst = $previousInterest = $demandData["previousInterest"] ?? 0;
+        $arrearDemand = collect($allDemands)->where("fyear", "<", getFY());
+        $arrearTotaTax = $arrearDemand->sum("total_tax");
+        $penalty = $arrearDemand->sum("monthlyPenalty");
+        $totalaAreaDemand = $previousInterest + $arrearTotaTax + $penalty;
+        $totalPenalty = $previousInterest + $penalty;
+        $rebats = collect($demandData["rebates"]??[]);
+        $rebatsAmt =  $rebats->sum("rebates_amt");
+
+        $thertyPerOfpreviousInterest = $arrearTotaTax > 0 ? ($reqPaidAmount / 100) * 30 : $reqPaidAmount;
+        if (round($reqPaidAmount) < round($totalaAreaDemand)) {
+            $previousInterest = $previousInterest > 0 ? ($thertyPerOfpreviousInterest <= $previousInterest ? $thertyPerOfpreviousInterest : $previousInterest) : 0;
+        }
+        $paidTotaTax = $reqPaidAmount;
+        $isPaidTotalTax = $reqPaidAmount - $totalDemandAmt >=0 ? true:false;
+        $isPaidCurrentTotlaDemandTax = $reqPaidAmount - $totalDemandAmt >= 0 ? true : false ;
+        $isPaidArearTotlaTax = $reqPaidAmount - $totalaAreaDemand >= 0 ? true : false;
+        $isPaidArearTotlaDemandTax = $isPaidArearTotlaTax;
+        $isPaidArearTotlaPenalty =  $isPaidArearTotlaTax ;
+        $isPaidArearTotlaArrearPenalty =  $demandPrivInterst - $previousInterest<=0  ? true : false ;
+        $specialRebaApply = $this->_REQ->paymentType=="isFullPayment" || ( $this->_REQ->paymentType!="isFullPayment" && round($this->_REQ->paidAmount + $rebatsAmt) > $totalaAreaDemand) ? true : false;
+        
+        $rebats = collect($demandData["rebates"]??[])->map(function($val)use($specialRebaApply,$demandData,$isPaidTotalTax,$isPaidCurrentTotlaDemandTax,$isPaidArearTotlaTax,$isPaidArearTotlaDemandTax,$isPaidArearTotlaPenalty,$isPaidArearTotlaArrearPenalty){ 
+            $isApplicatbel = false;
+            if($val["apply_on_total_tax"] && $specialRebaApply && $isPaidTotalTax){
+                $isApplicatbel = true;
+            }
+            if($val["apply_on_arear_tax"] && $specialRebaApply && $isPaidArearTotlaTax ){               
+                $isApplicatbel = true;
+            }
+            if($val["apply_on_total_intrest"]  && $specialRebaApply  && $isPaidArearTotlaPenalty)
+            {                
+                $isApplicatbel = true;
+            }
+            if($val["apply_on_arear_intrest"] && $specialRebaApply && $isPaidArearTotlaPenalty){                
+                $isApplicatbel = true;
+            }
+            if($val["apply_on_priv_intrest"] && $specialRebaApply && $isPaidArearTotlaArrearPenalty){                
+                $isApplicatbel = true;
+            }
+            $val["is_applicable"] = $isApplicatbel;
+            return $val;
+        });
+        return $rebats;
     }
 }
