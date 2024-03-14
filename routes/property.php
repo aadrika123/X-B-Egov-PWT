@@ -604,9 +604,9 @@ Route::controller(ActiveSafController::class)->group(function () {
   Route::post('saf/akola-fam', 'AkolaFam');
   // Route::post('saf/genrate-jahirnama', 'genrateJahirnamaPDF'); 
   Route::post('saf/get-jahirnama-doc-list', 'getJahirnamaDocList');
-  Route::post('saf/upload-jahirnama', 'uploadJahirnama');
+  Route::post('saf/upload-jahirnama', 'uploadJahirnama')->middleware("auth_maker");
   Route::post('saf/get-jahirnama', 'getJahirnamaDoc');
-  Route::post('saf/update-jahirnama-objection', 'updateJahirnama');
+  Route::post('saf/update-jahirnama-objection', 'updateJahirnama')->middleware("auth_maker");
 });
 
 /**
