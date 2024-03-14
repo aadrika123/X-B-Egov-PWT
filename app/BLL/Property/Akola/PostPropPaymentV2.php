@@ -728,7 +728,7 @@ class PostPropPaymentV2
 
         $payableAmount = $this->_REQ->paidAmount - $previousInterest;
 
-        $specialRebaApply = $this->_REQ->paymentType=="isFullPayment" || ( $this->_REQ->paymentType!="isFullPayment" && round($this->_REQ->paidAmount + $rebatsAmt) > $totalaAreaDemand) ? true : false;
+        $specialRebaApply = $this->_REQ->paymentType=="isFullPayment" || ( $this->_REQ->paymentType!="isFullPayment" && round($this->_REQ->paidAmount) >= round($demandData['payableAmt'])) ? true : false;
 
         if ($this->_REQ["paymentMode"] != "ONLINE") {
             $adjustAmt = round($this->_REQ->paidAmount - $addvanceAmt);
@@ -1173,7 +1173,7 @@ class PostPropPaymentV2
         $isPaidArearTotlaDemandTax = $isPaidArearTotlaTax;
         $isPaidArearTotlaPenalty =  $isPaidArearTotlaTax ;
         $isPaidArearTotlaArrearPenalty =  $demandPrivInterst - $previousInterest<=0  ? true : false ;
-        $specialRebaApply = $this->_REQ->paymentType=="isFullPayment" || ( $this->_REQ->paymentType!="isFullPayment" && round($this->_REQ->paidAmount + $rebatsAmt) > $totalaAreaDemand) ? true : false;
+        $specialRebaApply = $this->_REQ->paymentType=="isFullPayment" || ( $this->_REQ->paymentType!="isFullPayment" && round($this->_REQ->paidAmount) >= round($totalDemandAmt)) ? true : false;
         
         $rebats = collect($demandData["rebates"]??[])->map(function($val)use($specialRebaApply,$demandData,$isPaidTotalTax,$isPaidCurrentTotlaDemandTax,$isPaidArearTotlaTax,$isPaidArearTotlaDemandTax,$isPaidArearTotlaPenalty,$isPaidArearTotlaArrearPenalty){ 
             $isApplicatbel = false;
