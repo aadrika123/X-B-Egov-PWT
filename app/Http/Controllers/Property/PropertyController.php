@@ -1077,26 +1077,38 @@ class PropertyController extends Controller
                 $msg['inWorkflow'] = true;
                 $msg['currentRole'] = $data->role_name;
                 $msg['message'] = "Your " . $data->assessment_type . " application is still in workflow and pending at " . $data->role_name . ". Please Track your application with " . $data->application_no;
-            }
-            if (!$data) {
+            } else {
                 $sms = "";
                 $req->merge(["propId" => $propertyId]);
                 $getHoldingDues = new GetHoldingDuesV2;
                 $demand = $getHoldingDues->getDues($req);
-                if (($demand['previousInterest']) > 0)
+                if (($demand['previousInterest']) > 0 || ($demand['arrear']) > 0) {
                     $sms = "Please Clear The Previous Arrear Amount Of ₹" . $demand['arrearPayableAmt'] . " Before Applying The Application.";
-                if (($demand['arrear']) > 0)
-                    $sms = "Please Clear The Previous Arrear Amount Of ₹" . $demand['arrearPayableAmt'] . " Before Applying The Application.";
-
-                if ($sms){
-                    $msg['inWorkflow'] = true;
-                    $msg['message']    = $sms;
                 }
-                else
-                $msg['inWorkflow'] = false;
-            } 
-            else
-                $msg['inWorkflow'] = false;
+                if ($sms) {
+                    $msg['inWorkflow'] = true;
+                    $msg['message'] = $sms;
+                } else {
+                    $msg['inWorkflow'] = false;
+                }
+            }
+            // if (!$data) {
+            //     $sms = "";
+            //     $req->merge(["propId" => $propertyId]);
+            //     $getHoldingDues = new GetHoldingDuesV2;
+            //     $demand = $getHoldingDues->getDues($req);
+            //     if (($demand['previousInterest']) > 0)
+            //         $sms = "Please Clear The Previous Arrear Amount Of ₹" . $demand['arrearPayableAmt'] . " Before Applying The Application.";
+            //     if (($demand['arrear']) > 0)
+            //         $sms = "Please Clear The Previous Arrear Amount Of ₹" . $demand['arrearPayableAmt'] . " Before Applying The Application.";
+
+            //     if ($sms) {
+            //         $msg['inWorkflow'] = true;
+            //         $msg['message']    = $sms;
+            //     } else
+            //         $msg['inWorkflow'] = false;
+            // } else
+            //     $msg['inWorkflow'] = false;
 
             return responseMsgs(true, 'Data Updated', $msg, '010801', '01', '', 'Post', '');
         } catch (Exception $e) {
