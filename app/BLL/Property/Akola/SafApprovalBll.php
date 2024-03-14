@@ -146,7 +146,6 @@ class SafApprovalBll
             ];
             $this->_verifiedFloors = $this->_mPropActiveSafFloor->getSafFloorsAsFieldVrfDtl($this->_safId);
         } else {
-
             $this->_verifiedFloors = $this->_mPropSafVerificationDtls->getVerificationDetails($this->_verifiedPropDetails[0]->id);
         }
     }
@@ -673,8 +672,11 @@ class SafApprovalBll
                         $propFloor->save();
                     }
                 }
-                $newPropFloors = $mPropFloors->getFloorsByPropId($propProperties->id);
+                $isNewFloorExist = collect($this->_floorDetails)->whereNull('prop_floor_details_id');
+                if($isNewFloorExist->isNotEmpty())
+                    $this->generateBiNewFloorDemand();
 
+                $newPropFloors = $mPropFloors->getFloorsByPropId($propProperties->id);
                 if (collect($newPropFloors)->isEmpty())
                     $propProperties->update(["prop_type_mstr_id" => 4]);
             }
@@ -759,13 +761,13 @@ class SafApprovalBll
                     "due_major_building" => ($val["due_major_building"] / 100) * $percOfBifurcatedArea,
                     "due_open_ploat_tax" => ($val["due_open_ploat_tax"] / 100) * $percOfBifurcatedArea,
                 ];
-                $this->testDemand($arr);
                 if ($oldDemand = $demand->where("fyear", $arr["fyear"])->where("property_id", $arr["property_id"])->where("status", 1)->first()) {
                     $oldDemand = $this->updateOldDemands($oldDemand, $arr);
                     $oldDemand->update();
                     continue;
                 }
                 
+                $this->testDemand($arr);
                 $demand->store($arr);
                 $this->adjustOldDemand($val, $arr);
                 $val->update();
@@ -826,5 +828,121 @@ class SafApprovalBll
         if (round($newDemand["total_tax"]) != round($newDemand1->sum())) {
             throw new Exception("Demand not adjusted properly");
         }
+    }
+
+    public function generateBiNewFloorDemand()
+    {
+        $floorReqs = [];
+        $safDtls   = $this->_activeSaf;
+        $floorDtls = collect($this->_floorDetails)->whereNull('prop_floor_details_id');
+
+        foreach ($floorDtls as $floor) {
+            $floorReq =  [
+                "floorNo" => $floor->floor_mstr_id,
+                "constructionType" =>  $floor->const_type_mstr_id,
+                "occupancyType" =>  $floor->occupancy_type_mstr_id??"",
+                "usageType" => $floor->usage_type_mstr_id,
+                "buildupArea" =>  $floor->builtup_area,
+                "dateFrom" =>  $floor->date_from ,
+                "dateUpto" =>  $floor->date_upto
+            ];
+            array_push($floorReqs, $floorReq);
+        }
+        $ownerDtls = $this->_ownerDetails;
+
+        // $propFirstOwners = $this->_mPropOwners->firstOwner($this->_propDtls->id);
+        // if (collect($propFirstOwners)->isEmpty())
+        //     throw new Exception("Owner Details not Available");
+
+        // $ownerReq = [
+        //     "isArmedForce" => $ownerDtls->is_armed_force
+        // ];
+        // array_push($calculationReq['owner'], $ownerReq);
+        
+        $request   = new Request([
+            "propertyType"=> $this->_activeSaf->property_type,
+            "assessmentType"=>$this->_activeSaf->assessment_type ,
+            "dateOfPurchase"=>$this->_activeSaf->land_occupation_date,
+            "previousHoldingId"=>$this->_activeSaf->previous_holding_id,
+            "areaOfPlot"=>$this->_activeSaf->area_of_plot,
+            "category"=>$this->_activeSaf->category_id,
+            "owner"=>$this->_ownerDetails,
+            "floor"=> $floorReqs,
+        ]);
+        $taxCalculator = new TaxCalculator($request);
+        $taxCalculator->calculateTax();
+        $fyDemand = collect($taxCalculator->_GRID['fyearWiseTaxes'])->sortBy("fyear");
+        $user = Auth()->user();
+        $ulbId = $this->_activeSaf->ulb_id;
+        $demand = new PropDemand();
+
+        foreach ($fyDemand as $key => $val) {
+            $arr = [
+                "property_id"   => $this->_replicatedPropId,
+                "alv"           => $val["alv"],
+                "maintanance_amt" => $val["maintananceTax"] ?? 0,
+                "aging_amt"     => $val["agingAmt"] ?? 0,
+                "general_tax"   => $val["generalTax"] ?? 0,
+                "road_tax"      => $val["roadTax"] ?? 0,
+                "firefighting_tax" => $val["firefightingTax"] ?? 0,
+                "education_tax" => $val["educationTax"] ?? 0,
+                "water_tax"     => $val["waterTax"] ?? 0,
+                "cleanliness_tax" => $val["cleanlinessTax"] ?? 0,
+                "sewarage_tax"  => $val["sewerageTax"] ?? 0,
+                "tree_tax"      => $val["treeTax"] ?? 0,
+                "professional_tax" => $val["professionalTax"] ?? 0,
+                "tax1"      => $val["tax1"] ?? 0,
+                "tax2"      => $val["tax2"] ?? 0,
+                "tax3"      => $val["tax3"] ?? 0,
+                "sp_education_tax" => $val["stateEducationTax"] ?? 0,
+                "water_benefit" => $val["waterBenefitTax"] ?? 0,
+                "water_bill"    => $val["waterBillTax"] ?? 0,
+                "sp_water_cess" => $val["spWaterCessTax"] ?? 0,
+                "drain_cess"    => $val["drainCessTax"] ?? 0,
+                "light_cess"    => $val["lightCessTax"] ?? 0,
+                "major_building" => $val["majorBuildingTax"] ?? 0,
+                "total_tax"     => $val["totalTax"],
+                "open_ploat_tax" => $val["openPloatTax"] ?? 0,
+
+                "is_arrear"     => $val["fyear"] < getFY() ? true : false,
+                "fyear"         => $val["fyear"],
+                "user_id"       => $user->id ?? null,
+                "ulb_id"        => $ulbId ?? $user->ulb_id,
+
+                "balance" => $val["totalTax"],
+                "due_total_tax" => $val["totalTax"],
+                "due_balance" => $val["totalTax"],
+                "due_alv" => $val["alv"],
+                "due_maintanance_amt" => $val["maintananceTax"] ?? 0,
+                "due_aging_amt"     => $val["agingAmt"] ?? 0,
+                "due_general_tax"   => $val["generalTax"] ?? 0,
+                "due_road_tax"      => $val["roadTax"] ?? 0,
+                "due_firefighting_tax" => $val["firefightingTax"] ?? 0,
+                "due_education_tax" => $val["educationTax"] ?? 0,
+                "due_water_tax"     => $val["waterTax"] ?? 0,
+                "due_cleanliness_tax" => $val["cleanlinessTax"] ?? 0,
+                "due_sewarage_tax"  => $val["sewerageTax"] ?? 0,
+                "due_tree_tax"      => $val["treeTax"] ?? 0,
+                "due_professional_tax" => $val["professionalTax"] ?? 0,
+                "due_tax1"      => $val["tax1"] ?? 0,
+                "due_tax2"      => $val["tax2"] ?? 0,
+                "due_tax3"      => $val["tax3"] ?? 0,
+                "due_sp_education_tax" => $val["stateEducationTax"] ?? 0,
+                "due_water_benefit" => $val["waterBenefitTax"] ?? 0,
+                "due_water_bill"    => $val["waterBillTax"] ?? 0,
+                "due_sp_water_cess" => $val["spWaterCessTax"] ?? 0,
+                "due_drain_cess"    => $val["drainCessTax"] ?? 0,
+                "due_light_cess"    => $val["lightCessTax"] ?? 0,
+                "due_major_building" => $val["majorBuildingTax"] ?? 0,
+                "due_open_ploat_tax" => $val["openPloatTax"] ?? 0,
+            ];
+            if ($oldDemand = $demand->where("fyear", $arr["fyear"])->where("property_id", $arr["property_id"])->where("status", 1)->first()) {
+                $oldDemand = $this->updateOldDemands($oldDemand, $arr);
+                $oldDemand->update();
+                continue;
+            }
+            $demand->store($arr);
+        }
+
     }
 }
