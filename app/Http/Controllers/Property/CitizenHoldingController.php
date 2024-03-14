@@ -73,6 +73,15 @@ class CitizenHoldingController extends Controller
             ]);
         }
         try {
+            $reqData  = $this->_PropIciciPaymentsRequest->where('prop_id', $request['propId'])
+            ->where('status', 1)
+            ->orderby("created_at","DESC")
+            ->first();
+            $diffInMin = Carbon::parse(Carbon::parse())->diffInMinutes($reqData->created_at??null);
+            if($reqData && $diffInMin < 5)
+            {
+                throw new Exception("Please Wait ".(5-$diffInMin)." Minutes");
+            }
             $user = Auth()->user()??null;
             $isCitizenUserType = $user ? $this->_COMONFUNCTION->checkUsersWithtocken("active_citizens") : true;
             $demandsResponse = $this->_HoldingTaxController->getHoldingDues($request);
@@ -103,8 +112,24 @@ class CitizenHoldingController extends Controller
             $postPropPayment->_propCalculation = $demandsResponse;
             $postPropPayment->chakPayentAmount();
 
+            $previousInterest = $demand["previousInterest"] ?? 0;
+            $arrearDemand = collect($demand["demandList"])->where("fyear", "<", getFY());
+            $arrearTotaTax = $arrearDemand->sum("total_tax");
+            $penalty = $arrearDemand->sum("monthlyPenalty");
+            $totalaAreaDemand = $previousInterest + $arrearTotaTax + $penalty;
+            $rebats = collect($demandData["rebates"]??[]);
+            $rebatsAmt =  $rebats->sum("rebates_amt");
+            $isApplicable = $request->paymentType=="isFullPayment" || ( $request->paymentType!="isFullPayment" && round($request->paidAmount + $rebatsAmt) > $totalaAreaDemand) ? true : false;
+            $rebatsAmt = 0;
+            $rebats =  $postPropPayment->testSpecialRebates($demand,$request->paidAmount);
+            if($isApplicable)
+            {
+                $rebatsAmt = roundFigure(collect($rebats)->where("is_applicable",true)->sum("rebates_amt"));
+            }
+
             $request->merge([
-                "amount" => $request->paidAmount,
+                "rebate" =>$rebatsAmt,   
+                "amount" => $request->paidAmount - $rebatsAmt,
                 "id"    => $request->propId,
                 "ulbId" => $demand["basicDetails"]["ulb_id"],
                 "demandList" => $demand["demandList"],
@@ -176,7 +201,7 @@ class CitizenHoldingController extends Controller
 
         $newReqs = new ReqPayment([
             "paymentType" => $reqData->tran_type,
-            "paidAmount" => $reqData->payable_amount,
+            "paidAmount" => $reqData->payable_amount - $reqData->rebate_amount,
             "id"         => $reqData->prop_id,
             "paymentMode" => "ONLINE",
         ]);

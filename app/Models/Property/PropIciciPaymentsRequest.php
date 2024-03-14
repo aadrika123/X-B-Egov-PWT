@@ -28,6 +28,7 @@ class PropIciciPaymentsRequest extends Model
             "request"       => json_encode($requst->all()) ?? null,
             "ulb_id"        => $requst->ulbId,
             "ip_address"    => $requst->ipAddress ?? getClientIpAddress(),
+            "rebate_amount"  => $requst->rebate ,
             // "user_id"       => $requst->userId,
             // "user_type"     => $requst->userType,
             // "auth"          => $requst->auth
