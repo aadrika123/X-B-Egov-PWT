@@ -201,7 +201,7 @@ class CitizenHoldingController extends Controller
 
         $newReqs = new ReqPayment([
             "paymentType" => $reqData->tran_type,
-            "paidAmount" => $reqData->payable_amount - $reqData->rebate_amount,
+            "paidAmount" => $reqData->payable_amount ,
             "id"         => $reqData->prop_id,
             "paymentMode" => "ONLINE",
         ]);
