@@ -147,7 +147,7 @@ class TaxCalculator
             $this->_calculationDateFrom = $this->_newForm ? $this->_newForm : $this->_calculationDateFrom;
             // $this->_calculationDateFrom =  Carbon::now()->format('Y-m-d');         
         }
-        if (isset($this->_REQUEST->assessmentType) && (in_array($this->getAssestmentTypeStr(),['Reassessment']))) {
+        if (isset($this->_REQUEST->assessmentType) && (in_array($this->getAssestmentTypeStr(),['Reassessment','Bifurcation']))) {
             $this->_calculationDateFrom =  Carbon::now()->format('Y-m-d');
         }
         $this->_currentFyear = calculateFYear(Carbon::now()->format('Y-m-d'));
@@ -161,6 +161,12 @@ class TaxCalculator
         if ($this->_REQUEST->propertyType != 4) {
             $totalFloor = collect($this->_REQUEST->floor)->count();
             $totalBuildupArea = collect($this->_REQUEST->floor)->sum("buildupArea");
+            if($this->getAssestmentTypeStr()=='Bifurcation')
+            {
+               $bifurcatedFloorArea = collect($this->_REQUEST->floor)->whereNotNull('propFloorDetailId')->sum("biBuildupArea");
+               $newFloorArea = collect($this->_REQUEST->floor)->whereNull('propFloorDetailId')->sum("buildupArea");
+               $totalBuildupArea =  $bifurcatedFloorArea + $newFloorArea;
+            }
             $AllDiffArrea = ($totalBuildupArea - $this->_REQUEST->nakshaAreaOfPlot) > 0 ? $totalBuildupArea - $this->_REQUEST->nakshaAreaOfPlot : 0;
 
             foreach ($this->_REQUEST->floor as $key => $item) {
@@ -168,7 +174,7 @@ class TaxCalculator
                 $rate = $this->readRateByFloor($item);                 // (2.1)
                 $agingPerc = $this->readAgingByFloor($item);           // (2.2)
 
-                $floorBuildupArea = roundFigure($item->buildupArea * 0.092903);
+                $floorBuildupArea = roundFigure( isset($item->biBuildupArea) ? $item->biBuildupArea * 0.092903 :  $item->buildupArea  * 0.092903);
                 $alv = roundFigure($floorBuildupArea * $rate);
                 $maintance10Perc = roundFigure(($alv * $this->_maintancePerc) / 100);
                 $valueAfterMaintanance = roundFigure($alv - $maintance10Perc);
