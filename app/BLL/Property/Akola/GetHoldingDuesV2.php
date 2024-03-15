@@ -245,6 +245,7 @@ class GetHoldingDuesV2
         return $demandList->pipe(function ($item) {
             return [
                 "general_tax" => roundFigure($item->sum('general_tax')),
+                "exempted_general_tax" => roundFigure($item->sum('exempted_general_tax')),
                 "road_tax" => roundFigure($item->sum('road_tax')),
                 "firefighting_tax" => roundFigure($item->sum('firefighting_tax')),
                 "education_tax" => roundFigure($item->sum('education_tax')),
