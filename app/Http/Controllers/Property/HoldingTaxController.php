@@ -1646,7 +1646,7 @@ class HoldingTaxController extends Controller
                 'zone_name',
                 'ward_name',
                 'prop_sms_logs.id'
-            )            
+            )
             ->orderBy('prop_demands.property_id');
 
         if ($zoneId)
@@ -1681,17 +1681,17 @@ class HoldingTaxController extends Controller
      */
     public function propertyBulkSmsListV2(Request $req)
     {
-        try{
+        try {
             $zoneId = $wardId = $amount = NULL;
             if ($req->zoneId)
                 $zoneId = $req->zoneId;
-    
+
             if ($req->wardId)
                 $wardId = $req->wardId;
-    
+
             if ($req->amount)
                 $amount = $req->amount;
-    
+
             $fromDate = Carbon::now()->addWeek(-1)->format('Y-m-d');
             $uptoDate = Carbon::now()->format('Y-m-d');
             $perPage = $req->perPage ?? 10;
@@ -1705,39 +1705,39 @@ class HoldingTaxController extends Controller
                 group by property_id
                 )prop_demands
             "))
-            ->join("prop_properties","prop_properties.id","prop_demands.property_id")
-            ->join(DB::raw("(
+                ->join("prop_properties", "prop_properties.id", "prop_demands.property_id")
+                ->join(DB::raw("(
                 select property_id,string_agg(owner_name,',')owner_name,
                     string_agg(mobile_no::text,',')mobile_no 
                 from prop_owners
                 where status =1
                     and LENGTH(prop_owners.mobile_no) = 10
                 group by property_id
-            )prop_owners"),"prop_owners.property_id","prop_demands.property_id")
-            ->leftjoin('zone_masters', 'zone_masters.id', '=', 'prop_properties.zone_mstr_id')
-            ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'prop_properties.ward_mstr_id')
+            )prop_owners"), "prop_owners.property_id", "prop_demands.property_id")
+                ->leftjoin('zone_masters', 'zone_masters.id', '=', 'prop_properties.zone_mstr_id')
+                ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'prop_properties.ward_mstr_id')
 
-            ->leftJoin('prop_sms_logs', function ($join) use ($fromDate, $uptoDate) {
-                $join->on('prop_sms_logs.ref_id', '=', 'prop_properties.id')
-                    ->where('prop_sms_logs.ref_type', 'PROPERTY')
-                    ->where('prop_sms_logs.purpose', 'Demand Reminder')
-                    ->whereBetween(DB::raw('cast(prop_sms_logs.created_at as date)'), [$fromDate, $uptoDate]);
-            })
-            ->whereNull('prop_sms_logs.id')
-            ->orderBy("total_tax",'DESC')
-            ->select(
-                'prop_sms_logs.id as sms_log_id',
-                'prop_properties.id as property_id',
-                'total_tax', 
-                'max_fyear',
-                'prop_owners.owner_name',
-                'prop_owners.mobile_no',
-                'holding_no',
-                'prop_address',
-                'property_no',
-                'zone_name',
-                'ward_name',
-            );
+                ->leftJoin('prop_sms_logs', function ($join) use ($fromDate, $uptoDate) {
+                    $join->on('prop_sms_logs.ref_id', '=', 'prop_properties.id')
+                        ->where('prop_sms_logs.ref_type', 'PROPERTY')
+                        ->where('prop_sms_logs.purpose', 'Demand Reminder')
+                        ->whereBetween(DB::raw('cast(prop_sms_logs.created_at as date)'), [$fromDate, $uptoDate]);
+                })
+                ->whereNull('prop_sms_logs.id')
+                ->orderBy("total_tax", 'DESC')
+                ->select(
+                    'prop_sms_logs.id as sms_log_id',
+                    'prop_properties.id as property_id',
+                    'total_tax',
+                    'max_fyear',
+                    'prop_owners.owner_name',
+                    'prop_owners.mobile_no',
+                    'holding_no',
+                    'prop_address',
+                    'property_no',
+                    'zone_name',
+                    'ward_name',
+                );
 
             if ($zoneId)
                 $propDetails = $propDetails->where("prop_properties.zone_mstr_id", $zoneId);
@@ -1762,12 +1762,9 @@ class HoldingTaxController extends Controller
             ];
             // dd($propDetails->total(),DB::getQueryLog());
             return responseMsgs(true, "Bulk SMS List", $list, "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }
-        
     }
 
 
@@ -1822,6 +1819,62 @@ class HoldingTaxController extends Controller
                 "ref_type" => 'PROPERTY',
                 "mobile_no" => $ownerMobile,
                 "purpose" => 'Demand Reminder',
+                "template_id" => 1707170858405361648,
+                "message" => $sms,
+                "response" => $response['status'],
+                "smgid" => $response['msg'],
+                "stampdate" => Carbon::now(),
+            ];
+            $mPropSmsLog->create($smsReqs);
+        }
+
+        return responseMsgs(true, "SMS Send Successfully of " . $propDetails->count() . " Property", [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+    }
+
+    /**
+     * | Abhay Yojna SMS
+     */
+    public function propertyAbhayYojnaSms(Request $req)
+    {
+        $mPropSmsLog = new PropSmsLog();
+        $getHoldingDues = new GetHoldingDuesV2;
+        $propDetails = PropDemand::select(
+            'prop_demands.property_id',
+            DB::raw('SUM(due_total_tax) as total_tax, MAX(fyear) as max_fyear'),
+            'owner_name',
+            'mobile_no',
+        )
+            ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_demands.property_id')
+            ->where('due_total_tax', '>', 0.9)
+            ->where('paid_status', 0)
+            ->where(DB::raw('LENGTH(mobile_no)'), '=', 10)
+            ->groupBy('prop_demands.property_id', 'owner_name', 'mobile_no')
+            ->orderByDesc('prop_demands.property_id')
+            // ->limit(10)
+            // // ->count();
+            ->get();
+
+        foreach ($propDetails as $propDetail) {
+            $newReq = new Request(['propId' => $propDetail->property_id]);
+            $demand = $getHoldingDues->getDues($newReq);
+
+            $ownerName       = Str::limit(trim($propDetail->owner_name), 30);
+            $ownerMobile     = $propDetail->mobile_no;
+            $totalTax        = $demand['payableAmt'];
+            $fyear           = $propDetail->max_fyear;
+            $propertyId      = $propDetail->property_id;
+            $propertyNo      = $demand['basicDetails']['property_no'];
+            $wardNo          = $demand['basicDetails']['ward_no'];
+
+            $sms      = "Dear " . $ownerName . ", your Property Tax of amount Rs " . $totalTax . " for property no " . $propertyNo . " ward no. " . $wardNo . " is due. Please pay your tax before 31st March 2024 and get benefitted under Abhay Yojna. Please ignore if already paid. For details visit amcakola.in or call at 08069493299. SWATI INDUSTRIES";
+            $response = send_sms($ownerMobile, $sms, 1707171048817705363);
+
+            $smsReqs = [
+                "emp_id" => 5695,
+                "ref_id" => $propertyId,
+                "ref_type" => 'PROPERTY',
+                "mobile_no" => $ownerMobile,
+                "purpose" => 'Abhay Yojna',
                 "template_id" => 1707170858405361648,
                 "message" => $sms,
                 "response" => $response['status'],
@@ -1981,20 +2034,17 @@ class HoldingTaxController extends Controller
 
     public function genratePropNewTax(Request $request)
     {
-        try{
-            $propList = PropProperty::where("status",1)->orderBy("id","DESC")->where("id",138475)->limit(10)->get();
-            foreach($propList as $prop)
-            {
+        try {
+            $propList = PropProperty::where("status", 1)->orderBy("id", "DESC")->where("id", 138475)->limit(10)->get();
+            foreach ($propList as $prop) {
                 DB::beginTransaction();
                 $propId = $prop->id;
                 $calculateByPropId = new \App\BLL\Property\Akola\CalculatePropNewTaxByPropId($propId);
-                dd($calculateByPropId->_GRID,$calculateByPropId->_lastDemand,Carbon::now()->format('Y-m-d'),Carbon::now()->endOfYear()->addMonths(3)->format('Y-m-d'),getFY(),$calculateByPropId->setCalculationDateFrom(),$calculateByPropId->_lastDemand);
+                dd($calculateByPropId->_GRID, $calculateByPropId->_lastDemand, Carbon::now()->format('Y-m-d'), Carbon::now()->endOfYear()->addMonths(3)->format('Y-m-d'), getFY(), $calculateByPropId->setCalculationDateFrom(), $calculateByPropId->_lastDemand);
             }
-
-        }catch (Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
-            return responseMsgs(false, [$e->getMessage(),$e->getFile(),$e->getLine()], "", "011613", "1.0", "", "POST", $request->deviceId ?? "");
+            return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "", "011613", "1.0", "", "POST", $request->deviceId ?? "");
         }
-
     }
 }
