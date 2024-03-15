@@ -706,6 +706,9 @@ class PostPropPaymentV2
         if (!$this->_REQ->paidAmount) {
             $this->_REQ->merge(['paidAmount' => $this->_REQ['amount']]);
         }
+        if (isset($this->_REQ->isArrear) && $this->_REQ->isArrear) {
+            $this->_REQ->merge(['paidAmount' =>  $this->_propCalculation->original['data']['arrearPayableAmt']]);
+        }
         $addvanceAmt = $this->_propCalculation->original['data']["remainAdvance"] ?? 0;
 
         $previousInterest = $this->_propCalculation->original['data']["previousInterest"] ?? 0;

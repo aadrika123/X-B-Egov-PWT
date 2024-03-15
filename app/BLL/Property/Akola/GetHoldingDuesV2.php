@@ -92,8 +92,8 @@ class GetHoldingDuesV2
 
         $demandList = collect($demandList);
 
-        if (isset($req->isArrear) && $req->isArrear)                            // If Citizen wants to pay only arrear from Payment function
-            $demandList = $demandList->where('fyear', '<', $fy)->values();
+        // if (isset($req->isArrear) && $req->isArrear)                            // If Citizen wants to pay only arrear from Payment function
+        //     $demandList = $demandList->where('fyear', '<', $fy)->values();
 
         foreach ($demandList as $list) {
             $calculate2PercPenalty->calculatePenalty($list, $propBasicDtls->prop_type_mstr_id);
