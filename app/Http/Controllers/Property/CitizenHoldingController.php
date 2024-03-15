@@ -119,7 +119,7 @@ class CitizenHoldingController extends Controller
             $totalaAreaDemand = $previousInterest + $arrearTotaTax + $penalty;
             $rebats = collect($demandData["rebates"]??[]);
             $rebatsAmt =  $rebats->sum("rebates_amt");
-            $isApplicable = $request->paymentType=="isFullPayment" || ( $request->paymentType!="isFullPayment" && round($request->paidAmount + $rebatsAmt) > $totalaAreaDemand) ? true : false;
+            $isApplicable = $request->paymentType=="isFullPayment" || ( $request->paymentType!="isFullPayment" && round($request->paidAmount) > $demand["payableAmt"]) ? true : false;
             $rebatsAmt = 0;
             $rebats =  $postPropPayment->testSpecialRebates($demand,$request->paidAmount);
             if($isApplicable)
