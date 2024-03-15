@@ -151,6 +151,7 @@ class GeneratePaymentReceiptV2
                     $list->light_cess = $paidTranDemands->paid_light_cess;
                     $list->major_building = $paidTranDemands->paid_major_building;
                     $list->open_ploat_tax = $paidTranDemands->paid_open_ploat_tax;
+                    $list->exempted_general_tax	 = $paidTranDemands->paid_exempted_general_tax??0	;
                     // if ($list->is_full_paid == false || $list->has_partwise_paid == true) {                             // In Case of Part Payment Get the Paid demand by transaction paid Amount
                     //     $paidTranDemands = collect($tranDtls)->where('prop_demand_id', $list->id)->first();
                     //     $list->general_tax = $paidTranDemands->paid_general_tax;
@@ -247,6 +248,7 @@ class GeneratePaymentReceiptV2
             $lightCess = roundFigure($item->sum('light_cess'));
             $majorBuilding = roundFigure($item->sum('major_building'));
             $openPloatTax = roundFigure($item->sum('open_ploat_tax'));
+            $exceptionGeneralTax = roundFigure($item->sum('exempted_general_tax'));
 
             if ($isCurrent == 0){
                 $arrearPenalty = roundFigure($this->_GRID['arrearPenalty']);              // 🔴🔴🔴 Condition Handled in case of other payments Receipt Purpose
@@ -277,12 +279,13 @@ class GeneratePaymentReceiptV2
                 $spWaterCess +
                 $drainCess +
                 $lightCess +
-                $majorBuilding + $arrearPenalty +$openPloatTax - $arrearPenaltyRebate;
+                $majorBuilding + $arrearPenalty +$openPloatTax - $arrearPenaltyRebate - $exceptionGeneralTax;
 
             $totalPayableAmt = roundFigure($totalPayableAmt);
 
             return [
                 "general_tax" => $generalTax,
+                "exempted_general_tax"=>$exceptionGeneralTax,
                 "road_tax" => $roadTax,
                 "firefighting_tax" => $firefightingTax,
                 "education_tax" => $educationTax,

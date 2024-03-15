@@ -25,6 +25,7 @@ class GetHoldingDuesV2
     private $_SpecialOffers;
     private $_TotalDisccountPer;
     private $_TotalDisccontAmt;
+    public $_isSingleManArmedForce =false;
     public function setParams()
     {
         $this->_SpecialOffers = (new RefPropSpecialRebateType())->specialRebate();
@@ -49,6 +50,12 @@ class GetHoldingDuesV2
 
         // Get Property Details
         $propBasicDtls = $mPropProperty->getPropBasicDtls($req->propId);
+        $owners = $mPropOwners->getOwnersByPropId($req->propId);
+        $armedForceOwners = collect($owners)->where("is_armed_force",true);
+        if($armedForceOwners->isNotEmpty() && collect($owners)->count()==1)
+        {
+            $this->_isSingleManArmedForce =true;
+        }
         DB::enableQueryLog();
         $totalAdvanceAmt = $PropAdvance->getAdvanceAmt($req->propId);
         $totalAdjustmentAmt = $PropAdjustment->getAdjustmentAmt($req->propId);
@@ -62,7 +69,11 @@ class GetHoldingDuesV2
         //     $interest = $totalInterest ?? 0;
         //     $arrear = $arrear - $interest;
         // }
-        $demandList = $mPropDemand->getDueDemandByPropIdV2($req->propId);
+        $demandList = $mPropDemand->getDueDemandByPropIdV2($req->propId)->map(function($val){
+            $val->exempted_general_tax = $this->_isSingleManArmedForce ? $val->general_tax : 0;
+            $val->due_exempted_general_tax = $this->_isSingleManArmedForce ? $val->due_general_tax : 0;
+            return $val;
+        });
         foreach ($demandList as $list) {
             if ($list->is_full_paid == false) {                                // In Case of Part Payment Get the Dues Payable amount
                 $list->general_tax = $list->due_general_tax;
@@ -87,6 +98,7 @@ class GetHoldingDuesV2
                 $list->light_cess = $list->due_light_cess;
                 $list->major_building = $list->due_major_building;
                 $list->open_ploat_tax = $list->due_open_ploat_tax;
+                $list->exempted_general_tax = $list->due_exempted_general_tax;
             }
         }
 
@@ -111,6 +123,7 @@ class GetHoldingDuesV2
         if ($grandTaxes['balance'] <= 0)
             $paymentStatus = 1;
 
+        $demand['isSingleManArmedForce'] = $this->_isSingleManArmedForce;
         $demand['fromFyear'] = collect($demandList)->first()['fyear'] ?? "";
         $demand['uptoFyear'] = collect($demandList)->last()['fyear'] ?? "";
         $demand['demandList'] = $demandList;
@@ -144,7 +157,7 @@ class GetHoldingDuesV2
 
         // Read Rebate ❗❗❗ Rebate is pending
         $firstOwner = $mPropOwners->firstOwner($req->propId);
-        $owners = $mPropOwners->getOwnersByPropId($req->propId);
+        
 
         // if($firstOwner->is_armed_force)
         //     // $rebate=

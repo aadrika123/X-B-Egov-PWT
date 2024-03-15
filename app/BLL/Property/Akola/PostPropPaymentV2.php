@@ -179,6 +179,7 @@ class PostPropPaymentV2
         $demand = (object)collect($demand)->toArray();
         return [
             'paidGeneralTax' => $demand->general_tax ?? 0,
+            'paidExemptedGeneralTax' => $demand->exempted_general_tax ?? 0,
             'paidRoadTax' => $demand->road_tax ?? 0,
             'paidFirefightingTax' => $demand->firefighting_tax ?? 0,
             'paidEducationTax' => $demand->education_tax ?? 0,
@@ -827,7 +828,7 @@ class PostPropPaymentV2
             'demandAmt' => $arrearSetalAmount,                                            // Demandable Amount
             'arrearSettledAmt' => $arrearSetalAmount > 0 ? true : false,
         ]);
-        $this->_REQ->merge(["amount"=>$this->_REQ->amount - collect($this->_Rebates)->sum("amount")]);
+        $this->_REQ->merge(["amount"=>$this->_REQ->amount - collect($this->_Rebates)->sum("amount") - collect($paidDemands)->sum("paidTotalExemptedGeneralTax")]);
 
         $this->_fromFyear = ((collect($paidDemands)->sortBy("fyear"))->first())["fyear"] ?? $this->_fromFyear;
         $this->_uptoFyear = ((collect($paidDemands)->sortBy("fyear"))->last())["fyear"] ?? $this->_uptoFyear;
@@ -887,6 +888,7 @@ class PostPropPaymentV2
             $tblDemand->due_major_building  = $tblDemand->due_major_building - $paidTaxes->paidMajorBuilding        > 0  ?  ($tblDemand->balance == 0 ? 0  : $tblDemand->due_major_building - $paidTaxes->paidMajorBuilding) : 0;
             $tblDemand->due_open_ploat_tax  = $tblDemand->due_open_ploat_tax - ($paidTaxes->paidOpenPloatTax ?? 0)  > 0  ?  ($tblDemand->balance == 0 ? 0  : $tblDemand->due_open_ploat_tax - ($paidTaxes->paidOpenPloatTax ?? 0)) : 0;
             $tblDemand->paid_total_tax      = $paidTaxes->paidTotalTax + $tblDemand->paid_total_tax                 > 0  ?  ($tblDemand->balance == 0 ? 0  : $paidTaxes->paidTotalTax + $tblDemand->paid_total_tax) : 0;
+            $tblDemand->is_full_paid = $tblDemand->balance > 0 ? false : true;
             #it is testing purps only
             if (strtoupper($this->_REQ['paymentMode']) != "ONLINE") {
                 foreach ($tblDemand->toArray() as $keys => $testVal) {
@@ -929,6 +931,7 @@ class PostPropPaymentV2
                 "paid_light_cess" => $paidTaxes->paidLightCess,
                 "paid_major_building" => $paidTaxes->paidMajorBuilding,
                 "paid_open_ploat_tax" => $paidTaxes->paidOpenPloatTax ?? 0,
+                "paid_exempted_general_tax" => $paidTaxes->paidExemptedGeneralTax ?? 0,
             ];
             $trDtl[] = $tranDtlReq;
             $this->_mPropTranDtl->create($tranDtlReq);
@@ -999,7 +1002,7 @@ class PostPropPaymentV2
         $generatePaymentReceipt = new GeneratePaymentReceiptV2;                     // Version 2 Receipt
         $generatePaymentReceipt->generateReceipt("", $propTrans['id']);
         $receipt = $generatePaymentReceipt->_GRID;
-        // dd($receipt,$this->_REQ["paidAmount"],$this->_REQ["amount"],$thertyPerOfpreviousInterest);
+        // dd($paidDemands,collect($paidDemands)->sum("paidTotalExemptedGeneralTax"),$receipt,$this->_REQ["paidAmount"],$this->_REQ["amount"],$thertyPerOfpreviousInterest);
 
         // sendsms
         $propertyNo  = $this->_propDetails->property_no;
@@ -1075,6 +1078,7 @@ class PostPropPaymentV2
         $perPecOfTax =  $totaTax / 100;
 
         $generalTaxPerc = ($currentTax->sum('general_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $exemptedGeneralTaxPerc = ($currentTax->sum('exempted_general_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
         $roadTaxPerc = ($currentTax->sum('road_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
         $firefightingTaxPerc = ($currentTax->sum('firefighting_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
         $educationTaxPerc = ($currentTax->sum('education_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
@@ -1111,6 +1115,7 @@ class PostPropPaymentV2
 
         $paidDemandBifurcation = [
             'general_tax' => roundFigure(($payableAmountOfTax * $generalTaxPerc) / 100),
+            'exempted_general_tax' => roundFigure(($payableAmountOfTax * $exemptedGeneralTaxPerc) / 100),
             'road_tax' => roundFigure(($payableAmountOfTax * $roadTaxPerc) / 100),
             'firefighting_tax' => roundFigure(($payableAmountOfTax * $firefightingTaxPerc) / 100),
             'education_tax' => roundFigure(($payableAmountOfTax * $educationTaxPerc) / 100),
@@ -1134,6 +1139,7 @@ class PostPropPaymentV2
         ];
         $data["paid_total_tax"] =  $paidDemandBifurcation["total_tax"] ?? 0;
         $data["paidCurrentTaxesBifurcation"] = $this->readPaidTaxes($paidDemandBifurcation);
+        $data["paidTotalExemptedGeneralTax"] = $data["paidCurrentTaxesBifurcation"]["paidExemptedGeneralTax"]?? 0;
         return $data;
     }
 
