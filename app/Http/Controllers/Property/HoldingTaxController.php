@@ -1839,20 +1839,29 @@ class HoldingTaxController extends Controller
         $mPropSmsLog = new PropSmsLog();
         $getHoldingDues = new GetHoldingDuesV2;
         $propDetails = PropDemand::select(
+            'prop_sms_logs.id as sms_log_id',
             'prop_demands.property_id',
             DB::raw('SUM(due_total_tax) as total_tax, MAX(fyear) as max_fyear'),
-            'owner_name',
-            'mobile_no',
+            'prop_owners.owner_name',
+            'prop_owners.mobile_no',
         )
             ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_demands.property_id')
+            ->leftJoin('prop_sms_logs', function ($join) {
+                $join->on('prop_sms_logs.ref_id', '=', 'prop_demands.property_id')
+                    ->where('prop_sms_logs.ref_type', 'PROPERTY')
+                    ->where('prop_sms_logs.purpose', 'Abhay Yojna');
+            })
+            ->whereNull('prop_sms_logs.id')
             ->where('due_total_tax', '>', 0.9)
             ->where('paid_status', 0)
-            ->where(DB::raw('LENGTH(mobile_no)'), '=', 10)
-            ->groupBy('prop_demands.property_id', 'owner_name', 'mobile_no')
+            ->where(DB::raw('LENGTH(prop_owners.mobile_no)'), '=', 10)
+            ->groupBy('prop_demands.property_id', 'owner_name', 'prop_owners.mobile_no','prop_sms_logs.id')
             ->orderByDesc('prop_demands.property_id')
             // ->limit(10)
             // // ->count();
             ->get();
+
+            // return $propDetails->count();
 
         foreach ($propDetails as $propDetail) {
             $newReq = new Request(['propId' => $propDetail->property_id]);
