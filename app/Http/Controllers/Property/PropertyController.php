@@ -935,7 +935,7 @@ class PropertyController extends Controller
                 $propArr = $this->updateProperty($application);
                 $propUpdate = (new PropProperty)->edit($application->prop_id, $propArr);
                 foreach ($owneres as $val) {
-                    $ownerArr = $this->updatePropOwner($val);
+                    $ownerArr = $this->updatePropOwner($val,true);
                     if ($val->owner_id)
                         $ownerUpdate = (new PropOwner)->edit($val->owner_id, $ownerArr);
                     else {
@@ -947,7 +947,7 @@ class PropertyController extends Controller
                         $ownerUpdate = (new PropOwner)->postOwner((object)$ownerArr);
                     }
                 }
-                if ($application->is_full_update) {
+                if (true) {
                     foreach ($floors as $val) {
                         $floorArr = $this->updatePropFloorPrimary($val);
                         if ($val->floor_id)
