@@ -1836,64 +1836,168 @@ class HoldingTaxController extends Controller
      */
     public function propertyAbhayYojnaSms(Request $req)
     {
-        $mPropSmsLog = new PropSmsLog();
-        $getHoldingDues = new GetHoldingDuesV2;
-        $propDetails = PropDemand::select(
-            'prop_sms_logs.id as sms_log_id',
-            'prop_demands.property_id',
-            DB::raw('SUM(due_total_tax) as total_tax, MAX(fyear) as max_fyear'),
-            'prop_owners.owner_name',
-            'prop_owners.mobile_no',
-        )
-            ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_demands.property_id')
-            ->leftJoin('prop_sms_logs', function ($join) {
-                $join->on('prop_sms_logs.ref_id', '=', 'prop_demands.property_id')
-                    ->where('prop_sms_logs.ref_type', 'PROPERTY')
-                    ->where('prop_sms_logs.purpose', 'Abhay Yojna');
-            })
-            ->whereNull('prop_sms_logs.id')
-            ->where('due_total_tax', '>', 0.9)
-            ->where('paid_status', 0)
-            ->where(DB::raw('LENGTH(prop_owners.mobile_no)'), '=', 10)
-            ->groupBy('prop_demands.property_id', 'owner_name', 'prop_owners.mobile_no','prop_sms_logs.id')
-            ->orderByDesc('prop_demands.property_id')
-            // ->limit(10)
-            // // ->count();
-            ->get();
+        try{
 
-            // return $propDetails->count();
+            $mPropSmsLog = new PropSmsLog();
+            $getHoldingDues = new GetHoldingDuesV2;
+            $propDetails = PropDemand::select(
+                'prop_sms_logs.id as sms_log_id',
+                'prop_demands.property_id',
+                DB::raw('SUM(due_total_tax) as total_tax, MAX(fyear) as max_fyear'),
+                'prop_owners.owner_name',
+                'prop_owners.mobile_no',
+            )
+                ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_demands.property_id')
+                ->leftJoin('prop_sms_logs', function ($join) {
+                    $join->on('prop_sms_logs.ref_id', '=', 'prop_demands.property_id')
+                        ->where('prop_sms_logs.ref_type', 'PROPERTY')
+                        ->where('prop_sms_logs.response', 'success')
+                        ->where('prop_sms_logs.purpose', 'Abhay Yojna');
+                })
+                ->whereNull('prop_sms_logs.id')
+                ->where('due_total_tax', '>', 0.9)
+                ->where('paid_status', 0)
+                ->where(DB::raw('LENGTH(prop_owners.mobile_no)'), '=', 10)
+                ->groupBy('prop_demands.property_id', 'owner_name', 'prop_owners.mobile_no','prop_sms_logs.id')
+                ->orderByDesc('prop_demands.property_id')
+                // ->limit(1)
+                // // ->count();
+                ->get();
+    
+                $totalList= $propDetails->count();
+    
+            foreach ($propDetails as $key=>$propDetail) {
+                try{
 
-        foreach ($propDetails as $propDetail) {
-            $newReq = new Request(['propId' => $propDetail->property_id]);
-            $demand = $getHoldingDues->getDues($newReq);
-
-            $ownerName       = Str::limit(trim($propDetail->owner_name), 30);
-            $ownerMobile     = $propDetail->mobile_no;
-            $totalTax        = $demand['payableAmt'];
-            $fyear           = $propDetail->max_fyear;
-            $propertyId      = $propDetail->property_id;
-            $propertyNo      = $demand['basicDetails']['property_no'];
-            $wardNo          = $demand['basicDetails']['ward_no'];
-
-            $sms      = "Dear " . $ownerName . ", your Property Tax of amount Rs " . $totalTax . " for property no " . $propertyNo . " ward no. " . $wardNo . " is due. Please pay your tax before 31st March 2024 and get benefitted under Abhay Yojna. Please ignore if already paid. For details visit amcakola.in or call at 08069493299. SWATI INDUSTRIES";
-            $response = send_sms($ownerMobile, $sms, 1707171048817705363);
-
-            $smsReqs = [
-                "emp_id" => 5695,
-                "ref_id" => $propertyId,
-                "ref_type" => 'PROPERTY',
-                "mobile_no" => $ownerMobile,
-                "purpose" => 'Abhay Yojna',
-                "template_id" => 1707170858405361648,
-                "message" => $sms,
-                "response" => $response['status'],
-                "smgid" => $response['msg'],
-                "stampdate" => Carbon::now(),
-            ];
-            $mPropSmsLog->create($smsReqs);
+                    $newReq = new Request(['propId' => $propDetail->property_id]);
+                    $demand = $getHoldingDues->getDues($newReq);
+        
+                    $ownerName       = Str::limit(trim($propDetail->owner_name), 30);
+                    $ownerMobile     = $propDetail->mobile_no;
+                    $totalTax        = $demand['payableAmt'];
+                    $fyear           = $propDetail->max_fyear;
+                    $propertyId      = $propDetail->property_id;
+                    $propertyNo      = $demand['basicDetails']['property_no'];
+                    $wardNo          = $demand['basicDetails']['ward_no'];
+                    // dd(Config::get("database"),$ownerMobile);
+                    $sms      = "Dear " . $ownerName . ", your Property Tax of amount Rs " . $totalTax . " for property no " . $propertyNo . " ward no. " . $wardNo . " is due. Please pay your tax before 31st March 2024 and get benefitted under Abhay Yojna. Please ignore if already paid. For details visit amcakola.in or call at 08069493299. SWATI INDUSTRIES";
+                    $response = send_sms($ownerMobile, $sms, 1707171048817705363);
+                    print_var("==================index($key) remaining(".$totalList - ($key+1).")=========================\n");
+                    print_var("property_id=======>".$propDetail->property_id."\n");
+                    print_var("sms=======>".$sms."\n");
+                    print_var($response);
+        
+                    $smsReqs = [
+                        "emp_id" => 5695,
+                        "ref_id" => $propertyId,
+                        "ref_type" => 'PROPERTY',
+                        "mobile_no" => $ownerMobile,
+                        "purpose" => 'Abhay Yojna',
+                        "template_id" => 1707171048817705363,
+                        "message" => $sms,
+                        "response" => $response['status'],
+                        "smgid" => $response['msg'],
+                        "stampdate" => Carbon::now(),
+                    ];
+                    $mPropSmsLog->create($smsReqs);
+                }
+                catch(Exception $e)
+                {
+                   print_var([$e->getMessage(),$e->getFile(),$e->getLine()]);
+                }
+            }
+    
+            return responseMsgs(true, "SMS Send Successfully of " . $propDetails->count() . " Property", [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }
+        catch(Exception $e)
+        {
+            return responseMsgs(false, [$e->getMessage(),$e->getFile(),$e->getLine()], [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+        }
+    }
+    
+    /**
+     * | Abhay Yojna Marathi
+     */
+    public function propertyAbhayYojnaMarathi(Request $req)
+    {
+        try{
 
-        return responseMsgs(true, "SMS Send Successfully of " . $propDetails->count() . " Property", [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+            $mPropSmsLog = new PropSmsLog();
+            $getHoldingDues = new GetHoldingDuesV2;
+            $templateId = 1707171056543531628;
+            $propDetails = PropDemand::select(
+                'prop_sms_logs.id as sms_log_id',
+                'prop_demands.property_id',
+                DB::raw('SUM(due_total_tax) as total_tax, MAX(fyear) as max_fyear'),
+                'prop_owners.owner_name_marathi',
+                'prop_owners.mobile_no',
+            )
+                ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_demands.property_id')
+                ->leftJoin('prop_sms_logs', function ($join) {
+                    $join->on('prop_sms_logs.ref_id', '=', 'prop_demands.property_id')
+                        ->where('prop_sms_logs.ref_type', 'PROPERTY')
+                        ->where('prop_sms_logs.response', 'success')
+                        ->where('prop_sms_logs.purpose', 'Abhay Yojna Marathi');
+                })
+                ->whereNull('prop_sms_logs.id')
+                ->where('due_total_tax', '>', 0.9)
+                ->where('paid_status', 0)
+                ->where(DB::raw('LENGTH(prop_owners.mobile_no)'), '=', 10)
+                ->groupBy('prop_demands.property_id', 'owner_name_marathi', 'prop_owners.mobile_no','prop_sms_logs.id')
+                ->orderByDesc('prop_demands.property_id')
+                // ->limit(10)
+                // // ->count();
+                ->get();
+    
+               $totalList= $propDetails->count();
+    
+            foreach ($propDetails as $key=>$propDetail) {
+                try{
+
+                    $newReq = new Request(['propId' => $propDetail->property_id]);
+                    $demand = $getHoldingDues->getDues($newReq);
+        
+                    $ownerName       = Str::limit(trim($propDetail->owner_name_marathi), 30);
+                    $ownerMobile     = $propDetail->mobile_no;
+                    $totalTax        = $demand['payableAmt'];
+                    $fyear           = $propDetail->max_fyear;
+                    $propertyId      = $propDetail->property_id;
+                    $propertyNo      = $demand['basicDetails']['property_no'];
+                    $wardNo          = $demand['basicDetails']['ward_no'];
+                    // dd(Config::get("database"),$ownerMobile);
+                    $sms      = "प्रिय " . $ownerName . ", तुमचा मालमत्ता कर रु. " . $totalTax . " मालमत्ता क्रमांक " . $propertyNo . " प्रभाग क्र. " . $wardNo . " देय आहे. कृपया 31 मार्च 2024 पूर्वी तुमचा कर भरा आणि अभय योजनेअंतर्गत लाभ घ्या. आधीच पैसे दिले असल्यास दुर्लक्ष करा. तपशीलांसाठी amcakola.in ला भेट द्या किंवा 08069493299 वर कॉल करा. स्वाती इंडस्ट्रीज";
+                    $response = send_sms($ownerMobile, $sms, $templateId);
+                    print_var("==================index($key) remaining(".$totalList - ($key+1).")=========================\n");
+                    print_var("property_id=======>".$propDetail->property_id."\n");
+                    print_var("sms=======>".$sms."\n");
+                    print_var($response);
+        
+                    $smsReqs = [
+                        "emp_id" => 5695,
+                        "ref_id" => $propertyId,
+                        "ref_type" => 'PROPERTY',
+                        "mobile_no" => $ownerMobile,
+                        "purpose" => 'Abhay Yojna Marathi',
+                        "template_id" => $templateId,
+                        "message" => $sms,
+                        "response" => $response['status'],
+                        "smgid" => $response['msg'],
+                        "stampdate" => Carbon::now(),
+                    ];
+                    $mPropSmsLog->create($smsReqs);
+                }
+                catch(Exception $e)
+                {
+                   print_var([$e->getMessage(),$e->getFile(),$e->getLine()]);
+                }
+            }
+    
+            return responseMsgs(true, "SMS Send Successfully of " . $propDetails->count() . " Property", [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false, [$e->getMessage(),$e->getFile(),$e->getLine()], [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+        }
     }
 
     /**

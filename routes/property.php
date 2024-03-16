@@ -646,6 +646,7 @@ Route::controller(HoldingTaxController::class)->group(function () {
   Route::post('bulk-sms-list', 'propertyBulkSmsList');
   Route::post('bulk-sms', 'propertyBulkSms');
   Route::post('abhay-yojna', 'propertyAbhayYojnaSms');
+  Route::post('abhay-yojna-marathi', 'propertyAbhayYojnaMarathi');
   Route::post('bulk-sms-report', 'bulkSmsReport');
   Route::post('test-sms', 'testSms');
 });
