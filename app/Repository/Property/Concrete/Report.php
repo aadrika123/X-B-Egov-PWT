@@ -4513,10 +4513,12 @@ class Report implements IReport
                     +(COALESCE(light_cess,0)::numeric) 
                     +(COALESCE(major_building,0)::numeric) 
                     +(COALESCE(open_ploat_tax,0)::numeric)
+                    -(COALESCE(exempted_general_tax,0)::numeric)
 				)as total,
                 sum(COALESCE(maintanance_amt,0)::numeric) as maintanance_amt,
                 sum(COALESCE(aging_amt,0)::numeric) as aging_amt,
                 sum(COALESCE(general_tax,0)::numeric) as general_tax,
+                sum(COALESCE(exempted_general_tax,0)::numeric) as exempted_general_tax,
                 sum(COALESCE(road_tax,0)::numeric) as road_tax,
                 sum(COALESCE(firefighting_tax,0)::numeric) as firefighting_tax,
                 sum(COALESCE(education_tax,0)::numeric) as education_tax,
@@ -4564,10 +4566,12 @@ class Report implements IReport
                     +(COALESCE(current_light_cess,0)::numeric) 
                     +(COALESCE(current_major_building,0)::numeric) 
                     +(COALESCE(current_open_ploat_tax,0)::numeric)
+                    -(COALESCE(current_exempted_general_tax,0)::numeric)
                 )as c1urrent_total,
                 sum(COALESCE(current_maintanance_amt,0)::numeric ) as current_maintanance_amt,
                 sum(COALESCE(current_aging_amt,0)::numeric ) as current_aging_amt,
                 sum(COALESCE(current_general_tax,0)::numeric ) as current_general_tax,
+                sum(COALESCE(current_exempted_general_tax,0)::numeric ) as current_exempted_general_tax,
                 sum(COALESCE(current_road_tax,0)::numeric ) as current_road_tax,
                 sum(COALESCE(current_firefighting_tax,0)::numeric ) as current_firefighting_tax,
                 sum(COALESCE(current_education_tax,0)::numeric ) as current_education_tax,
@@ -4615,10 +4619,12 @@ class Report implements IReport
                     +(COALESCE(arear_light_cess,0)::numeric) 
                     +(COALESCE(arear_major_building,0)::numeric) 
                     +(COALESCE(arear_open_ploat_tax,0)::numeric)
+                    -(COALESCE(arear_exempted_general_tax,0)::numeric)
                 )as a1rear_total,
                 sum(COALESCE(arear_maintanance_amt,0)::numeric ) as arear_maintanance_amt,
                 sum(COALESCE(arear_aging_amt,0)::numeric ) as arear_aging_amt,
                 sum(COALESCE(arear_general_tax,0)::numeric ) as arear_general_tax,
+                sum(COALESCE(arear_exempted_general_tax,0)::numeric ) as arear_exempted_general_tax,
                 sum(COALESCE(arear_road_tax,0)::numeric ) as arear_road_tax,
                 sum(COALESCE(arear_firefighting_tax,0)::numeric ) as arear_firefighting_tax,
                 sum(COALESCE(arear_education_tax,0)::numeric ) as arear_education_tax,
@@ -4651,6 +4657,7 @@ class Report implements IReport
                     sum(COALESCE(prop_tran_dtls.paid_maintanance_amt,0)::numeric) as maintanance_amt,
                     sum(COALESCE(prop_tran_dtls.paid_aging_amt,0)::numeric) as aging_amt,
                     sum(COALESCE(prop_tran_dtls.paid_general_tax,0)::numeric) as general_tax,
+                    sum(COALESCE(prop_tran_dtls.paid_exempted_general_tax,0)::numeric) as exempted_general_tax,
                     sum(COALESCE(prop_tran_dtls.paid_road_tax,0)::numeric) as road_tax,
                     sum(COALESCE(prop_tran_dtls.paid_firefighting_tax,0)::numeric) as firefighting_tax,
                     sum(COALESCE(prop_tran_dtls.paid_education_tax,0)::numeric) as education_tax,
@@ -4677,6 +4684,7 @@ class Report implements IReport
                     sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_maintanance_amt,0)::numeric else 0 end) as current_maintanance_amt,
                     sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_aging_amt,0)::numeric else 0 end) as current_aging_amt,
                     sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_general_tax,0)::numeric else 0 end) as current_general_tax,
+                    sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_exempted_general_tax,0)::numeric else 0 end) as current_exempted_general_tax,
                     sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_road_tax,0)::numeric else 0 end) as current_road_tax,
                     sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_firefighting_tax,0)::numeric else 0 end) as current_firefighting_tax,
                     sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_education_tax,0)::numeric else 0 end) as current_education_tax,
@@ -4703,6 +4711,7 @@ class Report implements IReport
                     sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_maintanance_amt,0)::numeric else 0 end) as arear_maintanance_amt,
                     sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_aging_amt,0)::numeric else 0 end) as arear_aging_amt,
                     sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_general_tax,0)::numeric else 0 end) as arear_general_tax,
+                    sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_exempted_general_tax,0)::numeric else 0 end) as arear_exempted_general_tax,
                     sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_road_tax,0)::numeric else 0 end) as arear_road_tax,
                     sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_firefighting_tax,0)::numeric else 0 end) as arear_firefighting_tax,
                     sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_education_tax,0)::numeric else 0 end) as arear_education_tax,
@@ -4823,6 +4832,7 @@ class Report implements IReport
             $report->maintanance_amt = round($report->current_maintanance_amt)     +  round($report->arear_maintanance_amt);
             $report->aging_amt       = round($report->current_aging_amt)           +  round($report->arear_aging_amt);
             $report->general_tax     = round($report->current_general_tax)         +  round($report->arear_general_tax);
+            $report->exempted_general_tax     = round($report->current_exempted_general_tax)         +  round($report->arear_exempted_general_tax);
             $report->road_tax        = round($report->current_road_tax)            +  round($report->arear_road_tax);
             $report->firefighting_tax = round($report->current_firefighting_tax)    +  round($report->arear_firefighting_tax);
             $report->education_tax   = round($report->current_education_tax)       +  round($report->arear_education_tax);
@@ -4866,12 +4876,20 @@ class Report implements IReport
             // $current = $data["report"]["c1urrent_total"] - $rebate;
             $currentPattern = "/current_/i";
             $arrearPattern = "/arear_/i";
+            $arrearExcemptedPattern = "/arear_exempted_/i";
+            $currentExcemptedPattern = "/current_exempted_/i";
             foreach ($data["report"] as $key => $val) {
                 if (preg_match($currentPattern, $key)) {
                     $current += ($val ? $val : 0);
                 }
                 if (preg_match($arrearPattern, $key)) {
                     $arear += ($val ? $val : 0);
+                }
+                if (preg_match($currentExcemptedPattern, $key)) {
+                    $current -= ($val ? $val : 0);
+                }
+                if (preg_match($arrearExcemptedPattern, $key)) {
+                    $arear -= ($val ? $val : 0);
                 }
             };
             $arear = $arear + $penalty;
