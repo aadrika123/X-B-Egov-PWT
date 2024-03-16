@@ -131,7 +131,7 @@ class TaxCalculator
         }
 
         $this->_calculatorParams = [
-            'areaOfPlot' => isset($this->_REQUEST->bifurcatedPlot) ? $this->_REQUEST->bifurcatedPlot * 0.092903 : $this->_REQUEST->areaOfPlot * 0.092903,                         // Square feet to square meter conversion
+            'areaOfPlot' => $this->getAssestmentTypeStr() == 'Bifurcation' ? $this->_REQUEST->bifurcatedPlot * 0.092903 : $this->_REQUEST->areaOfPlot * 0.092903,                         // Square feet to square meter conversion
             'category' => $this->_REQUEST->category,
             'dateOfPurchase' => $this->_REQUEST->dateOfPurchase,
             'floors' => $this->_REQUEST->floor
