@@ -131,7 +131,7 @@ class TaxCalculator
         }
 
         $this->_calculatorParams = [
-            'areaOfPlot' => $this->_REQUEST->areaOfPlot * 0.092903,                         // Square feet to square meter conversion
+            'areaOfPlot' => isset($this->_REQUEST->bifurcatedPlot) ? $this->_REQUEST->bifurcatedPlot * 0.092903 : $this->_REQUEST->areaOfPlot * 0.092903,                         // Square feet to square meter conversion
             'category' => $this->_REQUEST->category,
             'dateOfPurchase' => $this->_REQUEST->dateOfPurchase,
             'floors' => $this->_REQUEST->floor
@@ -174,7 +174,7 @@ class TaxCalculator
                 $rate = $this->readRateByFloor($item);                 // (2.1)
                 $agingPerc = $this->readAgingByFloor($item);           // (2.2)
 
-                $floorBuildupArea = roundFigure( isset($item->biBuildupArea) ? $item->biBuildupArea * 0.092903 :  $item->buildupArea  * 0.092903);
+                $floorBuildupArea = roundFigure(isset($item->biBuildupArea) ? $item->biBuildupArea * 0.092903 :  $item->buildupArea  * 0.092903);
                 $alv = roundFigure($floorBuildupArea * $rate);
                 $maintance10Perc = roundFigure(($alv * $this->_maintancePerc) / 100);
                 $valueAfterMaintanance = roundFigure($alv - $maintance10Perc);
