@@ -281,7 +281,7 @@ trait Property
             ];
     }
 
-    public function updatePropOwner(PropOwnerUpdateRequest $UpdateOwnerRequest)
+    public function updatePropOwner(PropOwnerUpdateRequest $UpdateOwnerRequest,$flag=false)
     {
         $PropOwner = PropOwner::find($UpdateOwnerRequest->owner_id);
         $propUdateRequest = PropPropertyUpdateRequest::find($UpdateOwnerRequest->request_id);
@@ -290,7 +290,7 @@ trait Property
             // throw new Exception("Owner Not Found");
         }
         $arr = $this->updatePropOwnerBasic($UpdateOwnerRequest);
-        if($propUdateRequest->is_full_update || !$PropOwner)
+        if($propUdateRequest->is_full_update || $flag || !$PropOwner)
         {
             $arr =array_merge($arr,$this->updatePropOwnerPrimary($UpdateOwnerRequest)); 
         }
