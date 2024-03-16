@@ -10,6 +10,7 @@ use App\Http\Requests\Property\Reports\SafPropIndividualDemandAndCollection;
 use App\Http\Requests\Property\Reports\UserWiseLevelPending;
 use App\Http\Requests\Property\Reports\UserWiseWardWireLevelPending;
 use App\Models\MplYearlyReport;
+use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropPropertyUpdateRequest;
 use App\Models\Property\PropSaf;
@@ -29,6 +30,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
+use PhpParser\Node\Expr\FuncCall;
 
 #------------date 13/03/2023 -------------------------------------------------------------------------
 #   Code By Sandeep Bara
@@ -2833,7 +2835,7 @@ class ReportController extends Controller
             "jsk_count" => $data->jsk_count,
             "utc_count" => $data->utc_count,
             "sh_count" => $data->sh_count,
-            
+
 
 
             // "count_not_paid_3yrs" => $data->pending_cnt_3yrs,
@@ -4622,6 +4624,77 @@ class ReportController extends Controller
             $data['payment_mode'] = $paymentMode;
             $data['from_date'] = Carbon::parse($fromDate)->format('d-m-Y');
             $data['upto_date'] = Carbon::parse($uptoDate)->format('d-m-Y');
+
+            return responseMsgs(true, "Data Retreived", $data, "", "", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), []);
+        }
+    }
+
+    /**
+     * | assessmentWiseReport
+     */
+    public function assessmentWiseReport(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "fromDate"    => "required|date|date_format:Y-m-d",
+                "uptoDate"    => "required|date|date_format:Y-m-d|after_or_equal:" . $request->fromDate,
+                "wardId"      => "nullable|digits_between:1,9223372036854775807",
+                "zoneId"      => "nullable|digits_between:1,9223372036854775807",
+                "paymentMode" => "nullable",
+                "type"        => "nullable|in:Mutation,Bifurcation",
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        try {
+
+            $fromDate = $request->fromDate;
+            $uptoDate = $request->uptoDate;
+            $perPage  = $request->perPage ?? 10;
+            $wardId = $zoneId = null;
+
+            if ($request->wardId) {
+                $wardId = $request->wardId;
+            }
+            if ($request->zoneId) {
+                $zoneId = $request->zoneId;
+            }
+
+            $data = PropActiveSaf::select(
+                'prop_active_safs.id',
+                'zone_name',
+                'ward_name',
+                'saf_no',
+                'assessment_type',
+                'users.name as applied_by',
+                'role_name as current_role',
+                'application_date',
+            )
+                ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
+                ->join('users', 'users.id', 'prop_active_safs.user_id')
+                ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_active_safs.ward_mstr_id')
+                ->join('zone_masters', 'zone_masters.id', 'prop_active_safs.zone_mstr_id')
+                // ->leftJoin('wf_active_documents', function ($join) {
+                //     $join->on('wf_active_documents.active_id', '=', 'prop_active_safs.id')
+                //         ->where('wf_active_documents.status', 1);
+                //         // ->where('wf_active_documents.response', 'success')
+                //         // ->where('wf_active_documents.purpose', 'Abhay Yojna Marathi');
+                // })
+                ->whereBetween('application_date', [$fromDate, $uptoDate])
+                ->orderBy('zone')
+                ->orderBy('ward_name');
+
+                if ($wardId) {
+                    $data = $data->where("prop_active_safs.ward_mstr_id", $wardId);
+                }
+                if ($zoneId) {
+                    $data = $data->where("prop_active_safs.zone_mstr_id", $zoneId);
+                }
+
+               $data = $data->paginate($perPage);
 
             return responseMsgs(true, "Data Retreived", $data, "", "", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {

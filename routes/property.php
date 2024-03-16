@@ -539,6 +539,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('reports/maker-checker-summary', 'makerCheckerSummary');
     Route::post('reports/maker-checker-user-list', 'makerCheckerUserList');
     Route::post('reports/paid-transfer-fee', 'paidTransferFee');
+    Route::post('reports/assesment-wise', 'assessmentWiseReport');
     Route::post('live-dashboard-update', 'liveDashboardUpdate');
 
     Route::post('reports/device-type/collection', 'deviceTypeCollection');
