@@ -16,7 +16,7 @@ class PropAdvance extends Model
      */
     public function store($req)
     {
-        PropAdvance::create($req);
+        return PropAdvance::create($req)->id;
     }
 
     /**

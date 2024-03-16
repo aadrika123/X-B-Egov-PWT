@@ -8,6 +8,7 @@ use App\MicroServices\IdGenerator\PropIdGenerator;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
+use App\Models\Property\PropAdvance;
 use App\Models\Property\PropAssessmentHistory;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropFloor;
@@ -17,9 +18,12 @@ use App\Models\Property\PropProperty;
 use App\Models\Property\PropSafMemoDtl;
 use App\Models\Property\PropSafVerification;
 use App\Models\Property\PropSafVerificationDtl;
+use App\Models\Property\PropTransaction;
 use Exception;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 
 /**
  * | Created On-28-08-2023 
@@ -59,6 +63,8 @@ class SafApprovalBll
     public $_famNo;
     public $_famId;
     public $_SkipFiledWorkWfMstrId = [];
+    public $_paidTotalCurrentYearTax = 0;
+    public $_assessmentHistoryId = null;
     // Initializations
     public function __construct()
     {
@@ -248,6 +254,23 @@ class SafApprovalBll
         $oldFloor = PropFloor::where("property_id", $propProperties->id)->get();
         $oldOwners = PropOwner::where("property_id", $propProperties->id)->get();
         $oldDemand = PropDemand::where("property_id", $propProperties->id)->get();
+        
+        $currentYearDemand = collect($oldDemand)->where("fyear",getFY());
+        $currentYearDemandId = ($currentYearDemand->implode("id",","));
+        $currentYearDemandId = $currentYearDemandId ? (int)$currentYearDemandId  : 0;
+        
+        $oldTransection = $propProperties->getAllTransection()->get();
+        $oldTranDtl = new Collection();        
+        $oldTransection->map(function($val)use($oldTranDtl,$currentYearDemandId){
+            $trn = $val->getAllTranDtls()->where("prop_tran_dtls.prop_demand_id",$currentYearDemandId)->first();
+            if($trn)
+            {
+                $oldTranDtl->push($trn) ;
+            }
+
+        });
+        $this->_paidTotalCurrentYearTax = $oldTranDtl->sum("paid_total_tax");
+
         $history = new PropAssessmentHistory();
         $history->property_id = $propProperties->id;
         $history->assessment_type = $this->_activeSaf->assessment_type;
@@ -256,10 +279,12 @@ class SafApprovalBll
         $history->owner_log = json_encode($oldOwners->toArray(), JSON_UNESCAPED_UNICODE);
         $history->floar_log = json_encode($oldFloor->toArray(), JSON_UNESCAPED_UNICODE);
         $history->demand_log = json_encode($oldDemand->toArray(), JSON_UNESCAPED_UNICODE);
+        $history->transection_log = json_encode($oldTransection->toArray(), JSON_UNESCAPED_UNICODE);
+        $history->current_year_paid_demand_log = json_encode($oldTranDtl->toArray(), JSON_UNESCAPED_UNICODE);
 
         $history->user_id = Auth()->user() ? Auth()->user()->id : 0;
         $history->save();
-
+        $this->_assessmentHistoryId = $history->id;
         $propProperties->update($this->_toBeProperties->toArray());
         $propProperties->saf_id = $this->_activeSaf->id;
         // $propProperties->holding_no = $this->_activeSaf->holding_no;
@@ -404,6 +429,9 @@ class SafApprovalBll
             return;
         }
         $fyDemand = collect($this->_calculateTaxByUlb->_GRID['fyearWiseTaxes'])->sortBy("fyear");
+
+        $this->generateAdvance($fyDemand);
+
         $user = Auth()->user();
         $ulbId = $this->_activeSaf->ulb_id;
         $demand = new PropDemand();
@@ -468,11 +496,32 @@ class SafApprovalBll
                 "due_open_ploat_tax" => $val["openPloatTax"] ?? 0,
             ];
             if ($oldDemand = $demand->where("fyear", $arr["fyear"])->where("property_id", $arr["property_id"])->where("status", 1)->first()) {
-                $oldDemand = $this->updateOldDemands($oldDemand, $arr);
-                $oldDemand->update();
+                $oldDemand = $this->updateOldDemandsV1($oldDemand, $arr);
+                $oldDemand->update();                
                 continue;
             }
             $demand->store($arr);
+        }
+    }
+
+    public function generateAdvance($newDemand)
+    {        
+        $oldPaidTax=$this->_paidTotalCurrentYearTax;
+        if(round($oldPaidTax)>0 && !in_array($this->_activeSaf->assessment_type, ['New Assessment']))
+        {
+            $new_demand_log = json_encode($newDemand, JSON_UNESCAPED_UNICODE);
+            $newAdvance = new PropAdvance();
+            $advArr = [
+                "prop_id" => $this->_replicatedPropId,
+                "tran_id" => null,
+                "amount" => round($oldPaidTax),
+                "user_id" => (auth()->user() ? auth()->user()->id : null),
+                "ulb_id" => (auth()->user() ? auth()->user()->ulb_id : null),
+                "remarks" => "Old Demand payment",
+            ];
+            $advanceId = $newAdvance->store($advArr);
+            $history = new PropAssessmentHistory();
+            $history->where("id",$this->_assessmentHistoryId)->update(["advance_id"=>$advanceId,"total_paid_demand_amount"=>$oldPaidTax,"new_demand_log"=>$new_demand_log]);
         }
     }
 
@@ -526,6 +575,66 @@ class SafApprovalBll
         $oldDemand->due_major_building  = $oldDemand->due_major_building + $newDemand["due_major_building"];
         $oldDemand->open_ploat_tax  = $oldDemand->open_ploat_tax + $newDemand["open_ploat_tax"];
         $oldDemand->due_open_ploat_tax  = $oldDemand->due_open_ploat_tax + $newDemand["due_open_ploat_tax"];
+        if ($oldDemand->due_total_tax > 0 && $oldDemand->paid_status == 1) {
+            $oldDemand->is_full_paid = false;
+        }
+        if ($oldDemand->due_total_tax > 0 && $oldDemand->paid_status == 0) {
+            $oldDemand->is_full_paid = true;
+        }
+        return $oldDemand;
+    }
+
+    public function updateOldDemandsV1($oldDemand, $newDemand)
+    {
+        $oldDemand->maintanance_amt =  $newDemand["maintanance_amt"];
+        $oldDemand->aging_amt       = $newDemand["aging_amt"];
+        $oldDemand->general_tax     = $newDemand["general_tax"];
+        $oldDemand->road_tax        = $newDemand["road_tax"];
+        $oldDemand->firefighting_tax = $newDemand["firefighting_tax"];
+        $oldDemand->education_tax   = $newDemand["education_tax"];
+        $oldDemand->water_tax       = $newDemand["water_tax"];
+        $oldDemand->cleanliness_tax = $newDemand["cleanliness_tax"];
+        $oldDemand->sewarage_tax    = $newDemand["sewarage_tax"];
+        $oldDemand->tree_tax        = $newDemand["tree_tax"];
+        $oldDemand->professional_tax = $newDemand["professional_tax"];
+        $oldDemand->total_tax       = $newDemand["total_tax"];
+        $oldDemand->balance         = $newDemand["total_tax"];
+        $oldDemand->tax1            = $newDemand["tax1"];
+        $oldDemand->tax2            = $newDemand["tax2"];
+        $oldDemand->tax3            = $newDemand["tax3"];
+        $oldDemand->sp_education_tax = $newDemand["sp_education_tax"];
+        $oldDemand->water_benefit   = $newDemand["water_benefit"];
+        $oldDemand->water_bill      = $newDemand["water_bill"];
+        $oldDemand->sp_water_cess   = $newDemand["sp_water_cess"];
+        $oldDemand->drain_cess      = $newDemand["drain_cess"];
+        $oldDemand->light_cess      = $newDemand["light_cess"];
+        $oldDemand->major_building  = $newDemand["major_building"];
+        $oldDemand->due_maintanance_amt  = $newDemand["due_maintanance_amt"];
+        $oldDemand->due_aging_amt  = $newDemand["due_aging_amt"];
+        $oldDemand->due_general_tax  = $newDemand["due_general_tax"];
+        $oldDemand->due_road_tax  = $newDemand["due_road_tax"];
+        $oldDemand->due_firefighting_tax  = $newDemand["due_firefighting_tax"];
+        $oldDemand->due_education_tax  = $newDemand["due_education_tax"];
+        $oldDemand->due_water_tax  = $newDemand["due_water_tax"];
+        $oldDemand->due_cleanliness_tax  = $newDemand["due_cleanliness_tax"];
+        $oldDemand->due_sewarage_tax  = $newDemand["due_sewarage_tax"];
+        $oldDemand->due_tree_tax  = $newDemand["due_tree_tax"];
+        $oldDemand->due_professional_tax  = $newDemand["due_professional_tax"];
+        $oldDemand->due_total_tax  =$newDemand["due_total_tax"];
+        $oldDemand->due_balance  = $newDemand["due_balance"];
+        $oldDemand->due_tax1  = $newDemand["due_tax1"];
+        $oldDemand->due_tax2  = $newDemand["due_tax2"];
+        $oldDemand->due_tax3  = $newDemand["due_tax3"];
+        $oldDemand->due_sp_education_tax  = $newDemand["due_sp_education_tax"];
+        $oldDemand->due_water_benefit  = $newDemand["due_water_benefit"];
+        $oldDemand->due_water_bill  = $newDemand["due_water_bill"];
+        $oldDemand->due_sp_water_cess  = $newDemand["due_sp_water_cess"];
+        $oldDemand->due_drain_cess  = $newDemand["due_drain_cess"];
+        $oldDemand->due_light_cess  = $newDemand["due_light_cess"];
+        $oldDemand->due_major_building  = $newDemand["due_major_building"];
+        $oldDemand->open_ploat_tax  = $newDemand["open_ploat_tax"];
+        $oldDemand->due_open_ploat_tax  = $newDemand["due_open_ploat_tax"];
+        $oldDemand->paid_total_tax  = 0;
         if ($oldDemand->due_total_tax > 0 && $oldDemand->paid_status == 1) {
             $oldDemand->is_full_paid = false;
         }

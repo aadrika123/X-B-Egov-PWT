@@ -465,4 +465,9 @@ class PropTransaction extends Model
                 ->whereIn("prop_transactions.status",[1,2])
                 ->get();
     }
+
+    public function getAllTranDtls()
+    {
+        return $this->hasMany(PropTranDtl::class,"tran_id","id")->where("status",1);
+    }
 }

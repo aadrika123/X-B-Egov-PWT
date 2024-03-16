@@ -563,7 +563,7 @@ class TaxCalculator
                         $priveTotalTax = $this->_lastDemand ? $this->_lastDemand->total_tax : 0;
                         $diffAmount = (($yearTax["totalTax"] - $priveTotalTax) > 0) ? ($yearTax["totalTax"] - $priveTotalTax) : 0;
                         if ($diffAmount > 0) {
-                            $diffPercent = ($diffAmount / ($yearTax["totalTax"] > 0 ? $yearTax["totalTax"] : 1));
+                            $diffPercent = 1;#($diffAmount / ($yearTax["totalTax"] > 0 ? $yearTax["totalTax"] : 1));
                             // $yearTax2 = $yearTax;
                             $yearTax["agingAmt"]    = roundFigure($yearTax["agingAmt"] * $diffPercent);
                             $yearTax["generalTax"]  = roundFigure($yearTax["generalTax"] * $diffPercent);

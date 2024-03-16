@@ -1084,4 +1084,10 @@ class PropProperty extends Model
             ->where("status", 1)
             ->orderBy("fyear", "DESC")->first();
     }
+
+    public function getAllTransection()
+    {
+        return $this->hasMany(PropTransaction::class,"property_id","id")->where("status",1);
+    }
+
 }
