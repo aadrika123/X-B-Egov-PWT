@@ -969,6 +969,7 @@ class PostPropPaymentV2
         // Cheque Entry
         if (in_array($this->_REQ['paymentMode'], $this->_offlinePaymentModes)) {
             $this->_REQ->merge([
+                'applicationNo' => $this->_propDetails->holding_no??null,
                 'chequeDate' => $this->_REQ['chequeDate'],
                 'tranId' => $propTrans['id']
             ]);
