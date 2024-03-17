@@ -368,11 +368,13 @@ class HoldingTaxController extends Controller
             $postPropPayment->_propCalculation = $demandList;
             $postPropPayment->postPayment();
             DB::commit();
+            DB::connection("pgsql_master")->commit();
             return [
                 'tran_id' => $postPropPayment->_tranId
             ];
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection("pgsql_master")->rollBack();
             throw new Exception($e->getMessage());
         }
     }
@@ -420,9 +422,11 @@ class HoldingTaxController extends Controller
             // Transaction is beginning in Prop Payment Class
             $postPropPayment->postPayment();
             DB::commit();
+            DB::connection("pgsql_master")->commit();
             return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $postPropPayment->_tranNo, 'transactionId' => $postPropPayment->_tranId], "011604", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection("pgsql_master")->rollBack();
             return responseMsgs(false, $e->getMessage(), "", "011604", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
@@ -472,10 +476,12 @@ class HoldingTaxController extends Controller
             // Transaction is beginning in Prop Payment Class
             $postPropPayment->postPayment();
             DB::commit();
+            DB::connection("pgsql_master")->commit();
 
             return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $postPropPayment->_tranNo, 'transactionId' => $postPropPayment->_tranId], "011604", "2.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
+            DB::connection("pgsql_master")->rollBack();
             return responseMsgs(false, $e->getMessage(), "", "011604", "2.0", "", "POST", $req->deviceId ?? "");
         }
     }

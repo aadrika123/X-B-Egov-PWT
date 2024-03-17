@@ -674,6 +674,7 @@ class PostPropPaymentV2
 
         // 🔴🔴🔴🔴Begining Transactions 🔴🔴🔴
         DB::beginTransaction();
+        DB::connection("pgsql_master")->beginTransaction();
         $this->_propDetails->balance = 0;                  // Update Arrear
         $this->_propDetails->save();
 
