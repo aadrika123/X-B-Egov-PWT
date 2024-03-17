@@ -152,6 +152,10 @@ class DeactivateTran
 
     private function adjustPropDemand(PropDemand $propDemand, $tranDtl)
     {
+        if($propDemand->total_tax > ($propDemand->balance + $tranDtl->paid_balance))
+        {
+            return;
+        }
         $propDemand->due_maintanance_amt    = $propDemand->due_maintanance_amt  + $tranDtl->paid_maintanance_amt;
         $propDemand->due_aging_amt          = $propDemand->due_aging_amt        + $tranDtl->paid_aging_amt;
         $propDemand->due_general_tax        = $propDemand->due_general_tax      + $tranDtl->paid_general_tax;
