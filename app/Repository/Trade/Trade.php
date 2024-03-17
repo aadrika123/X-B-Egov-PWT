@@ -3412,26 +3412,26 @@ class Trade implements ITrade
                         ->whereIn("trade_transactions.status", [1, 2])
                         ->orderBy("trade_transactions.id","DESC")
                         ->first();
-                    $penalty = TradeFineRebete::select("type", "amount")
+                $penalty = TradeFineRebete::select("type", "amount")
                         ->where('tran_id', $Oltransaction->id??0)
                         ->where("status", 1)
                         ->orderBy("id")
                         ->get();
-                    $pen = 0;
-                    $delay_fee = 0;
-                    $denial_fee = 0;
-                    foreach ($penalty as $val) 
+                $pen = 0;
+                $delay_fee = 0;
+                $denial_fee = 0;
+                foreach ($penalty as $val) 
+                {
+                    if (strtoupper($val->type) == strtoupper("Delay Apply License")) 
                     {
-                        if (strtoupper($val->type) == strtoupper("Delay Apply License")) 
-                        {
-                            $delay_fee = $val->amount;
-                        } 
-                        elseif (strtoupper($val->type) == strtoupper("Denial Apply")) 
-                        {
-                            $denial_fee = $val->amount;
-                        }
-                        $pen += $val->amount;
+                        $delay_fee = $val->amount;
+                    } 
+                    elseif (strtoupper($val->type) == strtoupper("Denial Apply")) 
+                    {
+                        $denial_fee = $val->amount;
                     }
+                    $pen += $val->amount;
+                }
                     
                 $val->tran_no = $Oltransaction? $Oltransaction->tran_no :null;
                 $val->application_type = ($val->applicationType()->first())->application_type??null;
