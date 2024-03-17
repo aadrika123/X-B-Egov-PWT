@@ -3406,7 +3406,45 @@ class Trade implements ITrade
             $transaction->denial_fee = number_format($denial_fee, 2);
             $transaction->paid_amount_in_words = getIndianCurrency($transaction->paid_amount); 
             $application->parent_ids = trim($application->parent_ids.",".$application->id,","); 
-            $parentIds =   explode(",",$application->parent_ids?$application->parent_ids:$application->id);        
+            $parentIds =   explode(",",$application->parent_ids?$application->parent_ids:$application->id);  
+            $application->licenceHistory = TradeRenewal::whereIn("id",$parentIds)->orderBy("valid_upto","ASC")->get()->map(function($val){
+                $Oltransaction = TradeTransaction::where("trade_transactions.temp_id", $val->id)
+                        ->whereIn("trade_transactions.status", [1, 2])
+                        ->orderBy("trade_transactions.id","DESC")
+                        ->first();
+                    $penalty = TradeFineRebete::select("type", "amount")
+                        ->where('tran_id', $Oltransaction->id??0)
+                        ->where("status", 1)
+                        ->orderBy("id")
+                        ->get();
+                    $pen = 0;
+                    $delay_fee = 0;
+                    $denial_fee = 0;
+                    foreach ($penalty as $val) 
+                    {
+                        if (strtoupper($val->type) == strtoupper("Delay Apply License")) 
+                        {
+                            $delay_fee = $val->amount;
+                        } 
+                        elseif (strtoupper($val->type) == strtoupper("Denial Apply")) 
+                        {
+                            $denial_fee = $val->amount;
+                        }
+                        $pen += $val->amount;
+                    }
+                    
+                $val->tran_no = $Oltransaction? $Oltransaction->tran_no :null;
+                $val->application_type = ($val->applicationType()->first())->application_type??null;
+                $val->tran_date = $Oltransaction? Carbon::parse($Oltransaction->tran_date)->format("d-m-Y") :null;
+                $val->rate = $Oltransaction->paid_amount??0;
+                $val->delay_fee = $delay_fee;
+                $val->denial_fee = $denial_fee;
+                $val->valid_from = $val->valid_from ? Carbon::parse($val->valid_from)->format("d-m-Y") : $val->valid_from;
+                $val->valid_upto = $val->valid_upto ? Carbon::parse($val->valid_upto)->format("d-m-Y") : $val->valid_upto;
+                $val->license_date = $val->license_date ? Carbon::parse($val->license_date)->format("d-m-Y") : $val->license_date;
+                $val->application_date = $val->application_date ? Carbon::parse($val->application_date)->format("d-m-Y") : $val->application_date;
+                return $val->only(["tran_date","tran_no","rate","delay_fee","denial_fee","id","application_type","application_no","valid_from","valid_upto","license_date","application_date"]);
+            });      
             
             $oldOwnersId = TradeOwner::whereIN("temp_id",$parentIds)
                             ->where("is_active",true)
