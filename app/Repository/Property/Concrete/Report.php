@@ -173,6 +173,8 @@ class Report implements IReport
                 });
                 $list = [
                     "data" => $data,
+                    "total" => $totalFCount,
+                    "totalAmount"=> $totalFAmount,
 
                 ];
                 $tcName = collect($data)->first()->emp_name ?? "";
@@ -452,6 +454,33 @@ class Report implements IReport
             $totalAmount = $data2->sum("amount");
             $perPage = $request->perPage ? $request->perPage : 5;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
+            if ($request->all) {
+                $data = $data->get();
+                $mode = collect($data)->unique("transaction_mode")->pluck("transaction_mode");
+                $totalFAmount = collect($data)->unique("tran_id")->sum("amount");
+                $totalFCount = collect($data)->unique("tran_id")->count("tran_id");
+                $footer = $mode->map(function ($val) use ($data) {
+                    $count = $data->where("transaction_mode", $val)->unique("tran_id")->count("tran_id");
+                    $amount = $data->where("transaction_mode", $val)->unique("tran_id")->sum("amount");
+                    return ['mode' => $val, "count" => $count, "amount" => $amount];
+                });
+                $list = [
+                    "data" => $data,
+                    "total" => $totalFCount,
+                    "totalAmount"=> $totalFAmount,
+
+                ];
+                $tcName = collect($data)->first()->emp_name ?? "";
+                $tcMobile = collect($data)->first()->tc_mobile ?? "";
+                if ($request->footer) {
+                    $list["tcName"] = $tcName;
+                    $list["tcMobile"] = $tcMobile;
+                    $list["footer"] = $footer;
+                    $list["totalCount"] = $totalFCount;
+                    $list["totalAmount"] = $totalFAmount;
+                };
+                return responseMsgs(true, "", remove_null($list), $apiId, $version, $queryRunTime, $action, $deviceId);
+            }
             $paginator = $data->paginate($perPage);
 
             $list = [
