@@ -5,7 +5,7 @@ namespace App\Models\Property;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Waiver extends Model
+class Waiver extends PropParamModel #Model
 {
     use HasFactory;
     

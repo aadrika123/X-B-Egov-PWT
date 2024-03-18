@@ -6,7 +6,7 @@ use App\Models\Advertisements\WfActiveDocument;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class SecondaryDocVerification extends Model
+class SecondaryDocVerification extends PropParamModel #Model
 {
     use HasFactory;
     protected $guarded = [];

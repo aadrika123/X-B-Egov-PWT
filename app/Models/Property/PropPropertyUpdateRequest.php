@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-class PropPropertyUpdateRequest extends Model
+class PropPropertyUpdateRequest extends PropParamModel #Model
 {
     use HasFactory;
     protected $guarded = [];

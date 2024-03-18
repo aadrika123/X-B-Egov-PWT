@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
-class PropObjection extends Model
+class PropObjection extends PropParamModel #Model
 {
     use HasFactory;
 

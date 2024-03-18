@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
-class PropRwhVerification extends Model
+class PropRwhVerification extends PropParamModel #Model
 {
     use HasFactory;
 

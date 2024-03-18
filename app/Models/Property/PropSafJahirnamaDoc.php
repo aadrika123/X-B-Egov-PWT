@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
-class PropSafJahirnamaDoc extends Model
+class PropSafJahirnamaDoc extends PropParamModel #Model
 {
     use HasFactory;
     protected $guarded = [];

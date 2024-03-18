@@ -1000,12 +1000,12 @@ class PostPropPaymentV2
             ];
             $this->_PropAdjustment->store($adjArr);
         }
-
-        $generatePaymentReceipt = new GeneratePaymentReceiptV2;                     // Version 2 Receipt
-        $generatePaymentReceipt->generateReceipt("", $propTrans['id']);
-        $receipt = $generatePaymentReceipt->_GRID;
+        
+        // $generatePaymentReceipt = new GeneratePaymentReceiptV2;                     // Version 2 Receipt
+        // $generatePaymentReceipt->generateReceipt("", $propTrans['id']);
+        // $receipt = $generatePaymentReceipt->_GRID;
         // dd($paidDemands,collect($paidDemands)->sum("paidTotalExemptedGeneralTax"),$receipt,$this->_REQ["paidAmount"],$this->_REQ["amount"],$thertyPerOfpreviousInterest);
-
+        
         // sendsms
         $propertyNo  = $this->_propDetails->property_no;
         $paidAmount  = $this->_REQ->paidAmount;

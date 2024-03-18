@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 
-class MCapitalValueRate extends Model
+class MCapitalValueRate extends PropParamModel #Model
 {
     use HasFactory;
 

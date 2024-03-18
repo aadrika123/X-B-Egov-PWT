@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
-class MPropRoadType extends Model
+class MPropRoadType extends PropParamModel #Model
 {
     use HasFactory;
 

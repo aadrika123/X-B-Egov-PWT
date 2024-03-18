@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
-class RefPropSpecialRebateType extends Model
+class RefPropSpecialRebateType extends PropParamModel #Model
 {
     use HasFactory;
 

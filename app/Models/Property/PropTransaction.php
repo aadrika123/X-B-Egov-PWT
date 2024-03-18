@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use stdClass;
 
-class PropTransaction extends Model
+class PropTransaction extends PropParamModel #Model
 {
     use HasFactory;
     protected $guarded = [];

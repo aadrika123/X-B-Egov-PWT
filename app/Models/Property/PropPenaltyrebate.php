@@ -5,10 +5,10 @@ namespace App\Models\Property;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PropPenaltyrebate extends Model
+class PropPenaltyrebate extends PropParamModel #Model
 {
-    use HasFactory;
-    protected $guarded = [];
+    // use HasFactory;
+    // protected $guarded = [];
 
     /**
      * | Get Rebate Or Penalty Amount by tranid

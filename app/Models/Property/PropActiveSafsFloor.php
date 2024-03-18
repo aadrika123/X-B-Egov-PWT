@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
-class PropActiveSafsFloor extends Model
+class PropActiveSafsFloor extends PropParamModel #Model
 {
     use HasFactory;
     protected $guarded = [];

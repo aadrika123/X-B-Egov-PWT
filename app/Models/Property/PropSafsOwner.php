@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
-class PropSafsOwner extends Model
+class PropSafsOwner extends PropParamModel #Model
 {
     use HasFactory;
 

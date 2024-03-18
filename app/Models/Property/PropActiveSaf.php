@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-class  PropActiveSaf extends Model
+class  PropActiveSaf extends PropParamModel #Model
 {
     use HasFactory;
 

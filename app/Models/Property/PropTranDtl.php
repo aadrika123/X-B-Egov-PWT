@@ -5,7 +5,7 @@ namespace App\Models\Property;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PropTranDtl extends Model
+class PropTranDtl extends PropParamModel #Model
 {
     use HasFactory;
     protected $guarded = [];

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Exception;
 use Illuminate\Support\Facades\DB;
 
-class RefPropType extends Model
+class RefPropType extends PropParamModel #Model
 {
     use HasFactory;
 

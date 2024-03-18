@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Redis;
 
-class RefPropOccupancyFactor extends Model
+class RefPropOccupancyFactor extends PropParamModel #Model
 {
     use HasFactory;
     private $_redis;
