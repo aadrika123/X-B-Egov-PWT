@@ -721,8 +721,8 @@ class PropProperty extends Model
             'prop_properties.ulb_id',
             'prop_properties.holding_no',
             'zone_name',
-            'latitude',
-            'longitude',
+            // 'latitude',
+            // 'longitude',
             'prop_properties.new_holding_no',
             'prop_properties.pt_no',
             'prop_properties.khata_no',
@@ -740,14 +740,14 @@ class PropProperty extends Model
         )
             ->join('zone_masters', 'zone_masters.id', 'prop_properties.zone_mstr_id')
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
-            ->leftjoin(DB::raw("(select latitude, longitude,  prop_saf_geotag_uploads.saf_id
-                                from prop_saf_geotag_uploads 
-                                JOIN prop_properties ON prop_properties.saf_id = prop_saf_geotag_uploads.saf_id 
-                                where direction_type ILIKE('%front%')                               
-                                GROUP BY prop_saf_geotag_uploads.saf_id,latitude, longitude
-                           ) as geotag"), function ($join) {
-                $join->on("geotag.saf_id", "=", "prop_properties.saf_id");
-            })
+            // ->leftjoin(DB::raw("(select latitude, longitude,  prop_saf_geotag_uploads.saf_id
+            //                     from prop_saf_geotag_uploads 
+            //                     JOIN prop_properties ON prop_properties.saf_id = prop_saf_geotag_uploads.saf_id 
+            //                     where direction_type ILIKE('%front%')                               
+            //                     GROUP BY prop_saf_geotag_uploads.saf_id,latitude, longitude
+            //                ) as geotag"), function ($join) {
+            //     $join->on("geotag.saf_id", "=", "prop_properties.saf_id");
+            // })
             ->leftjoin(DB::raw("(
                 select string_agg(mobile_no::text,',') as mobile_no,
                         string_agg(owner_name,',') as owner_name,
