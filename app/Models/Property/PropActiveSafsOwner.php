@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class PropActiveSafsOwner extends Model
+class PropActiveSafsOwner extends PropParamModel #Model
 {
     use HasFactory;
     protected $guarded = [];

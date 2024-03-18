@@ -5,7 +5,7 @@ namespace App\Models\Property;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PropApartmentDtl extends Model
+class PropApartmentDtl extends PropParamModel #Model
 {
     use HasFactory;
 

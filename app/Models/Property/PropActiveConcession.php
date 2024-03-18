@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
-class PropActiveConcession extends Model
+class PropActiveConcession extends PropParamModel #Model
 {
     use HasFactory;
 

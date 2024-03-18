@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
-class PropAdvance extends Model
+class PropAdvance extends PropParamModel #Model
 {
     use HasFactory;
     protected $guarded = [];

@@ -5,7 +5,7 @@ namespace App\Models\Property;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ZoneMaster extends Model
+class ZoneMaster extends PropParamModel #Model
 {
     use HasFactory;
 

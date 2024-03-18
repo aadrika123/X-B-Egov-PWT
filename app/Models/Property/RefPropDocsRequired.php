@@ -5,7 +5,7 @@ namespace App\Models\Property;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class RefPropDocsRequired extends Model
+class RefPropDocsRequired extends PropParamModel #Model
 {
     use HasFactory;
     protected $table = 'ref_prop_docs_required';

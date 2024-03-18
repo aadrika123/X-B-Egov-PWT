@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
-class RefPropGbbuildingusagetype extends Model
+class RefPropGbbuildingusagetype extends PropParamModel #Model
 {
     use HasFactory;
 

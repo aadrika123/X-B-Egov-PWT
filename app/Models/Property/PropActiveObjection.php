@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Exception;
 
-class PropActiveObjection extends Model
+class PropActiveObjection extends PropParamModel #Model
 {
     use HasFactory;
 

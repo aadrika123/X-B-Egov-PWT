@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use KitLoong\MigrationsGenerator\Migration\Blueprint\Property;
 
-class PropSafsDemand extends Model
+class PropSafsDemand extends PropParamModel #Model
 {
     use HasFactory;
     protected $guarded = [];

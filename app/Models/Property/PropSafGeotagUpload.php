@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
-class PropSafGeotagUpload extends Model
+class PropSafGeotagUpload extends PropParamModel #Model
 {
     use HasFactory;
     protected $guarded = [];

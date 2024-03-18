@@ -5,7 +5,7 @@ namespace App\Models\Property;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class PropRainWaterHarvesting extends Model
+class PropRainWaterHarvesting extends PropParamModel #Model
 {
     use HasFactory;
 }

@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
-class PropActiveWaiver extends Model
+class PropActiveWaiver extends PropParamModel #Model
 {
     use HasFactory;
 

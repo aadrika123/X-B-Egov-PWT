@@ -5,7 +5,7 @@ namespace App\Models\Property;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class MPropRentalValue extends Model
+class MPropRentalValue extends PropParamModel #Model
 {
     use HasFactory;
 }

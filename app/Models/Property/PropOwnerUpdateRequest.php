@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-class PropOwnerUpdateRequest extends Model
+class PropOwnerUpdateRequest extends PropParamModel #Model
 {
     use HasFactory;
     protected $guarded = [];
