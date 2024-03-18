@@ -156,6 +156,18 @@ return [
             'driver' => 'pgsql',
             'url' => env('DATABASE_URL'),
             'host' => env('DB_TRADE_HOST', '127.0.0.1'),
+            'read' => [
+                'host' => [
+                    env('DB_TRADE_READ_HOST', env('DB_TRADE_HOST', '127.0.0.1')),
+                ],
+                'port' => env('DB_TRADE_READ_PORT', env('DB_TRADE_PORT', '5432')),
+                'database' => env('DB_TRADE_READ_DATABASE', env('DB_TRADE_DATABASE', 'akola_trade')),
+                'username' => env('DB_TRADE_READ_USERNAME', env('DB_TRADE_USERNAME', 'postgres')),
+                "password" => env('DB_TRADE_READ_PASSWORD', env('DB_TRADE_PASSWORD', 'root')),
+            ],
+            'write' => [
+                'host' => env('DB_TRADE_HOST', '127.0.0.1'),
+            ],
             'port' => env('DB_TRADE_PORT', '5432'),
             'database' => env('DB_TRADE_DATABASE', 'forge'),
             'username' => env('DB_TRADE_USERNAME', 'forge'),
