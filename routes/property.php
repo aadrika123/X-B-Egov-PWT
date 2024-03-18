@@ -644,11 +644,11 @@ Route::controller(HoldingTaxController::class)->group(function () {
 
   //unauthenticated api for prop-payment-history created by prity pandey
   Route::post('prop-payment-history-direct', 'propPaymentHistory')->withoutMiddleware(['request_logger', 'expireBearerToken']);
-  Route::post('bulk-sms-list', 'propertyBulkSmsList');
-  Route::post('bulk-sms', 'propertyBulkSms');
-  Route::post('abhay-yojna', 'propertyAbhayYojnaSms');
-  Route::post('abhay-yojna-marathi', 'propertyAbhayYojnaMarathi');
-  Route::post('bulk-sms-report', 'bulkSmsReport');
+  // Route::post('bulk-sms-list', 'propertyBulkSmsList');
+  // Route::post('bulk-sms', 'propertyBulkSms');
+  // Route::post('abhay-yojna', 'propertyAbhayYojnaSms');
+  // Route::post('abhay-yojna-marathi', 'propertyAbhayYojnaMarathi');
+  // Route::post('bulk-sms-report', 'bulkSmsReport');
   Route::post('test-sms', 'testSms');
 });
 
