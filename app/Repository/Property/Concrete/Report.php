@@ -33,9 +33,15 @@ class Report implements IReport
     protected $_common;
     protected $_modelWard;
     protected $_Saf;
+    protected $_DB;
+    protected $_DB_READ;
+    protected $_DB_NAME;
 
     public function __construct()
     {
+        $this->_DB_NAME = (new PropProperty())->getConnectionName();
+        $this->_DB = DB::connection( $this->_DB_NAME );
+        $this->_DB_READ = DB::connection( $this->_DB_NAME."::read" );
         $this->_common = new CommonFunction();
         $this->_modelWard = new ModelWard();
         $this->_Saf = new SafRepository();
@@ -84,7 +90,7 @@ class Report implements IReport
             }
 
             DB::enableQueryLog();
-            $data = PropTransaction::SELECT(
+            $data = PropTransaction::readConnection()->SELECT(
                 DB::raw("
                             ulb_ward_masters.ward_name AS ward_no,
                             prop_properties.id,
@@ -252,7 +258,7 @@ class Report implements IReport
             }
 
             DB::enableQueryLog();
-            $activSaf = PropTransaction::select(
+            $activSaf = PropTransaction::readConnection()->select(
                 DB::raw("
                             ulb_ward_masters.ward_name AS ward_no,
                             prop_active_safs.id,
@@ -309,7 +315,7 @@ class Report implements IReport
                 ->WHEREIN("prop_transactions.status", [1, 2])
                 ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
 
-            $rejectedSaf = PropTransaction::select(
+            $rejectedSaf = PropTransaction::readConnection()->select(
                 DB::raw("
                             ulb_ward_masters.ward_name AS ward_no,
                             prop_rejected_safs.id,
@@ -366,7 +372,7 @@ class Report implements IReport
                 ->WHEREIN("prop_transactions.status", [1, 2])
                 ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
 
-            $saf = PropTransaction::select(
+            $saf = PropTransaction::readConnection()->select(
                 DB::raw("
                             ulb_ward_masters.ward_name AS ward_no,
                             prop_safs.id,
@@ -528,7 +534,7 @@ class Report implements IReport
                 $ulbId = $request->ulbId;
             }
 
-            $data = PropProperty::select(
+            $data = PropProperty::readConnection()->select(
                 DB::raw("ulb_ward_masters.ward_name as ward_no,
                         prop_properties.holding_no,
                         (
@@ -820,7 +826,7 @@ class Report implements IReport
             $mWardIds = $mWardPermission->implode("ward_id", ",");
             $mWardIds = explode(',', ($mWardIds ? $mWardIds : "0"));
 
-            $data = PropActiveSaf::SELECT(
+            $data = PropActiveSaf::readConnection()->SELECT(
                 DB::RAW("wf_roles.id AS role_id, wf_roles.role_name,
                     prop_active_safs.id, prop_active_safs.saf_no, prop_active_safs.prop_address,prop_type_mstr_id,property_type,
                     ward_name as ward_no, 
@@ -898,7 +904,7 @@ class Report implements IReport
             }
 
 
-            $data = PropActiveSaf::SELECT(
+            $data = PropActiveSaf::readConnection()->SELECT(
                 DB::RAW(
                     "count(prop_active_safs.id),
                     users_role.user_id ,
@@ -991,7 +997,7 @@ class Report implements IReport
             $mWardIds = $mWardPermission->implode("ward_id", ",");
             $mWardIds = explode(',', ($mWardIds ? $mWardIds : "0"));
 
-            $data = DB::table("ulb_ward_masters")->SELECT(
+            $data = $this->_DB_READ->table("ulb_ward_masters")->SELECT(
                 DB::RAW(" DISTINCT(ward_name) as ward_no, COUNT(prop_active_safs.id) AS total")
             )
                 ->LEFTJOIN("prop_active_safs", "prop_active_safs.ward_mstr_id", "ulb_ward_masters.id");
@@ -1126,7 +1132,7 @@ class Report implements IReport
                 group by ward_name
                 ORDER BY  ward_name
             ";
-            $data = DB::select($sql);
+            $data = $this->_DB_READ->select($sql);
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
 
             return responseMsgs(true, "", $data, $apiId, $version, $queryRunTime, $action, $deviceId);
@@ -1167,7 +1173,7 @@ class Report implements IReport
             if ($request->paymentMode) {
                 $paymentMode = $request->paymentMode;
             }
-            $collection = DB::table(
+            $collection = $this->_DB_READ->table(
                 DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
                                     FROM prop_transactions
                                 ) payment_modes")
@@ -1208,7 +1214,7 @@ class Report implements IReport
             if ($paymentMode) {
                 $collection = $collection->where(DB::raw("upper(payment_modes.mode)"), $paymentMode);
             }
-            $refund = DB::table(
+            $refund = $this->_DB_READ->table(
                 DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
                                     FROM prop_transactions
                                 ) payment_modes")
@@ -1249,7 +1255,7 @@ class Report implements IReport
             if ($paymentMode) {
                 $refund = $refund->where(DB::raw("upper(payment_modes.mode)"), $paymentMode);
             }
-            $doorToDoor = DB::table(
+            $doorToDoor = $this->_DB_READ->table(
                 DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
                                     FROM prop_transactions
                                     WHERE UPPER(prop_transactions.payment_mode) <> UPPER('ONLINE')
@@ -1307,7 +1313,7 @@ class Report implements IReport
             if ($paymentMode) {
                 $doorToDoor = $doorToDoor->where(DB::raw("upper(payment_modes.mode)"), $paymentMode);
             }
-            $jsk = DB::table(
+            $jsk = $this->_DB_READ->table(
                 DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
                                     FROM prop_transactions
                                     WHERE UPPER(prop_transactions.payment_mode) <> UPPER('ONLINE')
@@ -1458,7 +1464,7 @@ class Report implements IReport
             if ($request->paymentMode) {
                 $paymentMode = $request->paymentMode;
             }
-            $collection = DB::table(
+            $collection = $this->_DB_READ->table(
                 DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
                                     FROM prop_transactions
                                 ) payment_modes")
@@ -1487,7 +1493,7 @@ class Report implements IReport
             if ($paymentMode) {
                 $collection = $collection->where(DB::raw("upper(payment_modes.mode)"), $paymentMode);
             }
-            $refund = DB::table(
+            $refund = $this->_DB_READ->table(
                 DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
                                     FROM prop_transactions
                                 ) payment_modes")
@@ -1516,7 +1522,7 @@ class Report implements IReport
             if ($paymentMode) {
                 $refund = $refund->where(DB::raw("upper(payment_modes.mode)"), $paymentMode);
             }
-            $doorToDoor = DB::table(
+            $doorToDoor = $this->_DB_READ->table(
                 DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
                                     FROM prop_transactions
                                     WHERE UPPER(prop_transactions.payment_mode) <> UPPER('ONLINE')
@@ -1566,7 +1572,7 @@ class Report implements IReport
             if ($paymentMode) {
                 $doorToDoor = $doorToDoor->where(DB::raw("upper(payment_modes.mode)"), $paymentMode);
             }
-            $jsk = DB::table(
+            $jsk = $this->_DB_READ->table(
                 DB::raw("(SELECT DISTINCT(UPPER(prop_transactions.payment_mode)) AS mode 
                                     FROM prop_transactions
                                     WHERE UPPER(prop_transactions.payment_mode) <> UPPER('ONLINE')
@@ -1616,7 +1622,7 @@ class Report implements IReport
             if ($paymentMode) {
                 $jsk = $jsk->where(DB::raw("upper(payment_modes.mode)"), $paymentMode);
             }
-            $assestmentType = DB::table(
+            $assestmentType = $this->_DB_READ->table(
                 DB::raw("(SELECT DISTINCT(UPPER(assessment_type)) AS mode 
                                     FROM (
                                             (
@@ -2100,10 +2106,10 @@ class Report implements IReport
                             )
                         ) AS outstanding               
             ";
-            $data = DB::TABLE(DB::RAW("($select $from)AS prop"))->get();
+            $data = $this->_DB_READ->TABLE(DB::RAW("($select $from)AS prop"))->get();
             // $footer = DB::TABLE(DB::RAW("($footerselect $footerfrom)AS prop"))->get();
             $items = $data;
-            $total = (collect(DB::SELECT("SELECT COUNT(*) AS total $footerfrom"))->first())->total ?? 0;
+            $total = (collect($this->_DB_READ->SELECT("SELECT COUNT(*) AS total $footerfrom"))->first())->total ?? 0;
             $lastPage = ceil($total / $perPage);
             $list = [
                 // "perPage" => $perPage,
@@ -2295,7 +2301,7 @@ class Report implements IReport
                                 )
                             ))) AS outstanding                                 
             ";
-            $dcb = DB::select($select . $from);
+            $dcb = $this->_DB_READ->select($select . $from);
 
             $data['total_arrear_demand'] = round(collect($dcb)->sum('arrear_demand'), 0);
             $data['total_current_demand'] = round(collect($dcb)->sum('current_demand'), 0);
@@ -2495,7 +2501,7 @@ class Report implements IReport
                                 )
                             ) AS outstanding                                  
             ";
-            $dcb = DB::select($select . $from);
+            $dcb = $this->_DB_READ->select($select . $from);
 
             $data['total_arrear_demand'] = round(collect($dcb)->sum('arrear_demand'), 0);
             $data['total_current_demand'] = round(collect($dcb)->sum('current_demand'), 0);
@@ -2552,7 +2558,7 @@ class Report implements IReport
             if ($request->wardId) {
                 $wardId = $request->wardId;
             }
-            $data = PropProperty::SELECT(
+            $data = PropProperty::readConnection()->SELECT(
                 DB::RAW("
                         ulb_ward_masters.ward_name as ward_no,
                         CASE WHEN prop_properties.new_holding_no!='' 
@@ -2728,7 +2734,7 @@ class Report implements IReport
                 $wardId = $request->wardId;
             }
 
-            $data = PropProperty::select(
+            $data = PropProperty::readConnection()->select(
                 DB::RAW("
                             prop_properties.id,
                             prop_properties.pt_no,
@@ -2863,9 +2869,9 @@ class Report implements IReport
                 " . ($wardMstrId ? " AND p.ward_mstr_id = $wardMstrId" : "") . "
                ";
 
-            $data = DB::TABLE(DB::RAW("($sql )AS prop"))->get();
+            $data = $this->_DB_READ->TABLE(DB::RAW("($sql )AS prop"))->get();
 
-            $total = (collect(DB::SELECT($sql2))->first())->total ?? 0;
+            $total = (collect($this->_DB_READ->SELECT($sql2))->first())->total ?? 0;
             $lastPage = ceil($total / $perPage);
             $list = [
                 "current_page" => $page,
@@ -2939,9 +2945,9 @@ class Report implements IReport
                 " . ($wardMstrId ? " AND p.ward_mstr_id = $wardMstrId" : "") . "
                 ";
 
-            $data = DB::TABLE(DB::RAW("($sql )AS prop"))->get();
+            $data = $this->_DB_READ->TABLE(DB::RAW("($sql )AS prop"))->get();
 
-            $total = (collect(DB::SELECT($sql2))->first())->total ?? 0;
+            $total = (collect($this->_DB_READ->SELECT($sql2))->first())->total ?? 0;
             $lastPage = ceil($total / $perPage);
             $list = [
                 "current_page" => $page,
@@ -3020,9 +3026,9 @@ class Report implements IReport
                         AND paid_status = 0
             ";
 
-            $data = DB::TABLE(DB::RAW("($sql )AS prop"))->get();
+            $data = $this->_DB_READ->TABLE(DB::RAW("($sql )AS prop"))->get();
 
-            $total = (collect(DB::SELECT($sql2))->first())->total ?? 0;
+            $total = (collect($this->_DB_READ->SELECT($sql2))->first())->total ?? 0;
             $lastPage = round($total / $perPage);
             $list = [
                 "current_page" => $page,
@@ -3123,9 +3129,9 @@ class Report implements IReport
                         AND fyear = '$currentFinancialYear' 
                         AND paid_status = 0";
 
-            $data = DB::TABLE(DB::RAW("($sql )AS prop"))->get();
+            $data = $this->_DB_READ->TABLE(DB::RAW("($sql )AS prop"))->get();
 
-            $total = (collect(DB::SELECT($sql2))->first())->total ?? 0;
+            $total = (collect($this->_DB_READ->SELECT($sql2))->first())->total ?? 0;
             $lastPage = ceil($total / $perPage);
             $list = [
                 "current_page" => $page,
@@ -3230,9 +3236,9 @@ class Report implements IReport
                         AND paid_status = 0
                     ";
 
-            $data = DB::select($sql);
+            $data = $this->_DB_READ->select($sql);
 
-            $total = (collect(DB::SELECT($sql2))->first())->total ?? 0;
+            $total = (collect($this->_DB_READ->SELECT($sql2))->first())->total ?? 0;
             $lastPage = ceil($total / $perPage);
             $list = [
                 "current_page" => $page,
@@ -3366,9 +3372,9 @@ class Report implements IReport
                         AND paid_status = 0
                     ";
 
-            $data = DB::select($sql);
+            $data = $this->_DB_READ->select($sql);
 
-            $total = (collect(DB::SELECT($sql2))->first())->total ?? 0;
+            $total = (collect($this->_DB_READ->SELECT($sql2))->first())->total ?? 0;
             $lastPage = ceil($total / $perPage);
             $list = [
                 "current_page" => $page,
@@ -3500,9 +3506,9 @@ class Report implements IReport
             $dataSql = $with.$select.$from.$where.$orderBy.$offsetLimit;
             $countSql = $with." select count(*) AS total ".$from.$where;
 
-            $data = DB::SELECT($dataSql);
+            $data = $this->_DB_READ->SELECT($dataSql);
 
-            $total = (collect(DB::SELECT($countSql))->first())->total ?? 0;
+            $total = (collect($this->_DB_READ->SELECT($countSql))->first())->total ?? 0;
             $lastPage = ceil($total / $perPage);
             $list = [
                 "current_page" => $page,
@@ -3563,9 +3569,9 @@ class Report implements IReport
                 AND  fyear = '$prePreviousFinancialYear'
                 AND  ulb_id = '$ulbId'";
 
-        $currentYearDcb =  DB::select($sql1);
-        $previousYearDcb = DB::select($sql2);
-        $prePreviousYearDcb = DB::select($sql3);
+        $currentYearDcb =  $this->_DB_READ->select($sql1);
+        $previousYearDcb = $this->_DB_READ->select($sql2);
+        $prePreviousYearDcb = $this->_DB_READ->select($sql3);
 
         $data = [
             collect($currentYearDcb)->first(),
@@ -3714,8 +3720,8 @@ class Report implements IReport
                                 first_qtr_rebate,
                                 jsk_rebate_amt";
 
-                $propData =  DB::select($sql1);
-                $proptotalData = collect(DB::select($sql));
+                $propData =  $this->_DB_READ->select($sql1);
+                $proptotalData = collect($this->_DB_READ->select($sql));
                 $propCount = collect($proptotalData)->sum('total');
                 $propPaidAmt = collect($proptotalData)->sum('paid_amount');
                 $propDemandAmt = collect($proptotalData)->sum('demand_amt');
@@ -3797,8 +3803,8 @@ class Report implements IReport
                              first_qtr_rebate,
                              jsk_rebate_amt";
 
-                $safData =  DB::select($sql2);
-                $saftotalData = collect(DB::select($sql));
+                $safData =  $this->_DB_READ->select($sql2);
+                $saftotalData = collect($this->_DB_READ->select($sql));
                 $safCount = collect($saftotalData)->sum('total');
                 $safPaidAmt = collect($saftotalData)->sum('paid_amount');
                 $safDemandAmt = collect($saftotalData)->sum('demand_amt');
@@ -3883,8 +3889,8 @@ class Report implements IReport
                                      first_qtr_rebate,
                                      jsk_rebate_amt";
 
-                $gbsafData =  DB::select($sql3);
-                $gbsaftotalData = collect(DB::select($sql));
+                $gbsafData =  $this->_DB_READ->select($sql3);
+                $gbsaftotalData = collect($this->_DB_READ->select($sql));
                 $gbsafCount = collect($gbsaftotalData)->sum('total');
                 $gbsafPaidAmt = collect($gbsaftotalData)->sum('paid_amount');
                 $gbsafDemandAmt = collect($gbsaftotalData)->sum('demand_amt');
@@ -4036,7 +4042,7 @@ class Report implements IReport
                             ) as zonewise_today_collection        
                         ";
 
-            $report = DB::select($query);
+            $report = $this->_DB_READ->select($query);
             $report[0]->zoneWiseReport = [
                 [
                     'zone' => 1,
@@ -4132,7 +4138,7 @@ class Report implements IReport
                                            details.card_collection,
                                            details.chque_collection,
                                            details.rtgs_collection";
-            $zoneWiseReport = DB::select($zoneWiseCollectionQuery);#print_var($query);print_var($zoneWiseCollectionQuery);die;
+            $zoneWiseReport = $this->_DB_READ->select($zoneWiseCollectionQuery);#print_var($query);print_var($zoneWiseCollectionQuery);die;
             $report[0]->zoneWiseReport = collect($zoneWiseReport);
             $report[0]->totalReport = [
                 "total_properties" => collect($zoneWiseReport)->sum("total_properties"),
@@ -4173,7 +4179,7 @@ class Report implements IReport
                             COALESCE(SUM(CASE WHEN payment_mode = 'RTGS' THEN amount ELSE 0 END),0) AS rtgs_collection
                             FROM prop_transactions
                     WHERE tran_date=CURRENT_DATE AND status=1 AND user_id=$userId";
-            $response = DB::select($query);
+            $response = $this->_DB_READ->select($query);
             return responseMsgs(true, "", remove_null($response[0]), "", "", "", "POST", "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "", "", "POST", "");
@@ -4424,7 +4430,7 @@ class Report implements IReport
                 " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
             ";
 
-            $report = DB::select($query);
+            $report = $this->_DB_READ->select($query);
             $report = collect($report)->first();
             $data["report"] = collect($report)->map(function ($val, $key) {
                 if ($key == "payment_mode") {
@@ -4856,7 +4862,7 @@ class Report implements IReport
                 " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
             ";
 
-            $report = DB::select($query);
+            $report = $this->_DB_READ->select($query);
             $report = collect($report)->first();
             $report->maintanance_amt = round($report->current_maintanance_amt)     +  round($report->arear_maintanance_amt);
             $report->aging_amt       = round($report->current_aging_amt)           +  round($report->arear_aging_amt);
@@ -5366,7 +5372,7 @@ class Report implements IReport
                 " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
             ";
 
-            $report = DB::select($query);
+            $report = $this->_DB_READ->select($query);
             $report = collect($report);
 
             $data["data"] = $report->map(function ($val) {
@@ -5487,7 +5493,7 @@ class Report implements IReport
             if ($request->userId) {
                 $userId = $request->userId;
             }
-            $data = PropTransaction::select(DB::raw("
+            $data = PropTransaction::readConnection()->select(DB::raw("
                         prop_transactions.id,prop_transactions.tran_no,
                         prop_transactions.tran_type,
                         prop_transactions.tran_date,
