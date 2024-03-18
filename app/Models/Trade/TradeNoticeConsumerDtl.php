@@ -5,13 +5,14 @@ namespace App\Models\Trade;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class TradeNoticeConsumerDtl extends Model
+class TradeNoticeConsumerDtl extends TradeParamModel    #Model
 {
     use HasFactory;
-    public $timestamp = false;
     protected $connection;
+    public $timestamps=false;
+
     public function __construct($DB=null)
     {
-       $this->connection = $DB ? $DB:"pgsql_trade";
+        parent::__construct($DB);
     }
 }

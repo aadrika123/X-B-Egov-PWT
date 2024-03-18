@@ -6,13 +6,13 @@ use App\Models\Workflows\WfActiveDocument;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class ActiveTradeLicence extends Model
+class ActiveTradeLicence extends TradeParamModel    #Model
 {
     use HasFactory;
     protected $connection;
     public function __construct($DB=null)
     {
-       $this->connection = $DB ? $DB:"pgsql_trade";
+        parent::__construct($DB);
     }
     
     # one to one

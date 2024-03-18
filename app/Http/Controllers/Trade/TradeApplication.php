@@ -213,10 +213,10 @@ class TradeApplication extends Controller
             $data['userType']           = $mUserType;
             $data['userType']           = $mUserType;
             $data["zone"]  = (new ZoneMaster())->getZone($refUlbId);
-            $data["firmTypeList"]       =$this->_MODEL_TradeParamFirmType->List();
-            $data["ownershipTypeList"]  =$this->_MODEL_TradeParamOwnershipType->List();
-            $data["categoryTypeList"]   =$this->_MODEL_TradeParamCategoryType->List();
-            $data["natureOfBusiness"]   =  $this->_MODEL_AkolaTradeParamItemType->List(); #$this->_MODEL_TradeParamItemType->List(true);
+            $data["firmTypeList"]       =$this->_MODEL_TradeParamFirmType->readConnection()->List();
+            $data["ownershipTypeList"]  =$this->_MODEL_TradeParamOwnershipType->readConnection()->List();
+            $data["categoryTypeList"]   =$this->_MODEL_TradeParamCategoryType->readConnection()->List();
+            $data["natureOfBusiness"]   =  $this->_MODEL_AkolaTradeParamItemType->readConnection()->List(); #$this->_MODEL_TradeParamItemType->List(true);
             if (isset($request->licenseId) && $request->licenseId  && $mApplicationTypeId != 1) {
                 $mOldLicenceId = $request->licenseId;
                 $nextMonth = Carbon::now()->addMonths(3)->format('Y-m-d');
@@ -225,7 +225,7 @@ class TradeApplication extends Controller
                     throw new Exception("Old Licence Not Found");
                 }
                 if (!$refOldLicece->is_active) {
-                    $newLicense = $this->_MODEL_ActiveTradeLicence->where("license_no", $refOldLicece->license_no)
+                    $newLicense = $this->_MODEL_ActiveTradeLicence->readConnection()->where("license_no", $refOldLicece->license_no)
                         ->orderBy("id")
                         ->first();
                     throw new Exception("Application Already Apply Please Track  " . $newLicense->application_no);
@@ -243,7 +243,7 @@ class TradeApplication extends Controller
                     throw new Exception("Application payment not clear Please pay application charge first " . $refOldLicece->application_no);
                 }
                 $refOldOwneres = TradeOwner::owneresByLId($request->licenseId);
-                $mnaturOfBusiness = $this->_MODEL_AkolaTradeParamItemType->itemsById($refOldLicece->nature_of_bussiness);
+                $mnaturOfBusiness = $this->_MODEL_AkolaTradeParamItemType->readConnection()->itemsById($refOldLicece->nature_of_bussiness);
                 $natur = array();
                 foreach ($mnaturOfBusiness as $val) {
                     $natur[] = [

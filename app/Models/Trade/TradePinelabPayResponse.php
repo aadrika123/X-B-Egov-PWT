@@ -5,15 +5,15 @@ namespace App\Models\Trade;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class TradePinelabPayResponse extends Model
+class TradePinelabPayResponse extends TradeParamModel    #Model
 {
     use HasFactory;
-    public $timestamps=false;
     protected $connection;
-    protected $guarded = [];
+    public $timestamps=false;
+
     public function __construct($DB=null)
     {
-       $this->connection = $DB ? $DB:"pgsql_trade";
+        parent::__construct($DB);
     }
 
     // public function insert(array $data)
