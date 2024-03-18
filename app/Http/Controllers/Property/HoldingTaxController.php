@@ -471,6 +471,10 @@ class HoldingTaxController extends Controller
             $propCalculation = $this->getHoldingDues($propCalReq);                    // Calculation of Holding
             if ($propCalculation->original['status'] == false)
                 throw new Exception($propCalculation->original['message']);
+            if($propCalculation->original['data']["payableAmt"]<=0)
+            {
+                throw new Exception("This Property have no Demand");
+            }
 
             $postPropPayment->_propCalculation = $propCalculation;
             // Transaction is beginning in Prop Payment Class
