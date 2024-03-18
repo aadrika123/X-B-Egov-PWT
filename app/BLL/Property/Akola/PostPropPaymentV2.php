@@ -834,7 +834,7 @@ class PostPropPaymentV2
         $this->_fromFyear = ((collect($paidDemands)->sortBy("fyear"))->first())["fyear"] ?? $this->_fromFyear;
         $this->_uptoFyear = ((collect($paidDemands)->sortBy("fyear"))->last())["fyear"] ?? $this->_uptoFyear;
 
-        $propTrans = $this->_mPropTrans->postPropTransactions($this->_REQ, $paidDemands, $this->_fromFyear, $this->_uptoFyear);
+        $propTrans = $this->_mPropTrans->postPropTransactions($this->_REQ, $paidDemands, $this->_fromFyear, $this->_uptoFyear);dd($propTrans);
         $this->_tranId = $propTrans['id'];
         $this->_propTransaction = $propTrans;
         $this->_penaltyRebates["monthlyPenalty"]["amount"] = roundFigure($paidPenalty);
