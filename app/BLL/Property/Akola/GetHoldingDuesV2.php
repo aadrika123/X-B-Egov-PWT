@@ -51,11 +51,11 @@ class GetHoldingDuesV2
         // Get Property Details
         $propBasicDtls = $mPropProperty->getPropBasicDtls($req->propId);
         $owners = $mPropOwners->getOwnersByPropId($req->propId);
-        // $armedForceOwners = collect($owners)->where("is_armed_force",true);
-        // if($armedForceOwners->isNotEmpty() && collect($owners)->count()==1)
-        // {
-        //     $this->_isSingleManArmedForce =true;
-        // }
+        $armedForceOwners = collect($owners)->where("is_armed_force",true);
+        if($armedForceOwners->isNotEmpty() && collect($owners)->count()==1)
+        {
+            $this->_isSingleManArmedForce =true;
+        }
         DB::enableQueryLog();
         $totalAdvanceAmt = $PropAdvance->getAdvanceAmt($req->propId);
         $totalAdjustmentAmt = $PropAdjustment->getAdjustmentAmt($req->propId);
