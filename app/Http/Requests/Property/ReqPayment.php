@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Property;
 
+use Carbon\Carbon;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -36,7 +37,13 @@ class ReqPayment extends FormRequest
             $rules['branchName'] = "required";
             $rules['chequeNo'] = "required";
         }
-        $rules['paymentMode'] = "required|In:CASH,CHEQUE,DD,NEFT,ONLINE,NETBANKING";
+        if(isset($this['paymentMode']) && $this['paymentMode']=='ONLINE_R')
+        {
+            $rules['TrnDate'] = "nullable|required_if:paymentMode,==,ONLINE_R|date|before_or_equal:".Carbon::now()->format('Y-m-d');
+            $rules['bankName'] = "nullable";
+            $rules['branchName'] = "nullable";
+        }
+        $rules['paymentMode'] = "required|In:CASH,CHEQUE,DD,NEFT,ONLINE,ONLINE_R,NETBANKING";
         $rules['id'] = "required";
 
         return $rules;

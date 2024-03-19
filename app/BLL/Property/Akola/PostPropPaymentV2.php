@@ -380,6 +380,7 @@ class PostPropPaymentV2
     public function postOtherPaymentModes()
     {
         $cash = Config::get('payment-constants.PAYMENT_MODE.3');
+        $online_r = Config::get('payment-constants.PAYMENT_MODE.7');
         $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
         $mTempTransaction = new TempTransaction();
         if ($this->_REQ['paymentMode'] != $cash) {
@@ -396,6 +397,7 @@ class PostPropPaymentV2
                 'branch_name' => $this->_REQ['branchName'],
                 'cheque_no' => $this->_REQ['chequeNo']
             ];
+            $this->_REQ['paymentMode'] == $online_r ? $chequeReqs["status"]=1:null;
             $mPropChequeDtl->postChequeDtl($chequeReqs);
         }
 
@@ -415,7 +417,10 @@ class PostPropPaymentV2
             'ulb_id' => $this->_REQ['ulbId'],
             "ward_no" => $this->_REQ["wardNo"],
         ];
-        $mTempTransaction->tempTransaction($tranReqs);
+        if($this->_REQ['paymentMode'] != $online_r)
+        {
+            $mTempTransaction->tempTransaction($tranReqs);
+        }
     }
 
     /**
