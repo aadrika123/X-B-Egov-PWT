@@ -187,7 +187,7 @@ return [
             'url' => env('DATABASE_URL'),
             'host' => env('DB_NOTICE_HOST', '127.0.0.1'),
             'port' => env('DB_NOTICE_PORT', '5432'),
-            'database' => env('DB_NOTICE_DATABASE', 'juidco_notice'),
+            'database' => env('DB_NOTICE_DATABASE', 'akola_notice'),
             'username' => env('DB_NOTICE_USERNAME', 'postgres'),
             'password' => env('DB_NOTICE_PASSWORD', ''),
             'charset' => 'utf8',
