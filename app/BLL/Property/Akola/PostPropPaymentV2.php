@@ -137,7 +137,7 @@ class PostPropPaymentV2
             'todayDate' => $this->_REQ->TrnDate ? Carbon::parse($this->_REQ->TrnDate)->format('Y-m-d') : $this->_todayDate->format('Y-m-d'),
             'tranNo' => $this->_tranNo,
             'amount' => $payableAmount,                                                                         // Payable Amount with Arrear
-            'demandAmt' => $this->_propCalculation->original['data']['grandTaxes']['balance'],                         // Demandable Amount
+            'demandAmt' => $payableAmount,#$this->_propCalculation->original['data']['grandTaxes']['balance'],                         // Demandable Amount
             'tranBy' => $tranBy,
             'arrearSettledAmt' => $arrear,
             'isArrearSettled' => false,
