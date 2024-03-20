@@ -12,6 +12,7 @@ use App\Http\Requests\Property\Reports\UserWiseWardWireLevelPending;
 use App\Models\MplYearlyReport;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropDemand;
+use App\Models\Property\PropProperty;
 use App\Models\Property\PropPropertyUpdateRequest;
 use App\Models\Property\PropSaf;
 use App\Models\Property\PropTransaction;
@@ -43,8 +44,14 @@ class ReportController extends Controller
 
     private $Repository;
     private $_common;
+    protected $_DB;
+    protected $_DB_READ;
+    protected $_DB_NAME;
     public function __construct(IReport $TradeRepository)
     {
+        $this->_DB_NAME = (new PropProperty())->getConnectionName();
+        $this->_DB = DB::connection( $this->_DB_NAME );
+        $this->_DB_READ = DB::connection( $this->_DB_NAME."::read" );
         DB::enableQueryLog();
         $this->Repository = $TradeRepository;
         $this->_common = new CommonFunction();
@@ -260,7 +267,7 @@ class ReportController extends Controller
             "perPage" => $request->perPage
         ]);
 
-        $data = $mPropDemand->wardWiseHolding($mreq);
+        $data = $mPropDemand->readConnection()->wardWiseHolding($mreq);
 
         $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
         return responseMsgs(true, "Ward Wise Holding Data!", $data, 'pr6.1', '1.1', $queryRunTime, 'Post', '');
@@ -309,7 +316,7 @@ class ReportController extends Controller
             $propReceipts = collect();
             $receipts = collect();
 
-            $transaction = $mpropTransaction->tranDtl($userId, $fromDate, $toDate);
+            $transaction = $mpropTransaction->readConnection()->tranDtl($userId, $fromDate, $toDate);
 
             if ($tranType == 'Property')
                 $data = $transaction->whereNotNull('property_id')->get();
@@ -1324,7 +1331,7 @@ class ReportController extends Controller
             $request->merge(["metaData" => ["pr111.1", 1.1, null, $request->getMethod(), null,]]);
             $ulbId = $request->ulbId ?? 2;
             $currentDate = Carbon::now()->format("Y-m-d");
-            $toDayCollection = PropTransaction::whereIn('status', [1, 2])->where("tran_date", $currentDate)->sum("amount");
+            $toDayCollection = PropTransaction::readConnection()->whereIn('status', [1, 2])->where("tran_date", $currentDate)->sum("amount");
             $data["toDayCollection"] = ($toDayCollection ? $toDayCollection : 0);
             return responseMsgs(true, "Mpl Report Today Coll", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
@@ -1405,8 +1412,8 @@ class ReportController extends Controller
                 )prop_transactions
                 JOIN users ON users.id = prop_transactions.user_id
             ";
-            $data = DB::select($sql . " limit $limit offset $offset");
-            $count = (collect(DB::SELECT("SELECT COUNT(*)AS total, SUM(total_amount) AS total_amount,sum(total_tran) as total_tran
+            $data = $this->_DB_READ->select($sql . " limit $limit offset $offset");
+            $count = (collect($this->_DB_READ->SELECT("SELECT COUNT(*)AS total, SUM(total_amount) AS total_amount,sum(total_tran) as total_tran
                                           FROM ($sql) total"))->first());
             $total = ($count)->total ?? 0;
             $sum = ($count)->total_amount ?? 0;
@@ -1445,7 +1452,7 @@ class ReportController extends Controller
             if ($request->paymentMode) {
                 $paymentMode = $request->paymentMode;
             }
-            $data = PropTransaction::select(DB::raw("COALESCE(sum(amount),0) as total_amount,count(id)total_tran"))
+            $data = PropTransaction::readConnection()->select(DB::raw("COALESCE(sum(amount),0) as total_amount,count(id)total_tran"))
                 ->whereBetween("tran_date", [$fromDate, $uptoDate])
                 ->whereIn("status", [1, 2])
                 ->whereNotNull("device_type")
@@ -2049,7 +2056,7 @@ class ReportController extends Controller
 
                        SELECT * FROM current_payments,lastyear_payments,jsk_collections
                 ) AS payment_modes";
-        $data = DB::select($sql);
+        $data = $this->_DB_READ->select($sql);
         return  $data = $data[0];
         $mMplYearlyReport = new MplYearlyReport();
         $currentFy = getFY();
@@ -2795,7 +2802,7 @@ class ReportController extends Controller
 
                        SELECT * FROM current_payments,lastyear_payments,jsk_collections
                 ) AS payment_modes";
-        $data = DB::select($sql);
+        $data = $this->_DB_READ->select($sql);
         $data = $data[0];
         $mMplYearlyReport = new MplYearlyReport();
         $currentFy = getFY();
@@ -4217,7 +4224,7 @@ class ReportController extends Controller
             if ($request->key) {
                 $key = trim($request->key);
             }
-            $data = DB::table("prop_safs")
+            $data = $this->_DB_READ->table("prop_safs")
                 ->leftjoin(DB::raw(
                     "(
                 select string_agg(owner_name,',') as owner_name,
@@ -4232,7 +4239,7 @@ class ReportController extends Controller
             )owners"
                 ), "owners.saf_id", "prop_safs.id");
             if ($request->appType == "REJECTED") {
-                $data = DB::table("prop_rejected_safs as prop_safs")
+                $data = $this->_DB_READ->table("prop_rejected_safs as prop_safs")
                     ->leftjoin(DB::raw(
                         "(
                     select string_agg(owner_name,',') as owner_name,
@@ -4385,7 +4392,7 @@ class ReportController extends Controller
             }
 
             $mPropPropertyUpdateRequest =  new PropPropertyUpdateRequest();
-            $data =  $mPropPropertyUpdateRequest->updateDetails();
+            $data =  $mPropPropertyUpdateRequest->readConnection()->updateDetails();
 
             #maker
             if ($request->userType == 'maker') {
@@ -4452,7 +4459,7 @@ class ReportController extends Controller
                 $zoneId = $request->zoneId;
             }
 
-            $makerCount = PropPropertyUpdateRequest::selectRaw('user_id,name as user_name, COUNT(prop_property_update_requests.*) as count')
+            $makerCount = PropPropertyUpdateRequest::readConnection()->selectRaw('user_id,name as user_name, COUNT(prop_property_update_requests.*) as count')
                 ->whereBetween('prop_property_update_requests.created_at', [$fromDate, $uptoDate])
                 ->join('users', 'users.id', 'prop_property_update_requests.user_id')
                 ->groupBy('user_id', 'name')
@@ -4467,7 +4474,7 @@ class ReportController extends Controller
             $makerCount =  $makerCount
                 ->get();
 
-            $checkerCount = PropPropertyUpdateRequest::selectRaw('user_id,name as user_name, COUNT(prop_property_update_requests.*) as count')
+            $checkerCount = PropPropertyUpdateRequest::readConnection()->selectRaw('user_id,name as user_name, COUNT(prop_property_update_requests.*) as count')
                 ->whereBetween('prop_property_update_requests.approval_date', [$fromDate, $uptoDate])
                 ->join('users', 'users.id', 'prop_property_update_requests.user_id')
                 ->groupBy('user_id', 'name')
@@ -4482,7 +4489,7 @@ class ReportController extends Controller
             $checkerCount =  $checkerCount
                 ->get();
 
-            $rejectedCount = PropPropertyUpdateRequest::selectRaw('user_id,name as user_name, COUNT(prop_property_update_requests.*) as count,pending_status')
+            $rejectedCount = PropPropertyUpdateRequest::readConnection()->selectRaw('user_id,name as user_name, COUNT(prop_property_update_requests.*) as count,pending_status')
                 ->whereBetween('prop_property_update_requests.approval_date', [$fromDate, $uptoDate])
                 ->join('users', 'users.id', 'prop_property_update_requests.user_id')
                 ->groupBy('user_id', 'name', 'pending_status')
@@ -4537,10 +4544,10 @@ class ReportController extends Controller
 
             $mPropPropertyUpdateRequest =  new PropPropertyUpdateRequest();
             $mUser =  new User();
-            $makerId = $mPropPropertyUpdateRequest
+            $makerId = $mPropPropertyUpdateRequest->readConnection()
                 ->distinct()->pluck('user_id');
 
-            $checkerId = $mPropPropertyUpdateRequest
+            $checkerId = $mPropPropertyUpdateRequest->readConnection()
                 ->distinct()->pluck('approved_by');
 
             $userId = collect($makerId)->merge($checkerId)->filter(function ($value) {
@@ -4590,7 +4597,7 @@ class ReportController extends Controller
                 $paymentMode = strtoupper($request->paymentMode);
             }
 
-            $bata = $mPropTransaction
+            $bata = $mPropTransaction->readConnection()
                 ->select(DB::raw('SUM(amount) as amount'), 'transfer_mode_mstr_id', 'transfer_mode', 'assessment_type')
                 ->join('prop_safs', 'prop_safs.id', 'prop_transactions.saf_id')
                 ->join('ref_prop_transfer_modes', 'ref_prop_transfer_modes.id', 'prop_safs.transfer_mode_mstr_id')
@@ -4663,7 +4670,7 @@ class ReportController extends Controller
                 $zoneId = $request->zoneId;
             }
 
-            $data = PropActiveSaf::select(
+            $data = PropActiveSaf::readConnection()->select(
                 'prop_active_safs.id',
                 'zone_name',
                 'ward_name',

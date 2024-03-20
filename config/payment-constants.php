@@ -19,11 +19,13 @@ return [
         '3' => 'CASH',
         '4' => 'CHEQUE',
         '5' => 'DD',
-        '6' => 'NEFT'
+        '6' => 'NEFT',
+        '7' => 'ONLINE_R',
     ],
 
     'PAYMENT_MODE_OFFLINE' => [
         'CASH',
+        'ONLINE_R',
         'CHEQUE',
         'DD',
         'NEFT',

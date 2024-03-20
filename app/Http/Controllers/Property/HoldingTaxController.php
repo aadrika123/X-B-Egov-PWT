@@ -464,7 +464,8 @@ class HoldingTaxController extends Controller
 
         $propCalReq = new Request([                                                 // Request from payment
             'propId' => $req['id'],
-            'isArrear' => $req['isArrear'] ?? null
+            'isArrear' => $req['isArrear'] ?? null,
+            "TrnDate"=>$req->TrnDate
         ]);
 
         try {

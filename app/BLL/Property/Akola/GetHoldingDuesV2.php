@@ -26,13 +26,13 @@ class GetHoldingDuesV2
     private $_TotalDisccountPer;
     private $_TotalDisccontAmt;
     public $_isSingleManArmedForce =false;
-    public function setParams()
+    public function setParams($from = null,$upto = null)
     {
-        $this->_SpecialOffers = (new RefPropSpecialRebateType())->specialRebate();
+        $this->_SpecialOffers = (new RefPropSpecialRebateType())->specialRebate($from,$upto);
     }
     public function getDues($req)
     {
-        $this->setParams();
+        $this->setParams($req->TrnDate,$req->TrnDate);
         $mPropDemand = new PropDemand();
         $mPropProperty = new PropProperty();
         $mPropOwners = new PropOwner();
@@ -51,11 +51,11 @@ class GetHoldingDuesV2
         // Get Property Details
         $propBasicDtls = $mPropProperty->getPropBasicDtls($req->propId);
         $owners = $mPropOwners->getOwnersByPropId($req->propId);
-        // $armedForceOwners = collect($owners)->where("is_armed_force",true);
-        // if($armedForceOwners->isNotEmpty() && collect($owners)->count()==1)
-        // {
-        //     $this->_isSingleManArmedForce =true;
-        // }
+        $armedForceOwners = collect($owners)->where("is_armed_force",true);
+        if($armedForceOwners->isNotEmpty() && collect($owners)->count()==1)
+        {
+            $this->_isSingleManArmedForce =true;
+        }
         DB::enableQueryLog();
         $totalAdvanceAmt = $PropAdvance->getAdvanceAmt($req->propId);
         $totalAdjustmentAmt = $PropAdjustment->getAdjustmentAmt($req->propId);
