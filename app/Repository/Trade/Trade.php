@@ -3444,7 +3444,7 @@ class Trade implements ITrade
                 $history->valid_upto = $history->valid_upto ? Carbon::parse($history->valid_upto)->format("d-m-Y") : $history->valid_upto;
                 $history->license_date = $history->license_date ? Carbon::parse($history->license_date)->format("d-m-Y") : $history->license_date;
                 $history->application_date = $history->application_date ? Carbon::parse($history->application_date)->format("d-m-Y") : $history->application_date;
-                return $history->only(["tran_date","tran_no","rate","delay_fee","denial_fee","id","application_type","application_no","valid_from","valid_upto","license_date","application_date"]);
+                return $history->only(["tran_date","tran_no","paid_amount","rate","delay_fee","denial_fee","id","application_type","application_no","valid_from","valid_upto","license_date","application_date"]);
             });      
             
             $oldOwnersId = TradeOwner::whereIN("temp_id",$parentIds)
