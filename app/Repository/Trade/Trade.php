@@ -3436,7 +3436,8 @@ class Trade implements ITrade
                 $history->tran_no = $Oltransaction? $Oltransaction->tran_no :null;                
                 $history->application_type = ($history->applicationType()->first())->application_type??null;
                 $history->tran_date = $Oltransaction? Carbon::parse($Oltransaction->tran_date)->format("d-m-Y") :null;
-                $history->rate = $Oltransaction->paid_amount??0;
+                $history->rate = $Oltransaction ? number_format(($Oltransaction->paid_amount - $pen), 2): 0;
+                $history->paid_amount = $Oltransaction ? number_format(($Oltransaction->paid_amount), 2): 0 ;
                 $history->delay_fee = $delay_fee;
                 $history->denial_fee = $denial_fee;
                 $history->valid_from = $history->valid_from ? Carbon::parse($history->valid_from)->format("d-m-Y") : $history->valid_from;
