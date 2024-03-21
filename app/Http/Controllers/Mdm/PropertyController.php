@@ -23,38 +23,30 @@ class PropertyController extends Controller
     {
         DB::enableQueryLog();
         $this->_COMMON_FUNCTION     = new CommonFunction();
-        $this->_APARTMENT_DTL           = new PropApartmentDtl();
+        $this->_APARTMENT_DTL       = new PropApartmentDtl();
 
         #roleId = 1 -> SUPER ADMIN,
         #         2 -> ADMIN
-        $this->_ALLOW_ROLE_ID       = [1,2];
-        
+        $this->_ALLOW_ROLE_ID       = [1, 2];
     }
 
     #============= Apartment Dtl Crud =================
     public function addApartment(Request $request)
     {
-        
-        try{
-            $user = Auth()->user();
-            $userId = $user->id??0;
-            $ulbId = $user->ulb_id??0;
-            DB::enableQueryLog();
-            $role = $this->_COMMON_FUNCTION->getUserAllRoles()->whereIn("role_id",$this->_ALLOW_ROLE_ID)->first();         
-            #roleId = 1 -> SUPER ADMIN,
-            #         2 -> ADMIN
-            if(!$role || !in_array($role->role_id,$this->_ALLOW_ROLE_ID))
-            {
-                throw new Exception(($role?$role->role_name:"You Are")." Not Authoried For This Action");
-            }
-            DB::beginTransaction();
+        try {
+            $user   = authUser($request);
+            $userId = $user->id ?? 0;
+            $ulbId  = $user->ulb_id ?? 0;
+
+            $request->request->add([
+                'ulbId'  => $ulbId,
+                'userId' => $userId,
+            ]);
+
             $data["apartmentId"] = $this->_APARTMENT_DTL->store($request);
-            DB::commit();
-            return responseMsg(true,"New Recode Added",$data);
-        }
-        catch(Exception $e)
-        {
-            return responseMsg(false,$e->getMessage(),$request->all());
+            return responseMsg(true, "New Record Added", $data);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
 }

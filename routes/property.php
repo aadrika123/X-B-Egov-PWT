@@ -580,7 +580,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
    *              date       : 2023/03/13
    */
   Route::controller(MdmPropertyController::class)->group(function(){
-    Route::post('apartment/add', 'addApartment');
+    Route::post('add-apartment', 'addApartment');
   });
 
 });

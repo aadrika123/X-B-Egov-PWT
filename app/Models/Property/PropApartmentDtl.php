@@ -41,4 +41,27 @@ class PropApartmentDtl extends PropParamModel #Model
             ->where('status', 1)
             ->first();
     }
+
+    /**
+     * | Added Apartment
+     */
+    public function  store($req)
+    {
+      $mPropApartmentDtl = new PropApartmentDtl();
+      $mPropApartmentDtl->apt_code                  = $req->aptCode;
+      $mPropApartmentDtl->apartment_name            = $req->apartmentName;
+      $mPropApartmentDtl->apartment_address         = $req->apartmentAddress;
+      $mPropApartmentDtl->water_harvesting_status   = $req->waterHarvestingStatus;
+      $mPropApartmentDtl->wtr_hrvs_image_file_name  = $req->waterHarvestingImage;
+      $mPropApartmentDtl->apt_image_file_name       = $req->aptImage;
+      $mPropApartmentDtl->ward_mstr_id              = $req->wardId;
+      $mPropApartmentDtl->is_blocks                 = $req->isBlocks;
+      $mPropApartmentDtl->no_of_block               = $req->noOfBlock;
+    //   $mPropApartmentDtl->road_type_mstr_id         = $req->road_type_mstr_id;
+      $mPropApartmentDtl->created_at                = now();
+      $mPropApartmentDtl->user_id                   = $req->userId;
+      $mPropApartmentDtl->ulb_id                    = $req->ulbId;
+      $mPropApartmentDtl->save();
+
+    }
 }

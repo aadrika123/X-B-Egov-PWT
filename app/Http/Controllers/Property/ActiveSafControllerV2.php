@@ -356,7 +356,7 @@ class ActiveSafControllerV2 extends Controller
 
         try {
             $mPropProperty = new PropProperty();
-            $ulbId = $request->ublId??2;
+            $ulbId = $request->ublId ?? 2;
             $key = $request->filteredBy;
             $parameter = $request->parameter;
             $isLegacy = $request->isLegacy;
@@ -366,8 +366,8 @@ class ActiveSafControllerV2 extends Controller
                 case ("holdingNo"):
                     $data = $mPropProperty->searchPropertyV2($ulbId)
                         ->where(function ($where) use ($parameter) {
-                            $where->ORwhere('prop_properties.holding_no', 'LIKE',  strtoupper($parameter) )
-                                ->orWhere('prop_properties.new_holding_no', 'LIKE', strtoupper($parameter) );
+                            $where->ORwhere('prop_properties.holding_no', 'LIKE',  strtoupper($parameter))
+                                ->orWhere('prop_properties.new_holding_no', 'LIKE', strtoupper($parameter));
                         });
                     break;
 
@@ -378,11 +378,11 @@ class ActiveSafControllerV2 extends Controller
 
                 case ("ownerName"):
                     $data = $mPropProperty->searchPropertyV2($ulbId)
-                            ->where(function($where)use($parameter){
-                                $where->where('o.owner_name', 'ILIKE', '%' . strtoupper($parameter) . '%')
+                        ->where(function ($where) use ($parameter) {
+                            $where->where('o.owner_name', 'ILIKE', '%' . strtoupper($parameter) . '%')
                                 ->orwhere('o.owner_name_marathi', 'ILIKE', '%' . strtoupper($parameter) . '%');
-                            });
-                        
+                        });
+
                     break;
 
                 case ("address"):
@@ -432,7 +432,7 @@ class ActiveSafControllerV2 extends Controller
 
                 case ("propertyNo"):
                     $data = $mPropProperty->searchPropertyV2($ulbId)
-                        ->where('prop_properties.property_no', 'LIKE',  $parameter.'-' );
+                        ->where('prop_properties.property_no', 'LIKE',  $parameter . '-');
                     break;
                 default:
                     $data = $mPropProperty->searchPropertyV2($ulbId);
@@ -444,8 +444,7 @@ class ActiveSafControllerV2 extends Controller
             if ($request->wardId) {
                 $data = $data->where("prop_properties.ward_mstr_id", $request->wardId);
             }
-            if($request->propId)
-            {
+            if ($request->propId) {
                 $data = $data->where("prop_properties.id", $request->propId);
             }
             $data = $data->where("prop_properties.status", 1);
@@ -505,11 +504,16 @@ class ActiveSafControllerV2 extends Controller
      */
     public function getAptList(Request $req)
     {
-        try {
-            $req->validate([
+        $validated = Validator::make(
+            $req->all(),
+            [
                 'wardMstrId' => 'required',
                 'ulbId' => 'nullable',
-            ]);
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        try {
             $mPropApartmentDtl = new PropApartmentDtl();
             $ulbId = $req->ulbId ?? authUser($req)->ulb_id;
             $req->request->add(['ulbId' => $ulbId,]);
@@ -520,9 +524,9 @@ class ActiveSafControllerV2 extends Controller
                 throw new Exception("Apartment List Not Available");
             }
 
-            return responseMsgs(true, "Apartment List", $data, 010124, 1.0, "308ms", "POST", $req->deviceId);
+            return responseMsgs(true, "Apartment List", $data, 010124, 1.0, responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), [], 010124, 1.0, "308ms", "POST", $req->deviceId);
+            return responseMsgs(false, $e->getMessage(), [], 010124, 1.0, responseTime(), "POST", $req->deviceId);
         }
     }
 
