@@ -959,9 +959,10 @@ class ActiveSafController extends Controller
             //     $prevHoldingIds = explode(",", $data->previous_holding_id);
             //     $prevOwnerDtls = $mPropOwner->getOwnerByPropIds($prevHoldingIds);
             // } else 
-            if ($data->previous_holding_id)
+            if ($data->previous_holding_id) {
                 $prevHoldingIds = explode(",", $data->previous_holding_id);
                 $prevOwnerDtls = $mPropOwner->getOwnerByPropIds($prevHoldingIds);
+            }
 
             $data = json_decode(json_encode($data), true);
 
