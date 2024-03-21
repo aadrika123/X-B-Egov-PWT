@@ -57,7 +57,7 @@ class PropertyController extends Controller
     {
         try {
             $perPage = $request->perPage ?? 10;
-            $data    = $this->_APARTMENT_DTL::paginate($perPage);
+            $data    = $this->_APARTMENT_DTL::orderBy('apartment_name')->paginate($perPage);
 
             return responseMsg(true, "Apartment List", $data);
         } catch (Exception $e) {
