@@ -164,6 +164,9 @@ class GetHoldingDuesV2
         $demand['remainAdvance'] = roundFigure($remainAdvance ?? 0);
         $demand['arrearPayableAmt'] = roundFigure($demand['arrear'] + $demand['arrearMonthlyPenalty']);
         $demand['payableAmt'] = roundFigure($grandTaxes['balance'] + $demand['totalInterestPenalty']);
+        $demand['total_exempted_general_tax'] = roundFigure($grandTaxes['exempted_general_tax']);
+        $demand['current_exempted_general_tax'] = roundFigure($demand['currentDemandList']['exempted_general_tax']??0);
+        $demand['arrear_exempted_general_tax'] = roundFigure($demand['overdueDemandList']['exempted_general_tax']??0);
         
         $demand["rebates"] = $this->_SpecialOffers->map(function($val)use($demand){
             $rebateAmt = 0;
