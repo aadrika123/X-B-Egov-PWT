@@ -155,10 +155,12 @@ class HoldingTaxController extends Controller
             $user = Auth()->user();
             $usertype = $this->_COMMONFUNCTION->getUserAllRoles();
             $testRole = collect($usertype)->whereIn("sort_name", Config::get("TradeConstant.CANE-CUTE-PAYMENT"));
+            $testOnlineRRole = collect($usertype)->whereIn("sort_name", Config::get("TradeConstant.CANE-CUTE-PAYMENT-ONLINE_R"));
             // $getHoldingDues = new GetHoldingDues;
             $getHoldingDues = new GetHoldingDuesV2;
             $demand = $getHoldingDues->getDues($req);
             $demand["can_take_payment"] = collect($testRole)->isNotEmpty() ? true : false;
+            $demand["can_take_online_r_payment"] = collect($testOnlineRRole)->isNotEmpty() && $demand["can_take_payment"] ? true : false;
             if ($this->_COMMONFUNCTION->checkUsersWithtocken("active_citizens")) {
                 $data["can_take_payment"] =  $demand["payableAmt"] > 0 ? true : false;
             }
