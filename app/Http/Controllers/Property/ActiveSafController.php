@@ -952,8 +952,16 @@ class ActiveSafController extends Controller
             } else
                 $data->current_role_name2 = $data->current_role_name;
 
+            // if ($data->previous_holding_id)
+            //     $prevOwnerDtls = $mPropOwner->getOwnersByPropIdV2($data->previous_holding_id);
+
+            // if ($data->assessment_type == 'Amalgamation') {
+            //     $prevHoldingIds = explode(",", $data->previous_holding_id);
+            //     $prevOwnerDtls = $mPropOwner->getOwnerByPropIds($prevHoldingIds);
+            // } else 
             if ($data->previous_holding_id)
-                $prevOwnerDtls = $mPropOwner->getOwnersByPropIdV2($data->previous_holding_id);
+                $prevHoldingIds = explode(",", $data->previous_holding_id);
+                $prevOwnerDtls = $mPropOwner->getOwnerByPropIds($prevHoldingIds);
 
             $data = json_decode(json_encode($data), true);
 

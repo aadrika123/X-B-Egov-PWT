@@ -22,9 +22,10 @@ class PropProperty extends  PropParamModel #Model
     // get Prpoperty id
     public function getPropertyId($holdingNo)
     {
-        return PropProperty::where('holding_no', $holdingNo)
+        return PropProperty::select('id')
+            ->where('holding_no', $holdingNo)
             ->orWhere('new_holding_no', $holdingNo)
-            ->select('id')
+            ->where('status', 1)
             ->first();
     }
 
@@ -1087,7 +1088,6 @@ class PropProperty extends  PropParamModel #Model
 
     public function getAllTransection()
     {
-        return $this->hasMany(PropTransaction::class,"property_id","id")->where("status",1);
+        return $this->hasMany(PropTransaction::class, "property_id", "id")->where("status", 1);
     }
-
 }
