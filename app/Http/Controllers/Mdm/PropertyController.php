@@ -57,7 +57,19 @@ class PropertyController extends Controller
     {
         try {
             $perPage = $request->perPage ?? 10;
-            $data    = $this->_APARTMENT_DTL::orderBy('apartment_name')->paginate($perPage);
+            $data    = $this->_APARTMENT_DTL::select(
+                'prop_apartment_dtls.id',
+                'apt_code',
+                'apartment_name',
+                'apartment_address',
+                'water_harvesting_status',
+                'wtr_hrvs_image_file_name',
+                'zone_name',
+                'ward_name' 
+            )
+                ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_apartment_dtls.id')
+                ->join('zone_masters', 'zone_masters.id', 'ulb_ward_masters.zone')
+                ->orderBy('apartment_name')->paginate($perPage);
 
             return responseMsg(true, "Apartment List", $data);
         } catch (Exception $e) {
