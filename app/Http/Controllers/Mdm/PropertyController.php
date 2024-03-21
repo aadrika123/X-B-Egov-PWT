@@ -49,4 +49,19 @@ class PropertyController extends Controller
             return responseMsg(false, $e->getMessage(), $request->all());
         }
     }
+
+    /**
+     * | 
+     */
+    public function apartmentList(Request $request)
+    {
+        try {
+            $perPage = $request->perPage ?? 10;
+            $data    = $this->_APARTMENT_DTL::paginate($perPage);
+
+            return responseMsg(true, "Apartment List", $data);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
 }

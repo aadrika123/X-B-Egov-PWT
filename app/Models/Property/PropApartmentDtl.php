@@ -14,10 +14,9 @@ class PropApartmentDtl extends PropParamModel #Model
      */
     public function apartmentList($req)
     {
-        return PropApartmentDtl::select('id', 'apt_code', 'apartment_name','apartment_address')
+        return PropApartmentDtl::select('id', 'apt_code', 'apartment_name')
             ->where('ward_mstr_id', $req->wardMstrId)
             ->where('ulb_id', $req->ulbId)
-            ->orderBy('apartment_name')
             ->get();
     }
 

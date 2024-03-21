@@ -581,6 +581,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
    */
   Route::controller(MdmPropertyController::class)->group(function(){
     Route::post('add-apartment', 'addApartment');
+    Route::post('apartment-list', 'apartmentList');
   });
 
 });
