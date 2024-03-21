@@ -63,5 +63,6 @@ class PropApartmentDtl extends PropParamModel #Model
       $mPropApartmentDtl->ulb_id                    = $req->ulbId;
       $mPropApartmentDtl->save();
 
+      return $mPropApartmentDtl->id;
     }
 }

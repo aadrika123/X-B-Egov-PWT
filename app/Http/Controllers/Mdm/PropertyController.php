@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Mdm;
 
 use App\Http\Controllers\Controller;
+use App\MicroServices\DocUpload;
 use App\Models\Property\PropApartmentDtl;
 use App\Repository\Common\CommonFunction;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class PropertyController extends Controller
 {
@@ -34,9 +37,42 @@ class PropertyController extends Controller
     public function addApartment(Request $request)
     {
         try {
+
+            $validated = Validator::make(
+                $request->all(),
+                [
+                    'apartmentCode'         => 'required',
+                    'apartmentName'         => 'required',
+                    'apartmentAddress'      => 'required',
+                    'waterHarvestingStatus' => 'required|boolean',
+                    'waterHarvestingImage'  => 'nullable|mimes:jpeg,png,jpg|max:2048',
+                    'aptImage'              => 'nullable|mimes:jpeg,png,jpg|max:2048',
+                    'ward'                  => 'required',
+                    'blocks'                => 'nullable',
+                ]
+            );
+            if ($validated->fails())
+                return validationError($validated);
+
+            $docUpload = new DocUpload;
             $user   = authUser($request);
             $userId = $user->id ?? 0;
             $ulbId  = $user->ulb_id ?? 0;
+
+
+            if ($request->file('waterHarvestingImage')) {
+                $refImageName = 'Har-' . Str::random(5) . '-' . date('His');
+                $file = $request->file('waterHarvestingImage');
+                $imageName = $docUpload->upload($refImageName, $file, 'Uploads/Property');
+                $request->request->add(['waterHarvestingImage' => 'Uploads/Property/' . $imageName]);
+            }
+
+            if ($request->file('aptImage')) {
+                $refImageName = 'Apt-' . Str::random(5) . '-' . date('His');
+                $file = $request->file('aptImage');
+                $imageName = $docUpload->upload($refImageName, $file, 'Uploads/Property');
+                $request->request->add(['aptImage' => 'Uploads/Property/' . $imageName]);
+            }
 
             $request->request->add([
                 'ulbId'  => $ulbId,
@@ -62,10 +98,13 @@ class PropertyController extends Controller
                 'apt_code',
                 'apartment_name',
                 'apartment_address',
-                'water_harvesting_status',
+                DB::raw("case when water_harvesting_status =0 then 'No'
+                                else 'Yes' end
+                                as water_harvesting_status
+                "),
                 'wtr_hrvs_image_file_name',
-                'zone_name',
-                'ward_name' 
+                'zone_name as zone',
+                'ward_name as ward_no'
             )
                 ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_apartment_dtls.id')
                 ->join('zone_masters', 'zone_masters.id', 'ulb_ward_masters.zone')
