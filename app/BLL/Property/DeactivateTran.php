@@ -152,9 +152,9 @@ class DeactivateTran
 
     private function adjustPropDemand(PropDemand $propDemand, $tranDtl)
     {
-        if($propDemand->total_tax > ($propDemand->balance + $tranDtl->paid_balance))
+        if(round($propDemand->total_tax) < round($propDemand->balance + $tranDtl->paid_balance) && ($propDemand->total_tax) - ($propDemand->balance + $tranDtl->paid_balance)<-1)
         {
-            return;
+            throw new Exception("demand has not been properly reversed");
         }
         $propDemand->due_maintanance_amt    = $propDemand->due_maintanance_amt  + $tranDtl->paid_maintanance_amt;
         $propDemand->due_aging_amt          = $propDemand->due_aging_amt        + $tranDtl->paid_aging_amt;
