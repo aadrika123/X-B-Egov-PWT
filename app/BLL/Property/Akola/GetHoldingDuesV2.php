@@ -197,6 +197,10 @@ class GetHoldingDuesV2
         $demand['currentDemandList']["shasti_abhay_yojan"] = 0;
         $demand['overdueDemandList']["shasti_abhay_yojan"] = roundFigure(collect($demand["rebates"])->where("rebate_type","Shasti Abhay Yojana")->sum("rebates_amt"));
         $demand['grandTaxes']["shasti_abhay_yojan"] = $demand['currentDemandList']["shasti_abhay_yojan"] + $demand['overdueDemandList']["shasti_abhay_yojan"];
+
+        $demand['currentDemandList']["totalPenalty"] = $demand['monthlyPenalty'];
+        $demand['overdueDemandList']["totalPenalty"] = $demand['arrearMonthlyPenalty'];
+        $demand['grandTaxes']["totalPenalty"] = $demand['totalInterestPenalty'];
         if ($demand['payableAmt'] > 0)
             $paymentStatus = 0;
 

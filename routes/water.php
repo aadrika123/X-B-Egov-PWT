@@ -135,6 +135,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('consumer/list-demand', 'listConsumerDemand');                                      // Consumer
         Route::post('admin/consumer/generate-demand', 'saveGenerateConsumerDemand');                    // Admin   Akola
         Route::post('admin/consumer/save-connection-meter', 'saveUpdateMeterDetails');                  // Admin
+        Route::post('consumer/update-con-type', 'updateConnectionType');
         Route::post('admin/consumer/get-meter-list', 'getMeterList');                                   // Admin
         Route::post('consumer/caretaken-connections', 'viewCaretakenConnection');                       // Citiizen
         Route::post('consumer/calculate/meter-fixed-reading', 'calculateMeterFixedReading');            // Admin

@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Water;
 
+use App\Models\Water\WaterSecondConsumer;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
@@ -26,9 +27,12 @@ class reqMeterEntry extends FormRequest
      */
     public function rules()
     {
+        $consumer = new WaterSecondConsumer();
+        $tbl = $consumer->getTable();
+        $con =$consumer->getConnectionName();
         $refMeterConnectionType = Config::get('waterConstaint.WATER_MASTER_DATA.METER_CONNECTION_TYPE');
         $rules['connectionType']        = 'required|int|in:1,2,3,4';
-        $rules['consumerId']            = "required|digits_between:1,9223372036854775807";
+        $rules['consumerId']            = "required|digits_between:1,9223372036854775807|exists:$con,$tbl,id";
         $rules['connectionDate']        = 'required|date|date_format:Y-m-d';
         $rules['oldMeterFinalReading']  = 'nullable';
 

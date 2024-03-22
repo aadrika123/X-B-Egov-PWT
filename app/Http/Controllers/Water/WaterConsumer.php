@@ -440,7 +440,7 @@ class WaterConsumer extends Controller
         | Re discuss
      */
     public function saveUpdateMeterDetails(reqMeterEntry $request)
-    {dd('hear');
+    {
         try {
             $mWaterConsumerMeter    = new WaterConsumerMeter();
             // $mWaterConsumerInitial  = new WaterConsumerInitialMeter();
@@ -1884,6 +1884,18 @@ class WaterConsumer extends Controller
             $this->commit();
             return responseMsgs(true, "Successfully apply disconnection ", remove_null($returnData), "1.0", "350ms", "POST", $request->deviceId);
         } catch (Exception $e) {
+            $this->rollback();
+            return responseMsgs(false, $e->getMessage(), "", $e->getCode(), "1.0", "", 'POST', "");
+        }
+    }
+
+    public function updateConnectionType(Request $request)
+    {
+        try{
+
+        }
+        catch(Exception $e)
+        {
             $this->rollback();
             return responseMsgs(false, $e->getMessage(), "", $e->getCode(), "1.0", "", 'POST', "");
         }
