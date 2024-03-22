@@ -49,6 +49,7 @@ class PropertyController extends Controller
                     'waterHarvestingImage'  => 'nullable|mimes:jpeg,png,jpg|max:2048',
                     'aptImage'              => 'nullable|mimes:jpeg,png,jpg|max:2048',
                     'ward'                  => 'required',
+                    'category'              => 'required',
                     'blocks'                => 'nullable',
                 ]
             );
