@@ -440,7 +440,7 @@ class WaterConsumer extends Controller
         | Re discuss
      */
     public function saveUpdateMeterDetails(reqMeterEntry $request)
-    {
+    {dd('hear');
         try {
             $mWaterConsumerMeter    = new WaterConsumerMeter();
             // $mWaterConsumerInitial  = new WaterConsumerInitialMeter();

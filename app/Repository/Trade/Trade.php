@@ -381,7 +381,7 @@ class Trade implements ITrade
                 {
                     $licence->licence_for_years   = $mApplicationTypeId == 2 ? $request->licenseDetails['licenseFor'] : $refOldLicece->licence_for_years;
                     $this->renewalAndSurenderLicense($licence, $refOldLicece, $request);
-                    $licence->valid_from    = $refOldLicece->valid_upto;
+                    $licence->valid_from    = Carbon::parse($refOldLicece->valid_upto)->addDay()->format("Y-m-d");
                     $licence->save();
                     $licenceId = $licence->id;
                     foreach ($refOldowners as $owners) {
@@ -391,10 +391,11 @@ class Trade implements ITrade
                         $owner->user_id  = $refUserId;
                         $owner->save();
                     }                    
-                } elseif ($mApplicationTypeId == 3) # code for Amendment
+                } 
+                elseif ($mApplicationTypeId == 3) # code for Amendment
                 {
                     $this->amedmentLicense($licence, $refOldLicece, $request);
-                    $licence->valid_from    = date('Y-m-d');
+                    $licence->valid_from    = Carbon::now()->format('Y-m-d');
                     $licence->save();
                     $licenceId = $licence->id;
                     foreach ($refOldowners as $owners) 
