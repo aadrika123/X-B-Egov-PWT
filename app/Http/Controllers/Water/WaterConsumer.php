@@ -1889,6 +1889,18 @@ class WaterConsumer extends Controller
         }
     }
 
+    public function updateConnectionType(Request $request)
+    {
+        try{
+
+        }
+        catch(Exception $e)
+        {
+            $this->rollback();
+            return responseMsgs(false, $e->getMessage(), "", $e->getCode(), "1.0", "", 'POST', "");
+        }
+    }
+
 
 
 

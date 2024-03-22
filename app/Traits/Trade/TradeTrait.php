@@ -371,7 +371,7 @@ trait TradeTrait
                 {
                     $prive_licence_id = $prive_licence->id;
                     $license_no = $prive_licence->license_no;
-                    $valid_from = $prive_licence->valid_upto; 
+                    $valid_from = Carbon::parse($prive_licence->valid_upto)->addDay()->format("Y-m-d"); 
                     $datef = date('Y-m-d', strtotime($valid_from));
                     $datefrom = date_create($datef);
                     $datea = date('Y-m-d', strtotime($refLicenc->application_date));
