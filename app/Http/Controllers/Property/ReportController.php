@@ -4693,7 +4693,8 @@ class ReportController extends Controller
                 ->join('wf_roles as role', 'role.id', 'wf_roleusermaps.wf_role_id')
                 ->whereBetween('application_date', [$fromDate, $uptoDate])
                 ->orderBy('zone')
-                ->orderBy('ward_name');
+                ->orderBy('ward_name')
+                ->orderBy('application_date');
 
             if ($wardId) {
                 $data = $data->where("prop_active_safs.ward_mstr_id", $wardId);
