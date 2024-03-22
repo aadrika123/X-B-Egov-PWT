@@ -4678,8 +4678,9 @@ class ReportController extends Controller
                 // 'users.name as applied_by',
                 // 'role.role_name as applied_by_role',
                 'wf_roles.role_name as current_role',
-                'application_date',
-                DB::raw("concat(users.name,' (',role.role_name,')') as applied_by")
+                // 'application_date',
+                DB::raw("concat(users.name,' (',role.role_name,')') as applied_by"),
+                DB::raw("TO_CHAR(application_date, 'DD-MM-YYYY') as application_date"),
             )
                 ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
                 ->join('users', 'users.id', 'prop_active_safs.user_id')
