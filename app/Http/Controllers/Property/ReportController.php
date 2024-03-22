@@ -4650,8 +4650,7 @@ class ReportController extends Controller
                 "uptoDate"    => "required|date|date_format:Y-m-d|after_or_equal:" . $request->fromDate,
                 "wardId"      => "nullable|digits_between:1,9223372036854775807",
                 "zoneId"      => "nullable|digits_between:1,9223372036854775807",
-                "paymentMode" => "nullable",
-                "type"        => "nullable|in:Mutation,Bifurcation",
+                // "type"        => "nullable|in:Mutation,Bifurcation",
             ]
         );
         if ($validated->fails())
@@ -4676,14 +4675,23 @@ class ReportController extends Controller
                 'ward_name',
                 'saf_no',
                 'assessment_type',
-                'users.name as applied_by',
-                'role_name as current_role',
+                // 'users.name as applied_by',
+                // 'role.role_name as applied_by_role',
+                'wf_roles.role_name as current_role',
                 'application_date',
+                DB::raw("concat(users.name,' (',role.role_name,')') as applied_by")
             )
                 ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
                 ->join('users', 'users.id', 'prop_active_safs.user_id')
                 ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_active_safs.ward_mstr_id')
                 ->join('zone_masters', 'zone_masters.id', 'prop_active_safs.zone_mstr_id')
+                ->join('wf_roleusermaps', 'wf_roleusermaps.user_id', 'prop_active_safs.user_id')
+                ->join('wf_roles as role', 'role.id', 'wf_roleusermaps.wf_role_id')
+
+                // ->leftJoin('wf_roleusermaps', function ($join) {
+                //     $join->on('wf_roleusermaps.id', '=', 'prop_active_safs.user_id')
+                //         ->where('wf_roleusermaps.is_suspended', false);
+                // })
                 // ->leftJoin('wf_active_documents', function ($join) {
                 //     $join->on('wf_active_documents.active_id', '=', 'prop_active_safs.id')
                 //         ->where('wf_active_documents.status', 1);

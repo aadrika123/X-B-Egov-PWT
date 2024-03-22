@@ -48,8 +48,8 @@ class PropertyController extends Controller
                     'waterHarvestingStatus' => 'required|boolean',
                     'waterHarvestingImage'  => 'nullable|mimes:jpeg,png,jpg|max:2048',
                     'aptImage'              => 'nullable|mimes:jpeg,png,jpg|max:2048',
-                    'ward'                  => 'required',
-                    'category'              => 'required',
+                    'ward'                  => 'required|digits_between:1,9223372036854775807',
+                    'category'              => 'required|digits_between:1,9223372036854775807',
                     'blocks'                => 'nullable',
                 ]
             );
