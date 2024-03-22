@@ -52,8 +52,8 @@ class PropApartmentDtl extends PropParamModel #Model
       $mPropApartmentDtl->apartment_name            = $req->apartmentName;
       $mPropApartmentDtl->apartment_address         = $req->apartmentAddress;
       $mPropApartmentDtl->water_harvesting_status   = $req->waterHarvestingStatus;
-      $mPropApartmentDtl->wtr_hrvs_image_file_name  = $req->waterHarvestingImage;
-      $mPropApartmentDtl->apt_image_file_name       = $req->aptImage;
+      $mPropApartmentDtl->wtr_hrvs_image_file_name  = $req->harvestingImage;
+      $mPropApartmentDtl->apt_image_file_name       = $req->apartmentImage;
       $mPropApartmentDtl->ward_mstr_id              = $req->ward;
       $mPropApartmentDtl->is_blocks                 = $req->isBlocks;
       $mPropApartmentDtl->no_of_block               = $req->blocks;

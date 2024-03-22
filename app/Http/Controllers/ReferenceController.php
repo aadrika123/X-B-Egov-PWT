@@ -10,6 +10,7 @@ use App\Models\MPropRentalValue;
 use App\Models\MPropVacanatRentalrate;
 use App\Models\MPropVacantRentalrate;
 use App\Models\PropApartmentdtl;
+use App\Models\Property\RefPropCategory;
 use App\Models\Property\RefPropTransferMode;
 use App\Models\RefPropBuildingRenatlRate;
 use App\Models\RefPropConstructionType;
@@ -502,6 +503,23 @@ class ReferenceController extends Controller
             }
 
             return responseMsgs(true, 'Property Usage Type Retrieved Successfully',  $m_propusagetype,  "012120", "");
+
+         } catch(\Exception $e){
+            return responseMsgs(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | categoryType
+     */
+    public function categoryType(Request $request)
+    {
+        try {
+            $mCategory = RefPropCategory::select('id','category','status','description')
+                                ->where('status', 1)
+                                ->get();
+            
+            return responseMsgs(true, 'Category Type',  $mCategory,  "012121", "");
 
          } catch(\Exception $e){
             return responseMsgs(false, $e->getMessage(), "");

@@ -8,6 +8,7 @@ use App\Models\Property\PropApartmentDtl;
 use App\Repository\Common\CommonFunction;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -64,14 +65,14 @@ class PropertyController extends Controller
                 $refImageName = 'Har-' . Str::random(5) . '-' . date('His');
                 $file = $request->file('waterHarvestingImage');
                 $imageName = $docUpload->upload($refImageName, $file, 'Uploads/Property');
-                $request->request->add(['waterHarvestingImage' => 'Uploads/Property/' . $imageName]);
+                $request->request->add(['harvestingImage' => 'Uploads/Property/' . $imageName]);
             }
 
             if ($request->file('aptImage')) {
                 $refImageName = 'Apt-' . Str::random(5) . '-' . date('His');
                 $file = $request->file('aptImage');
                 $imageName = $docUpload->upload($refImageName, $file, 'Uploads/Property');
-                $request->request->add(['aptImage' => 'Uploads/Property/' . $imageName]);
+                $request->request->add(['apartmentImage' => 'Uploads/Property/' . $imageName]);
             }
 
             $request->request->add([
@@ -92,6 +93,7 @@ class PropertyController extends Controller
     public function apartmentList(Request $request)
     {
         try {
+            $docUrl = Config::get('module-constants.DOC_URL');
             $perPage = $request->perPage ?? 10;
             $data    = $this->_APARTMENT_DTL::select(
                 'prop_apartment_dtls.id',
@@ -100,15 +102,16 @@ class PropertyController extends Controller
                 'apartment_address',
                 DB::raw("case when water_harvesting_status =0 then 'No'
                                 else 'Yes' end
-                                as water_harvesting_status
+                                as water_harvesting_status,
+                    concat('$docUrl/',wtr_hrvs_image_file_name) as wtr_hrvs_image_file_name
                 "),
-                'wtr_hrvs_image_file_name',
                 'zone_name as zone',
                 'ward_name as ward_no'
             )
                 ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_apartment_dtls.id')
                 ->join('zone_masters', 'zone_masters.id', 'ulb_ward_masters.zone')
-                ->orderBy('apartment_name')->paginate($perPage);
+                ->orderBy('apartment_name')
+                ->paginate($perPage);
 
             return responseMsg(true, "Apartment List", $data);
         } catch (Exception $e) {

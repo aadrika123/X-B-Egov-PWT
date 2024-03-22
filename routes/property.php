@@ -682,6 +682,7 @@ Route::controller(ReferenceController::class)->group(function () {
   Route::post('v1/prop-transfer-mode', 'listPropTransfermode');                                    //17
   Route::post('v1/get-prop-type', 'listProptype');                                                 //18
   Route::post('v1/prop-usage-type', 'listPropUsagetype');                                          //19
+  Route::post('v1/category-type', 'categoryType');                                                 //20
 });
 
 
