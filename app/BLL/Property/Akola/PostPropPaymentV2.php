@@ -1214,4 +1214,27 @@ class PostPropPaymentV2
         });
         return $rebats;
     }
+
+    public function testArmforceRebat()
+    {
+        $demands = collect($this->_propCalculation->original['data']["demandList"])->sortBy(["fyear", "id"]);
+        $paidDemands = [];
+        $paidArrearPenalty = 0;
+        $previousInterest = $this->_propCalculation->original['data']["previousInterest"] ?? 0;
+        $totalDemandAmt = collect($demands)->sum("due_total_tax");
+        $payableAmount = $this->_REQ->paidAmount - $previousInterest;        
+        $totalaAreaDemand =  $this->_propCalculation->original['data']["arrearPayableAmt"];
+        $paidPenalty = $previousInterest;
+        foreach ($demands as $key => $val) {
+            if ($payableAmount <= 0 && $totalDemandAmt!=0) {
+                continue;
+            }
+            $paymentDtl = ($this->demandAdjust($payableAmount, $val["id"]));
+            $payableAmount = $paymentDtl["balence"];
+            $paidArrearPenalty  += $paymentDtl["payableAmountOfPenalty"];
+            $paidPenalty += $paymentDtl["payableAmountOfPenalty"];
+            $paidDemands[] = $paymentDtl;
+        }
+        return(($this->_REQ->paymentType != "isPartPayment" || round($this->_REQ->paidAmount) == round($totalDemandAmt) || round($this->_REQ->paidAmount) == round($totalaAreaDemand)) ? collect($paidDemands)->sum("paidTotalExemptedGeneralTax") : 0);
+    }
 }

@@ -126,10 +126,11 @@ class CitizenHoldingController extends Controller
             {
                 $rebatsAmt = roundFigure(collect($rebats)->where("is_applicable",true)->sum("rebates_amt"));
             }
+            $paidTotalExemptedGeneralTax = $postPropPayment->testArmforceRebat();
 
             $request->merge([
                 "rebate" =>$rebatsAmt,   
-                "amount" => $request->paidAmount - $rebatsAmt,
+                "amount" => round($request->paidAmount - $rebatsAmt - $paidTotalExemptedGeneralTax),
                 "id"    => $request->propId,
                 "ulbId" => $demand["basicDetails"]["ulb_id"],
                 "demandList" => $demand["demandList"],
@@ -164,6 +165,7 @@ class CitizenHoldingController extends Controller
             ]);
             $respons["propId"] = $request->propId;
             $respons["paidAmount"] = $request->paidAmount;
+            $respons["amount"] = $request->amount;
 
             DB::beginTransaction();
             $respons["requestId"] = $this->_PropIciciPaymentsRequest->store($request);
@@ -174,6 +176,7 @@ class CitizenHoldingController extends Controller
                     "encryptUrl",
                     "propId",
                     "paidAmount",
+                    "amount",
                     "requestId",
                 ]
             );

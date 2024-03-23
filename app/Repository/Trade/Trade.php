@@ -3341,6 +3341,7 @@ class Trade implements ITrade
                 $item_name = trim($item_name, ',');
                 $cods = trim($cods, ',');
             }
+            $application->firm_name_marathi = trim($application->firm_name_marathi)?$application->firm_name_marathi:$application->firm_name;
             $application->items = $item_name;
             $application->items_code = $cods;
             if(!$application->licence_for_years || !$application->valid_from || !$application->valid_upto)

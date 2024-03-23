@@ -312,9 +312,8 @@ class ApplySafController extends Controller
             }
 
             $req->merge([
-                'hasPreviousHoldingNo' => true,
-                'previousHoldingId' => implode(",", $previousHoldingIds),
-                'holdingNo' => implode(",", $req->holdingNoLists)
+                'amalgamatHoldingId' => implode(",", $previousHoldingIds),
+                'amalgamatHoldingNo' => implode(",", $req->holdingNoLists)
             ]);
         }
     }

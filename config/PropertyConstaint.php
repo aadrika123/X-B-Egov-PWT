@@ -318,7 +318,8 @@ return [
     [
         "Reassessment",
         "Mutation",
-        "Bifurcation"
+        "Bifurcation",
+        "Amalgamation"
     ],
 
     "ULB-TYPE-ID" => [
