@@ -50,8 +50,8 @@ class ReportController extends Controller
     public function __construct(IReport $TradeRepository)
     {
         $this->_DB_NAME = (new PropProperty())->getConnectionName();
-        $this->_DB = DB::connection( $this->_DB_NAME );
-        $this->_DB_READ = DB::connection( $this->_DB_NAME."::read" );
+        $this->_DB = DB::connection($this->_DB_NAME);
+        $this->_DB_READ = DB::connection($this->_DB_NAME . "::read");
         DB::enableQueryLog();
         $this->Repository = $TradeRepository;
         $this->_common = new CommonFunction();
@@ -4650,8 +4650,7 @@ class ReportController extends Controller
                 "uptoDate"    => "required|date|date_format:Y-m-d|after_or_equal:" . $request->fromDate,
                 "wardId"      => "nullable|digits_between:1,9223372036854775807",
                 "zoneId"      => "nullable|digits_between:1,9223372036854775807",
-                "paymentMode" => "nullable",
-                "type"        => "nullable|in:Mutation,Bifurcation",
+                // "type"        => "nullable|in:Mutation,Bifurcation",
             ]
         );
         if ($validated->fails())
@@ -4676,32 +4675,34 @@ class ReportController extends Controller
                 'ward_name',
                 'saf_no',
                 'assessment_type',
-                'users.name as applied_by',
-                'role_name as current_role',
-                'application_date',
+                // 'users.name as applied_by',
+                // 'role.role_name as applied_by_role',
+                // 'application_date',
+                'wf_roles.role_name as current_role',
+                DB::raw("concat(users.name,' (',role.role_name,')') as applied_by"),
+                DB::raw("TO_CHAR(application_date, 'DD-MM-YYYY') as application_date"),
             )
                 ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
                 ->join('users', 'users.id', 'prop_active_safs.user_id')
                 ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_active_safs.ward_mstr_id')
                 ->join('zone_masters', 'zone_masters.id', 'prop_active_safs.zone_mstr_id')
-                // ->leftJoin('wf_active_documents', function ($join) {
-                //     $join->on('wf_active_documents.active_id', '=', 'prop_active_safs.id')
-                //         ->where('wf_active_documents.status', 1);
-                //         // ->where('wf_active_documents.response', 'success')
-                //         // ->where('wf_active_documents.purpose', 'Abhay Yojna Marathi');
-                // })
+                ->leftJoin('wf_roleusermaps', function ($join) {
+                    $join->on('wf_roleusermaps.user_id', '=', 'prop_active_safs.user_id')
+                        ->where('wf_roleusermaps.is_suspended', false);
+                })
+                ->join('wf_roles as role', 'role.id', 'wf_roleusermaps.wf_role_id')
                 ->whereBetween('application_date', [$fromDate, $uptoDate])
                 ->orderBy('zone')
                 ->orderBy('ward_name');
 
-                if ($wardId) {
-                    $data = $data->where("prop_active_safs.ward_mstr_id", $wardId);
-                }
-                if ($zoneId) {
-                    $data = $data->where("prop_active_safs.zone_mstr_id", $zoneId);
-                }
+            if ($wardId) {
+                $data = $data->where("prop_active_safs.ward_mstr_id", $wardId);
+            }
+            if ($zoneId) {
+                $data = $data->where("prop_active_safs.zone_mstr_id", $zoneId);
+            }
 
-               $data = $data->paginate($perPage);
+            $data = $data->paginate($perPage);
 
             return responseMsgs(true, "Data Retreived", $data, "", "", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {

@@ -57,7 +57,7 @@ class PropApartmentDtl extends PropParamModel #Model
       $mPropApartmentDtl->ward_mstr_id              = $req->ward;
       $mPropApartmentDtl->is_blocks                 = $req->isBlocks;
       $mPropApartmentDtl->no_of_block               = $req->blocks;
-    //   $mPropApartmentDtl->road_type_mstr_id         = $req->road_type_mstr_id;
+      $mPropApartmentDtl->category_type_mstr_id     = $req->category;
       $mPropApartmentDtl->created_at                = now();
       $mPropApartmentDtl->user_id                   = $req->userId;
       $mPropApartmentDtl->ulb_id                    = $req->ulbId;
