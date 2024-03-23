@@ -93,7 +93,7 @@ class WaterConsumerMeter extends Model
             $meterStatus = 0;
         }
         if ($req->connectionType == $refConnectionType['Meter']) {
-            $installationDate = Carbon::now();
+            $installationDate = Carbon::parse($req->connectionDate);#Carbon::now();
         }
         if ($req->connectionType == $refConnectionType['Fixed']) {
             $meterStatus = 0;
@@ -102,17 +102,18 @@ class WaterConsumerMeter extends Model
         $mWaterConsumerMeter = new WaterConsumerMeter();
         $mWaterConsumerMeter->consumer_id               = $req->consumerId;
         $mWaterConsumerMeter->connection_date           = $req->connectionDate;
-        $mWaterConsumerMeter->emp_details_id            = auth()->user()->id;
+        $mWaterConsumerMeter->emp_details_id            = Auth()->user()?auth()->user()->id:null;
         $mWaterConsumerMeter->connection_type           = $req->connectionType;
         $mWaterConsumerMeter->meter_no                  = $req->meterNo ?? null;
         $mWaterConsumerMeter->meter_intallation_date    = $installationDate ?? null;
         $mWaterConsumerMeter->initial_reading           = $req->newMeterInitialReading ?? 0;
-        $mWaterConsumerMeter->final_meter_reading       = $req->newMeterInitialReading ?? 0;
+        $mWaterConsumerMeter->final_meter_reading       = $req->oldMeterFinalReading ?? 0;
         $mWaterConsumerMeter->meter_status              = $meterStatus ?? 1;                        // Static for meter connection
         $mWaterConsumerMeter->rate_per_month            = $fixedRate ?? 0;                          // For fixed connection
-        $mWaterConsumerMeter->relative_path             = $documentPath['relaivePath'];
-        $mWaterConsumerMeter->meter_doc                 = $documentPath['document'];
+        $mWaterConsumerMeter->relative_path             = $documentPath['relaivePath']??null;
+        $mWaterConsumerMeter->meter_doc                 = $documentPath['document']??null;
         $mWaterConsumerMeter->save();
+        return $mWaterConsumerMeter->id;
     }
     /**
      * save meter details for akola 

@@ -271,7 +271,10 @@ class WaterConsumer extends Controller
 
             # Calling BLL for call
             $returnData = new WaterMonthelyCall($request->consumerId, $request->demandUpto, $request->finalRading); #WaterSecondConsumer::get();
-            $returnData->checkDemandGenerationCondition();
+            if(!$request->isNotstrickChek)
+            {
+                $returnData->checkDemandGenerationCondition();
+            }
             $calculatedDemand = $returnData->parentFunction($request);
             if ($calculatedDemand['status'] == false) {
                 throw new Exception($calculatedDemand['errors']);
@@ -312,8 +315,10 @@ class WaterConsumer extends Controller
                 // if (($sms["status"] !== false)) {
                 //     $respons = SMSAKGOVT(6206998554, $sms["sms"], $sms["temp_id"]);
                 // }
-                $this->commit();                
-                return responseMsgs(true, "Demand Generated! for" . " " . $request->consumerId, "", "", "02", ".ms", "POST", "");
+                $this->commit(); 
+                $respons = $documentPath??[];   
+                $respons["consumerId"]  =   $request->consumerId;        
+                return responseMsgs(true, "Demand Generated! for" . " " . $request->consumerId, $respons, "", "02", ".ms", "POST", "");
             }
         } catch (Exception $e) {
             $this->rollback();
@@ -634,11 +639,11 @@ class WaterConsumer extends Controller
         | Working
         | Common function
      */
-    public function saveDocument($request, $refImageName)
+    public function saveDocument($request, $refImageName,$folder=null)
     {
         $document       = $request->document;
         $docUpload      = new DocUpload;
-        $relativePath   = Config::get('waterConstaint.WATER_RELATIVE_PATH');
+        $relativePath   = trim(Config::get('waterConstaint.WATER_RELATIVE_PATH')."/".$folder,"/");
 
         $imageName = $docUpload->upload($refImageName, $document, $relativePath);
         $doc = [
@@ -1889,15 +1894,70 @@ class WaterConsumer extends Controller
         }
     }
 
-    public function updateConnectionType(Request $request)
+    public function updateConnectionType(reqMeterEntry $request)
     {
         try{
-
+            $userDetails = Auth()->user();
+            $userDetails ? $userDetails["emp_id"] = $userDetails->id : null;
+            $m_consumer = new WaterSecondConsumer();
+            $m_meter = new WaterConsumerMeter();
+            $merterReading = new WaterConsumerInitialMeter();
+            $m_demand = new WaterConsumerDemand();
+            $meterRefImageName      = config::get('waterConstaint.WATER_METER_CODE');
+            $consumerDtl = $m_consumer->find($request->consumerId);
+            $connectinDtl = $consumerDtl->getLastConnectionDtl();
+            $lastMeterreading = $consumerDtl->getLastReading();
+            $lastDemand = $consumerDtl->getLastDemand();
+            $lastPaidDemand = $consumerDtl->getLastPaidDemand();
+            $allUnpaidDemand = $consumerDtl->getAllUnpaidDemand();
+            if($lastPaidDemand && $lastPaidDemand->demand_upto > $request->connectionDate)
+            {
+                throw new Exception("Demand Already paid Upto ".Carbon::parse($lastPaidDemand->demand_upto)->format("d-m-Y").". Connection date can not befor or equal to last demand paid upto date");
+            }
+            if($connectinDtl && $connectinDtl->connection_type!=3 && (($lastMeterreading->initial_reading??0) >= $request->oldMeterFinalReading))
+            {
+                throw new Exception("old meter reading can not less than previouse reading");
+            }
+            $removeDemand = collect($allUnpaidDemand)->where("demand_upto",">=",$request->connectionDate)->where("generation_date",">=",$request->connectionDate);
+            $demandRquest = new Request(
+                [
+                "consumerId"=>$consumerDtl->id,
+                "demandUpto"       => $request->connectionDate,
+                'finalRading'      => $request->oldMeterFinalReading,
+                "isNotstrickChek"  =>true,
+                "document"         =>$request->document,  
+                "auth"             =>$request->auth,
+                ]
+            );
+            
+            $this->begin();
+            foreach($removeDemand as $val)
+            {
+                $val->status = 0;
+                $val->save();
+            }
+            $demandGenrationRes = $this->saveGenerateConsumerDemand($demandRquest);
+            if(!$demandGenrationRes->original["status"])
+            {
+                throw new Exception($demandGenrationRes->original["message"]);
+            }
+            $request->merge(['finalRading'      => $request->newMeterInitialReading]);
+            $documentPath = $demandGenrationRes->original["data"];
+            $oldFile = public_path()."/".($documentPath["relaivePath"]??"")."/".($documentPath["document"]??"");
+            $neFileName =  public_path()."/".($documentPath["relaivePath"]??"")."/meter_doc"."/".($documentPath["document"]??"");
+            if(($documentPath["relaivePath"]??false) && copy($oldFile,$neFileName))
+            {
+                $documentPath["relaivePath"] = $documentPath["relaivePath"]."/meter_doc";
+            }
+            $meterDetails["meterId"] = $m_meter->saveMeterDetails($request, $documentPath, 0);
+            $merterReading->saveConsumerReading($request,$meterDetails,$userDetails);
+            $this->commit();
+            return responseMsgs(true, "connection type changed", "");
         }
         catch(Exception $e)
         {
             $this->rollback();
-            return responseMsgs(false, $e->getMessage(), "", $e->getCode(), "1.0", "", 'POST', "");
+            return responseMsgs(false, [$e->getMessage(),$e->getFile(),$e->getLine()], "", $e->getCode(), "1.0", "", 'POST', "");
         }
     }
 

@@ -615,4 +615,29 @@ class WaterSecondConsumer extends Model
         return WaterSecondConsumer::where('consumer_no', $consumerNo)
             ->where('status', 1);
     }
+
+    public function getLastConnectionDtl()
+    {
+        return $this->hasOne(WaterConsumerMeter::class,"consumer_id","id")->where("status",1)->orderBy("id","DESC")->first();
+    }
+
+    public function getLastDemand()
+    {
+        return $this->hasOne(WaterConsumerDemand::class,"consumer_id","id")->where("status",1)->orderBy("demand_upto","DESC")->first();
+    }
+
+    public function getLastPaidDemand()
+    {
+        return $this->hasOne(WaterConsumerDemand::class,"consumer_id","id")->where("status",1)->where("paid_status",1)->orderBy("demand_upto","DESC")->first();
+    }
+
+    public function getAllUnpaidDemand()
+    {
+        return $this->hasMany(WaterConsumerDemand::class,"consumer_id","id")->where("status",1)->where("paid_status",0)->orderBy("demand_upto","ASC")->get();
+    }
+
+    public function getLastReading()
+    {
+        return $this->hasOne(WaterConsumerInitialMeter::class,"consumer_id","id")->where("status",1)->orderBy("id","DESC")->first();
+    }
 }
