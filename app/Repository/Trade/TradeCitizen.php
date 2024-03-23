@@ -914,7 +914,7 @@ class TradeCitizen implements ITradeCitizen
         try {
             $id = $request->id;
             $refUser        = Auth()->user();
-            $refUserId      = $refUser->id;
+            $refUserId      = $refUser->id??0;
             $refUlbId       = $refUser->ulb_id ?? 0;
             $refWorkflowId  = $this->_WF_MASTER_Id;
             $modul_id = $this->_MODULE_ID;
