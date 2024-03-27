@@ -1865,6 +1865,7 @@ class WaterPaymentController extends Controller
     public function initiateOnlineDemandPayment(reqDemandPayment $request)
     {
         try {
+            throw new Exception("Online Payment not Available in water");
             $refUser = Auth()->user() ?? null;
             $isCitizenUserType = $refUser ? $this->_COMONFUNCTION->checkUsersWithtocken("active_citizens") : true;
 
