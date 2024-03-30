@@ -171,13 +171,16 @@ class PropertyController extends Controller
                 DB::raw("case when water_harvesting_status =0 then 'No'
                                 else 'Yes' end
                                 as water_harvesting_status,
-                    concat('$docUrl/',wtr_hrvs_image_file_name) as wtr_hrvs_image_file_name
+                    concat('$docUrl/',wtr_hrvs_image_file_name) as wtr_hrvs_image_file_name,
+                    concat('$docUrl/',apt_image_file_name) as apt_image_file_name
                 "),
                 'zone_name as zone',
-                'ward_name as ward_no'
+                'ward_name as ward_no',
+                'category'
             )
                 ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_apartment_dtls.id')
                 ->join('zone_masters', 'zone_masters.id', 'ulb_ward_masters.zone')
+                ->join('ref_prop_categories', 'ref_prop_categories.id', 'prop_apartment_dtls.category_type_mstr_id')
                 ->orderBy('apartment_name')
                 ->paginate($perPage);
 
