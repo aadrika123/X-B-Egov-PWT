@@ -120,4 +120,9 @@ class TradeLicence extends TradeParamModel    #Model
             )
             ->firstOrFail();
     }
+
+    public function getPendingApplication()
+    {
+        return $this->hasOne(ActiveTradeLicence::class,"trade_id","id");
+    }
 }

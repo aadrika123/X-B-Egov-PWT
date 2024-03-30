@@ -38,6 +38,7 @@ use App\Models\Property\ZoneMaster;
 use App\Models\Trade\ActiveTradeOwner;
 use App\Models\Trade\AkolaTradeParamItemType;
 use App\Models\Trade\RejectedTradeOwner;
+use App\Models\Trade\TradeRenewal;
 use App\Models\Workflows\WfRoleusermap;
 use App\Traits\Trade\TradeTrait;
 
@@ -1379,7 +1380,7 @@ class TradeApplication extends Controller
         $mFramNameRegex = "/^[a-zA-Z0-9][a-zA-Z0-9\'\.\-\,\&\s\/]+$/i";
         $mOwnerName = "/^([a-zA-Z0-9]+)(\s[a-zA-Z0-9\.\,\']+)*$/i";
         $mMobileNo  = "/[0-9]{10}/";
-        $validator = Validator::make($request->all(), [
+        $rules = [
             "validFrom"             =>"required|date|date_format:Y-m-d",
             "validUpto"             => "required|date|date_format:Y-m-d|after:".$request->validFrom,            
             "firmEstdDate"          => "required|date|before_or_equal:".$request->validFrom,
@@ -1388,7 +1389,16 @@ class TradeApplication extends Controller
             "firmName"              => "required|regex:$mFramNameRegex",
             "firmType"              => "required|digits_between:1,9223372036854775807",
             "ownershipType"         => "required|digits_between:1,9223372036854775807",
-        ]);
+            "renewalHistory"        => "nullable|array",
+            "renewalHistory.*.validFrom"  => "required|date|date_format:Y-m-d|after_or_equal:".$request->validUpto,
+            "renewalHistory.*.validUpto"  => "required|date|date_format:Y-m-d|after_or_equal:".$request->validUpto,
+            "renewalHistory.*.applicationNo"  => "required",
+        ];
+        if(is_array($request->renewalHistory))
+        {
+            $rules["renewalHistory.0.validFrom"] = "required|date|date_format:Y-m-d|after_or_equal:".$request->validUpto;
+        }
+        $validator = Validator::make($request->all(), $rules);
     
         if ($validator->fails()) {
             return response()->json([
@@ -1398,6 +1408,20 @@ class TradeApplication extends Controller
             ], 200);
         }
         try{
+            $valid_from = $request->validFrom;
+            $valid_upto = $request->validUpto;
+            foreach(collect($request->renewalHistory) as $val)
+            {
+                if(Carbon::parse($valid_upto)->greaterThan(Carbon::parse($val["validFrom"])))
+                {
+                    throw new Exception("application no (".$val["applicationNo"].") valid from can not less than priveuse application valid upto (".$valid_upto.")");
+                }
+                if(Carbon::parse($val["validFrom"])->greaterThan(Carbon::parse($val["validUpto"])))
+                {
+                    throw new Exception("application no (".$val["applicationNo"].") valid from can not grater than valid upto(".$val["validUpto"].")");
+                }
+                $valid_upto = $val["validUpto"];
+            }
             $appId = $request->applicationId;
             $oldData = TradeLicence::find($appId);
             if(!$oldData){
@@ -1429,6 +1453,7 @@ class TradeApplication extends Controller
             $oldData->licence_for_years     = $yearDiff;
             $oldData->update_counter+=1;
             $oldData->update();            
+            $parentId = $this->insertHistory($oldData,$request);
             $this->commit();
             $message = "Application Updated ".trim(getNumberToSentence($oldData->update_counter)). ($oldData->update_counter >99 ? " times" : " time");            
             return responseMsg(true, $message, '');
@@ -1437,6 +1462,85 @@ class TradeApplication extends Controller
             $this->rollback();
             return responseMsg(false, $e->getMessage(), '');
         }
+    }
+
+    private function insertHistory(TradeLicence $oldData,Request $request)
+    {
+
+        $parentId = $oldData->id;
+        $tradId = $oldData->id;
+        $history = collect();
+        $owners = $oldData->owneres()->where("is_active",true)->get();
+        $apliedApplication = $oldData->getPendingApplication()->first();
+        foreach(collect($request->renewalHistory) as $key=>$val)
+        {                
+            
+            $yearDiffh = (int)round(Carbon::parse($val["validFrom"])->diffInDays(Carbon::parse($val["validUpto"]))/365); 
+            $Obj  = new ActiveTradeLicence();
+            $newObj = $oldData->replicate();
+            $newObj->valid_from = $val["validFrom"];                
+            $newObj->valid_upto = $val["validUpto"];
+            $newObj->license_date = $val["validFrom"];
+            $newObj->application_date = $val["validFrom"];
+            $newObj->application_no = $val["applicationNo"];
+            $newObj->application_type_id = 2;
+            $newObj->parent_ids = trim($parentId, ',');
+            $newObj->trade_id = $tradId;
+            $newObj->licence_for_years     = $yearDiffh;
+
+            $newObj->setTable($Obj->getTable());
+            $newObj->save();
+
+            $parentId = $newObj->id.",".$parentId;
+            $tradId = $newObj->id;
+
+            if($key < (collect($request->renewalHistory)->count() -1))
+            {
+                $reniwal = $newObj->replicate();
+                $reniwal->setTable('trade_renewals');
+                $reniwal->id = $newObj->id;
+                $reniwal->is_active = true;
+                $reniwal->save();
+                $history->push($reniwal);
+            }
+            if($key == (collect($request->renewalHistory)->count() -1)) 
+            {
+                $las = $newObj->replicate();
+                $las->setTable($oldData->getTable());
+                $las->id = $newObj->id;
+                $las->save();
+
+                $las2 = $oldData->replicate();
+                $las2->setTable("trade_renewals");
+                $las2->id = $oldData->id;
+                $las2->is_active = true;
+                $las2->save();
+
+                $oldData->forceDelete();
+                $history->push($newObj);
+            }  
+            $ownerObj = new ActiveTradeOwner();
+            $owners->map(function($owner) use($ownerObj,$tradId){
+                $newOwner = $owner->replicate();
+                $newOwner->setTable($ownerObj->getTable());
+                $newOwner->temp_id = $tradId;
+                $newOwner->save();  
+                $newOwner->forceDelete(); 
+                $newOwner2 = $newOwner->replicate();                 
+                $newOwner2->setTable($owner->getTable());
+                $newOwner2->id = $newOwner->id;
+                $newOwner2->save();
+                
+            });           
+            $newObj->forceDelete();       
+        } 
+        if(collect($request->renewalHistory)->isNotEmpty() && $apliedApplication)    
+        {
+            $apliedApplication->trade_id = $tradId;
+            $apliedApplication->parent_ids = trim($parentId, ',');
+            $apliedApplication->update();
+        }
+        return $parentId;
     }
 
 }
