@@ -89,6 +89,73 @@ class PropertyController extends Controller
     }
 
     /**
+     * 
+     */
+    public function editApartment(Request $request)
+    {
+        try {
+            $validated = Validator::make(
+                $request->all(),
+                [
+                    'id'                    => 'required|digits_between:1,9223372036854775807',
+                    'apartmentCode'         => 'required',
+                    'apartmentName'         => 'required',
+                    'apartmentAddress'      => 'required',
+                    'waterHarvestingStatus' => 'required|boolean',
+                    'waterHarvestingImage'  => 'nullable|mimes:jpeg,png,jpg|max:2048',
+                    'aptImage'              => 'nullable|mimes:jpeg,png,jpg|max:2048',
+                    'ward'                  => 'required|digits_between:1,9223372036854775807',
+                    'category'              => 'required|digits_between:1,9223372036854775807',
+                    'blocks'                => 'nullable',
+                ]
+            );
+            if ($validated->fails())
+                return validationError($validated);
+
+            $docUpload = new DocUpload;
+            $user   = authUser($request);
+            $userId = $user->id ?? 0;
+            $ulbId  = $user->ulb_id ?? 0;
+            $apartment = $this->_APARTMENT_DTL::find($request->id);
+            if (!$apartment)
+                throw new Exception("No Apartment Found");
+
+            if ($request->file('waterHarvestingImage')) {
+                $refImageName = 'Har-' . Str::random(5) . '-' . date('His');
+                $file = $request->file('waterHarvestingImage');
+                $imageName = $docUpload->upload($refImageName, $file, 'Uploads/Property');
+                $request->request->add(['harvestingImage' => 'Uploads/Property/' . $imageName]);
+            }
+
+            if ($request->file('aptImage')) {
+                $refImageName = 'Apt-' . Str::random(5) . '-' . date('His');
+                $file = $request->file('aptImage');
+                $imageName = $docUpload->upload($refImageName, $file, 'Uploads/Property');
+                $request->request->add(['apartmentImage' => 'Uploads/Property/' . $imageName]);
+            }
+
+            $newRequest = [
+                'apt_code'                  => $request->apartmentCode ?? $apartment->apt_code,
+                'apartment_name'            => $request->apartmentName ?? $apartment->apartment_name,
+                'apartment_address'         => $request->apartmentAddress ?? $apartment->apartment_address,
+                'water_harvesting_status'   => $request->waterHarvestingStatus ?? $apartment->water_harvesting_status,
+                'wtr_hrvs_image_file_name'  => $request->harvestingImage ?? $apartment->wtr_hrvs_image_file_name,
+                'apt_image_file_name'       => $request->apartmentImage ?? $apartment->apt_image_file_name,
+                'ward_mstr_id'              => $request->ward ?? $apartment->ward_mstr_id,
+                'is_blocks'                 => $request->isBlocks ?? $apartment->is_blocks,
+                'no_of_block'               => $request->blocks ?? $apartment->no_of_block,
+                'category_type_mstr_id'     => $request->category ?? $apartment->category_type_mstr_id,
+            ];
+
+            $apartment->update($newRequest);
+
+            return responseMsg(true, "Record Updated", []);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), []);
+        }
+    }
+
+    /**
      * | 
      */
     public function apartmentList(Request $request)
