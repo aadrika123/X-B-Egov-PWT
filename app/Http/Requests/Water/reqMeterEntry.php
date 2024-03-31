@@ -55,9 +55,9 @@ class reqMeterEntry extends FormRequest
             $rules['document']                  = 'required|mimes:pdf,jpeg,jpg,png|max:2048';
             $rules['newMeterInitialReading']    = 'required';
         }
-        if (isset($this->connectionType) && $this->connectionType && $this->connectionType == $refMeterConnectionType['Fixed']) {
-            $rules['newMeterInitialReading'] = 'required';
-        }
+        // if (isset($this->connectionType) && $this->connectionType && $this->connectionType == $refMeterConnectionType['Fixed']) {
+        //     $rules['newMeterInitialReading'] = 'required';
+        // }
         if (isset($this->connectionType) && $this->connectionType && $this->connectionType == $refMeterConnectionType['Meter/Fixed']) {
             $rules['meterNo']               = 'required';
             $rules['document']              = 'required|mimes:pdf,jpeg,jpg,png|max:2048';
