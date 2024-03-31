@@ -3737,7 +3737,7 @@ class ReportController extends Controller
                                         COALESCE(sum(prop_transactions.amount),0)as total_tran_amount,
                                         COALESCE(sum(advance_amount),0)as advance_amount,
                                         COALESCE(sum(adjust_amount),0)as adjust_amount,
-                                        (COALESCE(sum(dtls.arrear_collection),0) + COALESCE(sum(penalty_rebate.penalty),0) - COALESCE(sum(adjust_amount),0)) as arrear_collection,
+                                        (COALESCE(sum(dtls.arrear_collection),0) + COALESCE(sum(penalty_rebate.penalty),0) - COALESCE(sum(penalty_rebate.shasti_rebate), 0) - COALESCE(sum(adjust_amount),0)) as arrear_collection,
                                         (COALESCE(sum(dtls.arrear_hh),0) ) as arrear_hh,
                                         (COALESCE(sum(dtls.current_hh),0) ) as current_hh,
                                         (COALESCE(sum(dtls.current_collection),0) -  COALESCE(sum(penalty_rebate.rebate),0)+COALESCE(sum(advance_amount),0))as current_collection
@@ -3746,9 +3746,9 @@ class ReportController extends Controller
                                         SELECT 
                                             prop_transactions.id,
                                             count(distinct prop_transactions.property_id) as total_prop,
-                                            sum(CASE WHEN prop_demands.fyear < '$currentfyear' THEN prop_tran_dtls.paid_total_tax ELSE 0 END) as arrear_collection,
+                                            sum(CASE WHEN prop_demands.fyear < '$currentfyear' THEN prop_tran_dtls.paid_total_tax  - paid_exempted_general_tax  ELSE 0 END) as arrear_collection,
                                             count(distinct CASE WHEN prop_demands.fyear < '$currentfyear' THEN prop_demands.property_id ELSE null END) as arrear_hh,
-                                            sum(CASE WHEN prop_demands.fyear = '$currentfyear' THEN prop_tran_dtls.paid_total_tax ELSE 0 END) as current_collection,
+                                            sum(CASE WHEN prop_demands.fyear = '$currentfyear' THEN prop_tran_dtls.paid_total_tax  - paid_exempted_general_tax ELSE 0 END) as current_collection,
                                             count(distinct CASE WHEN prop_demands.fyear = '$currentfyear' THEN prop_demands.property_id ELSE null END) as current_hh,
                                             sum(prop_tran_dtls.paid_total_tax) as paid_total_tax 
                                         FROM prop_transactions
@@ -3763,7 +3763,12 @@ class ReportController extends Controller
                                         SELECT 
                                             tran_id,
                                             sum(CASE WHEN is_rebate != true THEN prop_penaltyrebates.amount ELSE 0 END) as penalty,
-                                            sum(CASE WHEN is_rebate = true THEN prop_penaltyrebates.amount ELSE 0 END) as rebate
+                                            sum(
+                                                CASE WHEN is_rebate = true And head_name != 'Shasti Abhay Yojana' THEN prop_penaltyrebates.amount ELSE 0 END
+                                              ) as rebate, 
+                                              sum(
+                                                CASE WHEN is_rebate = true And head_name = 'Shasti Abhay Yojana' THEN prop_penaltyrebates.amount ELSE 0 END
+                                              ) as shasti_rebate 
                                         FROM prop_penaltyrebates
                                         JOIN prop_transactions ON prop_transactions.id = prop_penaltyrebates.tran_id
                                         WHERE prop_transactions.status IN (1,2) 
