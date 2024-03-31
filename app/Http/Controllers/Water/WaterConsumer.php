@@ -1945,6 +1945,10 @@ class WaterConsumer extends Controller
             $documentPath = $demandGenrationRes->original["data"];
             $oldFile = public_path()."/".($documentPath["relaivePath"]??"")."/".($documentPath["document"]??"");
             $neFileName =  public_path()."/".($documentPath["relaivePath"]??"")."/meter_doc"."/".($documentPath["document"]??"");
+            $meterDocPath = public_path()."/".($documentPath["relaivePath"]??"")."/meter_doc2";
+            if (!file_exists($meterDocPath)) {                
+                mkdir($meterDocPath, 0755);
+            }
             if(($documentPath["relaivePath"]??false) && copy($oldFile,$neFileName))
             {
                 $documentPath["relaivePath"] = $documentPath["relaivePath"]."/meter_doc";
