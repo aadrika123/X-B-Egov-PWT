@@ -17,6 +17,7 @@ use App\Models\Property\PropPropertyUpdateRequest;
 use App\Models\Property\PropSaf;
 use App\Models\Property\PropTransaction;
 use App\Models\Trade\TradeTransaction;
+use App\Models\UlbMaster;
 use App\Models\User;
 use App\Models\Water\WaterTran;
 use App\Repository\Common\CommonFunction;
@@ -2173,12 +2174,12 @@ class ReportController extends Controller
     {
         $todayDate = Carbon::now();
         $currentFy = getFY();
-        // $currentfyStartDate = $todayDate->startOfYear()->addMonths(3)->format("Y-m-d");
-        // $currentfyEndDate   = $todayDate->startOfYear()->addYears(1)->addMonths(3)->addDay(-1)->format("Y-m-d");
 
-        list($currentfyStartDate, $currentfyEndDate) = explode('-', getFY());
-        $currentfyStartDate = $currentfyStartDate . "-04-01";
-        $currentfyEndDate = $currentfyEndDate . "-03-31";
+        list($currentFyearFrom, $currentFyearEnd) = explode('-', getFY());
+        $currentfyStartDate = $currentFyearFrom . "-04-01";
+        $currentfyEndDate = $currentFyearEnd . "-03-31";
+        $privfyStartDate = ($currentFyearFrom-1) . "-04-01";
+        $privfyEndDate = ($currentFyearEnd-1) . "-03-31";
 
         $sql = "SELECT 
                         total_assessment.*, 
@@ -2188,20 +2189,11 @@ class ReportController extends Controller
                         total_props.*, 
                         total_occupancy_props.*,
                         property_use_type.*,
-                        -- total_vacant_land.*, 
-                        --pnding_3yrs.*,
-                        --pnding_2yrs.*,
-                        --pnding_1yrs.*,
-                        --outstandings_last_yr.*,
-                        --outstanding_current_yr.*,
-                        --mutations.*,
                         payments.*,
                         top_wards_collections.*,
                         top_area_safs.*,
                         area_wise_defaulter.*,
                         payment_modes.*,
-                        -- current_demand_collection.*,
-                        -- arrear_demand_collection.*
                         dcb_collection.*,
                         member_count.*
         
@@ -2388,29 +2380,6 @@ class ReportController extends Controller
                   WHERE 
                     status = 1 AND ulb_id=2
                 ) AS total_props, 
-                -- (
-                --   SELECT 
-                --     COUNT(id) AS total_vacant_land 
-                --   FROM 
-                --     prop_properties p 
-                --   WHERE 
-                --     p.prop_type_mstr_id = 4 
-                --     AND status = 1 AND ulb_id=2
-                -- ) AS total_vacant_land, 
-                -- (
-                --     SELECT SUM(total_tax-adjust_amt) AS arrear_demand_collection 
-                --             FROM prop_transactions t
-                --         JOIN prop_tran_dtls td ON td.tran_id=t.id AND td.status=1
-                --         JOIN prop_demands d ON d.id=td.prop_demand_id AND d.status=1
-                --         WHERE t.status=1 AND d.fyear<'2023-2024' AND t.tran_date BETWEEN '2023-04-01' AND '2024-03-31'
-                -- ) AS arrear_demand_collection, 
-                -- (
-                --     SELECT SUM(total_tax-adjust_amt) AS current_demand_collection
-                --         FROM prop_transactions t
-                --     JOIN prop_tran_dtls td ON td.tran_id=t.id AND td.status=1
-                --     JOIN prop_demands d ON d.id=td.prop_demand_id AND d.status=1
-                --     WHERE t.status=1 AND d.fyear='2023-2024' AND t.tran_date BETWEEN '2023-04-01' AND '2024-03-31'
-                -- ) AS current_demand_collection, 
 
                 (
                     SELECT  
@@ -2589,14 +2558,14 @@ class ReportController extends Controller
                           FROM 
                               (
                                   SELECT 
-                                   CASE WHEN tran_date BETWEEN '2022-04-01' AND '2023-03-31' THEN SUM(amount) END AS lastyr_pmt_amt,      -- Parameterize this for last yr fyear range date	
-                                   CASE WHEN tran_date BETWEEN '2022-04-01' AND '2023-03-31' THEN COUNT(id) END AS lastyr_pmt_cnt,		-- Parameterize this for last yr fyear range date
+                                   CASE WHEN tran_date BETWEEN '$privfyStartDate' AND '$privfyEndDate' THEN SUM(amount) END AS lastyr_pmt_amt,      -- Parameterize this for last yr fyear range date	
+                                   CASE WHEN tran_date BETWEEN '$privfyStartDate' AND '$privfyEndDate' THEN COUNT(id) END AS lastyr_pmt_cnt,		-- Parameterize this for last yr fyear range date
                             
                                    CASE WHEN tran_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate' THEN SUM(amount) END AS currentyr_pmt_amt,	-- Parameterize this for current yr fyear range date
                                    CASE WHEN tran_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate' THEN COUNT(id) END AS currentyr_pmt_cnt      -- Parameterize this for current yr fyear range date
                             
                               FROM prop_transactions
-                              WHERE tran_date BETWEEN '2022-04-01' AND '$currentfyEndDate' AND status=1	AND ulb_id=2			-- Parameterize this for last two yrs fyear range date
+                              WHERE tran_date BETWEEN '$privfyStartDate' AND '$currentfyEndDate' AND status=1	AND ulb_id=2			-- Parameterize this for last two yrs fyear range date
                               GROUP BY tran_date
                           ) AS payments
                 ) AS payments,
@@ -2783,21 +2752,21 @@ class ReportController extends Controller
                                    SUM(CASE WHEN UPPER(payment_mode)='ONLINE' THEN 1 ELSE 0 END) AS current_online_counts
 
                            FROM prop_transactions
-                           WHERE tran_date BETWEEN '2022-04-01' AND '2023-03-31'				-- Parameterize this for Past fyear range date
+                           WHERE tran_date BETWEEN '$privfyStartDate' AND '$privfyEndDate'				-- Parameterize this for Past fyear range date
                            AND status=1 AND ulb_id=2
                        ),
                     jsk_collections AS (													    -- Jsk Collections
 
                            SELECT 
-                             COALESCE(SUM(CASE WHEN (t.tran_date BETWEEN '2022-04-01' AND '2023-03-31') THEN t.amount ELSE 0 END),0) AS prev_year_jskcollection,    -- Parameterize this for Past fyear range date
-                             COALESCE(SUM(CASE WHEN (t.tran_date BETWEEN '2022-04-01' AND '2023-03-31') THEN 1 ELSE 0 END),0) AS prev_year_jskcount,                -- Parameterize this for Past fyear range date
+                             COALESCE(SUM(CASE WHEN (t.tran_date BETWEEN '$privfyStartDate' AND '$privfyEndDate') THEN t.amount ELSE 0 END),0) AS prev_year_jskcollection,    -- Parameterize this for Past fyear range date
+                             COALESCE(SUM(CASE WHEN (t.tran_date BETWEEN '$privfyStartDate' AND '$privfyEndDate') THEN 1 ELSE 0 END),0) AS prev_year_jskcount,                -- Parameterize this for Past fyear range date
                              COALESCE(SUM(CASE WHEN (t.tran_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate') THEN t.amount ELSE 0 END),0) AS current_year_jskcollection, -- Parameterize this for current fyear range date
                              COALESCE(SUM(CASE WHEN (t.tran_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate') THEN 1 ELSE 0 END),0) AS current_year_jskcount			  -- Parameterize this for current fyear range date
 
                           FROM prop_transactions t
                           JOIN users u ON u.id=t.user_id   
                           WHERE UPPER(u.user_type)='JSK' AND u.suspended=false  AND t.status=1
-                          AND t.tran_date BETWEEN '2022-04-01' AND '$currentfyEndDate'  AND t.ulb_id=2	-- Parameterize this for last two fyears
+                          AND t.tran_date BETWEEN '$privfyStartDate' AND '$currentfyEndDate'  AND t.ulb_id=2	-- Parameterize this for last two fyears
                   )
 
                        SELECT * FROM current_payments,lastyear_payments,jsk_collections
@@ -2805,7 +2774,6 @@ class ReportController extends Controller
         $data = $this->_DB_READ->select($sql);
         $data = $data[0];
         $mMplYearlyReport = new MplYearlyReport();
-        $currentFy = getFY();
 
         $tradedata = $this->tradedetails();
         $propdata = $this->propertydetails();
@@ -2843,18 +2811,6 @@ class ReportController extends Controller
             "utc_count" => $data->utc_count,
             "sh_count" => $data->sh_count,
 
-
-
-            // "count_not_paid_3yrs" => $data->pending_cnt_3yrs,
-            // "amount_not_paid_3yrs" => $data->amt_not_paid_3yrs,
-            // "count_not_paid_2yrs" => $data->pending_cnt_2yrs,
-            // "amount_not_paid_2yrs" => $data->amt_not_paid_2yrs,
-            // "count_not_paid_1yrs" => $data->pending_cnt_1yrs,
-            // "amount_not_paid_1yrs" => $data->amt_not_paid_1yrs,
-            // "demand_outstanding_this_year" => $data->outstanding_amt_curryear,
-            // "demand_outstanding_from_this_year_prop_count" => $data->outstanding_cnt_curryear,
-            // "demand_outstanding_coll_this_year" => $data->recoverable_demand_currentyr,
-
             "last_year_payment_amount" => $data->lastyr_pmt_amt,
             "last_year_payment_count" => $data->lastyr_pmt_cnt,
             "this_year_payment_count" => $data->currentyr_pmt_cnt,
@@ -2862,28 +2818,13 @@ class ReportController extends Controller
 
             "collection_against_current_demand" => $data->current_collection,
             "collection_againt_arrear_demand" => $data->arrear_collection,
-            // "mutation_this_year_count" => $data->current_yr_mutation_count,
-            // "assessed_property_this_year_achievement" => $data->outstanding_amt_lastyear,
-            // "assessed_property_this_year_achievement" => $data->outstanding_cnt_lastyear,
-            // "assessed_property_this_year_achievement" => $data->recoverable_demand_lastyear,
-
-            // "assessed_property_this_year_achievement" => $data->last_yr_mutation_count,
-
-            // "assessed_property_this_year_achievement" => $data->top_transaction_first_ward_no,
-            // "assessed_property_this_year_achievement" => $data->top_transaction_sec_ward_no,
-            // "assessed_property_this_year_achievement" => $data->top_transaction_third_ward_no,
-            // "assessed_property_this_year_achievement" => $data->top_transaction_forth_ward_no,
-            // "assessed_property_this_year_achievement" => $data->top_transaction_fifth_ward_no,
+            
             "top_area_property_transaction_ward1_count" => $data->top_transaction_first_ward_count,
             "top_area_property_transaction_ward2_count" => $data->top_transaction_sec_ward_count,
             "top_area_property_transaction_ward3_count" => $data->top_transaction_third_ward_count,
             "top_area_property_transaction_ward4_count" => $data->top_transaction_forth_ward_count,
             "top_area_property_transaction_ward5_count" => $data->top_transaction_fifth_ward_count,
-            // "assessed_property_this_year_achievement" => $data->top_transaction_first_ward_amt,
-            // "assessed_property_this_year_achievement" => $data->top_transaction_sec_ward_amt,
-            // "assessed_property_this_year_achievement" => $data->top_transaction_third_ward_amt,
-            // "assessed_property_this_year_achievement" => $data->top_transaction_forth_ward_amt,
-            // "assessed_property_this_year_achievement" => $data->top_transaction_fifth_ward_amt,
+            
 
             "top_area_saf_ward1_name" => $data->top_saf_first_ward_no,
             "top_area_saf_ward2_name" => $data->top_saf_sec_ward_no,
@@ -2911,26 +2852,6 @@ class ReportController extends Controller
             "top_defaulter_ward3_amount" => $data->defaulter_third_unpaid_amount,
             "top_defaulter_ward4_amount" => $data->defaulter_forth_unpaid_amount,
             "top_defaulter_ward5_amount" => $data->defaulter_fifth_unpaid_amount,
-
-            // "total_assessed_residential" => $data->applied_res_safs,
-            // "total_assessed_commercial" => $data->applied_comm_safs,
-            // "total_assessed_industrial" => $data->applied_industries_safs,
-            // "total_assessed_gbsaf" => $data->applied_gb_safs,
-            // "assessed_property_this_year_achievement" => $data->current_online_payment,
-            // "assessed_property_this_year_achievement" => $data->current_online_counts,
-            // "assessed_property_this_year_achievement" => $data->prev_year_jskcollection,
-            // "assessed_property_this_year_achievement" => $data->prev_year_jskcount,
-            // "assessed_property_this_year_achievement" => $data->current_year_jskcollection,
-            // "assessed_property_this_year_achievement" => $data->current_year_jskcount,
-            // "assessed_property_this_year_achievement" => $data->lastyear_cash_payment,
-            // "assessed_property_this_year_achievement" => $data->lastyear_cheque_payment,
-            // "assessed_property_this_year_achievement" => $data->lastyear_dd_payment,
-            // "assessed_property_this_year_achievement" => $data->lastyear_neft_payment,
-            // "assessed_property_this_year_achievement" => $data->lastyear_online_payment,
-            // "date" => $todayDate,
-            // "fyear" => "$currentFy",
-            // "ulb_id" => "2",
-            // "ulb_name" => "Akola Municipal Corporation",
 
 
             #trade
@@ -2984,8 +2905,7 @@ class ReportController extends Controller
             'prop_current_demand'  => $propdata->prop_current_demand,
             'prop_arrear_demand'  => $propdata->prop_arrear_demand,
             'prop_total_demand'  => $propdata->prop_total_demand,
-            //'prop_current_collection'  => $propdata->prop_current_collection,
-            //'prop_arrear_collection'  => $propdata->prop_arrear_collection,
+            
             'prop_total_collection'  => $propdata->prop_total_collection,
 
 
@@ -3037,14 +2957,22 @@ class ReportController extends Controller
             'd_market_total_hh'  => $marketdata->d_market_total_hh,
             'd_market_total_amount'  => $marketdata->d_market_total_amount
         ];
-
-        $mMplYearlyReport->where('fyear', $currentFy)
-            ->update($updateReqs);
-
+        if($mMplYearlyReport->where('fyear', $currentFy)->count("id"))
+        {
+            $sms ="Update";
+            $test = $mMplYearlyReport->where('fyear', $currentFy)
+                ->update($updateReqs);
+        }
+        else{
+            $sms ="Insert";
+            $ulbDtl = UlbMaster::find(2);
+            $updateReqs =array_merge($updateReqs,["fyear" => $currentFy,"ulb_id"=>2,"ulb_name"=>$ulbDtl->ulb_name??null]);
+            $test = $mMplYearlyReport->create($updateReqs)->id;
+        }
         // $updateReqs->push(["fyear" => "$currentFy"]);
         // $mMplYearlyReport->create($updateReqs);
 
-        dd("ok");
+        dd($sms);
     }
 
     /**
@@ -3057,6 +2985,11 @@ class ReportController extends Controller
      */
     public function tradedetails()
     {
+        list($currentFyearFrom, $currentFyearEnd) = explode('-', getFY());
+        $currentfyStartDate = $currentFyearFrom . "-04-01";
+        $currentfyEndDate = $currentFyearEnd . "-03-31";
+        $privfyStartDate = ($currentFyearFrom-1) . "-04-01";
+        $privfyEndDate = ($currentFyearEnd-1) . "-03-31";
         # total trade licences
         $sql_total_trade_license = "
                                     
@@ -3098,7 +3031,7 @@ class ReportController extends Controller
                                                 Null::numeric AS trade_lastyear_online_counts
                                     FROM payment_mode
                                     join trade_transactions on UPPER (trade_transactions.payment_mode) = payment_mode.payment_mode
-                                    WHERE tran_date BETWEEN '2023-04-01' AND '2024-03-31'					-- Parameterize this for current fyear range date
+                                    WHERE tran_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate'					-- Parameterize this for current fyear range date
                                         AND  status=1 
                                     group by ulb_id
                         
@@ -3125,7 +3058,7 @@ class ReportController extends Controller
 
                                     FROM payment_mode
                                     join trade_transactions on UPPER (trade_transactions.payment_mode) = payment_mode.payment_mode
-                                    WHERE tran_date BETWEEN '2022-04-01' AND '2023-03-31'					
+                                    WHERE tran_date BETWEEN '$privfyStartDate' AND '$privfyEndDate'					
                                         AND  status=1 
                                     group by ulb_id
 
@@ -3199,7 +3132,7 @@ class ReportController extends Controller
                                 ) AS trade_licences ON trade_licences.zone_id = zone_masters.id
                             LEFT JOIN trade_transactions ON trade_transactions.temp_id = trade_licences.id
                                 AND trade_transactions.status IN (1, 2) 
-                                AND trade_transactions.tran_date BETWEEN '2023-04-01' AND '2024-03-31' 
+                                AND trade_transactions.tran_date BETWEEN '$currentfyStartDate' AND '$currentfyEndDate' 
                             GROUP BY 
                                 zone_masters.id
         ";
@@ -3288,6 +3221,12 @@ class ReportController extends Controller
 
     public function propertydetails()
     {
+        $currentFy = getFY();
+        list($currentFyearFrom, $currentFyearEnd) = explode('-', $currentFy);
+        $currentfyStartDate = $currentFyearFrom . "-04-01";
+        $currentfyEndDate = $currentFyearEnd . "-03-31";
+        $privfyStartDate = ($currentFyearFrom-1) . "-04-01";
+        $privfyEndDate = ($currentFyearEnd-1) . "-03-31";
         # total trade licences
         $sql_property_under_assesment = "
                                     
@@ -3314,7 +3253,7 @@ class ReportController extends Controller
                 left join prop_properties on prop_properties.zone_mstr_id = zone_masters.id
                 left JOIN prop_transactions on prop_transactions.property_id = prop_properties.id
                 and prop_transactions.status IN (1, 2) 
-                    AND prop_transactions.tran_date between '2023-04-01' and '2024-03-31' 
+                    AND prop_transactions.tran_date between '$currentfyStartDate' and '$currentfyEndDate' 
                 GROUP BY 
                     zone_masters.id 
         ";
@@ -3322,12 +3261,12 @@ class ReportController extends Controller
         $sql_property_demand = "
                 select 
                 SUM(
-                    CASE WHEN prop_demands.fyear  = '2023-2024' then prop_demands.total_tax
+                    CASE WHEN prop_demands.fyear  = '$currentFy' then prop_demands.total_tax
                         ELSE 0
                         END
                 ) AS prop_current_demand,
                 SUM(
-                    CASE WHEN prop_demands.fyear < '2023-2024' then prop_demands.total_tax
+                    CASE WHEN prop_demands.fyear < '$currentFy' then prop_demands.total_tax
                         ELSE 0
                         END
                 ) AS prop_arrear_demand,
@@ -3339,7 +3278,7 @@ class ReportController extends Controller
         $sql_property_collection = "
              select sum(amount) AS prop_total_collection
              from prop_transactions
-             where prop_transactions.tran_date between '2023-04-01' and '2024-03-31' 
+             where prop_transactions.tran_date between '$currentfyStartDate' and '$currentfyEndDate' 
              and saf_id is  null
              and prop_transactions.status = 1
              ";
@@ -3412,6 +3351,13 @@ class ReportController extends Controller
 
     public function waterdetails()
     {
+        $currentFy = getFY();
+        list($currentFyearFrom, $currentFyearEnd) = explode('-', $currentFy);
+        $currentfyStartDate = $currentFyearFrom . "-04-01";
+        $currentfyEndDate = $currentFyearEnd . "-03-31";
+        $privfyStartDate = ($currentFyearFrom-1) . "-04-01";
+        $privfyEndDate = ($currentFyearEnd-1) . "-03-31";
+
         # total trade licences
         $sql_water_application_underprocess = "
                                                                             
@@ -3443,29 +3389,29 @@ class ReportController extends Controller
         $sql_water_demand = "
 
                         with demand as (
-                            select ulb_id,sum(case when demand_from >='2023-04-01' and demand_upto <='2024-03-31' then amount else 0 end) as current_demand,
-                            sum(case when demand_upto <'2023-04-01'then amount else 0 end) as arrear_demand,
+                            select ulb_id,sum(case when demand_from >='$currentfyStartDate' and demand_upto <='$currentfyEndDate' then amount else 0 end) as current_demand,
+                            sum(case when demand_upto <'$currentfyStartDate'then amount else 0 end) as arrear_demand,
                             sum(amount) as total_demand,count(distinct consumer_id) as total_consumer
                             from water_consumer_demands
-                            where status = true and demand_upto<'2024-03-31'
+                            where status = true and demand_upto<'$currentfyEndDate'
                             group by ulb_id
                             
                         ),
                         collection as (
                             
                             select water_consumer_demands.ulb_id, sum(water_tran_details.paid_amount) as total_collection,
-                                sum(case when water_consumer_demands.demand_from >='2023-04-01' 
-                                    and water_consumer_demands.demand_upto <='2024-03-31' 
+                                sum(case when water_consumer_demands.demand_from >='$currentfyStartDate' 
+                                    and water_consumer_demands.demand_upto <='$currentfyEndDate' 
                                     then water_tran_details.paid_amount else 0 
                                     end) as current_collection,
-                                sum(case when water_consumer_demands.demand_upto <'2023-04-01'
+                                sum(case when water_consumer_demands.demand_upto <'$currentfyStartDate'
                                     then water_tran_details.paid_amount else 0 
                                     end) as arrear_collection,
                                 count(distinct water_consumer_demands.consumer_id) as total_coll_consumer
                             from  water_tran_details
                             join water_consumer_demands on water_consumer_demands.id = 	water_tran_details.demand_id
                             join water_trans on water_trans.id = water_tran_details.tran_id
-                            where water_trans.tran_date between '2023-04-01' and '2024-03-31' and water_trans.status in(1,2)
+                            where water_trans.tran_date between '$currentfyStartDate' and '$currentfyEndDate' and water_trans.status in(1,2)
                                 and water_trans.tran_type = 'Demand Collection'
                                 and water_tran_details.status = 1
                             group by  water_consumer_demands.ulb_id
@@ -3476,7 +3422,7 @@ class ReportController extends Controller
                                 count(distinct water_trans.related_id) as total_prev_coll_consumer
                             from  water_tran_details
                             join water_trans on water_trans.id = water_tran_details.tran_id
-                            where water_trans.tran_date < '2023-04-01' and water_trans.status in(1,2)
+                            where water_trans.tran_date < '$currentfyStartDate' and water_trans.status in(1,2)
                                 and water_trans.tran_type = 'Demand Collection'
                             and water_tran_details.status = 1
                             group by  water_trans.ulb_id
@@ -3523,7 +3469,7 @@ class ReportController extends Controller
                             water_second_consumers ON water_second_consumers.zone_mstr_id = zone_masters.id 
                         left join water_trans on water_trans.related_id = water_second_consumers.id
                         and water_trans.status in (1,2)
-                        AND water_trans.tran_type = 'Demand Collection' and water_trans.tran_date  between '2023-04-01' and '2024-03-31' 
+                        AND water_trans.tran_type = 'Demand Collection' and water_trans.tran_date  between '$currentfyStartDate' and '$currentfyEndDate' 
                         GROUP BY 
                             zone_masters.id 
                         ";
@@ -3570,6 +3516,13 @@ class ReportController extends Controller
     public function marketdetails()
     {
 
+        $currentFy = getFY();
+        list($currentFyearFrom, $currentFyearEnd) = explode('-', $currentFy);
+        $currentfyStartDate = $currentFyearFrom . "-04-01";
+        $currentfyEndDate = $currentFyearEnd . "-03-31";
+        $privfyStartDate = ($currentFyearFrom-1) . "-04-01";
+        $privfyEndDate = ($currentFyearEnd-1) . "-03-31";
+
         $sql_market_zonal = "
                     select m_circle.id AS id,
                         CASE 
@@ -3591,7 +3544,7 @@ class ReportController extends Controller
                             JOIN mar_shop_payments on mar_shop_payments.shop_id = mar_shops.id
                                 where mar_shop_payments.shop_id = mar_shops.id
                                 and mar_shop_payments.is_active = '1'
-                                    AND mar_shop_payments.payment_date between '2023-04-01' and '2024-03-31'
+                                    AND mar_shop_payments.payment_date between '$currentfyStartDate' and '$currentfyEndDate'
                                     --and mar_shops.circle_id is null
                             ) mar_shops
                             on mar_shops.circle_id = m_circle.id
