@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 
 /**
- * | ✅✅Created by-Anshu Kumar
+ * | ✅✅Created by- Sandeep Bara
  * | Created for-Calculation of the tax By Created Property
  * | Status-Closed
  */
@@ -93,7 +93,7 @@ class CalculatePropNewTaxByPropId extends TaxCalculator
     {
         $this->_lastDemand = ($this->_propDtls->PropLastDemands());
         list($fromYear, $lastYear) = explode("-", $this->_lastDemand->fyear ?? getFY());        
-        $this->_calculationDateFrom = $lastYear . "-04-01";
+        $this->_calculationDateFrom = ($this->_lastDemand ? $lastYear : $fromYear). "-04-01";
     }
 
     public function readCalculatorParams()
@@ -113,6 +113,16 @@ class CalculatePropNewTaxByPropId extends TaxCalculator
         $this->generateFyearWiseTaxes();    // 4
 
         $this->generatePayableAmount();     // 5
+        $this->storeDemand();     // 6
+    }
+
+    public function storeDemand()
+    {
+        $tax = new SafApprovalBll();   
+        $tax->_activeSaf =  $this->_propDtls;    
+        $tax->_replicatedPropId = $this->_propDtls->id;
+        $tax->_calculateTaxByUlb = (object)(["_GRID"=>$this->_GRID]);
+        $tax->generatTaxAccUlTc();
     }
 
 }

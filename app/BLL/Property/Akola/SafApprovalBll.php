@@ -42,7 +42,7 @@ class SafApprovalBll
     private $_mPropActiveSaf;
     private $_mPropActiveSafOwner;
     private $_mPropActiveSafFloor;
-    private $_activeSaf;
+    public $_activeSaf;
     private $_ownerDetails;
     private $_floorDetails;
     private $_toBeProperties;
@@ -52,7 +52,7 @@ class SafApprovalBll
     private $_verifiedPropDetails;
     private $_verifiedFloors;
     private $_mPropFloors;
-    private $_calculateTaxByUlb;
+    public $_calculateTaxByUlb;
     public $_holdingNo;
     public $_ptNo;
     public $_famNo;

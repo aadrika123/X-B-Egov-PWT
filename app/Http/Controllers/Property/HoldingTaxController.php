@@ -1888,15 +1888,17 @@ class HoldingTaxController extends Controller
     public function genratePropNewTax(Request $request)
     {
         try{
-            $propList = PropProperty::where("status",1)->orderBy("id","DESC")->where("id",171749)->limit(10)->get();
+            $propList = PropProperty::where("status",1)->orderBy("id","DESC")->where("id",138475)->limit(10)->get();
             foreach($propList as $prop)
             {
+                DB::beginTransaction();
                 $propId = $prop->id;
                 $calculateByPropId = new \App\BLL\Property\Akola\CalculatePropNewTaxByPropId($propId);
-                dd($calculateByPropId->_GRID,$calculateByPropId->_lastDemand,Carbon::now()->format('Y-m-d'),Carbon::now()->endOfYear()->addMonths(3)->format('Y-m-d'),getFY());
+                dd($calculateByPropId->_GRID,$calculateByPropId->_lastDemand,Carbon::now()->format('Y-m-d'),Carbon::now()->endOfYear()->addMonths(3)->format('Y-m-d'),getFY(),$calculateByPropId->setCalculationDateFrom(),$calculateByPropId->_lastDemand);
             }
 
         }catch (Exception $e) {
+            DB::rollBack();
             return responseMsgs(false, [$e->getMessage(),$e->getFile(),$e->getLine()], "", "011613", "1.0", "", "POST", $request->deviceId ?? "");
         }
 
