@@ -178,7 +178,7 @@ class PropertyController extends Controller
                 'ward_name as ward_no',
                 'category'
             )
-                ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_apartment_dtls.id')
+                ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_apartment_dtls.ward_mstr_id')
                 ->join('zone_masters', 'zone_masters.id', 'ulb_ward_masters.zone')
                 ->join('ref_prop_categories', 'ref_prop_categories.id', 'prop_apartment_dtls.category_type_mstr_id')
                 ->orderBy('apartment_name')
