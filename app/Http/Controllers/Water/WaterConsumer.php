@@ -2930,7 +2930,7 @@ class WaterConsumer extends Controller
     public function gerateAutoFixedDemand(Request $request)
     {
         $excelData[] =[
-            "consumer_id","status","error",
+            "consumer_id","consumer No","status","error",
         ] ;
         try{        
             $newRequest = new Request([
@@ -2961,7 +2961,7 @@ class WaterConsumer extends Controller
             ]);
             $sql = "
                     with consumers as (
-                        select id 
+                        select id ,consumer_no
                         from water_second_consumers
                         where status =1
                     ),
@@ -2992,7 +2992,7 @@ class WaterConsumer extends Controller
                         or last_demands.demand_upto < (date_trunc('month',(date_trunc('month', now())- interval '1 month'))+ interval '1 month - 1 day')::date
                         )
                     order by demand_upto DESC
-                    limit 10
+                    --limit 10
             ";
             $data = $this->_DB->select($sql);
             foreach($data as $key=>$val)
@@ -3000,6 +3000,7 @@ class WaterConsumer extends Controller
                 $consumerId = $val->id;
                 $excelData[$key+1]=[
                     "consumer_id"=>$consumerId,
+                    "consumer_no" =>$val->consumer_no,
                     "status"=>"Succes",
                     "error"=>"",
                 ];
@@ -3015,7 +3016,7 @@ class WaterConsumer extends Controller
                     $this->rollback();
                     continue;
                 }
-                $this->commit();
+                $this->rollback();
                 echo("\n================status(".$excelData[$key+1]["status"].")===================\n");
             }
             $fileName =  Carbon::now()->format("Y-m-d_H_i_s_A_")."Fixed-consumer-Demand.xlsx" ;
