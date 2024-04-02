@@ -2163,11 +2163,11 @@ class HoldingTaxController extends Controller
     public function genratePropNewTax(Request $request)
     {
         $excelData[] =[
-            "prop_id","status","error","primaryError",
+            "prop id","Holding No","Property No","status","error","primaryError",
         ] ;
         try {
             $zoneId = 4;
-            $propList = PropProperty::select("prop_properties.id","prop_properties.area_of_plot")
+            $propList = PropProperty::select("prop_properties.id","prop_properties.holding_no","prop_properties.property_no","prop_properties.area_of_plot")
                         ->leftJoin("prop_demands",function($join){
                             $join->on("prop_demands.property_id","prop_properties.id")
                             ->where("prop_demands.status",1)
@@ -2188,6 +2188,8 @@ class HoldingTaxController extends Controller
                 $calculateByPropId = new \App\BLL\Property\Akola\CalculatePropNewTaxByPropId($propId);
                 $excelData[$key+1]=[
                     "prop_id"=>$propId,
+                    "holding_no"=>$prop->holding_no,
+                    "property_no"=>$prop->property_no,
                     "status"=>"Succes",
                     "error"=>"",
                     "primaryError"=>"",
