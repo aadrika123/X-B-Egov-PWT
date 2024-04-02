@@ -4,8 +4,9 @@ namespace App\Exports;
 
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class DataExport implements FromCollection
+class DataExport implements FromCollection , WithHeadings
 {
     /**
      * ========================================
@@ -13,8 +14,10 @@ class DataExport implements FromCollection
      *          Date       : 2024-03-30
      */
     private $_data = [];
-    public function __construct(array $data)
+    private $_headings = [];
+    public function __construct(array $data, array $headings = [])
     {
+        $this->_headings = $headings;
         $this->_data = $data;
         foreach($data as $key=>$val)
         {
@@ -32,5 +35,9 @@ class DataExport implements FromCollection
     public function collection()
     {
         return new Collection($this->_data);
+    }
+    public function headings(): array
+    {
+        return (!$this->_headings ? collect(collect($this->_data)->first())->keys() : collect($this->_headings))->toArray();
     }
 }

@@ -2178,7 +2178,7 @@ class HoldingTaxController extends Controller
                         ->orderBy("prop_properties.ward_mstr_id", "ASC")
                         ->orderBy("prop_properties.id", "DESC")
                         ->where("prop_properties.zone_mstr_id", $zoneId)
-                        // ->where("prop_properties.id", 169540)
+                        ->where("prop_properties.id", 172883)
                         // ->limit(1000)
                         ->get();
             
@@ -2190,7 +2190,7 @@ class HoldingTaxController extends Controller
                     "prop_id"=>$propId,
                     "holding_no"=>$prop->holding_no,
                     "property_no"=>$prop->property_no,
-                    "status"=>"Succes",
+                    "status"=>"Fail",
                     "error"=>"",
                     "primaryError"=>"",
                 ];
@@ -2204,12 +2204,13 @@ class HoldingTaxController extends Controller
                     $calculateByPropId->storeDemand(); 
                     DB::commit();
                     print_var($calculateByPropId->_GRID);
+                    $excelData[$key+1]["status"]="Success";
 
                 }
                 catch (Exception $e) {
                     DB::rollBack();
                     $calculateByPropId->testData();
-                    $errors = json_encode($calculateByPropId->_ERROR);
+                    $errors = "•".implode("\n •",$calculateByPropId->_ERROR);
                     $primaryError = $e->getMessage();
                     $excelData[$key+1]["status"]="Fail";
                     $excelData[$key+1]["error"]=$errors;

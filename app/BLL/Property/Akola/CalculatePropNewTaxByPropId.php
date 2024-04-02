@@ -196,53 +196,65 @@ class CalculatePropNewTaxByPropId extends TaxCalculator
         }
     }
 
+    public function insertRefValues($floor)
+    {
+        $floor->floor_name = ($this->_ref_prop_floors->where("id",$floor->floor_mstr_id)->first())->floor_name??"N/A";
+        $floor->usage_type = ($this->_ref_prop_usage_types->where("id",$floor->usage_type_mstr_id)->first())->usage_type??"N/A";
+        $floor->construction_type = ($this->_ref_prop_construction_types->where("id",$floor->const_type_mstr_id)->first())->construction_type??"N/A";
+        $floor->construction_type = ($this->_ref_prop_construction_types->where("id",$floor->const_type_mstr_id)->first())->construction_type??"N/A";
+        return $floor;
+    }
+
     public function testIndividualFloor($floor,$key)
     {
         if(!$floor)
         {
             return;
         }
+        $floor = $this->insertRefValues($floor);
         $floor = is_array($floor) ? $floor : collect($floor)->toArray();
+        $erFloorDtls = "($key)Floor No -".$floor["floor_name"]." Usage Type -".$floor["usage_type"]." Construction Type -".$floor["construction_type"]." Of ";
         if(!$floor["floor_mstr_id"]??true)
         {
-            $this->_ERROR["floor"][$key][]= (($floor["id"]??0)."/flo ")."floor mstr id is not available";
+           $erFloorDtls.="floor mstr id is not available ";
         }
         elseif(!in_array($floor["floor_mstr_id"],$this->_ref_prop_floors->pluck("id")->toArray()))
         {
-            $this->_ERROR["floor"][$key][]=  (($floor["id"]??0)."/flo ")."floor mstr id is invalid";
+            $erFloorDtls.="floor mstr id is invalid ";
         }
 
         if(!$floor["usage_type_mstr_id"]??true)
         {
-            $this->_ERROR["floor"][$key][]= (($floor["id"]??0)."/flo ")."floor usage type mstr id is not available";
+           $erFloorDtls.="floor usage type mstr id is not available ";
         }
         elseif(!in_array($floor["usage_type_mstr_id"],$this->_ref_prop_usage_types->pluck("id")->toArray()))
         {
-            $this->_ERROR["floor"][$key][]=  (($floor["id"]??0)."/flo ")."floor usage type mstr id is invalid";
+            $erFloorDtls.="floor usage type mstr id is invalid ";
         }
 
         if(!$floor["const_type_mstr_id"]??true)
         {
-            $this->_ERROR["floor"][$key][]= (($floor["id"]??0)."/flo ")."floor const type mstr id is not available";
+           $erFloorDtls.="floor const type mstr id is not available ";
         }
         elseif(!in_array($floor["const_type_mstr_id"],$this->_ref_prop_construction_types->pluck("id")->toArray()))
         {
-            $this->_ERROR["floor"][$key][]=  (($floor["id"]??0)."/flo ")."floor const type mstr id is invalid";
+            $erFloorDtls.="floor const type mstr id is invalid ";
         }
 
         if(!$floor["occupancy_type_mstr_id"]??true)
         {
-            $this->_ERROR["floor"][$key][]= (($floor["id"]??0)."/flo ")."floor occupancy type mstr id is not available";
+           $erFloorDtls.="floor occupancy type mstr id is not available ";
         }
         elseif(!in_array($floor["occupancy_type_mstr_id"],$this->_ref_prop_occupancy_types->pluck("id")->toArray()))
         {
-            $this->_ERROR["floor"][$key][]=  (($floor["id"]??0)."/flo ")."floor occupancy type mstr id is invalid";
+            $erFloorDtls.="floor occupancy type mstr id is invalid ";
         }
 
         if(!$floor["builtup_area"]??true)
         {
-            $this->_ERROR["floor"][$key][]= (($floor["id"]??0)."/flo ")."floor builtup area is not available";
+           $erFloorDtls.="floor builtup area is not available ";
         }
+        $this->_ERROR[]= $erFloorDtls;
     }
 
     public function testFloors()
