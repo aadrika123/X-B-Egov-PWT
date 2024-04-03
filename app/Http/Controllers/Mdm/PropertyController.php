@@ -168,6 +168,7 @@ class PropertyController extends Controller
                 'apt_code',
                 'apartment_name',
                 'apartment_address',
+                'no_of_block',
                 DB::raw("case when water_harvesting_status =0 then 'No'
                                 else 'Yes' end
                                 as water_harvesting_status,
