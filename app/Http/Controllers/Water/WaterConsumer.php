@@ -3016,7 +3016,7 @@ class WaterConsumer extends Controller
                     $this->rollback();
                     continue;
                 }
-                $this->rollback();
+                $this->commit();
                 echo("\n================status(".$excelData[$key+1]["status"].")===================\n");
             }
             $fileName =  Carbon::now()->format("Y-m-d_H_i_s_A_")."Fixed-consumer-Demand.xlsx" ;

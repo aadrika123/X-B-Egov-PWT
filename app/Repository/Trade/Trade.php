@@ -3358,6 +3358,7 @@ class Trade implements ITrade
                     "payment_mode",
                     "paid_amount",
                     "penalty",
+                    "rate_id",
                     "trade_transactions.id",
                     "trade_cheque_dtls.cheque_no",
                     "trade_cheque_dtls.bank_name",
@@ -3377,6 +3378,8 @@ class Trade implements ITrade
             {
                 $this->temCalValidity($application);
             }
+            $rate_ids = explode(",",($transaction->rate_id??"0"));
+            $rates = $this->_MODEL_AkolaTradeParamLicenceRate->whereIn("id",$rate_ids)->sum("rate");
             $penalty = TradeFineRebete::select("type", "amount")
                 ->where('tran_id', $transaction->id??0)
                 ->where("status", 1)
@@ -3403,7 +3406,8 @@ class Trade implements ITrade
                 $transaction->paid_amount = 0 ;
                 $transaction->id =0;
             }
-            $transaction->rate = number_format(($transaction->paid_amount - $pen), 2);
+            // $transaction->rate = number_format(($transaction->paid_amount - $pen), 2);
+            $transaction->rate = number_format(($rates), 2);
             $transaction->delay_fee = number_format($delay_fee, 2);
             $transaction->denial_fee = number_format($denial_fee, 2);
             $transaction->paid_amount_in_words = getIndianCurrency($transaction->paid_amount); 
@@ -3434,11 +3438,15 @@ class Trade implements ITrade
                     }
                     $pen += $val->amount;
                 }
+
+                $hrate_ids = explode(",",($Oltransaction->rate_id??"0"));
+                $hrates = $this->_MODEL_AkolaTradeParamLicenceRate->whereIn("id",$hrate_ids)->sum("rate");
                     
                 $history->tran_no = $Oltransaction? $Oltransaction->tran_no :null;                
                 $history->application_type = ($history->applicationType()->first())->application_type??null;
                 $history->tran_date = $Oltransaction? Carbon::parse($Oltransaction->tran_date)->format("d-m-Y") :null;
-                $history->rate = $Oltransaction ? number_format(($Oltransaction->paid_amount - $pen), 2): 0;
+                // $history->rate = $Oltransaction ? number_format(($Oltransaction->paid_amount - $pen), 2): 0;
+                $history->rate = number_format(($hrates), 2);
                 $history->paid_amount = $Oltransaction ? number_format(($Oltransaction->paid_amount), 2): 0 ;
                 $history->delay_fee = $delay_fee;
                 $history->denial_fee = $denial_fee;
