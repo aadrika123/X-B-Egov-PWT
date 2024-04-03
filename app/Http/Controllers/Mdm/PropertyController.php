@@ -168,10 +168,12 @@ class PropertyController extends Controller
                 'apt_code',
                 'apartment_name',
                 'apartment_address',
+                'no_of_block',
                 DB::raw("case when water_harvesting_status =0 then 'No'
                                 else 'Yes' end
                                 as water_harvesting_status,
-                    concat('$docUrl/',wtr_hrvs_image_file_name) as wtr_hrvs_image_file_name,
+                        case when  water_harvesting_status =0 then '' else 
+                    concat('$docUrl/',wtr_hrvs_image_file_name) end as wtr_hrvs_image_file_name,
                     concat('$docUrl/',apt_image_file_name) as apt_image_file_name
                 "),
                 'zone_name as zone',
