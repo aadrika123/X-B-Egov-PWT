@@ -75,8 +75,8 @@ class Report implements IReport
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         try {
             $refUser        = Auth()->user();
-            $refUserId      = $refUser->id;
-            $ulbId          = $refUser->ulb_id;
+            $refUserId      = $refUser->id??0;
+            $ulbId          = $refUser->ulb_id??2;
             $wardId = null;
             $userId = null;
             $zoneId = null;

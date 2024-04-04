@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Water;
 
 use App\BLL\Water\WaterConsumerDemandReceipt;
 use App\BLL\Water\WaterMonthelyCall;
+use App\Exports\DataExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Water\reqDeactivate;
 use App\Http\Requests\Water\reqMeterEntry;
@@ -58,6 +59,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\CssSelector\Node\FunctionNode;
 
 class WaterConsumer extends Controller
@@ -2922,6 +2924,109 @@ class WaterConsumer extends Controller
         }
         catch(Exception $e){
 
+        }
+    }
+
+    public function gerateAutoFixedDemand(Request $request)
+    {
+        $excelData[] =[
+            "consumer_id","consumer No","status","error",
+        ] ;
+        try{        
+            $newRequest = new Request([
+                "auth" => [
+                    "id" => 18,
+                    "user_name" => null,
+                    "mobile" => null,
+                    "email" => "stateadmin@gmail.com",
+                    "email_verified_at" => null,
+                    "user_type" => "Admin",
+                    "ulb_id" => 2,
+                    "suspended" => false,
+                    "super_user" => null,
+                    "description" => "asdf",
+                    "workflow_participant" => false,
+                    "photo_relative_path" => null,
+                    "photo" => null,
+                    "sign_relative_path" => null,
+                    "signature" => null,
+                    "old_ids" => null,
+                    "name" => "STATE ADMIN",
+                    "old_password" => null,
+                    "user_code" => null,
+                    "alternate_mobile" => null,
+                    "address" => null,
+                    "max_login_allow" => 10,
+                ]
+            ]);
+            $sql = "
+                    with consumers as (
+                        select id ,consumer_no
+                        from water_second_consumers
+                        where status =1
+                    ),
+                    fixed_consumer as (
+                        select water_consumer_meters.consumer_id,connection_type
+                        from water_consumer_meters
+                        where id in(
+                            select max(water_consumer_meters.id) as max_id
+                            from water_consumer_meters
+                            join consumers on consumers.id = water_consumer_meters.consumer_id
+                            where water_consumer_meters.status =1
+                            group by consumers.id
+                        )
+                        AND connection_type =3
+                    ),
+                    last_demands as (
+                        select water_consumer_demands.consumer_id,max(demand_upto) as demand_upto
+                        from water_consumer_demands
+                        left join fixed_consumer on fixed_consumer.consumer_id = water_consumer_demands.consumer_id
+                        where status =true
+                        group by water_consumer_demands.consumer_id
+                    )
+                    select *
+                    from consumers
+                    join fixed_consumer on fixed_consumer.consumer_id = consumers.id
+                    left join last_demands on last_demands.consumer_id = consumers.id
+                    where (last_demands.consumer_id is null 
+                        or last_demands.demand_upto < (date_trunc('month',(date_trunc('month', now())- interval '1 month'))+ interval '1 month - 1 day')::date
+                        )
+                    order by demand_upto DESC
+                    --limit 10
+            ";
+            $data = $this->_DB->select($sql);
+            foreach($data as $key=>$val)
+            {
+                $consumerId = $val->id;
+                $excelData[$key+1]=[
+                    "consumer_id"=>$consumerId,
+                    "consumer_no" =>$val->consumer_no,
+                    "status"=>"Succes",
+                    "error"=>"",
+                ];
+                echo("\n\n=============index($key [$consumerId])=========\n\n");
+                $newRequest->merge(["consumerId"=>$consumerId]);
+                $this->begin();
+                $respons = $this->saveGenerateConsumerDemand($newRequest);
+                $respons = $respons->original;                
+                if(!$respons["status"])
+                {
+                    $excelData[$key+1]["status"] = "Fail";
+                    $excelData[$key+1]["error"] = $respons["message"];
+                    $this->rollback();
+                    continue;
+                }
+                $this->commit();
+                echo("\n================status(".$excelData[$key+1]["status"].")===================\n");
+            }
+            $fileName =  Carbon::now()->format("Y-m-d_H_i_s_A_")."Fixed-consumer-Demand.xlsx" ;
+            Excel::store(new DataExport($excelData), $fileName,"public");
+            echo("demand genrated=====>file====>".$fileName);
+        }
+        catch(Exception $e)
+        {
+           $this->rollback();
+           dd($e->getMessage());
         }
     }
 }

@@ -94,7 +94,8 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('saf/generate-order-id', 'generateOrderId');                                            // Generate Order ID(14)
     Route::get('saf/prop-transactions', 'getPropTransactions');                                         // Get Property Transactions(17)
     Route::post('saf/site-verification', 'siteVerification');                                           // Ulb TC Site Verification(18)
-    Route::post('saf/geotagging', 'geoTagging');                                                        // Geo Tagging(19)
+    Route::post('saf/geotagging', 'geoTagging');
+    Route::post("saf/get-uploaded-geotagging","getUploadedGeoTagging") ;                                                       // Geo Tagging(19)
     Route::post('saf/get-tc-verifications', 'getTcVerifications');                                      // Get TC Verifications  Data(20)
     Route::post('saf/proptransaction-by-id', 'getTransactionBySafPropId');                              // Get Property Transaction by Property ID or SAF id(22)
     Route::post('saf/get-demand-by-id', 'getDemandBySafId');                                            // Get the demandable Amount of the Property from Admin Side(26)

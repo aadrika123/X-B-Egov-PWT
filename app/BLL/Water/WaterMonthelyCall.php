@@ -621,7 +621,7 @@ class WaterMonthelyCall
         {
             throw new Exception("the demand is generated Of this Quater ");
         }
-        if($totalDayDiff<45)
+        if($this->_meterStatus=="Meter" && $totalDayDiff<45)
         {
             throw new Exception("Total Deference Between prevues demand and current date should be mini 45 days ");
         } 

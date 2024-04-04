@@ -348,7 +348,7 @@ class ApplySafController extends Controller
         if ($assessmentType == 'Bifurcation') {
             $floorDetail = collect($floorDetail)->whereNotNull('propFloorDetailId');
 
-            foreach ($floorDetail as $requestFloor) {
+            foreach ($floorDetail as $index => $requestFloor) {
                 $propFloorDtls = $mPropFloors::find($requestFloor['propFloorDetailId']);
                 $safFloorDtls  = PropActiveSafsFloor::where('prop_floor_details_id', $requestFloor['propFloorDetailId'])->where('status', 1)->get();
                 $currentFloorArea  = $requestFloor['biBuildupArea'];
@@ -357,7 +357,7 @@ class ApplySafController extends Controller
                 $newAreaOfPlot  = $propFloorArea - $safFloorArea;
 
                 if (($safFloorArea + $currentFloorArea) > $propFloorArea)
-                    throw new Exception("You have excedeed the floor area. Please insert plot area below " . $newAreaOfPlot . " of floor id " . $requestFloor['propFloorDetailId']);
+                    throw new Exception("You have excedeed the floor area. Please insert plot area below " . $newAreaOfPlot . " of floor " . $index+1);
             }
         }
     }

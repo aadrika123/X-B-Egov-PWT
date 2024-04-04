@@ -95,6 +95,7 @@ class GeneratePaymentReceiptV2
             $trans = $this->_mPropTransaction->getPropByTranPropId($this->_tranNo);
 
         $this->_trans = $trans;
+        $currentFyear = getFY($this->_trans->tran_date);
         if (collect($trans)->isEmpty())
             throw new Exception("Transaction Not Available for this Transaction No");
 

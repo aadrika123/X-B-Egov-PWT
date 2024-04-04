@@ -3848,6 +3848,35 @@ class ActiveSafController extends Controller
         }
     }
 
+
+    public function getUploadedGeoTagging(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            ['applicationId' => 'required']
+        );
+        if ($validated->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validated->errors()
+            ], 200);
+        }
+        try {
+            $safId = $request->applicationId;
+            $data = array();
+            $geoTagging = PropSafGeotagUpload::where("saf_id", $safId)->get()->map(function ($val) {
+                $val->paths = Config::get('module-constants.DOC_URL') . "/" . $val->relative_path . "/" . $val->image_path;
+                return $val;
+            });
+            $data["geoTagging"] = $geoTagging;
+            return responseMsg(true, "GeoTaging Dtls", remove_null($data));
+        }catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+
+    }
+
     # code by sandeep bara 
     # date 31-01-2023
     // ----------start------------

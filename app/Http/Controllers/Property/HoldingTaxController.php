@@ -17,6 +17,7 @@ use App\BLL\Property\PostRazorPayPenaltyRebate;
 use App\BLL\Property\YearlyDemandGeneration;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
+use App\Exports\DataExport;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\ThirdPartyController;
 use App\Http\Requests\Property\ReqPayment;
@@ -61,6 +62,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
+use Maatwebsite\Excel\Facades\Excel;
 
 class HoldingTaxController extends Controller
 {
@@ -2160,18 +2162,70 @@ class HoldingTaxController extends Controller
 
     public function genratePropNewTax(Request $request)
     {
+        $excelData[] =[
+            "prop id","Holding No","Property No","status","error","primaryError",
+        ] ;
         try {
-            $propList = PropProperty::where("status", 1)->orderBy("id", "DESC")->where("id", 173912)->limit(10)->get();
-            foreach ($propList as $prop) {
-                DB::beginTransaction();
+            $zoneId = 4;
+            $propList = PropProperty::select("prop_properties.id","prop_properties.holding_no","prop_properties.property_no","prop_properties.area_of_plot")
+                        ->leftJoin("prop_demands",function($join){
+                            $join->on("prop_demands.property_id","prop_properties.id")
+                            ->where("prop_demands.status",1)
+                            ->where("prop_demands.fyear",getFY());
+                        })
+                        ->where("prop_properties.status", 1)
+                        ->whereNull("prop_demands.id")
+                        ->orderBy("prop_properties.ward_mstr_id", "ASC")
+                        ->orderBy("prop_properties.id", "DESC")
+                        ->where("prop_properties.zone_mstr_id", $zoneId)
+                        ->where("prop_properties.id", 172883)
+                        // ->limit(1000)
+                        ->get();
+            
+            foreach ($propList as $key=>$prop) {   
+                echo("\n\n\n===========index($key===> ".$prop->id." zone[$zoneId])==========\n\n\n");             
                 $propId = $prop->id;
                 $calculateByPropId = new \App\BLL\Property\Akola\CalculatePropNewTaxByPropId($propId);
-                $newDemand = PropDemand::where("property_id",$propId)->orderBy("fyear","DESC")->first();
-                DB::rollBack();
-                dd($calculateByPropId->_GRID, $calculateByPropId->_lastDemand, Carbon::now()->format('Y-m-d'), Carbon::now()->endOfYear()->addMonths(3)->format('Y-m-d'), getFY(), $calculateByPropId->setCalculationDateFrom(), $newDemand);
+                $excelData[$key+1]=[
+                    "prop_id"=>$propId,
+                    "holding_no"=>$prop->holding_no,
+                    "property_no"=>$prop->property_no,
+                    "status"=>"Fail",
+                    "error"=>"",
+                    "primaryError"=>"",
+                ];
+                try{
+                    if(!is_numeric($prop->area_of_plot))
+                    {
+                        throw new Exception("property plot of arrea is invalid");
+                    }
+                    $calculateByPropId->starts();
+                    DB::beginTransaction();
+                    $calculateByPropId->storeDemand(); 
+                    DB::commit();
+                    print_var($calculateByPropId->_GRID);
+                    $excelData[$key+1]["status"]="Success";
+
+                }
+                catch (Exception $e) {
+                    DB::rollBack();
+                    $calculateByPropId->testData();
+                    $errors = "•".implode("\n •",$calculateByPropId->_ERROR);
+                    $primaryError = $e->getMessage();
+                    $excelData[$key+1]["status"]="Fail";
+                    $excelData[$key+1]["error"]=$errors;
+                    $excelData[$key+1]["primaryError"]=$primaryError;
+                } 
+                echo("\n================status(".$excelData[$key+1]["status"].")===================\n");                
             }
+            $fileName =  Carbon::now()->format("Y-m-d_H_i_s_A_")."propDemand_Genration(".getFY()."_Z_$zoneId).xlsx" ;   
+            Excel::store(new DataExport($excelData), $fileName,"public");
+            echo("demand genrated=====>file====>".$fileName);
         } catch (Exception $e) {
             DB::rollBack();
+            $fileName =  Carbon::now()->format("Y-m-d_H_i_s_A_")."propDemand_Genration(".getFY()."_Z_$zoneId).xlsx" ;   
+            Excel::store(new DataExport($excelData), $fileName,"public");
+            echo("demand genrated=====>(last)file====>".$fileName);
             return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "", "011613", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }

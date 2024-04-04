@@ -108,22 +108,22 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(iSafRepository::class, SafRepository::class);
         $this->app->bind(iSafReassessRepo::class, SafReassessRepo::class);
         $this->app->bind(IPropertyDeactivate::class, PropertyDeactivate::class);
-        $this->app->bind(iRainWaterHarvesting::class, RainWaterHarvestingRepo::class);
+        // $this->app->bind(iRainWaterHarvesting::class, RainWaterHarvestingRepo::class);
         $this->app->bind(IPropertyBifurcation::class, PropertyBifurcation::class);
         $this->app->bind(iPropertyDetailsRepo::class, PropertyDetailsRepo::class);
-        $this->app->bind(iDocumentOperationRepo::class, DocumentOperationRepo::class);
-        $this->app->bind(iSafDemandRepo::class, SafDemandRepo::class);
+        // $this->app->bind(iDocumentOperationRepo::class, DocumentOperationRepo::class);
+        // $this->app->bind(iSafDemandRepo::class, SafDemandRepo::class);
         $this->app->bind(IReport::class, Report::class);
 
         //menu permission
 
         // Workflow Master
-        $this->app->bind(iWorkflowMasterRepository::class, WorkflowMasterRepository::class);
+        // $this->app->bind(iWorkflowMasterRepository::class, WorkflowMasterRepository::class);
         $this->app->bind(iWorkflowRoleRepository::class, WorkflowRoleRepository::class);
-        $this->app->bind(iWfWorkflowRepository::class, WfWorkflowRepository::class);
-        $this->app->bind(iWorkflowRoleMapRepository::class, WorkflowRoleMapRepository::class);
+        // $this->app->bind(iWfWorkflowRepository::class, WfWorkflowRepository::class);
+        // $this->app->bind(iWorkflowRoleMapRepository::class, WorkflowRoleMapRepository::class);
         $this->app->bind(iWorkflowRoleUserMapRepository::class, WorkflowRoleUserMapRepository::class);
-        $this->app->bind(iWorkflowWardUserRepository::class, WorkflowWardUserRepository::class);
+        // $this->app->bind(iWorkflowWardUserRepository::class, WorkflowWardUserRepository::class);
         $this->app->bind(iWorkflowMapRepository::class, WorkflowMap::class);
 
         // Grievance
