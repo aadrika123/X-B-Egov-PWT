@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ApiController;
 use App\Http\Controllers\Dashboard\JskController;
 use App\Http\Controllers\Mdm\PropertyController as MdmPropertyController;
 use App\Http\Controllers\Payment\BankReconcillationController;
@@ -574,6 +575,11 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('get-user-active-applications', 'getActiveApplications');
   });
 
+  
+//create by prity pandey
+Route::controller(ApiController::class)->group(function () {
+  Route::post('user-property-details', 'pushIGRData');
+});
   /**
    * =============MDM Crud===============
    *              created by : sandeep Bara
