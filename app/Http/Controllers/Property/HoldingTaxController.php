@@ -2178,12 +2178,12 @@ class HoldingTaxController extends Controller
                         ->orderBy("prop_properties.ward_mstr_id", "ASC")
                         ->orderBy("prop_properties.id", "DESC")
                         ->where("prop_properties.zone_mstr_id", $zoneId)
-                        ->where("prop_properties.id", 172883)
-                        // ->limit(1000)
+                        // ->where("prop_properties.id", 172883)
+                        // ->limit(10)
                         ->get();
-            
+            $total = $propList->count("id");
             foreach ($propList as $key=>$prop) {   
-                echo("\n\n\n===========index($key===> ".$prop->id." zone[$zoneId])==========\n\n\n");             
+                echo("\n\n\n===========index([".($total - $key)."] ****** $key===> ".$prop->id." zone[$zoneId])==========\n\n\n");             
                 $propId = $prop->id;
                 $calculateByPropId = new \App\BLL\Property\Akola\CalculatePropNewTaxByPropId($propId);
                 $excelData[$key+1]=[
@@ -2218,12 +2218,12 @@ class HoldingTaxController extends Controller
                 } 
                 echo("\n================status(".$excelData[$key+1]["status"].")===================\n");                
             }
-            $fileName =  Carbon::now()->format("Y-m-d_H_i_s_A_")."propDemand_Genration(".getFY()."_Z_$zoneId).xlsx" ;   
+            $fileName =  "Prop/".Carbon::now()->format("Y-m-d_H_i_s_A_")."propDemand_Genration(".getFY()."_Z_$zoneId).xlsx" ;   
             Excel::store(new DataExport($excelData), $fileName,"public");
             echo("demand genrated=====>file====>".$fileName);
         } catch (Exception $e) {
             DB::rollBack();
-            $fileName =  Carbon::now()->format("Y-m-d_H_i_s_A_")."propDemand_Genration(".getFY()."_Z_$zoneId).xlsx" ;   
+            $fileName =  "Prop/".Carbon::now()->format("Y-m-d_H_i_s_A_")."propDemand_Genration(".getFY()."_Z_$zoneId).xlsx" ;   
             Excel::store(new DataExport($excelData), $fileName,"public");
             echo("demand genrated=====>(last)file====>".$fileName);
             return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "", "011613", "1.0", "", "POST", $request->deviceId ?? "");
