@@ -180,7 +180,7 @@ class NewConnectionController extends Controller
             $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
                 ->whereIn('water_applications.current_role', $roleId)
                 // ->whereIn('water_applications.ward_id', $occupiedWards)
-                ->where('water_applications.is_escalate', false)
+                ->where('water_applications.is_escalate', false)    
                 ->where('water_applications.parked', false)
                 ->orderByDesc('water_applications.id')
                 ->get();
