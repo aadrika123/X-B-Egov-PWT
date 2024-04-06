@@ -17,6 +17,7 @@ use App\BLL\Property\PostRazorPayPenaltyRebate;
 use App\BLL\Property\YearlyDemandGeneration;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
+use App\Exceptions\UserException;
 use App\Exports\DataExport;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\ThirdPartyController;
@@ -2178,7 +2179,7 @@ class HoldingTaxController extends Controller
                         ->orderBy("prop_properties.ward_mstr_id", "ASC")
                         ->orderBy("prop_properties.id", "DESC")
                         ->where("prop_properties.zone_mstr_id", $zoneId)
-                        // ->where("prop_properties.id", 172883)
+                        ->where("prop_properties.id", 172883)
                         // ->limit(10)
                         ->get();
             $total = $propList->count("id");

@@ -153,31 +153,6 @@ class GeneratePaymentReceiptV2
                     $list->major_building = $paidTranDemands->paid_major_building;
                     $list->open_ploat_tax = $paidTranDemands->paid_open_ploat_tax;
                     $list->exempted_general_tax	 = $paidTranDemands->paid_exempted_general_tax??0	;
-                    // if ($list->is_full_paid == false || $list->has_partwise_paid == true) {                             // In Case of Part Payment Get the Paid demand by transaction paid Amount
-                    //     $paidTranDemands = collect($tranDtls)->where('prop_demand_id', $list->id)->first();
-                    //     $list->general_tax = $paidTranDemands->paid_general_tax;
-                    //     $list->road_tax = $paidTranDemands->paid_road_tax;
-                    //     $list->firefighting_tax = $paidTranDemands->paid_firefighting_tax;
-                    //     $list->education_tax = $paidTranDemands->paid_education_tax;
-                    //     $list->water_tax = $paidTranDemands->paid_water_tax;
-                    //     $list->cleanliness_tax = $paidTranDemands->paid_cleanliness_tax;
-                    //     $list->sewarage_tax = $paidTranDemands->paid_sewarage_tax;
-                    //     $list->tree_tax = $paidTranDemands->paid_tree_tax;
-                    //     $list->professional_tax = $paidTranDemands->paid_professional_tax;
-                    //     $list->total_tax = $paidTranDemands->paid_total_tax;
-                    //     $list->balance = $paidTranDemands->paid_balance;
-                    //     $list->tax1 = $paidTranDemands->paid_tax1;
-                    //     $list->tax2 = $paidTranDemands->paid_tax2;
-                    //     $list->tax3 = $paidTranDemands->paid_tax3;
-                    //     $list->sp_education_tax = $paidTranDemands->paid_sp_education_tax;
-                    //     $list->water_benefit = $paidTranDemands->paid_water_benefit;
-                    //     $list->water_bill = $paidTranDemands->paid_water_bill;
-                    //     $list->sp_water_cess = $paidTranDemands->paid_sp_water_cess;
-                    //     $list->drain_cess = $paidTranDemands->paid_drain_cess;
-                    //     $list->light_cess = $paidTranDemands->paid_light_cess;
-                    //     $list->major_building = $paidTranDemands->paid_major_building;
-                    //     $list->open_ploat_tax = $paidTranDemands->paid_open_ploat_tax;
-                    // }
                 }
                 $this->_GRID['penaltyRebates'] = $this->_mPropPenaltyRebates->getPenaltyRebatesHeads($trans->id, "Property");
             }
@@ -190,6 +165,7 @@ class GeneratePaymentReceiptV2
 
             $this->_GRID['arrearPenalty'] = collect($this->_GRID['penaltyRebates'])->where('head_name', 'Monthly Penalty')->first()->amount ?? 0;
             $this->_GRID['arrearPenaltyRebate'] = collect($this->_GRID['penaltyRebates'])->where('head_name', 'Shasti Abhay Yojana')->where("is_rebate",true)->first()->amount ?? 0;
+            $this->_GRID['quarterlyRebates'] = collect($this->_GRID['penaltyRebates'])->whereIn('head_name', ['First Quieter Rebate','Second Quieter Rebate','Third Quieter Rebate','Forth Quieter Rebate'])->where("is_rebate",true)->first()->amount ?? 0;
             $currentDemand = $demandsList->where('fyear', $currentFyear);
             $this->_currentDemand = $this->aggregateDemand($currentDemand, true);       // Current Demand true
             $this->_currentDemand['arrearPenalty'] = 0;
@@ -254,11 +230,13 @@ class GeneratePaymentReceiptV2
             if ($isCurrent == 0){
                 $arrearPenalty = roundFigure($this->_GRID['arrearPenalty']);              // 🔴🔴🔴 Condition Handled in case of other payments Receipt Purpose
                 $arrearPenaltyRebate = roundFigure($this->_GRID['arrearPenaltyRebate']);
+                $quarterlyRebates = roundFigure(0);
             }
             else
             {
                 $arrearPenalty = roundFigure(0);
                 $arrearPenaltyRebate = roundFigure(0);
+                $quarterlyRebates = roundFigure($this->_GRID['quarterlyRebates']);
             }
 
             $totalPayableAmt = $generalTax +
@@ -280,7 +258,7 @@ class GeneratePaymentReceiptV2
                 $spWaterCess +
                 $drainCess +
                 $lightCess +
-                $majorBuilding + $arrearPenalty +$openPloatTax - $arrearPenaltyRebate - $exceptionGeneralTax;
+                $majorBuilding + $arrearPenalty +$openPloatTax - $arrearPenaltyRebate - $exceptionGeneralTax -$quarterlyRebates;
 
             $totalPayableAmt = roundFigure($totalPayableAmt);
 
@@ -308,6 +286,7 @@ class GeneratePaymentReceiptV2
                 "major_building" => $majorBuilding,
                 "arrearPenalty" => $arrearPenalty,
                 "arrearPenaltyRebate" => $arrearPenaltyRebate,
+                "quarterlyRebates" => $quarterlyRebates,
                 "totalPayableAmt" => $totalPayableAmt,
                 "open_ploat_tax"=>$openPloatTax,
                 "total_tax" => $totalTax,

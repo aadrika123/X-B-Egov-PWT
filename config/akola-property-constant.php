@@ -7,6 +7,8 @@
  * | Status-Closed
  */
 
+use Carbon\Carbon;
+
 return [
     "RESIDENTIAL_USAGE_TYPE" => 45,
     "ARREAR_TILL_FYEAR" => "2022-2023",
@@ -35,5 +37,34 @@ return [
         "2020-2021"=>0.6,
         "2019-2020"=>0.4,
         "2018-2019"=>0.2,
+    ],
+    "FIRST_QUIETER_REBATE"=>[
+        "0"=>[
+            "rebate_type"=>"First Quieter Rebate",
+            "effective_from"=>"2024-04-01",
+            "from_date"=>Carbon::parse(Carbon::now()->format("Y")."-04-15")->format("Y-m-d"),
+            "upto_date"=>Carbon::parse(Carbon::now()->format("Y")."-05-14")->format("Y-m-d"),
+            "rebates"=>7,
+            "rebates_in_perc"=>true,
+            "apply_on_current_tax"=>true,
+        ],
+        "1"=>[
+            "rebate_type"=>"First Quieter Rebate",
+            "effective_from"=>"2024-04-01",
+            "from_date"=>Carbon::parse(Carbon::now()->format("Y")."-05-15")->format("Y-m-d"),
+            "upto_date"=>Carbon::parse(Carbon::now()->format("Y")."-06-14")->format("Y-m-d"),
+            "rebates"=>6,
+            "rebates_in_perc"=>true,
+            "apply_on_current_tax"=>true,
+        ],
+        "2"=>[
+            "rebate_type"=>"First Quieter Rebate",
+            "effective_from"=>"2024-04-01",
+            "from_date"=>Carbon::parse(Carbon::now()->format("Y")."-06-15")->format("Y-m-d"),
+            "upto_date"=>Carbon::parse(Carbon::now()->format("Y")."-07-14")->format("Y-m-d"),
+            "rebates"=>5,            
+            "rebates_in_perc"=>true,
+            "apply_on_current_tax"=>true,
+        ],
     ],
 ];

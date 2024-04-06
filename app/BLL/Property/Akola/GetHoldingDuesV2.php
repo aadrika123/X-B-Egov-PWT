@@ -11,6 +11,8 @@ use App\Models\Property\PropProperty;
 use App\Models\Property\RefPropSpecialRebateType;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -26,9 +28,14 @@ class GetHoldingDuesV2
     private $_TotalDisccountPer;
     private $_TotalDisccontAmt;
     public $_isSingleManArmedForce =false;
+    public $_QuaveryRebates;
     public function setParams($from = null,$upto = null)
     {
         $this->_SpecialOffers = (new RefPropSpecialRebateType())->specialRebate($from,$upto);
+        $this->_QuaveryRebates = collect(Config::get('akola-property-constant.FIRST_QUIETER_REBATE'))->where("effective_from","<=",Carbon::parse($from)->format("Y-m-d"))->where("upto_date",">=",Carbon::parse($from)->format("Y-m-d"))->where("from_date","<=",Carbon::parse($from)->format("Y-m-d"));
+        $this->_QuaveryRebates =  new Collection($this->_QuaveryRebates);
+        
+        
     }
     public function getDues($req)
     {
@@ -194,9 +201,23 @@ class GetHoldingDuesV2
             $val->rebates_amt = roundFigure($rebateAmt);
             return $val;
         });
+        $demand["QuarterlyRebates"] = $this->_QuaveryRebates->map(function($val)use($demand){
+            $rebateAmt = 0;
+            $rebate = 0;
+            if($val["apply_on_current_tax"]??false){
+                $rebate = $val["rebates_in_perc"] ? ($demand['currentDemand']/100) * $val["rebates"] : $val["rebates"];
+                $rebateAmt += $rebate;
+            }
+            $val["rebates_amt"] = roundFigure($rebateAmt);
+            return $val;
+        });
         $demand['currentDemandList']["shasti_abhay_yojan"] = 0;
         $demand['overdueDemandList']["shasti_abhay_yojan"] = roundFigure(collect($demand["rebates"])->where("rebate_type","Shasti Abhay Yojana")->sum("rebates_amt"));
         $demand['grandTaxes']["shasti_abhay_yojan"] = $demand['currentDemandList']["shasti_abhay_yojan"] + $demand['overdueDemandList']["shasti_abhay_yojan"];
+
+        $demand['currentDemandList']["first_quarter_rebates"] = roundFigure(collect($demand["QuarterlyRebates"])->where("rebate_type","First Quieter Rebate")->sum("rebates_amt"));
+        $demand['overdueDemandList']["first_quarter_rebates"] = 0;
+        $demand['grandTaxes']["first_quarter_rebates"] = $demand['currentDemandList']["first_quarter_rebates"] + $demand['overdueDemandList']["first_quarter_rebates"];
 
         $demand['currentDemandList']["totalPenalty"] = $demand['monthlyPenalty'];
         $demand['overdueDemandList']["totalPenalty"] = $demand['arrearMonthlyPenalty'];

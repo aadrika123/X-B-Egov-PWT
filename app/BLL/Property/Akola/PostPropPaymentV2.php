@@ -692,16 +692,7 @@ class PostPropPaymentV2
         // Adjust Demand on Part Payment
         if ($this->_REQ->paymentType == 'isPartPayment' && $this->_REQ->paidAmount < $this->_propCalculation->original['data']['payableAmt']) {
             $isPartWisePaid = true;                                                                                 // Flag has been kept for showing the partial payment receipt
-            $this->_REQ->merge(['amount' => $this->_REQ->paidAmount]);
-            // if ($this->_REQ->paidAmount > $this->_propCalculation->original['data']['arrearPayableAmt'])           // We have to adjust current demand
-            //     $this->currentDemandAdjust();
-            // elseif ($this->_REQ->paidAmount < $this->_propCalculation->original['data']['arrearPayableAmt'] && $this->_REQ->paidAmount > $this->_propCalculation->original['data']['totalInterestPenalty'])           // We have to adjust Arrear demand
-            //     $this->arrearDemandAdjust();
-            // else
-            //     throw new Exception("Part Payment in Monthly Interest Not Available");            
-            if ($this->_REQ->paidAmount < $this->_propCalculation->original['data']['totalInterestPenalty']) {
-                // throw new Exception("Part Payment in Monthly Interest Not Available");
-            }
+            $this->_REQ->merge(['amount' => $this->_REQ->paidAmount]); 
         }
 
         // Adjust Demand on Part Payment
@@ -734,7 +725,9 @@ class PostPropPaymentV2
 
         $demandData = $this->_propCalculation->original['data'];
         $rebats = collect($demandData["rebates"]??[]);
+        $firstQuaterRebats = collect($demandData["QuarterlyRebates"]??[]);
         $rebatsAmt =  $rebats->sum("rebates_amt");
+        $firstQuaterRebatsAmt =  $firstQuaterRebats->sum("rebates_amt");
 
         $payableAmount = $this->_REQ->paidAmount - $previousInterest;
 
@@ -818,6 +811,18 @@ class PostPropPaymentV2
         if($rebats->isNotEmpty())
         {
             foreach($rebats as $rebat)
+            {
+                $this->_Rebates[] = [
+                    "type"=>$rebat["rebate_type"],
+                    "isRebate"=>true,
+                    "amount"=>$rebat["rebates_amt"],
+                ];
+            }
+        }
+
+        if((round($reqPaidAmount) >= round($demandData['payableAmt'])))
+        {
+            foreach($firstQuaterRebats as $rebat)
             {
                 $this->_Rebates[] = [
                     "type"=>$rebat["rebate_type"],
@@ -1009,6 +1014,7 @@ class PostPropPaymentV2
         // $generatePaymentReceipt = new GeneratePaymentReceiptV2;                     // Version 2 Receipt
         // $generatePaymentReceipt->generateReceipt("", $propTrans['id']);
         // $receipt = $generatePaymentReceipt->_GRID;
+        // DB::rollBack();
         // dd($paidDemands,collect($paidDemands)->sum("paidTotalExemptedGeneralTax"),$receipt,$this->_REQ["paidAmount"],$this->_REQ["amount"],$thertyPerOfpreviousInterest);
         
         // sendsms
