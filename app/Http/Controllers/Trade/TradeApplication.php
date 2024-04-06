@@ -1394,7 +1394,7 @@ class TradeApplication extends Controller
             "renewalHistory.*.validUpto"  => "required|date|date_format:Y-m-d|after_or_equal:".$request->validUpto,
             "renewalHistory.*.applicationNo"  => "required",
         ];
-        if(is_array($request->renewalHistory))
+        if(is_array($request->renewalHistory) && $request->renewalHistory)
         {
             $rules["renewalHistory.0.validFrom"] = "required|date|date_format:Y-m-d|after_or_equal:".$request->validUpto;
         }
