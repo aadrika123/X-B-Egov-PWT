@@ -374,9 +374,9 @@ class ActiveSafController extends Controller
             $floars = $req->floor;
             $updateOwnerId = collect($mOwners)->whereNotNull("propOwnerDetailId")->unique("propOwnerDetailId")->pluck("propOwnerDetailId");
             $updateFloorId = collect($floars)->whereNotNull("propFloorDetailId")->unique("propFloorDetailId")->pluck("propFloorDetailId");
-
+$oldData =             $mPropSaf->find($req->id);
             DB::beginTransaction();
-            $mPropSaf->edit($req);                                                      // Updation SAF Basic Details
+            $mPropSaf->edit($req); dd($oldData,$mPropSaf->find($req->id));                                                     // Updation SAF Basic Details
 
             #deactivateOldOwners
             $deactivateOwner = $mPropSafOwners->where("saf_id", $safId)->update(["status" => 0]);

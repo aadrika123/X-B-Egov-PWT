@@ -10,7 +10,7 @@
 use Carbon\Carbon;
 
 return [
-    "RESIDENTIAL_USAGE_TYPE" => 45,
+    "RESIDENTIAL_USAGE_TYPE" => [34,36,45,52],
     "ARREAR_TILL_FYEAR" => "2022-2023",
     "ULB_TOTAL_TAXES" => 44,
     "LESS_PERSENTAGE_APPLY_WARD_IDS"=>[

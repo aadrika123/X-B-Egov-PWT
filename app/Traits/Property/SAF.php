@@ -510,11 +510,11 @@ trait SAF
         $useType =  collect($req)->pluck('useType');
         // Check Pure Residential
         $pureResidential = collect($useType)->every(function ($value) {
-            return $value == Config::get('akola-property-constant.RESIDENTIAL_USAGE_TYPE');
+            return in_array($value ,Config::get('akola-property-constant.RESIDENTIAL_USAGE_TYPE'));
         });
         // check Pure Commercial
         $pureCommercial = collect($useType)->every(function ($value) {
-            return $value != Config::get('akola-property-constant.RESIDENTIAL_USAGE_TYPE');
+            return !in_array($value,Config::get('akola-property-constant.RESIDENTIAL_USAGE_TYPE'));
         });
 
         if ($pureResidential == true)
@@ -534,11 +534,12 @@ trait SAF
         $useType =  collect($req)->pluck('usage_type_mstr_id');
         // Check Pure Residential
         $pureResidential = collect($useType)->every(function ($value) {
-            return $value == Config::get('akola-property-constant.RESIDENTIAL_USAGE_TYPE');
+            return in_array($value ,Config::get('akola-property-constant.RESIDENTIAL_USAGE_TYPE'));
         });
         // check Pure Commercial
         $pureCommercial = collect($useType)->every(function ($value) {
-            return $value != Config::get('akola-property-constant.RESIDENTIAL_USAGE_TYPE');
+            return !in_array($value ,Config::get('akola-property-constant.RESIDENTIAL_USAGE_TYPE'));
+            // return $value != Config::get('akola-property-constant.RESIDENTIAL_USAGE_TYPE');
         });
 
         if ($pureResidential == true)

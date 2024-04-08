@@ -192,7 +192,7 @@ class TaxCalculator
                 $sewerageTax = roundFigure($taxValue * 0.02);
                 $treeTax = roundFigure($taxValue * 0.01);
 
-                $isCommercial = ($item->usageType == $this->_residentialUsageType) ? false : true;                    // Residential usage type id
+                $isCommercial = (in_array($item->usageType,$this->_residentialUsageType)) ? false : true;                    // Residential usage type id
 
                 $stateTaxes = $this->readStateTaxes($floorBuildupArea, $isCommercial, $alv);                   // Read State Taxes(2.3)
 
