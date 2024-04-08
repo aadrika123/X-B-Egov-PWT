@@ -1257,6 +1257,8 @@ class ActiveSafController extends Controller
             if ($status = ((new \App\Repository\Property\Concrete\SafRepository())->applicationStatus($req->applicationId, true))) {
                 $data["current_role_name2"] = $status;
             }
+            $assessmentType = collect(Config::get("PropertyConstaint.ASSESSMENT-TYPE"))->flip();
+            $data["assessment_type_id"] =$assessmentType[$data["assessment_type"]]??null;
             $usertype = $this->_COMMONFUNCTION->getUserAllRoles();
             $testRole = collect($usertype)->whereIn("sort_name", Config::get("TradeConstant.CANE-CUTE-PAYMENT"));
             $data["can_take_payment"] = (collect($testRole)->isNotEmpty() && ($data["proccess_fee_paid"] ?? 1) == 0) ? true : false;

@@ -29,12 +29,19 @@ class GetHoldingDuesV2
     private $_TotalDisccontAmt;
     public $_isSingleManArmedForce =false;
     public $_QuaveryRebates;
+    public $_IsOldTranClear =true;
+
     public function setParams($from = null,$upto = null)
     {
         $this->_SpecialOffers = (new RefPropSpecialRebateType())->specialRebate($from,$upto);
         $this->_QuaveryRebates = collect(Config::get('akola-property-constant.FIRST_QUIETER_REBATE'))->where("effective_from","<=",Carbon::parse($from)->format("Y-m-d"))->where("upto_date",">=",Carbon::parse($from)->format("Y-m-d"))->where("from_date","<=",Carbon::parse($from)->format("Y-m-d"));
         $this->_QuaveryRebates =  new Collection($this->_QuaveryRebates);
         
+        
+    }
+
+    public function testOldTranClear()
+    {
         
     }
     public function getDues($req)
