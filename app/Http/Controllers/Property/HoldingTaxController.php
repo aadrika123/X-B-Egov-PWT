@@ -2167,7 +2167,7 @@ class HoldingTaxController extends Controller
             "prop id","Holding No","Property No","status","error","primaryError",
         ] ;
         try {
-            $zoneId = 4;
+            $zoneId = 1;
             $propList = PropProperty::select("prop_properties.id","prop_properties.holding_no","prop_properties.property_no","prop_properties.area_of_plot")
                         ->leftJoin("prop_demands",function($join){
                             $join->on("prop_demands.property_id","prop_properties.id")
@@ -2179,7 +2179,7 @@ class HoldingTaxController extends Controller
                         ->orderBy("prop_properties.ward_mstr_id", "ASC")
                         ->orderBy("prop_properties.id", "DESC")
                         ->where("prop_properties.zone_mstr_id", $zoneId)
-                        ->where("prop_properties.id", 172883)
+                        // ->where("prop_properties.id", 172883)
                         // ->limit(10)
                         ->get();
             $total = $propList->count("id");
