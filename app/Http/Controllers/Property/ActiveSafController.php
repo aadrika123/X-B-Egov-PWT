@@ -1235,6 +1235,15 @@ class ActiveSafController extends Controller
 
             $data = json_decode(json_encode($data), true);
 
+            $assessmentType = collect(Config::get("PropertyConstaint.ASSESSMENT-TYPE"))->flip();
+            $data["assessment_type_id"] =$assessmentType[$data["assessment_type"]]??null;
+            $flipArea = $data["bifurcated_from_plot_area"];
+            if(in_array($data["assessment_type_id"],[4]))
+            {
+                $data["bifurcated_from_plot_area"] = $data["area_of_plot"];
+                $data["area_of_plot"] = $flipArea;
+            }
+
             $ownerDtls = $mPropActiveSafOwner->getOwnersBySafId($data['id']);
             if (collect($ownerDtls)->isEmpty())
                 $ownerDtls = $mPropSafOwner->getOwnersBySafId($data['id']);
@@ -1244,6 +1253,15 @@ class ActiveSafController extends Controller
             if (collect($getFloorDtls)->isEmpty())
                 $getFloorDtls = $mPropSafsFloors->getFloorsBySafId($data['id']);
 
+            $getFloorDtls->map(function($val)use($data){
+                $flipArea = $val->bifurcated_from_buildup_area;
+                if(in_array($data["assessment_type_id"],[4]))
+                {
+                    $val->bifurcated_from_buildup_area = $val->builtup_area;
+                    $val->builtup_area = $flipArea;
+                }
+                return $val;
+            });
             $data['floors'] = $getFloorDtls;
             $data["tranDtl"] = $mPropTransaction->getSafTranList($data['id']);
             $data["userDtl"] = [
@@ -1257,8 +1275,6 @@ class ActiveSafController extends Controller
             if ($status = ((new \App\Repository\Property\Concrete\SafRepository())->applicationStatus($req->applicationId, true))) {
                 $data["current_role_name2"] = $status;
             }
-            $assessmentType = collect(Config::get("PropertyConstaint.ASSESSMENT-TYPE"))->flip();
-            $data["assessment_type_id"] =$assessmentType[$data["assessment_type"]]??null;
             $usertype = $this->_COMMONFUNCTION->getUserAllRoles();
             $testRole = collect($usertype)->whereIn("sort_name", Config::get("TradeConstant.CANE-CUTE-PAYMENT"));
             $data["can_take_payment"] = (collect($testRole)->isNotEmpty() && ($data["proccess_fee_paid"] ?? 1) == 0) ? true : false;

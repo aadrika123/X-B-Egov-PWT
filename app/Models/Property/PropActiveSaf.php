@@ -163,7 +163,7 @@ class  PropActiveSaf extends PropParamModel #Model
             'ownership_type_mstr_id' => $req->ownershipType,
             'prop_type_mstr_id' => $req->propertyType,
             'holding_type' => $req->holdingType,
-            'area_of_plot' => $req->areaOfPlot,
+            'area_of_plot' => isset($req->bifurcatedPlot) ? $req->bifurcatedPlot : $req->areaOfPlot,#$req->areaOfPlot,
             'zone_mstr_id' => $req->zone,
 
             'prop_state' => $req->propState,
