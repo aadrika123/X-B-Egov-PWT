@@ -643,6 +643,7 @@ Route::controller(HoldingTaxController::class)->group(function () {
   Route::post('payment-holding', 'paymentHolding');                                         // (04) Payment Holding (For Testing Purpose)
   Route::post('prop-payment-receipt', 'propPaymentReceipt');                                // (05) Generate Property Payment Receipt
   Route::post('independent/get-holding-dues', 'getHoldingDues');                            // (07) Property/ Holding Dues
+  Route::post('independent/bulk-get-holding-dues', 'bulkGetHoldingDues');                            // (07.1) Property/ Holding Dues
   Route::post('independent/generate-prop-orderid', 'generateOrderId');                      // (08) Generate Property Order ID
   Route::post('prop-payment-history', 'propPaymentHistory');                                // (06) Property Payment History
   Route::post('prop-ulb-receipt', 'proUlbReceipt');                                         // (09) Property Ulb Payment Receipt

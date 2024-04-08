@@ -1920,7 +1920,7 @@ class WaterConsumer extends Controller
             {
                 throw new Exception("old meter reading can not less than previouse reading");
             }
-            $removeDemand = collect($allUnpaidDemand)->where("demand_upto",">=",$request->connectionDate)->where("generation_date",">=",$request->connectionDate);
+            $removeDemand = collect($allUnpaidDemand)->where("demand_upto",">=",$request->connectionDate);#->where("generation_date",">=",$request->connectionDate);
             $demandRquest = new Request(
                 [
                 "consumerId"=>$consumerDtl->id,
@@ -1938,8 +1938,11 @@ class WaterConsumer extends Controller
                 $val->status = 0;
                 $val->save();
             }
+            $endOfPrivMonthEnd = Carbon::parse($request->connectionDate)->subMonth()->endOfMonth()->format("Y-m-d");
+            $lastDemand = $m_demand->akolaCheckConsumerDemand($consumerDtl->id)->get()->sortByDesc("demand_upto")->first();
+            $currentDemandUpdotoDate = Carbon::parse($lastDemand->demand_upto)->format("Y-m-d");
             $demandGenrationRes = $this->saveGenerateConsumerDemand($demandRquest);
-            if(!$demandGenrationRes->original["status"])
+            if(!$demandGenrationRes->original["status"] && ($endOfPrivMonthEnd > $currentDemandUpdotoDate))
             {
                 throw new Exception($demandGenrationRes->original["message"]);
             }

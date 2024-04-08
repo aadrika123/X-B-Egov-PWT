@@ -173,6 +173,60 @@ class HoldingTaxController extends Controller
         }
     }
 
+    public function bulkGetHoldingDues(Request $request)
+    {
+        try{
+            $perPage = $request->perPage ? $request->perPage : 50;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $limit = $perPage;
+            $offset =  $request->page && $request->page > 0 ? ($request->page - 1 * $perPage) : 0;
+            $where ="";
+            if($request->ward)
+            {
+                $where.=" AND ward_mstr_id = ".$request->ward ;
+            }
+            if($request->zone)
+            {
+                $where.=" AND zone_mstr_id = ".$request->zone ;
+            }
+            $sql = "
+                SELECT DISTINCT prop_demands.property_id 
+                FROM prop_demands
+                JOIN prop_properties on prop_properties.id = prop_demands.property_id
+                WHERE prop_demands.status = 1 AND prop_demands.balance>0
+                    $where
+                GROUP BY prop_demands.property_id
+                OFFSET $offset LIMIT $limit
+            ";
+            $sqlCont = "
+                SELECT COUNT(DISTINCT prop_demands.property_id) as count 
+                FROM prop_demands
+                JOIN prop_properties on prop_properties.id = prop_demands.property_id
+                WHERE prop_demands.status = 1 AND prop_demands.balance>0
+                    $where
+            ";
+            $count = (collect(DB::select($sqlCont))->first())->count;
+            $data = DB::select($sql);
+            $responseData = collect(["page"=>$page,"perPage"=>$perPage,"total"=>$count,"data"=>collect()]);
+            foreach($data as $key=>$val)
+            {
+                $propertyId = $val->property_id;
+                $newReq = new Request(["propId"=>$propertyId]);
+                $response = $this->getHoldingDues($newReq);
+                if(!$response->original["status"])
+                {
+                    continue;
+                }
+                $responseData["data"]->push($response->original["data"]);
+            }
+            return responseMsgs(true, "data fetched", $responseData , "011602", "1.0", "", "POST", $request->deviceId ?? "");
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false, $e->getMessage(), ['basicDetails' => $basicDtls ?? []], "011602", "1.0", "", "POST", $request->deviceId ?? "");
+        }
+    }
+
 
 
     /**
