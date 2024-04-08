@@ -29,6 +29,7 @@ class GetHoldingDuesV2
     private $_TotalDisccontAmt;
     public $_isSingleManArmedForce =false;
     public $_QuaveryRebates;
+    public $_QuaveryRebatesDtls;
     public $_IsOldTranClear =true;
 
     public function setParams($from = null,$upto = null)
@@ -36,6 +37,10 @@ class GetHoldingDuesV2
         $this->_SpecialOffers = (new RefPropSpecialRebateType())->specialRebate($from,$upto);
         $this->_QuaveryRebates = collect(Config::get('akola-property-constant.FIRST_QUIETER_REBATE'))->where("effective_from","<=",Carbon::parse($from)->format("Y-m-d"))->where("upto_date",">=",Carbon::parse($from)->format("Y-m-d"))->where("from_date","<=",Carbon::parse($from)->format("Y-m-d"));
         $this->_QuaveryRebates =  new Collection($this->_QuaveryRebates);
+        if($this->_QuaveryRebates)
+        {
+            $this->_QuaveryRebatesDtls = collect(Config::get('akola-property-constant.FIRST_QUIETER_REBATE'))->where("effective_from","<=",Carbon::parse($from)->format("Y-m-d"));
+        }
         
         
     }
@@ -216,6 +221,17 @@ class GetHoldingDuesV2
                 $rebateAmt += $rebate;
             }
             $val["rebates_amt"] = roundFigure($rebateAmt);
+            return $val;
+        });
+        $demand["QuarterlyRebatesDtls"] = collect($this->_QuaveryRebatesDtls)->map(function($val)use($demand){
+            $rebateAmt = 0;
+            $rebate = 0;
+            if($val["apply_on_current_tax"]??false){
+                $rebate = $val["rebates_in_perc"] ? ($demand['currentDemand']/100) * $val["rebates"] : $val["rebates"];
+                $rebateAmt += $rebate;                
+            }
+            $val["rebates_amt"] = roundFigure($rebateAmt);
+            $val["payableAmt"]=roundFigure($demand['payableAmt'] - $rebateAmt); 
             return $val;
         });
         $demand['currentDemandList']["shasti_abhay_yojan"] = 0;
