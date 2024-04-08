@@ -80,7 +80,7 @@ class CitizenHoldingController extends Controller
             $diffInMin = Carbon::parse(Carbon::parse())->diffInMinutes($reqData->created_at??null);
             if($reqData && $diffInMin < 5)
             {
-                throw new Exception("Please Wait ".(5-$diffInMin)." Minutes");
+                // throw new Exception("Please Wait ".(5-$diffInMin)." Minutes");
             }
             $user = Auth()->user()??null;
             $isCitizenUserType = $user ? $this->_COMONFUNCTION->checkUsersWithtocken("active_citizens") : true;
@@ -127,10 +127,12 @@ class CitizenHoldingController extends Controller
                 $rebatsAmt = roundFigure(collect($rebats)->where("is_applicable",true)->sum("rebates_amt"));
             }
             $paidTotalExemptedGeneralTax = $postPropPayment->testArmforceRebat();
+            $firstQuaterRebats = collect($demand["QuarterlyRebates"]??[]);
+            $firstQuaterRebatsAmt =  $firstQuaterRebats->sum("rebates_amt");
 
             $request->merge([
                 "rebate" =>$rebatsAmt,   
-                "amount" => round($request->paidAmount - $rebatsAmt - $paidTotalExemptedGeneralTax),
+                "amount" => round($request->paidAmount - $rebatsAmt - $paidTotalExemptedGeneralTax -$firstQuaterRebatsAmt),
                 "id"    => $request->propId,
                 "ulbId" => $demand["basicDetails"]["ulb_id"],
                 "demandList" => $demand["demandList"],

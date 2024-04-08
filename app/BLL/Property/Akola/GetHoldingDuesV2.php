@@ -217,7 +217,7 @@ class GetHoldingDuesV2
             $rebateAmt = 0;
             $rebate = 0;
             if($val["apply_on_current_tax"]??false){
-                $rebate = $val["rebates_in_perc"] ? ($demand['currentDemand']/100) * $val["rebates"] : $val["rebates"];
+                $rebate = $val["rebates_in_perc"] ? (($demand['currentDemandList']["general_tax"]??0)/100) * $val["rebates"] : $val["rebates"];
                 $rebateAmt += $rebate;
             }
             $val["rebates_amt"] = roundFigure($rebateAmt);
@@ -228,7 +228,7 @@ class GetHoldingDuesV2
             $rebateAmt = 0;
             $rebate = 0;
             if($val["apply_on_current_tax"]??false){
-                $rebate = $val["rebates_in_perc"] ? ($demand['currentDemand']/100) * $val["rebates"] : $val["rebates"];
+                $rebate = $val["rebates_in_perc"] ? (($demand['currentDemandList']["general_tax"]??0)/100) * $val["rebates"] : $val["rebates"];
                 $rebateAmt += $rebate;                
             }
             $val["rebates_amt"] = roundFigure($rebateAmt);
