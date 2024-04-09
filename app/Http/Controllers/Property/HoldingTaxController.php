@@ -181,13 +181,13 @@ class HoldingTaxController extends Controller
             $limit = $perPage;
             $offset =  $request->page && $request->page > 0 ? (($request->page - 1) * $perPage) : 0;
             $where ="";
-            if($request->ward)
+            if($request->wardId)
             {
-                $where.=" AND ward_mstr_id = ".$request->ward ;
+                $where.=" AND ward_mstr_id = ".$request->wardId ;
             }
-            if($request->zone)
+            if($request->zoneId)
             {
-                $where.=" AND zone_mstr_id = ".$request->zone ;
+                $where.=" AND zone_mstr_id = ".$request->zoneId ;
             }
             $sql = "
                 SELECT DISTINCT prop_demands.property_id 
