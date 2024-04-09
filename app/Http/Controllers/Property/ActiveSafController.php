@@ -1256,10 +1256,10 @@ class ActiveSafController extends Controller
                 $getFloorDtls = $mPropSafsFloors->getFloorsBySafId($data['id']);
 
             $getFloorDtls->map(function($val)use($data){
-                $flipArea = $val->bifurcated_from_buildup_area;
+                $flipArea = roundFigure($val->bifurcated_from_buildup_area);
                 if(in_array($data["assessment_type_id"],[4])  )
                 {
-                    $val->bifurcated_from_buildup_area = $val->builtup_area;
+                    $val->bifurcated_from_buildup_area = roundFigure($val->builtup_area);
                     $val->builtup_area = $flipArea;
                 }
                 return $val;
