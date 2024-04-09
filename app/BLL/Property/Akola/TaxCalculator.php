@@ -35,6 +35,7 @@ class TaxCalculator
     private $_agingPercs;
     private $_currentFyear;
     private $_residentialUsageType;
+    private $_govResidentialUsageType;
     private $_newForm;
     public $_oldUnpayedAmount;
     public $_lastDemand;
@@ -51,6 +52,7 @@ class TaxCalculator
         $this->_mRefPropConsTypes = new RefPropConstructionType();
         $this->_agingPercs = Config::get('PropertyConstaint.AGING_PERC');
         $this->_residentialUsageType = Config::get('akola-property-constant.RESIDENTIAL_USAGE_TYPE');
+        $this->_govResidentialUsageType = Config::get('akola-property-constant.GOV_USAGE_TYPE');
         $this->_LESS_PERSENTAGE_APPLY_WARD_IDS = Config::get('akola-property-constant.LESS_PERSENTAGE_APPLY_WARD_IDS');
     }
 
@@ -191,11 +193,14 @@ class TaxCalculator
                 $cleanlinessTax = roundFigure($taxValue * 0.02);
                 $sewerageTax = roundFigure($taxValue * 0.02);
                 $treeTax = roundFigure($taxValue * 0.01);
-
+                
                 $isCommercial = (in_array($item->usageType,$this->_residentialUsageType)) ? false : true;                    // Residential usage type id
 
                 $stateTaxes = $this->readStateTaxes($floorBuildupArea, $isCommercial, $alv);                   // Read State Taxes(2.3)
-
+                if(in_array($item->usageType,$this->_govResidentialUsageType))
+                {
+                    $educationTax  = 0 ;
+                }
                 $tax1 = 0;
                 $diffArrea = 0;
                 $doubleTax1 = ($generalTax + $roadTax + $firefightingTax + $educationTax
