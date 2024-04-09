@@ -356,11 +356,13 @@ class ActiveSafController extends Controller
             $oldSaf             = $mPropSaf->find($safId);
             $user               = Auth()->user();
             $userId             = $user->id ?? null;
+            $ulb_id             = $user->ulb_id??$req->ulbId;
             $assessmentType     = $req->assessmentType;
             if ($oldSaf->current_role != $oldSaf->initiator_role_id && !$oldSaf->parked) {
                 throw new Exception("Can not edit this application");
             }
 
+            $ulbWorkflowId = (new ApplySafController())->readAssessUlbWfId($req, $ulb_id); 
             $roadWidthType = $applysafController->readRoadWidthType($req->roadType);
             $mutationProccessFee = $applysafController->readProccessFee($req->assessmentType, $req->saleValue, $req->propertyType, $req->transferModeId);
             $metaReqs['holdingType'] = $applysafController->holdingType($req['floor']);
@@ -376,7 +378,7 @@ class ActiveSafController extends Controller
             $updateFloorId = collect($floars)->whereNotNull("propFloorDetailId")->unique("propFloorDetailId")->pluck("propFloorDetailId");
             $oldData =             $mPropSaf->find($req->id);
             DB::beginTransaction();
-            $mPropSaf->edit($req); dd($oldData,$mPropSaf->find($req->id));                                                     // Updation SAF Basic Details
+            $mPropSaf->edit($req);                                                   // Updation SAF Basic Details
 
             #deactivateOldOwners
             $deactivateOwner = $mPropSafOwners->where("saf_id", $safId)->update(["status" => 0]);

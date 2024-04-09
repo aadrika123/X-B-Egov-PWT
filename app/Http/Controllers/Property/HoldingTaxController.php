@@ -207,7 +207,8 @@ class HoldingTaxController extends Controller
             ";
             $count = (collect(DB::select($sqlCont))->first())->count;
             $data = DB::select($sql);
-            $responseData = collect(["page"=>$page,"perPage"=>$perPage,"total"=>$count,"data"=>collect()]);
+            $lastPage = ceil($count/$perPage);
+            $responseData = collect();
             foreach($data as $key=>$val)
             {
                 $propertyId = $val->property_id;
@@ -217,9 +218,15 @@ class HoldingTaxController extends Controller
                 {
                     continue;
                 }
-                $responseData["data"]->push($response->original["data"]);
+                $responseData->push($response->original["data"]);
             }
-            return responseMsgs(true, "data fetched", $responseData , "011602", "1.0", "", "POST", $request->deviceId ?? "");
+            $list = [
+                "current_page" => $page,
+                "last_page" => $lastPage,
+                "data" => $responseData,
+                "total" => $count,
+            ];
+            return responseMsgs(true, "data fetched", $list , "011602", "1.0", "", "POST", $request->deviceId ?? "");
         }
         catch(Exception $e)
         {
