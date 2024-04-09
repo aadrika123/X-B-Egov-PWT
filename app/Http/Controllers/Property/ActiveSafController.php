@@ -374,7 +374,7 @@ class ActiveSafController extends Controller
             $floars = $req->floor;
             $updateOwnerId = collect($mOwners)->whereNotNull("propOwnerDetailId")->unique("propOwnerDetailId")->pluck("propOwnerDetailId");
             $updateFloorId = collect($floars)->whereNotNull("propFloorDetailId")->unique("propFloorDetailId")->pluck("propFloorDetailId");
-$oldData =             $mPropSaf->find($req->id);
+            $oldData =             $mPropSaf->find($req->id);
             DB::beginTransaction();
             $mPropSaf->edit($req); dd($oldData,$mPropSaf->find($req->id));                                                     // Updation SAF Basic Details
 
@@ -1255,7 +1255,7 @@ $oldData =             $mPropSaf->find($req->id);
 
             $getFloorDtls->map(function($val)use($data){
                 $flipArea = $val->bifurcated_from_buildup_area;
-                if(in_array($data["assessment_type_id"],[4]))
+                if(in_array($data["assessment_type_id"],[4])  )
                 {
                     $val->bifurcated_from_buildup_area = $val->builtup_area;
                     $val->builtup_area = $flipArea;

@@ -179,7 +179,7 @@ class HoldingTaxController extends Controller
             $perPage = $request->perPage ? $request->perPage : 50;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $limit = $perPage;
-            $offset =  $request->page && $request->page > 0 ? ($request->page - 1 * $perPage) : 0;
+            $offset =  $request->page && $request->page > 0 ? (($request->page - 1) * $perPage) : 0;
             $where ="";
             if($request->ward)
             {
