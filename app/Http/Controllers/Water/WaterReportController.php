@@ -9,6 +9,7 @@ use App\Models\Water\WaterTran;
 use App\Traits\Water\WaterTrait;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Water\WaterConsumer as WaterWaterConsumer;
 use App\Models\UlbWardMaster;
 use App\Models\Water\WaterConsumer;
 use Illuminate\Support\Facades\Config;
@@ -3163,11 +3164,25 @@ class WaterReportController extends Controller
                     LIMIT $limit OFFSET $offset ";
             $countSql = $with . " SELECT COUNT(*) " . $from;
             $data = DB::connection('pgsql_water')->select(DB::raw($dataSql));
+            $WaterConsumerController = App::makeWith(WaterWaterConsumer::class,["IConsumer",IConsumer::class]);
+            $responseCollection = collect();
+            foreach($data as $val)
+            {
+                
+                $request->merge(["consumerId"=>$val->consumer_id]);
+                $response = $WaterConsumerController->getConsumerDemandsV2($request);
+                if(!$response->original["status"])
+                {
+                    continue;
+                }
+                $response = $response->original["data"];
+                $responseCollection->push($response);
+            }
             $total = (collect(DB::connection('pgsql_water')->select(DB::raw($countSql)))->first())->count ?? 0;
             $lastPage = ceil($total / $perPage);
             $list = [
                 "current_page" => $page,
-                "data" => $data,
+                "data" => $responseCollection,
                 "total" => $total,
                 "per_page" => $perPage,
                 "last_page" => ($total > 0 ? $lastPage - 1 : 1),
@@ -3175,6 +3190,67 @@ class WaterReportController extends Controller
             return responseMsgs(true, "", $list, $apiId, $version, $queryRunTime = NULL, $action, $deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
+    }
+
+    public function waterBulkdemandV4(colllectionReport $request)
+    {
+        try{
+            $perPage = $request->perPage ? $request->perPage : 50;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+            $limit = $perPage;
+            $offset =  $request->page && $request->page > 0 ? (($request->page - 1) * $perPage) : 0;
+            $where ="";
+            if($request->wardId)
+            {
+                $where.=" AND ward_mstr_id = ".$request->wardId ;
+            }
+            if($request->zoneId)
+            {
+                $where.=" AND zone_mstr_id = ".$request->zoneId ;
+            }
+            $sql = "
+                SELECT DISTINCT prop_demands.property_id 
+                FROM prop_demands
+                JOIN prop_properties on prop_properties.id = prop_demands.property_id
+                WHERE prop_demands.status = 1 AND prop_demands.balance>0
+                    $where
+                GROUP BY prop_demands.property_id
+                OFFSET $offset LIMIT $limit
+            ";
+            $sqlCont = "
+                SELECT COUNT(DISTINCT prop_demands.property_id) as count 
+                FROM prop_demands
+                JOIN prop_properties on prop_properties.id = prop_demands.property_id
+                WHERE prop_demands.status = 1 AND prop_demands.balance>0
+                    $where
+            ";
+            $count = (collect(DB::select($sqlCont))->first())->count;
+            $data = DB::select($sql);
+            $lastPage = ceil($count/$perPage);
+            $responseData = collect();
+            foreach($data as $key=>$val)
+            {
+                $propertyId = $val->property_id;
+                $newReq = new Request(["propId"=>$propertyId]);
+                $response = $this->getHoldingDues($newReq);
+                if(!$response->original["status"])
+                {
+                    continue;
+                }
+                $responseData->push($response->original["data"]);
+            }
+            $list = [
+                "current_page" => $page,
+                "last_page" => $lastPage,
+                "data" => $responseData,
+                "total" => $count,
+            ];
+            return responseMsgs(true, "data fetched", $list , "011602", "1.0", "", "POST", $request->deviceId ?? "");
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false, $e->getMessage(), ['basicDetails' => $basicDtls ?? []], "011602", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }
     /**\
