@@ -297,12 +297,20 @@ return [
      */
     "POINT20-TAXED-COMM-USAGE-TYPES" => [2, 4, 13, 17, 20, 22],
 
-    "CONSTRUCTION-TYPE" => [
-        "1" => "Pucca with RCC Roof (RCC)",
-        "2" => "Pucca with Asbestos/Corrugated Sheet (ACC)",
-        "3" => "Kuttcha with Clay Roof (Other)",
-    ],
+    // "CONSTRUCTION-TYPE" => [
+    //     "1" => "Pucca with RCC Roof (RCC)",
+    //     "2" => "Pucca with Asbestos/Corrugated Sheet (ACC)",
+    //     "3" => "Kuttcha with Clay Roof (Other)",
+    // ],
 
+    "CONSTRUCTION-TYPE" => [
+        "1" => "RCC Structure",
+        "2" => "Load Bearing",
+        "3" => "Tin Shed",
+        "4" =>  "Mud Structure",
+        "5" =>  "Slum",
+    ],
+    
     // Property Assessment Type
     "ASSESSMENT-TYPE" =>
     [
