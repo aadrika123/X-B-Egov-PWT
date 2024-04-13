@@ -271,7 +271,7 @@ class PropertyDetailsController extends Controller
                         break;
                     case ("gbsaf"):
                         $approved = $mPropSafs->searchGbSafs()
-                            ->where('prop_active_safs.pt_no',  $ptn);
+                            ->where('prop_safs.pt_no',  $ptn);
 
                         $active = $mPropActiveSaf->searchGbSafs()
                             ->where('prop_active_safs.pt_no',  $ptn);
@@ -317,7 +317,7 @@ class PropertyDetailsController extends Controller
                 switch ($key) {
                     case ("saf"):
                         $approved  = $mPropSafs->searchSafs()
-                            ->where('prop_active_safs.holding_no', $holding)
+                            ->where('prop_safs.holding_no', $holding)
                             ->groupby('prop_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
 
                         $active = $mPropActiveSaf->searchSafs()
@@ -328,7 +328,7 @@ class PropertyDetailsController extends Controller
                         break;
                     case ("gbsaf"):
                         $approved = $mPropSafs->searchGbSafs()
-                            ->where('prop_active_safs.holding_no', $holding);
+                            ->where('prop_safs.holding_no', $holding);
 
                         $active = $mPropActiveSaf->searchGbSafs()
                             ->where('prop_active_safs.holding_no', $holding);
