@@ -31,6 +31,7 @@ class GetHoldingDuesV2
     public $_QuaveryRebates;
     public $_QuaveryRebatesDtls;
     public $_IsOldTranClear =true;
+    public $_Today ;
 
     public function setParams($from = null,$upto = null)
     {
@@ -51,6 +52,7 @@ class GetHoldingDuesV2
     }
     public function getDues($req)
     {
+        $this->_Today = Carbon::parse($req->TrnDate)->format("Y-m-d");
         $this->setParams($req->TrnDate,$req->TrnDate);
         $mPropDemand = new PropDemand();
         $mPropProperty = new PropProperty();
@@ -62,7 +64,8 @@ class GetHoldingDuesV2
         $mPropPendingArrear = new PropPendingArrear();
         // $revCalculateByAmt = new RevCalculateByAmt;              
         $demandList = collect();
-        $calculate2PercPenalty = new Calculate2PercPenalty;
+        $calculate2PercPenalty = new Calculate2PercPenalty();
+        $calculate2PercPenalty->_Today = $this->_Today;
         $fy = getFY();
         $userId = auth()->user()->id ?? 0;
         $userDtls = $mUsers::find($userId);

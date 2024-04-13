@@ -11,13 +11,16 @@ use Carbon\Carbon;
  */
 class Calculate2PercPenalty
 {
+    public $_Today;
     /**
      * | @param demand 
      */
     public function calculatePenalty($demand,$prop_type_mstr_id=null)
     {
-        $currentFy = getFY();
-        $currentMonth = Carbon::now()->format('m');
+        $currentFy = getFY($this->_Today);
+        // $currentMonth = Carbon::now()->format('m');
+        $currentMonth = Carbon::parse($this->_Today)->format('m');        
+        $now = Carbon::parse($this->_Today)->firstOfMonth()->format("Y-m-d");
         $currentFyMonths = $currentMonth - 4;                   // Start of the month april
         $monthlyBalance = 0;
         $noOfPenalMonths = 0;
@@ -34,14 +37,13 @@ class Calculate2PercPenalty
             {
                 list($fromYear,$uptoYear) = explode("-",$demand->fyear);
                 $uptoDate = new Carbon($uptoYear."-09-01");
-                $now = Carbon::now()->firstOfMonth()->format("Y-m-d");
                 $noOfPenalMonths = $uptoDate->diffInMonths($now);                
             }
             if(!$demand->is_old)
             {
                 list($fromYear,$uptoYear) = explode("-",$demand->fyear);
                 $uptoDate = new Carbon($uptoYear."-04-01");
-                $now = Carbon::now()->firstOfMonth()->format("Y-m-d");
+                // $now = Carbon::now()->firstOfMonth()->format("Y-m-d");
                 $noOfPenalMonths = $uptoDate->diffInMonths($now)+1;  
             } 
             
@@ -63,9 +65,9 @@ class Calculate2PercPenalty
         // if($demand->fyear=='2021-2022'){
         //     dd($demand,$noOfPenalMonths,$amount,$penalAmt, Carbon::now()->firstOfMonth()->format("Y-m-d"),$monthlyBalance);
         // }
-        if($demand->fyear != $currentFy){
+        // if($demand->fyear != $currentFy){
             $demand->monthlyPenalty = roundFigure($penalAmt);
-        }
+        // }
         
     }
 
