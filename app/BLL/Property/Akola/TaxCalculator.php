@@ -533,7 +533,10 @@ class TaxCalculator
         #=======end========       
         // Act Of Limitations end
         while ($this->_calculationDateFrom <= $currentFyearEndDate) {
-            $annualTaxes = collect($this->_floorsTaxes)->where('dateFrom', '<=', $this->_calculationDateFrom)->where("appliedUpto",">=",getFY($privFiveYear));
+            // $annualTaxes = collect($this->_floorsTaxes)->where('dateFrom', '<=', $this->_calculationDateFrom)->where("appliedUpto",">=",getFY($privFiveYear));
+            $annualTaxes = collect($this->_floorsTaxes)->where('appliedFrom', '<=', getFY($this->_calculationDateFrom))->where("appliedUpto",">=",getFY($privFiveYear))->filter(function($val){
+                return $val["appliedFrom"]<=$val["appliedUpto"] && $val["appliedUpto"]>=getFY($this->_calculationDateFrom);
+            });
             // dd($this->_REQUEST->propertyType,$this->_REQUEST["ward"],$this->_REQUEST->all());
             if ($this->_REQUEST->propertyType == 4 && in_array($this->_REQUEST["ward"], $this->_LESS_PERSENTAGE_APPLY_WARD_IDS) && getFy($this->_calculationDateFrom) <= '2021-2023') {
 
