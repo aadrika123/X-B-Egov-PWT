@@ -147,7 +147,8 @@ class CitizenHoldingController extends Controller
                 // "userId" => $user->id,
                 // "userType"  => $user->user_type,
                 // "auth"  => $user
-            ]);
+            ]); 
+            throw new Exception("Payment Gateway temporary disabled due to maintainable");
             if(!$isCitizenUserType)
             {
                 $request->merge(["userId"=>$user->id]);
