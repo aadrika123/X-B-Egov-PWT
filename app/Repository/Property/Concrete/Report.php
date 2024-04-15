@@ -2131,7 +2131,7 @@ class Report implements IReport
         }
     }
 
-    public function oldPropWardWiseDCB(Request $request)
+    public function PropWardWiseDCB(Request $request)
     {
         $metaData = collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
@@ -2191,31 +2191,33 @@ class Report implements IReport
                 )demands ON demands.ward_mstr_id = ulb_ward_masters.id
                 LEFT JOIN (
                     SELECT prop_properties.ward_mstr_id,
-                    COUNT
-                        (DISTINCT (
-                            CASE WHEN prop_demands.fyear  = '$fiYear'  then prop_demands.property_id
-                            END)
+                        COUNT(
+                            DISTINCT (
+                                CASE WHEN prop_demands.fyear  = '$fiYear'  then prop_demands.property_id
+                                END
+                            )
                         ) as current_collection_hh,
 
                         COUNT(DISTINCT(prop_properties.id)) AS collection_from_no_of_hh,
                         SUM(
-                                CASE WHEN prop_demands.fyear  = '$fiYear' then prop_demands.total_tax
-                                    ELSE 0
-                                    END
-                        ) AS current_collection,
-
-                        COUNT
-                            (DISTINCT (
-                                CASE WHEN prop_demands.fyear< '$fiYear' then prop_demands.property_id
-                                END)
-                            ) as arrear_collection_hh,
-
-                        SUM(
-                            CASE when prop_demands.fyear <'$fiYear' then prop_demands.total_tax
+                                CASE WHEN prop_demands.fyear  = '$fiYear' then prop_tran_dtls.paid_total_tax
                                 ELSE 0
                                 END
-                            ) AS arrear_collection,
-                    SUM(total_tax) AS total_collection
+                        ) AS current_collection,
+
+                        COUNT(
+                            DISTINCT (
+                                CASE WHEN prop_demands.fyear< '$fiYear' then prop_demands.property_id
+                                END
+                            )
+                        ) as arrear_collection_hh,
+
+                        SUM(
+                            CASE when prop_demands.fyear <'$fiYear' then prop_tran_dtls.paid_total_tax
+                                ELSE 0
+                                END
+                        ) AS arrear_collection,
+                        SUM(prop_tran_dtls.paid_total_tax) AS total_collection
                     FROM prop_demands
                     JOIN prop_properties ON prop_properties.id = prop_demands.property_id
                     JOIN prop_tran_dtls ON prop_tran_dtls.prop_demand_id = prop_demands.id 
@@ -2231,7 +2233,7 @@ class Report implements IReport
                 )collection ON collection.ward_mstr_id = ulb_ward_masters.id
                 LEFT JOIN ( 
                     SELECT prop_properties.ward_mstr_id,
-                    SUM(total_tax) AS total_prev_collection
+                    SUM(prop_tran_dtls.paid_total_tax) AS total_prev_collection
                     FROM prop_demands
                     JOIN prop_properties ON prop_properties.id = prop_demands.property_id
                     JOIN prop_tran_dtls ON prop_tran_dtls.prop_demand_id = prop_demands.id 
@@ -2328,7 +2330,7 @@ class Report implements IReport
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
-    public function PropWardWiseDCB(Request $request)
+    public function oldPropWardWiseDCB(Request $request)
     {
         $metaData = collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
