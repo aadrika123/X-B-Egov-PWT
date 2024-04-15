@@ -165,7 +165,11 @@ class HoldingTaxController extends Controller
             $demand["can_take_payment"] = collect($testRole)->isNotEmpty() ? true : false;
             $demand["can_take_online_r_payment"] = collect($testOnlineRRole)->isNotEmpty() && $demand["can_take_payment"] ? true : false;
             if ($this->_COMMONFUNCTION->checkUsersWithtocken("active_citizens")) {
-                $data["can_take_payment"] =  $demand["payableAmt"] > 0 ? true : false;
+                $demand["can_take_payment"] =  $demand["payableAmt"] > 0 ? true : false;
+            }
+            if(!$getHoldingDues->_IsOldTranClear)
+            {
+                $demand["can_take_payment"] =$getHoldingDues->_IsOldTranClear;
             }
             return responseMsgs(true, "Demand Details", remove_null($demand), "011602", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {

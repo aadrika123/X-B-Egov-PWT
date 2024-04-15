@@ -470,4 +470,9 @@ class PropTransaction extends PropParamModel #Model
     {
         return $this->hasMany(PropTranDtl::class,"tran_id","id")->where("status",1);
     }
+
+    public function getChequeDtl()
+    {
+        return $this->hasOne(PropChequeDtl::class,"transaction_id","id")->where("status","<>",0)->orderBy("id")->first();
+    }
 }

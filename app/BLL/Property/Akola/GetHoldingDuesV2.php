@@ -8,6 +8,7 @@ use App\Models\Property\PropDemand;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropPendingArrear;
 use App\Models\Property\PropProperty;
+use App\Models\Property\PropTransaction;
 use App\Models\Property\RefPropSpecialRebateType;
 use App\Models\User;
 use Carbon\Carbon;
@@ -46,9 +47,14 @@ class GetHoldingDuesV2
         
     }
 
-    public function testOldTranClear()
+    public function testOldTranClear($propertyId)
     {
-        
+        $oldTransaction = PropTransaction::where("status",1)->where("property_id",$propertyId)->orderBy("id","DESC")->first();
+        $checkDtls = $oldTransaction ? $oldTransaction->getChequeDtl():collect([]);
+        if($checkDtls)
+        {
+            $this->_IsOldTranClear = $checkDtls->status==1? true:false;
+        }
     }
     public function getDues($req)
     {
@@ -72,6 +78,7 @@ class GetHoldingDuesV2
 
         // Get Property Details
         $propBasicDtls = $mPropProperty->getPropBasicDtls($req->propId);
+        $this->testOldTranClear($req->propId);
         $owners = $mPropOwners->getOwnersByPropId($req->propId);
         $armedForceOwners = collect($owners)->where("is_armed_force",true);
         if($armedForceOwners->isNotEmpty() && collect($owners)->count()==1)
@@ -279,6 +286,7 @@ class GetHoldingDuesV2
             "area_of_plot",
             "building_name",
         ]);
+        $demand['isOldTranClear'] = $this->_IsOldTranClear;
         $basicDtls['moduleId'] = 1;
         $basicDtls['workflowId'] = 0;
         $basicDtls["holding_type"] = $holdingType;

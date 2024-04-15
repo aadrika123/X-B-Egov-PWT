@@ -93,6 +93,9 @@ class CitizenHoldingController extends Controller
             if ($demand["payableAmt"]<=0) {
                 throw new Exception("Deamnd Amount is 0 ");
             }
+            if (!$demand["isOldTranClear"]) {
+                throw new Exception("Please waite for previous transaction clearance ");
+            }
             $payableAmt = $demand["payableAmt"];
             $arrear = $demand["arrear"]+($demand["arrearMonthlyPenalty"]??0);
             if ($request->paymentType != "isPartPayment") {
