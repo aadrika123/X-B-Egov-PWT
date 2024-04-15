@@ -194,7 +194,7 @@ class TaxCalculator
                 $rate = $this->readRateByFloor($item);                // (2.1)
                 $agingPerc = $this->readAgingByFloor($item);           // (2.2)
 
-                $floorBuildupArea = roundFigure(isset($item->biBuildupArea) ? $item->biBuildupArea * 0.092903 :  $item->buildupArea  * 0.092903);
+                $floorBuildupArea = roundFigure(isset($item->biBuildupArea) && $this->getAssestmentTypeStr()=='Bifurcation' ? $item->biBuildupArea * 0.092903 :  $item->buildupArea  * 0.092903);
                 $alv = roundFigure($floorBuildupArea * $rate);
                 $maintance10Perc = roundFigure(($alv * $this->_maintancePerc) / 100);
                 $valueAfterMaintanance = roundFigure($alv - $maintance10Perc);
