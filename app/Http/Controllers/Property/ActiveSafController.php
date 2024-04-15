@@ -1966,6 +1966,13 @@ class ActiveSafController extends Controller
 
             $userId = authUser($req)->id;
             $safId = $req->applicationId;
+            $usertype = $this->_COMMONFUNCTION->getUserAllRoles();
+            $adminAllows = false;
+            $testAdminRole = collect($usertype)->whereIn("sort_name", Config::get("TradeConstant.CANE-REJECT-APPLICATION"));
+            if($usertype && $testAdminRole->isNotEmpty() && $req->status==0)
+            {
+                $adminAllows =true;
+            }
             // Derivative Assignments
             $safDetails = PropActiveSaf::find($req->applicationId);
             if (!$safDetails) {
@@ -1991,12 +1998,12 @@ class ActiveSafController extends Controller
                 'workflowId' => $workflowId
             ]);
             $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
-            if (collect($readRoleDtls)->isEmpty())
+            if (collect($readRoleDtls)->isEmpty() && !$adminAllows)
                 throw new Exception("You Are Not Authorized for this workflow");
 
-            $roleId = $readRoleDtls->wf_role_id;
+            $roleId = $readRoleDtls->wf_role_id??null;
 
-            if ($safDetails->finisher_role_id != $roleId)
+            if ($safDetails->finisher_role_id != $roleId && !$adminAllows)
                 throw new Exception("Forbidden Access");
 
             $activeSaf = $mPropActiveSaf->getQuerySafById($req->applicationId);
@@ -2013,7 +2020,7 @@ class ActiveSafController extends Controller
                 $fieldVerifiedSaf = $propSafVerification->getVerifications2($safId);
             }
 
-            if (collect($fieldVerifiedSaf)->isEmpty() && !in_array($safDetails->workflow_id, $this->_SkipFiledWorkWfMstrId))
+            if (collect($fieldVerifiedSaf)->isEmpty() && !in_array($safDetails->workflow_id, $this->_SkipFiledWorkWfMstrId) && $req->status!=0)
                 throw new Exception("Site Verification not Exist");
 
             DB::beginTransaction();
