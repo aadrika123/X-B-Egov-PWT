@@ -212,7 +212,13 @@ class TaxCalculator
                 $sewerageTax = roundFigure($taxValue * 0.02);
                 $treeTax = roundFigure($taxValue * 0.01);
 
-                $isCommercial = ($item->usageType == $this->_residentialUsageType) ? false : true;                    // Residential usage type id
+                $isCommercial = (in_array($item->usageType,$this->_residentialUsageType)) ? false : true;                    // Residential usage type id
+
+                $stateTaxes = $this->readStateTaxes($floorBuildupArea, $isCommercial, $alv);                   // Read State Taxes(2.3)
+                if(in_array($item->usageType,$this->_govResidentialUsageType))
+                {
+                    $educationTax  = 0 ;
+                }
 
                 $stateTaxes = $this->readStateTaxes($floorBuildupArea, $isCommercial, $alv);                   // Read State Taxes(2.3)
 
@@ -298,7 +304,13 @@ class TaxCalculator
                 $sewerageTax = roundFigure($taxValue * 0.02);
                 $treeTax = roundFigure($taxValue * 0.01);
 
-                $isCommercial = ($item->usageType == $this->_residentialUsageType) ? false : true;                    // Residential usage type id
+                $isCommercial = (in_array($item->usageType,$this->_residentialUsageType)) ? false : true;                    // Residential usage type id
+
+                $stateTaxes = $this->readStateTaxes($floorBuildupArea, $isCommercial, $alv);                   // Read State Taxes(2.3)
+                if(in_array($item->usageType,$this->_govResidentialUsageType))
+                {
+                    $educationTax  = 0 ;
+                }
 
                 $stateTaxes = $this->readStateTaxes($floorBuildupArea, $isCommercial, $alv);                   // Read State Taxes(2.3)
 
