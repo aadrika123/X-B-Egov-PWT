@@ -69,7 +69,6 @@ class CalculateSafTaxById extends TaxCalculator
         // Get Floors
         if ($this->_safDtls->prop_type_mstr_id != 4) {
             $propFloors = $this->_mPropActiveSafFloors->getSafFloorsBySafId($this->_safDtls->id);
-
             if (collect($propFloors)->isEmpty())
                 $propFloors = $this->_mPropSafFloors->getSafFloorsBySafId($this->_safDtls->id);
 
@@ -90,7 +89,8 @@ class CalculateSafTaxById extends TaxCalculator
                     "usageTypeName" => $floor->usage_type, #name value
                     "buildupArea" =>  $floor->builtup_area,
                     "dateFrom" =>  $floor->date_from,
-                    "dateUpto" =>  $floor->date_upto
+                    "dateUpto" =>  $floor->date_upto,
+                    "propFloorDetailId" =>$floor->prop_floor_details_id,
                 ];
                 array_push($calculationReq['floor'], $floorReq);
             }
@@ -108,7 +108,8 @@ class CalculateSafTaxById extends TaxCalculator
                     "usageTypeName" => $floor->usage_type, #name value
                     "buildupArea" =>  $floor->builtup_area,
                     "dateFrom" =>  $floor->date_from,
-                    "dateUpto" =>  $floor->date_upto
+                    "dateUpto" =>  $floor->date_upto,
+                    "propFloorDetailId" =>$floor->prop_floor_details_id,
                 ];
                 array_push($calculationReq['floor'], $floorReq);
             }

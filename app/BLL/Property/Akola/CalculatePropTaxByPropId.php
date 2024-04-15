@@ -63,7 +63,8 @@ class CalculatePropTaxByPropId extends TaxCalculator
                     "usageType" => $floor->usage_type_mstr_id,
                     "buildupArea" =>  $floor->builtup_area,
                     "dateFrom" =>  $floor->date_from ,
-                    "dateUpto" =>  $floor->date_upto
+                    "dateUpto" =>  $floor->date_upto,
+                    "propFloorDetailId" =>$floor->prop_floor_details_id,
                 ];
                 array_push($calculationReq['floor'], $floorReq);
             }
