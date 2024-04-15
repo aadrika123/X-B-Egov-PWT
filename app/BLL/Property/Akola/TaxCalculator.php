@@ -42,6 +42,9 @@ class TaxCalculator
     public $_isSingleManArmedForce = false;
     private $_LESS_PERSENTAGE_APPLY_WARD_IDS;
 
+    public $_OldFloors = [];
+    public $_newFloors = [];
+
     /**
      * | Initialization of global variables
      */
@@ -61,6 +64,8 @@ class TaxCalculator
      */
     public function calculateTax()
     {
+        $this->setOldFloors();
+        $this->setNewFloors();
         $this->readCalculatorParams();      // 1
 
         $this->generateFloorWiseTax();      // 2
@@ -155,10 +160,215 @@ class TaxCalculator
         $this->_currentFyear = calculateFYear(Carbon::now()->format('Y-m-d'));
     }
 
+    public function setOldFloors()
+    {
+        if($this->getAssestmentTypeStr() != 'New Assessment')
+        {
+            $this->_OldFloors = collect($this->_REQUEST->floor)->whereNotNull("propFloorDetailId");
+        }
+    }
+    public function setNewFloors()
+    {
+        $this->_newFloors = collect($this->_REQUEST->floor)->whereNull("propFloorDetailId");
+        if($this->getAssestmentTypeStr() == 'New Assessment')
+        {
+            $this->_newFloors = collect($this->_REQUEST->floor);
+        }
+    }
+
+    public function generateFloorWiseTax()
+    {
+        if ($this->_REQUEST->propertyType != 4) {
+            $totalFloor = collect($this->_REQUEST->floor)->count();
+            $totalBuildupArea = collect($this->_REQUEST->floor)->sum("buildupArea");
+            if($this->getAssestmentTypeStr()=='Bifurcation')
+            {
+               $bifurcatedFloorArea = collect($this->_REQUEST->floor)->whereNotNull('propFloorDetailId')->sum("biBuildupArea");
+               $newFloorArea = collect($this->_REQUEST->floor)->whereNull('propFloorDetailId')->sum("buildupArea");
+               $totalBuildupArea =  $bifurcatedFloorArea + $newFloorArea;
+            }
+            $AllDiffArrea = ($totalBuildupArea - $this->_REQUEST->nakshaAreaOfPlot) > 0 ? $totalBuildupArea - $this->_REQUEST->nakshaAreaOfPlot : 0;
+
+            foreach ($this->_OldFloors as $key => $item) {
+                $item = (object)$item;
+                $rate = $this->readRateByFloor($item);                // (2.1)
+                $agingPerc = $this->readAgingByFloor($item);           // (2.2)
+
+                $floorBuildupArea = roundFigure(isset($item->biBuildupArea) ? $item->biBuildupArea * 0.092903 :  $item->buildupArea  * 0.092903);
+                $alv = roundFigure($floorBuildupArea * $rate);
+                $maintance10Perc = roundFigure(($alv * $this->_maintancePerc) / 100);
+                $valueAfterMaintanance = roundFigure($alv - $maintance10Perc);
+                $aging = roundFigure(($valueAfterMaintanance * $agingPerc) / 100);
+                $taxValue = roundFigure($valueAfterMaintanance - $aging);               // Tax value is the amount in which all the tax will be calculated
+
+                // Municipal Taxes
+                // $generalTax = $this->_isSingleManArmedForce ? 0 : roundFigure($taxValue * 0.30);
+                $generalTax = roundFigure($taxValue * 0.30);
+                $roadTax = roundFigure($taxValue * 0.03);
+                $firefightingTax = roundFigure($taxValue * 0.02);
+                $educationTax = roundFigure($taxValue * 0.02);
+                $waterTax = roundFigure($taxValue * 0.02);
+                $cleanlinessTax = roundFigure($taxValue * 0.02);
+                $sewerageTax = roundFigure($taxValue * 0.02);
+                $treeTax = roundFigure($taxValue * 0.01);
+
+                $isCommercial = ($item->usageType == $this->_residentialUsageType) ? false : true;                    // Residential usage type id
+
+                $stateTaxes = $this->readStateTaxes($floorBuildupArea, $isCommercial, $alv);                   // Read State Taxes(2.3)
+
+                $tax1 = 0;
+                $diffArrea = 0;
+                $doubleTax1 = ($generalTax + $roadTax + $firefightingTax + $educationTax
+                    + $waterTax + $cleanlinessTax + $sewerageTax
+                    + $treeTax + $stateTaxes['educationTax'] + $stateTaxes['professionalTax']
+                    + ($openPloatTax ?? 0));
+                if ($this->_REQUEST->nakshaAreaOfPlot) {
+                    // $diffArrea = ($this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot)>0 ? $this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot :0;
+                    $diffArrea = $AllDiffArrea / ($totalBuildupArea > 0 ? $totalBuildupArea : 1);
+                }
+                # double tax apply
+                if ($this->_REQUEST->isAllowDoubleTax) {
+                    $tax1 = $doubleTax1;
+                }
+                # 100% penalty apply on diff arrea
+                elseif ($diffArrea > 0) {
+                    // $tax1 = $doubleTax1 * ($diffArrea / ($this->_REQUEST->areaOfPlot>0?$this->_REQUEST->areaOfPlot:1));
+                    $tax1 = $doubleTax1 * ($diffArrea);
+                }
+                $this->_floorsTaxes[$key] = [
+                    'usageType' => $item->usageType,
+                    'usageTypeName' => $item->usageTypeName ?? "",
+                    'constructionType' => $item->constructionType ?? "",
+                    'constructionTypeVal' => Config::get("PropertyConstaint.CONSTRUCTION-TYPE." . $item->constructionType ?? ""),
+                    'occupancyType' => $item->occupancyType ?? "",
+                    'occupancyTypeVal' => Config::get("PropertyConstaint.OCCUPANCY-TYPE." . $item->occupancyType ?? ""),
+                    'dateFrom' => $item->dateFrom,
+                    'dateUpto' => $item->dateUpto,
+                    'appliedFrom' => getFY(),#getFY($item->dateFrom),
+                    'appliedUpto' => getFY($item->dateUpto),
+                    'rate' => $rate,
+                    'floorKey' => $key,
+                    'floorNo' => $item->floorNo,
+                    'floorName' => $item->floorName ?? "",
+                    'buildupAreaInSqmt' => $floorBuildupArea,
+                    'alv' => $alv,
+                    'maintancePerc' => $this->_maintancePerc,
+                    'maintantance10Perc' => $maintance10Perc,
+                    'valueAfterMaintance' => $valueAfterMaintanance,
+                    'agingPerc' => $agingPerc,
+                    'agingAmt' => $aging,
+                    'taxValue' => $taxValue,
+                    'generalTax' => $generalTax,
+                    'roadTax' => $roadTax,
+                    'firefightingTax' => $firefightingTax,
+                    'educationTax' => $educationTax,
+                    'waterTax' => $waterTax,
+                    'cleanlinessTax' => $cleanlinessTax,
+                    'sewerageTax' => $sewerageTax,
+                    'treeTax' => $treeTax,
+                    "tax1" => $tax1,
+                    'isCommercial' => $isCommercial,
+                    'stateEducationTaxPerc' => $stateTaxes['educationTaxPerc'],
+                    'stateEducationTax' => $stateTaxes['educationTax'],
+                    'professionalTaxPerc' => $stateTaxes['professionalTaxPerc'],
+                    'professionalTax' => $stateTaxes['professionalTax'],
+                ];
+            }
+
+            foreach ($this->_newFloors as $key => $item) {
+                $item = (object)$item;
+                $rate = $this->readRateByFloor($item);                 // (2.1)
+                $agingPerc = $this->readAgingByFloor($item);           // (2.2)
+
+                $floorBuildupArea = roundFigure(isset($item->biBuildupArea) ? $item->biBuildupArea * 0.092903 :  $item->buildupArea  * 0.092903);
+                $alv = roundFigure($floorBuildupArea * $rate);
+                $maintance10Perc = roundFigure(($alv * $this->_maintancePerc) / 100);
+                $valueAfterMaintanance = roundFigure($alv - $maintance10Perc);
+                $aging = roundFigure(($valueAfterMaintanance * $agingPerc) / 100);
+                $taxValue = roundFigure($valueAfterMaintanance - $aging);               // Tax value is the amount in which all the tax will be calculated
+
+                // Municipal Taxes
+                // $generalTax = $this->_isSingleManArmedForce ? 0 : roundFigure($taxValue * 0.30);
+                $generalTax = roundFigure($taxValue * 0.30);
+                $roadTax = roundFigure($taxValue * 0.03);
+                $firefightingTax = roundFigure($taxValue * 0.02);
+                $educationTax = roundFigure($taxValue * 0.02);
+                $waterTax = roundFigure($taxValue * 0.02);
+                $cleanlinessTax = roundFigure($taxValue * 0.02);
+                $sewerageTax = roundFigure($taxValue * 0.02);
+                $treeTax = roundFigure($taxValue * 0.01);
+
+                $isCommercial = ($item->usageType == $this->_residentialUsageType) ? false : true;                    // Residential usage type id
+
+                $stateTaxes = $this->readStateTaxes($floorBuildupArea, $isCommercial, $alv);                   // Read State Taxes(2.3)
+
+                $tax1 = 0;
+                $diffArrea = 0;
+                $doubleTax1 = ($generalTax + $roadTax + $firefightingTax + $educationTax
+                    + $waterTax + $cleanlinessTax + $sewerageTax
+                    + $treeTax + $stateTaxes['educationTax'] + $stateTaxes['professionalTax']
+                    + ($openPloatTax ?? 0));
+                if ($this->_REQUEST->nakshaAreaOfPlot) {
+                    // $diffArrea = ($this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot)>0 ? $this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot :0;
+                    $diffArrea = $AllDiffArrea / ($totalBuildupArea > 0 ? $totalBuildupArea : 1);
+                }
+                # double tax apply
+                if ($this->_REQUEST->isAllowDoubleTax) {
+                    $tax1 = $doubleTax1;
+                }
+                # 100% penalty apply on diff arrea
+                elseif ($diffArrea > 0) {
+                    // $tax1 = $doubleTax1 * ($diffArrea / ($this->_REQUEST->areaOfPlot>0?$this->_REQUEST->areaOfPlot:1));
+                    $tax1 = $doubleTax1 * ($diffArrea);
+                }
+                $this->_floorsTaxes[$key] = [
+                    'usageType' => $item->usageType,
+                    'usageTypeName' => $item->usageTypeName ?? "",
+                    'constructionType' => $item->constructionType ?? "",
+                    'constructionTypeVal' => Config::get("PropertyConstaint.CONSTRUCTION-TYPE." . $item->constructionType ?? ""),
+                    'occupancyType' => $item->occupancyType ?? "",
+                    'occupancyTypeVal' => Config::get("PropertyConstaint.OCCUPANCY-TYPE." . $item->occupancyType ?? ""),
+                    'dateFrom' => $item->dateFrom,
+                    'dateUpto' => $item->dateUpto,
+                    'appliedFrom' => getFY($item->dateFrom),
+                    'appliedUpto' => getFY($item->dateUpto),
+                    'rate' => $rate,
+                    'floorKey' => $key,
+                    'floorNo' => $item->floorNo,
+                    'floorName' => $item->floorName ?? "",
+                    'buildupAreaInSqmt' => $floorBuildupArea,
+                    'alv' => $alv,
+                    'maintancePerc' => $this->_maintancePerc,
+                    'maintantance10Perc' => $maintance10Perc,
+                    'valueAfterMaintance' => $valueAfterMaintanance,
+                    'agingPerc' => $agingPerc,
+                    'agingAmt' => $aging,
+                    'taxValue' => $taxValue,
+                    'generalTax' => $generalTax,
+                    'roadTax' => $roadTax,
+                    'firefightingTax' => $firefightingTax,
+                    'educationTax' => $educationTax,
+                    'waterTax' => $waterTax,
+                    'cleanlinessTax' => $cleanlinessTax,
+                    'sewerageTax' => $sewerageTax,
+                    'treeTax' => $treeTax,
+                    "tax1" => $tax1,
+                    'isCommercial' => $isCommercial,
+                    'stateEducationTaxPerc' => $stateTaxes['educationTaxPerc'],
+                    'stateEducationTax' => $stateTaxes['educationTax'],
+                    'professionalTaxPerc' => $stateTaxes['professionalTaxPerc'],
+                    'professionalTax' => $stateTaxes['professionalTax'],
+                ];
+            }
+
+            $this->_GRID['floorsTaxes'] = $this->_floorsTaxes;
+        }
+    }
+
     /**
      * | Calculate Floor Wise Calculation including Vacant also (2)
      */
-    public function generateFloorWiseTax()
+    public function generateFloorWiseTax_old()
     {
         if ($this->_REQUEST->propertyType != 4) {
             $totalFloor = collect($this->_REQUEST->floor)->count();
@@ -176,7 +386,7 @@ class TaxCalculator
                 $rate = $this->readRateByFloor($item);                 // (2.1)
                 $agingPerc = $this->readAgingByFloor($item);           // (2.2)
 
-                $floorBuildupArea = roundFigure(isset($item->biBuildupArea) ? $item->biBuildupArea * 0.092903 :  $item->buildupArea  * 0.092903);
+                $floorBuildupArea = roundFigure(isset($item->biBuildupArea) && $this->getAssestmentTypeStr()=='Bifurcation' ? $item->biBuildupArea * 0.092903 :  $item->buildupArea  * 0.092903);
                 $alv = roundFigure($floorBuildupArea * $rate);
                 $maintance10Perc = roundFigure(($alv * $this->_maintancePerc) / 100);
                 $valueAfterMaintanance = roundFigure($alv - $maintance10Perc);
@@ -592,6 +802,7 @@ class TaxCalculator
                         }
                         break;
                 }
+                $yearTax["totalFloar"] = $annualTaxes->count();
                 $fyearWiseTaxes->put($fyear, array_merge($yearTax, ['fyear' => $fyear]));
             }
 
