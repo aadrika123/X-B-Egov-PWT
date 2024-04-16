@@ -915,6 +915,18 @@ class PropProperty extends  PropParamModel #Model
     }
 
     /**
+     * | get New Holding
+     */
+    public function getMultipleProperty($propertyId)
+    {
+        return PropProperty::on('pgsql::read')
+            ->whereIn('id', $propertyId)
+            ->where('status',1)
+            ->orderByDesc('id')
+            ->get();
+    }
+
+    /**
      * | Get Property Applications for Payment details Purpose
      */
     public function getBasicDetails($propId)

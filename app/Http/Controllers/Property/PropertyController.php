@@ -60,6 +60,11 @@ class PropertyController extends Controller
 {
     use SAF;
     use Property;
+    protected $_safRepo;
+    public function __construct(iSafRepository $safRepo)
+    {
+        $this->_safRepo = $safRepo;
+    }
     /**
      * | Send otp for caretaker property
      */
@@ -1934,6 +1939,91 @@ class PropertyController extends Controller
             return responseMsgs(true, "tc location Save", '', "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+
+    /**
+     * | For Amalgamation
+     * | Created By : Mrinal
+     * | Date       : 16-04-2024
+     */
+
+    /**
+     * | Check Amalgamation Property
+     */
+    public function checkAmalgamationProperty(Request $request)
+    {
+        try {
+            $validated = Validator::make(
+                $request->all(),
+                [
+                    'holdingNo' => 'required|array',
+                ]
+            );
+            if ($validated->fails()) {
+                return validationError($validated);
+            }
+            $mPropProperties = new PropProperty();
+            $mPropFloor = new PropFloor();
+            $holdingTaxController = new HoldingTaxController($this->_safRepo);
+            $holdingDtls = $mPropProperties->searchCollectiveHolding($request->holdingNo);
+            if (collect($holdingDtls)->isEmpty())
+                throw new Exception("No Property found for the respective holding no.");
+
+            $plotArea = collect($holdingDtls)->sum('area_of_plot');
+            $propertyIds = collect($holdingDtls)->pluck('id');
+            $floorDtls = $mPropFloor->getAppartmentFloor($propertyIds)->get();
+            $demands = array();
+            foreach ($propertyIds as $propId) {
+                $request->merge(["propId" => $propId]);
+                $demand = $holdingTaxController->getHoldingDues($request);
+                $demand = $demand->original;
+                if ($demand['status'] == false) {
+                    $demand['data']['basicDetails']['property_id'] = $propId;
+                    array_push($demands, $demand['data']['basicDetails']);
+                }
+            }
+
+            if (collect($demands)->isEmpty())
+                throw new Exception("Previous Demand is not clear for the respective property.");
+
+            return responseMsgs(true, "Amalgamation Requirement Fulfilled", $demands, '', '01', responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
+
+    /**
+     * | Master Holding Data
+     */
+    public function masterHoldingData(Request $request)
+    {
+        try {
+            // $validated = Validator::make(
+            //     $request->all(),
+            //     [
+            //         'holdingNo' => 'required|array',
+            //     ]
+            // );
+            // if ($validated->fails()) {
+            //     return validationError($validated);
+            // }
+            $mPropFloor = new PropFloor();
+            $mPropProperties = new PropProperty();
+            $safController = new ActiveSafController($this->_safRepo);
+            $propIds = collect($request->amalgamation)->pluck('propId')->unique();
+            $holdingDtls = $mPropProperties->getMultipleProperty($propIds);
+            $plotArea = collect($holdingDtls)->sum('area_of_plot');
+            $floorDtls = $mPropFloor->getAppartmentFloor($propIds)->get();
+            $masterHoldingId = collect($request->amalgamation)->where('isMasterHolding', true)->first();
+            $reqPropId = new Request(['propertyId' => $masterHoldingId['propId']]);
+            $masterData = $safController->getPropByHoldingNo($reqPropId)->original['data'];
+            $masterData['floors'] = $floorDtls;
+            $masterData['area_of_plot'] = $plotArea;
+
+            return responseMsgs(true, "Master Holding Data", $masterData, '', '01', responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
 }
