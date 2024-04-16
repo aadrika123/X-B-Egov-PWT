@@ -1987,9 +1987,9 @@ class PropertyController extends Controller
             if (collect($demands)->isEmpty())
                 throw new Exception("Previous Demand is not clear for the respective property.");
 
-            return responseMsgs(true, "Amalgamation Requirement Fulfilled", $demands, '011707', '01', responseTime(), $request->getMethod(), $request->deviceId);
+            return responseMsgs(true, "Amalgamation Requirement Fulfilled", $demands, '', '01', responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), [], '011707', '01', responseTime(), $request->getMethod(), $request->deviceId);
+            return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
 
@@ -2021,9 +2021,9 @@ class PropertyController extends Controller
             $masterData['floors'] = $floorDtls;
             $masterData['area_of_plot'] = $plotArea;
 
-            return responseMsgs(true, "Master Holding Data", $masterData, '011707', '01', responseTime(), $request->getMethod(), $request->deviceId);
+            return responseMsgs(true, "Master Holding Data", $masterData, '', '01', responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), [], '011707', '01', responseTime(), $request->getMethod(), $request->deviceId);
+            return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
 }
