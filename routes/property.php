@@ -545,6 +545,8 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('live-dashboard-update', 'liveDashboardUpdate');
 
     Route::post('reports/device-type/collection', 'deviceTypeCollection');
+    Route::post('reports/property/dealy-head-wise-individual-collection', 'individulaPropHeadWishDealyColl');
+    Route::post('reports/property/dealy-head-wise-zone-collection', 'zoneWishDealyColl');
 
     /**
      * #==========created by Prity Pandey==========================     
