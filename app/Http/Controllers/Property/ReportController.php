@@ -4953,8 +4953,7 @@ class ReportController extends Controller
                 $totalTran  = collect($totalTrans)->where("zone_mstr_id",$val->id);
                 $val->total_demand = $val->arrear_demand + $val->current_demand;
                 $val->total_collection = $val->arrear_collection + $val->current_collection;
-                $val->arrear_collection = $val->old_due;
-                $val->arrear_collection = $val->old_due;
+                $val->arrear_due = $val->old_due;
                 $val->tc_tran_count = $tcTran->sum("tran_count");
                 $val->counter_tran_count = $counterTran->sum("tran_count");
                 $val->online_tran_count = $onlineTran->sum("tran_count");
@@ -5333,8 +5332,7 @@ class ReportController extends Controller
                 $totalTran  = collect($totalTrans)->where("ward_mstr_id",$val->id);
                 $val->total_demand = $val->arrear_demand + $val->current_demand;
                 $val->total_collection = $val->arrear_collection + $val->current_collection;
-                $val->arrear_collection = $val->old_due;
-                $val->arrear_collection = $val->old_due;
+                $val->arrear_due = $val->old_due;
                 $val->tc_tran_count = $tcTran->sum("tran_count");
                 $val->counter_tran_count = $counterTran->sum("tran_count");
                 $val->online_tran_count = $onlineTran->sum("tran_count");
