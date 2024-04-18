@@ -4812,6 +4812,8 @@ class ReportController extends Controller
                         AND prop_transactions.tran_date < '$fromDate'
                     GROUP BY prop_properties.zone_mstr_id
                 )prev_collection ON prev_collection.zone_mstr_id = zone_masters.id
+                WHERE 1=1 
+                    ".($zoneId?" AND zone_masters.id = $zoneId" : "" )."
                 GROUP BY zone_masters.id ,zone_masters.zone_name 
                 ORDER BY zone_masters.id
             ";
@@ -5187,6 +5189,9 @@ class ReportController extends Controller
                         ".($wardId?" AND prop_properties.ward_mstr_id = $wardId" : "" )."
                     GROUP BY prop_properties.ward_mstr_id
                 )prev_collection ON prev_collection.ward_mstr_id = ulb_ward_masters.id
+                WHERE 1=1 
+                    ".($zoneId?" AND ulb_ward_masters.zone = $zoneId" : "" )."
+                    ".($wardId?" AND ulb_ward_masters.id = $wardId" : "" )."
                 GROUP BY ulb_ward_masters.id ,ulb_ward_masters.ward_name 
             ";
             
