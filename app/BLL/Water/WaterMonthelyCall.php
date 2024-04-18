@@ -157,15 +157,15 @@ class WaterMonthelyCall
     {
         switch ($this->_consumerId) {
             case (!$this->_consuemrDetails):
-                throw new Exception("consumer Details not found!");
+                throw new Exception("Consumer details not found!");
                 break;
 
             case (!$this->_consumerCharges):
-                throw new Exception("consumer charges not found!");
+                throw new Exception("Consumer charges not found!");
                 break;
 
             case (!$this->_consumerFeeUnits):
-                throw new Exception("consumer free units not found!");
+                throw new Exception("Consumer free units not found!");
                 break;
         }
 
@@ -193,11 +193,11 @@ class WaterMonthelyCall
         }
         if ($this->_consuemrMeterDetails->connection_type == 1 && $this->_unitConsumed < ($this->_consumerLastMeterReding->initial_reading ?? $this->_consuemrMeterDetails->initial_reading))
         {   
-                throw new Exception("finalRading should be grater than previous reading!");
+                throw new Exception("Final Reading should be greater than previous reading!");
         }
         if($this->_fromDate > $this->_uptoDate)
         {
-            throw new Exception("from Date can't smaller than up to date!(from date = $this->_fromDate, upto date = $this->_uptoDate )");
+            throw new Exception("From date can't be smaller than upto date!(from date = $this->_fromDate, upto date = $this->_uptoDate )");
         }
 
     }
@@ -611,7 +611,7 @@ class WaterMonthelyCall
         $totalDayDiff = Carbon::parse($lastDemand->generation_date ? $lastDemand->generation_date : $lastDemandUpto)->diffInDays($this->_now->copy());
         if($lastDemandUpto >= $today)
         {
-            throw new Exception("the demand is generated till ".$this->_fromDate);
+            throw new Exception("The demand is generated till ".$this->_fromDate);
         }
         // if($this->_meterStatus=="Meter" && $currentDateYear == $lastDemandYear && $lastDemandQuater == $currentDateQuater)
         // {
@@ -619,11 +619,11 @@ class WaterMonthelyCall
         // }
         if($this->_meterStatus!="Meter" && $currentDateYear == $lastDemandGenerationYear && $lastDemandGenerationQuater == $currentDateQuater)
         {
-            throw new Exception("the demand is generated Of this Quater ");
+            throw new Exception("The demand is generated of this Quater ");
         }
         if($this->_meterStatus=="Meter" && $totalDayDiff<45)
         {
-            throw new Exception("Total Deference Between prevues demand and current date should be mini 45 days ");
+            throw new Exception("Total difference between previous demand and current demand should be minimum 45 days.");
         } 
         $this->monthelyDemandCall();       
     }
