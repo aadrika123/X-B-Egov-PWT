@@ -2,8 +2,10 @@
 
 namespace App\Traits\Property;
 
+use App\Models\ActiveCitizen;
 use App\Models\Masters\RefRequiredDocument;
 use App\Models\Property\SecondaryDocVerification;
+use App\Models\User;
 use App\Models\Workflows\WfActiveDocument;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
@@ -88,6 +90,7 @@ trait AkolaSafDoc
                 }
                 if ($uploadedDoc) {
                     $seconderyData = (new SecondaryDocVerification())->SeconderyWfActiveDocumentById($uploadedDoc->id ?? 0);
+                    $uploadeUser = $uploadedDoc->uploaded_by_type!="Citizen" ? User::find($uploadedDoc->uploaded_by??0) : ActiveCitizen::find($uploadedDoc->uploaded_by??0);
                     $response = [
                         "uploadedDocId" => $uploadedDoc->id ?? "",
                         "documentCode" => $item,
@@ -95,6 +98,7 @@ trait AkolaSafDoc
                         "docPath" => $uploadedDoc->doc_path ?? "",
                         "verifyStatus" => ($uploadedDoc->verify_status ?? ""),
                         "remarks" => ($uploadedDoc->remarks ?? ""),
+                        "uploadedBy" => ($uploadeUser->name ?? ($uploadeUser->user_name??"")) ." (".$uploadedDoc->uploaded_by_type.")",
                     ];
                     $documents->push($response);
                 }

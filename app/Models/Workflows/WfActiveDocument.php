@@ -203,7 +203,9 @@ class WfActiveDocument extends Model
                 'd.verify_status',
                 'd.doc_code as doc_for',
                 'd.doc_code',
-                'o.owner_name'
+                'o.owner_name',
+                "uploaded_by_type",
+                "uploaded_by",
             )
             ->leftJoin('active_trade_owners as o', 'o.id', '=', 'd.owner_dtl_id')
             ->where('d.active_id', $applicationId)

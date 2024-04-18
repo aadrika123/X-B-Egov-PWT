@@ -2,6 +2,7 @@
 
 namespace App\Traits\Trade;
 
+use App\Models\ActiveCitizen;
 use Illuminate\Support\Facades\Config;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Masters\RefRequiredDocument;
@@ -12,6 +13,7 @@ use App\Models\Trade\TradeRenewal;
 use App\Models\Trade\TradeTransaction;
 use App\Models\UlbMaster;
 use App\Models\UlbWardMaster;
+use App\Models\User;
 use App\Repository\Common\CommonFunction;
 use Carbon\Carbon;
 use Exception;
@@ -228,6 +230,7 @@ trait TradeTrait
                     ->where('owner_dtl_id', $ownerId)
                     ->first();
                 if ($uploadedDoc) {
+                    $uploadeUser = $uploadedDoc->uploaded_by_type!="Citizen" ? User::find($uploadedDoc->uploaded_by??0) : ActiveCitizen::find($uploadedDoc->uploaded_by??0);
                     $response = [
                         "uploadedDocId" => $uploadedDoc->id ?? "",
                         "documentCode" => $item,
@@ -235,6 +238,7 @@ trait TradeTrait
                         "docPath" => $uploadedDoc->doc_path ?? "",
                         "verifyStatus" => $uploadedDoc->verify_status ?? "",
                         "remarks" => $uploadedDoc->remarks ?? "",
+                        "uploadedBy" => ($uploadeUser->name ?? ($uploadeUser->user_name??"")) ." (".$uploadedDoc->uploaded_by_type.")",
                     ];
                     $documents->push($response);
                 }

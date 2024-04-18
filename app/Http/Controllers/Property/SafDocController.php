@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Property;
 
 use App\Http\Controllers\Controller;
 use App\MicroServices\DocUpload;
+use App\Models\ActiveCitizen;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
@@ -13,6 +14,7 @@ use App\Models\Property\PropSafsOwner;
 use App\Models\Property\PropSafVerification;
 use App\Models\Property\PropSafVerificationDtl;
 use App\Models\Property\SecondaryDocVerification;
+use App\Models\User;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWorkflow;
@@ -147,6 +149,7 @@ class SafDocController extends Controller
 
                 if ($uploadedDoc) {
                     $seconderyData = (new SecondaryDocVerification())->SeconderyWfActiveDocumentById($uploadedDoc->id??0);
+                    $uploadeUser = $uploadedDoc->uploaded_by_type!="Citizen" ? User::find($uploadedDoc->uploaded_by??0) : ActiveCitizen::find($uploadedDoc->uploaded_by??0);
                     $response = [
                         "uploadedDocId" => $uploadedDoc->id ?? "",
                         "documentCode" => $item,
@@ -155,6 +158,7 @@ class SafDocController extends Controller
                         // "verifyStatus" => $refSafs->payment_status == 1 ? ($uploadedDoc->verify_status ?? "") : 0,
                         "verifyStatus" =>  ($uploadedDoc->verify_status ?? 0),
                         "remarks" => ($uploadedDoc->remarks ?? ""),
+                        "uploadedBy" => ($uploadeUser->name ?? ($uploadeUser->user_name??"")) ." (".$uploadedDoc->uploaded_by_type.")",
                     ];
                     $documents->push($response);
                 }
@@ -252,6 +256,8 @@ class SafDocController extends Controller
             $metaReqs['document'] = $imageName;
             $metaReqs['doc_code'] = $req->docCode;
             $metaReqs['doc_category'] = $req->docCategory;
+            $metaReqs["uploaded_by"]       = Auth()->user()->id ?? null;
+            $metaReqs["uploaded_by_type"]  = Auth()->user()->user_type ?? "Citizen";
 
             if ($req->docCode == 'PHOTOGRAPH') {
                 $metaReqs['verify_status'] = 1;
@@ -350,6 +356,11 @@ class SafDocController extends Controller
                     $documents->push($val );
                 }
             }
+            $documents = $documents->map(function($val){
+                $uploadeUser = $val->uploaded_by_type!="Citizen" ? User::find($val->uploaded_by??0) : ActiveCitizen::find($val->uploaded_by??0);
+                $val->uploadedBy = ($uploadeUser->name ?? ($uploadeUser->user_name??"")) ." (".$val->uploaded_by_type.")";
+                return $val;
+            });
 
             return responseMsgs(true, ["docVerifyStatus" => $safDetails->doc_verify_status], remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {

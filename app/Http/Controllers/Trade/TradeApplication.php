@@ -34,6 +34,7 @@ use App\Http\Requests\Trade\ReqPaybleAmount;
 use App\Models\Trade\TradeParamCategoryType;
 use App\Models\Trade\TradeParamOwnershipType;
 use App\Http\Requests\Trade\ReqUpdateBasicDtl;
+use App\Models\ActiveCitizen;
 use App\Models\Property\ZoneMaster;
 use App\Models\Trade\ActiveTradeOwner;
 use App\Models\Trade\AkolaTradeParamItemType;
@@ -1038,7 +1039,11 @@ class TradeApplication extends Controller
 
             $appNo = $licenceDetails->application_no;
             $tradR = $this->_CONTROLLER_TRADE;
-            $documents = $mWfActiveDocument->getTradeDocByAppNo($licenceDetails->id, $licenceDetails->workflow_id, $modul_id);
+            $documents = $mWfActiveDocument->getTradeDocByAppNo($licenceDetails->id, $licenceDetails->workflow_id, $modul_id)->map(function($val){
+                $uploadeUser = $val->uploaded_by_type!="Citizen" ? User::find($val->uploaded_by??0) : ActiveCitizen::find($val->uploaded_by??0);
+                $val->uploadedBy = ($uploadeUser->name ?? ($uploadeUser->user_name??"")) ." (".$val->uploaded_by_type.")";
+                return $val;
+            });
 
             $doc = $tradR->getLicenseDocLists($req);
             $docVerifyStatus = $doc->original["data"]["docVerifyStatus"] ?? 0;
