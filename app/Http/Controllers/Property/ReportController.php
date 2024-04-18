@@ -4670,6 +4670,17 @@ class ReportController extends Controller
 
     public function zoneWishDealyColl(Request $request)
     {
+        $ruls =[
+            "fromDate"  => "required|date|date_format:Y-m-d|before_or_equal:".Carbon::now()->format('Y-m-d'),
+            "uptoDate"  => "required|date|date_format:Y-m-d|after_or_equal:".Carbon::parse($request->fromDate)->format('Y-m-d'),
+            "zonId"     => "nullable|digits_between:1,9223372036854775807",
+        ];
+        $validated = Validator::make($request->all(),$ruls);
+        
+        if($validated->fails())
+        {
+            return validationErrorV2($validated);
+        }
         try{
             $fromDate = $uptoDate = Carbon::now()->format('Y-m-d');
             $zoneId = null;
@@ -4802,6 +4813,7 @@ class ReportController extends Controller
                     GROUP BY prop_properties.zone_mstr_id
                 )prev_collection ON prev_collection.zone_mstr_id = zone_masters.id
                 GROUP BY zone_masters.id ,zone_masters.zone_name 
+                ORDER BY zone_masters.id
             ";
             
 
@@ -4982,6 +4994,391 @@ class ReportController extends Controller
             $penalties = [
                 "id"                    =>  0,
                 "zone_name"             =>  "Total Intrest",
+                "current_demand_hh"     =>  "---",
+                "arrear_demand_hh"      =>  "---",
+                "current_collection_hh"      =>  "---",
+                "arrear_collection_hh"      =>  "---",
+                "collection_from_hh"      =>  "---",
+                "arrear_hh_eff"      =>  "---",
+                "current_hh_eff"      =>  "---",
+                "balance_hh"      =>  "---",
+                "arrear_demand"      =>  "---",
+                "previous_collection"      =>  "---",
+                "current_demand"      => "---" ,
+                "arrear_collection"      =>  $penaltyRebates->sum("penalty_amount"),
+                "current_collection"      =>  $penaltyRebates->sum("rebate_amount"),
+                "old_due"      => "---",
+                "current_due"      =>  "---",
+                "current_balance_hh"      =>  "---",
+                "arrear_balance_hh"      =>  "---",
+                "arrear_eff"      =>  "---",
+                "current_eff"      =>  "---",
+                "outstanding"      =>  "---",
+                "total_demand"      =>  "---",
+                "total_collection"      =>  $penaltyRebates->sum("penalty_amount") + $penaltyRebates->sum("rebate_amount"),
+                "tc_tran_count"      =>  "---",
+                "counter_tran_count"      =>  "---",
+                "online_tran_count"      =>  "---",
+                "total_tran_count"      =>  $dcbData->sum("tran_count"),
+            ];
+            $dcbData->push($granTax,$penalties,$granTax);
+
+            return responseMsgs(true, "Zone Wise daily Collecton Report", $dcbData);
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false, $e->getMessage(), []);
+        }
+    }
+
+    public function wardWishDealyColl(Request $request)
+    {
+        $ruls =[
+            "fromDate"  => "required|date|date_format:Y-m-d|before_or_equal:".Carbon::now()->format('Y-m-d'),
+            "uptoDate"  => "required|date|date_format:Y-m-d|after_or_equal:".Carbon::parse($request->fromDate)->format('Y-m-d'),
+            "zonId"     => "nullable|digits_between:1,9223372036854775807",
+            "wardId"    => "nullable|digits_between:1,9223372036854775807",
+        ];
+        $validated = Validator::make($request->all(),$ruls);
+        
+        if($validated->fails())
+        {
+            return validationErrorV2($validated);
+        }
+        try{
+            $fromDate = $uptoDate = Carbon::now()->format('Y-m-d');
+            $zoneId =  $wardId = null;
+            if($request->zoneId)
+            {
+                $zoneId = $request->zoneId;
+            }
+            if($request->wardId)
+            {
+                $wardId = $request->wardId;
+            }
+            if($request->fromDate)
+            {
+                $fromDate = $request->fromDate;
+            }
+            if($request->uptoDate)
+            {
+                $uptoDate = $request->uptoDate;
+            }
+            $fromFyear = getFY($fromDate);
+            $uptoFyear = getFY($uptoDate);
+            $sql = "
+                SELECT ulb_ward_masters.id AS id,
+                    ulb_ward_masters.ward_name AS ward_no, 
+                    SUM(COALESCE(demands.current_demand_hh, 0::numeric)) AS current_demand_hh,   
+                    SUM(COALESCE(demands.arrear_demand_hh, 0::numeric)) AS arrear_demand_hh,
+                    SUM(COALESCE(collection.current_collection_hh, 0::numeric)) AS current_collection_hh,   
+                    SUM(COALESCE(collection.arrear_collection_hh, 0::numeric)) AS arrear_collection_hh,
+                    SUM(COALESCE(collection.collection_from_no_of_hh, 0::numeric)) AS collection_from_hh,
+                
+                    round(SUM((COALESCE(collection.arrear_collection_hh, 0::numeric) / (case when demands.arrear_demand_hh > 0 then demands.arrear_demand_hh else 1 end))*100)) AS arrear_hh_eff,
+                    round(SUM((COALESCE(collection.current_collection_hh, 0::numeric) / (case when demands.current_demand_hh > 0 then demands.current_demand_hh else 1 end))*100)) AS current_hh_eff,
+                
+                    round(SUM(COALESCE(
+                        COALESCE(demands.current_demand_hh, 0::numeric) 
+                        - COALESCE(collection.collection_from_no_of_hh, 0::numeric), 0::numeric
+                    ))) AS balance_hh,                       
+                    round(SUM(COALESCE(
+                        COALESCE(demands.arrear_demand, 0::numeric) 
+                        - COALESCE(prev_collection.total_prev_collection, 0::numeric), 0::numeric
+                    ))) AS arrear_demand,
+                
+                    round(SUM(COALESCE(prev_collection.total_prev_collection, 0::numeric))) AS previous_collection,
+                    round(SUM(COALESCE(demands.current_demand, 0::numeric))) AS current_demand,
+                    round(SUM(COALESCE(collection.arrear_collection, 0::numeric))) AS arrear_collection,
+                    round(SUM(COALESCE(collection.current_collection, 0::numeric))) AS current_collection,
+                
+                    round(SUM((COALESCE(
+                            COALESCE(demands.arrear_demand, 0::numeric) 
+                            - COALESCE(prev_collection.total_prev_collection, 0::numeric), 0::numeric
+                        ) 
+                        - COALESCE(collection.arrear_collection, 0::numeric) 
+                        )))AS old_due,
+                
+                    round(SUM((COALESCE(demands.current_demand, 0::numeric) - COALESCE(collection.current_collection, 0::numeric)))) AS current_due,
+                
+                    round(SUM((COALESCE(demands.current_demand_hh, 0::numeric) - COALESCE(collection.current_collection_hh, 0::numeric)))) AS current_balance_hh,
+                    round(SUM((COALESCE(demands.arrear_demand_hh, 0::numeric) - COALESCE(collection.arrear_collection_hh, 0::numeric)))) AS arrear_balance_hh,
+                
+                    round(SUM((COALESCE(collection.arrear_collection, 0::numeric) / (case when demands.arrear_demand > 0 then demands.arrear_demand else 1 end))*100)) AS arrear_eff,
+                    round(SUM((COALESCE(collection.current_collection, 0::numeric) / (case when demands.current_demand > 0 then demands.current_demand else 1 end))*100)) AS current_eff,
+                
+                    round(SUM((
+                        COALESCE(
+                            COALESCE(demands.current_demand, 0::numeric) 
+                            + (
+                                COALESCE(demands.arrear_demand, 0::numeric) 
+                                - COALESCE(prev_collection.total_prev_collection, 0::numeric)
+                            ), 0::numeric
+                        ) 
+                        - COALESCE(
+                            COALESCE(collection.current_collection, 0::numeric) 
+                            + COALESCE(collection.arrear_collection, 0::numeric), 0::numeric
+                        )
+                    ))) AS outstanding                                 
+                
+                FROM ulb_ward_masters                
+                LEFT JOIN(
+                    SELECT prop_properties.ward_mstr_id,
+                        COUNT(
+                            DISTINCT ( CASE WHEN prop_demands.fyear  >= '$fromFyear'  then prop_demands.property_id END)
+                        ) as current_demand_hh,
+                        SUM( CASE WHEN prop_demands.fyear >= '$fromFyear' then prop_demands.total_tax  ELSE 0 END ) AS current_demand,
+                        COUNT(
+                            DISTINCT ( CASE WHEN prop_demands.fyear < '$fromFyear' then prop_demands.property_id END)
+                        ) as arrear_demand_hh,
+                        SUM( CASE WHEN prop_demands.fyear < '$fromFyear' then prop_demands.total_tax ELSE 0 END ) AS arrear_demand,
+                        SUM(total_tax) AS total_demand
+                    FROM prop_demands
+                    JOIN prop_properties ON prop_properties.id = prop_demands.property_id
+                    WHERE prop_demands.status =1 
+                        AND prop_demands.fyear <= '$uptoFyear'
+                        ".($zoneId?" AND prop_properties.zone_mstr_id = $zoneId" : "" )."
+                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId" : "" )."
+                    GROUP BY prop_properties.ward_mstr_id
+                )demands ON demands.ward_mstr_id = ulb_ward_masters.id
+                LEFT JOIN (
+                    SELECT prop_properties.ward_mstr_id,
+                        COUNT(
+                            DISTINCT (CASE WHEN prop_demands.fyear  >= '$fromFyear'  then prop_demands.property_id END)
+                        ) as current_collection_hh,
+                
+                        COUNT(DISTINCT(prop_properties.id)) AS collection_from_no_of_hh,
+                        SUM( CASE WHEN prop_demands.fyear  >= '$fromFyear' then prop_tran_dtls.paid_total_tax ELSE 0 END ) AS current_collection,
+                
+                        COUNT(
+                            DISTINCT ( CASE WHEN prop_demands.fyear < '$fromFyear' then prop_demands.property_id END )
+                        ) as arrear_collection_hh,
+                
+                        SUM(
+                            CASE when prop_demands.fyear < '$fromFyear' then prop_tran_dtls.paid_total_tax ELSE 0 END
+                        ) AS arrear_collection,
+                        SUM(prop_tran_dtls.paid_total_tax) AS total_collection
+                    FROM prop_demands
+                    JOIN prop_properties ON prop_properties.id = prop_demands.property_id
+                    JOIN prop_tran_dtls ON prop_tran_dtls.prop_demand_id = prop_demands.id 
+                        AND prop_tran_dtls.prop_demand_id is not null 
+                    JOIN prop_transactions ON prop_transactions.id = prop_tran_dtls.tran_id 
+                        AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
+                    WHERE prop_demands.status =1 
+                        AND prop_transactions.tran_date  BETWEEN '$fromDate' AND '$uptoDate'
+                        AND prop_demands.fyear <= '$uptoFyear'
+                        ".($zoneId?" AND prop_properties.zone_mstr_id = $zoneId" : "" )."
+                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId" : "" )."
+                    GROUP BY prop_properties.ward_mstr_id
+                )collection ON collection.ward_mstr_id = ulb_ward_masters.id
+                LEFT JOIN ( 
+                    SELECT prop_properties.ward_mstr_id,
+                        SUM(prop_tran_dtls.paid_total_tax) AS total_prev_collection
+                    FROM prop_demands
+                    JOIN prop_properties ON prop_properties.id = prop_demands.property_id
+                    JOIN prop_tran_dtls ON prop_tran_dtls.prop_demand_id = prop_demands.id 
+                        AND prop_tran_dtls.prop_demand_id is not null 
+                    JOIN prop_transactions ON prop_transactions.id = prop_tran_dtls.tran_id 
+                        AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
+                    WHERE prop_demands.status =1 
+                        AND prop_transactions.tran_date < '$fromDate'
+                        ".($zoneId?" AND prop_properties.zone_mstr_id = $zoneId" : "" )."
+                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId" : "" )."
+                    GROUP BY prop_properties.ward_mstr_id
+                )prev_collection ON prev_collection.ward_mstr_id = ulb_ward_masters.id
+                GROUP BY ulb_ward_masters.id ,ulb_ward_masters.ward_name 
+            ";
+            
+
+            $online = $this->_DB_READ->table("prop_transactions")
+                ->select(
+                    DB::raw("prop_properties.ward_mstr_id ,
+                        COUNT( DISTINCT(prop_transactions.property_id) ) AS holding_count, 
+                        COUNT( DISTINCT(prop_transactions.user_id) ) AS user_count, 
+                        COUNT(prop_transactions.id) AS tran_count, 
+                        SUM( COALESCE(prop_transactions.amount, 0)) AS amount
+                    ")
+                )
+                ->JOIN("prop_properties","prop_properties.id","prop_transactions.property_id")
+                ->WHERENOTNULL("prop_transactions.property_id")
+                ->WHEREIN("prop_transactions.status", [1, 2])
+                ->WHERE(DB::RAW("UPPER(prop_transactions.payment_mode)"),"=" ,DB::RAW("UPPER('ONLINE')"))
+                ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]); 
+
+            $doorToDoor = $this->_DB_READ->table("prop_transactions")
+                ->select(
+                    DB::raw("prop_properties.ward_mstr_id ,
+                        COUNT( DISTINCT(prop_transactions.property_id) ) AS holding_count, 
+                        COUNT( DISTINCT(prop_transactions.user_id) ) AS user_count, 
+                        COUNT(prop_transactions.id) AS tran_count, 
+                        SUM( COALESCE(prop_transactions.amount, 0)) AS amount
+                    ")
+                )
+                ->JOIN("prop_properties","prop_properties.id","prop_transactions.property_id")
+                ->JOIN(DB::RAW("(                                        
+                    SELECT DISTINCT wf_roleusermaps.user_id as role_user_id
+                    FROM wf_roles
+                    JOIN wf_roleusermaps ON wf_roleusermaps.wf_role_id = wf_roles.id 
+                        AND wf_roleusermaps.is_suspended = FALSE
+                    JOIN wf_workflowrolemaps ON wf_workflowrolemaps.wf_role_id = wf_roleusermaps.wf_role_id
+                        AND wf_workflowrolemaps.is_suspended = FALSE
+                    JOIN wf_workflows ON wf_workflows.id = wf_workflowrolemaps.workflow_id AND wf_workflows.is_suspended = FALSE 
+                    JOIN ulb_masters ON ulb_masters.id = wf_workflows.ulb_id
+                    WHERE wf_roles.is_suspended = FALSE 
+                        AND wf_workflows.ulb_id = 2
+                        AND wf_roles.id not in (8,108)
+                    GROUP BY wf_roleusermaps.user_id
+                    ORDER BY wf_roleusermaps.user_id
+                ) collecter"),"collecter.role_user_id","prop_transactions.user_id")
+                ->WHERENOTNULL("prop_transactions.property_id")
+                ->WHEREIN("prop_transactions.status", [1, 2])
+                ->WHERE(DB::RAW("UPPER(prop_transactions.payment_mode)"),"<>" ,DB::RAW("UPPER('ONLINE')"))
+                ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);            
+
+            $jsk = $this->_DB_READ->table("prop_transactions")
+                ->select(
+                    DB::raw("prop_properties.ward_mstr_id ,
+                        COUNT( DISTINCT(prop_transactions.property_id) ) AS holding_count, 
+                        COUNT( DISTINCT(prop_transactions.user_id) ) AS user_count, 
+                        COUNT(prop_transactions.id) AS tran_count, 
+                        SUM( COALESCE(prop_transactions.amount, 0)) AS amount
+                    ")
+                )
+                ->JOIN("prop_properties","prop_properties.id","prop_transactions.property_id")
+                ->JOIN(DB::RAW("(                                        
+                    SELECT DISTINCT wf_roleusermaps.user_id as role_user_id
+                    FROM wf_roles
+                    JOIN wf_roleusermaps ON wf_roleusermaps.wf_role_id = wf_roles.id 
+                        AND wf_roleusermaps.is_suspended = FALSE
+                    JOIN wf_workflowrolemaps ON wf_workflowrolemaps.wf_role_id = wf_roleusermaps.wf_role_id
+                        AND wf_workflowrolemaps.is_suspended = FALSE
+                    JOIN wf_workflows ON wf_workflows.id = wf_workflowrolemaps.workflow_id AND wf_workflows.is_suspended = FALSE 
+                    JOIN ulb_masters ON ulb_masters.id = wf_workflows.ulb_id
+                    WHERE wf_roles.is_suspended = FALSE 
+                        AND wf_workflows.ulb_id = 2
+                        AND wf_roles.id in (8,108)
+                    GROUP BY wf_roleusermaps.user_id
+                    ORDER BY wf_roleusermaps.user_id
+                ) collecter"),"collecter.role_user_id","prop_transactions.user_id")
+                ->WHERENOTNULL("prop_transactions.property_id")
+                ->WHEREIN("prop_transactions.status", [1, 2])
+                ->WHERE(DB::RAW("UPPER(prop_transactions.payment_mode)"),"<>" ,DB::RAW("UPPER('ONLINE')"))
+                ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
+
+            $totalTrans = $this->_DB_READ->table("prop_transactions")
+                ->select(
+                    DB::raw("prop_properties.ward_mstr_id ,
+                        COUNT( DISTINCT(prop_transactions.property_id) ) AS holding_count, 
+                        COUNT( DISTINCT(prop_transactions.user_id) ) AS user_count, 
+                        COUNT(prop_transactions.id) AS tran_count, 
+                        SUM( COALESCE(prop_transactions.amount, 0)) AS amount
+                    ")
+                )
+                ->JOIN("prop_properties","prop_properties.id","prop_transactions.property_id")
+                ->WHERENOTNULL("prop_transactions.property_id")
+                ->WHEREIN("prop_transactions.status", [1, 2])
+                ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
+
+            $penaltyRebates = $this->_DB_READ->table("prop_penaltyrebates")
+                            ->select(
+                                DB::raw("prop_properties.ward_mstr_id ,
+                                    COUNT( DISTINCT(prop_transactions.property_id) ) AS holding_count, 
+                                    COUNT( DISTINCT(prop_transactions.user_id) ) AS user_count, 
+                                    COUNT(DISTINCT(prop_transactions.id)) AS tran_count, 
+                                    SUM( CASE WHEN prop_penaltyrebates.is_rebate = TRUE then COALESCE(prop_penaltyrebates.amount, 0) else 0 end) AS rebate_amount,
+                                    SUM( CASE WHEN prop_penaltyrebates.is_rebate = false then COALESCE(prop_penaltyrebates.amount, 0) else 0 end) AS penalty_amount
+                                ")
+                            )
+                            ->join("prop_transactions","prop_transactions.id","prop_penaltyrebates.tran_id")
+                            ->JOIN("prop_properties","prop_properties.id","prop_transactions.property_id")
+                            ->WHERENOTNULL("prop_transactions.property_id")
+                            ->WHEREIN("prop_transactions.status", [1, 2])
+                            ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
+
+            if ($zoneId) {
+                $online = $online->WHERE("prop_properties.zone_mstr_id", $zoneId);
+                $doorToDoor = $doorToDoor->WHERE("prop_properties.zone_mstr_id", $zoneId);
+                $jsk =  $jsk->WHERE("prop_properties.zone_mstr_id", $zoneId);
+                $totalTrans =  $totalTrans->WHERE("prop_properties.zone_mstr_id", $zoneId);
+                $penaltyRebates = $penaltyRebates->WHERE("prop_properties.zone_mstr_id", $zoneId);
+            }
+            if ($wardId) {
+                $online = $online->WHERE("prop_properties.ward_mstr_id", $wardId);
+                $doorToDoor = $doorToDoor->WHERE("prop_properties.ward_mstr_id", $wardId);
+                $jsk =  $jsk->WHERE("prop_properties.ward_mstr_id", $wardId);
+                $totalTrans =  $totalTrans->WHERE("prop_properties.ward_mstr_id", $wardId);
+                $penaltyRebates = $penaltyRebates->WHERE("prop_properties.ward_mstr_id", $wardId);
+            }
+
+            
+
+            $online = $online->GROUPBY("prop_properties.ward_mstr_id");
+            $doorToDoor =  $doorToDoor->GROUPBY("prop_properties.ward_mstr_id");
+            $jsk = $jsk->GROUPBY("prop_properties.ward_mstr_id");
+            $totalTrans = $totalTrans->GROUPBY("prop_properties.ward_mstr_id");
+            $penaltyRebates = $penaltyRebates->GROUPBY("prop_properties.ward_mstr_id");
+
+            $online = $online->get();
+            $doorToDoor = $doorToDoor->get();
+            $jsk        = $jsk->get();
+            $totalTrans  = $totalTrans->get();
+            $penaltyRebates = $penaltyRebates->get();
+
+            
+
+            $dcbData = collect($this->_DB_READ->select($sql))->map(function($val)use($online,$doorToDoor,$jsk,$totalTrans){
+                $tcTran = collect($doorToDoor)->where("ward_mstr_id",$val->id);
+                $counterTran = collect($jsk)->where("ward_mstr_id",$val->id);
+                $onlineTran = collect($online)->where("ward_mstr_id",$val->id);
+                $totalTran  = collect($totalTrans)->where("ward_mstr_id",$val->id);
+                $val->total_demand = $val->arrear_demand + $val->current_demand;
+                $val->total_collection = $val->arrear_collection + $val->current_collection;
+                $val->arrear_collection = $val->old_due;
+                $val->arrear_collection = $val->old_due;
+                $val->tc_tran_count = $tcTran->sum("tran_count");
+                $val->counter_tran_count = $counterTran->sum("tran_count");
+                $val->online_tran_count = $onlineTran->sum("tran_count");
+                $val->total_tran_count = $totalTran->sum("tran_count");
+                preg_match('/\d+/', $val->ward_no, $matches); 
+                preg_match('/[a-zA-Z]+/', $val->ward_no, $matchesC);
+                $val->sl = (int) implode("",$matches);
+                $val->slZ = implode("",$matchesC);
+                return $val;
+            });
+            $dcbData = collect($dcbData)->sortBy(["slZ","sl"])->values();
+            $granTax = [
+                "id"                    =>  0,
+                "ward_name"             =>  "Grand Tax",
+                "current_demand_hh"     =>  $dcbData->sum("current_demand_hh"),
+                "arrear_demand_hh"      =>  $dcbData->sum("arrear_demand_hh"),
+                "current_collection_hh"      =>  $dcbData->sum("current_collection_hh"),
+                "arrear_collection_hh"      =>  $dcbData->sum("arrear_collection_hh"),
+                "collection_from_hh"      =>  $dcbData->sum("collection_from_hh"),
+                "arrear_hh_eff"      =>  $dcbData->sum("arrear_hh_eff"),
+                "current_hh_eff"      =>  $dcbData->sum("current_hh_eff"),
+                "balance_hh"      =>  $dcbData->sum("balance_hh"),
+                "arrear_demand"      =>  $dcbData->sum("arrear_demand"),
+                "previous_collection"      =>  $dcbData->sum("previous_collection"),
+                "current_demand"      =>  $dcbData->sum("current_demand"),
+                "arrear_collection"      =>  $dcbData->sum("arrear_collection"),
+                "current_collection"      =>  $dcbData->sum("current_collection"),
+                "old_due"      =>  $dcbData->sum("old_due"),
+                "current_due"      =>  $dcbData->sum("current_due"),
+                "current_balance_hh"      =>  $dcbData->sum("current_balance_hh"),
+                "arrear_balance_hh"      =>  $dcbData->sum("arrear_balance_hh"),
+                "arrear_eff"      =>  $dcbData->sum("arrear_eff"),
+                "current_eff"      =>  $dcbData->sum("current_eff"),
+                "outstanding"      =>  $dcbData->sum("outstanding"),
+                "total_demand"      =>  $dcbData->sum("total_demand"),
+                "total_collection"      =>  $dcbData->sum("total_collection"),
+                "tc_tran_count"      =>  $dcbData->sum("tc_tran_count"),
+                "counter_tran_count"      =>  $dcbData->sum("counter_tran_count"),
+                "online_tran_count"      =>  $dcbData->sum("online_tran_count"),
+                "total_tran_count"      =>  $dcbData->sum("total_tran_count"),
+            ];
+            $penalties = [
+                "id"                    =>  0,
+                "ward_name"             =>  "Total Intrest",
                 "current_demand_hh"     =>  "---",
                 "arrear_demand_hh"      =>  "---",
                 "current_collection_hh"      =>  "---",

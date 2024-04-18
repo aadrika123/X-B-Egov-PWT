@@ -47,6 +47,14 @@ if (!function_exists("validationError")) {
     }
 }
 
+if (!function_exists("validationErrorV2")) {
+    function validationErrorV2($validator)
+    {
+        $response = ['status' => false, "message" => 'Validation Error', "errors" => $validator->errors()];
+        return response()->json($response, 200);
+    }
+}
+
 
 if (!function_exists("print_var")) {
     function print_var($data = '')

@@ -549,6 +549,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('reports/device-type/collection', 'deviceTypeCollection');
     Route::post('reports/property/dealy-head-wise-individual-collection', 'individulaPropHeadWishDealyColl');
     Route::post('reports/property/dealy-head-wise-zone-collection', 'zoneWishDealyColl');
+    Route::post('reports/property/dealy-head-wise-ward-collection', 'wardWishDealyColl');
 
     /**
      * #==========created by Prity Pandey==========================     
