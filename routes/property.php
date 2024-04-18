@@ -547,9 +547,9 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('live-dashboard-update', 'liveDashboardUpdate');
 
     Route::post('reports/device-type/collection', 'deviceTypeCollection');
-    Route::post('reports/property/dealy-head-wise-individual-collection', 'individulaPropHeadWishDealyColl');
-    Route::post('reports/property/dealy-head-wise-zone-collection', 'zoneWishDealyColl');
-    Route::post('reports/property/dealy-head-wise-ward-collection', 'wardWishDealyColl');
+    Route::post('reports/property/daily-head-wise-individual-collection', 'individulaPropHeadWishDailyColl');
+    Route::post('reports/property/daily-head-wise-zone-collection', 'zoneWishDailyColl');
+    Route::post('reports/property/daily-head-wise-ward-collection', 'wardWishDailyColl');
 
     /**
      * #==========created by Prity Pandey==========================     

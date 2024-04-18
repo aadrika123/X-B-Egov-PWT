@@ -4668,7 +4668,7 @@ class ReportController extends Controller
         }
     }
 
-    public function zoneWishDealyColl(Request $request)
+    public function zoneWishDailyColl(Request $request)
     {
         $ruls =[
             "fromDate"  => "required|date|date_format:Y-m-d|before_or_equal:".Carbon::now()->format('Y-m-d'),
@@ -5031,7 +5031,7 @@ class ReportController extends Controller
         }
     }
 
-    public function wardWishDealyColl(Request $request)
+    public function wardWishDailyColl(Request $request)
     {
         $ruls =[
             "fromDate"  => "required|date|date_format:Y-m-d|before_or_equal:".Carbon::now()->format('Y-m-d'),
@@ -5409,6 +5409,17 @@ class ReportController extends Controller
             $dcbData->push($granTax,$penalties,$granTax);
 
             return responseMsgs(true, "Zone Wise daily Collecton Report", $dcbData);
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false, $e->getMessage(), []);
+        }
+    }
+
+    public function individulaPropHeadWishDailyColl(Request $request)
+    {
+        try{
+
         }
         catch(Exception $e)
         {
