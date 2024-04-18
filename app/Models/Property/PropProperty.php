@@ -261,7 +261,7 @@ class PropProperty extends  PropParamModel #Model
      */
     public function searchCollectiveHolding($holdingArray)
     {
-        return PropProperty::whereIn('new_holding_no', $holdingArray)
+        return PropProperty::whereIn('holding_no', $holdingArray)
             ->where('status', 1)
             ->get();
     }

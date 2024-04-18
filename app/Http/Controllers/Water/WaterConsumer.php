@@ -163,14 +163,14 @@ class WaterConsumer extends Controller
             # Basic consumer details
             $WaterBasicDetails = $mWaterSecondConsumer->fullWaterDetails($refConsumerId)->first();
             if (!$WaterBasicDetails) {
-                throw new Exception("consumer detail not found ");
+                throw new Exception("Consumer detail not found ");
             }
 
             # Get demand details 
             $refConsumerDemand = $mWaterConsumerDemand->getConsumerDemandV3($refConsumerId);
             if (!($refConsumerDemand->first())) {
                 $consumerDemand['demandStatus'] = 0;                                    // Static / to represent existence of demand
-                return responseMsgs(false, "consumer demands not found!", $consumerDemand, "", "01", responseTime(), $request->getMethod(), $request->deviceId);
+                return responseMsgs(false, "Consumer demands not found!", $consumerDemand, "", "01", responseTime(), $request->getMethod(), $request->deviceId);
             }
 
             $totalAdvanceAmt = $mWaterAdvance->getAdvanceAmt($refConsumerId);
@@ -418,18 +418,18 @@ class WaterConsumer extends Controller
             }
 
             if ($refDemandUpto && $refDemandUpto > $today) {
-                throw new Exception("the demand is generated till" . "" . $lastDemand->demand_upto);
+                throw new Exception("The demand is generated till" . "" . $lastDemand->demand_upto);
             }
 
             $startDate  = Carbon::parse($refDemandUpto);
             $uptoMonth  = $startDate;
             $todayMonth = $today;
             if ($refDemandUpto && $uptoMonth->greaterThan($todayMonth)) {
-                throw new Exception("demand should be generated generate in next month!");
+                throw new Exception("Demand should be generated in the next month!");
             }
             $diffMonth = $startDate->diffInMonths($today);
             if ($refDemandUpto && $diffMonth < 3) {
-                throw new Exception("there should be a difference of 3  month!");
+                throw new Exception("There should be a difference of 3 month!");
             }
         } 
         # write the code to check the first meter reading exist and the other 
@@ -533,14 +533,14 @@ class WaterConsumer extends Controller
             # If fixed meter connection is changing to meter connection as per rule every connection should be in meter
             if ($request->connectionType != $refMeterConnType['Fixed'] && $consumerMeterDetails->connection_type == $refMeterConnType['Fixed']) {
                 if ($consumerDemand) {
-                    throw new Exception("Please pay the old Demand Amount! as per rule to change fixed connection to meter!");
+                    throw new Exception("Please pay the old demand Amount! as per rule to change fixed connection to meter!");
                 }
                 throw new Exception("Please apply for regularization as per rule 16 your connection should be in meter!");
             }
             # If there is previous meter detail exist
             $reqConnectionDate = $request->connectionDate;
             if (strtotime($consumerMeterDetails->connection_date) > strtotime($reqConnectionDate)) {
-                throw new Exception("Connection Date should be greater than previous Connection date!");
+                throw new Exception("Connection date should be greater than previous connection date!");
             }
             # Check the Conversion of the Connection
             $this->checkConnectionTypeUpdate($request, $consumerMeterDetails, $refMeterConnType);
@@ -553,7 +553,7 @@ class WaterConsumer extends Controller
             $consumerDmandDate = Carbon::parse($consumerDemand->demand_upto)->format('m');
             switch ($consumerDemand) {
                 case ($consumerDmandDate >= $reqConnectionDate):
-                    throw new Exception("Can not update Connection Date, Demand already generated upto that month!");
+                    throw new Exception("Cannot update connection Date, Demand already generated upto that month!");
                     break;
             }
         }
@@ -764,7 +764,7 @@ class WaterConsumer extends Controller
             $finisherRoleId     = DB::select($refFinisherRoleId);
             $initiatorRoleId    = DB::select($refInitiatorRoleId);
             if (!$finisherRoleId || !$initiatorRoleId) {
-                throw new Exception("initiatorRoleId or finisherRoleId not found for respective Workflow!");
+                throw new Exception("Initiator Role or finisher Role not found for respective Workflow!");
             }
 
             # If the user is not citizen
@@ -772,7 +772,7 @@ class WaterConsumer extends Controller
                 $request->request->add(['workflowId' => $refWorkflow]);
                 $roleDetails = $this->getRole($request);
                 if (!$roleDetails) {
-                    throw new Exception("Role detail Not found!");
+                    throw new Exception("Role not found!");
                 }
                 $roleId = $roleDetails['wf_role_id'];
                 $refRequest = [
@@ -868,7 +868,7 @@ class WaterConsumer extends Controller
             throw new Exception("There are unpaid pending demand!");
         }
         if (isset($request->ulbId) && $request->ulbId != $refConsumerDetails->ulb_id) {
-            throw new Exception("ulb not matched according to consumer connection!");
+            throw new Exception("Ulb not matched according to consumer connection!");
         }
         // if ($refConsumerDetails->user_type == $refUserType['1'] && $user->id != $refConsumerDetails->user_id) {
         //     throw new Exception("You are not the autherised user who filled before the connection!");
@@ -1023,9 +1023,9 @@ class WaterConsumer extends Controller
             $consumerDetails = $mWaterWaterConsumer->getConsumerByIds($consumerIds)->get();
             $checkConsumer = collect($consumerDetails)->first();
             if (is_null($checkConsumer)) {
-                throw new Exception("Consuemr Details Not Found!");
+                throw new Exception("Consumer Details Not Found!");
             }
-            return responseMsgs(true, 'list of undertaken water connections!', remove_null($consumerDetails), "", "01", ".ms", "POST", $request->deviceId);
+            return responseMsgs(true, 'List of undertaken water connections!', remove_null($consumerDetails), "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", $request->deviceId);
         }
@@ -1100,7 +1100,7 @@ class WaterConsumer extends Controller
 
         $meterConnectionDetails = $mWaterConsumerMeter->getMeterDetailsByConsumerId($consumerId)->first();
         if (!$meterConnectionDetails)
-            throw new Exception("Consumer meter details not found maybe meter is not installed!");
+            throw new Exception("Consumer meter detail's not found maybe meter is not installed!");
 
         if ($meterConnectionDetails->connection_type != $refConnectionType['Fixed'])
             throw new Exception("Consumer meter's connection type is not fixed!");
@@ -1136,7 +1136,7 @@ class WaterConsumer extends Controller
             $mWaterConsumerInitialMeter = new WaterConsumerInitialMeter();
 
             if ($request->uptoData > $todayDate) {
-                throw new Exception("uptoDate should not be grater than" . " " . $todayDate);
+                throw new Exception("Upto date should not be grater than" . " " . $todayDate);
             }
             $refConsumerDemand = $mWaterConsumerDemand->consumerDemandByConsumerId($refConsumerId);
             if (is_null($refConsumerDemand)) {
@@ -1150,7 +1150,7 @@ class WaterConsumer extends Controller
 
             $difference = $endDate->diffInMonths($startDate);
             if ($difference < 1 || $startDate > $endDate) {
-                throw new Exception("current uptoData should be grater than the previous uptoDate! and should have a month difference!");
+                throw new Exception("Current uptoDate should be greater than the previous uptoDate! and should have a month difference!");
             }
             $diffInDays = $endDate->diffInDays($startDate);
             $finalMeterReading = $mWaterConsumerInitialMeter->getmeterReadingAndDetails($refConsumerId)
@@ -1424,7 +1424,7 @@ class WaterConsumer extends Controller
         $mActiveCitizenUndercare    = new ActiveCitizenUndercare();
 
         if ($endDate > $todayDate) {
-            throw new Exception("please generate the demand on $formatEndDate or after it!");
+            throw new Exception("Please generate the demand on $formatEndDate or after it!");
         }
         $careTakerDetails   = $mActiveCitizenUndercare->getWaterUnderCare($user->id)->get();
         $consumerIds        = collect($careTakerDetails)->pluck('consumer_id');
