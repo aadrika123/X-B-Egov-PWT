@@ -5353,7 +5353,7 @@ class ReportController extends Controller
             $dcbData = collect($dcbData)->sortBy(["slZ","sl"])->values();
             $granTax = [
                 "id"                    =>  0,
-                "ward_name"             =>  "Grand Tax",
+                "ward_no"             =>  "Grand Tax",
                 "current_demand_hh"     =>  $dcbData->sum("current_demand_hh"),
                 "arrear_demand_hh"      =>  $dcbData->sum("arrear_demand_hh"),
                 "current_collection_hh"      =>  $dcbData->sum("current_collection_hh"),
@@ -5384,7 +5384,7 @@ class ReportController extends Controller
             ];
             $penalties = [
                 "id"                    =>  0,
-                "ward_name"             =>  "Total Intrest",
+                "ward_no"             =>  "Total Intrest",
                 "current_demand_hh"     =>  "---",
                 "arrear_demand_hh"      =>  "---",
                 "current_collection_hh"      =>  "---",
