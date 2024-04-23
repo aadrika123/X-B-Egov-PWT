@@ -5,6 +5,7 @@ namespace App\BLL\Property\Akola;
 use App\MicroServices\DocumentUpload;
 use App\MicroServices\IdGeneration;
 use App\Models\Payment\TempTransaction;
+use App\Models\Property\Logs\PropDemandsTransaction;
 use App\Models\Property\Logs\PropSmsLog;
 use App\Models\Property\PropAdjustment;
 use App\Models\Property\PropAdvance;
@@ -851,6 +852,9 @@ class PostPropPaymentV2
         $this->_penaltyRebates["monthlyPenalty"]["amount"] = roundFigure($paidPenalty);
         $d1 = [];
         $trDtl = [];
+        foreach($demands as $key=>$val){
+            $this->insertDemandTranLog($this->_tranId,$val);
+        }
 
         #update Pending Arrear Penalty
         if ($previousInterest > 0 && $OldInterest = $this->_PropPendingArrear->find($previousInterestId)) {
@@ -1243,5 +1247,45 @@ class PostPropPaymentV2
             $paidDemands[] = $paymentDtl;
         }
         return(($this->_REQ->paymentType != "isPartPayment" || round($this->_REQ->paidAmount) == round($totalDemandAmt) || round($this->_REQ->paidAmount) == round($totalaAreaDemand)) ? collect($paidDemands)->sum("paidTotalExemptedGeneralTax") : 0);
+    }
+
+    public function insertDemandTranLog($tranId,$demand)
+    {
+        $demands = PropDemand::find($demand["id"]);
+        $demandTranLog = new PropDemandsTransaction();
+        $insertArray =[
+            "property_id"       =>  $demands["property_id"],
+            "transaction_id"    =>  $tranId,
+            "demand_id"         =>  $demands["id"],
+            "alv"               =>  $demands["due_alv"],
+            "maintanance_amt"   =>  $demands["due_maintanance_amt"],
+            "aging_amt"         =>  $demands["due_aging_amt"],
+            "general_tax"       =>  $demands["due_general_tax"],
+            "road_tax"          =>  $demands["due_road_tax"],
+            "firefighting_tax"  =>  $demands["due_firefighting_tax"],
+            "education_tax"     =>  $demands["due_education_tax"],
+            "water_tax"         =>  $demands["due_water_tax"],
+            "cleanliness_tax"   =>  $demands["due_cleanliness_tax"],
+            "sewarage_tax"      =>  $demands["due_sewarage_tax"],
+            "tree_tax"          =>  $demands["due_tree_tax"],
+            "professional_tax"  =>  $demands["due_professional_tax"],
+            "total_tax"         =>  $demands["due_total_tax"],
+            "balance"           =>  $demands["due_balance"],
+            "tax1"              =>  $demands["due_tax1"],
+            "tax2"              =>  $demands["due_tax2"],
+            "tax3"              =>  $demands["due_tax3"],
+            "sp_education_tax"  =>  $demands["due_sp_education_tax"],
+            "water_benefit"     =>  $demands["due_water_benefit"],
+            "water_bill"        =>  $demands["due_water_bill"],
+            "sp_water_cess"     =>  $demands["due_sp_water_cess"],
+            "drain_cess"        =>  $demands["due_drain_cess"],
+            "light_cess"        =>  $demands["due_light_cess"],
+            "major_building"    =>  $demands["due_major_building"],
+            "open_ploat_tax"    =>  $demands["due_open_ploat_tax"],
+            "paid_status"       =>  $demands["paid_status"],
+            "fyear"             =>  $demands["fyear"],
+            "json_demands"      =>  json_encode($demands)
+        ];
+        $demandTranLog->create($insertArray);
     }
 }
