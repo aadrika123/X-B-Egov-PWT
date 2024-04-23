@@ -1553,7 +1553,7 @@ class Report implements IReport
                 });
             }
 
-            $perPage = $request->perPage ? $request->perPage : 10;
+            $perPage = $request->perPage ? $request->perPage : 1000;
             $paginator = $data->paginate($perPage);
             $list = [
                 "current_page" => $paginator->currentPage(),
@@ -1635,14 +1635,14 @@ class Report implements IReport
                 ->WHERE("active_trade_licences.is_active", TRUE);
             $data = $data->groupBy(["ward_name", "ulb_ward_masters.id"]);
 
-            $perPage = $request->perPage ? $request->perPage : 10;
+            $perPage = $request->perPage ? $request->perPage : 1000;
             $paginator = $data->paginate($perPage);
             $list = [
                 "current_page" => $paginator->currentPage(),
                 "last_page" => $paginator->lastPage(),
                 "data" => $paginator->items(),
                 "total" => $paginator->total(),
-            ];
+            ];        
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, $header, $list, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
@@ -1726,7 +1726,7 @@ class Report implements IReport
             if ($request->wardId) {
                 $data = $data->WHEREIN("active_trade_licences.ward_id", $mWardIds);
             }
-            $perPage = $request->perPage ? $request->perPage : 10;
+            $perPage = $request->perPage ? $request->perPage : 1000;
             $paginator = $data->paginate($perPage);
             $list = [
                 "current_page" => $paginator->currentPage(),
