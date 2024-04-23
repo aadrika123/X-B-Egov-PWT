@@ -14,6 +14,7 @@ use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWardUser;
 use App\Repository\Common\CommonFunction;
 use App\Repository\Property\Interfaces\IReport;
+use App\Repository\Water\Concrete\Report as ConcreteReport;
 use App\Traits\Property\SAF;
 use App\Traits\Workflow\Workflow;
 use Carbon\Carbon;
@@ -5465,6 +5466,15 @@ class Report implements IReport
     public function tranDeactivatedList(Request $request)
     {
         try {
+            if($request->tranType=="Water" || $request->tranType=="Water")
+            {
+                return ((new ConcreteReport())->tranDeactivatedList($request));
+            }
+
+            if($request->tranType=="Trade" || $request->tranType=="Trade")
+            {
+                
+            }
             $user = Auth()->user();
             $paymentMode = "";
             $fromDate = $toDate = Carbon::now()->format("Y-m-d");
