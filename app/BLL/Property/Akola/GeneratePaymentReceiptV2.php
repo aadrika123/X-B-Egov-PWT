@@ -314,9 +314,9 @@ class GeneratePaymentReceiptV2
         $mobileDuration = ($from)." to ".($to);
         if($from==$to)
         {
-            $from = $from-1;
-            $duration = "01-April-".($from) ." to "."31-March-".($to);
-            $mobileDuration = ($from)." to ".($to);            
+            $from = $from;
+            $duration = "01-April-".($from) ." to "."31-March-".($to+1);
+            $mobileDuration = ($from)." to ".($to+1);            
         }
         if($from !=$to-1)
         {
