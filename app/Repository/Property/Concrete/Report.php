@@ -5466,12 +5466,12 @@ class Report implements IReport
     public function tranDeactivatedList(Request $request)
     {
         try {
-            if($request->tranType=="Water" || $request->tranType=="Water")
+            if($request->tranType=="Water" || $request->selectedModuleOption=="Water")
             {
                 return ((new ConcreteReport())->tranDeactivatedList($request));
             }
 
-            if($request->tranType=="Trade" || $request->tranType=="Trade")
+            if($request->tranType=="Trade" || $request->selectedModuleOption=="Trade")
             {
                 
             }
