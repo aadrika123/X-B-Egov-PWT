@@ -853,7 +853,8 @@ class PostPropPaymentV2
         $d1 = [];
         $trDtl = [];
         foreach($demands as $key=>$val){
-            $this->insertDemandTranLog($this->_tranId,$val);
+            $this->insertDemandTranLog($this->_tranId,$val,($key==0?$demandData['previousInterest']:0));
+            
         }
 
         #update Pending Arrear Penalty
@@ -1249,8 +1250,9 @@ class PostPropPaymentV2
         return(($this->_REQ->paymentType != "isPartPayment" || round($this->_REQ->paidAmount) == round($totalDemandAmt) || round($this->_REQ->paidAmount) == round($totalaAreaDemand)) ? collect($paidDemands)->sum("paidTotalExemptedGeneralTax") : 0);
     }
 
-    public function insertDemandTranLog($tranId,$demand)
-    {
+    public function insertDemandTranLog($tranId,$demand,$prive_intrest=0)
+    {        
+        $monthely_penalty = $demand["monthlyPenalty"];
         $demands = PropDemand::find($demand["id"]);
         $demandTranLog = new PropDemandsTransaction();
         $insertArray =[
@@ -1284,7 +1286,9 @@ class PostPropPaymentV2
             "open_ploat_tax"    =>  $demands["due_open_ploat_tax"],
             "paid_status"       =>  $demands["paid_status"],
             "fyear"             =>  $demands["fyear"],
-            "json_demands"      =>  json_encode($demands)
+            "json_demands"      =>  json_encode($demands),
+            "monthly_penalty"      =>  $monthely_penalty,
+            "prive_intrest"      =>  $prive_intrest
         ];
         $demandTranLog->create($insertArray);
     }
