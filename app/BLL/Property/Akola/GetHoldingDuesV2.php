@@ -50,7 +50,7 @@ class GetHoldingDuesV2
     public function testOldTranClear($propertyId)
     {
         $oldTransaction = PropTransaction::where("status",1)->where("property_id",$propertyId)->orderBy("id","DESC")->first();
-        $checkDtls = $oldTransaction ? $oldTransaction->getChequeDtl():collect([]);
+        $checkDtls = $oldTransaction ? $oldTransaction->getChequeDtl():false;
         if($checkDtls)
         {
             $this->_IsOldTranClear = $checkDtls->status==1? true:false;
