@@ -3638,10 +3638,10 @@ class WaterReportController extends Controller
 
             $refDetailsV2 = [
                 "array" => $data,
-                "sum_current_coll" => $refData->pluck('current_collections')->sum(),
-                "sum_arrear_coll" => $refData->pluck('arrear_collections')->sum(),
-                "sum_total_coll" => $refData->pluck('total_collections')->sum(),
-                "totalAmount"   =>  $refData->pluck('amount')->sum(),
+                "sum_current_coll" => roundFigure($refData->pluck('current_collections')->sum()??0),
+                "sum_arrear_coll" => roundFigure($refData->pluck('arrear_collections')->sum()??0),
+                "sum_total_coll" => roundFigure($refData->pluck('total_collections')->sum()??0),
+                "totalAmount"   =>  roundFigure($refData->pluck('amount')->sum()??0),
                 "totalColletion" => $refData->pluck('tran_id')->count(),
                 "currentDate"  => $currentDate
             ];
