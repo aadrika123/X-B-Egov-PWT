@@ -14,6 +14,7 @@ class ReqEditSaf extends reqApplySaf
         $rules["id"]="required|digits_between:1,9223372036854775807|exists:prop_active_safs,id";
         $rules["previousHoldingId"]="nullable";
         $rules["owner.*.propOwnerDetailId"]       = "nullable|digits_between:1,9223372036854775807";
+        $rules["isOwnerChanged"] = "nullable|bool";
         if($this->propertyType != 4)
         {
             $rules["floor.*.propFloorDetailId"] =   "nullable|digits_between:1,9223372036854775807";

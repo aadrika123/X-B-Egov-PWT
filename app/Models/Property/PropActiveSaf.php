@@ -179,7 +179,7 @@ class  PropActiveSaf extends PropParamModel #Model
 
         $reqs = [
             'previous_ward_mstr_id' => $req->previousWard,
-            'is_owner_changed' => $req->isOwnerChanged,
+            'is_owner_changed' => isset($req->isOwnerChanged)?$req->isOwnerChanged : $saf->is_owner_changed,
             'transfer_mode_mstr_id' => $req->transferModeId ?? null,
             'ward_mstr_id' => $req->ward,
             'ownership_type_mstr_id' => $req->ownershipType,
