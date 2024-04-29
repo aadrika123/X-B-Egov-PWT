@@ -920,6 +920,7 @@ class ActiveSafController extends Controller
             $prevOwnerDtls = array();
             $user = Auth()->user();
             $is_approved = false;
+            $adminAllows = false;
             // Derivative Assignments
             $data = $mPropActiveSaf->getActiveSafDtls()                         // <------- Model function Active SAF Details
                 ->where('prop_active_safs.id', $req->applicationId)
@@ -1012,6 +1013,12 @@ class ActiveSafController extends Controller
             }
             $usertype = $this->_COMMONFUNCTION->getUserAllRoles();
             $testRole = collect($usertype)->whereIn("sort_name", Config::get("TradeConstant.CANE-CUTE-PAYMENT"));
+            $testAdminRole = collect($usertype)->whereIn("sort_name", Config::get("TradeConstant.CANE-REJECT-APPLICATION"));
+            if($testAdminRole->isNotEmpty() && !$is_approved)
+            {
+                $adminAllows = true;
+            }
+            $data["can_deactivate_saf"] =$adminAllows;
             $data["can_take_payment"] = ($is_approved && collect($testRole)->isNotEmpty() && ($data["proccess_fee_paid"] ?? 1) == 0) ? true : false;
             if ($this->_COMMONFUNCTION->checkUsersWithtocken("active_citizens")) {
                 $data["can_take_payment"] = (($data["proccess_fee_paid"] ?? 1) == 0 && $is_approved) ? true : false;
