@@ -95,6 +95,7 @@ use App\Models\Workflows\WfMaster;
 use App\Models\Workflows\WfRole;
 use App\Repository\Common\CommonFunction;
 use Barryvdh\DomPDF\Facade\PDF;
+use Hamcrest\Type\IsNumeric;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Http;
@@ -1263,10 +1264,10 @@ class ActiveSafController extends Controller
                 $getFloorDtls = $mPropSafsFloors->getFloorsBySafId($data['id']);
 
             $getFloorDtls->map(function($val)use($data){
-                $flipArea = roundFigure($val->bifurcated_from_buildup_area);
+                $flipArea = roundFigure(is_numeric($val->bifurcated_from_buildup_area) ? $val->bifurcated_from_buildup_area: 0);
                 if(in_array($data["assessment_type_id"],[4])  )
                 {
-                    $val->bifurcated_from_buildup_area = roundFigure($val->builtup_area);
+                    $val->bifurcated_from_buildup_area = roundFigure(is_numeric($val->builtup_area) ? $val->builtup_area:0 );
                     $val->builtup_area = $flipArea;
                 }
                 return $val;
