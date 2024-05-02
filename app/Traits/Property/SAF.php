@@ -11,6 +11,7 @@ use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafsFloor;
 use App\Models\Property\PropSafsOwner;
+use App\Models\Property\RefPropUsageType;
 use App\Models\UlbWardMaster;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
@@ -548,6 +549,13 @@ trait SAF
             return "PURE_COMMERCIAL";
         else
             return "MIX_COMMERCIAL";
+    }
+
+    public function getPropHoldingTypeAccordingUsage($req)
+    {
+        $useType =  collect($req)->pluck('usage_type_mstr_id');
+        $mUsageType = (RefPropUsageType::whereIn("id",$useType)->orderBy("usage_type_mr","ASC")->get())->unique('usage_type_mr');
+        return($mUsageType->implode("usage_type_mr"," & "));
     }
 
 
