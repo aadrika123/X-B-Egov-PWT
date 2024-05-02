@@ -2140,7 +2140,7 @@ class Report implements IReport
             $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
-            $wardId = null;
+            $zoneId=$wardId = null;
             $fiYear = getFY();
             if ($request->fiYear) {
                 $fiYear = $request->fiYear;
@@ -2156,6 +2156,9 @@ class Report implements IReport
             }
             if ($request->wardId) {
                 $wardId = $request->wardId;
+            }
+            if ($request->zone) {
+                $zoneId = $request->zone;
             }
             $from = "
                 FROM ulb_ward_masters 
@@ -2249,6 +2252,7 @@ class Report implements IReport
                 )prev_collection ON prev_collection.ward_mstr_id = ulb_ward_masters.id                 
                 WHERE  ulb_ward_masters.ulb_id = $ulbId  
                     " . ($wardId ? " AND ulb_ward_masters.id = $wardId" : "") . "
+                    " . ($zoneId ? " AND ulb_ward_masters.zone = $zoneId" : "") . "
                 GROUP BY ulb_ward_masters.ward_name           
             ";
             $select = "SELECT ulb_ward_masters.ward_name AS ward_no, 

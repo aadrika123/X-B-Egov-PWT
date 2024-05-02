@@ -16,8 +16,10 @@ use App\Models\Property\PropProperty;
 use App\Models\Property\PropPropertyUpdateRequest;
 use App\Models\Property\PropSaf;
 use App\Models\Property\PropTransaction;
+use App\Models\Property\ZoneMaster;
 use App\Models\Trade\TradeTransaction;
 use App\Models\UlbMaster;
+use App\Models\UlbWardMaster;
 use App\Models\User;
 use App\Models\Water\WaterTran;
 use App\Repository\Common\CommonFunction;
@@ -33,6 +35,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use PhpParser\Node\Expr\FuncCall;
+use Illuminate\Support\Str;
 
 #------------date 13/03/2023 -------------------------------------------------------------------------
 #   Code By Sandeep Bara
@@ -5008,7 +5011,7 @@ class ReportController extends Controller
                 "previous_collection"      =>  "---",
                 "current_demand"      => "---" ,
                 "arrear_collection"      =>  $penaltyRebates->sum("penalty_amount"),
-                "current_collection"      =>  $penaltyRebates->sum("rebate_amount"),
+                "current_collection"      =>  "---",#$penaltyRebates->sum("rebate_amount"),
                 "old_due"      => "---",
                 "arrear_due"      =>  "---",
                 "current_due"      =>  "---",
@@ -5018,7 +5021,7 @@ class ReportController extends Controller
                 "current_eff"      =>  "---",
                 "outstanding"      =>  "---",
                 "total_demand"      =>  "---",
-                "total_collection"      =>  $penaltyRebates->sum("penalty_amount") + $penaltyRebates->sum("rebate_amount"),
+                "total_collection"      =>  $penaltyRebates->sum("penalty_amount") ,#+ $penaltyRebates->sum("rebate_amount"),
                 "tc_tran_count"      =>  "---",
                 "counter_tran_count"      =>  "---",
                 "online_tran_count"      =>  "---",
@@ -5397,7 +5400,7 @@ class ReportController extends Controller
                 "previous_collection"      =>  "---",
                 "current_demand"      => "---" ,
                 "arrear_collection"      =>  $penaltyRebates->sum("penalty_amount"),
-                "current_collection"      =>  $penaltyRebates->sum("rebate_amount"),
+                "current_collection"      =>  "---",#$penaltyRebates->sum("rebate_amount"),
                 "old_due"      => "---",
                 "arrear_due"      => "---",
                 "current_due"      =>  "---",
@@ -5407,7 +5410,7 @@ class ReportController extends Controller
                 "current_eff"      =>  "---",
                 "outstanding"      =>  "---",
                 "total_demand"      =>  "---",
-                "total_collection"      =>  $penaltyRebates->sum("penalty_amount") + $penaltyRebates->sum("rebate_amount"),
+                "total_collection"      =>  $penaltyRebates->sum("penalty_amount") ,#+ $penaltyRebates->sum("rebate_amount"),
                 "tc_tran_count"      =>  "---",
                 "counter_tran_count"      =>  "---",
                 "online_tran_count"      =>  "---",
@@ -5425,11 +5428,708 @@ class ReportController extends Controller
 
     public function individulaPropHeadWishDailyColl(Request $request)
     {
-        try{
+        try {
+            $user = Auth()->user();
+            $paymentMode = "";
+            $fromDate = $toDate = Carbon::now()->format("Y-m-d");
+            $wardId = $zoneId = $userId = null;
+            if ($request->fromDate) {
+                $fromDate = $request->fromDate;
+            }
+            if ($request->uptoDate) {
+                $toDate = $request->uptoDate;
+            }
+            if ($request->paymentMode) {
+                if (!is_array($request->paymentMode)) {
+                    $paymentMode = Str::upper($request->paymentMode);
+                } elseif (is_array($request->paymentMode[0])) {
+                    foreach ($request->paymentMode as $val) {
+                        $paymentMode .= Str::upper($val["value"]) . ",";
+                    }
+                    $paymentMode =  trim($paymentMode, ",");
+                } else {
 
-        }
-        catch(Exception $e)
-        {
+                    foreach ($request->paymentMode as $val) {
+                        $paymentMode .= Str::upper($val) . ",";
+                    }
+                    $paymentMode =  trim($paymentMode, ",");
+                }
+            }
+            if ($request->wardId) {
+                $wardId = $request->wardId;
+            }
+            if ($request->zoneId) {
+                $zoneId = $request->zoneId;
+            }
+            if ($request->userId) {
+                $userId = $request->userId;
+            }
+            $fromFyear = getFy($fromDate);
+            $uptoFyear = getFy($toDate);
+            /*
+                $query = "
+                        select 
+                            users.name,
+                            prop_transactions.from_fyear,
+                            prop_transactions.to_fyear,
+                            prop_properties.property_no,
+                            prop_transactions.id as tran_id,
+                            prop_transactions.property_id,
+                            prop_transactions.payment_mode,
+                            prop_transactions.tran_no,	
+                            prop_transactions.tran_date,
+                            prop_transactions.book_no,
+                            CASE WHEN prop_cheque_dtls.id IS NULL THEN 1 ELSE prop_cheque_dtls.status END AS cheque_status,
+                            prop_cheque_dtls.cheque_no,
+                            prop_cheque_dtls.cheque_date,
+                            prop_cheque_dtls.bank_name,
+                            prop_cheque_dtls.branch_name,
+                            prop_cheque_dtls.clear_bounce_date,
+                            prop_properties.holding_no,
+                            case when trim(prop_properties.applicant_marathi) is null then prop_properties.applicant_name else prop_properties.applicant_marathi end as applicant_name ,
+                            ulb_ward_masters.ward_name,
+                            zone_masters.zone_name,
+                            owners.owner_name,
+                            owners.guardian_name,
+                            owners.mobile_no,
+                            
+                            COALESCE(total_demand,0::numeric) as total_demand,
+                            COALESCE(total_tax,0::numeric) as total_tax,
+                            COALESCE(prop_transactions.amount,0::numeric) as amount,
+                            (
+                                +(COALESCE(maintanance_amt,0)::numeric) 
+                                +(COALESCE(aging_amt,0)::numeric) 
+                                +(COALESCE(general_tax,0)::numeric) 
+                                +(COALESCE(road_tax,0)::numeric) 
+                                +(COALESCE(firefighting_tax,0)::numeric)
+                                +(COALESCE(education_tax,0)::numeric)
+                                +(COALESCE(water_tax,0)::numeric)
+                                +(COALESCE(cleanliness_tax,0)::numeric)
+                                +(COALESCE(sewarage_tax,0)::numeric)
+                                +(COALESCE(tree_tax,0)::numeric)
+                                +(COALESCE(professional_tax,0)::numeric)
+                                +(COALESCE(adjust_amt,0)::numeric)
+                                +(COALESCE(tax1,0)::numeric)
+                                +(COALESCE(tax2,0)::numeric) 
+                                +(COALESCE(tax3,0)::numeric)
+                                +(COALESCE(sp_education_tax,0)::numeric) 
+                                +(COALESCE(water_benefit,0)::numeric)
+                                +(COALESCE(water_bill,0)::numeric)
+                                +(COALESCE(sp_water_cess,0)::numeric)
+                                +(COALESCE(drain_cess,0)::numeric)
+                                +(COALESCE(light_cess,0)::numeric) 
+                                +(COALESCE(major_building,0)::numeric) 
+                                +(COALESCE(open_ploat_tax,0)::numeric)
+                            )as total,
+                            (COALESCE(maintanance_amt,0)::numeric) as maintanance_amt,
+                            (COALESCE(aging_amt,0)::numeric) as aging_amt,
+                            (COALESCE(general_tax,0)::numeric) as general_tax,
+                            (COALESCE(road_tax,0)::numeric) as road_tax,
+                            (COALESCE(firefighting_tax,0)::numeric) as firefighting_tax,
+                            (COALESCE(education_tax,0)::numeric) as education_tax,
+                            (COALESCE(water_tax,0)::numeric) as water_tax,
+                            (COALESCE(cleanliness_tax,0)::numeric) as cleanliness_tax,
+                            (COALESCE(sewarage_tax,0)::numeric) as sewarage_tax,
+                            (COALESCE(tree_tax,0)::numeric) as tree_tax,
+                            (COALESCE(professional_tax,0)::numeric) as professional_tax,
+                            (COALESCE(adjust_amt,0)::numeric) as adjust_amt,
+                            (COALESCE(tax1,0)::numeric) as tax1,
+                            (COALESCE(tax2,0)::numeric) as tax2,
+                            (COALESCE(tax3,0)::numeric) as tax3,
+                            (COALESCE(sp_education_tax,0)::numeric) as sp_education_tax,
+                            (COALESCE(water_benefit,0)::numeric) as water_benefit,
+                            (COALESCE(water_bill,0)::numeric) as water_bill,
+                            (COALESCE(sp_water_cess,0)::numeric) as sp_water_cess,
+                            (COALESCE(drain_cess,0)::numeric) as drain_cess,
+                            (COALESCE(light_cess,0)::numeric) as light_cess,
+                            (COALESCE(major_building,0)::numeric) as major_building,
+                            (COALESCE(open_ploat_tax,0)::numeric) as open_ploat_tax,
+                        
+                            (COALESCE(c1urrent_total_demand,0)::numeric) as c1urrent_total_demand,
+                            (COALESCE(c1urrent_total_tax,0)::numeric) as c1urrent_total_tax,
+                            (
+                                +(COALESCE(current_maintanance_amt,0)::numeric) 
+                                +(COALESCE(current_aging_amt,0)::numeric) 
+                                +(COALESCE(current_general_tax,0)::numeric) 
+                                +(COALESCE(current_road_tax,0)::numeric) 
+                                +(COALESCE(current_firefighting_tax,0)::numeric)
+                                +(COALESCE(current_education_tax,0)::numeric)
+                                +(COALESCE(current_water_tax,0)::numeric)
+                                +(COALESCE(current_cleanliness_tax,0)::numeric)
+                                +(COALESCE(current_sewarage_tax,0)::numeric)
+                                +(COALESCE(current_tree_tax,0)::numeric)
+                                +(COALESCE(current_professional_tax,0)::numeric)
+                                +(COALESCE(current_adjust_amt,0)::numeric)
+                                +(COALESCE(current_tax1,0)::numeric)
+                                +(COALESCE(current_tax2,0)::numeric) 
+                                +(COALESCE(current_tax3,0)::numeric)
+                                +(COALESCE(current_sp_education_tax,0)::numeric) 
+                                +(COALESCE(current_water_benefit,0)::numeric)
+                                +(COALESCE(current_water_bill,0)::numeric)
+                                +(COALESCE(current_sp_water_cess,0)::numeric)
+                                +(COALESCE(current_drain_cess,0)::numeric)
+                                +(COALESCE(current_light_cess,0)::numeric) 
+                                +(COALESCE(current_major_building,0)::numeric) 
+                                +(COALESCE(current_open_ploat_tax,0)::numeric)
+                            )as c1urrent_total,
+                            (COALESCE(current_maintanance_amt,0)::numeric ) as current_maintanance_amt,
+                            (COALESCE(current_aging_amt,0)::numeric ) as current_aging_amt,
+                            (COALESCE(current_general_tax,0)::numeric ) as current_general_tax,
+                            (COALESCE(current_road_tax,0)::numeric ) as current_road_tax,
+                            (COALESCE(current_firefighting_tax,0)::numeric ) as current_firefighting_tax,
+                            (COALESCE(current_education_tax,0)::numeric ) as current_education_tax,
+                            (COALESCE(current_water_tax,0)::numeric ) as current_water_tax,
+                            (COALESCE(current_cleanliness_tax,0)::numeric ) as current_cleanliness_tax,
+                            (COALESCE(current_sewarage_tax,0)::numeric ) as current_sewarage_tax,
+                            (COALESCE(current_tree_tax,0)::numeric ) as current_tree_tax,
+                            (COALESCE(current_professional_tax,0)::numeric ) as current_professional_tax,
+                            (COALESCE(current_adjust_amt,0)::numeric ) as current_adjust_amt,
+                            (COALESCE(current_tax1,0)::numeric ) as current_tax1,
+                            (COALESCE(current_tax2,0)::numeric ) as current_tax2,
+                            (COALESCE(current_tax3,0)::numeric ) as current_tax3,
+                            (COALESCE(current_sp_education_tax,0)::numeric ) as current_sp_education_tax,
+                            (COALESCE(current_water_benefit,0)::numeric ) as current_water_benefit,
+                            (COALESCE(current_water_bill,0)::numeric ) as current_water_bill,
+                            (COALESCE(current_sp_water_cess,0)::numeric ) as current_sp_water_cess,
+                            (COALESCE(current_drain_cess,0)::numeric ) as current_drain_cess,
+                            (COALESCE(current_light_cess,0)::numeric ) as current_light_cess,
+                            (COALESCE(current_major_building,0)::numeric ) as current_major_building,
+                            (COALESCE(current_open_ploat_tax,0)::numeric ) as current_open_ploat_tax,
+                        
+                            (COALESCE(a1rear_total_demand,0)::numeric) as a1rear_total_demand,
+                            (COALESCE(a1rear_total_tax,0)::numeric) as a1rear_total_tax,
+                            (
+                                +(COALESCE(arear_maintanance_amt,0)::numeric) 
+                                +(COALESCE(arear_aging_amt,0)::numeric) 
+                                +(COALESCE(arear_general_tax,0)::numeric) 
+                                +(COALESCE(arear_road_tax,0)::numeric) 
+                                +(COALESCE(arear_firefighting_tax,0)::numeric)
+                                +(COALESCE(arear_education_tax,0)::numeric)
+                                +(COALESCE(arear_water_tax,0)::numeric)
+                                +(COALESCE(arear_cleanliness_tax,0)::numeric)
+                                +(COALESCE(arear_sewarage_tax,0)::numeric)
+                                +(COALESCE(arear_tree_tax,0)::numeric)
+                                +(COALESCE(arear_professional_tax,0)::numeric)
+                                +(COALESCE(arear_adjust_amt,0)::numeric)
+                                +(COALESCE(arear_tax1,0)::numeric)
+                                +(COALESCE(arear_tax2,0)::numeric) 
+                                +(COALESCE(arear_tax3,0)::numeric)
+                                +(COALESCE(arear_sp_education_tax,0)::numeric) 
+                                +(COALESCE(arear_water_benefit,0)::numeric)
+                                +(COALESCE(arear_water_bill,0)::numeric)
+                                +(COALESCE(arear_sp_water_cess,0)::numeric)
+                                +(COALESCE(arear_drain_cess,0)::numeric)
+                                +(COALESCE(arear_light_cess,0)::numeric) 
+                                +(COALESCE(arear_major_building,0)::numeric) 
+                                +(COALESCE(arear_open_ploat_tax,0)::numeric)
+                            )as a1rear_total,
+                            (COALESCE(arear_maintanance_amt,0)::numeric ) as arear_maintanance_amt,
+                            (COALESCE(arear_aging_amt,0)::numeric ) as arear_aging_amt,
+                            (COALESCE(arear_general_tax,0)::numeric ) as arear_general_tax,
+                            (COALESCE(arear_road_tax,0)::numeric ) as arear_road_tax,
+                            (COALESCE(arear_firefighting_tax,0)::numeric ) as arear_firefighting_tax,
+                            (COALESCE(arear_education_tax,0)::numeric ) as arear_education_tax,
+                            (COALESCE(arear_water_tax,0)::numeric ) as arear_water_tax,
+                            (COALESCE(arear_cleanliness_tax,0)::numeric ) as arear_cleanliness_tax,
+                            (COALESCE(arear_sewarage_tax,0)::numeric ) as arear_sewarage_tax,
+                            (COALESCE(arear_tree_tax,0)::numeric ) as arear_tree_tax,
+                            (COALESCE(arear_professional_tax,0)::numeric ) as arear_professional_tax,
+                            (COALESCE(arear_adjust_amt,0)::numeric ) as arear_adjust_amt,
+                            (COALESCE(arear_tax1,0)::numeric ) as arear_tax1,
+                            (COALESCE(arear_tax2,0)::numeric ) as arear_tax2,
+                            (COALESCE(arear_tax3,0)::numeric ) as arear_tax3,
+                            (COALESCE(arear_sp_education_tax,0)::numeric ) as arear_sp_education_tax,
+                            (COALESCE(arear_water_benefit,0)::numeric ) as arear_water_benefit,
+                            (COALESCE(arear_water_bill,0)::numeric ) as arear_water_bill,
+                            (COALESCE(arear_sp_water_cess,0)::numeric ) as arear_sp_water_cess,
+                            (COALESCE(arear_drain_cess,0)::numeric ) as arear_drain_cess,
+                            (COALESCE(arear_light_cess,0)::numeric ) as arear_light_cess,
+                            (COALESCE(arear_major_building,0)::numeric ) as arear_major_building,
+                            (COALESCE(arear_open_ploat_tax,0)::numeric ) as arear_open_ploat_tax,
+                            (COALESCE(rebate,0)::numeric) as rebate,
+                            (COALESCE(penalty,0)::numeric) as penalty,
+                            (COALESCE(advance_amount,0)::numeric) as advance_amount,
+                            (COALESCE(adjusted_amount,0)::numeric) as adjusted_amount
+                        from prop_transactions
+                        join prop_properties on prop_properties.id = prop_transactions.property_id 
+                        join (
+                            select distinct(prop_transactions.id)as tran_id ,
+                                sum(COALESCE(prop_tran_dtls.paid_total_tax,0)::numeric) as total_demand,					
+                                sum(COALESCE(prop_tran_dtls.paid_total_tax,0)::numeric) as total_tax,
+                                sum(COALESCE(prop_tran_dtls.paid_maintanance_amt,0)::numeric) as maintanance_amt,
+                                sum(COALESCE(prop_tran_dtls.paid_aging_amt,0)::numeric) as aging_amt,
+                                sum(COALESCE(prop_tran_dtls.paid_general_tax,0)::numeric) as general_tax,
+                                sum(COALESCE(prop_tran_dtls.paid_road_tax,0)::numeric) as road_tax,
+                                sum(COALESCE(prop_tran_dtls.paid_firefighting_tax,0)::numeric) as firefighting_tax,
+                                sum(COALESCE(prop_tran_dtls.paid_education_tax,0)::numeric) as education_tax,
+                                sum(COALESCE(prop_tran_dtls.paid_water_tax,0)::numeric) as water_tax,
+                                sum(COALESCE(prop_tran_dtls.paid_cleanliness_tax,0)::numeric) as cleanliness_tax,
+                                sum(COALESCE(prop_tran_dtls.paid_sewarage_tax,0)::numeric) as sewarage_tax,
+                                sum(COALESCE(prop_tran_dtls.paid_tree_tax,0)::numeric) as tree_tax,
+                                sum(COALESCE(prop_tran_dtls.paid_professional_tax,0)::numeric) as professional_tax,
+                                sum(COALESCE(prop_tran_dtls.paid_adjust_amt,0)::numeric) as adjust_amt,
+                                sum(COALESCE(prop_tran_dtls.paid_tax1,0)::numeric) as tax1,
+                                sum(COALESCE(prop_tran_dtls.paid_tax2,0)::numeric) as tax2,
+                                sum(COALESCE(prop_tran_dtls.paid_tax3,0)::numeric) as tax3,
+                                sum(COALESCE(prop_tran_dtls.paid_sp_education_tax,0)::numeric) as sp_education_tax,
+                                sum(COALESCE(prop_tran_dtls.paid_water_benefit,0)::numeric) as water_benefit,
+                                sum(COALESCE(prop_tran_dtls.paid_water_bill,0)::numeric) as water_bill,
+                                sum(COALESCE(prop_tran_dtls.paid_sp_water_cess,0)::numeric) as sp_water_cess,
+                                sum(COALESCE(prop_tran_dtls.paid_drain_cess,0)::numeric) as drain_cess,
+                                sum(COALESCE(prop_tran_dtls.paid_light_cess,0)::numeric) as light_cess,
+                                sum(COALESCE(prop_tran_dtls.paid_major_building,0)::numeric) as major_building,
+                                sum(COALESCE(prop_tran_dtls.paid_open_ploat_tax,0)::numeric) as open_ploat_tax,
+                            
+                                sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_total_tax,0)::numeric else 0 end) as c1urrent_total_demand,
+                                sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_total_tax,0)::numeric else 0 end) as c1urrent_total_tax,
+                                sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_maintanance_amt,0)::numeric else 0 end) as current_maintanance_amt,
+                                sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_aging_amt,0)::numeric else 0 end) as current_aging_amt,
+                                sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_general_tax,0)::numeric else 0 end) as current_general_tax,
+                                sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_road_tax,0)::numeric else 0 end) as current_road_tax,
+                                sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_firefighting_tax,0)::numeric else 0 end) as current_firefighting_tax,
+                                sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_education_tax,0)::numeric else 0 end) as current_education_tax,
+                                sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_water_tax,0)::numeric else 0 end) as current_water_tax,
+                                sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_cleanliness_tax,0)::numeric else 0 end) as current_cleanliness_tax,
+                                sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_sewarage_tax,0)::numeric else 0 end) as current_sewarage_tax,
+                                sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_tree_tax,0)::numeric else 0 end) as current_tree_tax,
+                                sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_professional_tax,0)::numeric else 0 end) as current_professional_tax,
+                                sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_adjust_amt,0)::numeric else 0 end) as current_adjust_amt,
+                                sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_tax1,0)::numeric else 0 end) as current_tax1,
+                                sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_tax2,0)::numeric else 0 end) as current_tax2,
+                                sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_tax3,0)::numeric else 0 end) as current_tax3,
+                                sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_sp_education_tax,0)::numeric else 0 end) as current_sp_education_tax,
+                                sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_water_benefit,0)::numeric else 0 end) as current_water_benefit,
+                                sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_water_bill,0)::numeric else 0 end) as current_water_bill,
+                                sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_sp_water_cess,0)::numeric else 0 end) as current_sp_water_cess,
+                                sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_drain_cess,0)::numeric else 0 end) as current_drain_cess,
+                                sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_light_cess,0)::numeric else 0 end) as current_light_cess,
+                                sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_major_building,0)::numeric else 0 end) as current_major_building,
+                                sum(case when fyear between '$fromFyear' and '$uptoFyear' then COALESCE(prop_tran_dtls.paid_open_ploat_tax,0)::numeric else 0 end) as current_open_ploat_tax,
+                            
+                                sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_total_tax,0)::numeric else 0 end) as a1rear_total_demand,
+                                sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_total_tax,0)::numeric else 0 end) as a1rear_total_tax,
+                                sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_maintanance_amt,0)::numeric else 0 end) as arear_maintanance_amt,
+                                sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_aging_amt,0)::numeric else 0 end) as arear_aging_amt,
+                                sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_general_tax,0)::numeric else 0 end) as arear_general_tax,
+                                sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_road_tax,0)::numeric else 0 end) as arear_road_tax,
+                                sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_firefighting_tax,0)::numeric else 0 end) as arear_firefighting_tax,
+                                sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_education_tax,0)::numeric else 0 end) as arear_education_tax,
+                                sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_water_tax,0)::numeric else 0 end) as arear_water_tax,
+                                sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_cleanliness_tax,0)::numeric else 0 end) as arear_cleanliness_tax,
+                                sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_sewarage_tax,0)::numeric else 0 end) as arear_sewarage_tax,
+                                sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_tree_tax,0)::numeric else 0 end) as arear_tree_tax,
+                                sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_professional_tax,0)::numeric else 0 end) as arear_professional_tax,
+                                sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_adjust_amt,0)::numeric else 0 end) as arear_adjust_amt,
+                                sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_tax1,0)::numeric else 0 end) as arear_tax1,
+                                sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_tax2,0)::numeric else 0 end) as arear_tax2,
+                                sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_tax3,0)::numeric else 0 end) as arear_tax3,
+                                sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_sp_education_tax,0)::numeric else 0 end) as arear_sp_education_tax,
+                                sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_water_benefit,0)::numeric else 0 end) as arear_water_benefit,
+                                sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_water_bill,0)::numeric else 0 end) as arear_water_bill,
+                                sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_sp_water_cess,0)::numeric else 0 end) as arear_sp_water_cess,
+                                sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_drain_cess,0)::numeric else 0 end) as arear_drain_cess,
+                                sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_light_cess,0)::numeric else 0 end) as arear_light_cess,
+                                sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_major_building,0)::numeric else 0 end) as arear_major_building,
+                                sum(case when fyear < '$fromFyear' then COALESCE(prop_tran_dtls.paid_open_ploat_tax,0)::numeric else 0 end) as arear_open_ploat_tax
+                            
+                            from prop_tran_dtls                
+                            join prop_transactions on prop_transactions.id = prop_tran_dtls.tran_id
+                            join (
+                                select prop_properties.id as pid,prop_properties.ward_mstr_id,prop_properties.zone_mstr_id
+                                from prop_properties
+                                join prop_transactions on prop_transactions.property_id = prop_properties.id
+                                where prop_transactions.tran_date between '$fromDate' and '$toDate' 
+                                    and prop_transactions.status in(1,2)
+                                group BY prop_properties.id
+                            )props on props.pid = prop_transactions.property_id
+                            join prop_demands on prop_demands.id = prop_tran_dtls.prop_demand_id
+                            where prop_transactions.tran_date between '$fromDate' and '$toDate' 
+                                and prop_transactions.status in(1,2)
+                                and prop_demands.status =1 
+                                and prop_tran_dtls.status =1 
+                                " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
+                                " . ($wardId ? "AND props.ward_mstr_id = $wardId" : "") . "
+                                " . ($zoneId ? "AND props.zone_mstr_id = $zoneId" : "") . "
+                                " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . "
+                            group by prop_transactions.id
+                                
+                        )prop_tran_dtls on prop_tran_dtls.tran_id = prop_transactions.id
+                        left join(
+                            select distinct(prop_transactions.id)as tran_id ,
+                            sum(case when prop_penaltyrebates.is_rebate =true then COALESCE(round(prop_penaltyrebates.amount),0) else 0 end) as rebate,
+                                sum(case when prop_penaltyrebates.is_rebate !=true then COALESCE(round(prop_penaltyrebates.amount),0) else 0 end) as penalty
+                            from prop_penaltyrebates
+                            join prop_transactions on prop_transactions.id = prop_penaltyrebates.tran_id
+                            join (
+                                select prop_properties.id as pid,prop_properties.ward_mstr_id,prop_properties.zone_mstr_id
+                                from prop_properties
+                                join prop_transactions on prop_transactions.property_id = prop_properties.id
+                                where prop_transactions.tran_date between '$fromDate' and '$toDate' 
+                                    and prop_transactions.status in(1,2)
+                                group BY prop_properties.id
+                            )props on props.pid = prop_transactions.property_id
+                            where prop_transactions.tran_date between '$fromDate' and '$toDate' 
+                                and prop_transactions.status in(1,2)
+                                and prop_penaltyrebates.status =1 
+                                " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
+                                " . ($wardId ? "AND props.ward_mstr_id = $wardId" : "") . "
+                                " . ($zoneId ? "AND props.zone_mstr_id = $zoneId" : "") . "
+                                " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . "
+                            group by prop_transactions.id
+                        )fine_rebet on fine_rebet.tran_id = prop_transactions.id
+                        left join(
+                            select distinct(prop_transactions.id)as tran_id ,
+                                sum(prop_advances.amount) as advance_amount
+                            from prop_advances
+                            join prop_transactions on prop_transactions.id = prop_advances.tran_id
+                            join (
+                                select prop_properties.id as pid,prop_properties.ward_mstr_id,prop_properties.zone_mstr_id
+                                from prop_properties
+                                join prop_transactions on prop_transactions.property_id = prop_properties.id
+                                where prop_transactions.tran_date between '$fromDate' and '$toDate'  
+                                    and prop_transactions.status in(1,2)
+                                group BY prop_properties.id
+                            )props on props.pid = prop_transactions.property_id
+                            where prop_transactions.tran_date between '$fromDate' and '$toDate' 
+                                and prop_transactions.status in(1,2)
+                                and prop_advances.status =1 
+                                " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
+                                " . ($wardId ? "AND props.ward_mstr_id = $wardId" : "") . "
+                                " . ($zoneId ? "AND props.zone_mstr_id = $zoneId" : "") . "
+                                " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . "   
+                            group by prop_transactions.id
+                        )advance on advance.tran_id = prop_transactions.id			
+                        left join(
+                            select distinct(prop_transactions.id)as tran_id ,
+                                sum(prop_adjustments.amount) as adjusted_amount
+                            from prop_adjustments
+                            join prop_transactions on prop_transactions.id = prop_adjustments.tran_id
+                            join (
+                                select prop_properties.id as pid,prop_properties.ward_mstr_id,prop_properties.zone_mstr_id
+                                from prop_properties
+                                join prop_transactions on prop_transactions.property_id = prop_properties.id
+                                where prop_transactions.tran_date between '$fromDate' and '$toDate' 
+                                    and prop_transactions.status in(1,2)
+                                group BY prop_properties.id
+                            )props on props.pid = prop_transactions.property_id
+                            where prop_transactions.tran_date between '$fromDate' and '$toDate' 
+                                and prop_transactions.status in(1,2)
+                                and prop_adjustments.status =1 
+                                " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
+                                " . ($wardId ? "AND props.ward_mstr_id = $wardId" : "") . "
+                                " . ($zoneId ? "AND props.zone_mstr_id = $zoneId" : "") . "
+                                " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . " 
+                            group by prop_transactions.id
+                        )adjusted on adjusted.tran_id = prop_transactions.id
+                        left join prop_cheque_dtls on prop_cheque_dtls.transaction_id = prop_transactions.id
+                        left join(
+                            select string_agg(case when trim(owner_name_marathi) is null then owner_name else owner_name_marathi end,',')owner_name,
+                                string_agg(case when trim(guardian_name_marathi) is null then guardian_name else guardian_name_marathi end,',')guardian_name,
+                                string_agg(mobile_no	,',')mobile_no,
+                                string_agg(owner_name_marathi,',')owner_name_marathi,
+                                string_agg(guardian_name_marathi,',')guardian_name_marathi,
+                                prop_transactions.id
+                            from prop_owners
+                            join prop_transactions on prop_transactions.property_id = prop_owners.property_id
+                            where  prop_transactions.tran_date between '$fromDate' and '$toDate' 
+                                and prop_transactions.status in(1,2)
+                                and prop_owners.status =1
+                                " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "                    
+                                " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . "
+                            group by prop_transactions.id
+                        
+                        )owners on owners.id = prop_transactions.id
+                        left join users on users.id = prop_transactions.user_id
+                        left join ulb_ward_masters on ulb_ward_masters.id = prop_properties.ward_mstr_id	
+                        left join zone_masters on zone_masters.id = prop_properties.zone_mstr_id
+                        where prop_transactions.tran_date between '$fromDate' and '$toDate' 
+                            and prop_transactions.status in(1,2)
+                            " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
+                ";
+            */
+            $query = "
+                    SELECT prop_transactions.id,
+                        ROW_NUMBER() OVER( PARTITION BY prop_transactions.id  ORDER BY prop_demands.fyear DESC  )as row_num,
+                        prop_transactions.tran_no,owners.owner_name,ulb_ward_masters.ward_name,zone_masters.zone_name,props.holding_no,props.property_no,'' as part,
+                        prop_transactions.book_no,split_part(prop_transactions.book_no, '-',2) as receipt_no,
+                        prop_transactions.tran_date,prop_demands.fyear,
+                        prop_tran_dtls.paid_general_tax as general_tax, prop_tran_dtls.paid_road_tax as road_tax, prop_tran_dtls.paid_firefighting_tax as firefighting_tax,
+                        prop_tran_dtls.paid_education_tax as education_tax, prop_tran_dtls.paid_water_tax as water_tax, prop_tran_dtls.paid_cleanliness_tax as cleanliness_tax,
+                        prop_tran_dtls.paid_sewarage_tax as sewarage_tax, prop_tran_dtls.paid_tree_tax as tree_tax, prop_tran_dtls.paid_professional_tax as professional_tax,
+                        prop_tran_dtls.paid_tax1 as tax1, prop_tran_dtls.paid_tax2 as tax2, prop_tran_dtls.paid_tax3 as tax3, 
+                        prop_tran_dtls.paid_sp_education_tax as sp_education_tax, prop_tran_dtls.paid_water_benefit as water_benefit,
+                        prop_tran_dtls.paid_water_bill as water_bill, prop_tran_dtls.paid_sp_water_cess as sp_water_cess,
+                        prop_tran_dtls.paid_drain_cess as drain_cess, prop_tran_dtls.paid_light_cess as light_cess, prop_tran_dtls.paid_major_building as major_building,
+                        prop_tran_dtls.paid_open_ploat_tax as open_ploat_tax, prop_tran_dtls.paid_exempted_general_tax as exempted_general_tax,
+                        prop_tran_dtls.paid_total_tax as total_tax, prop_tran_dtls.paid_total_tax as total_tax,
+                        prop_transactions.payment_mode, 
+                        case when upper(prop_transactions.payment_mode) in('CHEQUE','DD') then prop_cheque_dtls.cheque_no  end as cheque_or_dd_no,
+                        case when upper(prop_transactions.payment_mode) in('RTGS','NEFT') then prop_cheque_dtls.cheque_no  end as rtgs_or_neft_no,
+                        fine_rebet.rebate, fine_rebet.penalty,advance.advance_amount, adjusted.adjusted_amount
+                    
+                    from prop_tran_dtls
+                    join prop_demands on prop_demands.id = prop_tran_dtls.prop_demand_id
+                    join prop_transactions on prop_transactions.id = prop_tran_dtls.tran_id
+                    join (
+                        select prop_properties.id as pid,prop_properties.ward_mstr_id,prop_properties.zone_mstr_id,prop_properties.property_no,prop_properties.holding_no
+                        from prop_properties
+                        join prop_transactions on prop_transactions.property_id = prop_properties.id
+                        where prop_transactions.tran_date between '$fromDate' and '$toDate' 
+                            and prop_transactions.status in(1,2)
+                            " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
+                            " . ($wardId ? "AND prop_properties.ward_mstr_id = $wardId" : "") . "
+                            " . ($zoneId ? "AND prop_properties.zone_mstr_id = $zoneId" : "") . "
+                            " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . "
+                        group BY prop_properties.id
+                    )props on props.pid = prop_transactions.property_id
+                    left join prop_cheque_dtls on prop_cheque_dtls.transaction_id = prop_transactions.id
+                    left join(
+                                    select string_agg(case when trim(owner_name_marathi) is null then owner_name else owner_name_marathi end,',')owner_name,
+                                        string_agg(case when trim(guardian_name_marathi) is null then guardian_name else guardian_name_marathi end,',')guardian_name,
+                                        string_agg(mobile_no	,',')mobile_no,
+                                        string_agg(owner_name_marathi,',')owner_name_marathi,
+                                        string_agg(guardian_name_marathi,',')guardian_name_marathi,
+                                        prop_transactions.id
+                                    from prop_owners
+                                    join prop_transactions on prop_transactions.property_id = prop_owners.property_id
+                                    where  prop_transactions.tran_date between '$fromDate' and '$toDate'  
+                                        and prop_transactions.status in(1,2)
+                                        and prop_owners.status =1
+                                        " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
+                                    group by prop_transactions.id
+                                
+                    )owners on owners.id = prop_transactions.id
+                    left join(
+                        select distinct(prop_transactions.id)as tran_id ,
+                        sum(case when prop_penaltyrebates.is_rebate =true then COALESCE(round(prop_penaltyrebates.amount),0) else 0 end) as rebate,
+                            sum(case when prop_penaltyrebates.is_rebate !=true then COALESCE(round(prop_penaltyrebates.amount),0) else 0 end) as penalty
+                        from prop_penaltyrebates
+                        join prop_transactions on prop_transactions.id = prop_penaltyrebates.tran_id
+                        join (
+                            select prop_properties.id as pid,prop_properties.ward_mstr_id,prop_properties.zone_mstr_id
+                            from prop_properties
+                            join prop_transactions on prop_transactions.property_id = prop_properties.id
+                            where prop_transactions.tran_date between '$fromDate' and '$toDate'  
+                                and prop_transactions.status in(1,2)
+                                " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
+                            group BY prop_properties.id
+                        )props on props.pid = prop_transactions.property_id
+                        where prop_transactions.tran_date between '$fromDate' and '$toDate'  
+                            and prop_transactions.status in(1,2)
+                            " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
+                            and prop_penaltyrebates.status =1 
+                        group by prop_transactions.id
+                    )fine_rebet on fine_rebet.tran_id = prop_transactions.id
+                    left join(
+                        select distinct(prop_transactions.id)as tran_id ,
+                            sum(prop_advances.amount) as advance_amount
+                        from prop_advances
+                        join prop_transactions on prop_transactions.id = prop_advances.tran_id
+                        join (
+                            select prop_properties.id as pid,prop_properties.ward_mstr_id,prop_properties.zone_mstr_id
+                            from prop_properties
+                            join prop_transactions on prop_transactions.property_id = prop_properties.id
+                            where prop_transactions.tran_date between '$fromDate' and '$toDate'    
+                                and prop_transactions.status in(1,2)
+                                " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
+                            group BY prop_properties.id
+                        )props on props.pid = prop_transactions.property_id
+                        where prop_transactions.tran_date between '$fromDate' and '$toDate'   
+                            and prop_transactions.status in(1,2)
+                            " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
+                            and prop_advances.status =1 
+                        group by prop_transactions.id
+                    )advance on advance.tran_id = prop_transactions.id			
+                    left join(
+                        select distinct(prop_transactions.id)as tran_id ,
+                            sum(prop_adjustments.amount) as adjusted_amount
+                        from prop_adjustments
+                        join prop_transactions on prop_transactions.id = prop_adjustments.tran_id
+                        join (
+                            select prop_properties.id as pid,prop_properties.ward_mstr_id,prop_properties.zone_mstr_id
+                            from prop_properties
+                            join prop_transactions on prop_transactions.property_id = prop_properties.id
+                            where prop_transactions.tran_date between '$fromDate' and '$toDate'  
+                                and prop_transactions.status in(1,2)
+                                " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
+                            group BY prop_properties.id
+                        )props on props.pid = prop_transactions.property_id
+                        where prop_transactions.tran_date between '$fromDate' and '$toDate'  
+                            and prop_transactions.status in(1,2)
+                            and prop_adjustments.status =1
+                            " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
+                        group by prop_transactions.id
+                    )adjusted on adjusted.tran_id = prop_transactions.id
+                    left join ulb_ward_masters on ulb_ward_masters.id = props.ward_mstr_id	
+                    left join zone_masters on zone_masters.id = props.zone_mstr_id
+                    where prop_transactions.tran_date between '$fromDate' and '$toDate' 
+                        and prop_transactions.status in(1,2)
+                        and prop_demands.status =1 
+                        and prop_tran_dtls.status =1 
+                        " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
+                        " . ($wardId ? "AND props.ward_mstr_id = $wardId" : "") . "
+                        " . ($zoneId ? "AND props.zone_mstr_id = $zoneId" : "") . "
+                        " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . "
+                    order by prop_transactions.tran_date,prop_transactions.id,prop_demands.fyear ASC
+            ";
+            
+
+            $report = $this->_DB_READ->select($query);
+            $test = collect($report);
+            $report = collect($report)->map(function ($val) use($uptoFyear,$test){
+                $val->rebate = $val->row_num==1 ? $val->rebate : 0;
+                $penalty = ($val->row_num==2) ? $val->penalty : 0;
+                if($val->row_num ==1)
+                {
+                    $penalty = (($test)->where("id",$val->id)->count("id")==1 ? $val->penalty : 0 );
+                }
+                $val->penalty = $penalty ;
+                $val->advance_amount = $val->row_num==1 ? $val->advance_amount : 0;
+                $val->adjusted_amount = $val->row_num==1 ? $val->adjusted_amount : 0;
+                return $val;
+            });
+            $arrearReports = $report->where("fyear","<",$uptoFyear);
+            $currentReports = $report->where("fyear","=",$uptoFyear);
+            $arrear = [
+                "id"                    =>  0,
+                "row_num"             =>  "1",
+                "tran_no"     =>  "---",
+                "owner_name"      =>  "Arrear Collection",
+                "ward_name"      =>  "---",
+                "zone_name"      =>  "---",
+                "holding_no"      =>  "---",
+                "property_no"      =>  "---",
+                "part"      =>  "---",
+                "book_no"      =>  "---",
+                "receipt_no"      =>  "---",
+                "tran_date"      =>  "---",
+                "fyear"      => "---" ,
+                "general_tax"      =>  roundFigure($arrearReports->sum("general_tax")),
+                "road_tax"      =>  roundFigure($arrearReports->sum("road_tax")),
+                "firefighting_tax"      => roundFigure($arrearReports->sum("firefighting_tax")),
+                "education_tax"      =>  roundFigure($arrearReports->sum("education_tax")),
+                "water_tax"      =>  roundFigure($arrearReports->sum("water_tax")),
+                "cleanliness_tax"      =>  roundFigure($arrearReports->sum("cleanliness_tax")),
+                "sewarage_tax"      =>  roundFigure($arrearReports->sum("sewarage_tax")),
+                "tree_tax"      =>  roundFigure($arrearReports->sum("tree_tax")),
+                "professional_tax"      =>  roundFigure($arrearReports->sum("professional_tax")),
+                "tax1"      =>  roundFigure($arrearReports->sum("tax1")),
+                "tax2"      =>  roundFigure($arrearReports->sum("tax2")),
+                "tax3"      =>  roundFigure($arrearReports->sum("tax3")),
+                "sp_education_tax"      =>  roundFigure($arrearReports->sum("sp_education_tax")),
+                "water_benefit"      =>  roundFigure($arrearReports->sum("water_benefit")),
+                "water_bill"      =>  roundFigure($arrearReports->sum("water_bill")),
+                "sp_water_cess"      =>  roundFigure($arrearReports->sum("sp_water_cess")),
+                "drain_cess"      =>  roundFigure($arrearReports->sum("drain_cess")),
+                "light_cess"      =>  roundFigure($arrearReports->sum("light_cess")),
+                "major_building"      =>  roundFigure($arrearReports->sum("major_building")),
+                "open_ploat_tax"      =>  roundFigure($arrearReports->sum("open_ploat_tax")),
+                "exempted_general_tax"      =>  roundFigure($arrearReports->sum("exempted_general_tax")),
+                "total_tax"      =>  roundFigure($arrearReports->sum("total_tax")),
+                "payment_mode"      =>  "---",
+                "cheque_or_dd_no"      =>  "---",
+                "rtgs_or_neft_no"      =>  "---",
+                "rebate"      =>  roundFigure($arrearReports->sum("rebate")),
+                "penalty"      =>  roundFigure($arrearReports->sum("penalty")),
+                "advance_amount"      =>  roundFigure($arrearReports->sum("advance_amount")),
+                "adjusted_amount"      =>  roundFigure($arrearReports->sum("adjusted_amount")),
+            ];
+            $current = [
+                "id"                    =>  0,
+                "row_num"             =>  "1",
+                "tran_no"     =>  "---",
+                "owner_name"      =>  "Current Collection",
+                "ward_name"      =>  "---",
+                "zone_name"      =>  "---",
+                "holding_no"      =>  "---",
+                "property_no"      =>  "---",
+                "part"      =>  "---",
+                "book_no"      =>  "---",
+                "receipt_no"      =>  "---",
+                "tran_date"      =>  "---",
+                "fyear"      => "---" ,
+                "general_tax"      =>  roundFigure($currentReports->sum("general_tax")),
+                "road_tax"      =>  roundFigure($currentReports->sum("road_tax")),
+                "firefighting_tax"      => roundFigure($currentReports->sum("firefighting_tax")),
+                "education_tax"      =>  roundFigure($currentReports->sum("education_tax")),
+                "water_tax"      =>  roundFigure($currentReports->sum("water_tax")),
+                "cleanliness_tax"      =>  roundFigure($currentReports->sum("cleanliness_tax")),
+                "sewarage_tax"      =>  roundFigure($currentReports->sum("sewarage_tax")),
+                "tree_tax"      =>  roundFigure($currentReports->sum("tree_tax")),
+                "professional_tax"      =>  roundFigure($currentReports->sum("professional_tax")),
+                "tax1"      =>  roundFigure($currentReports->sum("tax1")),
+                "tax2"      =>  roundFigure($currentReports->sum("tax2")),
+                "tax3"      =>  roundFigure($currentReports->sum("tax3")),
+                "sp_education_tax"      =>  roundFigure($currentReports->sum("sp_education_tax")),
+                "water_benefit"      =>  roundFigure($currentReports->sum("water_benefit")),
+                "water_bill"      =>  roundFigure($currentReports->sum("water_bill")),
+                "sp_water_cess"      =>  roundFigure($currentReports->sum("sp_water_cess")),
+                "drain_cess"      =>  roundFigure($currentReports->sum("drain_cess")),
+                "light_cess"      =>  roundFigure($currentReports->sum("light_cess")),
+                "major_building"      =>  roundFigure($currentReports->sum("major_building")),
+                "open_ploat_tax"      =>  roundFigure($currentReports->sum("open_ploat_tax")),
+                "exempted_general_tax"      =>  roundFigure($currentReports->sum("exempted_general_tax")),
+                "total_tax"      =>  roundFigure($currentReports->sum("total_tax")),
+                "payment_mode"      =>  "---",
+                "cheque_or_dd_no"      =>  "---",
+                "rtgs_or_neft_no"      =>  "---",
+                "rebate"      =>  roundFigure($currentReports->sum("rebate")),
+                "penalty"      =>  roundFigure($currentReports->sum("penalty")),
+                "advance_amount"      =>  roundFigure($currentReports->sum("advance_amount")),
+                "adjusted_amount"      =>  roundFigure($currentReports->sum("adjusted_amount")),
+            ];
+
+            $granTax = [
+                "id"                    =>  0,
+                "row_num"             =>  "1",
+                "tran_no"     =>  "---",
+                "owner_name"      =>  "Total Tax Collection",
+                "ward_name"      =>  "---",
+                "zone_name"      =>  "---",
+                "holding_no"      =>  "---",
+                "property_no"      =>  "---",
+                "part"      =>  "---",
+                "book_no"      =>  "---",
+                "receipt_no"      =>  "---",
+                "tran_date"      =>  "---",
+                "fyear"      => "---" ,
+                "general_tax"      =>  roundFigure($report->sum("general_tax")),
+                "road_tax"      =>  roundFigure($report->sum("road_tax")),
+                "firefighting_tax"      => roundFigure($report->sum("firefighting_tax")),
+                "education_tax"      =>  roundFigure($report->sum("education_tax")),
+                "water_tax"      =>  roundFigure($report->sum("water_tax")),
+                "cleanliness_tax"      =>  roundFigure($report->sum("cleanliness_tax")),
+                "sewarage_tax"      =>  roundFigure($report->sum("sewarage_tax")),
+                "tree_tax"      =>  roundFigure($report->sum("tree_tax")),
+                "professional_tax"      =>  roundFigure($report->sum("professional_tax")),
+                "tax1"      =>  roundFigure($report->sum("tax1")),
+                "tax2"      =>  roundFigure($report->sum("tax2")),
+                "tax3"      =>  roundFigure($report->sum("tax3")),
+                "sp_education_tax"      =>  roundFigure($report->sum("sp_education_tax")),
+                "water_benefit"      =>  roundFigure($report->sum("water_benefit")),
+                "water_bill"      =>  roundFigure($report->sum("water_bill")),
+                "sp_water_cess"      =>  roundFigure($report->sum("sp_water_cess")),
+                "drain_cess"      =>  roundFigure($report->sum("drain_cess")),
+                "light_cess"      =>  roundFigure($report->sum("light_cess")),
+                "major_building"      =>  roundFigure($report->sum("major_building")),
+                "open_ploat_tax"      =>  roundFigure($report->sum("open_ploat_tax")),
+                "exempted_general_tax"      =>  roundFigure($report->sum("exempted_general_tax")),
+                "total_tax"      =>  roundFigure($report->sum("total_tax")),
+                "payment_mode"      =>  "---",
+                "cheque_or_dd_no"      =>  "---",
+                "rtgs_or_neft_no"      =>  "---",
+                "rebate"      =>  roundFigure($report->sum("rebate")),
+                "penalty"      =>  roundFigure($report->sum("penalty")),
+                "advance_amount"      =>  roundFigure($report->sum("advance_amount")),
+                "adjusted_amount"      =>  roundFigure($report->sum("adjusted_amount")),
+            ];
+
+            $report->push($arrear,$current,$granTax);
+
+            
+            return responseMsgs(true, "Admin Dashboard Reports", remove_null($report));
+        } 
+        catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), []);
         }
     }
