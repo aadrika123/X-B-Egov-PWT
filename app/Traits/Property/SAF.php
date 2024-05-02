@@ -554,7 +554,7 @@ trait SAF
     public function getPropHoldingTypeAccordingUsage($req)
     {
         $useType =  collect($req)->pluck('usage_type_mstr_id');
-        $mUsageType = (RefPropUsageType::whereIn("id",$useType)->orderBy("usage_type_mr","ASC")->get())->unique('usage_type_mr');
+        $mUsageType = (RefPropUsageType::whereIn("id",$useType)->where(DB::raw("NOT usage_type"),"ILIKE",DB::raw("'%Veranda%'"))->orderBy("usage_type_mr","ASC")->get())->unique('usage_type_mr');
         return($mUsageType->implode("usage_type_mr"," & "));
     }
 
