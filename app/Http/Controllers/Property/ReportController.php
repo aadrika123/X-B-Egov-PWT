@@ -4710,8 +4710,8 @@ class ReportController extends Controller
                     SUM(COALESCE(collection.arrear_collection_hh, 0::numeric)) AS arrear_collection_hh,
                     SUM(COALESCE(collection.collection_from_no_of_hh, 0::numeric)) AS collection_from_hh,
                 
-                    round(SUM((COALESCE(collection.arrear_collection_hh, 0::numeric) / (case when demands.arrear_demand_hh > 0 then demands.arrear_demand_hh else 1 end))*100)) AS arrear_hh_eff,
-                    round(SUM((COALESCE(collection.current_collection_hh, 0::numeric) / (case when demands.current_demand_hh > 0 then demands.current_demand_hh else 1 end))*100)) AS current_hh_eff,
+                    round(SUM((COALESCE(collection.arrear_collection_hh, 0::numeric) / (case when demands.arrear_demand_hh > 0 then demands.arrear_demand_hh else 1 end))*100),2) AS arrear_hh_eff,
+                    round(SUM((COALESCE(collection.current_collection_hh, 0::numeric) / (case when demands.current_demand_hh > 0 then demands.current_demand_hh else 1 end))*100),2) AS current_hh_eff,
                 
                     round(SUM(COALESCE(
                         COALESCE(demands.current_demand_hh, 0::numeric) 
@@ -4739,8 +4739,8 @@ class ReportController extends Controller
                     round(SUM((COALESCE(demands.current_demand_hh, 0::numeric) - COALESCE(collection.current_collection_hh, 0::numeric)))) AS current_balance_hh,
                     round(SUM((COALESCE(demands.arrear_demand_hh, 0::numeric) - COALESCE(collection.arrear_collection_hh, 0::numeric)))) AS arrear_balance_hh,
                 
-                    round(SUM((COALESCE(collection.arrear_collection, 0::numeric) / (case when demands.arrear_demand > 0 then demands.arrear_demand else 1 end))*100)) AS arrear_eff,
-                    round(SUM((COALESCE(collection.current_collection, 0::numeric) / (case when demands.current_demand > 0 then demands.current_demand else 1 end))*100)) AS current_eff,
+                    round(SUM((COALESCE(collection.arrear_collection, 0::numeric) / (case when demands.arrear_demand > 0 then demands.arrear_demand else 1 end))*100),2) AS arrear_eff,
+                    round(SUM((COALESCE(collection.current_collection, 0::numeric) / (case when demands.current_demand > 0 then demands.current_demand else 1 end))*100),2) AS current_eff,
                 
                     round(SUM((
                         COALESCE(
@@ -5081,8 +5081,8 @@ class ReportController extends Controller
                     SUM(COALESCE(collection.arrear_collection_hh, 0::numeric)) AS arrear_collection_hh,
                     SUM(COALESCE(collection.collection_from_no_of_hh, 0::numeric)) AS collection_from_hh,
                 
-                    round(SUM((COALESCE(collection.arrear_collection_hh, 0::numeric) / (case when demands.arrear_demand_hh > 0 then demands.arrear_demand_hh else 1 end))*100)) AS arrear_hh_eff,
-                    round(SUM((COALESCE(collection.current_collection_hh, 0::numeric) / (case when demands.current_demand_hh > 0 then demands.current_demand_hh else 1 end))*100)) AS current_hh_eff,
+                    round(SUM((COALESCE(collection.arrear_collection_hh, 0::numeric) / (case when demands.arrear_demand_hh > 0 then demands.arrear_demand_hh else 1 end))*100),2) AS arrear_hh_eff,
+                    round(SUM((COALESCE(collection.current_collection_hh, 0::numeric) / (case when demands.current_demand_hh > 0 then demands.current_demand_hh else 1 end))*100),2) AS current_hh_eff,
                 
                     round(SUM(COALESCE(
                         COALESCE(demands.current_demand_hh, 0::numeric) 
@@ -5110,8 +5110,8 @@ class ReportController extends Controller
                     round(SUM((COALESCE(demands.current_demand_hh, 0::numeric) - COALESCE(collection.current_collection_hh, 0::numeric)))) AS current_balance_hh,
                     round(SUM((COALESCE(demands.arrear_demand_hh, 0::numeric) - COALESCE(collection.arrear_collection_hh, 0::numeric)))) AS arrear_balance_hh,
                 
-                    round(SUM((COALESCE(collection.arrear_collection, 0::numeric) / (case when demands.arrear_demand > 0 then demands.arrear_demand else 1 end))*100)) AS arrear_eff,
-                    round(SUM((COALESCE(collection.current_collection, 0::numeric) / (case when demands.current_demand > 0 then demands.current_demand else 1 end))*100)) AS current_eff,
+                    round(SUM((COALESCE(collection.arrear_collection, 0::numeric) / (case when demands.arrear_demand > 0 then demands.arrear_demand else 1 end))*100),2) AS arrear_eff,
+                    round(SUM((COALESCE(collection.current_collection, 0::numeric) / (case when demands.current_demand > 0 then demands.current_demand else 1 end))*100),2) AS current_eff,
                 
                     round(SUM((
                         COALESCE(
