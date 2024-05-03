@@ -3952,10 +3952,10 @@ class Report implements IReport
             }
             $query = " SELECT *,
                                 (SELECT COUNT(id) FROM prop_properties) AS total_properties,
-                                (SELECT ROUND(((zone1_collection/zone1_demand)*100),2) as zone1_recovery),
-                                (SELECT ROUND(((zone2_collection/zone2_demand)*100),2) as zone2_recovery),
-                                (SELECT ROUND(((zone3_collection/zone3_demand)*100),2) as zone3_recovery),
-                                (SELECT ROUND(((zone4_collection/zone4_demand)*100),2) as zone4_recovery)
+                                (SELECT ROUND(((zone1_collection/case when zone1_demand=0 then 1 else zone1_demand end)*100),2) as zone1_recovery),
+                                (SELECT ROUND(((zone2_collection/case when zone2_demand=0 then 1 else zone2_demand end)*100),2) as zone2_recovery),
+                                (SELECT ROUND(((zone3_collection/case when zone3_demand=0 then 1 else zone3_demand end)*100),2) as zone3_recovery),
+                                (SELECT ROUND(((zone4_collection/case when zone4_demand=0 then 1 else zone4_demand end)*100),2) as zone4_recovery))
                                 
                                 FROM
                                 -- Transaction Queries
