@@ -5850,6 +5850,7 @@ class ReportController extends Controller
             $query = "
                     SELECT prop_transactions.id,
                         ROW_NUMBER() OVER( PARTITION BY prop_transactions.id  ORDER BY prop_demands.fyear DESC  )as row_num,
+                        ROW_NUMBER() OVER( PARTITION BY prop_transactions.id  ORDER BY prop_demands.fyear ASC  )as row_num_second,
                         prop_transactions.tran_no,owners.owner_name,ulb_ward_masters.ward_name,zone_masters.zone_name,props.holding_no,props.property_no,'' as part,
                         prop_transactions.book_no,split_part(prop_transactions.book_no, '-',2) as receipt_no,
                         prop_transactions.tran_date,prop_demands.fyear,
@@ -5863,15 +5864,17 @@ class ReportController extends Controller
                         prop_tran_dtls.paid_open_ploat_tax as open_ploat_tax, prop_tran_dtls.paid_exempted_general_tax as exempted_general_tax,
                         prop_tran_dtls.paid_total_tax as total_tax, prop_tran_dtls.paid_total_tax as total_tax,
                         prop_transactions.payment_mode, 
-                        case when upper(prop_transactions.payment_mode) in('CHEQUE','DD') then prop_cheque_dtls.cheque_no  end as cheque_or_dd_no,
-                        case when upper(prop_transactions.payment_mode) in('RTGS','NEFT') then prop_cheque_dtls.cheque_no  end as rtgs_or_neft_no,
-                        fine_rebet.rebate, fine_rebet.penalty,advance.advance_amount, adjusted.adjusted_amount
+                        case when upper(prop_transactions.payment_mode) in('CHEQUE','DD') THEN prop_cheque_dtls.cheque_no  END AS cheque_or_dd_no,
+                        case when upper(prop_transactions.payment_mode) in('RTGS','NEFT') THEN prop_cheque_dtls.cheque_no  END AS rtgs_or_neft_no,
+                        fine_rebet.rebate, fine_rebet.penalty,advance.advance_amount, adjusted.adjusted_amount,
+                        CASE WHEN first_tran.min_id = prop_transactions.id THEN mutation_fee.procces_fee ELSE 0 END AS procces_fee, 
+	                    CASE WHEN first_tran.min_id = prop_transactions.id THEN mutation_fee.tran_date ELSE NULL END AS mutation_fee_tran_date
                     
                     from prop_tran_dtls
                     join prop_demands on prop_demands.id = prop_tran_dtls.prop_demand_id
                     join prop_transactions on prop_transactions.id = prop_tran_dtls.tran_id
                     join (
-                        select prop_properties.id as pid,prop_properties.ward_mstr_id,prop_properties.zone_mstr_id,prop_properties.property_no,prop_properties.holding_no
+                        select prop_properties.id as pid ,prop_properties.saf_id, prop_properties.ward_mstr_id,prop_properties.zone_mstr_id,prop_properties.property_no,prop_properties.holding_no
                         from prop_properties
                         join prop_transactions on prop_transactions.property_id = prop_properties.id
                         where prop_transactions.tran_date between '$fromDate' and '$toDate' 
@@ -5960,6 +5963,21 @@ class ReportController extends Controller
                             " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
                         group by prop_transactions.id
                     )adjusted on adjusted.tran_id = prop_transactions.id
+                    left join (
+                        select min(id)as min_id,property_id
+                        from prop_transactions
+                        where saf_id is null  
+                            and prop_transactions.status in(1,2)
+                        group by property_id
+                    )first_tran on first_tran.min_id = prop_transactions.id	
+                    left join(
+                        select saf_id, sum(amount)as procces_fee,max(tran_date)tran_date
+                        from prop_transactions
+                        where saf_id is not null  
+                            and prop_transactions.status in(1,2)
+                            and tran_type = 'Saf Proccess Fee'
+                        group by saf_id
+                    )mutation_fee on mutation_fee.saf_id=props.saf_id
                     left join ulb_ward_masters on ulb_ward_masters.id = props.ward_mstr_id	
                     left join zone_masters on zone_masters.id = props.zone_mstr_id
                     where prop_transactions.tran_date between '$fromDate' and '$toDate' 
@@ -5978,6 +5996,7 @@ class ReportController extends Controller
             $test = collect($report);
             $report = collect($report)->map(function ($val) use($uptoFyear,$test){
                 $val->rebate = $val->row_num==1 ? $val->rebate : 0;
+                $val->rebate = $val->row_num_second==1 ? $val->procces_fee : 0;
                 $penalty = ($val->row_num==2) ? $val->penalty : 0;
                 if($val->row_num ==1)
                 {
@@ -6033,6 +6052,8 @@ class ReportController extends Controller
                 "penalty"      =>  roundFigure($arrearReports->sum("penalty")),
                 "advance_amount"      =>  roundFigure($arrearReports->sum("advance_amount")),
                 "adjusted_amount"      =>  roundFigure($arrearReports->sum("adjusted_amount")),
+                "procces_fee"      =>  roundFigure($arrearReports->sum("procces_fee")),
+                "mutation_fee_tran_date"      =>  "---",
             ];
             $current = [
                 "id"                    =>  0,
@@ -6077,6 +6098,8 @@ class ReportController extends Controller
                 "penalty"      =>  roundFigure($currentReports->sum("penalty")),
                 "advance_amount"      =>  roundFigure($currentReports->sum("advance_amount")),
                 "adjusted_amount"      =>  roundFigure($currentReports->sum("adjusted_amount")),
+                "procces_fee"      =>  roundFigure($arrearReports->sum("procces_fee")),
+                "mutation_fee_tran_date"      =>  "---",
             ];
 
             $granTax = [
@@ -6122,6 +6145,8 @@ class ReportController extends Controller
                 "penalty"      =>  roundFigure($report->sum("penalty")),
                 "advance_amount"      =>  roundFigure($report->sum("advance_amount")),
                 "adjusted_amount"      =>  roundFigure($report->sum("adjusted_amount")),
+                "procces_fee"      =>  roundFigure($arrearReports->sum("procces_fee")),
+                "mutation_fee_tran_date"      =>  "---",
             ];
 
             $report->push($arrear,$current,$granTax);
