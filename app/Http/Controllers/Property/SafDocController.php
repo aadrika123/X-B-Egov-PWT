@@ -357,14 +357,15 @@ class SafDocController extends Controller
                 }
             }
             $documents = $documents->map(function($val){
-                $uploadeUser = $val->uploaded_by_type!="Citizen" ? User::find($val->uploaded_by??0) : ActiveCitizen::find($val->uploaded_by??0);
-                $val->uploadedBy = ($uploadeUser->name ?? ($uploadeUser->user_name??"")) ." (".$val->uploaded_by_type.")";
+
+                $uploadeUser = isset($val["uploaded_by_type"]) && $val["uploaded_by_type"] !="Citizen"? User::find($val["uploaded_by_type"]??0) : ActiveCitizen::find($val["uploaded_by_type"]??0);
+                $val["uploadedBy"] = ($uploadeUser->name ?? ($uploadeUser->user_name??"")) ." (".($val["uploaded_by_type"]??"").")";
                 return $val;
             });
 
             return responseMsgs(true, ["docVerifyStatus" => $safDetails->doc_verify_status], remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, [$e->getMessage(),$e->getFile(),$e->getLine()], "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
