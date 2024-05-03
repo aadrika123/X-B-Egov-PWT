@@ -6125,6 +6125,19 @@ class ReportController extends Controller
             ];
 
             $report->push($arrear,$current,$granTax);
+            $data["report"] = $report;
+            $data["headers"] = [
+                "fromDate" => Carbon::parse($fromDate)->format('d-m-Y'),
+                "uptoDate" => Carbon::parse($toDate)->format('d-m-Y'),
+                "fromFyear" => $fromFyear,
+                "uptoFyear" => $uptoFyear,
+                "tcName" => $userId ? User::find($userId)->name ?? "" : "All",
+                "WardName" => $wardId ? ulbWardMaster::find($wardId)->ward_name ?? "" : "All",
+                "zoneName" => $zoneId ? (new ZoneMaster)->createZoneName($zoneId) ?? "" : "East/West/North/South",
+                "paymentMode" => $paymentMode ? str::replace(",", "/", $paymentMode) : "All",
+                "printDate" => Carbon::now()->format('d-m-Y H:i:s A'),
+                "printedBy" => $user->name ?? "",
+            ]; 
 
             
             return responseMsgs(true, "Admin Dashboard Reports", remove_null($report));
