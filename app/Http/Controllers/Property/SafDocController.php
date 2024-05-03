@@ -357,8 +357,7 @@ class SafDocController extends Controller
                 }
             }
             $documents = $documents->map(function($val){
-
-                $uploadeUser = isset($val["uploaded_by_type"]) && $val["uploaded_by_type"] !="Citizen"? User::find($val["uploaded_by_type"]??0) : ActiveCitizen::find($val["uploaded_by_type"]??0);
+                $uploadeUser = isset($val["uploaded_by_type"]) && $val["uploaded_by_type"] !="Citizen"? User::find($val["uploaded_by"]??0) : ActiveCitizen::find($val["uploaded_by"]??0);
                 $val["uploadedBy"] = ($uploadeUser->name ?? ($uploadeUser->user_name??"")) ." (".($val["uploaded_by_type"]??"").")";
                 return $val;
             });

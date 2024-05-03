@@ -82,6 +82,7 @@ class PropSafJahirnamaDoc extends PropParamModel #Model
                 ->select(
                     "*",
                     DB::raw("
+                    user_id AS uploaded_by, 'TC' as uploaded_by_type,
                     concat('".$this->_docUrl."/',relative_path,'/',doc_name) as doc_path,
                     TRIM('/ ' FROM CASE WHEN TRIM(objection_doc_relative_path) <>'' OR TRIM(objection_doc) <> '' THEN(
                             concat('".$this->_docUrl."/',objection_doc_relative_path,'/',objection_doc)
