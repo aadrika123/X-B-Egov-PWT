@@ -6140,7 +6140,7 @@ class ReportController extends Controller
             ]; 
 
             
-            return responseMsgs(true, "Admin Dashboard Reports", remove_null($report));
+            return responseMsgs(true, "Admin Dashboard Reports", remove_null($data));
         } 
         catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), []);
