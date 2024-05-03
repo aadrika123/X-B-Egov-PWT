@@ -257,11 +257,11 @@ class WaterSecondConsumer extends Model
                         ELSE 'unknown'
                     END AS payment_status,
                     zone_masters.zone_name,
-                    ulb_ward_masters.ward_name,
+                    ulb_ward_masters.ward_name
                 ")
             )
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_second_consumers.id')
-            ->where('water_consumer_owners.' . $key, 'ILIKE', '%' . $refVal . '%')
+            ->where('water_consumer_owners.' . $key, 'ILIKE', "%$refVal%")
             ->join('water_consumer_demands', 'water_consumer_demands.consumer_id', 'water_second_consumers.id')
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
             ->leftjoin('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
