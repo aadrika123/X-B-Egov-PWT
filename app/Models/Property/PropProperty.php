@@ -971,6 +971,7 @@ class PropProperty extends  PropParamModel #Model
                 'p.plot_no',
                 'p.area_of_plot',
                 'p.building_name',
+                "p.saf_id",
 
                 'z.zone_name',
                 'o.owner_name as eng_owner_name',

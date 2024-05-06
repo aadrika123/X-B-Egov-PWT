@@ -50,6 +50,7 @@ class GeneratePaymentReceiptV2
     private $_mPropAdjustment;
     private $_advanceAmt = 0;
     private $_adjustAmt = 0;
+    private $_processFee = 0;
 
     /**
      * | Initializations of Variables
@@ -107,7 +108,9 @@ class GeneratePaymentReceiptV2
         $tranDtls = $this->_mPropTranDtl->getTranDemandsByTranId($trans->id);
         // $this->_propertyDtls = $this->_mPropProperty->getBasicDetails($trans->property_id);             // Get details from property table
         $this->_propertyDtls = $this->_mPropProperty->getBasicDetailsV2($trans->property_id); 
-
+        $safTran = $this->_mPropTransaction->whereIn("status",[1,2])->where("tran_type","Saf Proccess Fee")->where("saf_id",$this->_propertyDtls->saf_id)->first();
+        $isFirstTransaction = $this->_mPropTransaction->whereIn("status",[1,2])->where("property_id",$trans->property_id)->where("id","<",$this->_trans->id)->count("id") ==0?true:false;     
+        $this->_processFee = $isFirstTransaction && $safTran ? $safTran->amount : 0;
         if ($this->_tranType == 'Property') {                                   // Get Property Demands by demand ids
             if (collect($this->_propertyDtls)->isEmpty())
                 throw new Exception("Property Details not available");
@@ -177,18 +180,21 @@ class GeneratePaymentReceiptV2
             $this->_overDueDemand["advancePaidAmount"]    =  0;
             $this->_overDueDemand["advancePaidAmount"]    = 0;
             $this->_overDueDemand["netAdvance"] = 0;
+            $this->_overDueDemand["processFee"] = 0;
 
-            $this->_currentDemand["FinalTax"] =   roundFigure($this->_currentDemand["FinalTax"] + (($this->_advanceAmt??0) - ($this->_adjustAmt??0) ));    
+            $this->_currentDemand["FinalTax1"] =   roundFigure($this->_currentDemand["FinalTax"] + (($this->_advanceAmt??0) - ($this->_adjustAmt??0) ) );    
+            $this->_currentDemand["FinalTax"] =   roundFigure($this->_currentDemand["FinalTax"] + (($this->_advanceAmt??0) - ($this->_adjustAmt??0) ) + $this->_processFee);
             $this->_currentDemand["advancePaidAmount"]    =  ($this->_adjustAmt??0) ;
             $this->_currentDemand["advancePaidAmount"]    =  ($this->_advanceAmt??0) ;
             $this->_currentDemand["netAdvance"] =  (($this->_advanceAmt??0) - ($this->_adjustAmt??0)) ;
+            $this->_currentDemand["processFee"] = $this->_processFee;
 
             $this->_GRID['overdueDemand'] = $this->_overDueDemand;
             $this->_GRID['currentDemand'] = $this->_currentDemand;
 
             $aggregateDemandList = new Collection([$this->_currentDemand, $this->_overDueDemand]);
             $aggregateDemand = $this->aggregateDemand($aggregateDemandList);
-            $aggregateDemand["FinalTax"] =   round($aggregateDemand["FinalTax"] + (($this->_advanceAmt??0) - ($this->_adjustAmt??0) ));    
+            $aggregateDemand["FinalTax"] =   round($aggregateDemand["FinalTax"] + (($this->_advanceAmt??0) - ($this->_adjustAmt??0) ) + $this->_processFee);    
             $aggregateDemand["advancePaidAmount"]    =  ($this->_adjustAmt??0) ;
             $aggregateDemand["advancePaidAmount"]    =  ($this->_advanceAmt??0) ;
             $aggregateDemand["netAdvance"] =  (($this->_advanceAmt??0) - ($this->_adjustAmt??0)) ;
