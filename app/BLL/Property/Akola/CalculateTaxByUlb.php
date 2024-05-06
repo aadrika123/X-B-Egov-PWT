@@ -8,6 +8,7 @@ use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafsFloor;
 use App\Models\Property\PropSafVerification;
 use App\Models\Property\PropSafVerificationDtl;
+use App\Traits\Property\SAF;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
@@ -20,11 +21,13 @@ use Illuminate\Support\Facades\DB;
  */
 class CalculateTaxByUlb extends TaxCalculator
 {
+    use SAF;
     private $_mPropSafVerifications;
     private $_mPropSafVerificationDtls;
     private $_verificationId;
     private $_propVerifications;
     private $_propVerificationDtls;
+    private $_mPropSafFloors;
     private $_safs;
     private $_REQUEST;
 
@@ -36,6 +39,7 @@ class CalculateTaxByUlb extends TaxCalculator
         $this->_verificationId = $verificationId;
         $this->_mPropSafVerifications = new PropSafVerification();
         $this->_mPropSafVerificationDtls = new PropSafVerificationDtl();
+        $this->_mPropSafFloors = new PropSafsFloor();
 
         $this->readParams();                // Read all the parameter for calculation
         $this->generateRequests();
@@ -88,14 +92,31 @@ class CalculateTaxByUlb extends TaxCalculator
                 throw new Exception("Verification Floors not available for this property");
 
             foreach ($this->_propVerificationDtls as $floor) {
+                $safFloor = $this->_mPropSafFloors->find($floor->saf_floor_id);
+                $floor  = $this->addjustVerifyFloorDtls($safFloor ? $safFloor : $this->_mPropSafFloors, $floor);
+                $floor  = $this->addjustVerifyFloorDtlVal($floor);
+                // $floorReq =  [
+                //     "floorNo" => $floor->floor_mstr_id,
+                //     "constructionType" =>  $floor->construction_type_id,
+                //     "occupancyType" =>  $floor->occupancy_type_mstr_id??"",
+                //     "usageType" => $floor->usage_type_id,
+                //     "buildupArea" =>  $floor->builtup_area,
+                //     "dateFrom" =>  $floor->date_from,
+                //     "dateUpto" =>  $floor->date_to
+                // ];
                 $floorReq =  [
                     "floorNo" => $floor->floor_mstr_id,
-                    "constructionType" =>  $floor->construction_type_id,
-                    "occupancyType" =>  $floor->occupancy_type_mstr_id??"",
-                    "usageType" => $floor->usage_type_id,
+                    "floorName" => $floor->floor_name, #name value
+                    "constructionType" =>  $floor->const_type_mstr_id,
+                    "occupancyType" =>  $floor->occupancy_type_mstr_id ?? "",
+                    "usageType" => $floor->usage_type_mstr_id,
+                    "usageTypeName" => $floor->usage_type, #name value
                     "buildupArea" =>  $floor->builtup_area,
                     "dateFrom" =>  $floor->date_from,
-                    "dateUpto" =>  $floor->date_to
+                    "dateUpto" =>  $floor->date_upto,
+                    "rentAmount" =>  $floor->rent_amount,
+                    "rentAgreementDate" =>  $floor->rent_agreement_date,
+                    "propFloorDetailId" =>$floor->prop_floor_details_id,
                 ];
                 array_push($calculationReq['floor'], $floorReq);
             }

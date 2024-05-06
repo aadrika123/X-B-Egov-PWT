@@ -90,6 +90,8 @@ class CalculateSafTaxById extends TaxCalculator
                     "buildupArea" =>  $floor->builtup_area,
                     "dateFrom" =>  $floor->date_from,
                     "dateUpto" =>  $floor->date_upto,
+                    "rentAmount" =>  $floor->rent_amount,
+                    "rentAgreementDate" =>  $floor->rent_agreement_date,
                     "propFloorDetailId" =>$floor->prop_floor_details_id,
                 ];
                 array_push($calculationReq['floor'], $floorReq);
@@ -109,6 +111,8 @@ class CalculateSafTaxById extends TaxCalculator
                     "buildupArea" =>  $floor->builtup_area,
                     "dateFrom" =>  $floor->date_from,
                     "dateUpto" =>  $floor->date_upto,
+                    "rentAmount" =>  $floor->rent_amount??null,
+                    "rentAgreementDate" =>  $floor->rent_agreement_date??null,
                     "propFloorDetailId" =>$floor->prop_floor_details_id,
                 ];
                 array_push($calculationReq['floor'], $floorReq);
