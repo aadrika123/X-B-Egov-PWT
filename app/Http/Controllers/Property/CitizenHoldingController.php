@@ -78,7 +78,7 @@ class CitizenHoldingController extends Controller
             ->orderby("created_at","DESC")
             ->first();
             $diffInMin = Carbon::parse(Carbon::parse())->diffInMinutes($reqData->created_at??null);
-            if($reqData && $diffInMin < 5)
+            if($reqData && $diffInMin < 5 && !Config::get("sms-constants.sms_test"))
             {
                 throw new Exception("Please Wait ".(5-$diffInMin)." Minutes");
             }
