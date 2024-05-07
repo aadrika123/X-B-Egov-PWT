@@ -57,6 +57,7 @@ class CalculateSafTaxById extends TaxCalculator
             "dateOfPurchase" => $this->_safDtls->land_occupation_date,
             "previousHoldingId" => $this->_safDtls->previous_holding_id ?? 0,
             "applyDate" => $this->_safDtls->application_date ?? null,
+            "approvedDate" => $this->_safDtls->saf_approved_date ?? null,
             "ward" => $this->_safDtls->ward_mstr_id ?? null,
             "zone" => $this->_safDtls->zone_mstr_id ?? null,
             "assessmentType" => (flipConstants(Config::get("PropertyConstaint.ASSESSMENT-TYPE"))[$this->_safDtls->assessment_type] ?? ''),

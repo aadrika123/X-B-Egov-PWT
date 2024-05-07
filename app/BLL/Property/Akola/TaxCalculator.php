@@ -580,9 +580,9 @@ class TaxCalculator
             }
 
             $this->_floorsTaxes[0] = [
-                'dateFrom' => $this->_REQUEST->applyDate ? Carbon::parse($this->_REQUEST->applyDate)->addYears(-5)->format('Y-m-d'):Carbon::now()->addYears(-5)->format('Y-m-d'),
+                'dateFrom' => $this->_REQUEST->approvedDate ? Carbon::parse($this->_REQUEST->approvedDate)->addYears(-5)->format('Y-m-d'):Carbon::now()->addYears(-5)->format('Y-m-d'),
                 'dateUpto' => null,
-                'appliedFrom' => getFY($this->_REQUEST->applyDate ? Carbon::parse($this->_REQUEST->applyDate)->addYears(-5)->format('Y-m-d'):Carbon::now()->addYears(-5)->format('Y-m-d')),
+                'appliedFrom' => getFY($this->_REQUEST->approvedDate ? Carbon::parse($this->_REQUEST->approvedDate)->addYears(-5)->format('Y-m-d'):Carbon::now()->addYears(-5)->format('Y-m-d')),
                 'appliedUpto' => getFY(),
                 'rate' => $rate,
                 'floorKey' => "Vacant Land",
@@ -746,8 +746,11 @@ class TaxCalculator
          * for if vacand land apply New Assessment then teck tax from privisus 6 year
          */
         $privFiveYear = Carbon::now()->addYears(-5)->format('Y-m-d');
-        if ($this->_REQUEST->applyDate) {
-            $privFiveYear = Carbon::parse($this->_REQUEST->applyDate)->addYears(-5)->format('Y-m-d');
+        // if ($this->_REQUEST->applyDate) {
+        //     $privFiveYear = Carbon::parse($this->_REQUEST->applyDate)->addYears(-5)->format('Y-m-d');
+        // }
+        if ($this->_REQUEST->approvedDate) {
+            $privFiveYear = Carbon::parse($this->_REQUEST->approvedDate)->addYears(-5)->format('Y-m-d');
         }
 
         if ((Config::get("PropertyConstaint.ASSESSMENT-TYPE." . $this->_REQUEST->assessmentType) == 'New Assessment' || $this->_REQUEST->assessmentType == 'New Assessment') && $privFiveYear < $this->_calculationDateFrom) {
