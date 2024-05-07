@@ -2210,6 +2210,7 @@ class ActiveSafController extends Controller
         // Rejected SAF Application replication
         $rejectedSaf = $activeSaf->replicate();
         $rejectedSaf->setTable('prop_rejected_safs');
+        $rejectedSaf->saf_approved_date = Carbon::naw()->format("Y-m-d");
         $rejectedSaf->id = $activeSaf->id;
         $rejectedSaf->push();
         $activeSaf->delete();

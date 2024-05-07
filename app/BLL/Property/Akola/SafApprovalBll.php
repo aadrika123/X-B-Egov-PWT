@@ -19,6 +19,7 @@ use App\Models\Property\PropSafMemoDtl;
 use App\Models\Property\PropSafVerification;
 use App\Models\Property\PropSafVerificationDtl;
 use App\Models\Property\PropTransaction;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
@@ -397,6 +398,7 @@ class SafApprovalBll
         $approvedSaf = $this->_activeSaf->replicate();
         $approvedSaf->setTable('prop_safs');
         $approvedSaf->id = $this->_activeSaf->id;
+        $approvedSaf->saf_approved_date = Carbon::naw()->format("Y-m-d");
         $approvedSaf->property_id = $this->_replicatedPropId;
         $approvedSaf->save();
         $this->_activeSaf->delete();
