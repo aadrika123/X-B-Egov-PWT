@@ -398,7 +398,7 @@ class SafApprovalBll
         $approvedSaf = $this->_activeSaf->replicate();
         $approvedSaf->setTable('prop_safs');
         $approvedSaf->id = $this->_activeSaf->id;
-        $approvedSaf->saf_approved_date = Carbon::naw()->format("Y-m-d");
+        $approvedSaf->saf_approved_date = Carbon::now()->format("Y-m-d");
         $approvedSaf->property_id = $this->_replicatedPropId;
         $approvedSaf->save();
         $this->_activeSaf->delete();
