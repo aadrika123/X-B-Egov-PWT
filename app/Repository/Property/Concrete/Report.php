@@ -4530,7 +4530,10 @@ class Report implements IReport
                 '$paymentMode' AS payment_mode,
                 count(distinct(prop_transactions.id)) as total_tran,	
                 sum(COALESCE(total_demand,0)::numeric) as total_demand,
-                sum(COALESCE(total_tax,0)::numeric) as total_tax,sum(COALESCE(prop_transactions.amount,0)::numeric) as amount,
+                sum(COALESCE(total_tax,0)::numeric) as total_tax,
+                sum(COALESCE(prop_transactions.amount,0)::numeric) as amount,
+                sum(0) as arear_process_fee,
+                sum(CASE WHEN prop_transactions.saf_id IS NOT NULL AND prop_transactions.tran_type ='Saf Proccess Fee' then prop_transactions.amount else 0 end) as current_process_fee,
 				sum(
                     +(COALESCE(maintanance_amt,0)::numeric) 
                     +(COALESCE(aging_amt,0)::numeric) 
@@ -4872,7 +4875,7 @@ class Report implements IReport
                 and prop_transactions.status in(1,2)
                 " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
             ";
-
+            // print_var($query);die;
             $report = $this->_DB_READ->select($query);
             $report = collect($report)->first();
             $report->maintanance_amt = round($report->current_maintanance_amt)     +  round($report->arear_maintanance_amt);
@@ -4898,7 +4901,8 @@ class Report implements IReport
             $report->light_cess      = round($report->current_light_cess)          +  round($report->arear_light_cess);
             $report->major_building  = round($report->current_major_building)      +  round($report->arear_major_building);
             $report->open_ploat_tax  = round($report->current_open_ploat_tax)      +  round($report->arear_open_ploat_tax);
-            $report->net_advance = round($report->advance_amount)      -  round($report->adjusted_amount);
+            $report->net_advance     = round($report->advance_amount)      -  round($report->adjusted_amount);
+            $report->process_fee     = round($report->arear_process_fee)  + round($report->current_process_fee)   ;
 
             $data["report"] = collect($report)->map(function ($val, $key) {
                 if ($key == "payment_mode") {
