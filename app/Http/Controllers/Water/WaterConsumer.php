@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Water\reqDeactivate;
 use App\Http\Requests\Water\reqMeterEntry;
 use App\Http\Requests\Water\newWaterRequest;
+use App\MicroServices\DocumentUpload;
 use App\MicroServices\DocUpload;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Masters\RefRequiredDocument;
@@ -17,6 +18,8 @@ use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\Citizen\ActiveCitizenUndercare;
 use App\Models\Payment\TempTransaction;
 use App\Models\User;
+use App\Models\Water\Log\WaterConsumerOwnerUpdatingLog;
+use App\Models\Water\Log\WaterConsumersUpdatingLog;
 use App\Models\Water\WaterAdjustment;
 use App\Models\Water\WaterAdvance;
 use App\Models\Water\WaterApplication;
@@ -2418,11 +2421,17 @@ class WaterConsumer extends Controller
                 'address'            => 'nullable|',
                 'property_no'        => 'nullable',
                 'dtcCode'            => 'nullble',
-                'oldConsumerNo'      => 'nullable'
+                'oldConsumerNo'      => 'nullable',
+                "category"           => "nullable|in:General,Slum",
+                "propertytype"       =>  "nullable|in:1,2",
+                "tapsize"            =>  "nullable",
+                "landmark"           =>  "nullable",
+                "document"           =>  "nullable|mimes:pdf,jpeg,png,jpg,gif",
+                "remarks"           =>  "nullable",
             ]
         );
         if ($validated->fails())
-            return validationError($validated);
+            return validationErrorV2($validated);
         try {
             $request->merge([
                 "propertyNo"=>$request->property_no,
@@ -2431,25 +2440,77 @@ class WaterConsumer extends Controller
                 "guardianName"=>$request->guardian_name,
             ]);
             $now            = Carbon::now();
-            $user           = authUser($request);
+            $user           = Auth()->user();
             $userId         = $user->id;
             $consumerId     = $request->consumerId;
+            $relativePath   = Config::get("waterConstaint.WATER_UPDATE_RELATIVE_PATH"); 
+            $refImageName = $request->consumerId;
+            $imageName=null;
 
+            $docUpload = new DocumentUpload();
             $mWaterSecondConsumer = new waterSecondConsumer();
             $mWaterConsumerOwners = new WaterConsumerOwner();
-            $consumerDtls = $mWaterSecondConsumer->consumerDetails($consumerId)->first();
+            $mWaterConsumerLog = new WaterConsumersUpdatingLog();
+            $mWaterConsumerOwnersLog = new WaterConsumerOwnerUpdatingLog();
+            $consumerDtls = $mWaterSecondConsumer->find($consumerId);
             if (!$consumerDtls) {
                 throw new Exception("consumer details not found!");
             }
+            $owner = $mWaterConsumerOwners->where("consumer_id",$request->consumerId)->orderBy("id","ASC")->first();
+            
+            $conUpdaleLog = $consumerDtls->replicate();
+            $conUpdaleLog->setTable($mWaterConsumerLog->getTable());
+            $conUpdaleLog->purpose      =   "Consumer Update";  
+            $conUpdaleLog->up_user_id   = $user->id;
+            $conUpdaleLog->up_user_type = $user->user_type;            
+            $conUpdaleLog->remarks       = $request->remarks; 
+
+            $ownerUdatesLog = $owner->replicate();
+            $ownerUdatesLog->setTable($mWaterConsumerOwnersLog->getTable());
+            #=========consumer updates=================
+            $consumerDtls->ward_mstr_id         =  $request->wardId         ? $request->wardId : $consumerDtls->ward_mstr_id;
+            $consumerDtls->zone_mstr_id         =  $request->zoneId         ? $request->zoneId : $consumerDtls->zone_mstr_id;
+            $consumerDtls->mobile_no            =  $request->mobileNo       ? $request->mobileNo : $consumerDtls->mobile_no;
+            $consumerDtls->old_consumer_no      =  $request->oldConsumerNo  ? $request->oldConsumerNo : $consumerDtls->old_consumer_no;
+            $consumerDtls->property_no          =  $request->propertyNo     ? $request->propertyNo : $consumerDtls->property_no;
+            $consumerDtls->dtc_code             =  $request->dtcCode        ? $request->dtcCode : $consumerDtls->dtc_code;
+            $consumerDtls->category             =  $request->category       ? $request->category : $consumerDtls->category;
+            $consumerDtls->property_type_id     =  $request->propertytype   ? $request->propertytype : $consumerDtls->property_type_id;
+            $consumerDtls->tab_size             =  $request->tapsize        ? $request->tapsize : $consumerDtls->tab_size;
+            $consumerDtls->landmark             =  $request->landmark       ? $request->landmark : $consumerDtls->landmark;
+            $consumerDtls->address              =  $request->address       ? $request->address : $consumerDtls->address;
+
+            #=========consumer updates=================
+            if($owner)
+            {
+                $owner->applicant_name       =  $request->applicant_name      ? $request->applicant_name : $owner->applicant_name;
+                $owner->guardian_name        =  $request->guardian_name       ? $request->guardian_name  : $owner->guardian_name;
+                $owner->email                =  $request->email               ? $request->email          : $owner->email;
+                $owner->mobile_no            =  $request->mobile_no           ? $request->mobile_no      : $owner->mobile_no;
+            }
 
             $this->begin();
-            $mWaterSecondConsumer->editConsumerdtls($request, $userId);
-            $mWaterConsumerOwners->editConsumerOwnerDtls($request, $userId);
+
+            $conUpdaleLog->save();
+            if($request->document)
+            {
+                $imageName = $docUpload->upload($conUpdaleLog->id, $request->document, $relativePath);
+            }
+            $conUpdaleLog->relative_path = $imageName ? $relativePath : null; 
+            $conUpdaleLog->document      = $imageName ;
+            $conUpdaleLog->update();
+
+            $ownerUdatesLog->consumers_updating_log_id = $conUpdaleLog->id;
+            $owner ? $ownerUdatesLog->save() :"";
+
+            $consumerDtls->update();
+            $owner ? $owner->update():"";
+
             $this->commit();
             return responseMsgs(true, "update consumer details succesfull!", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             $this->rollback();
-            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
+            return responseMsgs(false, [$e->getMessage(),$e->getFile(),$e->getLine()], "", "010203", "1.0", "", 'POST', "");
         }
     }
 

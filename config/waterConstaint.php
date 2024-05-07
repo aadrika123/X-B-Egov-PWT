@@ -37,6 +37,7 @@ return [
     "TOWARDS_DEMAND" => "Water User Charges",
     "WATER_DEPAPRTMENT_ID" => "2",
     "WATER_RELATIVE_PATH" => "Uploads/Water",
+    "WATER_UPDATE_RELATIVE_PATH" => "Uploads/Water/Consumer/UpdateLog",
 
     "PROPERTY_TYPE" => [
         "Residential"       => 1,
