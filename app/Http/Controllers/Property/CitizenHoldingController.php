@@ -131,7 +131,7 @@ class CitizenHoldingController extends Controller
             }
             $paidTotalExemptedGeneralTax = $postPropPayment->testArmforceRebat();
             $firstQuaterRebats = collect($demand["QuarterlyRebates"]??[]);
-            $firstQuaterRebatsAmt =  $firstQuaterRebats->sum("rebates_amt");
+            $firstQuaterRebatsAmt =  $request->paymentType=="isFullPayment" ? $firstQuaterRebats->sum("rebates_amt"):0;
 
             $request->merge([
                 "rebate" =>$rebatsAmt,   
