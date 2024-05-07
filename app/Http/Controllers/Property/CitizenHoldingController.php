@@ -151,10 +151,10 @@ class CitizenHoldingController extends Controller
                 // "userType"  => $user->user_type,
                 // "auth"  => $user
             ]); 
-            // if(!Config::get("sms-constants.sms_test"))
-            // {
-            //     throw new Exception("Payment Gateway temporary disabled due to maintainable");
-            // }
+            if(!Config::get("sms-constants.sms_test"))
+            {
+                throw new Exception("Payment Gateway temporary disabled due to maintainable");
+            }
             if(!$isCitizenUserType)
             {
                 $request->merge(["userId"=>$user->id]);
