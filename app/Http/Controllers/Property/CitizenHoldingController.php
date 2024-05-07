@@ -80,7 +80,7 @@ class CitizenHoldingController extends Controller
             $diffInMin = Carbon::parse(Carbon::parse())->diffInMinutes($reqData->created_at??null);
             if($reqData && $diffInMin < 5)
             {
-                // throw new Exception("Please Wait ".(5-$diffInMin)." Minutes");
+                throw new Exception("Please Wait ".(5-$diffInMin)." Minutes");
             }
             $user = Auth()->user()??null;
             $isCitizenUserType = $user ? $this->_COMONFUNCTION->checkUsersWithtocken("active_citizens") : true;
@@ -151,10 +151,10 @@ class CitizenHoldingController extends Controller
                 // "userType"  => $user->user_type,
                 // "auth"  => $user
             ]); 
-            if(!Config::get("sms-constants.sms_test"))
-            {
-                throw new Exception("Payment Gateway temporary disabled due to maintainable");
-            }
+            // if(!Config::get("sms-constants.sms_test"))
+            // {
+            //     throw new Exception("Payment Gateway temporary disabled due to maintainable");
+            // }
             if(!$isCitizenUserType)
             {
                 $request->merge(["userId"=>$user->id]);
