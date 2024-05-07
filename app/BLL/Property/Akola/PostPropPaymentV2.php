@@ -708,7 +708,7 @@ class PostPropPaymentV2
         if (isset($this->_REQ->isArrear) && $this->_REQ->isArrear) {
             $this->_REQ->merge(['paidAmount' =>  $this->_propCalculation->original['data']['arrearPayableAmt']]);
         }
-        if (isset($this->_REQ->isFullPayment) && $this->_REQ->isFullPayment) {
+        if (isset($this->_REQ->paymentType ) && $this->_REQ->paymentType == "isFullPayment") {
             $this->_REQ->merge(['paidAmount' =>  $this->_REQ['amount']]);
         }
         $addvanceAmt = $this->_propCalculation->original['data']["remainAdvance"] ?? 0;
