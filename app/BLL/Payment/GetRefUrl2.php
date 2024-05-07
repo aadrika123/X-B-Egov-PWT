@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Http;
  * | Status - Open
  * | Final Url-https://eazypayuat.icicibank.com/EazyPGVerify?ezpaytranid=2309111661222&amount=&paymentmode=&merchantid=136082&trandate=&pgreferenceno=16945076411108222585  // tranid is ref no
  */
-class GetRefUrl
+class GetRefUrl2
 {
     // private static $icid ;
     // private static $aesKey ;                                              
