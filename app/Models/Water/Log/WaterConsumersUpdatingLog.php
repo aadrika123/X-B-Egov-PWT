@@ -3,6 +3,7 @@
 namespace App\Models\Water\Log;
 
 use App\Models\water\waterParamPropertyType;
+use App\Models\Water\WaterPropertyTypeMstr;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -19,7 +20,7 @@ class WaterConsumersUpdatingLog extends Model
 
     public function getProperty()
     {
-        return $this->hasOne(waterParamPropertyType::class,"id","property_type_id")->first();
+        return $this->hasOne(WaterPropertyTypeMstr::class,"id","property_type_id")->first();
     }
 
 }

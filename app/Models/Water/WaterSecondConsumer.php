@@ -644,6 +644,6 @@ class WaterSecondConsumer extends Model
 
     public function getProperty()
     {
-        return $this->hasOne(waterParamPropertyType::class,"id","property_type_id")->first();
+        return $this->hasOne(WaterPropertyTypeMstr::class,"id","property_type_id")->first();
     }
 }
