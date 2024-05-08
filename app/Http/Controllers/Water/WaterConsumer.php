@@ -2561,13 +2561,19 @@ class WaterConsumer extends Controller
                                             "water_consumers_updating_logs.consumer_no",
                                             "water_consumers_updating_logs.remarks",
                                             "water_consumers_updating_logs.purpose",
+                                            "water_consumers_updating_logs.remarks",
                                             "water_consumers_updating_logs.up_created_at AS created_at",
+                                            "water_consumers_updating_logs.folio_no as property_no",
+                                            "zone_masters.zone_name",
+                                            "ulb_ward_masters.ward_name",
                                             "owners.applicant_name",
                                             "owners.guardian_name",
                                             "owners.mobile_no",
                                             "users.name AS user_name",
                                             )
                     ->leftJoin("users","users.id","water_consumers_updating_logs.up_user_id")
+                    ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers_updating_logs.ward_mstr_id')
+                    ->leftjoin('zone_masters', 'zone_masters.id', 'water_consumers_updating_logs.zone_mstr_id')
                     ->leftJoin(DB::raw("(
                         SELECT water_consumer_owner_updating_logs.consumers_updating_log_id,
                             string_agg(water_consumer_owner_updating_logs.applicant_name,',') as applicant_name,
