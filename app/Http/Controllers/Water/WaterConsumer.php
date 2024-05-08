@@ -2470,7 +2470,7 @@ class WaterConsumer extends Controller
             $ownerUdatesLog = $owner->replicate();
             $ownerUdatesLog->setTable($mWaterConsumerOwnersLog->getTable());
             $ownerUdatesLog->woner_id  =   $owner->id;
-              
+
             #=========consumer updates=================
             $consumerDtls->ward_mstr_id         =  $request->wardId         ? $request->wardId : $consumerDtls->ward_mstr_id;
             $consumerDtls->zone_mstr_id         =  $request->zoneId         ? $request->zoneId : $consumerDtls->zone_mstr_id;
@@ -2518,7 +2518,7 @@ class WaterConsumer extends Controller
             return responseMsgs(true, "update consumer details succesfull!", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             $this->rollback();
-            return responseMsgs(false, [$e->getMessage(),$e->getFile(),$e->getLine()], "", "010203", "1.0", "", 'POST', "");
+            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
         }
     }
 
@@ -2622,24 +2622,33 @@ class WaterConsumer extends Controller
         }
     }
 
-    public function updateConsumerDetailLogs(Request $request)
+    public function consumerUpdateDetailLogs(Request $request)
     {
        $logs = new  WaterConsumersUpdatingLog();
         $validated = Validator::make(
             $request->all(),
             [
-                'applicationId'         => "required|integer|exist:".$logs->getConnection().".".$logs->getTable().",id",
+                'applicationId'         => "required|integer|exists:".$logs->getConnectionName().".".$logs->getTable().",id",
             ]
         );
         if ($validated->fails())
             return validationErrorV2($validated);
         try{
+            $newConsumerData = new WaterSecondConsumer();
             $consumerLog = $logs->find($request->applicationId);
             $ownres      = $consumerLog->getOwners();
+            foreach(json_decode($consumerLog->new_data_json,true) as $key=>$val)
+            {
+                $newConsumerData->$key = $val;
+            }   
+            $newOwnresData = $ownres->map(function($val){
+                return json_decode($val->new_data_json);
+            });
+            dd($consumerLog,$newConsumerData,$ownres,$newOwnresData);
         }
-        catch(ExcelExcel $e)
+        catch(Exception $e)
         {
-
+            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
         }
     }
 

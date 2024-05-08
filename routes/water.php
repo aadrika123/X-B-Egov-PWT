@@ -159,6 +159,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('consumer/get-consumer-demand', 'getConsumerDemands');
         Route::post('consumer/update-consumer-details', 'updateConsumerDetails');
         Route::post('consumer/update-consumer-log-search', 'searchUpdateConsumerLog');
+        Route::post('consumer/update-consumer-log-dtl', 'consumerUpdateDetailLogs');
         Route::post('consumer/get-details', 'WaterConsumerDetails');
         Route::post('consumer/get-connection-list', 'getConnectionList');
         Route::post('consumer/demands-correction', 'updateConsumerDemands');
