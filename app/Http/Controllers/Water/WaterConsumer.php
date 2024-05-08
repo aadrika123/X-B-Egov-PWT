@@ -2636,15 +2636,29 @@ class WaterConsumer extends Controller
         try{
             $newConsumerData = new WaterSecondConsumer();
             $consumerLog = $logs->find($request->applicationId);
+            $users = User::find($consumerLog->up_user_id);
             $ownres      = $consumerLog->getOwners();
             foreach(json_decode($consumerLog->new_data_json,true) as $key=>$val)
             {
                 $newConsumerData->$key = $val;
             }   
             $newOwnresData = $ownres->map(function($val){
-                return json_decode($val->new_data_json);
+                $owner = new WaterConsumerOwner();
+                
+                foreach(json_decode($val->new_data_json,true) as $key=>$val1)
+                {
+                    $owner->$key = $val1;
+                }
+                return $owner;
             });
-            dd($consumerLog,$newConsumerData,$ownres,$newOwnresData);
+            $data=[
+                "userDtls" => $users,
+                "oldConsumer"=>$consumerLog,
+                "newConsumer"=>$newConsumerData,
+                "oldOwnere"=>$ownres,
+                "newOwnere"=>$newOwnresData,
+            ];
+            return responseMsgs(true,"Log Details" ,remove_null($data), "", "010203", "1.0", "", 'POST', "");
         }
         catch(Exception $e)
         {

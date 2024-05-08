@@ -4533,7 +4533,7 @@ class Report implements IReport
                 sum(COALESCE(total_tax,0)::numeric) as total_tax,
                 sum(COALESCE(prop_transactions.amount,0)::numeric) as amount,
                 sum(0) as arear_process_fee,
-                sum(CASE WHEN prop_transactions.saf_id IS NOT NULL AND prop_transactions.tran_type ='Saf Proccess Fee' then prop_transactions.amount else 0 end) as current_process_fee,
+                sum(CASE WHEN saf.id IS NOT NULL AND prop_transactions.tran_type ='Saf Proccess Fee' then prop_transactions.amount else 0 end) as current_process_fee,
 				sum(
                     +(COALESCE(maintanance_amt,0)::numeric) 
                     +(COALESCE(aging_amt,0)::numeric) 
@@ -4871,6 +4871,41 @@ class Report implements IReport
                     " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . " 
                 group by prop_transactions.id
             )adjusted on adjusted.tran_id = prop_transactions.id
+            left join(
+                (
+                    select prop_transactions.id,saf.ward_mstr_id,saf.zone_mstr_id
+                    from prop_active_safs AS saf 
+                    join prop_transactions on prop_transactions.saf_id = saf.id
+                    where prop_transactions.tran_date between '$fromDate' and '$toDate' 
+                        ".($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
+                        ".($wardId ? "AND saf.ward_mstr_id = $wardId" : "") . "
+                        ".($zoneId ? "AND saf.zone_mstr_id = $zoneId" : "") . "
+                        ".($userId ? "AND prop_transactions.user_id = $userId" : "") . "
+                    group by prop_transactions.id,saf.ward_mstr_id,saf.zone_mstr_id
+                )
+                union(
+                    select prop_transactions.id,saf.ward_mstr_id,saf.zone_mstr_id
+                    from prop_rejected_safs AS saf 
+                    join prop_transactions on prop_transactions.saf_id = saf.id
+                    where prop_transactions.tran_date between '$fromDate' and '$toDate' 
+                        ".($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
+                        ".($wardId ? "AND saf.ward_mstr_id = $wardId" : "") . "
+                        ".($zoneId ? "AND saf.zone_mstr_id = $zoneId" : "") . "
+                        ".($userId ? "AND prop_transactions.user_id = $userId" : "") . "
+                    group by prop_transactions.id,saf.ward_mstr_id,saf.zone_mstr_id
+                )
+                union(
+                    select prop_transactions.id,saf.ward_mstr_id,saf.zone_mstr_id
+                    from prop_safs AS saf 
+                    join prop_transactions on prop_transactions.saf_id = saf.id
+                    where prop_transactions.tran_date between '$fromDate' and '$toDate' 
+                        ".($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
+                        ".($wardId ? "AND saf.ward_mstr_id = $wardId" : "") . "
+                        ".($zoneId ? "AND saf.zone_mstr_id = $zoneId" : "") . "
+                        ".($userId ? "AND prop_transactions.user_id = $userId" : "") . "
+                    group by prop_transactions.id,saf.ward_mstr_id,saf.zone_mstr_id
+                )
+            )saf on saf.id = prop_transactions.id
             where prop_transactions.tran_date between '$fromDate' and '$toDate' 
                 and prop_transactions.status in(1,2)
                 " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
