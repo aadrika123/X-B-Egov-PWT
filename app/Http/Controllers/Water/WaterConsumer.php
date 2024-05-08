@@ -2469,7 +2469,8 @@ class WaterConsumer extends Controller
 
             $ownerUdatesLog = $owner->replicate();
             $ownerUdatesLog->setTable($mWaterConsumerOwnersLog->getTable());
-            $ownerUdatesLog->woner_id  =   $owner->id;  
+            $ownerUdatesLog->woner_id  =   $owner->id;
+              
             #=========consumer updates=================
             $consumerDtls->ward_mstr_id         =  $request->wardId         ? $request->wardId : $consumerDtls->ward_mstr_id;
             $consumerDtls->zone_mstr_id         =  $request->zoneId         ? $request->zoneId : $consumerDtls->zone_mstr_id;
@@ -2498,16 +2499,20 @@ class WaterConsumer extends Controller
             if($request->document)
             {
                 $imageName = $docUpload->upload($conUpdaleLog->id, $request->document, $relativePath);
-            }
-            $conUpdaleLog->relative_path = $imageName ? $relativePath : null; 
-            $conUpdaleLog->document      = $imageName ;
-            $conUpdaleLog->update();
+            }            
 
-            $ownerUdatesLog->consumers_updating_log_id = $conUpdaleLog->id;
-            $owner ? $ownerUdatesLog->save() :"";
+            $ownerUdatesLog->consumers_updating_log_id = $conUpdaleLog->id;            
 
             $consumerDtls->update();
             $owner ? $owner->update():"";
+
+            $conUpdaleLog->relative_path = $imageName ? $relativePath : null; 
+            $conUpdaleLog->document      = $imageName ;
+            $conUpdaleLog->new_data_json = json_encode($consumerDtls->toArray(),JSON_UNESCAPED_UNICODE);
+            $conUpdaleLog->update();
+            $owner ? $ownerUdatesLog->new_data_json = json_encode($owner->toArray(),JSON_UNESCAPED_UNICODE):"";
+            $owner ? $ownerUdatesLog->save() :"";
+
 
             $this->commit();
             return responseMsgs(true, "update consumer details succesfull!", "", "", "01", ".ms", "POST", $request->deviceId);
@@ -2630,7 +2635,7 @@ class WaterConsumer extends Controller
             return validationErrorV2($validated);
         try{
             $consumerLog = $logs->find($request->applicationId);
-            // $ownre
+            $ownres      = $consumerLog->getOwners();
         }
         catch(ExcelExcel $e)
         {
