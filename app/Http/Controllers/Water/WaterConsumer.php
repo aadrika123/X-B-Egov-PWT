@@ -2469,6 +2469,7 @@ class WaterConsumer extends Controller
 
             $ownerUdatesLog = $owner->replicate();
             $ownerUdatesLog->setTable($mWaterConsumerOwnersLog->getTable());
+            $ownerUdatesLog->woner_id  =   $owner->id;  
             #=========consumer updates=================
             $consumerDtls->ward_mstr_id         =  $request->wardId         ? $request->wardId : $consumerDtls->ward_mstr_id;
             $consumerDtls->zone_mstr_id         =  $request->zoneId         ? $request->zoneId : $consumerDtls->zone_mstr_id;
@@ -2618,16 +2619,18 @@ class WaterConsumer extends Controller
 
     public function updateConsumerDetailLogs(Request $request)
     {
+       $logs = new  WaterConsumersUpdatingLog();
         $validated = Validator::make(
             $request->all(),
             [
-                'applicationId'         => 'required|integer',
+                'applicationId'         => "required|integer|exist:".$logs->getConnection().".".$logs->getTable().",id",
             ]
         );
         if ($validated->fails())
             return validationErrorV2($validated);
         try{
-
+            $consumerLog = $logs->find($request->applicationId);
+            $ownre
         }
         catch(ExcelExcel $e)
         {
