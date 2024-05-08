@@ -325,7 +325,7 @@ class CommonFunction implements ICommonFunction
         return($roles);
     }
 
-    public function getUserAllRoles()
+    public function getUserAllRoles($userId=null)
     {
         $user = Auth()->user();
         $constaint = Config::get("TradeConstant.USER-TYPE-SHORT-NAME");
@@ -336,7 +336,7 @@ class CommonFunction implements ICommonFunction
                 )
             )
             ->join("wf_roles","wf_roles.id","wf_roleusermaps.wf_role_id")
-            ->where("wf_roleusermaps.user_id",$user->id??0)
+            ->where("wf_roleusermaps.user_id",$userId ? $userId:($user->id??0))
             ->where("wf_roles.is_suspended",FALSE)
             ->where("wf_roleusermaps.is_suspended",FALSE)
             ->get()

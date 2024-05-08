@@ -2,6 +2,7 @@
 
 namespace App\Models\Water\Log;
 
+use App\Models\water\waterParamPropertyType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -15,5 +16,10 @@ class WaterConsumersUpdatingLog extends Model
     {
         return $this->hasMany(WaterConsumerOwnerUpdatingLog::class,"consumers_updating_log_id","id")->get();
     }
-    
+
+    public function getProperty()
+    {
+        return $this->hasOne(waterParamPropertyType::class,"id","property_type_id")->first();
+    }
+
 }

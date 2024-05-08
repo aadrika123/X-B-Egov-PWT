@@ -2636,12 +2636,14 @@ class WaterConsumer extends Controller
         try{
             $newConsumerData = new WaterSecondConsumer();
             $consumerLog = $logs->find($request->applicationId);
+            $consumerLog->property_type = $consumerLog->getProperty()->property_type??"";
             $users = User::find($consumerLog->up_user_id);
             $ownres      = $consumerLog->getOwners();
             foreach(json_decode($consumerLog->new_data_json,true) as $key=>$val)
             {
                 $newConsumerData->$key = $val;
-            }   
+            } 
+            $newConsumerData->property_type = $newConsumerData->getProperty()->property_type??"";  
             $newOwnresData = $ownres->map(function($val){
                 $owner = new WaterConsumerOwner();
                 
@@ -2651,8 +2653,18 @@ class WaterConsumer extends Controller
                 }
                 return $owner;
             });
+            $commonFunction = new \App\Repository\Common\CommonFunction();
+            $rols = ($commonFunction->getUserAllRoles($users->id)->first());
+            $docUrl = Config::get('module-constants.DOC_URL');
+            $header = [
+                "user_name" =>$users->name??"",
+                "role" =>$rols->role_name??"",
+                "remarks" =>$consumerLog->remarks??"",
+                "upate_date" =>$consumerLog->up_created_at ? Carbon::parse($consumerLog->up_created_at)->format("d-m-Y h:i:s A") :"",
+                "document" =>$consumerLog->document ? trim($docUrl."/".$consumerLog->relative_path."/".$consumerLog->document,"/") :"",
+            ];
             $data=[
-                "userDtls" => $users,
+                "userDtls" => $header,
                 "oldConsumer"=>$consumerLog,
                 "newConsumer"=>$newConsumerData,
                 "oldOwnere"=>$ownres,

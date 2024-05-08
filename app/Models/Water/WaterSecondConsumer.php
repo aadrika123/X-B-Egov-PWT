@@ -2,6 +2,7 @@
 
 namespace App\Models\Water;
 
+use App\Models\water\waterParamPropertyType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -639,5 +640,10 @@ class WaterSecondConsumer extends Model
     public function getLastReading()
     {
         return $this->hasOne(WaterConsumerInitialMeter::class,"consumer_id","id")->where("status",1)->orderBy("id","DESC")->first();
+    }
+
+    public function getProperty()
+    {
+        return $this->hasOne(waterParamPropertyType::class,"id","property_type_id")->first();
     }
 }
