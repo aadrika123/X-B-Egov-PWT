@@ -167,12 +167,15 @@ class CitizenHoldingController extends Controller
             if (!$respons->original["status"]) {
                 throw new Exception("Payment Not Initiate");
             }
+            $plainUrl = $respons->original["message"]["plainUrl"];
             $respons = $respons->original["data"];
+
             $request->merge([
                 "encryptUrl" => $respons["encryptUrl"],
                 "reqRefNo"  => $respons["req_ref_no"]
             ]);
             $respons["propId"] = $request->propId;
+            $respons["plainUrl"] = $plainUrl;
             $respons["paidAmount"] = $request->paidAmount;
             $respons["amount"] = $request->amount;
 
