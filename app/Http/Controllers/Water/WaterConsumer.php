@@ -2630,7 +2630,7 @@ class WaterConsumer extends Controller
             return validationErrorV2($validated);
         try{
             $consumerLog = $logs->find($request->applicationId);
-            $ownre
+            // $ownre
         }
         catch(ExcelExcel $e)
         {
