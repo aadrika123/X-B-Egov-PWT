@@ -792,7 +792,7 @@ class PostPropPaymentV2
         $reqPaidAmount = $this->_REQ->paidAmount;
         $rebats = collect($demandData["rebates"]??[])->map(function($val)use($specialRebaApply,$demandData,$paidDemands,$reqPaidAmount,$previousInterest,$paidArrearPenalty,$paidPenalty){ 
             $isApplicatbel = false;
-            $oldPayment = (Carbon::parse($this->_REQ->tranDate)->between(Carbon::parse(Carbon::now()->format("Y")."-04-01"),Carbon::parse(Carbon::now()->format("Y")."-04-30")));
+            $oldPayment = (Carbon::parse($this->_REQ->tranDate)->between(Carbon::parse(Carbon::now()->format("Y")."-04-01"),Carbon::parse(Carbon::now()->format("Y")."-05-31")));
             if($val["apply_on_total_tax"] && ($specialRebaApply && round($reqPaidAmount) >= round($demandData['payableAmt'])) || ($oldPayment && round($reqPaidAmount) >= round($demandData['arrearPayableAmt']))){
                 $isApplicatbel = true;
             }
