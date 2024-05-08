@@ -2529,8 +2529,8 @@ class WaterConsumer extends Controller
         $validated = Validator::make(
             $request->all(),
             [
-                "fromDate" => "nullable|date|befor_or_equal:$now|date_format:Y-m-d",
-                "uptoDate" => "nullable|date|befor_or_equal:$now|date_format:Y-m-d",
+                "fromDate" => "nullable|date|before_or_equal:$now|date_format:Y-m-d",
+                "uptoDate" => "nullable|date|before_or_equal:$now|date_format:Y-m-d",
                 "userId" => "nullable|digits_between:1,9223372036854775807",
                 "wardId" => "nullable|digits_between:1,9223372036854775807",
                 "zoneId"    => "nullable|digits_between:1,9223372036854775807",
