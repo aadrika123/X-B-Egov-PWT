@@ -2562,6 +2562,7 @@ class WaterConsumer extends Controller
                                             "water_consumers_updating_logs.remarks",
                                             "water_consumers_updating_logs.purpose",
                                             "water_consumers_updating_logs.remarks",
+                                            "water_consumers_updating_logs.address",
                                             "water_consumers_updating_logs.up_created_at AS created_at",
                                             "water_consumers_updating_logs.folio_no as property_no",
                                             "zone_masters.zone_name",
