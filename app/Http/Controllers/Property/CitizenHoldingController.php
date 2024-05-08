@@ -183,6 +183,7 @@ class CitizenHoldingController extends Controller
             $respons = collect($respons)->only(
                 [
                     "encryptUrl",
+                    "plainUrl",
                     "propId",
                     "paidAmount",
                     "amount",
