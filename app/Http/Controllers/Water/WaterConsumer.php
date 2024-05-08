@@ -62,6 +62,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Excel as ExcelExcel;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\CssSelector\Node\FunctionNode;
 
@@ -2461,6 +2462,7 @@ class WaterConsumer extends Controller
             $conUpdaleLog = $consumerDtls->replicate();
             $conUpdaleLog->setTable($mWaterConsumerLog->getTable());
             $conUpdaleLog->purpose      =   "Consumer Update";  
+            $conUpdaleLog->consumer_id  =   $consumerDtls->id;  
             $conUpdaleLog->up_user_id   = $user->id;
             $conUpdaleLog->up_user_type = $user->user_type;            
             $conUpdaleLog->remarks       = $request->remarks; 
@@ -2511,6 +2513,118 @@ class WaterConsumer extends Controller
         } catch (Exception $e) {
             $this->rollback();
             return responseMsgs(false, [$e->getMessage(),$e->getFile(),$e->getLine()], "", "010203", "1.0", "", 'POST', "");
+        }
+    }
+
+
+    public function searchUpdateConsumerLog(Request $request)
+    {
+        $now = Carbon::now()->format("Y-m-d");
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "fromDate" => "nullable|date|befor_or_equal:$now|date_format:Y-m-d",
+                "uptoDate" => "nullable|date|befor_or_equal:$now|date_format:Y-m-d",
+                "userId" => "nullable|digits_between:1,9223372036854775807",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "zoneId"    => "nullable|digits_between:1,9223372036854775807",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        if ($validated->fails())
+            return validationErrorV2($validated);
+        try{
+            $fromDate = $uptoDate = $now ;
+            $userId = $wardId = $zoneId = null;
+            $key = $request->key;
+            if($request->wardId)
+            {
+                $wardId = $request->wardId;
+            }
+            if($request->zoneId)
+            {
+                $zoneId = $request->zoneId;
+            }
+            if($request->userId)
+            {
+                $userId = $request->userId;
+            }
+            $data = WaterConsumersUpdatingLog::select("water_consumers_updating_logs.id",
+                                            "water_consumers_updating_logs.consumer_id",
+                                            "water_consumers_updating_logs.consumer_no",
+                                            "water_consumers_updating_logs.consumer_no"
+                                            )
+                    ->leftJoin(DB::raw("(
+                        SELECT water_consumer_owner_updating_logs.consumers_updating_log_id,
+                            string_agg(water_consumer_owner_updating_logs.applicant_name,',') as applicant_name,
+                            string_agg(water_consumer_owner_updating_logs.guardian_name,',') as guardian_name,
+                            string_agg(water_consumer_owner_updating_logs.mobile_no,',') as mobile_no
+                        FROM water_consumer_owner_updating_logs
+                        JOIN water_consumers_updating_logs ON water_consumers_updating_logs.id = water_consumer_owner_updating_logs.consumers_updating_log_id
+                        WHERE CAST(water_consumers_updating_logs.up_created_at AS DATE) BETWEEN '$fromDate' AND '$uptoDate' 
+                        ".($userId ? " AND water_consumers_updating_logs.up_user_id = $userId" : "")."
+                        ".($wardId ? " AND water_consumers_updating_logs.ward_mstr_id = $wardId" : "")."
+                        ".($zoneId ? " AND water_consumers_updating_logs.zone_mstr_id = $zoneId" : "")."
+                        GROUP BY water_consumer_owner_updating_logs.consumers_updating_log_id
+                    )owners"),"owners.consumers_updating_log_id","water_consumers_updating_logs.id")
+                    ->whereBetween(DB::raw("CAST(water_consumers_updating_logs.up_created_at AS DATE)"),[$fromDate,$uptoDate]);
+            if($userId)
+            {
+                $data->where("water_consumers_updating_logs.up_user_id",$userId);
+            }
+            if($wardId)
+            {
+                $data->where("water_consumers_updating_logs.ward_mstr_id",$wardId);
+            }
+            if($zoneId)
+            {
+                $data->where("water_consumers_updating_logs.zone_mstr_id",$zoneId);
+            }
+            if($key)
+            {
+                $data->where(function($where)use($key){
+                    $where->orWhere("water_consumers_updating_logs.consumer_no","ILIKE","%$key%")
+                    ->orWhere("water_consumers_updating_logs.old_consumer_no","ILIKE","%$key%")
+                    ->orWhere("water_consumers_updating_logs.address","ILIKE","%$key%")
+                    ->orWhere("owners.applicant_name","ILIKE","%$key%")
+                    ->orWhere("owners.guardian_name","ILIKE","%$key%")
+                    ->orWhere("owners.mobile_no","ILIKE","%$key%");
+                });
+            }
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $paginator = $data->paginate($perPage);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true, "", $list);
+        }
+        catch(Exception $e)
+        {
+            return responseMsgs(false,$e->getMessage(),"");
+        }
+    }
+
+    public function updateConsumerDetailLogs(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'consumerId'         => 'required|integer',
+            ]
+        );
+        if ($validated->fails())
+            return validationErrorV2($validated);
+        try{
+
+        }
+        catch(ExcelExcel $e)
+        {
+
         }
     }
 
