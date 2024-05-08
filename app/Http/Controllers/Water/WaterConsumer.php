@@ -17,6 +17,9 @@ use App\MicroServices\IdGeneration;
 use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\Citizen\ActiveCitizenUndercare;
 use App\Models\Payment\TempTransaction;
+use App\Models\Property\ZoneMaster;
+use App\Models\UlbMaster;
+use App\Models\UlbWardMaster;
 use App\Models\User;
 use App\Models\Water\Log\WaterConsumerOwnerUpdatingLog;
 use App\Models\Water\Log\WaterConsumersUpdatingLog;
@@ -2642,15 +2645,19 @@ class WaterConsumer extends Controller
             return validationErrorV2($validated);
         try{
             $newConsumerData = new WaterSecondConsumer();
-            $consumerLog = $logs->find($request->applicationId);
-            $consumerLog->property_type = $consumerLog->getProperty()->property_type??"";
+            $consumerLog = $logs->find($request->applicationId);            
             $users = User::find($consumerLog->up_user_id);
+            $consumerLog->property_type = $consumerLog->getProperty()->property_type??"";
+            $consumerLog->zone = ZoneMaster::find($consumerLog->zone_mstr_id)->zone_name??"";
+            $consumerLog->ward_name = UlbWardMaster::find($consumerLog->ward_mstr_id)->ward_name??"";
             $ownres      = $consumerLog->getOwners();
             foreach(json_decode($consumerLog->new_data_json,true) as $key=>$val)
             {
                 $newConsumerData->$key = $val;
             } 
-            $newConsumerData->property_type = $newConsumerData->getProperty()->property_type??"";  
+            $newConsumerData->property_type = $newConsumerData->getProperty()->property_type??""; 
+            $newConsumerData->zone = ZoneMaster::find($newConsumerData->zone_mstr_id)->zone_name??"";  
+            $newConsumerData->ward_name = UlbWardMaster::find($newConsumerData->ward_mstr_id)->ward_name??"";
             $newOwnresData = $ownres->map(function($val){
                 $owner = new WaterConsumerOwner();
                 
