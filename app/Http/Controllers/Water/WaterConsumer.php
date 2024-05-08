@@ -2553,8 +2553,15 @@ class WaterConsumer extends Controller
             $data = WaterConsumersUpdatingLog::select("water_consumers_updating_logs.id",
                                             "water_consumers_updating_logs.consumer_id",
                                             "water_consumers_updating_logs.consumer_no",
-                                            "water_consumers_updating_logs.consumer_no"
+                                            "water_consumers_updating_logs.remarks",
+                                            "water_consumers_updating_logs.purpose",
+                                            "water_consumers_updating_logs.up_created_at AS created_at",
+                                            "owners.applicant_name",
+                                            "owners.guardian_name",
+                                            "owners.mobile_no",
+                                            "users.name AS user_name",
                                             )
+                    ->leftJoin("users","users.id","water_consumers_updating_logs.up_user_id")
                     ->leftJoin(DB::raw("(
                         SELECT water_consumer_owner_updating_logs.consumers_updating_log_id,
                             string_agg(water_consumer_owner_updating_logs.applicant_name,',') as applicant_name,
@@ -2614,7 +2621,7 @@ class WaterConsumer extends Controller
         $validated = Validator::make(
             $request->all(),
             [
-                'consumerId'         => 'required|integer',
+                'applicationId'         => 'required|integer',
             ]
         );
         if ($validated->fails())
