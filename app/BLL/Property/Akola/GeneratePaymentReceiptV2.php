@@ -198,6 +198,7 @@ class GeneratePaymentReceiptV2
             $aggregateDemand["advancePaidAmount"]    =  ($this->_adjustAmt??0) ;
             $aggregateDemand["advancePaidAmount"]    =  ($this->_advanceAmt??0) ;
             $aggregateDemand["netAdvance"] =  (($this->_advanceAmt??0) - ($this->_adjustAmt??0)) ;
+            $aggregateDemand["processFee"] = $this->_processFee;
             $this->_GRID['aggregateDemand'] = $aggregateDemand;   
         }
     }
