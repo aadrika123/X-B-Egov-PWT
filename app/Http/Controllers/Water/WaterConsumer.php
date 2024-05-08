@@ -2427,8 +2427,8 @@ class WaterConsumer extends Controller
                 "propertytype"       =>  "nullable|in:1,2",
                 "tapsize"            =>  "nullable",
                 "landmark"           =>  "nullable",
-                "document"           =>  "nullable|mimes:pdf,jpeg,png,jpg,gif",
-                "remarks"           =>  "nullable",
+                "document"           =>  "required|mimes:pdf,jpeg,png,jpg,gif",
+                "remarks"           =>  "required",
             ]
         );
         if ($validated->fails())
