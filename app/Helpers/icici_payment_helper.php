@@ -10,7 +10,7 @@ if(!function_exists("checkPaymentStatus")){
             $merchantid = Config::get("payment-constants.ICICI_ID");
             $baseUrl = config::get("payment-constants.ICICI_BASE_URL");
             // $merchantid = "378278";
-            $url = "$baseUrl/EazyPGVerify?ezpaytranid=&amount=&paymentmode=&merchantid=$merchantid&trandate=&pgreferenceno=$reqRefNo";        
+            $url = "$baseUrl/EazyPGVerify?ezpaytranid=&amount=&paymentmode=&merchantid=$merchantid&trandate=&pgreferenceno=$reqRefNo&dstatus=Y";        
             $data = (file_get_contents($url));
             $response["response"]["response"] = $data;
             $data = (explode("&",$data));            
