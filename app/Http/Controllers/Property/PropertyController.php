@@ -1984,15 +1984,21 @@ class PropertyController extends Controller
             $propertyIds = collect($holdingDtls)->pluck('id');
             $floorDtls = $mPropFloor->getAppartmentFloor($propertyIds)->get();
             $demands = array();
+            $propDtls = array();
             foreach ($propertyIds as $propId) {
                 $request->merge(["propId" => $propId]);
                 $demand = $holdingTaxController->getHoldingDues($request);
-                $demand = $demand->original;                
-                if ($demand['status'] == false || ($demand['data']['payableAmt']==0)) {  
+                $demand = $demand->original;                               
+                if ($demand['status'] == false) {  
                     continue;                  
                 }
                 $demand['data']['basicDetails']['property_id'] = $propId;
                 $demand['data']['basicDetails']['payableAmt'] = $demand['data']['payableAmt'];
+                array_push($propDtls, $demand['data']['basicDetails']);
+                if (($demand['data']['payableAmt']==0))
+                {
+                    continue;  
+                }
                 array_push($demands, $demand['data']['basicDetails']);
             }
             if (collect($demands)->isNotEmpty())
@@ -2003,7 +2009,7 @@ class PropertyController extends Controller
                 throw new Exception("Demand is not clear of property no. ".implode(" and property no. ",$mesage->toArray()));
             }
 
-            return responseMsgs(true, "Amalgamation Requirement Fulfilled", $demands, '', '01', responseTime(), $request->getMethod(), $request->deviceId);
+            return responseMsgs(true, "Amalgamation Requirement Fulfilled", $propDtls, '', '01', responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), $request->getMethod(), $request->deviceId);
         }
