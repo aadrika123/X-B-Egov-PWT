@@ -2043,8 +2043,8 @@ class PropertyController extends Controller
             $masterData['floors'] = $floorDtls->map(function($val){
                 $val->floor_name = $val->getRefFloor()->floor_name??"";
                 $val->construction_type = $val->getRefConstructionType()->construction_type??"";
-                $val->floor_name = $val->getRefOccupancyType()->occupancy_type??"";
-                $val->floor_name = $val->getRefUsageType()->usage_type??"";
+                $val->occupancy_type = $val->getRefOccupancyType()->occupancy_type??"";
+                $val->usage_type = $val->getRefUsageType()->usage_type??"";
                 return $val;
             });
             $masterData['area_of_plot'] = $plotArea;
