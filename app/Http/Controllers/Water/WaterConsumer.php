@@ -2547,6 +2547,18 @@ class WaterConsumer extends Controller
             $fromDate = $uptoDate = $now ;
             $userId = $wardId = $zoneId = null;
             $key = $request->key;
+            if($key)
+            {
+                $fromDate = $uptoDate = null;
+            }
+            if($request->fromDate)
+            {
+                $fromDate = $request->fromDate;
+            }
+            if($request->uptoDate)
+            {
+                $uptoDate = $request->uptoDate;
+            }
             if($request->wardId)
             {
                 $wardId = $request->wardId;
@@ -2590,8 +2602,11 @@ class WaterConsumer extends Controller
                         ".($wardId ? " AND water_consumers_updating_logs.ward_mstr_id = $wardId" : "")."
                         ".($zoneId ? " AND water_consumers_updating_logs.zone_mstr_id = $zoneId" : "")."
                         GROUP BY water_consumer_owner_updating_logs.consumers_updating_log_id
-                    )owners"),"owners.consumers_updating_log_id","water_consumers_updating_logs.id")
-                    ->whereBetween(DB::raw("CAST(water_consumers_updating_logs.up_created_at AS DATE)"),[$fromDate,$uptoDate]);
+                    )owners"),"owners.consumers_updating_log_id","water_consumers_updating_logs.id");
+            if($fromDate && $uptoDate)
+            {
+                $data->whereBetween(DB::raw("CAST(water_consumers_updating_logs.up_created_at AS DATE)"),[$fromDate,$uptoDate]);
+            }
             if($userId)
             {
                 $data->where("water_consumers_updating_logs.up_user_id",$userId);
