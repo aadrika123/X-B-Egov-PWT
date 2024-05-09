@@ -1970,6 +1970,15 @@ class PropertyController extends Controller
             $holdingDtls = $mPropProperties->searchCollectiveHolding($request->holdingNo);
             if (collect($holdingDtls)->isEmpty())
                 throw new Exception("No Property found for the respective holding no.");
+            $ckeckIndividulaProp = collect($request->holdingNo)->map(function($val)use($holdingDtls){                
+                $holding = $holdingDtls->where("holding_no",$val);                
+                return["holding_no"=>$val,"holdigin_exists"=>$holding->isNotEmpty()];
+            })->where("holdigin_exists",false);
+            if($ckeckIndividulaProp->isNotEmpty())
+            {
+                $holdingNotexists = $ckeckIndividulaProp->pluck("holding_no");
+                throw new Exception("Holding no. ".implode(" And Holding no. ",$holdingNotexists->toArray()).($holdingNotexists->count()==1?" is":" Are") ." Not Exists");
+            }
 
             $plotArea = collect($holdingDtls)->sum('area_of_plot');
             $propertyIds = collect($holdingDtls)->pluck('id');
