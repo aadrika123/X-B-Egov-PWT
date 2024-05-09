@@ -24,7 +24,7 @@ class AkolaCalculationController extends Controller
             $taxes = $taxCalculator->_GRID;
             return responseMsgs(true, "Calculated Tax", $taxes, "", "1.0", responseTime(), 'POST', $req->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), [], "", "1.0", responseTime(), 'POST', $req->deviceId);
+            return responseMsgs(false, [$e->getMessage(),$e->getFile(),$e->getLine()], [], "", "1.0", responseTime(), 'POST', $req->deviceId);
         }
     }
 }

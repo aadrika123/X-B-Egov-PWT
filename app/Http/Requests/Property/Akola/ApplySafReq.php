@@ -61,8 +61,38 @@ class ApplySafReq extends FormRequest
                 "floor.*.buildupArea" => "required|numeric",
                 // "floor.*.dateFrom" => "required|date|date_format:Y-m-d|before_or_equal:$this->todayDate|after_or_equal:$this->dateOfPurchase"
                 "floor.*.dateFrom" => "required|date|date_format:Y-m-d|before_or_equal:$todayDate" . ((in_array($this->assessmentType, [3, 4])) ? "" : "|after_or_equal:$this->dateOfPurchase"),
-                "floor.*.rentAmount"        =>    "required_if:floor.*.occupancyType,2|numeric|not_in:0",   
-                "floor.*.rentAgreementDate" =>    "required_if:floor.*.occupancyType,2|before_or_equal:$todayDate", 
+                "floor.*.rentAmount"        =>   
+                    [
+                        "required_if:floor.*.occupancyType,2",
+                        function ($attribute, $value, $fail)
+                        {
+                            $key = explode(".",$attribute)[1];
+                            if($this->floor[$key]["occupancyType"]==2 && (!is_numeric($value)))
+                            {
+                                $fail('The '.$attribute.' is invalid.');
+                            }
+                            if($this->floor[$key]["occupancyType"]==2 && (((float)$value==0)))
+                            {
+                                $fail('The '.$attribute.' can not less than or equals to 0.');
+                            }
+
+                        },
+                    ],
+                // "required_if:floor.*.occupancyType,2|numeric_if:floor.*.occupancyType,2|not_in_if:floor.*.occupancyType,2,0",   
+                "floor.*.rentAgreementDate" =>
+                [
+                    "required_if:floor.*.occupancyType,2",
+                    function ($attribute, $value, $fail) use($todayDate)
+                    {
+                        $key = explode(".",$attribute)[1];
+                        if($this->floor[$key]["occupancyType"]==2 && $value>$todayDate)
+                        {
+                            $fail('The '.$attribute.' is invalid.');
+                        }
+
+                    },
+                ],
+                // "required_if:floor.*.occupancyType,2|before_or_equal_if:$todayDate", 
             ]);
         }
         return $validation;

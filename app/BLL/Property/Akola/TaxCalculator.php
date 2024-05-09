@@ -195,7 +195,7 @@ class TaxCalculator
                 $agingPerc = $this->readAgingByFloor($item);           // (2.2)
 
                 $floorBuildupArea = roundFigure(isset($item->biBuildupArea) && $this->getAssestmentTypeStr()=='Bifurcation' ? $item->biBuildupArea * 0.092903 :  $item->buildupArea  * 0.092903);
-                $alv = ($item->occupancyType==2 && $item->rentAmount) ? roundFigure($item->rentAmount * 12) : roundFigure($floorBuildupArea * $rate);
+                $alv = ($item->occupancyType==2 && isset($item->rentAmount)) ? roundFigure($item->rentAmount * 12) : roundFigure($floorBuildupArea * $rate);
                 $maintance10Perc = roundFigure(($alv * $this->_maintancePerc) / 100);
                 $valueAfterMaintanance = roundFigure($alv - $maintance10Perc);
                 $aging = roundFigure(($valueAfterMaintanance * $agingPerc) / 100);
@@ -257,7 +257,7 @@ class TaxCalculator
                     'floorNo' => $item->floorNo,
                     'floorName' => $item->floorName ?? "",
                     'buildupAreaInSqmt' => $floorBuildupArea,
-                    'rentAmount' => $item->rentAmount,
+                    'rentAmount' => $item->rentAmount??0,
                     'alv' => $alv,
                     'maintancePerc' => $this->_maintancePerc,
                     'maintantance10Perc' => $maintance10Perc,
@@ -288,7 +288,7 @@ class TaxCalculator
                 $agingPerc = $this->readAgingByFloor($item);           // (2.2)
 
                 $floorBuildupArea = roundFigure(isset($item->biBuildupArea) ? $item->biBuildupArea * 0.092903 :  $item->buildupArea  * 0.092903);
-                $alv = ($item->occupancyType==2 && $item->rentAmount) ? roundFigure($item->rentAmount * 12) : roundFigure($floorBuildupArea * $rate);
+                $alv = ($item->occupancyType==2 && isset($item->rentAmount)) ? roundFigure($item->rentAmount * 12) : roundFigure($floorBuildupArea * $rate);
                 $maintance10Perc = roundFigure(($alv * $this->_maintancePerc) / 100);
                 $valueAfterMaintanance = roundFigure($alv - $maintance10Perc);
                 $aging = roundFigure(($valueAfterMaintanance * $agingPerc) / 100);
@@ -350,7 +350,7 @@ class TaxCalculator
                     'floorNo' => $item->floorNo,
                     'floorName' => $item->floorName ?? "",
                     'buildupAreaInSqmt' => $floorBuildupArea,
-                    'rentAmount' => $item->rentAmount,
+                    'rentAmount' => $item->rentAmount??0,
                     'alv' => $alv,
                     'maintancePerc' => $this->_maintancePerc,
                     'maintantance10Perc' => $maintance10Perc,
