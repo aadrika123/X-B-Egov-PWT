@@ -232,4 +232,22 @@ class PropActiveSafsFloor extends PropParamModel #Model
             ->where('status', 1)
             ->get();
     }
+
+    public function getRefFloor()
+    {
+        return $this->belongsTo(RefPropFloor::class,"floor_mstr_id","id")->first();
+    }
+
+    public function getRefUsageType()
+    {
+        return $this->belongsTo(RefPropUsageType::class,"usage_type_mstr_id","id")->first();
+    }
+    public function getRefConstructionType()
+    {
+        return $this->belongsTo(RefPropConstructionType::class,"const_type_mstr_id","id")->first();
+    }
+    public function getRefOccupancyType()
+    {
+        return $this->belongsTo(RefPropOccupancyType::class,"occupancy_type_mstr_id","id")->first();
+    }
 }

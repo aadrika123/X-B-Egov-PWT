@@ -2040,7 +2040,13 @@ class PropertyController extends Controller
             $masterHoldingId = collect($request->amalgamation)->where('isMasterHolding', true)->first();
             $reqPropId = new Request(['propertyId' => $masterHoldingId['propId']]);
             $masterData = $safController->getPropByHoldingNo($reqPropId)->original['data'];
-            $masterData['floors'] = $floorDtls;
+            $masterData['floors'] = $floorDtls->map(function($val){
+                $val->floor_name = $val->getRefFloor()->floor_name??"";
+                $val->construction_type = $val->getRefConstructionType()->construction_type??"";
+                $val->floor_name = $val->getRefOccupancyType()->occupancy_type??"";
+                $val->floor_name = $val->getRefUsageType()->usage_type??"";
+                return $val;
+            });
             $masterData['area_of_plot'] = $plotArea;
 
             return responseMsgs(true, "Master Holding Data", $masterData, '', '01', responseTime(), $request->getMethod(), $request->deviceId);
