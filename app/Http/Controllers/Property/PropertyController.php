@@ -1978,15 +1978,21 @@ class PropertyController extends Controller
             foreach ($propertyIds as $propId) {
                 $request->merge(["propId" => $propId]);
                 $demand = $holdingTaxController->getHoldingDues($request);
-                $demand = $demand->original;
-                if ($demand['status'] == false) {
-                    $demand['data']['basicDetails']['property_id'] = $propId;
-                    array_push($demands, $demand['data']['basicDetails']);
+                $demand = $demand->original;                
+                if ($demand['status'] == false || ($demand['data']['payableAmt']==0)) {  
+                    continue;                  
                 }
+                $demand['data']['basicDetails']['property_id'] = $propId;
+                $demand['data']['basicDetails']['payableAmt'] = $demand['data']['payableAmt'];
+                array_push($demands, $demand['data']['basicDetails']);
             }
-
-            if (collect($demands)->isEmpty())
-                throw new Exception("Previous Demand is not clear for the respective property.");
+            if (collect($demands)->isNotEmpty())
+            {
+                $mesage = collect($demands)->map(function($val){
+                    return ($val["holding_no"]??"")." due amount ".($val["payableAmt"]??"");
+                });
+                throw new Exception("Demand is not clear of property no. ".implode(" and property no. ",$mesage->toArray()));
+            }
 
             return responseMsgs(true, "Amalgamation Requirement Fulfilled", $demands, '', '01', responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
