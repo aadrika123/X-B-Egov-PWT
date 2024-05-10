@@ -13,6 +13,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Property\reqApplySaf;
 use App\Http\Requests\ReqGBSaf;
 use App\Models\Property\Logs\PropSmsLog;
+use App\Models\Property\Logs\SafAmalgamatePropLog;
 use App\Models\Property\PropActiveGbOfficer;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropActiveSafsFloor;
@@ -169,6 +170,12 @@ class ApplySafController extends Controller
             }
             DB::beginTransaction();
             $createSaf = $saf->store($request);                                         // Store SAF Using Model function 
+            if($request->assessmentType == 5 || $request->assessmentType == "Amalgamation")
+            {
+                $request->merge(["safId"=>$createSaf->original['safId']]);
+                $SafAmalgamatePropLog = new SafAmalgamatePropLog();
+                $SafAmalgamatePropLog->store($request);
+            }
             $safId = $createSaf->original['safId'];
             $safNo = $createSaf->original['safNo'];
 
@@ -315,8 +322,8 @@ class ApplySafController extends Controller
             }
 
             $req->merge([
-                'amalgamatHoldingId' => implode(",", $previousHoldingIds),
-                'amalgamatHoldingNo' => implode(",", $req->holdingNoLists)
+                'amalgamatHoldingId' => $previousHoldingIds,
+                'amalgamatHoldingNo' => $req->holdingNoLists
             ]);
         }
     }

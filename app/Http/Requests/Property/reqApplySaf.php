@@ -100,7 +100,7 @@ class reqApplySaf extends FormRequest
                 $rules["floor.*.constructionType"]  =   "required";
                 $rules["floor.*.occupancyType"]     =   "required|int";
                 $rules["floor.*.buildupArea"]       =   "required|numeric|not_in:0";
-                $rules["floor.*.dateFrom"]          =   "required|date|date_format:Y-m-d|before_or_equal:$mNowDate" . ((in_array($this->assessmentType, [3, 4])) ? "" :  "|after_or_equal:$this->dateOfPurchase");
+                $rules["floor.*.dateFrom"]          =   "required|date|date_format:Y-m-d|before_or_equal:$mNowDate" . ((in_array($this->assessmentType, [3,4,5])) ? "" :  "|after_or_equal:$this->dateOfPurchase");
                 $rules["floor.*.dateUpto"]          =   "nullable|date|date_format:Y-m-d|before_or_equal:$mNowDate|before:$this->dateFrom";
                 $rules["floor.*.rentAmount"]        =    "required_if:floor.*.occupancyType,2|numeric|not_in:0";   
                 $rules["floor.*.rentAgreementDate"] =    "required_if:floor.*.occupancyType,2|before_or_equal:$mNowDate";             
@@ -116,7 +116,7 @@ class reqApplySaf extends FormRequest
         // if ($this->isWaterHarvesting == 1)
         //     $rules['rwhDateFrom'] = 'nullable|date|date_format:Y-m-d|before_or_equal:$mNowDate';
 
-        if (isset($this->assessmentType) && $this->assessmentType != 1 && $this->assessmentType != 5) {           // Holding No Required for Reassess,Mutation,Bifurcation,Amalgamation
+        if (isset($this->assessmentType) && $this->assessmentType != 1) {           // Holding No Required for Reassess,Mutation,Bifurcation,Amalgamation
             $rules['previousHoldingId'] = "required|numeric";
         }
         $rules['zone']           = "required|int";

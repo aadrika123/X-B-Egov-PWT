@@ -1070,6 +1070,13 @@ class PropProperty extends  PropParamModel #Model
             ->orderBy("id", "ASC");
     }
 
+    public function getAllDemands()
+    {
+        return $this->hasMany(PropDemand::class, "property_id", "id")
+            ->where("status", 1)
+            ->orderBy("fyear", "ASC");
+    }
+
     public function PropDueDemands()
     {
         return $this->hasMany(PropDemand::class, "property_id", "id")

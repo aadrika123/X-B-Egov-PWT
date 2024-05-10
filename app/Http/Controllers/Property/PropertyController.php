@@ -2021,15 +2021,17 @@ class PropertyController extends Controller
     public function masterHoldingData(Request $request)
     {
         try {
-            // $validated = Validator::make(
-            //     $request->all(),
-            //     [
-            //         'holdingNo' => 'required|array',
-            //     ]
-            // );
-            // if ($validated->fails()) {
-            //     return validationError($validated);
-            // }
+            $validated = Validator::make(
+                $request->all(),
+                [
+                    'amalgamation' => 'required|array',
+                    "amalgamation.*.propId"=>"required|integer",
+                    "amalgamation.*.isMasterHolding"=>"required|bool",
+                ]
+            );
+            if ($validated->fails()) {
+                return validationErrorV2($validated);
+            }
             $mPropFloor = new PropFloor();
             $mPropProperties = new PropProperty();
             $safController = new ActiveSafController($this->_safRepo);
@@ -2048,6 +2050,7 @@ class PropertyController extends Controller
                 return $val;
             });
             $masterData['area_of_plot'] = $plotArea;
+            $masterData['amalgamation'] = $request->amalgamation;
 
             return responseMsgs(true, "Master Holding Data", $masterData, '', '01', responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
