@@ -1000,8 +1000,14 @@ class ActiveSafController extends Controller
             foreach($amalgamatePropsList as $val)
             {                
                 $aProp = new PropProperty(json_decode($val->property_json,true));
-                $aProp->floors = new PropFloor(json_decode($val->floors_json,true));
-                $aProp->owneres = new PropOwner(json_decode($val->owners_json,true));
+                $aProp = $this->addjustVerifySafDtlVal($aProp);
+                $aFloors = new PropFloor(json_decode($val->floors_json,true));
+                $aFloors = collect($aFloors)->map(function($f){
+                    return$this->addjustVerifyFloorDtlVal(new PropFloor($f));
+                });
+                $aProp->floors = $aFloors;
+                $aOwneres = new PropOwner(json_decode($val->owners_json,true));
+                $aProp->owneres = $aOwneres;
                 $amalgamateProps->push($aProp);
             }
             $data["amalgamateProps"] =$amalgamateProps;
