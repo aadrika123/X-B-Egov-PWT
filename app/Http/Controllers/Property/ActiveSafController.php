@@ -88,6 +88,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use App\MicroServices\IdGenerator\HoldingNoGenerator;
 use App\Models\Property\Logs\PropSmsLog;
+use App\Models\Property\Logs\SafAmalgamatePropLog;
 use App\Models\Property\PropSafJahirnamaDoc;
 use App\Models\Property\RefPropCategory;
 use App\Models\Property\SecondaryDocVerification;
@@ -994,6 +995,16 @@ class ActiveSafController extends Controller
                 $val = $this->addjustVerifyFloorDtlVal($val);
                 $getFloorDtls->push($val);
             });
+            $amalgamatePropsList = SafAmalgamatePropLog::where("saf_id",$data['id'])->get();
+            $amalgamateProps = collect();
+            foreach($amalgamatePropsList as $val)
+            {                
+                $aProp = new PropProperty(json_decode($val->property_json,true));
+                $aProp->floors = new PropFloor(json_decode($val->floors_json,true));
+                $aProp->owneres = new PropOwner(json_decode($val->owners_json,true));
+                $amalgamateProps->push($aProp);
+            }
+            $data["amalgamateProps"] =$amalgamateProps;
 
             $data["builtup_area"] = $data['area_of_plot'];
             if ($data['prop_type_mstr_id'] != 4) {
