@@ -753,8 +753,8 @@ class PostPropPaymentV2
                     $payableAmount;
                     $this->_REQ->merge(
                         [
-                            'paidAmount' => ($this->_REQ->paidAmount - $addvanceAmt),
-                            'amount' => ($this->_REQ->paidAmount - $addvanceAmt)
+                            'paidAmount' => ($this->_REQ->paidAmount - $addvanceAmt)>0 ? ($this->_REQ->paidAmount - $addvanceAmt) : 0,
+                            'amount' => ($this->_REQ->paidAmount - $addvanceAmt) >0 ? ($this->_REQ->paidAmount - $addvanceAmt) : 0
                         ]
                     );
                     break;
@@ -762,8 +762,8 @@ class PostPropPaymentV2
                     $payableAmount;
                     $this->_REQ->merge(
                         [
-                            'paidAmount' => ($this->_REQ->paidAmount - $addvanceAmt),
-                            'amount' => ($this->_REQ->paidAmount - $addvanceAmt)
+                            'paidAmount' => ($this->_REQ->paidAmount - $addvanceAmt)>0 ? ($this->_REQ->paidAmount - $addvanceAmt) : 0,
+                            'amount' => ($this->_REQ->paidAmount - $addvanceAmt)>0 ? ($this->_REQ->paidAmount - $addvanceAmt) : 0
                         ]
                     );
                     break;
