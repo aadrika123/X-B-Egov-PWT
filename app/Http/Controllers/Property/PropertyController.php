@@ -2040,6 +2040,8 @@ class PropertyController extends Controller
             $plotArea = collect($holdingDtls)->sum('area_of_plot');
             $floorDtls = $mPropFloor->getAppartmentFloor($propIds)->get();
             $masterHoldingId = collect($request->amalgamation)->where('isMasterHolding', true)->first();
+            $amalgamatPropIds = collect($request->amalgamation)->where('isMasterHolding', "!=",true)->pluck('propId')->unique();
+            $amalgamatPropHoldingNo = $mPropProperties->select("holding_no")->whereIn("id",$amalgamatPropIds)->get();
             $reqPropId = new Request(['propertyId' => $masterHoldingId['propId']]);
             $masterData = $safController->getPropByHoldingNo($reqPropId)->original['data'];
             $masterData['floors'] = $floorDtls->map(function($val){
@@ -2051,6 +2053,7 @@ class PropertyController extends Controller
             });
             $masterData['area_of_plot'] = $plotArea;
             $masterData['amalgamation'] = $request->amalgamation;
+            $masterData["holdingNoLists"] = $amalgamatPropHoldingNo->pluck("holding_no");
 
             return responseMsgs(true, "Master Holding Data", $masterData, '', '01', responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
