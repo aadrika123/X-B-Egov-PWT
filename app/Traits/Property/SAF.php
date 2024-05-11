@@ -11,7 +11,15 @@ use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafsFloor;
 use App\Models\Property\PropSafsOwner;
+use App\Models\Property\RefPropCategory;
+use App\Models\Property\RefPropConstructionType;
+use App\Models\Property\RefPropFloor;
+use App\Models\Property\RefPropOccupancyType;
+use App\Models\Property\RefPropOwnershipType;
+use App\Models\Property\RefPropTransferMode;
+use App\Models\Property\RefPropType;
 use App\Models\Property\RefPropUsageType;
+use App\Models\Property\ZoneMaster;
 use App\Models\UlbWardMaster;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
@@ -650,16 +658,21 @@ trait SAF
         if (!$response->original["status"]) {
             throw new Exception("Master Data Not Found");
         }
-        $data = $response->original["data"];
-        $property_type = $data["property_type"];
-        $zone_master = $data["zone"];
-        $ward_master = $data["ward_master"];
-        $categories = $data["categories"];
-        $safData->property_type     = (collect($property_type)->where("id", $safData->prop_type_mstr_id)->first())->property_type ?? $safData->property_type;
-        $safData->old_ward_no       = (collect($ward_master)->where("id", $safData->ward_mstr_id)->first())->ward_name ?? $safData->old_ward_no;
-        $safData->zone              = (collect($zone_master)->where("id", $safData->zone_mstr_id)->first())->zone_name ?? $safData->zone;
+        $ulbWardMaster = new UlbWardMaster();
+        $refPropOwnershipType = new RefPropOwnershipType();
+        $refPropType = new RefPropType();        
+        $mZoneMasters = new ZoneMaster();
+        $mRefPropCategory = new RefPropCategory();
+        $refPropTransferMode = new RefPropTransferMode();
 
-        $safData->category = (collect($categories)->where("id", $safData->category_id)->first())->category ?? $safData->category;
+        $safData->property_type     = (($refPropType->where("id", $safData->prop_type_mstr_id)->first()))->property_type ?? $safData->property_type;
+        $safData->ownership_type     = (($refPropOwnershipType->where("id", $safData->ownership_type_mstr_id)->first()))->ownership_type ?? $safData->ownership_type;
+        $safData->transfer_mode     = (($refPropTransferMode->where("id", $safData->transfer_mode_mstr_id)->first()))->transfer_mode ?? $safData->transfer_mode;
+        $safData->old_ward_no       = (($ulbWardMaster->where("id", $safData->ward_mstr_id)->first()))->ward_name ?? $safData->old_ward_no;
+        $safData->ward_no           = $safData->old_ward_no;
+        $safData->zone              = (($mZoneMasters->where("id", $safData->zone_mstr_id)->first()))->zone_name ?? $safData->zone;
+
+        $safData->category = (($mRefPropCategory->where("id", $safData->category_id)->first()))->category ?? $safData->category;
         return $safData;
     }
 
@@ -684,15 +697,20 @@ trait SAF
             throw new Exception("Master Data Not Found");
         }
         $data = $response->original["data"];
-        $floor_type = $data["floor_type"];
-        $occupancy_type = $data["occupancy_type"];
-        $usage_type = $data["usage_type"];
-        $construction_type = $data["construction_type"];
+        // $floor_type = $data["floor_type"];
+        // $occupancy_type = $data["occupancy_type"];
+        // $usage_type = $data["usage_type"];
+        // $construction_type = $data["construction_type"];
 
-        $floor->floor_name          = (collect($floor_type)->where("id", $floor->floor_mstr_id)->first())->floor_name ?? $floor->floor_name;
-        $floor->usage_type          = (collect($usage_type)->where("id", $floor->usage_type_mstr_id)->first())->usage_type ?? $floor->usage_type;
-        $floor->construction_type   = (collect($construction_type)->where("id", $floor->const_type_mstr_id)->first())->construction_type ?? $floor->construction_type;
-        $floor->occupancy_type      = (collect($occupancy_type)->where("id", $floor->occupancy_type_mstr_id)->first())->occupancy_type ?? $floor->occupancy_type;
+        $refPropFloor = new RefPropFloor();
+        $refPropUsageType = new RefPropUsageType();
+        $refPropOccupancyType = new RefPropOccupancyType();
+        $refPropConstructionType = new RefPropConstructionType();
+
+        $floor->floor_name          = (($refPropFloor->where("id", $floor->floor_mstr_id)->first())->floor_name) ?? $floor->floor_name;
+        $floor->usage_type          = (($refPropUsageType->where("id", $floor->usage_type_mstr_id)->first())->usage_type) ?? $floor->usage_type;
+        $floor->construction_type   = (($refPropConstructionType->where("id", $floor->const_type_mstr_id)->first())->construction_type) ?? $floor->construction_type;
+        $floor->occupancy_type      = (($refPropOccupancyType->where("id", $floor->occupancy_type_mstr_id)->first())->occupancy_type) ?? $floor->occupancy_type;
 
         return $floor;
     }

@@ -1006,6 +1006,8 @@ class ActiveSafController extends Controller
                     return$this->addjustVerifyFloorDtlVal(new PropFloor($f));
                 });
                 $aProp->floors = $aFloors;
+                if (!$aProp->holding_type)
+                    $aProp->holding_type = $this->propHoldingType($aFloors);
                 $aOwneres = new PropOwner(json_decode($val->owners_json,true));
                 $aProp->owneres = $aOwneres;
                 $amalgamateProps->push($aProp);
