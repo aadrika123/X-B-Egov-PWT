@@ -6172,6 +6172,246 @@ class ReportController extends Controller
         }
     }
 
+    public function propEachFyearHoldingDues(Request $request)
+    {
+        $ruls =[
+            "zoneId"     => "required|digits_between:1,9223372036854775807",
+            "wardId"    => "required|digits_between:1,9223372036854775807",
+        ];
+        $validated = Validator::make($request->all(),$ruls);
+        
+        if($validated->fails())
+        {
+            return validationErrorV2($validated);
+        }
+        try{
+            $user = Auth()->user();
+            $currentFyear = getFY();
+            list($fromFyear,$uptoFyear) = explode("-",$currentFyear);
+            $wardId = $zoneId=null;
+            if ($request->wardId) {
+                $wardId = $request->wardId;
+            }
+            if ($request->zoneId) {
+                $zoneId = $request->zoneId;
+            }
+            $sql = "
+            with demands as(
+                select prop_demands.property_id, prop_demands.total_tax, prop_demands.balance, prop_demands.fyear, prop_demands.due_total_tax,
+                    prop_demands.is_old, prop_demands.created_at,
+                    SPLIT_PART(prop_demands.fyear,'-',2) as upto_year,
+                    (
+                        case when prop_demands.paid_status = 1 then prop_demands.due_total_tax 			
+                        else total_tax end
+                    )as actual_demand,
+                    (
+                        case when prop_demands.paid_status = 1 then prop_demands.due_general_tax 			
+                        else general_tax end
+                    )as general_tax,
+                    (
+                        case when prop_demands.paid_status = 1 then prop_demands.due_road_tax 			
+                        else road_tax end
+                    )as road_tax,
+                    (
+                        case when prop_demands.paid_status = 1 then prop_demands.due_firefighting_tax 			
+                        else firefighting_tax end
+                    )as firefighting_tax,
+                    (
+                        case when prop_demands.paid_status = 1 then prop_demands.due_education_tax 			
+                        else education_tax end
+                    )as education_tax,
+                    (
+                        case when prop_demands.paid_status = 1 then prop_demands.due_water_tax		
+                        else water_tax end
+                    )as water_tax,
+                    (
+                        case when prop_demands.paid_status = 1 then prop_demands.due_cleanliness_tax		
+                        else cleanliness_tax end
+                    )as cleanliness_tax,
+                    (
+                        case when prop_demands.paid_status = 1 then prop_demands.due_sewarage_tax		
+                        else sewarage_tax end
+                    )as sewarage_tax,
+                    (
+                        case when prop_demands.paid_status = 1 then prop_demands.due_tree_tax		
+                        else tree_tax end
+                    )as tree_tax,
+                    (
+                        case when prop_demands.paid_status = 1 then prop_demands.due_professional_tax		
+                        else professional_tax end
+                    )as professional_tax,
+                    (
+                        case when prop_demands.paid_status = 1 then prop_demands.due_tax1		
+                        else tax1 end
+                    )as tax1,
+                    (
+                        case when prop_demands.paid_status = 1 then prop_demands.due_tax2		
+                        else tax2 end
+                    )as tax2,
+                    (
+                        case when prop_demands.paid_status = 1 then prop_demands.due_tax3		
+                        else tax3 end
+                    )as tax3,
+                    (
+                        case when prop_demands.paid_status = 1 then prop_demands.due_sp_education_tax		
+                        else sp_education_tax end
+                    )as sp_education_tax,
+                    (
+                        case when prop_demands.paid_status = 1 then prop_demands.due_water_benefit		
+                        else water_benefit end
+                    )as water_benefit,
+                    (
+                        case when prop_demands.paid_status = 1 then prop_demands.due_water_bill		
+                        else water_bill end
+                    )as water_bill,
+                    (
+                        case when prop_demands.paid_status = 1 then prop_demands.due_sp_water_cess		
+                        else sp_water_cess end
+                    )as sp_water_cess,
+                    (
+                        case when prop_demands.paid_status = 1 then prop_demands.due_drain_cess		
+                        else drain_cess end
+                    )as drain_cess,
+                    (
+                        case when prop_demands.paid_status = 1 then prop_demands.due_light_cess		
+                        else light_cess end
+                    )as light_cess,
+                    (
+                        case when prop_demands.paid_status = 1 then prop_demands.due_major_building		
+                        else major_building end
+                    )as major_building,
+                    (
+                        case when prop_demands.paid_status = 1 then prop_demands.due_open_ploat_tax		
+                        else open_ploat_tax end
+                    )as open_ploat_tax,		
+                
+                    (case when prop_demands.is_full_paid = false then prop_demands.due_total_tax else total_tax end) /12 as monthly_tax,
+                    case when prop_properties.prop_type_mstr_id = 4 and  prop_demands.is_old != true and prop_demands.created_at is not null 
+                            and (prop_demands.created_at::date between '$fromFyear-04-01' and '$uptoFyear-03-31')
+                            then (
+                                0
+                            )
+                        when prop_demands.fyear < '$currentFyear' and prop_demands.is_old != true
+                            then (
+                                (DATE_PART('YEAR', current_date) - DATE_PART('YEAR', concat(SPLIT_PART(prop_demands.fyear,'-',2),'-04-01') :: DATE)) * 12
+                                + (DATE_PART('Month', current_date :: DATE) - DATE_PART('Month', concat(SPLIT_PART(prop_demands.fyear,'-',2),'-04-01') :: DATE))
+                            )+1
+                        when prop_demands.fyear < '$currentFyear' and prop_demands.is_old = true 
+                        then (
+                                (DATE_PART('YEAR', current_date) - DATE_PART('YEAR', concat(SPLIT_PART(prop_demands.fyear,'-',2),'-09-01') :: DATE)) * 12
+                                + (DATE_PART('Month', current_date :: DATE) - DATE_PART('Month', concat(SPLIT_PART(prop_demands.fyear,'-',2),'-09-01') :: DATE))
+                            )
+                        
+                        else 0 end
+                         AS month_diff,
+                    prop_properties.prop_type_mstr_id
+                from prop_demands
+                join prop_properties on prop_properties.id = prop_demands.property_id
+                where prop_demands.status =1 
+                ".($wardId ? " AND prop_properties.ward_mstr_id = $wardId":"")."
+                ".($zoneId ? " AND prop_properties.zone_mstr_id = $zoneId":"")."
+                order by prop_demands.property_id,prop_demands.fyear
+            ),
+            demand_with_penalty as (
+                select property_id, 	
+                    sum(actual_demand )as current_demand,
+                    sum(actual_demand) as actual_demand,
+                    SUM(general_tax)as general_tax,
+                    SUM(road_tax)as road_tax,
+                    SUM(firefighting_tax)as firefighting_tax,
+                    SUM(education_tax)as education_tax,
+                    SUM(water_tax)as water_tax,
+                    SUM(cleanliness_tax)as cleanliness_tax,
+                    SUM(sewarage_tax)as sewarage_tax,
+                    SUM(tree_tax)as tree_tax,
+                    SUM(professional_tax)as professional_tax,
+                    SUM(tax1)as tax1,
+                    SUM(tax2)as tax2,
+                    SUM(tax3)as tax3,
+                    SUM(sp_education_tax)as sp_education_tax,
+                    SUM(water_benefit)as water_benefit,
+                    SUM(water_bill)as water_bill,
+                    SUM(sp_water_cess)as sp_water_cess,
+                    SUM(drain_cess)as drain_cess,
+                    SUM(light_cess)as light_cess,
+                    SUM(major_building)as major_building,
+                    SUM(open_ploat_tax)as open_ploat_tax,
+                    (fyear) as fyear,
+                    sum((actual_demand * month_diff *0.02)) as two_per_penalty ,
+                    ROW_NUMBER() OVER(
+                        PARTITION BY property_id
+                        ORDER BY fyear
+                    )as row_no
+                from demands 
+                where actual_demand > 0
+                group by property_id,fyear
+            ),
+            arrea_pending_penalty as (
+                select prop_pending_arrears.prop_id,demand_with_penalty.fyear,sum(CASE WHEN demand_with_penalty.row_no=1 AND demand_with_penalty.fyear != '$currentFyear' THEN prop_pending_arrears.due_total_interest ELSE 0 END ) as priv_total_interest
+                from prop_pending_arrears
+                join demand_with_penalty on demand_with_penalty.property_id = prop_pending_arrears.prop_id
+                where prop_pending_arrears.paid_status =0 and prop_pending_arrears.status =1
+                group by prop_pending_arrears.prop_id,demand_with_penalty.fyear
+            ),
+            owners as (
+                select prop_owners.property_id,
+                    string_agg((case when trim(prop_owners.owner_name_marathi)='' then prop_owners.owner_name else owner_name_marathi end),', ') as owner_name,
+                    string_agg(prop_owners.mobile_no,', ') as mobile_no
+                from prop_owners
+                join demand_with_penalty on demand_with_penalty.property_id = prop_owners.property_id
+                where prop_owners.status =1
+                group by prop_owners.property_id
+            )
+            select prop_properties.id,zone_masters.zone_name,ulb_ward_masters.ward_name,prop_properties.holding_no,prop_properties.property_no,
+                prop_properties.prop_address ,
+                owners.owner_name, owners.mobile_no, 
+                demand_with_penalty.fyear, 
+                demand_with_penalty.current_demand,
+                
+                demand_with_penalty.general_tax as general_tax,
+                demand_with_penalty.road_tax as road_tax,
+                demand_with_penalty.firefighting_tax as firefighting_tax,
+                demand_with_penalty.education_tax as education_tax,
+                demand_with_penalty.water_tax as water_tax,
+                demand_with_penalty.cleanliness_tax as cleanliness_tax,
+                demand_with_penalty.sewarage_tax as sewarage_tax,
+                demand_with_penalty.tree_tax as tree_tax,
+                demand_with_penalty.professional_tax as professional_tax,
+                demand_with_penalty.tax1 as tax1,
+                demand_with_penalty.tax2 as tax2,
+                demand_with_penalty.tax3 as tax3,
+                demand_with_penalty.sp_education_tax as sp_education_tax,
+                demand_with_penalty.water_benefit as water_benefit,
+                demand_with_penalty.water_bill as water_bill,
+                demand_with_penalty.sp_water_cess as sp_water_cess,
+                demand_with_penalty.drain_cess as drain_cess,
+                demand_with_penalty.light_cess as light_cess,
+                demand_with_penalty.major_building as major_building,
+                demand_with_penalty.open_ploat_tax as open_ploat_tax,
+                
+                demand_with_penalty.actual_demand,
+                demand_with_penalty.two_per_penalty,
+                coalesce(arrea_pending_penalty.priv_total_interest,0) as priv_total_interest,
+                (coalesce(demand_with_penalty.actual_demand,0)
+                 + coalesce(demand_with_penalty.two_per_penalty,0)
+                 + coalesce(arrea_pending_penalty.priv_total_interest,0)
+                 ) as total_demand
+            from demand_with_penalty
+            join prop_properties on prop_properties.id = demand_with_penalty.property_id
+            left join owners on owners.property_id = demand_with_penalty.property_id
+            left join arrea_pending_penalty on arrea_pending_penalty.prop_id = demand_with_penalty.property_id AND arrea_pending_penalty.fyear = demand_with_penalty.fyear
+            left join zone_masters on zone_masters.id = prop_properties.zone_mstr_id
+            left join ulb_ward_masters on ulb_ward_masters.id = prop_properties.ward_mstr_id            
+            ORDER BY prop_properties.id,zone_masters.id,ulb_ward_masters.id            
+            ";
+        $data = DB::select($sql);
+        return responseMsgs(true,"",$data);
+
+        }catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), []);
+        }
+    }
+
 
     /*
 

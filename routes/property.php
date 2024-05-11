@@ -550,6 +550,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('reports/property/daily-head-wise-individual-collection', 'individulaPropHeadWishDailyColl');
     Route::post('reports/property/daily-head-wise-zone-collection', 'zoneWishDailyColl');
     Route::post('reports/property/daily-head-wise-ward-collection', 'wardWishDailyColl');
+    Route::post("reports/property/individual-each-year-demand-due","propEachFyearHoldingDues");
 
     /**
      * #==========created by Prity Pandey==========================     
