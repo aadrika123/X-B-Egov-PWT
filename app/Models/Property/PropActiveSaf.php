@@ -3,6 +3,7 @@
 namespace App\Models\Property;
 
 use App\MicroServices\IdGeneration;
+use App\Models\Property\Logs\SafAmalgamatePropLog;
 use Carbon\Carbon;
 use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -1092,5 +1093,10 @@ class  PropActiveSaf extends PropParamModel #Model
     {
         return PropActiveSaf::where('citizen_id', $citizenId)
             ->where('status', 1);
+    }
+
+    public function getAmalgamateLogs()
+    {
+        return $this->hasMany(SafAmalgamatePropLog::class,"saf_id","id")->get();
     }
 }

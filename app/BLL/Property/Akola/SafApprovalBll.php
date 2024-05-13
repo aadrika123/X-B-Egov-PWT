@@ -105,6 +105,7 @@ class SafApprovalBll
         $this->generatTaxAccUlTc();
 
         $this->transferPropertyBifucation();
+        $this->deactivateAmalgamateProp();
     }
 
 
@@ -1059,5 +1060,18 @@ class SafApprovalBll
             $demand->store($arr);
         }
 
+    }
+
+    public function deactivateAmalgamateProp()
+    {
+        if($this->_activeSaf->assessment_type=="Amalgamation")
+        {
+            $amalgamateProps = $this->_activeSaf->getAmalgamateLogs()->where("is_master",false);
+            foreach($amalgamateProps as $aProp)
+            {
+                $aProp->status = 4;
+                $aProp->update();
+            }
+        }
     }
 }

@@ -48,7 +48,7 @@ class HoldingNoGenerator
     public function generateHoldingNo($activeSaf)
     {
         $this->_activeSafs = $activeSaf;
-        if(in_array($activeSaf->assessment_type, [$this->_cAssessmentTypes[2],$this->_cAssessmentTypes[3]]) &&  $activeSaf->holding_no)
+        if(in_array($activeSaf->assessment_type, [$this->_cAssessmentTypes[2],$this->_cAssessmentTypes[3],$this->_cAssessmentTypes[5]]) &&  $activeSaf->holding_no)
         {
             return $activeSaf->holding_no;
         }

@@ -64,4 +64,9 @@ class SafAmalgamatePropLog extends PropParamModel
         ];
         self::create($array);
     }
+
+    public function getProperty()
+    {
+        return $this->belongsTo(PropProperty::class,"id","property_id")->first();
+    }
 }
