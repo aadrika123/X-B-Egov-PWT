@@ -4611,6 +4611,7 @@ class ReportController extends Controller
                 "uptoDate"    => "required|date|date_format:Y-m-d|after_or_equal:" . $request->fromDate,
                 "wardId"      => "nullable|digits_between:1,9223372036854775807",
                 "zoneId"      => "nullable|digits_between:1,9223372036854775807",
+                "assessmentType"      => "nullable",
                 // "type"        => "nullable|in:Mutation,Bifurcation",
             ]
         );
@@ -4622,6 +4623,7 @@ class ReportController extends Controller
             $uptoDate = $request->uptoDate;
             $perPage  = $request->perPage ?? 10;
             $wardId = $zoneId = null;
+            $assessmentType = $request->assessmentType;
 
             if ($request->wardId) {
                 $wardId = $request->wardId;
@@ -4653,6 +4655,9 @@ class ReportController extends Controller
                 })
                 ->join('wf_roles as role', 'role.id', 'wf_roleusermaps.wf_role_id')
                 ->whereBetween('application_date', [$fromDate, $uptoDate])
+                ->when(!empty($assessmentType), function ($query) use ($assessmentType) {
+                    return $query->where("assessment_type", $assessmentType);
+                })
                 ->orderBy('zone')
                 ->orderBy('ward_name');
 

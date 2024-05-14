@@ -163,7 +163,7 @@ class  PropActiveSaf extends PropParamModel #Model
             'ownership_type_mstr_id' => $req->ownershipType,
             'prop_type_mstr_id' => $req->propertyType,
             'holding_type' => $req->holdingType,
-            'area_of_plot' => isset($req->bifurcatedPlot) ? $req->bifurcatedPlot : $req->areaOfPlot,#$req->areaOfPlot,
+            'area_of_plot' => isset($req->bifurcatedPlot) ? $req->bifurcatedPlot : $req->areaOfPlot, #$req->areaOfPlot,
             'zone_mstr_id' => $req->zone,
 
             'prop_state' => $req->propState,
@@ -179,7 +179,7 @@ class  PropActiveSaf extends PropParamModel #Model
 
         $reqs = [
             'previous_ward_mstr_id' => $req->previousWard,
-            'is_owner_changed' => isset($req->isOwnerChanged)?$req->isOwnerChanged : $saf->is_owner_changed,
+            'is_owner_changed' => isset($req->isOwnerChanged) ? $req->isOwnerChanged : $saf->is_owner_changed,
             'transfer_mode_mstr_id' => $req->transferModeId ?? null,
             'ward_mstr_id' => $req->ward,
             'ownership_type_mstr_id' => $req->ownershipType,
@@ -882,7 +882,8 @@ class  PropActiveSaf extends PropParamModel #Model
     public function searchSafs()
     {
         return PropActiveSaf::select(
-            'prop_active_safs.id',"prop_active_safs.proccess_fee_paid",
+            'prop_active_safs.id',
+            "prop_active_safs.proccess_fee_paid",
             DB::raw("'active' as status"),
             'prop_active_safs.saf_no',
             'prop_active_safs.assessment_type',
@@ -903,20 +904,23 @@ class  PropActiveSaf extends PropParamModel #Model
             'u.ward_name as old_ward_no',
             'uu.ward_name as new_ward_no',
             'prop_address',
-            DB::raw(
-                "case when prop_active_safs.user_id is not null then 'TC/TL/JSK' when 
-                prop_active_safs.citizen_id is not null then 'Citizen' end as appliedBy"
-            ),
+            // DB::raw(
+            //     "case when prop_active_safs.user_id is not null then 'TC/TL/JSK' when 
+            //     prop_active_safs.citizen_id is not null then 'Citizen' end as appliedBy"
+            // ),
+            "users.name as appliedBy",
             DB::raw("string_agg(so.mobile_no::VARCHAR,',') as mobile_no"),
             DB::raw("string_agg(so.owner_name,',') as owner_name"),
         )
+            ->leftjoin('users', 'users.id', 'prop_active_safs.user_id')
             ->leftjoin('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
             ->join('ulb_ward_masters as u', 'u.id', 'prop_active_safs.ward_mstr_id')
             ->leftjoin('ulb_ward_masters as uu', 'uu.id', 'prop_active_safs.new_ward_mstr_id')
-            ->join('prop_active_safs_owners as so', function($join){
+            ->join('prop_active_safs_owners as so', function ($join) {
                 $join->on('so.saf_id', 'prop_active_safs.id')
-                ->where("so.status",1);
-            });
+                    ->where("so.status", 1);
+            })
+            ->groupBy('users.name');
     }
 
     /**
@@ -925,7 +929,8 @@ class  PropActiveSaf extends PropParamModel #Model
     public function searchGbSafs()
     {
         return PropActiveSaf::select(
-            'prop_active_safs.id',"prop_active_safs.proccess_fee_paid",
+            'prop_active_safs.id',
+            "prop_active_safs.proccess_fee_paid",
             DB::raw("'active' as status"),
             'prop_active_safs.saf_no',
             'prop_active_safs.assessment_type',
