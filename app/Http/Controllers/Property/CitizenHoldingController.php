@@ -151,7 +151,7 @@ class CitizenHoldingController extends Controller
                 // "userType"  => $user->user_type,
                 // "auth"  => $user
             ]); #$request->propId!=9
-            if( !Config::get("sms-constants.sms_test"))
+            if( $request->propId!=9 && !Config::get("sms-constants.sms_test"))
             {
                 throw new Exception("Payment Gateway temporary disabled due to maintainable");
             }
