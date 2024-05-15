@@ -3463,7 +3463,7 @@ class Trade implements ITrade
                             ->first();
             $owner_doc = WfActiveDocument::whereIn("active_id",$parentIds)
                         ->where("workflow_id",$application->workflow_id)
-                        ->where("owner_dtl_id",$oldOwnersId->id)
+                        // ->where("owner_dtl_id",$oldOwnersId->id)
                         ->where("doc_code","Owner Image")
                         ->where("status","<>",0)
                         ->first();
