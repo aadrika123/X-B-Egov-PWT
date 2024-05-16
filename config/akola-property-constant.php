@@ -39,7 +39,7 @@ return [
         "2018-2019"=>0.2,
     ],
     "FIRST_QUIETER_REBATE"=>[
-        "1"=>[
+        "0"=>[
             "rebate_type"=>"First Quieter Rebate",
             "effective_from"=>"2024-04-01",
             "from_date"=>Carbon::parse(Carbon::now()->format("Y")."-04-01")->format("Y-m-d"),
@@ -48,7 +48,7 @@ return [
             "rebates_in_perc"=>true,
             "apply_on_current_tax"=>true,
         ],
-        "0"=>[
+        "1"=>[
             "rebate_type"=>"First Quieter Rebate",
             "effective_from"=>"2024-04-01",
             "from_date"=>Carbon::parse(Carbon::now()->format("Y")."-05-15")->format("Y-m-d"),
