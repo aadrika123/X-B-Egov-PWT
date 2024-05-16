@@ -223,6 +223,7 @@ class GetHoldingDuesV2
             $val["rebates_amt"] = roundFigure($rebateAmt);
             return $val;
         });
+        $demand["QuarterlyRebates"] = $demand["QuarterlyRebates"]->values();
         $demand["QuarterlyRebatesDtls"] = collect($this->_QuaveryRebatesDtls)->map(function($val)use($demand){
             $rebateAmt = 0;
             $rebate = 0;
