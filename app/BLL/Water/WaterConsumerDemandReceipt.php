@@ -11,12 +11,14 @@ use App\Models\Water\WaterConsumerMeter;
 use App\Models\Water\WaterConsumerOwner;
 use App\Models\Water\WaterConsumerTax;
 use App\Models\Water\WaterMeterReadingDoc;
+use App\Models\Water\WaterPropertyTypeMstr;
 use App\Models\Water\WaterSecondConsumer;
 use Carbon\Carbon;
 use Exception;
 use Hamcrest\Type\IsObject;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class WaterConsumerDemandReceipt
 {
@@ -71,8 +73,9 @@ class WaterConsumerDemandReceipt
     private $_mWaterConsumerTax;
     private $_mWaterConsumerMeter;
     private $_mWaterConsumerInitialMeter;
-    private $_mWaterMeterReadingDoc ;
+    private $_mWaterMeterReadingDoc;
     private $_mUsers;
+    private $_propertyType;
 
     public function __construct($consumerId)
     {
@@ -95,48 +98,46 @@ class WaterConsumerDemandReceipt
     private function setConsumerDtl()
     {
         $this->_connectionDtls  = $this->_mWaterSecondaryConsumers->find($this->_consumerId);
-        if(!$this->_connectionDtls)
-        {
+        if (!$this->_connectionDtls) {
             throw new Exception("Invalid Consumer Id");
         }
-        $this->_connectionDtls->zone_name = $this->_mZones->find($this->_connectionDtls->zone_mstr_id)->zone_name??"";
-        $this->_connectionDtls->ward_name = $this->_mUlbWards->find($this->_connectionDtls->ward_mstr_id)->ward_name??"";
+        $this->_connectionDtls->zone_name = $this->_mZones->find($this->_connectionDtls->zone_mstr_id)->zone_name ?? "";
+        $this->_connectionDtls->ward_name = $this->_mUlbWards->find($this->_connectionDtls->ward_mstr_id)->ward_name ?? "";
     }
     private function setOwnersDtl()
     {
-        $this->_ownersDtls      = $this->_mWaterConsumerOwners->where("consumer_id",$this->_consumerId)->where("status",true)->orderBy("id","ASC")->get();
+        $this->_ownersDtls      = $this->_mWaterConsumerOwners->where("consumer_id", $this->_consumerId)->where("status", true)->orderBy("id", "ASC")->get();
     }
 
     private function setDueDemandList()
     {
         $this->_dueDemandsList  = $this->_mWaterConsumerDemands->getConsumerDemandV3($this->_consumerId);
         $this->_demandFrom = $this->_dueDemandsList->min("demand_from");
-        
-        $this->_demandUpto = $this->_dueDemandsList->max("demand_upto");        
-        $lastDemands  = collect($this->_dueDemandsList)->where("demand_upto",$this->_demandUpto)->sortBy("generation_date")->first();
-        $this->_meterStatus = $lastDemands->connection_type??null;
-        $this->_userDtl = $this->_mUsers->find($lastDemands->emp_details_id??0);
 
-        $lastTaxId = $lastDemands->consumer_tax_id??null;
-        $prevuesReadingDemand = collect();        
-        $this->_demandNo = $lastDemands->demand_no??"";
-        $prevuesReadingDemand = $this->_mWaterConsumerDemands->where("consumer_id",$this->_consumerId)->where(function($where) use($lastTaxId){
-            $where->OrWhere("consumer_tax_id","<>",$lastTaxId)
-            ->orWhereNull("consumer_tax_id");
+        $this->_demandUpto = $this->_dueDemandsList->max("demand_upto");
+        $lastDemands  = collect($this->_dueDemandsList)->where("demand_upto", $this->_demandUpto)->sortBy("generation_date")->first();
+        $this->_meterStatus = $lastDemands->connection_type ?? null;
+        $this->_userDtl = $this->_mUsers->find($lastDemands->emp_details_id ?? 0);
+
+        $lastTaxId = $lastDemands->consumer_tax_id ?? null;
+        $prevuesReadingDemand = collect();
+        $this->_demandNo = $lastDemands->demand_no ?? "";
+        $prevuesReadingDemand = $this->_mWaterConsumerDemands->where("consumer_id", $this->_consumerId)->where(function ($where) use ($lastTaxId) {
+            $where->OrWhere("consumer_tax_id", "<>", $lastTaxId)
+                ->orWhereNull("consumer_tax_id");
         })
-        ->orderBy("consumer_tax_id","DESC")
-        ->first();        
-        if($lastTaxId)
-        {            
-            $this->_demandFrom = collect($this->_dueDemandsList)->where("consumer_tax_id",$lastTaxId)->min("demand_from");
-            $this->_demandUpto = collect($this->_dueDemandsList)->where("consumer_tax_id",$lastTaxId)->max("demand_upto");
+            ->orderBy("consumer_tax_id", "DESC")
+            ->first();
+        if ($lastTaxId) {
+            $this->_demandFrom = collect($this->_dueDemandsList)->where("consumer_tax_id", $lastTaxId)->min("demand_from");
+            $this->_demandUpto = collect($this->_dueDemandsList)->where("consumer_tax_id", $lastTaxId)->max("demand_upto");
         }
-        $this->_currentDemand = collect(collect($this->_dueDemandsList)->where("consumer_tax_id",$lastTaxId)->values());
+        $this->_currentDemand = collect(collect($this->_dueDemandsList)->where("consumer_tax_id", $lastTaxId)->values());
 
         $currenBillDemadFrom = collect($this->_currentDemand)->min("demand_from");
         $currenBillDemadUpto = collect($this->_currentDemand)->max("demand_upto");
 
-        $this->_arrearDemand = collect(collect($this->_dueDemandsList)->where("consumer_tax_id","<>",$lastTaxId)->values());
+        $this->_arrearDemand = collect(collect($this->_dueDemandsList)->where("consumer_tax_id", "<>", $lastTaxId)->values());
         $this->_currentDemandAmount = round($this->_currentDemand->sum("due_balance_amount"));
         $this->_arrearDemandAmount = round($this->_arrearDemand->sum("due_balance_amount"));
 
@@ -144,44 +145,41 @@ class WaterConsumerDemandReceipt
         $this->_totalDemand         = round($this->_totalDemand);
 
         $this->_currentReadingDate = collect($this->_currentDemand)->max("generation_date");
-        $this->_prevuesReadingDate = $prevuesReadingDemand->generation_date??null;
+        $this->_prevuesReadingDate = $prevuesReadingDemand->generation_date ?? null;
         $this->_currentReadingDate = $this->_currentReadingDate ? Carbon::parse($this->_currentReadingDate)->format("d-m-Y") : "";
         $this->_prevuesReadingDate = $this->_prevuesReadingDate ? Carbon::parse($this->_prevuesReadingDate)->format("d-m-Y") : "";
 
-        $this->_demandFrom = $this->_demandFrom ? Carbon::parse($this->_demandFrom)->format("d-m-Y"): $this->_demandFrom ;
+        $this->_demandFrom = $this->_demandFrom ? Carbon::parse($this->_demandFrom)->format("d-m-Y") : $this->_demandFrom;
         $this->_demandUpto = $this->_demandUpto ? Carbon::parse($this->_demandUpto)->format("d-m-Y") : $this->_demandUpto;
-        $this->_currentBillDays = $currenBillDemadFrom && $currenBillDemadUpto ? (Carbon::parse($currenBillDemadFrom)->diffInDays(Carbon::parse($currenBillDemadUpto))+1):null;
-        
+        $this->_currentBillDays = $currenBillDemadFrom && $currenBillDemadUpto ? (Carbon::parse($currenBillDemadFrom)->diffInDays(Carbon::parse($currenBillDemadUpto)) + 1) : null;
     }
 
     private function setLastFiveTax()
     {
-        $this->_lastFiveTax      = $this->_mWaterConsumerTax->select("id","charge_type","initial_reading","final_reading")
-                                    ->where("consumer_id",$this->_consumerId)
-                                    ->where("status",1)
-                                    ->orderBy("id","DESC")
-                                    ->limit(5)
-                                    ->get();
-        $this->_lastFiveTax = collect($this->_lastFiveTax)->map(function($val){
-                $demandFromUpto = $this->_mWaterConsumerDemands->select(DB::raw("min(demand_from)AS demand_from,max(demand_upto)As demand_upto"))
-                                    ->where("consumer_tax_id",$val->id)
-                                    ->where("status",true)
-                                    ->first();
-                $val->demand_from = $demandFromUpto->demand_from ? Carbon::parse($demandFromUpto->demand_from)->format("d-m-Y"):"";
-                $val->demand_upto = $demandFromUpto->demand_upto ? Carbon::parse($demandFromUpto->demand_upto)->format("d-m-Y"):"";
-                $val->unit_consume = round($val->final_reading - $val->initial_reading,2);
-                return $val;
-
+        $this->_lastFiveTax      = $this->_mWaterConsumerTax->select("id", "charge_type", "initial_reading", "final_reading")
+            ->where("consumer_id", $this->_consumerId)
+            ->where("status", 1)
+            ->orderBy("id", "DESC")
+            ->limit(5)
+            ->get();
+        $this->_lastFiveTax = collect($this->_lastFiveTax)->map(function ($val) {
+            $demandFromUpto = $this->_mWaterConsumerDemands->select(DB::raw("min(demand_from)AS demand_from,max(demand_upto)As demand_upto"))
+                ->where("consumer_tax_id", $val->id)
+                ->where("status", true)
+                ->first();
+            $val->demand_from = $demandFromUpto->demand_from ? Carbon::parse($demandFromUpto->demand_from)->format("d-m-Y") : "";
+            $val->demand_upto = $demandFromUpto->demand_upto ? Carbon::parse($demandFromUpto->demand_upto)->format("d-m-Y") : "";
+            $val->unit_consume = round($val->final_reading - $val->initial_reading, 2);
+            return $val;
         });
-        if($this->_lastFiveTax->isEmpty())
-        {
+        if ($this->_lastFiveTax->isEmpty()) {
             $this->_lastFiveTax->push([
-                "demand_from"=>$this->_demandFrom,
-                "demand_upto"=>$this->_demandUpto,
-                "charge_type"=>$this->_meterStatus,
-                "initial_reading"=>0,
-                "final_reading"=>0,
-                "unit_consume"=>0,
+                "demand_from" => $this->_demandFrom,
+                "demand_upto" => $this->_demandUpto,
+                "charge_type" => $this->_meterStatus,
+                "initial_reading" => 0,
+                "final_reading" => 0,
+                "unit_consume" => 0,
             ]);
         }
     }
@@ -189,29 +187,26 @@ class WaterConsumerDemandReceipt
     private function setMeterReadingImage()
     {
         $lastDemands = $this->_dueDemandsList->sortByDesc("demand_upto")->first();
-        $this->_meterReadingDocuments   = $this->_mWaterMeterReadingDoc->getDocByDemandId($lastDemands->id??0);
+        $this->_meterReadingDocuments   = $this->_mWaterMeterReadingDoc->getDocByDemandId($lastDemands->id ?? 0);
         $this->_meterImg = ($this->_meterReadingDocuments ? ($this->_docUrl . "/" . $this->_meterReadingDocuments->relative_path . "/" . $this->_meterReadingDocuments->file_name) : "");
-        $this->_meterNo = $this->_meterReadingDocuments->meter_no??null;
+        $this->_meterNo = $this->_meterReadingDocuments->meter_no ?? null;
     }
     private function setMeterDtl()
     {
-        $meterDtl = $this->_mWaterConsumerMeter->where("consumer_id",$this->_consumerId)->where("status",1)->orderBy("id","DESC")->first();
-        if((!$this->_meterNo) && $meterDtl)
-        {
+        $meterDtl = $this->_mWaterConsumerMeter->where("consumer_id", $this->_consumerId)->where("status", 1)->orderBy("id", "DESC")->first();
+        if ((!$this->_meterNo) && $meterDtl) {
             $this->_meterNo = $meterDtl->meter_no;
         }
     }
 
     private function setLastUnitConsume()
     {
-        $this->_lastTax = $this->_lastFiveTax->first();        
-        $this->_meterStatus = (($this->_meterStatus) ? $this->_meterStatus : ($this->_lastTax->charge_type??"Fixed"));
-        if($this->_consumptionUnit != (($this->_lastTax->final_reading??0) - ($this->_lastTax->initial_reading??0)))
-        {   
-            $this->_lastFiveTax = collect($this->_lastFiveTax)->map(function($val,$key){
-                
-                if($key==0)
-                {
+        $this->_lastTax = $this->_lastFiveTax->first();
+        $this->_meterStatus = (($this->_meterStatus) ? $this->_meterStatus : ($this->_lastTax->charge_type ?? "Fixed"));
+        if ($this->_consumptionUnit != (($this->_lastTax->final_reading ?? 0) - ($this->_lastTax->initial_reading ?? 0))) {
+            $this->_lastFiveTax = collect($this->_lastFiveTax)->map(function ($val, $key) {
+
+                if ($key == 0) {
                     (!is_array($val)) ? $val->initial_reading : $val["initial_reading"] = $this->_fromUnit;
                     (!is_array($val)) ? $val->final_reading   : $val["final_reading"] = $this->_uptoUnit;
                     (!is_array($val)) ? $val->unit_consume    : $val["unit_consume"] = $this->_consumptionUnit;
@@ -225,23 +220,22 @@ class WaterConsumerDemandReceipt
     }
 
     private function setParams()
-    {        
+    {
         $this->setConsumerDtl();
         $this->setOwnersDtl();
         $this->setDueDemandList();
         $this->setLastFiveTax();
         $this->setMeterReadingImage();
         $this->setMeterDtl();
-        
+
         $this->_billDate            = Carbon::parse($this->_now->copy())->format("d-m-Y");
         $this->_billDueDate         = Carbon::parse($this->_now->copy())->addDays(15)->format('d-m-Y');
-        
+
 
         $this->_lastTowReading  = $this->_mWaterConsumerInitialMeter->calculateUnitsConsumed($this->_consumerId);
         $this->_fromUnit            = $this->_lastTowReading->min("initial_reading");
         $this->_uptoUnit            = $this->_lastTowReading->max("initial_reading");
-        if($this->_fromUnit==$this->_uptoUnit)
-        {            
+        if ($this->_fromUnit == $this->_uptoUnit) {
             $this->_fromUnit = isset($this->_lastTowReading[1]) ? ($this->_lastTowReading[1])->initial_reading : 0;
         }
         $this->_consumptionUnit     = $this->_uptoUnit - $this->_fromUnit;
@@ -249,60 +243,65 @@ class WaterConsumerDemandReceipt
         $this->setLastUnitConsume();
     }
 
+
     public function setReceipts()
+
     {
-        $this->setParams();     
+        $this->setParams();
         $this->_GRID = [
             "demandType"            => $this->_mTowards,
             "consumerNo"            => $this->_connectionDtls->consumer_no,
             "fromDate"              => $this->_demandFrom,
             "uptoDate"              => $this->_demandUpto,
             "demandNo"              => $this->_demandNo,
-            "taxNo"                 => $this->_connectionDtls->folio_no ,
-            "billDate"              => $this->_billDate ,
-            "billDueDate"           => $this->_billDueDate ,
-            "billDueDate"           => $this->_billDueDate ,
+            "taxNo"                 => $this->_connectionDtls->folio_no,
+            "billDate"              => $this->_billDate,
+            "billDueDate"           => $this->_billDueDate,
+            "billDueDate"           => $this->_billDueDate,
             "currentDemand"         => $this->_currentDemand,
             "arrearDemand"         => $this->_arrearDemand,
             "userDtl"              => $this->_userDtl,
-            "userName"             => $this->_userDtl->name??"",
+            "userName"             => $this->_userDtl->name ?? "",
             "consumerDtl"          => $this->_consumerDtls,
             "ownersDtl"            => $this->_ownersDtls,
-            "consumerName"         => collect($this->_ownersDtls)->implode("applicant_name",", "),
-            "mobileNo"             => collect($this->_ownersDtls)->implode("mobile_no",", "),  
-            "consumerAddress"      => $this->_connectionDtls->address, 
-            "zoneName"          => $this->_connectionDtls->zone_name,  
-            "WardName"          => $this->_connectionDtls->Ward_name,  
-            "connectionDate"    => $this->_connectionDtls->connection_date ? Carbon::parse($this->_connectionDtls->connection_date)->format("d-m-Y"):"",  
-            "connectionType"    => $this->_connectionDtls->category ? $this->_connectionDtls->category:"General",    
-            "tabSize"           => $this->_connectionDtls->tab_size ,    
-            "oldPropertyNo"     => $this->_connectionDtls->folio_no , 
-            "newPropertyNo"     => $this->_connectionDtls->holding_no , 
-            "meterNo"           => !$this->_meterNo ? ($this->_meterReadingDocuments->meter_no??""): $this->_meterNo,
+            "consumerName"         => collect($this->_ownersDtls)->implode("applicant_name", ", "),
+            "mobileNo"             => collect($this->_ownersDtls)->implode("mobile_no", ", "),
+            "consumerAddress"      => $this->_connectionDtls->address,
+            "zoneName"          => $this->_connectionDtls->zone_name,
+            "WardName"          => $this->_connectionDtls->Ward_name,
+            "connectionDate"    => $this->_connectionDtls->connection_date ? Carbon::parse($this->_connectionDtls->connection_date)->format("d-m-Y") : "",
+            "connectionType"    => $this->_connectionDtls->category ? $this->_connectionDtls->category : "General",
+            "tabSize"           => $this->_connectionDtls->tab_size,
+            "oldPropertyNo"     => $this->_connectionDtls->folio_no,
+            "newPropertyNo"     => $this->_connectionDtls->holding_no,
+
+            "meterNo"           => !$this->_meterNo ? ($this->_meterReadingDocuments->meter_no ?? "") : $this->_meterNo,
             "currentReadingDate"    => $this->_currentReadingDate,
             "currentReading"        => $this->_uptoUnit,
             "previousReadingDate"   => $this->_prevuesReadingDate,
             "previousReading"       => $this->_fromUnit,
             "totalUnitUsed"         => $this->_consumptionUnit,
             "meterStatus"           => $this->_meterStatus,
-            "meterImage"            => $this->_meterStatus=="Meter" ? $this->_meterImg : "",
+            "meterImage"            => $this->_meterStatus == "Meter" ? $this->_meterImg : "",
             "previousReadingDtls"   => $this->_lastFiveTax,
             "billPeriodInDay"       => $this->_currentBillDays,
-            "billOutstandingDetails"=> [
-                                            "currentBillAmount" => $this->_currentDemandAmount,
-                                            "arrearBillAmount"  => $this->_arrearDemandAmount,
-                                            "adjustmentBill"    => 0, 
-                                            "totalOutstanding"  => $this->_totalDemand,
-                                            "beforeDueDate"     => $this->_totalDemand,
-                                        ],
+            "propertyTypeId"        => $this->_connectionDtls->property_type_id, //changes by akshay for demand receipt 
+
+            "billOutstandingDetails" => [
+                "currentBillAmount" => $this->_currentDemandAmount,
+                "arrearBillAmount"  => $this->_arrearDemandAmount,
+                "adjustmentBill"    => 0,
+                "totalOutstanding"  => $this->_totalDemand,
+                "beforeDueDate"     => $this->_totalDemand,
+            ],
         ];
+        $property = WaterPropertyTypeMstr::find($this->_connectionDtls->property_type_id);
+        $this->_GRID['propertyType'] = $property->property_type;
+
     }
 
     public function generateDemandReceipts()
     {
-        $this->setReceipts();
+         $this->setReceipts();
     }
-
-
-    
 }
