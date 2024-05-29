@@ -2001,13 +2001,13 @@ class PropertyController extends Controller
                 }
                 array_push($demands, $demand['data']['basicDetails']);
             }
-            if (collect($demands)->isNotEmpty())
-            {
-                $mesage = collect($demands)->map(function($val){
-                    return ($val["holding_no"]??"")." due amount ".($val["payableAmt"]??"");
-                });
-                throw new Exception("Demand is not clear of property no. ".implode(" and property no. ",$mesage->toArray()));
-            }
+            // if (collect($demands)->isNotEmpty())
+            // {
+            //     $mesage = collect($demands)->map(function($val){
+            //         return ($val["holding_no"]??"")." due amount ".($val["payableAmt"]??"");
+            //     });
+            //     throw new Exception("Demand is not clear of property no. ".implode(" and property no. ",$mesage->toArray()));
+            // }
 
             return responseMsgs(true, "Amalgamation Requirement Fulfilled", $propDtls, '', '01', responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
