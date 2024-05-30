@@ -623,7 +623,7 @@ trait SAF
         } elseif ($propertyType == $propertyTypeCon["VACANT LAND"]) {
             $proccessFee = 2000;
         }
-        elseif ($propertyType == $propertyTypeCon["VACANT LAND"] && in_array($transferType, [$transferTypeCon["Gift"], $transferTypeCon["Will"], $transferTypeCon["Succession"], $transferTypeCon["Heridity/Will/Gift"]]) && !$isLocateOnGovLan) {
+        elseif ($propertyType == $propertyTypeCon["VACANT LAND"] && in_array($transferType, [$transferTypeCon["Gift"], $transferTypeCon["Will"], $transferTypeCon["Succession"], $transferTypeCon["Heridity/Will/Gift"]])) {
             $proccessFee = 500;
         }
         if ($assessmentType != ("Mutation" || "Bifurcation")) {
