@@ -519,11 +519,11 @@ trait SAF
         $useType =  collect($req)->pluck('useType');
         // Check Pure Residential
         $pureResidential = collect($useType)->every(function ($value) {
-            return in_array($value ,Config::get('akola-property-constant.RESIDENTIAL_USAGE_TYPE'));
+            return in_array($value, Config::get('akola-property-constant.RESIDENTIAL_USAGE_TYPE'));
         });
         // check Pure Commercial
         $pureCommercial = collect($useType)->every(function ($value) {
-            return !in_array($value,Config::get('akola-property-constant.RESIDENTIAL_USAGE_TYPE'));
+            return !in_array($value, Config::get('akola-property-constant.RESIDENTIAL_USAGE_TYPE'));
         });
 
         if ($pureResidential == true)
@@ -543,11 +543,11 @@ trait SAF
         $useType =  collect($req)->pluck('usage_type_mstr_id');
         // Check Pure Residential
         $pureResidential = collect($useType)->every(function ($value) {
-            return in_array($value ,Config::get('akola-property-constant.RESIDENTIAL_USAGE_TYPE'));
+            return in_array($value, Config::get('akola-property-constant.RESIDENTIAL_USAGE_TYPE'));
         });
         // check Pure Commercial
         $pureCommercial = collect($useType)->every(function ($value) {
-            return !in_array($value ,Config::get('akola-property-constant.RESIDENTIAL_USAGE_TYPE'));
+            return !in_array($value, Config::get('akola-property-constant.RESIDENTIAL_USAGE_TYPE'));
             // return $value != Config::get('akola-property-constant.RESIDENTIAL_USAGE_TYPE');
         });
 
@@ -562,8 +562,8 @@ trait SAF
     public function getPropHoldingTypeAccordingUsage($req)
     {
         $useType =  collect($req)->pluck('usage_type_mstr_id');
-        $mUsageType = (RefPropUsageType::whereIn("id",$useType)->where(DB::raw("NOT usage_type"),"ILIKE",DB::raw("'%Veranda%'"))->orderBy("usage_type_mr","ASC")->get())->unique('usage_type_mr');
-        return($mUsageType->implode("usage_type_mr"," & "));
+        $mUsageType = (RefPropUsageType::whereIn("id", $useType)->where(DB::raw("NOT usage_type"), "ILIKE", DB::raw("'%Veranda%'"))->orderBy("usage_type_mr", "ASC")->get())->unique('usage_type_mr');
+        return ($mUsageType->implode("usage_type_mr", " & "));
     }
 
 
@@ -620,12 +620,12 @@ trait SAF
             $proccessFee = 500;
         } elseif ($propertyType != $propertyTypeCon["VACANT LAND"] && !$isLocateOnGovLan) {
             $proccessFee = 2000;
-        } elseif ($propertyType == $propertyTypeCon["VACANT LAND"]) {
+        } elseif ($propertyType == $propertyTypeCon["VACANT LAND"] && in_array($transferType, [$transferTypeCon["Gift"], $transferTypeCon["Will"], $transferTypeCon["Succession"], $transferTypeCon["Heridity/Will/Gift"]])) {
+            $proccessFee = 500;
+        } elseif ($propertyType == $propertyTypeCon["VACANT LAND"] && !in_array($transferType, [$transferTypeCon["Gift"], $transferTypeCon["Will"], $transferTypeCon["Succession"], $transferTypeCon["Heridity/Will/Gift"]])) {
             $proccessFee = 2000;
         }
-        elseif ($propertyType == $propertyTypeCon["VACANT LAND"] && in_array($transferType, [$transferTypeCon["Gift"], $transferTypeCon["Will"], $transferTypeCon["Succession"], $transferTypeCon["Heridity/Will/Gift"]])) {
-            $proccessFee = 500;
-        }
+
         if ($assessmentType != ("Mutation" || "Bifurcation")) {
             $proccessFee = 0;
         }
@@ -663,7 +663,7 @@ trait SAF
         }
         $ulbWardMaster = new UlbWardMaster();
         $refPropOwnershipType = new RefPropOwnershipType();
-        $refPropType = new RefPropType();        
+        $refPropType = new RefPropType();
         $mZoneMasters = new ZoneMaster();
         $mRefPropCategory = new RefPropCategory();
         $refPropTransferMode = new RefPropTransferMode();
