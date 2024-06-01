@@ -471,7 +471,7 @@ class ActiveSafController extends Controller
                 ->whereIn('current_role', $roleIds)
                 ->whereIn('ward_mstr_id', $occupiedWards)
                 ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name');
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name','jhirnama_no','has_any_objection','generation_date');
 
             $safInbox = app(Pipeline::class)
                 ->send(

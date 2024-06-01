@@ -34,6 +34,7 @@ class SafRepository implements iSafRepository
     public function metaSafDtls($workflowIds)
     {
         return DB::table('prop_active_safs')
+            ->leftJoin('prop_saf_jahirnama_docs', 'prop_saf_jahirnama_docs.saf_id', 'prop_active_safs.id')
             ->leftJoin('prop_active_safs_owners as o', 'o.saf_id', '=', 'prop_active_safs.id')
             ->join('ref_prop_types as p', 'p.id', '=', 'prop_active_safs.prop_type_mstr_id')
             ->leftJoin('ulb_ward_masters as ward', 'ward.id', '=', 'prop_active_safs.ward_mstr_id')
@@ -62,6 +63,18 @@ class SafRepository implements iSafRepository
                 'prop_active_safs.citizen_id',
                 'prop_active_safs.is_field_verified',
                 'prop_active_safs.is_agency_verified',
+                'jhirnama_no',
+                'has_any_objection',
+                'generation_date',
+                DB::raw('COALESCE(CURRENT_DATE - generation_date, 0) AS days_difference'),
+                
+                DB::raw("CASE 
+                            WHEN (jhirnama_no IS NULL) THEN '0'
+                            WHEN (has_any_objection IS true) THEN '4'
+                            WHEN CURRENT_DATE - generation_date > 15 THEN '3'
+                            WHEN CURRENT_DATE - generation_date < 15 THEN '2'
+                            else 1
+                        END AS jhirnama_status"),
             )
             ->whereIn('workflow_id', $workflowIds)
             ->where('is_gb_saf', false)
@@ -130,13 +143,13 @@ class SafRepository implements iSafRepository
      * date : 26-10-2023
      * determin the application status
      */
-    public function applicationStatus($applicationId,$docChequ2=true)
+    public function applicationStatus($applicationId, $docChequ2 = true)
     {
         $refUser        = Auth()->user();
         $refUserId      = $refUser->id ?? 0;
         $refUlbId       = $refUser->ulb_id ?? 0;
         // $refWorkflowId  = $this->_WF_MASTER_Id;
-        
+
         $application = PropSaf::find($applicationId);
         if (!$application) {
             $application = PropActiveSaf::find($applicationId);
@@ -144,49 +157,40 @@ class SafRepository implements iSafRepository
         if (!$application) {
             $application = DB::table("prop_rejected_safs")->find($applicationId);
         }
-        $refWorkflowId = $application->workflow_id??0;
+        $refWorkflowId = $application->workflow_id ?? 0;
         $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId, $refUlbId);
-        $rols  = WfRole::find($application->current_role??0);
+        $rols  = WfRole::find($application->current_role ?? 0);
         $status = "";
-        
-        if($application->gettable()==(new PropSaf)->gettable())
-        {
-            $status="Application is Approved";
-        }
-        elseif($application->gettable()==('prop_rejected_safs'))
-        {
-            $status="Application is Rejected";
-        }
-        elseif($application->parked && $application->current_role!=$application->initiator_role_id)
-        {
-            $status = "Application back to citizen by ". ($rols->role_name??"");
-        }
-        elseif ($application->saf_pending_status==1 && (($application->current_role != $application->finisher_role_id) || ($application->current_role == $application->finisher_role_id))) {            
-            $status = "Application pending at " . ($rols->role_name??"");
-        }
-        elseif ($docChequ2 && strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""] && $application->citizen_id == $refUserId && $application->document_upload_status == 0) {
+
+        if ($application->gettable() == (new PropSaf)->gettable()) {
+            $status = "Application is Approved";
+        } elseif ($application->gettable() == ('prop_rejected_safs')) {
+            $status = "Application is Rejected";
+        } elseif ($application->parked && $application->current_role != $application->initiator_role_id) {
+            $status = "Application back to citizen by " . ($rols->role_name ?? "");
+        } elseif ($application->saf_pending_status == 1 && (($application->current_role != $application->finisher_role_id) || ($application->current_role == $application->finisher_role_id))) {
+            $status = "Application pending at " . ($rols->role_name ?? "");
+        } elseif ($docChequ2 && strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""] && $application->citizen_id == $refUserId && $application->document_upload_status == 0) {
             $request = new Request(["applicationId" => $applicationId, "ulb_id" => $refUlbId, "user_id" => $refUserId]);
             $doc_status = $this->checkWorckFlowForwardBackord($request);
-            if ($doc_status ) {#&& $application->payment_status == 0
-                $status = "All Required Documents Are Uploaded";# But Payment is Pending 
+            if ($doc_status) { #&& $application->payment_status == 0
+                $status = "All Required Documents Are Uploaded"; # But Payment is Pending 
             } elseif ($doc_status && $application->payment_status == 1) {
                 $status = "Pending At Counter";
             } elseif (!$doc_status && $application->payment_status == 1) {
                 $status = "Payment is Done But Document Not Uploaded";
-            } elseif (!$doc_status) {# && $application->payment_status == 0
-                $status = "Document Not Uploaded";#Payment is Pending And 
+            } elseif (!$doc_status) { # && $application->payment_status == 0
+                $status = "Document Not Uploaded"; #Payment is Pending And 
             }
-        } 
-        elseif($docChequ2 && $application->payment_status==0 && $application->document_upload_status == 0 ){
-            $request = new Request(["applicationId" => $applicationId, "ulb_id" => $refUlbId, "user_id" => $refUserId,"workFlowId"=>$refWorkflowId]);
-            $doc_status = $this->checkWorckFlowForwardBackord($request);            
+        } elseif ($docChequ2 && $application->payment_status == 0 && $application->document_upload_status == 0) {
+            $request = new Request(["applicationId" => $applicationId, "ulb_id" => $refUlbId, "user_id" => $refUserId, "workFlowId" => $refWorkflowId]);
+            $doc_status = $this->checkWorckFlowForwardBackord($request);
             if ($doc_status) {
                 $status = "All Required Documents Are Uploaded";
-            }
-            else{
+            } else {
                 $status = "All Required Documents Are Not Uploaded";
             }
-        } 
+        }
         return $status;
     }
 
@@ -204,41 +208,38 @@ class SafRepository implements iSafRepository
         $fromRole = [];
         if (!empty($allRolse)) {
             $fromRole = array_values(objToArray($allRolse->where("id", $request->senderRoleId)))[0] ?? [];
-            $getUserRoll = $this->_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id,$refWorkflowId);
-            ($fromRole && strtoupper($mUserType) != $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""] ) ? "" : $fromRole = $getUserRoll;
-        }        
-        if (strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""] || ($fromRole["can_upload_document"] ?? false) ||  ($fromRole["can_verify_document"] ?? false)) 
-        {
+            $getUserRoll = $this->_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $refWorkflowId);
+            ($fromRole && strtoupper($mUserType) != $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""]) ? "" : $fromRole = $getUserRoll;
+        }
+        if (strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""] || ($fromRole["can_upload_document"] ?? false) ||  ($fromRole["can_verify_document"] ?? false)) {
             $documents = $this->_SafDocController->getDocList($request);
-            if (!$documents->original["status"]) 
-            {
+            if (!$documents->original["status"]) {
                 return false;
             }
             $applicationDoc = $documents->original["data"]["listDocs"];
             $ownerDoc = $documents->original["data"]["ownerDocs"];
             $appMandetoryDoc = $applicationDoc->whereIn("docType", ["R", "OR"]);
             $appUploadedDoc = $applicationDoc->whereNotNull("uploadedDoc");
-            
+
             $appUploadedDocVerified = collect();
             $appUploadedDocRejected = collect();
-            $appMadetoryDocRejected  = collect(); 
-            $appUploadedDoc->map(function ($val) use ($appUploadedDocVerified,$appUploadedDocRejected,$appMadetoryDocRejected) {
-                
+            $appMadetoryDocRejected  = collect();
+            $appUploadedDoc->map(function ($val) use ($appUploadedDocVerified, $appUploadedDocRejected, $appMadetoryDocRejected) {
+
                 $appUploadedDocVerified->push(["is_docVerify" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"]) ? true : false) : true)]);
-                $appUploadedDocRejected->push(["is_docRejected" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"]==2) ? true : false) : false)]);
-                if(in_array($val["docType"],["R", "OR"]))
-                {
-                    $appMadetoryDocRejected->push(["is_docRejected" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"]==2) ? true : false) : false)]);
+                $appUploadedDocRejected->push(["is_docRejected" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false)]);
+                if (in_array($val["docType"], ["R", "OR"])) {
+                    $appMadetoryDocRejected->push(["is_docRejected" => (!empty($val["uploadedDoc"]) ?  (((collect($val["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false)]);
                 }
             });
             $is_appUploadedDocVerified          = $appUploadedDocVerified->where("is_docVerify", false);
             $is_appUploadedDocRejected          = $appUploadedDocRejected->where("is_docRejected", true);
             $is_appUploadedMadetoryDocRejected  = $appMadetoryDocRejected->where("is_docRejected", true);
-            
-            $is_appMandUploadedDoc = $appMandetoryDoc->filter(function($val){
-                return ($val["uploadedDoc"]=="" || $val["uploadedDoc"]==null);
+
+            $is_appMandUploadedDoc = $appMandetoryDoc->filter(function ($val) {
+                return ($val["uploadedDoc"] == "" || $val["uploadedDoc"] == null);
             });
-            
+
             $Wdocuments = collect();
             $ownerDoc->map(function ($val) use ($Wdocuments) {
                 $ownerId = $val["ownerDetails"]["ownerId"] ?? "";
@@ -246,8 +247,8 @@ class SafRepository implements iSafRepository
                     $val1["ownerId"] = $ownerId;
                     $val1["is_uploded"] = (in_array($val1["docType"], ["R", "OR"]))  ? ((!empty($val1["uploadedDoc"])) ? true : false) : true;
                     $val1["is_docVerify"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"]) ? true : false) : true;
-                    $val1["is_docRejected"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"]==2) ? true : false) : false;
-                    $val1["is_madetory_docRejected"] = (!empty($val1["uploadedDoc"]) && in_array($val1["docType"],["R", "OR"]))?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"]==2) ? true : false) : false;
+                    $val1["is_docRejected"] = !empty($val1["uploadedDoc"]) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false;
+                    $val1["is_madetory_docRejected"] = (!empty($val1["uploadedDoc"]) && in_array($val1["docType"], ["R", "OR"])) ?  (((collect($val1["uploadedDoc"])->all())["verifyStatus"] == 2) ? true : false) : false;
                     $Wdocuments->push($val1);
                 });
             });
@@ -256,13 +257,11 @@ class SafRepository implements iSafRepository
             $is_ownerDocVerify              = $Wdocuments->where("is_docVerify", false);
             $is_ownerDocRejected            = $Wdocuments->where("is_docRejected", true);
             $is_ownerMadetoryDocRejected    = $Wdocuments->where("is_madetory_docRejected", true);
-            
-            if (($fromRole["can_upload_document"] ?? false) || strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""]) 
-            {
+
+            if (($fromRole["can_upload_document"] ?? false) || strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""]) {
                 return (empty($is_ownerUploadedDoc->all()) && empty($is_ownerDocRejected->all()) && empty($is_appMandUploadedDoc->all()) && empty($is_appUploadedDocRejected->all()));
             }
-            if ($fromRole["can_verify_document"] ?? false) 
-            {
+            if ($fromRole["can_verify_document"] ?? false) {
                 return (empty($is_ownerDocVerify->all()) && empty($is_appUploadedDocVerified->all()) && empty($is_ownerMadetoryDocRejected->all()) && empty($is_appUploadedMadetoryDocRejected->all()));
             }
         }
