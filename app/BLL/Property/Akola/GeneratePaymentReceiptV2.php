@@ -104,12 +104,12 @@ class GeneratePaymentReceiptV2
         $this->_tranType = $trans->tran_type;                // Property or SAF       
         $this->_advanceAmt = $this->_mPropAdvance->getAdvanceAmtByTrId($this->_trans->id)->sum("amount");
         $this->_adjustAmt = $this->_mPropAdjustment->getAdjustmentAmtByTrId($this->_trans->id)->sum("amount");
-        
+
         $tranDtls = $this->_mPropTranDtl->getTranDemandsByTranId($trans->id);
         // $this->_propertyDtls = $this->_mPropProperty->getBasicDetails($trans->property_id);             // Get details from property table
-        $this->_propertyDtls = $this->_mPropProperty->getBasicDetailsV2($trans->property_id); 
-        $safTran = $this->_mPropTransaction->whereIn("status",[1,2])->where("tran_type","Saf Proccess Fee")->where("saf_id",$this->_propertyDtls->saf_id)->first();
-        $isFirstTransaction = $this->_mPropTransaction->whereIn("status",[1,2])->where("property_id",$trans->property_id)->where("id","<",$this->_trans->id)->count("id") ==0?true:false;     
+        $this->_propertyDtls = $this->_mPropProperty->getBasicDetailsV2($trans->property_id);
+        $safTran = $this->_mPropTransaction->whereIn("status", [1, 2])->where("tran_type", "Saf Proccess Fee")->where("saf_id", $this->_propertyDtls->saf_id)->first();
+        $isFirstTransaction = $this->_mPropTransaction->whereIn("status", [1, 2])->where("property_id", $trans->property_id)->where("id", "<", $this->_trans->id)->count("id") == 0 ? true : false;
         $this->_processFee = $isFirstTransaction && $safTran ? $safTran->amount : 0;
         if ($this->_tranType == 'Property') {                                   // Get Property Demands by demand ids
             if (collect($this->_propertyDtls)->isEmpty())
@@ -132,7 +132,7 @@ class GeneratePaymentReceiptV2
                 $demandIds = collect($tranDtls)->pluck('prop_demand_id')->toArray();
                 $demandsList = $this->_mPropDemands->getDemandsListByIds($demandIds);
                 foreach ($demandsList as $list) {
-                    $paidTranDemands =  collect($tranDtls)->where("prop_demand_id",$list->id)->first();
+                    $paidTranDemands =  collect($tranDtls)->where("prop_demand_id", $list->id)->first();
                     $list->general_tax = $paidTranDemands->paid_general_tax;
                     $list->road_tax = $paidTranDemands->paid_road_tax;
                     $list->firefighting_tax = $paidTranDemands->paid_firefighting_tax;
@@ -155,7 +155,7 @@ class GeneratePaymentReceiptV2
                     $list->light_cess = $paidTranDemands->paid_light_cess;
                     $list->major_building = $paidTranDemands->paid_major_building;
                     $list->open_ploat_tax = $paidTranDemands->paid_open_ploat_tax;
-                    $list->exempted_general_tax	 = $paidTranDemands->paid_exempted_general_tax??0	;
+                    $list->exempted_general_tax     = $paidTranDemands->paid_exempted_general_tax ?? 0;
                 }
                 $this->_GRID['penaltyRebates'] = $this->_mPropPenaltyRebates->getPenaltyRebatesHeads($trans->id, "Property");
             }
@@ -167,8 +167,8 @@ class GeneratePaymentReceiptV2
             }
 
             $this->_GRID['arrearPenalty'] = collect($this->_GRID['penaltyRebates'])->where('head_name', 'Monthly Penalty')->first()->amount ?? 0;
-            $this->_GRID['arrearPenaltyRebate'] = collect($this->_GRID['penaltyRebates'])->where('head_name', 'Shasti Abhay Yojana')->where("is_rebate",true)->first()->amount ?? 0;
-            $this->_GRID['quarterlyRebates'] = collect($this->_GRID['penaltyRebates'])->whereIn('head_name', ['First Quieter Rebate','Second Quieter Rebate','Third Quieter Rebate','Forth Quieter Rebate'])->where("is_rebate",true)->first()->amount ?? 0;
+            $this->_GRID['arrearPenaltyRebate'] = collect($this->_GRID['penaltyRebates'])->where('head_name', 'Shasti Abhay Yojana')->where("is_rebate", true)->first()->amount ?? 0;
+            $this->_GRID['quarterlyRebates'] = collect($this->_GRID['penaltyRebates'])->whereIn('head_name', ['First Quieter Rebate', 'Second Quieter Rebate', 'Third Quieter Rebate', 'Forth Quieter Rebate'])->where("is_rebate", true)->first()->amount ?? 0;
             $currentDemand = $demandsList->where('fyear', $currentFyear);
             $this->_currentDemand = $this->aggregateDemand($currentDemand, true);       // Current Demand true
             $this->_currentDemand['arrearPenalty'] = 0;
@@ -182,11 +182,11 @@ class GeneratePaymentReceiptV2
             $this->_overDueDemand["netAdvance"] = 0;
             $this->_overDueDemand["processFee"] = 0;
 
-            $this->_currentDemand["FinalTax1"] =   roundFigure($this->_currentDemand["FinalTax"] + (($this->_advanceAmt??0) - ($this->_adjustAmt??0) ) );    
-            $this->_currentDemand["FinalTax"] =   roundFigure($this->_currentDemand["FinalTax"] + (($this->_advanceAmt??0) - ($this->_adjustAmt??0) + $this->_processFee ) );
-            $this->_currentDemand["advancePaidAmount"]    =  ($this->_adjustAmt??0) ;
-            $this->_currentDemand["advancePaidAmount"]    =  ($this->_advanceAmt??0) ;
-            $this->_currentDemand["netAdvance"] =  (($this->_advanceAmt??0) - ($this->_adjustAmt??0)) ;
+            $this->_currentDemand["FinalTax1"] =   roundFigure($this->_currentDemand["FinalTax"] + (($this->_advanceAmt ?? 0) - ($this->_adjustAmt ?? 0)));
+            $this->_currentDemand["FinalTax"] =   roundFigure($this->_currentDemand["FinalTax"] + (($this->_advanceAmt ?? 0) - ($this->_adjustAmt ?? 0) + $this->_processFee));
+            $this->_currentDemand["advancePaidAmount"]    =  ($this->_adjustAmt ?? 0);
+            $this->_currentDemand["advancePaidAmount"]    =  ($this->_advanceAmt ?? 0);
+            $this->_currentDemand["netAdvance"] =  (($this->_advanceAmt ?? 0) - ($this->_adjustAmt ?? 0));
             $this->_currentDemand["processFee"] = $this->_processFee;
 
             $this->_GRID['overdueDemand'] = $this->_overDueDemand;
@@ -194,12 +194,12 @@ class GeneratePaymentReceiptV2
 
             $aggregateDemandList = new Collection([$this->_currentDemand, $this->_overDueDemand]);
             $aggregateDemand = $this->aggregateDemand($aggregateDemandList);
-            $aggregateDemand["FinalTax"] =   round($aggregateDemand["FinalTax"] + (($this->_advanceAmt??0) - ($this->_adjustAmt??0) ) +$this->_processFee );    
-            $aggregateDemand["advancePaidAmount"]    =  ($this->_adjustAmt??0) ;
-            $aggregateDemand["advancePaidAmount"]    =  ($this->_advanceAmt??0) ;
-            $aggregateDemand["netAdvance"] =  (($this->_advanceAmt??0) - ($this->_adjustAmt??0)) ;
+            $aggregateDemand["FinalTax"] =   round($aggregateDemand["FinalTax"] + (($this->_advanceAmt ?? 0) - ($this->_adjustAmt ?? 0)) + $this->_processFee);
+            $aggregateDemand["advancePaidAmount"]    =  ($this->_adjustAmt ?? 0);
+            $aggregateDemand["advancePaidAmount"]    =  ($this->_advanceAmt ?? 0);
+            $aggregateDemand["netAdvance"] =  (($this->_advanceAmt ?? 0) - ($this->_adjustAmt ?? 0));
             $aggregateDemand["processFee"] = $this->_processFee;
-            $this->_GRID['aggregateDemand'] = $aggregateDemand;   
+            $this->_GRID['aggregateDemand'] = $aggregateDemand;
         }
     }
 
@@ -234,13 +234,11 @@ class GeneratePaymentReceiptV2
             $openPloatTax = roundFigure($item->sum('open_ploat_tax'));
             $exceptionGeneralTax = roundFigure($item->sum('exempted_general_tax'));
 
-            if ($isCurrent == 0){
+            if ($isCurrent == 0) {
                 $arrearPenalty = roundFigure($this->_GRID['arrearPenalty']);              // 🔴🔴🔴 Condition Handled in case of other payments Receipt Purpose
                 $arrearPenaltyRebate = roundFigure($this->_GRID['arrearPenaltyRebate']);
                 $quarterlyRebates = roundFigure(0);
-            }
-            else
-            {
+            } else {
                 $arrearPenalty = roundFigure(0);
                 $arrearPenaltyRebate = roundFigure(0);
                 $quarterlyRebates = roundFigure($this->_GRID['quarterlyRebates']);
@@ -265,13 +263,13 @@ class GeneratePaymentReceiptV2
                 $spWaterCess +
                 $drainCess +
                 $lightCess +
-                $majorBuilding + $arrearPenalty +$openPloatTax - $arrearPenaltyRebate - $exceptionGeneralTax -$quarterlyRebates;
+                $majorBuilding + $arrearPenalty + $openPloatTax - $arrearPenaltyRebate - $exceptionGeneralTax - $quarterlyRebates;
 
             $totalPayableAmt = roundFigure($totalPayableAmt);
 
             return [
                 "general_tax" => $generalTax,
-                "exempted_general_tax"=>$exceptionGeneralTax,
+                "exempted_general_tax" => $exceptionGeneralTax,
                 "road_tax" => $roadTax,
                 "firefighting_tax" => $firefightingTax,
                 "education_tax" => $educationTax,
@@ -295,7 +293,7 @@ class GeneratePaymentReceiptV2
                 "arrearPenaltyRebate" => $arrearPenaltyRebate,
                 "quarterlyRebates" => $quarterlyRebates,
                 "totalPayableAmt" => $totalPayableAmt,
-                "open_ploat_tax"=>$openPloatTax,
+                "open_ploat_tax" => $openPloatTax,
                 "total_tax" => $totalTax,
                 "exceptionUnderSAY" => roundFigure(0),
                 "generalTaxException" => roundFigure(0),
@@ -305,7 +303,7 @@ class GeneratePaymentReceiptV2
                 "noticeFee" => roundFigure(0),
                 "FinalTax" => $totalPayableAmt
             ];
-        }); 
+        });
         return collect($aggregate);
     }
 
@@ -314,20 +312,18 @@ class GeneratePaymentReceiptV2
      */
     public function addPropDtls()
     {
-        $from =   explode('-',$this->_trans->from_fyear)[0];
-        $to = explode('-',$this->_trans->to_fyear); 
-        $to = $to[1]??($to[0]);        
-        $duration = "01-April-".($from) ." to "."31-March-".($to);        
-        $mobileDuration = ($from)." to ".($to);
-        if($from==$to)
-        {
+        $from =   explode('-', $this->_trans->from_fyear)[0];
+        $to = explode('-', $this->_trans->to_fyear);
+        $to = $to[1] ?? ($to[0]);
+        $duration = "01-April-" . ($from) . " to " . "31-March-" . ($to);
+        $mobileDuration = ($from) . " to " . ($to);
+        if ($from == $to) {
             $from = $from;
-            $duration = "01-April-".($from) ." to "."31-March-".($to+1);
-            $mobileDuration = ($from)." to ".($to+1);            
+            $duration = "01-April-" . ($from) . " to " . "31-March-" . ($to + 1);
+            $mobileDuration = ($from) . " to " . ($to + 1);
         }
-        if($from !=$to-1 && $from < $to-1)
-        {
-            $duration = "01-April-".($from) ." to "."31-March-".($to-1)." and 01-April-".($to-1)." to "."31-March-".($to);
+        if ($from != $to - 1 && $from < $to - 1) {
+            $duration = "01-April-" . ($from) . " to " . "31-March-" . ($to - 1) . " and 01-April-" . ($to - 1) . " to " . "31-March-" . ($to);
         }
         // dd($from,$to,$duration);
         $receiptDtls = [
@@ -336,15 +332,15 @@ class GeneratePaymentReceiptV2
             "transactionDate" => Carbon::parse($this->_trans->tran_date)->format('d-m-Y'),
             "transactionNo" => $this->_trans->tran_no,
             "transactionTime" => $this->_trans->created_at->format('g:i A'),
-            "chequeStatus" => $this->_trans->cheque_status??1, 
+            "chequeStatus" => $this->_trans->cheque_status ?? 1,
             "verifyStatus" => $this->_trans->verify_status,                     // (0-Not Verified,1-Verified,2-Under Verification,3-Bounce)
-            "applicationNo" => $this->_propertyDtls->application_no??"",
+            "applicationNo" => $this->_propertyDtls->application_no ?? "",
             "customerName" => $this->_propertyDtls->applicant_marathi ?? "", //trim($this->_propertyDtls->applicant_name) ? $this->_propertyDtls->applicant_name : $this->_propertyDtls->applicant_marathi,
             "ownerName" => $this->_propertyDtls->owner_name_marathi ?? "", //trim($this->_propertyDtls->owner_name) ? $this->_propertyDtls->owner_name : $this->_propertyDtls->owner_name_marathi,
-            "guardianName" => trim($this->_propertyDtls->guardian_name??"") ? $this->_propertyDtls->guardian_name : $this->_propertyDtls->guardian_name_marathi??"",
-            "mobileNo" => $this->_propertyDtls->mobile_no??"",
-            "address" => $this->_propertyDtls->prop_address??"",
-            "zone_name" => $this->_propertyDtls->zone_name??"",
+            "guardianName" => trim($this->_propertyDtls->guardian_name ?? "") ? $this->_propertyDtls->guardian_name : $this->_propertyDtls->guardian_name_marathi ?? "",
+            "mobileNo" => $this->_propertyDtls->mobile_no ?? "",
+            "address" => $this->_propertyDtls->prop_address ?? "",
+            "zone_name" => $this->_propertyDtls->zone_name ?? "",
             "paidFrom" => $this->_trans->from_fyear,
             "paidUpto" => $this->_trans->to_fyear,
             "paymentMode" => $this->_trans->payment_mode,
@@ -354,8 +350,8 @@ class GeneratePaymentReceiptV2
             "chequeDate" => ymdToDmyDate($this->_trans->cheque_date),
             "demandAmount" => $this->_trans->demand_amt,
             "arrearSettled" => $this->_trans->arrear_settled_amt,
-            "ulbId" => $this->_propertyDtls->ulb_id??"",
-            "wardNo" => $this->_propertyDtls->ward_no??"",
+            "ulbId" => $this->_propertyDtls->ulb_id ?? "",
+            "wardNo" => $this->_propertyDtls->ward_no ?? "",
             "propertyNo" => $this->_propertyDtls->property_no ?? "",
             "towards" => $this->_mTowards,
             "description" => [
@@ -364,20 +360,21 @@ class GeneratePaymentReceiptV2
             "totalPaidAmount" => $this->_trans->amount,
             "advancePaidAmount" => $this->_advanceAmt,
             "adjustAmount" => $this->_adjustAmt,
-            "netAdvance"=>$this->_advanceAmt - $this->_adjustAmt, 
+            "netAdvance" => $this->_advanceAmt - $this->_adjustAmt,
             "paidAmtInWords" => getIndianCurrency($this->_trans->amount),
             "tcName" => $this->_trans->tc_name,
             "tcMobile" => $this->_trans->tc_mobile,
             "ulbDetails" => $this->_ulbDetails,
             "isArrearReceipt" => $this->_isArrearReceipt,
             "bookNo" => $this->_trans->book_no ?? "",
-            "plot_no"=>$this->_propertyDtls->plot_no??"",
-            "area_of_plot"=>$this->_propertyDtls->area_of_plot??"",
-            "building_name"=>$this->_propertyDtls->building_name??"",
+            "plot_no" => $this->_propertyDtls->plot_no ?? "",
+            "area_of_plot" => $this->_propertyDtls->area_of_plot ?? "",
+            "building_name" => $this->_propertyDtls->building_name ?? "",
 
-            "receiptNo" => isset($this->_trans->book_no) ? (explode('-', $this->_trans->book_no)[1]??"0") : "",                  
-           'duration' => ($duration) ,
-           'mobileDuration' => ($mobileDuration) ,
+            "receiptNo" => isset($this->_trans->book_no) ? (explode('-', $this->_trans->book_no)[1] ?? "0") : "",
+            'duration' => ($duration),
+            'mobileDuration' => ($mobileDuration),
+            'currentFinancialYear' => getFY()
         ];
 
         $this->_GRID['receiptDtls'] = $receiptDtls;
