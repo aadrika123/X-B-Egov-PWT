@@ -51,7 +51,7 @@ class Report implements IReport
     {
         $this->_DB_NAME = "pgsql_trade";
         $this->_NOTICE_DB = "pgsql_notice";
-        $this->_DB_READ = DB::connection( $this->_DB_NAME."::read" );
+        $this->_DB_READ = DB::connection($this->_DB_NAME . "::read");
         $this->_DB = DB::connection($this->_DB_NAME);
         $this->_NOTICE_DB = DB::connection($this->_NOTICE_DB);
         DB::enableQueryLog();
@@ -75,8 +75,8 @@ class Report implements IReport
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         try {
             $refUser        = Auth()->user();
-            $refUserId      = $refUser->id??0;
-            $ulbId          = $refUser->ulb_id??2;
+            $refUserId      = $refUser->id ?? 0;
+            $ulbId          = $refUser->ulb_id ?? 2;
             $wardId = null;
             $userId = null;
             $zoneId = null;
@@ -341,13 +341,13 @@ class Report implements IReport
             }
 
             $data = TradeTransaction::readConnection()
-            ->select(
-                DB::raw("sum(trade_transactions.paid_amount) as amount, 
+                ->select(
+                    DB::raw("sum(trade_transactions.paid_amount) as amount, 
                             count(trade_transactions.id) total_no,
                             users.id as user_id, 
                             case when users.id  is null then 'Online' else users.name 
                             end as user_name ")
-            )
+                )
                 ->LEFTJOIN("users", function ($join) {
                     $join->on("users.id", "=", "trade_transactions.emp_dtl_id")
                         ->whereNotIn(DB::raw("upper(trade_transactions.payment_mode)"), ["ONLINE", "ONL"]);
@@ -423,27 +423,42 @@ class Report implements IReport
                 "application_type",
                 "licences.ulb_id",
                 "licences.application_no",
+                "licences.holding_no",
                 "licences.provisional_license_no",
                 "licences.license_no",
                 "licences.firm_name",
+                'zone_masters.zone_name AS zone',
                 "trade_param_firm_types.firm_type",
                 "licences.firm_type_id",
+                "owner.owner_name",
+                "owner.mobile_no",
+                "owner.address",
+                
                 DB::raw("ulb_ward_masters.ward_name as ward_no,
-                    ulb_masters.ulb_name,
-                    TO_CHAR( CAST(licences.valid_from AS DATE), 'DD-MM-YYYY') as valid_from ,
-                    TO_CHAR( CAST(licences.valid_upto AS DATE), 'DD-MM-YYYY') as valid_upto,
-                    TO_CHAR( CAST(licences.application_date AS DATE), 'DD-MM-YYYY') as application_date,
-                    TO_CHAR( CAST(licences.license_date AS DATE), 'DD-MM-YYYY') as license_date
-                ")
+                ulb_masters.ulb_name,
+                TO_CHAR( CAST(licences.valid_from AS DATE), 'DD-MM-YYYY') as valid_from ,
+                TO_CHAR( CAST(licences.valid_upto AS DATE), 'DD-MM-YYYY') as valid_upto,
+                TO_CHAR( CAST(licences.application_date AS DATE), 'DD-MM-YYYY') as application_date,
+                TO_CHAR( CAST(licences.license_date AS DATE), 'DD-MM-YYYY') as license_date
+            ")
             ];
             $select1 = $select;
             $select1[] = DB::raw("'approve' as type ");
             $data = $this->_DB_READ->TABLE("trade_licences AS licences")
                 ->select($select1)
                 ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
+                ->leftJOIN("zone_masters", "zone_masters.id", "licences.zone_id")
                 ->join("trade_param_application_types", "trade_param_application_types.id", "licences.application_type_id")
                 ->leftjoin("ulb_ward_masters", "ulb_ward_masters.id", "licences.ward_id")
-                ->leftjoin("trade_param_firm_types", "trade_param_firm_types.id", "licences.firm_type_id");
+                ->leftjoin("trade_param_firm_types", "trade_param_firm_types.id", "licences.firm_type_id")
+                ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
+                                STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
+                                trade_owners.temp_id,
+                                STRING_AGG(address,',') AS address
+                                FROM trade_owners 
+                                WHERE trade_owners.is_active = true
+                                GROUP BY trade_owners.temp_id
+                                ) owner"), "owner.temp_id", "=", "licences.id");
 
             if ($oprater) {
                 $data = $data->where("licences.valid_upto", $oprater, $uptoDate);
@@ -472,9 +487,17 @@ class Report implements IReport
                 $old = $this->_DB_READ->TABLE("trade_renewals AS licences")
                     ->select($select2)
                     ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
+                    ->leftJOIN("zone_masters", "zone_masters.id", "licences.zone_id")
                     ->join("trade_param_application_types", "trade_param_application_types.id", "licences.application_type_id")
                     ->leftjoin("ulb_ward_masters", "ulb_ward_masters.id", "licences.ward_id")
-                    ->leftjoin("trade_param_firm_types", "trade_param_firm_types.id", "licences.firm_type_id");
+                    ->leftjoin("trade_param_firm_types", "trade_param_firm_types.id", "licences.firm_type_id")
+                    ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
+                                STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
+                                trade_owners.temp_id,STRING_AGG(address,',') AS address
+                                FROM trade_owners 
+                                WHERE trade_owners.is_active = true
+                                GROUP BY trade_owners.temp_id
+                                ) owner"), "owner.temp_id", "=", "licences.id");
                 if ($ulbId) {
                     $old = $old->where('licences.license_no', 'ILIKE', "%" . $licenseNo . "%");
                 } else {
@@ -502,6 +525,152 @@ class Report implements IReport
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
+
+
+    public function valideAndExpired1(Request $request)
+    {
+        $metaData = collect($request->metaData)->all();
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try {
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $ulbId          = $refUser->ulb_id;
+            $wardId = null;
+            $userId = null;
+            $uptoDate = Carbon::now()->format("Y-m-d");
+            $licenseNo = null;
+            $oprater = null;
+
+            if ($request->licenseNo) {
+                $licenseNo = $request->licenseNo;
+            }
+            if (strtoupper($request->licenseStatus) == "EXPIRED") {
+                $oprater = "<";
+            }
+            if (strtoupper($request->licenseStatus) == "VALID") {
+                $oprater = ">=";
+            }
+            if ($request->uptoDate) {
+                $uptoDate = $request->uptoDate;
+            }
+            if ($request->wardId) {
+                $wardId = $request->wardId;
+            }
+            if ($request->ulbId) {
+                $ulbId = $request->ulbId;
+            }
+
+            $select = [
+                "licences.id",
+                "licences.ward_id",
+                "licences.application_type_id",
+                "application_type",
+                "licences.ulb_id",
+                "licences.application_no",
+                "licences.provisional_license_no",
+                "licences.license_no",
+                "licences.firm_name",
+                'zone_masters.zone_name AS zone',
+                "trade_param_firm_types.firm_type",
+                "licences.firm_type_id",
+                DB::raw("ulb_ward_masters.ward_name as ward_no,
+                ulb_masters.ulb_name,
+                TO_CHAR( CAST(licences.valid_from AS DATE), 'DD-MM-YYYY') as valid_from ,
+                TO_CHAR( CAST(licences.valid_upto AS DATE), 'DD-MM-YYYY') as valid_upto,
+                TO_CHAR( CAST(licences.application_date AS DATE), 'DD-MM-YYYY') as application_date,
+                TO_CHAR( CAST(licences.license_date AS DATE), 'DD-MM-YYYY') as license_date,
+                STRING_AGG(trade_owners.owner_name, ', ') AS owner_name,
+                STRING_AGG(trade_owners.mobile_no::TEXT, ', ') AS mobile_no,
+                STRING_AGG(trade_owners.address, ', ') AS address")
+            ];
+
+            $data = $this->_DB_READ->TABLE("trade_licences AS licences")
+                ->select($select)
+                ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
+                ->leftJOIN("zone_masters", "zone_masters.id", "licences.zone_id")
+                ->join("trade_param_application_types", "trade_param_application_types.id", "licences.application_type_id")
+                ->leftjoin("ulb_ward_masters", "ulb_ward_masters.id", "licences.ward_id")
+                ->leftjoin("trade_param_firm_types", "trade_param_firm_types.id", "licences.firm_type_id")
+                ->leftjoin("trade_owners", "trade_owners.temp_id", "licences.id")
+                ->where("trade_owners.is_active", true)
+                ->groupBy([
+                    "licences.id",
+                    "zone_masters.zone_name",
+                    "trade_param_firm_types.firm_type",
+                    "ulb_ward_masters.ward_name",
+                    "ulb_masters.ulb_name"
+                ]);
+
+            if ($oprater) {
+                $data = $data->where("licences.valid_upto", $oprater, $uptoDate);
+            }
+            if (strtoupper($request->licenseStatus) == "TO BE EXPIRED") {
+                $oprater = true;
+                $data = $data->whereBetween("licences.valid_upto", [$uptoDate, (new Carbon($uptoDate))->addDays(30)->format("Y-m-d")])
+                    ->where("licences.is_active", true);
+            }
+            if ($wardId) {
+                $data = $data->where("licences.ward_id", $wardId);
+            }
+            if ($ulbId) {
+                $data = $data->where("licences.ulb_id", $ulbId);
+            }
+            if ($licenseNo) {
+                if ($ulbId) {
+                    $data = $data->where('licences.license_no', 'ILIKE', "%" . $licenseNo . "%");
+                } else {
+                    $data = $data->where('licences.license_no', 'ILIKE', "" . $licenseNo . "");
+                }
+            }
+            if ((!$oprater) && $licenseNo) {
+                $select2 = $select;
+                $select2[] = DB::raw("'old' as type ");
+                $old = $this->_DB_READ->TABLE("trade_renewals AS licences")
+                    ->select($select2)
+                    ->join("ulb_masters", "ulb_masters.id", "licences.ulb_id")
+                    ->leftJOIN("zone_masters", "zone_masters.id", "licences.zone_id")
+                    ->join("trade_param_application_types", "trade_param_application_types.id", "licences.application_type_id")
+                    ->leftjoin("ulb_ward_masters", "ulb_ward_masters.id", "licences.ward_id")
+                    ->leftjoin("trade_param_firm_types", "trade_param_firm_types.id", "licences.firm_type_id")
+                    ->leftjoin("rejected_trade_owners", "rejected_trade_owners.temp_id", "licences.id")
+                    ->where("trade_owners.is_active", true)
+                    ->groupBy([
+                        "licences.id",
+                        "zone_masters.zone_name",
+                        "trade_param_firm_types.firm_type",
+                        "ulb_ward_masters.ward_name",
+                        "ulb_masters.ulb_name"
+                    ]);
+
+                if ($ulbId) {
+                    $old = $old->where('licences.license_no', 'ILIKE', "%" . $licenseNo . "%");
+                } else {
+                    $old = $old->where('licences.license_no', 'ILIKE', "" . $licenseNo . "");
+                }
+                if ($wardId) {
+                    $old = $old->where("licences.ward_id", $wardId);
+                }
+                if ($ulbId) {
+                    $old = $old->where("licences.ulb_id", $ulbId);
+                }
+                $data = $data->union($old)->orderBy("application_date");
+            }
+
+            $perPage = $request->perPage ? $request->perPage :  10;
+            $paginator = $data->paginate($perPage);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true, "", remove_null($list), $apiId, $version, $queryRunTime, $action, $deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
+        }
+    }
+
 
     public function CollectionSummary(Request $request)
     {
@@ -1212,7 +1381,7 @@ class Report implements IReport
         $metaData = collect($request->metaData)->all();
         list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
         return responseMsgs(false, "Please check the function", [], $apiId, $version, $queryRunTime, $action, $deviceId);
-        
+
         // try {
         //     $refUser        = Auth()->user();
         //     $refUserId      = $refUser->id;
@@ -1434,7 +1603,7 @@ class Report implements IReport
                         ->WHERE("active_trade_licences.ulb_id", $ulbId)
                         ->WHERE("active_trade_licences.is_parked", FALSE)
                         ->WHERE("active_trade_licences.is_active", TRUE);
-                        // ->WHEREIN("active_trade_licences.payment_status", [1, 2]);
+                    // ->WHEREIN("active_trade_licences.payment_status", [1, 2]);
                 })
                 ->GROUPBY(["wf_roles.id", "wf_roles.role_name"])
                 // ->UNION(
@@ -1642,7 +1811,7 @@ class Report implements IReport
                 "last_page" => $paginator->lastPage(),
                 "data" => $paginator->items(),
                 "total" => $paginator->total(),
-            ];        
+            ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, $header, $list, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
