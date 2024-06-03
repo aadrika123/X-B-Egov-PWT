@@ -528,7 +528,8 @@ class ActiveSafController extends Controller
                 ->where('prop_active_safs.status', 1)
                 ->whereIn('ward_mstr_id', $occupiedWardsId)
                 ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name');
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name','jhirnama_no','has_any_objection','generation_date');
+                // ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name');
 
             $safInbox = app(Pipeline::class)
                 ->send(
@@ -573,7 +574,8 @@ class ActiveSafController extends Controller
                 ->whereIn('current_role', $roleIds)
                 ->whereIn('ward_mstr_id', $occupiedWardsId)
                 ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name','jhirnama_no','has_any_objection','generation_date')
+                // ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
                 ->paginate($perPage);
 
             return responseMsgs(true, "field Verified Inbox!", remove_null($safInbox), 010125, 1.0, "", "POST", $mDeviceId);
@@ -614,7 +616,8 @@ class ActiveSafController extends Controller
                 ->whereNotIn('current_role', $roleIds)
                 ->whereIn('ward_mstr_id', $wardId)
                 ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name');
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name','jhirnama_no','has_any_objection','generation_date');
+                // ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name');
 
             $safData = app(Pipeline::class)
                 ->send(
@@ -664,7 +667,8 @@ class ActiveSafController extends Controller
                 ->where('prop_active_safs.ulb_id', $ulbId)
                 ->whereIn('ward_mstr_id', $wardIds)
                 ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'prop_active_safs.saf_no', 'ward.ward_name', 'p.property_type');
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name','jhirnama_no','has_any_objection','generation_date');
+                // ->groupBy('prop_active_safs.id', 'prop_active_safs.saf_no', 'ward.ward_name', 'p.property_type');
 
             $safData = app(Pipeline::class)
                 ->send(
