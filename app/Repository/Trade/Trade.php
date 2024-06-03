@@ -2034,6 +2034,9 @@ class Trade implements ITrade
                             $join->on("owner.temp_id", "active_trade_licences.id");
                         })
                         ->leftjoin("trade_param_firm_types", "trade_param_firm_types.id", "active_trade_licences.firm_type_id")
+                        ->leftjoin("ulb_ward_masters", function ($join) {
+                            $join->on("ulb_ward_masters.id", "=", "active_trade_licences.ward_id");
+                        })
                     ->select(
                         "active_trade_licences.id",
                         "active_trade_licences.application_no",
