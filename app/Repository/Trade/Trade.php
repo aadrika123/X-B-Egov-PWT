@@ -2053,6 +2053,10 @@ class Trade implements ITrade
                         "trade_param_firm_types.firm_type",
                         "active_trade_licences.firm_type_id",
                         DB::raw("TO_CHAR(CAST(active_trade_licences.application_date AS DATE), 'DD-MM-YYYY') as application_date"),
+                        ('ulb_ward_masters.id as ward_id'),
+                        DB::RAW("CASE WHEN old_ward_name IS NULL THEN CAST(ward_name AS TEXT) 
+                        ELSE old_ward_name 
+                        END AS ward_no")
                     )
                     ->WHERE("active_trade_licences.is_active",TRUE);
     }
