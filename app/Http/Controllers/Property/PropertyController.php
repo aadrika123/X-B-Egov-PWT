@@ -1087,9 +1087,9 @@ class PropertyController extends Controller
                 $req->merge(["propId" => $propertyId]);
                 $getHoldingDues = new GetHoldingDuesV2;
                 $demand = $getHoldingDues->getDues($req);
-                // if (($demand['previousInterest']) > 0 || ($demand['arrear']) > 0) {
-                //     $sms = "Please Clear The Previous Arrear Amount Of ₹" . $demand['arrearPayableAmt'] . " Before Applying The Application.";
-                // }
+                if (($demand['previousInterest']) > 0 || ($demand['arrear']) > 0) {
+                    $sms = "Please Clear The Previous Arrear Amount Of ₹" . $demand['arrearPayableAmt'] . " Before Applying The Application.";
+                }
                 if ($sms) {
                     $msg['inWorkflow'] = true;
                     $msg['message'] = $sms;
