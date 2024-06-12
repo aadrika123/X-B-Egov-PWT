@@ -167,9 +167,8 @@ class HoldingTaxController extends Controller
             if ($this->_COMMONFUNCTION->checkUsersWithtocken("active_citizens")) {
                 $demand["can_take_payment"] =  $demand["payableAmt"] > 0 ? true : false;
             }
-            if(!$getHoldingDues->_IsOldTranClear)
-            {
-                $demand["can_take_payment"] =$getHoldingDues->_IsOldTranClear;
+            if (!$getHoldingDues->_IsOldTranClear) {
+                $demand["can_take_payment"] = $getHoldingDues->_IsOldTranClear;
             }
             return responseMsgs(true, "Demand Details", remove_null($demand), "011602", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
@@ -179,19 +178,17 @@ class HoldingTaxController extends Controller
 
     public function bulkGetHoldingDues(Request $request)
     {
-        try{
+        try {
             $perPage = $request->perPage ? $request->perPage : 50;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $limit = $perPage;
             $offset =  $request->page && $request->page > 0 ? (($request->page - 1) * $perPage) : 0;
-            $where ="";
-            if($request->wardId)
-            {
-                $where.=" AND ward_mstr_id = ".$request->wardId ;
+            $where = "";
+            if ($request->wardId) {
+                $where .= " AND ward_mstr_id = " . $request->wardId;
             }
-            if($request->zoneId)
-            {
-                $where.=" AND zone_mstr_id = ".$request->zoneId ;
+            if ($request->zoneId) {
+                $where .= " AND zone_mstr_id = " . $request->zoneId;
             }
             $sql = "
                 SELECT DISTINCT prop_demands.property_id 
@@ -211,15 +208,13 @@ class HoldingTaxController extends Controller
             ";
             $count = (collect(DB::select($sqlCont))->first())->count;
             $data = DB::select($sql);
-            $lastPage = ceil($count/$perPage);
+            $lastPage = ceil($count / $perPage);
             $responseData = collect();
-            foreach($data as $key=>$val)
-            {
+            foreach ($data as $key => $val) {
                 $propertyId = $val->property_id;
-                $newReq = new Request(["propId"=>$propertyId]);
+                $newReq = new Request(["propId" => $propertyId]);
                 $response = $this->getHoldingDues($newReq);
-                if(!$response->original["status"])
-                {
+                if (!$response->original["status"]) {
                     continue;
                 }
                 $responseData->push($response->original["data"]);
@@ -230,10 +225,8 @@ class HoldingTaxController extends Controller
                 "data" => $responseData,
                 "total" => $count,
             ];
-            return responseMsgs(true, "data fetched", $list , "011602", "1.0", "", "POST", $request->deviceId ?? "");
-        }
-        catch(Exception $e)
-        {
+            return responseMsgs(true, "data fetched", $list, "011602", "1.0", "", "POST", $request->deviceId ?? "");
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), ['basicDetails' => $basicDtls ?? []], "011602", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }
@@ -535,16 +528,15 @@ class HoldingTaxController extends Controller
         $propCalReq = new Request([                                                 // Request from payment
             'propId' => $req['id'],
             'isArrear' => $req['isArrear'] ?? null,
-            "TrnDate"=>$req->TrnDate
+            "TrnDate" => $req->TrnDate
         ]);
 
         try {
             $propCalculation = $this->getHoldingDues($propCalReq);                    // Calculation of Holding
             if ($propCalculation->original['status'] == false)
                 throw new Exception($propCalculation->original['message']);
-            if($propCalculation->original['data']["payableAmt"]<=0)
-            {
-                throw new Exception("This Property have no Demand");
+            if ($propCalculation->original['data']["payableAmt"] <= 0) {
+                throw new Exception("This property have no Demand");
             }
 
             $postPropPayment->_propCalculation = $propCalculation;
@@ -1917,7 +1909,7 @@ class HoldingTaxController extends Controller
      */
     public function propertyAbhayYojnaSms(Request $req)
     {
-        try{
+        try {
 
             $mPropSmsLog = new PropSmsLog();
             $getHoldingDues = new GetHoldingDuesV2;
@@ -1939,20 +1931,20 @@ class HoldingTaxController extends Controller
                 ->where('due_total_tax', '>', 0.9)
                 ->where('paid_status', 0)
                 ->where(DB::raw('LENGTH(prop_owners.mobile_no)'), '=', 10)
-                ->groupBy('prop_demands.property_id', 'owner_name', 'prop_owners.mobile_no','prop_sms_logs.id')
+                ->groupBy('prop_demands.property_id', 'owner_name', 'prop_owners.mobile_no', 'prop_sms_logs.id')
                 ->orderByDesc('prop_demands.property_id')
                 // ->limit(1)
                 // // ->count();
                 ->get();
-    
-                $totalList= $propDetails->count();
-    
-            foreach ($propDetails as $key=>$propDetail) {
-                try{
+
+            $totalList = $propDetails->count();
+
+            foreach ($propDetails as $key => $propDetail) {
+                try {
 
                     $newReq = new Request(['propId' => $propDetail->property_id]);
                     $demand = $getHoldingDues->getDues($newReq);
-        
+
                     $ownerName       = Str::limit(trim($propDetail->owner_name), 30);
                     $ownerMobile     = $propDetail->mobile_no;
                     $totalTax        = $demand['payableAmt'];
@@ -1963,11 +1955,11 @@ class HoldingTaxController extends Controller
                     // dd(Config::get("database"),$ownerMobile);
                     $sms      = "Dear " . $ownerName . ", your Property Tax of amount Rs " . $totalTax . " for property no " . $propertyNo . " ward no. " . $wardNo . " is due. Please pay your tax before 31st March 2024 and get benefitted under Abhay Yojna. Please ignore if already paid. For details visit amcakola.in or call at 08069493299. SWATI INDUSTRIES";
                     $response = send_sms($ownerMobile, $sms, 1707171048817705363);
-                    print_var("==================index($key) remaining(".$totalList - ($key+1).")=========================\n");
-                    print_var("property_id=======>".$propDetail->property_id."\n");
-                    print_var("sms=======>".$sms."\n");
+                    print_var("==================index($key) remaining(" . $totalList - ($key + 1) . ")=========================\n");
+                    print_var("property_id=======>" . $propDetail->property_id . "\n");
+                    print_var("sms=======>" . $sms . "\n");
                     print_var($response);
-        
+
                     $smsReqs = [
                         "emp_id" => 5695,
                         "ref_id" => $propertyId,
@@ -1981,27 +1973,23 @@ class HoldingTaxController extends Controller
                         "stampdate" => Carbon::now(),
                     ];
                     $mPropSmsLog->create($smsReqs);
-                }
-                catch(Exception $e)
-                {
-                   print_var([$e->getMessage(),$e->getFile(),$e->getLine()]);
+                } catch (Exception $e) {
+                    print_var([$e->getMessage(), $e->getFile(), $e->getLine()]);
                 }
             }
-    
+
             return responseMsgs(true, "SMS Send Successfully of " . $propDetails->count() . " Property", [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
-        }
-        catch(Exception $e)
-        {
-            return responseMsgs(false, [$e->getMessage(),$e->getFile(),$e->getLine()], [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }
     }
-    
+
     /**
      * | Abhay Yojna Marathi
      */
     public function propertyAbhayYojnaMarathi(Request $req)
     {
-        try{
+        try {
 
             $mPropSmsLog = new PropSmsLog();
             $getHoldingDues = new GetHoldingDuesV2;
@@ -2024,20 +2012,20 @@ class HoldingTaxController extends Controller
                 ->where('due_total_tax', '>', 0.9)
                 ->where('paid_status', 0)
                 ->where(DB::raw('LENGTH(prop_owners.mobile_no)'), '=', 10)
-                ->groupBy('prop_demands.property_id', 'owner_name_marathi', 'prop_owners.mobile_no','prop_sms_logs.id')
+                ->groupBy('prop_demands.property_id', 'owner_name_marathi', 'prop_owners.mobile_no', 'prop_sms_logs.id')
                 ->orderByDesc('prop_demands.property_id')
                 // ->limit(10)
                 // // ->count();
                 ->get();
-    
-               $totalList= $propDetails->count();
-    
-            foreach ($propDetails as $key=>$propDetail) {
-                try{
+
+            $totalList = $propDetails->count();
+
+            foreach ($propDetails as $key => $propDetail) {
+                try {
 
                     $newReq = new Request(['propId' => $propDetail->property_id]);
                     $demand = $getHoldingDues->getDues($newReq);
-        
+
                     $ownerName       = Str::limit(trim($propDetail->owner_name_marathi), 30);
                     $ownerMobile     = $propDetail->mobile_no;
                     $totalTax        = $demand['payableAmt'];
@@ -2048,11 +2036,11 @@ class HoldingTaxController extends Controller
                     // dd(Config::get("database"),$ownerMobile);
                     $sms      = "प्रिय " . $ownerName . ", तुमचा मालमत्ता कर रु. " . $totalTax . " मालमत्ता क्रमांक " . $propertyNo . " प्रभाग क्र. " . $wardNo . " देय आहे. कृपया 31 मार्च 2024 पूर्वी तुमचा कर भरा आणि अभय योजनेअंतर्गत लाभ घ्या. आधीच पैसे दिले असल्यास दुर्लक्ष करा. तपशीलांसाठी amcakola.in ला भेट द्या किंवा 08069493299 वर कॉल करा. स्वाती इंडस्ट्रीज";
                     $response = send_sms($ownerMobile, $sms, $templateId);
-                    print_var("==================index($key) remaining(".$totalList - ($key+1).")=========================\n");
-                    print_var("property_id=======>".$propDetail->property_id."\n");
-                    print_var("sms=======>".$sms."\n");
+                    print_var("==================index($key) remaining(" . $totalList - ($key + 1) . ")=========================\n");
+                    print_var("property_id=======>" . $propDetail->property_id . "\n");
+                    print_var("sms=======>" . $sms . "\n");
                     print_var($response);
-        
+
                     $smsReqs = [
                         "emp_id" => 5695,
                         "ref_id" => $propertyId,
@@ -2066,18 +2054,165 @@ class HoldingTaxController extends Controller
                         "stampdate" => Carbon::now(),
                     ];
                     $mPropSmsLog->create($smsReqs);
-                }
-                catch(Exception $e)
-                {
-                   print_var([$e->getMessage(),$e->getFile(),$e->getLine()]);
+                } catch (Exception $e) {
+                    print_var([$e->getMessage(), $e->getFile(), $e->getLine()]);
                 }
             }
-    
+
             return responseMsgs(true, "SMS Send Successfully of " . $propDetails->count() . " Property", [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }
-        catch(Exception $e)
-        {
-            return responseMsgs(false, [$e->getMessage(),$e->getFile(),$e->getLine()], [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+    }
+
+    /**
+     * | 7 Percent 
+     */
+    public function sevenPercentRebate(Request $req)
+    {
+        try {
+
+            $mPropSmsLog = new PropSmsLog();
+            $getHoldingDues = new GetHoldingDuesV2;
+            $templateId = 1707171810762149107;
+
+            // $propDetails = PropDemand::select(
+            //     'prop_sms_logs.id as sms_log_id',
+            //     'prop_demands.property_id',
+            //     DB::raw('SUM(due_total_tax) as total_tax, MAX(fyear) as max_fyear'),
+            //     DB::raw('DISTINCT prop_owners.mobile_no'),
+            //     // 'prop_owners.mobile_no',
+            // )
+            //     ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_demands.property_id')
+            //     ->leftJoin('prop_sms_logs', function ($join) {
+            //         $join->on('prop_sms_logs.ref_id', '=', 'prop_demands.property_id')
+            //             ->where('prop_sms_logs.ref_type', 'PROPERTY')
+            //             ->where('prop_sms_logs.response', 'success')
+            //             ->where('prop_sms_logs.purpose', 'Seven Percent');
+            //     })
+            //     ->whereNull('prop_sms_logs.id')
+            //     ->where('due_total_tax', '>', 0.9)
+            //     ->where('paid_status', 0)
+            //     ->where(DB::raw('LENGTH(prop_owners.mobile_no)'), '=', 10)
+            //     ->groupBy('prop_demands.property_id', 'prop_owners.mobile_no','prop_sms_logs.id')
+            //     ->orderByDesc('prop_demands.property_id')
+            //     // ->limit(1)
+            //     // // ->count();
+            //     ->get();
+
+            $excludedNumbers = [
+                "0000000000",
+                "1234567890",
+                "1234567980",
+                "7276697080",
+                "7507400637",
+                "7666652353",
+                "7768057380",
+                "8007630909",
+                "8208797389",
+                "8421361147",
+                "8446476541",
+                "8552004988",
+                "8805936867",
+                "8888888888",
+                "8983083044",
+                "9011639025",
+                "9011994455",
+                "9028451248",
+                "9049747878",
+                "9325378260",
+                "9421593900",
+                "9423129711",
+                "9623032000",
+                "9730017161",
+                "9822221420",
+                "9822225172",
+                "9822578752",
+                "9822728239",
+                "9822739215",
+                "9822908009",
+                "9823067383",
+                "9823351800",
+                "9823360433",
+                "9823457170",
+                "9823574842",
+                "9823602339",
+                "9834647256",
+                "9850314158",
+                "9881935087",
+                "9890601568",
+                "9921043253",
+                "9921108888",
+                "9921978872",
+                "9922284221",
+                "9922892999",
+                "9922932921",
+                "9960590192",
+            ];
+
+            $rawQuery =
+                "SELECT DISTINCT ON (prop_owners.mobile_no) 
+                                prop_sms_logs.id as sms_log_id,
+                                prop_demands.property_id,
+                                SUM(due_total_tax) as total_tax,
+                                MAX(fyear) as max_fyear,
+                                prop_owners.mobile_no
+                            FROM prop_demands
+                            JOIN prop_owners ON prop_owners.property_id = prop_demands.property_id
+                            LEFT JOIN prop_sms_logs ON prop_sms_logs.ref_id = prop_demands.property_id
+                                AND prop_sms_logs.ref_type = 'PROPERTY'
+                                AND prop_sms_logs.response = 'success'
+                                AND prop_sms_logs.purpose = 'Seven Percent'
+                            WHERE prop_sms_logs.id IS NULL
+                                AND due_total_tax > 0.9
+                                AND paid_status = 0
+                                AND LENGTH(prop_owners.mobile_no) = 10
+                                AND prop_owners.mobile_no NOT IN ('" . implode("', '", $excludedNumbers) . "')
+                            GROUP BY prop_demands.property_id, prop_owners.mobile_no, prop_sms_logs.id
+                            ORDER BY prop_owners.mobile_no, prop_demands.property_id DESC";
+
+
+            $propDetails = DB::select(DB::raw($rawQuery));
+
+            $totalList = collect($propDetails)->count();
+
+            foreach ($propDetails as $key => $propDetail) {
+                try {
+
+                    // $newReq = new Request(['propId' => $propDetail->property_id]);
+                    // $demand = $getHoldingDues->getDues($newReq);
+
+                    $ownerMobile     = $propDetail->mobile_no;
+                    $propertyId      = $propDetail->property_id;
+
+                    $sms      = "मालमत्ताधारकांना सुचीत करण्यात येते की सन 2024-25 या वर्षाचा कर भरणा 14जुन 2024 च्या आत केल्यास सामान्य कराच्या रक्कमेत 7% सुट देण्यात येईल. स्वाती इंडस्ट्रीज";
+                    $response = send_sms($ownerMobile, $sms, $templateId);
+                    print_var("==================index($key) remaining(" . $totalList - ($key + 1) . ")=========================\n");
+                    print_var("property_id=======>" . $propDetail->property_id . "\n");
+                    print_var("sms=======>" . $sms . "\n");
+                    print_var($response);
+
+                    $smsReqs = [
+                        "emp_id" => 5695,
+                        "ref_id" => $propertyId,
+                        "ref_type" => 'PROPERTY',
+                        "mobile_no" => $ownerMobile,
+                        "purpose" => 'Seven Percent',
+                        "template_id" => $templateId,
+                        "message" => $sms,
+                        "response" => $response['status'],
+                        "smgid" => $response['msg'],
+                        "stampdate" => Carbon::now(),
+                    ];
+                    $mPropSmsLog->create($smsReqs);
+                } catch (Exception $e) {
+                    print_var([$e->getMessage(), $e->getFile(), $e->getLine()]);
+                }
+            }
+
+            return responseMsgs(true, "SMS Send Successfully of " . collect($propDetails)->count() . " Property", [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }
     }
 
@@ -2228,70 +2363,67 @@ class HoldingTaxController extends Controller
 
     public function genratePropNewTax(Request $request)
     {
-        $excelData[] =[
-            "prop id","Holding No","Property No","status","error","primaryError",
-        ] ;
+        $excelData[] = [
+            "prop id", "Holding No", "Property No", "status", "error", "primaryError",
+        ];
         try {
             $zoneId = 1;
-            $propList = PropProperty::select("prop_properties.id","prop_properties.holding_no","prop_properties.property_no","prop_properties.area_of_plot")
-                        ->leftJoin("prop_demands",function($join){
-                            $join->on("prop_demands.property_id","prop_properties.id")
-                            ->where("prop_demands.status",1)
-                            ->where("prop_demands.fyear",getFY());
-                        })
-                        ->where("prop_properties.status", 1)
-                        ->whereNull("prop_demands.id")
-                        ->orderBy("prop_properties.ward_mstr_id", "ASC")
-                        ->orderBy("prop_properties.id", "DESC")
-                        ->where("prop_properties.zone_mstr_id", $zoneId)
-                        // ->where("prop_properties.id", 172883)
-                        // ->limit(10)
-                        ->get();
+            $propList = PropProperty::select("prop_properties.id", "prop_properties.holding_no", "prop_properties.property_no", "prop_properties.area_of_plot")
+                ->leftJoin("prop_demands", function ($join) {
+                    $join->on("prop_demands.property_id", "prop_properties.id")
+                        ->where("prop_demands.status", 1)
+                        ->where("prop_demands.fyear", getFY());
+                })
+                ->where("prop_properties.status", 1)
+                ->whereNull("prop_demands.id")
+                ->orderBy("prop_properties.ward_mstr_id", "ASC")
+                ->orderBy("prop_properties.id", "DESC")
+                ->where("prop_properties.zone_mstr_id", $zoneId)
+                // ->where("prop_properties.id", 172883)
+                // ->limit(10)
+                ->get();
             $total = $propList->count("id");
-            foreach ($propList as $key=>$prop) {   
-                echo("\n\n\n===========index([".($total - $key)."] ****** $key===> ".$prop->id." zone[$zoneId])==========\n\n\n");             
+            foreach ($propList as $key => $prop) {
+                echo ("\n\n\n===========index([" . ($total - $key) . "] ****** $key===> " . $prop->id . " zone[$zoneId])==========\n\n\n");
                 $propId = $prop->id;
                 $calculateByPropId = new \App\BLL\Property\Akola\CalculatePropNewTaxByPropId($propId);
-                $excelData[$key+1]=[
-                    "prop_id"=>$propId,
-                    "holding_no"=>$prop->holding_no,
-                    "property_no"=>$prop->property_no,
-                    "status"=>"Fail",
-                    "error"=>"",
-                    "primaryError"=>"",
+                $excelData[$key + 1] = [
+                    "prop_id" => $propId,
+                    "holding_no" => $prop->holding_no,
+                    "property_no" => $prop->property_no,
+                    "status" => "Fail",
+                    "error" => "",
+                    "primaryError" => "",
                 ];
-                try{
-                    if(!is_numeric($prop->area_of_plot))
-                    {
+                try {
+                    if (!is_numeric($prop->area_of_plot)) {
                         throw new Exception("property plot of arrea is invalid");
                     }
                     $calculateByPropId->starts();
                     DB::beginTransaction();
-                    $calculateByPropId->storeDemand(); 
+                    $calculateByPropId->storeDemand();
                     DB::commit();
                     print_var($calculateByPropId->_GRID);
-                    $excelData[$key+1]["status"]="Success";
-
-                }
-                catch (Exception $e) {
+                    $excelData[$key + 1]["status"] = "Success";
+                } catch (Exception $e) {
                     DB::rollBack();
                     $calculateByPropId->testData();
-                    $errors = "•".implode("\n •",$calculateByPropId->_ERROR);
+                    $errors = "•" . implode("\n •", $calculateByPropId->_ERROR);
                     $primaryError = $e->getMessage();
-                    $excelData[$key+1]["status"]="Fail";
-                    $excelData[$key+1]["error"]=$errors;
-                    $excelData[$key+1]["primaryError"]=$primaryError;
-                } 
-                echo("\n================status(".$excelData[$key+1]["status"].")===================\n");                
+                    $excelData[$key + 1]["status"] = "Fail";
+                    $excelData[$key + 1]["error"] = $errors;
+                    $excelData[$key + 1]["primaryError"] = $primaryError;
+                }
+                echo ("\n================status(" . $excelData[$key + 1]["status"] . ")===================\n");
             }
-            $fileName =  "Prop/".Carbon::now()->format("Y-m-d_H_i_s_A_")."propDemand_Genration(".getFY()."_Z_$zoneId).xlsx" ;   
-            Excel::store(new DataExport($excelData), $fileName,"public");
-            echo("demand genrated=====>file====>".$fileName);
+            $fileName =  "Prop/" . Carbon::now()->format("Y-m-d_H_i_s_A_") . "propDemand_Genration(" . getFY() . "_Z_$zoneId).xlsx";
+            Excel::store(new DataExport($excelData), $fileName, "public");
+            echo ("demand genrated=====>file====>" . $fileName);
         } catch (Exception $e) {
             DB::rollBack();
-            $fileName =  "Prop/".Carbon::now()->format("Y-m-d_H_i_s_A_")."propDemand_Genration(".getFY()."_Z_$zoneId).xlsx" ;   
-            Excel::store(new DataExport($excelData), $fileName,"public");
-            echo("demand genrated=====>(last)file====>".$fileName);
+            $fileName =  "Prop/" . Carbon::now()->format("Y-m-d_H_i_s_A_") . "propDemand_Genration(" . getFY() . "_Z_$zoneId).xlsx";
+            Excel::store(new DataExport($excelData), $fileName, "public");
+            echo ("demand genrated=====>(last)file====>" . $fileName);
             return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "", "011613", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }

@@ -399,6 +399,7 @@ class PostPropPaymentV2
                 'cheque_no' => $this->_REQ['chequeNo']
             ];
             $this->_REQ['paymentMode'] == $online_r ? $chequeReqs["status"]=1:null;
+            $this->_REQ['paymentMode'] == "DD" ? $chequeReqs["status"]=1:null;
             $mPropChequeDtl->postChequeDtl($chequeReqs);
         }
 
@@ -418,7 +419,9 @@ class PostPropPaymentV2
             'ulb_id' => $this->_REQ['ulbId'],
             "ward_no" => $this->_REQ["wardNo"],
         ];
-        if($this->_REQ['paymentMode'] != $online_r)
+        
+        // if($this->_REQ['paymentMode'] != $online_r)
+        if(!in_array($this->_REQ['paymentMode'],[$online_r,'DD']))
         {
             $mTempTransaction->tempTransaction($tranReqs);
         }
@@ -1036,7 +1039,7 @@ class PostPropPaymentV2
         $firstOwner = collect($propOwners)->first();
         if ($firstOwner) {
             $ownerMobile = $firstOwner->mobileNo;
-            $ownerName = Str::limit(trim($firstOwner->ownerName), 30);;
+            $ownerName = Str::limit(trim($firstOwner->ownerName), 30);
             if (strlen($ownerMobile) == 10) {
                 $sms      = "Thank you " . $ownerName . " for making payment of Rs. " . $paidAmount . " against Property No. " . $propertyNo . ". For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
                 $response = send_sms($ownerMobile, $sms, 1707169564199604962);

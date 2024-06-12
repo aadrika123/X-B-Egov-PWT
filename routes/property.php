@@ -369,6 +369,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('v1/get-billref-no', 'generateBillRefNo');                        // (15) Pine Lab Get Reference No
     Route::post('oldChequeTranEntery', 'oldChequeEntery');
     Route::post('get-holding-dues-of-property', 'getHoldingDues')->withoutMiddleware(['request_logger', 'expireBearerToken']);
+    Route::post('sevenPercentRebate', 'sevenPercentRebate')->withoutMiddleware(['request_logger', 'expireBearerToken']);
   });
 
   Route::controller(CitizenHoldingController::class)->group(function () {
