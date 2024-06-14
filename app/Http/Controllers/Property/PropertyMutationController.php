@@ -181,6 +181,8 @@ class PropertyMutationController extends Controller
                 $propProperties->new_holding_no = $newSafData->holding_no;
                 $propProperties->property_no = $oldProp->property_no;
                 $propProperties = PropProperty::create($propProperties->toArray());
+                $prop_saf->saf_approved_date = Carbon::now();
+
                 #======transfer Lagaci Demands Transfer=====================
                 $dueDemands = PropDemand::where("property_id", $oldProp->id)
                     ->where("status", 1)
