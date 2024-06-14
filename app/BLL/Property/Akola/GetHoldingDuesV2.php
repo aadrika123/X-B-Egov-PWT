@@ -8,6 +8,7 @@ use App\Models\Property\PropDemand;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropPendingArrear;
 use App\Models\Property\PropProperty;
+use App\Models\Property\PropSaf;
 use App\Models\Property\PropTransaction;
 use App\Models\Property\RefPropSpecialRebateType;
 use App\Models\User;
@@ -33,6 +34,8 @@ class GetHoldingDuesV2
     public $_QuaveryRebatesDtls;
     public $_IsOldTranClear =true;
     public $_Today ;
+    public $_propSaf;
+    public $_assesmentType;
 
     public function setParams($from = null,$upto = null)
     {
@@ -65,6 +68,7 @@ class GetHoldingDuesV2
         $mPropOwners = new PropOwner();
         $PropAdvance = new PropAdvance();
         $PropAdjustment = new PropAdjustment();
+        $mPropSaf = new PropSaf();
         $mUsers = new User();
         $demand = array();
         $mPropPendingArrear = new PropPendingArrear();
@@ -78,6 +82,8 @@ class GetHoldingDuesV2
 
         // Get Property Details
         $propBasicDtls = $mPropProperty->getPropBasicDtls($req->propId);
+        $calculate2PercPenalty->_assesmentType =$this->_assesmentType = $propBasicDtls->assessment_type??"";
+        $calculate2PercPenalty->_propSaf = $this->_propSaf =  $mPropSaf->find($propBasicDtls->saf_id);
         $this->testOldTranClear($req->propId);
         $owners = $mPropOwners->getOwnersByPropId($req->propId);
         $armedForceOwners = collect($owners)->where("is_armed_force",true);

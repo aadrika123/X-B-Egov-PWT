@@ -3,6 +3,7 @@
 namespace App\BLL\Property\Akola;
 
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Config;
 
 /**
  * | Author - Anshu Kumar
@@ -12,6 +13,8 @@ use Carbon\Carbon;
 class Calculate2PercPenalty
 {
     public $_Today;
+    public $_assesmentType;
+    public $_propSaf;
     /**
      * | @param demand 
      */
@@ -50,7 +53,8 @@ class Calculate2PercPenalty
             if(!$demand->is_old &&  $prop_type_mstr_id==4 && $demand->created_at)
             {
                 $noOfPenalMonths = (getFY($demand->created_at)==getFY())?0:$noOfPenalMonths;
-            }   
+            }  
+            
                     
             $monthlyBalance = $demand->balance;
         }
@@ -66,8 +70,11 @@ class Calculate2PercPenalty
         //     dd($demand,$noOfPenalMonths,$amount,$penalAmt, Carbon::now()->firstOfMonth()->format("Y-m-d"),$monthlyBalance);
         // }
         // if($demand->fyear != $currentFy){
+            // }
+        if($this->_assesmentType==Config::get("PropertyConstaint.ASSESSMENT-TYPE.1") && $this->_propSaf && $demand->fyear <= getFY($this->_propSaf->saf_approved_date) && getFY($demand->created_at)<getFY()) {
+            $penalAmt =0;
+        }
             $demand->monthlyPenalty = roundFigure($penalAmt);
-        // }
         
     }
 
