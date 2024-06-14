@@ -39,12 +39,18 @@ class Calculate2PercPenalty
             if($demand->is_old)
             {
                 list($fromYear,$uptoYear) = explode("-",$demand->fyear);
+                if($this->_assesmentType==Config::get("PropertyConstaint.ASSESSMENT-TYPE.1") && $this->_propSaf && $this->_propSaf->saf_approved_date){
+                    list($fromYear,$uptoYear) = explode("-",getFY($this->_propSaf->saf_approved_date));
+                }
                 $uptoDate = new Carbon($uptoYear."-09-01");
                 $noOfPenalMonths = $uptoDate->diffInMonths($now);                
             }
             if(!$demand->is_old)
             {
                 list($fromYear,$uptoYear) = explode("-",$demand->fyear);
+                if($this->_assesmentType==Config::get("PropertyConstaint.ASSESSMENT-TYPE.1") &&$this->_propSaf && $this->_propSaf->saf_approved_date){
+                    list($fromYear,$uptoYear) = explode("-",getFY($this->_propSaf->saf_approved_date));
+                }
                 $uptoDate = new Carbon($uptoYear."-04-01");
                 // $now = Carbon::now()->firstOfMonth()->format("Y-m-d");
                 $noOfPenalMonths = $uptoDate->diffInMonths($now)+1;  
@@ -71,9 +77,9 @@ class Calculate2PercPenalty
         // }
         // if($demand->fyear != $currentFy){
             // }
-        if($this->_assesmentType==Config::get("PropertyConstaint.ASSESSMENT-TYPE.1") && $this->_propSaf && $demand->fyear <= getFY($this->_propSaf->saf_approved_date) && getFY($demand->created_at)<getFY()) {
-            $penalAmt =0;
-        }
+        // if($this->_assesmentType==Config::get("PropertyConstaint.ASSESSMENT-TYPE.1") && $this->_propSaf && $demand->fyear <= getFY($this->_propSaf->saf_approved_date) && getFY($demand->created_at)<getFY()) {
+        //     $penalAmt =0;
+        // }
             $demand->monthlyPenalty = roundFigure($penalAmt);
         
     }
