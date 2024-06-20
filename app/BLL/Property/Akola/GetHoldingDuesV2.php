@@ -235,6 +235,8 @@ class GetHoldingDuesV2
             if($val["apply_on_current_tax"]??false){
                 $rebate = $val["rebates_in_perc"] ? (($demand['currentDemandList']["general_tax"]??0)/100) * $val["rebates"] : $val["rebates"];
                 $rebateAmt += $rebate;
+                if($this->_isSingleManArmedForce)
+                    $rebateAmt = 0;
             }
             $val["rebates_amt"] = roundFigure($rebateAmt);
             return $val;
@@ -245,7 +247,9 @@ class GetHoldingDuesV2
             $rebate = 0;
             if($val["apply_on_current_tax"]??false){
                 $rebate = $val["rebates_in_perc"] ? (($demand['currentDemandList']["general_tax"]??0)/100) * $val["rebates"] : $val["rebates"];
-                $rebateAmt += $rebate;                
+                $rebateAmt += $rebate;
+                if($this->_isSingleManArmedForce)
+                    $rebateAmt = 0;
             }
             $val["rebates_amt"] = roundFigure($rebateAmt);
             $val["payableAmt"]=roundFigure($demand['payableAmt'] - $rebateAmt); 
