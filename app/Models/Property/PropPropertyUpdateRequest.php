@@ -119,8 +119,25 @@ class PropPropertyUpdateRequest extends PropParamModel #Model
 
     public function WorkFlowMetaList()
     {
-        return self::where("prop_property_update_requests.status", 1)
-            ->where("prop_property_update_requests.pending_status", 1)
+        return self::select(
+            "prop_property_update_requests.id",
+            "prop_property_update_requests.request_no",
+            "prop_property_update_requests.prop_id",
+            "prop_property_update_requests.workflow_id",
+            "owner.owner_name",
+            "owner.guardian_name",
+            "owner.mobile_no",
+            "owner.email",
+            "owner.owner_name_marathi",
+            "owner.guardian_name_marathi",
+            "prop_property_update_requests.holding_no",
+            "prop_property_update_requests.property_no",
+            "prop_property_update_requests.current_role_id",
+            "prop_property_update_requests.is_full_update",
+            DB::raw("TO_CHAR(CAST(prop_property_update_requests.created_at AS DATE), 'DD-MM-YYYY') as application_date"),
+            "ward_name"
+        )
+            ->join('ulb_ward_masters','ulb_ward_masters.id','prop_property_update_requests.ward_mstr_id')
             ->join("prop_properties", "prop_properties.id", "prop_property_update_requests.prop_id")
             ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                             STRING_AGG(guardian_name,',') AS guardian_name,
@@ -135,23 +152,8 @@ class PropPropertyUpdateRequest extends PropParamModel #Model
                         )owner"), function ($join) {
                 $join->on("owner.property_id", "prop_properties.id");
             })
-            ->select(
-                "prop_property_update_requests.id",
-                "prop_property_update_requests.request_no",
-                "prop_property_update_requests.prop_id",
-                "prop_property_update_requests.workflow_id",
-                "owner.owner_name",
-                "owner.guardian_name",
-                "owner.mobile_no",
-                "owner.email",
-                "owner.owner_name_marathi",
-                "owner.guardian_name_marathi",
-                "prop_property_update_requests.holding_no",
-                "prop_property_update_requests.property_no",
-                "prop_property_update_requests.current_role_id",
-                "prop_property_update_requests.is_full_update",
-                DB::raw("TO_CHAR(CAST(prop_property_update_requests.created_at AS DATE), 'DD-MM-YYYY') as application_date"),
-            );
+            ->where("prop_property_update_requests.status", 1)
+            ->where("prop_property_update_requests.pending_status", 1);
     }
 
     public function getOwnersUpdateReq()

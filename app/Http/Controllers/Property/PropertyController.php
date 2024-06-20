@@ -534,7 +534,7 @@ class PropertyController extends Controller
                 throw new Exception("You Are Not Authorized For This Action");
             }
             if ($mRole->is_initiator || in_array(strtoupper($mUserType), Config::get("TradeConstant.CANE-NO-HAVE-WARD"))) {
-                $mWardPermission = $ModelWard->getAllWard($refUlbId)->map(function ($val) {
+                $mWardPermission  = $ModelWard->getAllWard($refUlbId)->map(function ($val) {
                     $val->ward_no = $val->ward_name;
                     return $val;
                 });

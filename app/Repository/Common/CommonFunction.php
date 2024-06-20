@@ -29,6 +29,7 @@ class CommonFunction implements ICommonFunction
             )
                 ->join("ulb_ward_masters", "ulb_ward_masters.id", "=", "wf_ward_users.ward_id")
                 ->where('user_id', $user_id)
+                ->where('wf_ward_users.is_suspended', false)
                 ->orderBy('ward_id')
                 ->get();
             $ward_permission = objToArray($ward_permission);
