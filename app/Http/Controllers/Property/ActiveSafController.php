@@ -3466,19 +3466,22 @@ class ActiveSafController extends Controller
             if ($req->propertyType != $vacantLand) {
                 foreach ($req->floor as $floorDetail) {
                     $floorReq = [
-                        'verification_id' => $verificationId,
-                        'saf_id' => $req->safId,
-                        'saf_floor_id' => $floorDetail['floorId'] ?? null,
-                        'floor_mstr_id' => $floorDetail['floorNo'],
-                        'usage_type_id' => $floorDetail['useType'],
+                        'saf_id'               => $req->safId,
+                        'verification_id'      => $verificationId,
+                        'saf_floor_id'         => $floorDetail['floorId'] ?? null,
+                        'floor_mstr_id'        => $floorDetail['floorNo'],
+                        'usage_type_id'        => $floorDetail['useType'],
                         'construction_type_id' => $floorDetail['constructionType'],
-                        'occupancy_type_id' => $floorDetail['occupancyType'],
-                        'builtup_area' => $floorDetail['buildupArea'],
-                        'date_from' => $floorDetail['dateFrom'],
-                        'date_to' => $floorDetail['dateUpto'],
-                        'carpet_area' => null,
-                        'user_id' => $userId,
-                        'ulb_id' => $ulbId
+                        'occupancy_type_id'    => $floorDetail['occupancyType'],
+                        'builtup_area'         => $floorDetail['buildupArea'],
+                        'date_from'            => $floorDetail['dateFrom'],
+                        'date_to'              => $floorDetail['dateUpto'],
+                        'rent_amount'          => $floorDetail['rentAmount'],
+                        'rent_agreement_date'  => $floorDetail['rentAgreementDate'],
+                        'carpet_area'          => null,
+                        'user_id'              => $userId,
+                        'ulb_id'               => $ulbId,
+                        
                     ];
 
                     $verificationDtl->store($floorReq);
