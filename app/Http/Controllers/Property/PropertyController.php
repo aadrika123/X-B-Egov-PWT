@@ -1407,7 +1407,8 @@ class PropertyController extends Controller
                 'applicant_name' => $propDetails->applicant_marathi,
                 'property_from' => $minFloorFromDate,
                 'geo_tag_image' =>  $geotaggedImg,
-                'demands' => $propDemand
+                'demands'     => $propDemand,
+                'userDetails' => $req->auth,
             ];
             return responseMsgs(true, "Property Details", remove_null($responseDetails));
         } catch (Exception $e) {
