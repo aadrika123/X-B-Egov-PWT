@@ -1468,7 +1468,7 @@ class ActiveSafController extends Controller
                 $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIdsV2($roleMapsReqs);
             }
             if (!$forwardBackwardIds) {
-                throw new Exception("You Are Noth Authorize For This Workflow");
+                throw new Exception("You Are Not Authorize For This Workflow");
             }
             if (in_array($saf->workflow_id, $this->_alowJahirnamaWorckflows) && $request->action == 'forward') {
                 $this->checkMutionCondition($wfLevels, $saf);
@@ -1572,6 +1572,200 @@ class ActiveSafController extends Controller
                 $metaReqs['verificationStatus'] = 0;
                 $metaReqs['receiverRoleId'] = $forwardBackwardIds->backward_role_id;
             }
+
+            $saf->save();
+            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs['workflowId'] = $saf->workflow_id;
+            $metaReqs['refTableDotId'] = Config::get('PropertyConstaint.SAF_REF_TABLE');
+            $metaReqs['refTableIdValue'] = $request->applicationId;
+            $metaReqs['senderRoleId'] = $senderRoleId;
+            $metaReqs['user_id'] = $userId;
+            $metaReqs['trackDate'] = $this->_todayDate->format('Y-m-d H:i:s');
+            $request->request->add($metaReqs);
+            $track->saveTrack($request);
+
+            // Updation of Received Date
+            $preWorkflowReq = [
+                'workflowId' => $saf->workflow_id,
+                'refTableDotId' => Config::get('PropertyConstaint.SAF_REF_TABLE'),
+                'refTableIdValue' => $request->applicationId,
+                'receiverRoleId' => $senderRoleId
+            ];
+            $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
+            if ($previousWorkflowTrack) {
+                $previousWorkflowTrack->update([
+                    'forward_date' => $this->_todayDate->format('Y-m-d'),
+                    'forward_time' => $this->_todayDate->format('H:i:s')
+                ]);
+            }
+            DB::commit();
+            DB::connection('pgsql_master')->commit();
+            return responseMsgs(true, "Successfully " . $request->action . " The Application!!", $samHoldingDtls, "010109", "1.0", "", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
+            return responseMsg(false, $e->getMessage(), "", "010109", "1.0", "", "POST", $request->deviceId);
+        }
+    }
+
+    /**
+     * | For Tc And Utc
+     */
+    public function postNextLevelV2(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'applicationId'  => 'required|integer',
+                'receiverRoleId' => 'required|integer',
+                'action'         => 'required|In:forward,backward'
+            ]
+        );
+        if ($validated->fails()) {
+            return validationError($validated);
+        }
+
+        try {
+            // Variable Assigments
+            $userId               = authUser($request)->id;
+            $wfLevels             = Config::get('PropertyConstaint.SAF-LABEL');
+            $saf                  = PropActiveSaf::findOrFail($request->applicationId);
+            $mWfMstr              = new WfWorkflow();
+            $track                = new WorkflowTrack();
+            $mWfWorkflows         = new WfWorkflow();
+            $mWfRoleMaps          = new WfWorkflowrolemap();
+            $mPropSafGeotagUpload = new PropSafGeotagUpload();
+            $propSafVerification  = new PropSafVerification();
+            $samHoldingDtls       = array();
+            $safId                = $saf->id;
+
+            // Derivative Assignments
+            $senderRoleId = $saf->current_role;
+            if ($saf->parked)
+                $senderRoleId = $saf->initiator_role_id;
+
+            if (!$senderRoleId)
+                throw new Exception("Current Role Not Available");
+
+            $request->validate([
+                'comment' => $senderRoleId == $wfLevels['BO'] ? 'nullable' : 'required',
+            ]);
+
+            $ulbWorkflowId = $saf->workflow_id;
+            $ulbWorkflowMaps = $mWfWorkflows->getWfDetails($ulbWorkflowId);
+            $roleMapsReqs = new Request([
+                'workflowId' => $ulbWorkflowMaps->id,
+                'roleId' => $senderRoleId
+            ]);
+            $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIds($roleMapsReqs);
+            if (!$forwardBackwardIds) {
+                $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIdsV2($roleMapsReqs);
+            }
+            if (!$forwardBackwardIds) {
+                throw new Exception("You Are Not Authorize For This Workflow");
+            }
+            if (in_array($saf->workflow_id, $this->_alowJahirnamaWorckflows) && $request->action == 'forward') {
+                $this->checkMutionCondition($wfLevels, $saf);
+            }
+            $wfMstrId = $mWfMstr->getWfMstrByWorkflowId($saf->workflow_id)->wf_master_id ?? null;
+            DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
+            if ($request->action == 'forward') {
+                if ($saf->doc_upload_status == 0 && $senderRoleId == $wfLevels['BO']) {
+                    $docUploadStatus = (new SafDocController())->checkFullDocUpload($saf->id);
+                    $saf->doc_upload_status = $docUploadStatus ? 1 : $saf->doc_upload_status;
+                }
+                if ($saf->doc_verify_status == 0 && $senderRoleId == $wfLevels['DA']) {
+                    $docUploadStatus = (new SafDocController())->ifFullDocVerified($saf->id);
+                    $saf->doc_verify_status = $docUploadStatus ? 1 : $saf->doc_verify_status;
+                }
+                $gioTag = $mPropSafGeotagUpload->getGeoTags($saf->id);
+                $fieldVerifiedSaf = $propSafVerification->getVerificationsBySafId($safId);
+                if ($saf->prop_type_mstr_id == 4 && collect($fieldVerifiedSaf)->isEmpty()) {
+                    $fieldVerifiedSaf = $propSafVerification->getVerifications($safId);
+                    if (collect($fieldVerifiedSaf)->isEmpty()) {
+                        $fieldVerifiedSaf = $propSafVerification->getVerifications2($safId);
+                    }
+                }
+                if (collect($fieldVerifiedSaf)->isNotEmpty() && $saf->current_role == $wfLevels['UTC']) {
+                    $saf->is_field_verified = true;
+                }
+                if (!$gioTag->isEmpty()) {
+                    $saf->is_geo_tagged = true;
+                }
+                if (!$saf->is_field_verified && $saf->prop_type_mstr_id != 4 && $saf->current_role == $wfLevels['UTC']) #make option UTC Verification
+                {
+                    $saf->is_field_verified = true;
+                }
+                $saf->update();
+
+                $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $userId);          // Check Post Next level condition
+
+                $geotagExist = $saf->is_field_verified == true;
+                if ($saf->prop_type_mstr_id == 4) {
+                    $geotagExist = $saf->is_agency_verified;
+                }
+
+                if ($saf->prop_type_mstr_id == 4 && $saf->current_role == $wfLevels['TC']) #only for Vacant Land
+                {
+                    $saf->is_agency_verified = true;
+                    $saf->update();
+                    // $forwardBackwardIds->forward_role_id = $wfLevels['DA'];
+                }
+                // if (!$geotagExist && $saf->current_role == $wfLevels['DA'] && !in_array($wfMstrId, $this->_SkipFiledWorkWfMstrId)) {
+                //     $forwardBackwardIds->forward_role_id = $wfLevels['UTC'];
+                //     if ($saf->prop_type_mstr_id == 4) {
+                //         $forwardBackwardIds->forward_role_id = $wfLevels['TC'];
+                //     }
+                // }
+
+                if ($saf->is_bt_da == true) {
+                    // $forwardBackwardIds->forward_role_id = $wfLevels['SI'];
+                    $saf->is_bt_da = false;
+                }
+
+                if ($saf->parked == true) {
+                    $saf->parked = false;
+                    // $forwardBackwardIds->forward_role_id =  $saf->current_role;
+                }
+
+                $saf->current_role = $request->receiverRoleId;
+                $saf->last_role_id = $request->receiverRoleId;                     // Update Last Role Id
+                $saf->parked = false;
+                $metaReqs['verificationStatus'] = 1;
+                $metaReqs['receiverRoleId'] = $request->receiverRoleId;
+            }
+            // SAF Application Update Current Role Updation
+            // if ($request->action == 'backward') {
+            //     $samHoldingDtls = $this->checkBackwardCondition($senderRoleId, $wfLevels, $saf);          // Check Backward condition
+
+            //     #_Back to Dealing Assistant by Section Incharge
+            //     if ($saf->current_role == $wfLevels['TC']) {
+            //         $saf->is_agency_verified = $saf->is_agency_verified == true ? false :  $saf->is_agency_verified;
+            //         $saf->is_geo_tagged = $saf->is_geo_tagged == true ? false :  $saf->is_geo_tagged;
+            //     }
+            //     if ($saf->current_role == $wfLevels['UTC']) {
+            //         $saf->is_agency_verified = $saf->is_agency_verified == true ? false :  $saf->is_agency_verified;
+            //         $saf->is_geo_tagged = $saf->is_geo_tagged == true ? false :  $saf->is_geo_tagged;
+            //         $saf->is_field_verified = $saf->is_field_verified == true ? false :  $saf->is_field_verified;
+            //     }
+            //     if ($request->isBtd == true) {
+            //         $saf->is_bt_da = true;
+            //         $forwardBackwardIds->backward_role_id = $wfLevels['DA'];
+            //     }
+            //     if ($saf->prop_type_mstr_id == 4 && $saf->current_role == $wfLevels['DA']) #only for Vacant Land
+            //     {
+            //         $forwardBackwardIds->backward_role_id = $wfLevels['TC'];
+            //     }
+
+            //     if ($saf->prop_type_mstr_id == 4 && $saf->current_role == $wfLevels['DA'] && in_array($wfMstrId, $this->_SkipFiledWorkWfMstrId)) {
+            //         $forwardBackwardIds->backward_role_id = $wfLevels['BO'];
+            //     }
+
+            //     $saf->current_role = $forwardBackwardIds->backward_role_id;
+            //     $metaReqs['verificationStatus'] = 0;
+            //     $metaReqs['receiverRoleId'] = $forwardBackwardIds->backward_role_id;
+            // }
 
             $saf->save();
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
