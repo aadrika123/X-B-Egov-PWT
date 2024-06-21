@@ -143,7 +143,7 @@ class GetHoldingDuesV2
         //     $demandList = $demandList->where('fyear', '<', $fy)->values();
 
         foreach ($demandList as $list) {
-            $calculate2PercPenalty->calculatePenalty($list, $propBasicDtls->prop_type_mstr_id);
+            $calculate2PercPenalty->calculatePenalty($list, $propBasicDtls->prop_type_mstr_id,$this->_isSingleManArmedForce);
         }
 
         $demandList = collect($demandList)->sortBy('fyear')->values();
