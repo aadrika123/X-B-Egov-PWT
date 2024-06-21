@@ -11,6 +11,7 @@ use App\MicroServices\DocUpload;
 use App\Models\ActiveCitizen;
 use App\Models\Citizen\ActiveCitizenUndercare;
 use App\Models\Property\Location;
+use App\Models\Property\Logs\NakkalViewList;
 use App\Models\Property\PropActiveConcession;
 use App\Models\Property\PropActiveHarvesting;
 use App\Models\Property\PropActiveObjection;
@@ -940,7 +941,7 @@ class PropertyController extends Controller
                 $propArr = $this->updateProperty($application);
                 $propUpdate = (new PropProperty)->edit($application->prop_id, $propArr);
                 foreach ($owneres as $val) {
-                    $ownerArr = $this->updatePropOwner($val,true);
+                    $ownerArr = $this->updatePropOwner($val, true);
                     if ($val->owner_id)
                         $ownerUpdate = (new PropOwner)->edit($val->owner_id, $ownerArr);
                     else {
@@ -1340,10 +1341,11 @@ class PropertyController extends Controller
         if ($validated->fails())
             return validationError($validated);
 
-        $mPropProperty = new PropProperty();
-        $mPropFloors = new PropFloor();
-        $mPropOwner = new PropOwner();
-        $mPropDemands = new PropDemand();
+        $mPropProperty   = new PropProperty();
+        $mPropFloors     = new PropFloor();
+        $mPropOwner      = new PropOwner();
+        $mPropDemands    = new PropDemand();
+        $mNakkalViewList = new NakkalViewList();
 
         try {
             $propDetails = $mPropProperty->getPropBasicDtls($req->propId);
@@ -1410,6 +1412,14 @@ class PropertyController extends Controller
                 'demands'     => $propDemand,
                 'userDetails' => $req->auth,
             ];
+
+            $mReqs = [
+                'property_id' => $req->propId,
+                'user_id'     => $req->auth['id'],
+                'user_name'   => $req->auth['name'],
+            ];
+            $mNakkalViewList->store($mReqs);
+
             return responseMsgs(true, "Property Details", remove_null($responseDetails));
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), []);
@@ -1971,14 +1981,13 @@ class PropertyController extends Controller
             $holdingDtls = $mPropProperties->searchCollectiveHolding($request->holdingNo);
             if (collect($holdingDtls)->isEmpty())
                 throw new Exception("No Property found for the respective holding no.");
-            $ckeckIndividulaProp = collect($request->holdingNo)->map(function($val)use($holdingDtls){                
-                $holding = $holdingDtls->where("holding_no",$val);                
-                return["holding_no"=>$val,"holdigin_exists"=>$holding->isNotEmpty()];
-            })->where("holdigin_exists",false);
-            if($ckeckIndividulaProp->isNotEmpty())
-            {
+            $ckeckIndividulaProp = collect($request->holdingNo)->map(function ($val) use ($holdingDtls) {
+                $holding = $holdingDtls->where("holding_no", $val);
+                return ["holding_no" => $val, "holdigin_exists" => $holding->isNotEmpty()];
+            })->where("holdigin_exists", false);
+            if ($ckeckIndividulaProp->isNotEmpty()) {
                 $holdingNotexists = $ckeckIndividulaProp->pluck("holding_no");
-                throw new Exception("Holding no. ".implode(" And Holding no. ",$holdingNotexists->toArray()).($holdingNotexists->count()==1?" is":" Are") ." Not Exists");
+                throw new Exception("Holding no. " . implode(" And Holding no. ", $holdingNotexists->toArray()) . ($holdingNotexists->count() == 1 ? " is" : " Are") . " Not Exists");
             }
 
             $plotArea = collect($holdingDtls)->sum('area_of_plot');
@@ -1989,16 +1998,15 @@ class PropertyController extends Controller
             foreach ($propertyIds as $propId) {
                 $request->merge(["propId" => $propId]);
                 $demand = $holdingTaxController->getHoldingDues($request);
-                $demand = $demand->original;                               
-                if ($demand['status'] == false) {  
-                    continue;                  
+                $demand = $demand->original;
+                if ($demand['status'] == false) {
+                    continue;
                 }
                 $demand['data']['basicDetails']['property_id'] = $propId;
                 $demand['data']['basicDetails']['payableAmt'] = $demand['data']['payableAmt'];
                 array_push($propDtls, $demand['data']['basicDetails']);
-                if (($demand['data']['payableAmt']==0))
-                {
-                    continue;  
+                if (($demand['data']['payableAmt'] == 0)) {
+                    continue;
                 }
                 array_push($demands, $demand['data']['basicDetails']);
             }
@@ -2026,8 +2034,8 @@ class PropertyController extends Controller
                 $request->all(),
                 [
                     'amalgamation' => 'required|array',
-                    "amalgamation.*.propId"=>"required|integer",
-                    "amalgamation.*.isMasterHolding"=>"required|bool",
+                    "amalgamation.*.propId" => "required|integer",
+                    "amalgamation.*.isMasterHolding" => "required|bool",
                 ]
             );
             if ($validated->fails()) {
@@ -2041,15 +2049,15 @@ class PropertyController extends Controller
             $plotArea = collect($holdingDtls)->sum('area_of_plot');
             $floorDtls = $mPropFloor->getAppartmentFloor($propIds)->get();
             $masterHoldingId = collect($request->amalgamation)->where('isMasterHolding', true)->first();
-            $amalgamatPropIds = collect($request->amalgamation)->where('isMasterHolding', "!=",true)->pluck('propId')->unique();
-            $amalgamatPropHoldingNo = $mPropProperties->select("holding_no")->whereIn("id",$amalgamatPropIds)->get();
+            $amalgamatPropIds = collect($request->amalgamation)->where('isMasterHolding', "!=", true)->pluck('propId')->unique();
+            $amalgamatPropHoldingNo = $mPropProperties->select("holding_no")->whereIn("id", $amalgamatPropIds)->get();
             $reqPropId = new Request(['propertyId' => $masterHoldingId['propId']]);
             $masterData = $safController->getPropByHoldingNo($reqPropId)->original['data'];
-            $masterData['floors'] = $floorDtls->map(function($val){
-                $val->floor_name = $val->getRefFloor()->floor_name??"";
-                $val->construction_type = $val->getRefConstructionType()->construction_type??"";
-                $val->occupancy_type = $val->getRefOccupancyType()->occupancy_type??"";
-                $val->usage_type = $val->getRefUsageType()->usage_type??"";
+            $masterData['floors'] = $floorDtls->map(function ($val) {
+                $val->floor_name = $val->getRefFloor()->floor_name ?? "";
+                $val->construction_type = $val->getRefConstructionType()->construction_type ?? "";
+                $val->occupancy_type = $val->getRefOccupancyType()->occupancy_type ?? "";
+                $val->usage_type = $val->getRefUsageType()->usage_type ?? "";
                 return $val;
             });
             $masterData['area_of_plot'] = $plotArea;
