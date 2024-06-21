@@ -214,7 +214,10 @@ class PropOwner extends PropParamModel #Model
             'owner_name',
             'owner_name_marathi',
             'mobile_no',
-            'is_armed_force'
+            'is_armed_force',
+            'guardian_name_marathi',
+            'guardian_name',
+            
         )
             ->where('property_id', $propertyId)
             ->orderBy('id')
