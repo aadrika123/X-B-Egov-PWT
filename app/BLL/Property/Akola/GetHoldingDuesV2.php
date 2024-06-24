@@ -108,6 +108,7 @@ class GetHoldingDuesV2
             $val->exempted_general_tax     = $this->_isSingleManArmedForce ? $val->general_tax : 0;
             $val->due_exempted_general_tax = $this->_isSingleManArmedForce ? $val->due_general_tax : 0;
 
+            #_Rebate in case of Mobile tower 
             if ($this->_isMobileTower) {
                 $val->exempted_general_tax     = $this->_isMobileTower ? ($val->general_tax / 2) : 0;
                 $val->due_exempted_general_tax = $this->_isMobileTower ? ($val->due_general_tax / 2) : 0;
@@ -246,6 +247,13 @@ class GetHoldingDuesV2
             $rebate = 0;
             if ($val["apply_on_current_tax"] ?? false) {
                 $rebate = $val["rebates_in_perc"] ? (($demand['currentDemandList']["general_tax"] ?? 0) / 100) * $val["rebates"] : $val["rebates"];
+
+                #_Rebate in case of Mobile tower 
+                if ($this->_isMobileTower) {
+                    $rebate = $val["rebates_in_perc"] ? (($demand['currentDemandList']["general_tax"] ?? 0) / 100) * $val["rebates"] : $val["rebates"];
+                    $rebate = $rebate / 2;
+                }
+
                 $rebateAmt += $rebate;
                 if ($this->_isSingleManArmedForce)
                     $rebateAmt = 0;
@@ -259,6 +267,13 @@ class GetHoldingDuesV2
             $rebate = 0;
             if ($val["apply_on_current_tax"] ?? false) {
                 $rebate = $val["rebates_in_perc"] ? (($demand['currentDemandList']["general_tax"] ?? 0) / 100) * $val["rebates"] : $val["rebates"];
+
+                #_Rebate in case of Mobile tower 
+                if ($this->_isMobileTower) {
+                    $rebate = $val["rebates_in_perc"] ? (($demand['currentDemandList']["general_tax"] ?? 0) / 100) * $val["rebates"] : $val["rebates"];
+                    $rebate = $rebate / 2;
+                }
+
                 $rebateAmt += $rebate;
                 if ($this->_isSingleManArmedForce)
                     $rebateAmt = 0;
