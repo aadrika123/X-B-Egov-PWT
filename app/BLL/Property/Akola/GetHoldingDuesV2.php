@@ -104,13 +104,18 @@ class GetHoldingDuesV2
             $this->_isMobileTower = true;
 
         $demandList = $mPropDemand->getDueDemandByPropIdV2($req->propId)->map(function ($val) {
-            
+
             $val->exempted_general_tax     = $this->_isSingleManArmedForce ? $val->general_tax : 0;
             $val->due_exempted_general_tax = $this->_isSingleManArmedForce ? $val->due_general_tax : 0;
 
             if ($this->_isMobileTower) {
                 $val->exempted_general_tax     = $this->_isMobileTower ? ($val->general_tax / 2) : 0;
                 $val->due_exempted_general_tax = $this->_isMobileTower ? ($val->due_general_tax / 2) : 0;
+            }
+
+            if ($this->_isMobileTower && $this->_isSingleManArmedForce) {
+                $val->exempted_general_tax     = $this->_isMobileTower ? ($val->general_tax) : 0;
+                $val->due_exempted_general_tax = $this->_isMobileTower ? ($val->due_general_tax) : 0;
             }
             return $val;
         });
@@ -165,6 +170,7 @@ class GetHoldingDuesV2
             $paymentStatus = 1;
 
         $demand['isSingleManArmedForce'] = $this->_isSingleManArmedForce;
+        $demand['isMobileTower']         = $this->_isMobileTower;
         $demand['fromFyear'] = collect($demandList)->first()['fyear'] ?? "";
         $demand['uptoFyear'] = collect($demandList)->last()['fyear'] ?? "";
         $demand['demandList'] = $demandList;
