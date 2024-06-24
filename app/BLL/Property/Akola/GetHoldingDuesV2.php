@@ -29,40 +29,37 @@ class GetHoldingDuesV2
     private $_SpecialOffers;
     private $_TotalDisccountPer;
     private $_TotalDisccontAmt;
-    public $_isSingleManArmedForce =false;
+    public $_isSingleManArmedForce = false;
+    public $_isMobileTower = false;
     public $_QuaveryRebates;
     public $_QuaveryRebatesDtls;
-    public $_IsOldTranClear =true;
-    public $_Today ;
+    public $_IsOldTranClear = true;
+    public $_Today;
     public $_propSaf;
     public $_assesmentType;
 
-    public function setParams($from = null,$upto = null)
+    public function setParams($from = null, $upto = null)
     {
-        $this->_SpecialOffers = (new RefPropSpecialRebateType())->specialRebate($from,$upto);
-        $this->_QuaveryRebates = collect(Config::get('akola-property-constant.FIRST_QUIETER_REBATE'))->where("effective_from","<=",Carbon::parse($from)->format("Y-m-d"))->where("upto_date",">=",Carbon::parse($from)->format("Y-m-d"))->where("from_date","<=",Carbon::parse($from)->format("Y-m-d"));
+        $this->_SpecialOffers = (new RefPropSpecialRebateType())->specialRebate($from, $upto);
+        $this->_QuaveryRebates = collect(Config::get('akola-property-constant.FIRST_QUIETER_REBATE'))->where("effective_from", "<=", Carbon::parse($from)->format("Y-m-d"))->where("upto_date", ">=", Carbon::parse($from)->format("Y-m-d"))->where("from_date", "<=", Carbon::parse($from)->format("Y-m-d"));
         $this->_QuaveryRebates =  new Collection($this->_QuaveryRebates);
-        if($this->_QuaveryRebates)
-        {
-            $this->_QuaveryRebatesDtls = collect(Config::get('akola-property-constant.FIRST_QUIETER_REBATE'))->where("effective_from","<=",Carbon::parse($from)->format("Y-m-d"));
+        if ($this->_QuaveryRebates) {
+            $this->_QuaveryRebatesDtls = collect(Config::get('akola-property-constant.FIRST_QUIETER_REBATE'))->where("effective_from", "<=", Carbon::parse($from)->format("Y-m-d"));
         }
-        
-        
     }
 
     public function testOldTranClear($propertyId)
     {
-        $oldTransaction = PropTransaction::where("status",1)->where("property_id",$propertyId)->orderBy("id","DESC")->first();
-        $checkDtls = $oldTransaction ? $oldTransaction->getChequeDtl():false;
-        if($checkDtls)
-        {
-            $this->_IsOldTranClear = $checkDtls->status==1? true:false;
+        $oldTransaction = PropTransaction::where("status", 1)->where("property_id", $propertyId)->orderBy("id", "DESC")->first();
+        $checkDtls = $oldTransaction ? $oldTransaction->getChequeDtl() : false;
+        if ($checkDtls) {
+            $this->_IsOldTranClear = $checkDtls->status == 1 ? true : false;
         }
     }
     public function getDues($req)
     {
         $this->_Today = Carbon::parse($req->TrnDate)->format("Y-m-d");
-        $this->setParams($req->TrnDate,$req->TrnDate);
+        $this->setParams($req->TrnDate, $req->TrnDate);
         $mPropDemand = new PropDemand();
         $mPropProperty = new PropProperty();
         $mPropOwners = new PropOwner();
@@ -82,14 +79,13 @@ class GetHoldingDuesV2
 
         // Get Property Details
         $propBasicDtls = $mPropProperty->getPropBasicDtls($req->propId);
-        $calculate2PercPenalty->_assesmentType =$this->_assesmentType = $propBasicDtls->assessment_type??"";
+        $calculate2PercPenalty->_assesmentType = $this->_assesmentType = $propBasicDtls->assessment_type ?? "";
         $calculate2PercPenalty->_propSaf = $this->_propSaf =  $mPropSaf->find($propBasicDtls->saf_id);
         $this->testOldTranClear($req->propId);
         $owners = $mPropOwners->getOwnersByPropId($req->propId);
-        $armedForceOwners = collect($owners)->where("is_armed_force",true);
-        if($armedForceOwners->isNotEmpty() && collect($owners)->count()==1)
-        {
-            $this->_isSingleManArmedForce =true;
+        $armedForceOwners = collect($owners)->where("is_armed_force", true);
+        if ($armedForceOwners->isNotEmpty() && collect($owners)->count() == 1) {
+            $this->_isSingleManArmedForce = true;
         }
         DB::enableQueryLog();
         $totalAdvanceAmt = $PropAdvance->getAdvanceAmt($req->propId);
@@ -104,11 +100,21 @@ class GetHoldingDuesV2
         //     $interest = $totalInterest ?? 0;
         //     $arrear = $arrear - $interest;
         // }
-        $demandList = $mPropDemand->getDueDemandByPropIdV2($req->propId)->map(function($val){
-            $val->exempted_general_tax = $this->_isSingleManArmedForce ? $val->general_tax : 0;
+        if ($propBasicDtls->is_mobile_tower)
+            $this->_isMobileTower = true;
+
+        $demandList = $mPropDemand->getDueDemandByPropIdV2($req->propId)->map(function ($val) {
+            
+            if ($this->_isMobileTower) {
+                $val->exempted_general_tax     = $this->_isMobileTower ? ($val->general_tax / 2) : 0;
+                $val->due_exempted_general_tax = $this->_isMobileTower ? ($val->due_general_tax / 2) : 0;
+            }
+
+            $val->exempted_general_tax     = $this->_isSingleManArmedForce ? $val->general_tax : 0;
             $val->due_exempted_general_tax = $this->_isSingleManArmedForce ? $val->due_general_tax : 0;
             return $val;
         });
+
         foreach ($demandList as $list) {
             if ($list->is_full_paid == false) {                                // In Case of Part Payment Get the Dues Payable amount
                 $list->general_tax = $list->due_general_tax;
@@ -143,7 +149,7 @@ class GetHoldingDuesV2
         //     $demandList = $demandList->where('fyear', '<', $fy)->values();
 
         foreach ($demandList as $list) {
-            $calculate2PercPenalty->calculatePenalty($list, $propBasicDtls->prop_type_mstr_id,$this->_isSingleManArmedForce);
+            $calculate2PercPenalty->calculatePenalty($list, $propBasicDtls->prop_type_mstr_id, $this->_isSingleManArmedForce);
         }
 
         $demandList = collect($demandList)->sortBy('fyear')->values();
@@ -192,7 +198,7 @@ class GetHoldingDuesV2
 
         // Read Rebate ❗❗❗ Rebate is pending
         $firstOwner = $mPropOwners->firstOwner($req->propId);
-        
+
 
         // if($firstOwner->is_armed_force)
         //     // $rebate=
@@ -200,66 +206,66 @@ class GetHoldingDuesV2
         $demand['arrearPayableAmt'] = roundFigure($demand['arrear'] + $demand['arrearMonthlyPenalty']);
         $demand['payableAmt'] = roundFigure($grandTaxes['balance'] + $demand['totalInterestPenalty']);
         $demand['total_exempted_general_tax'] = roundFigure($grandTaxes['exempted_general_tax']);
-        $demand['current_exempted_general_tax'] = roundFigure($demand['currentDemandList']['exempted_general_tax']??0);
-        $demand['arrear_exempted_general_tax'] = roundFigure($demand['overdueDemandList']['exempted_general_tax']??0);
-        
-        $demand["rebates"] = $this->_SpecialOffers->map(function($val)use($demand){
+        $demand['current_exempted_general_tax'] = roundFigure($demand['currentDemandList']['exempted_general_tax'] ?? 0);
+        $demand['arrear_exempted_general_tax'] = roundFigure($demand['overdueDemandList']['exempted_general_tax'] ?? 0);
+
+        $demand["rebates"] = $this->_SpecialOffers->map(function ($val) use ($demand) {
             $rebateAmt = 0;
             $rebate = 0;
-            if($val->apply_on_total_tax){
-                $rebate = $val->rebates_in_perc ? ($demand['payableAmt']/100) * $val->rebates : $val->rebates;
+            if ($val->apply_on_total_tax) {
+                $rebate = $val->rebates_in_perc ? ($demand['payableAmt'] / 100) * $val->rebates : $val->rebates;
                 $rebateAmt += $rebate;
             }
-            if($val->apply_on_arear_tax){
-                $rebate = $val->rebates_in_perc ? ($demand['arrear']/100) * $val->rebates : $val->rebates;
+            if ($val->apply_on_arear_tax) {
+                $rebate = $val->rebates_in_perc ? ($demand['arrear'] / 100) * $val->rebates : $val->rebates;
                 $rebateAmt += $rebate;
             }
-            if($val->apply_on_total_intrest){
-                $rebate = $val->rebates_in_perc ? ($demand['arrearMonthlyPenalty']/100) * $val->rebates : $val->rebates;
+            if ($val->apply_on_total_intrest) {
+                $rebate = $val->rebates_in_perc ? ($demand['arrearMonthlyPenalty'] / 100) * $val->rebates : $val->rebates;
                 $rebateAmt += $rebate;
             }
-            if($val->apply_on_arear_intrest){
-                $rebate = $val->rebates_in_perc ? ($demand['arrearInterest']/100) * $val->rebates : $val->rebates;
+            if ($val->apply_on_arear_intrest) {
+                $rebate = $val->rebates_in_perc ? ($demand['arrearInterest'] / 100) * $val->rebates : $val->rebates;
                 $rebateAmt += $rebate;
             }
-            if($val->apply_on_priv_intrest){
-                $rebate = $val->rebates_in_perc ? ($demand['previousInterest']/100) * $val->rebates : $val->rebates;
+            if ($val->apply_on_priv_intrest) {
+                $rebate = $val->rebates_in_perc ? ($demand['previousInterest'] / 100) * $val->rebates : $val->rebates;
                 $rebateAmt += $rebate;
             }
             $val->rebates_amt = roundFigure($rebateAmt);
             return $val;
         });
-        $demand["QuarterlyRebates"] = $this->_QuaveryRebates->map(function($val)use($demand){
+        $demand["QuarterlyRebates"] = $this->_QuaveryRebates->map(function ($val) use ($demand) {
             $rebateAmt = 0;
             $rebate = 0;
-            if($val["apply_on_current_tax"]??false){
-                $rebate = $val["rebates_in_perc"] ? (($demand['currentDemandList']["general_tax"]??0)/100) * $val["rebates"] : $val["rebates"];
+            if ($val["apply_on_current_tax"] ?? false) {
+                $rebate = $val["rebates_in_perc"] ? (($demand['currentDemandList']["general_tax"] ?? 0) / 100) * $val["rebates"] : $val["rebates"];
                 $rebateAmt += $rebate;
-                if($this->_isSingleManArmedForce)
+                if ($this->_isSingleManArmedForce)
                     $rebateAmt = 0;
             }
             $val["rebates_amt"] = roundFigure($rebateAmt);
             return $val;
         });
         $demand["QuarterlyRebates"] = $demand["QuarterlyRebates"]->values();
-        $demand["QuarterlyRebatesDtls"] = collect($this->_QuaveryRebatesDtls)->map(function($val)use($demand){
+        $demand["QuarterlyRebatesDtls"] = collect($this->_QuaveryRebatesDtls)->map(function ($val) use ($demand) {
             $rebateAmt = 0;
             $rebate = 0;
-            if($val["apply_on_current_tax"]??false){
-                $rebate = $val["rebates_in_perc"] ? (($demand['currentDemandList']["general_tax"]??0)/100) * $val["rebates"] : $val["rebates"];
+            if ($val["apply_on_current_tax"] ?? false) {
+                $rebate = $val["rebates_in_perc"] ? (($demand['currentDemandList']["general_tax"] ?? 0) / 100) * $val["rebates"] : $val["rebates"];
                 $rebateAmt += $rebate;
-                if($this->_isSingleManArmedForce)
+                if ($this->_isSingleManArmedForce)
                     $rebateAmt = 0;
             }
             $val["rebates_amt"] = roundFigure($rebateAmt);
-            $val["payableAmt"]=roundFigure($demand['payableAmt'] - $rebateAmt); 
+            $val["payableAmt"] = roundFigure($demand['payableAmt'] - $rebateAmt);
             return $val;
         });
         $demand['currentDemandList']["shasti_abhay_yojan"] = 0;
-        $demand['overdueDemandList']["shasti_abhay_yojan"] = roundFigure(collect($demand["rebates"])->where("rebate_type","Shasti Abhay Yojana")->sum("rebates_amt"));
+        $demand['overdueDemandList']["shasti_abhay_yojan"] = roundFigure(collect($demand["rebates"])->where("rebate_type", "Shasti Abhay Yojana")->sum("rebates_amt"));
         $demand['grandTaxes']["shasti_abhay_yojan"] = $demand['currentDemandList']["shasti_abhay_yojan"] + $demand['overdueDemandList']["shasti_abhay_yojan"];
 
-        $demand['currentDemandList']["first_quarter_rebates"] = roundFigure(collect($demand["QuarterlyRebates"])->where("rebate_type","First Quieter Rebate")->sum("rebates_amt"));
+        $demand['currentDemandList']["first_quarter_rebates"] = roundFigure(collect($demand["QuarterlyRebates"])->where("rebate_type", "First Quieter Rebate")->sum("rebates_amt"));
         $demand['overdueDemandList']["first_quarter_rebates"] = 0;
         $demand['grandTaxes']["first_quarter_rebates"] = $demand['currentDemandList']["first_quarter_rebates"] + $demand['overdueDemandList']["first_quarter_rebates"];
 
