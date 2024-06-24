@@ -19,7 +19,7 @@ class Calculate2PercPenalty
     /**
      * | @param demand 
      */
-    public function calculatePenalty($demand, $prop_type_mstr_id = null, $isSingleManArmedForce = false)
+    public function calculatePenalty($demand, $prop_type_mstr_id = null, $isSingleManArmedForce = false, $isMobileTower = false)
     {
         $currentFy = getFY($this->_Today);
         // $currentMonth = Carbon::now()->format('m');
@@ -34,7 +34,7 @@ class Calculate2PercPenalty
             $noOfPenalMonths = 0;                               // Start of the month april
             $monthlyBalance = $demand->balance / 12;
 
-            if ($isSingleManArmedForce)
+            if ($isSingleManArmedForce || $isMobileTower)
                 $monthlyBalance = ($demand->balance - $demand->exempted_general_tax) / 12;
         }
         // && $demand->has_partwise_paid == false
@@ -65,7 +65,7 @@ class Calculate2PercPenalty
 
             $monthlyBalance = $demand->balance;
 
-            if ($isSingleManArmedForce)
+            if ($isSingleManArmedForce || $isMobileTower)
                 $monthlyBalance = ($demand->balance - $demand->exempted_general_tax);
         }
 
@@ -73,7 +73,7 @@ class Calculate2PercPenalty
             $noOfPenalMonths = 0;
             $monthlyBalance = $demand->balance / 12;
 
-            if ($isSingleManArmedForce)
+            if ($isSingleManArmedForce || $isMobileTower)
                 $monthlyBalance = ($demand->balance - $demand->exempted_general_tax) / 12;
         }
 
