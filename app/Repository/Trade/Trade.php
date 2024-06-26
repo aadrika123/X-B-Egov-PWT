@@ -503,7 +503,7 @@ class Trade implements ITrade
                         "ref_id"      => $licenceId,
                         "ref_type"    => 'TRADE',
                         "mobile_no"   => $firstOwnerMobile,
-                        "purpose"     => 'New Apply',
+                        "purpose"     => $request->applicationType,
                         "template_id" => 1707171938021689821,
                         "message"     => $sms,
                         "response"    => $response['status'],
