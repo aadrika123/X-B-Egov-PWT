@@ -1045,16 +1045,16 @@ class PostPropPaymentV2
                 $response = send_sms($ownerMobile, $sms, 1707169564199604962);
 
                 $smsReqs = [
-                    "emp_id" => $this->_REQ['userId'] ?? (auth()->user() ? auth()->user()->id : null),
-                    "ref_id" => $this->_propDetails->id,
-                    "ref_type" => 'PROPERTY',
-                    "mobile_no" => $ownerMobile,
-                    "purpose" => 'Holding Payment',
+                    "emp_id"      => $this->_REQ['userId'] ?? (auth()->user() ? auth()->user()->id : null),
+                    "ref_id"      => $this->_propDetails->id,
+                    "ref_type"    => 'PROPERTY',
+                    "mobile_no"   => $ownerMobile,
+                    "purpose"     => 'Holding Payment',
                     "template_id" => 1707169564199604962,
-                    "message" => $sms,
-                    "response" => $response['status'],
-                    "smgid" => $response['msg'],
-                    "stampdate" => Carbon::now(),
+                    "message"     => $sms,
+                    "response"    => $response['status'],
+                    "smgid"       => $response['msg'],
+                    "stampdate"   => Carbon::now(),
                 ];
                 $mPropSmsLog->create($smsReqs);
             }

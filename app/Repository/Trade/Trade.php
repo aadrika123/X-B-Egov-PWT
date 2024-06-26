@@ -36,6 +36,7 @@ use App\Models\Trade\TradeParamItemType;
 use App\Models\Trade\TradeParamLicenceRate;
 use App\Models\Trade\TradeParamOwnershipType;
 use App\Models\Trade\TradeRenewal;
+use App\Models\Trade\TradeSmsLog;
 use App\Models\Trade\TradeTransaction;
 use App\Models\UlbMaster;
 use App\Models\UlbWardMaster;
@@ -487,6 +488,31 @@ class Trade implements ITrade
                     throw new Exception("Some Error Ocures!....");
                 }
                 $this->commit();
+
+               $mTradeSmsLog      = new TradeSmsLog();
+               $firstOwnerDetails = collect($request->ownerDetails)->first();
+               $firstOwnerName    = $firstOwnerDetails['businessOwnerName'];
+               $firstOwnerMobile  = $firstOwnerDetails['mobileNo'];
+
+                if (strlen($firstOwnerMobile) == 10) {
+                    $sms      = "Dear " . $firstOwnerName . ", congratulations on submitting your License application. Your Ref No. is " . $mAppNo . ". For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
+                    $response = send_sms($firstOwnerMobile, $sms, 1707171938021689821);
+
+                    $smsReqs = [
+                        "emp_id"      => (auth()->user() ? auth()->user()->id : null),
+                        "ref_id"      => $licenceId,
+                        "ref_type"    => 'TRADE',
+                        "mobile_no"   => $firstOwnerMobile,
+                        "purpose"     => 'New Apply',
+                        "template_id" => 1707171938021689821,
+                        "message"     => $sms,
+                        "response"    => $response['status'],
+                        "smgid"       => $response['msg'],
+                        "stampdate"   => Carbon::now(),
+                    ];
+                    $mTradeSmsLog->create($smsReqs);
+                }
+
                 $res['applicationNo'] = $mAppNo;
                 $res['applyLicenseId'] = $licenceId;
                 return responseMsg(true, $mAppNo, $res);
