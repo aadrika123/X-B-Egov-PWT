@@ -89,12 +89,11 @@ class TaxCalculator
 
         if ($this->_REQUEST->propertyType != 4) {                                               // If the property is not vacand land it means the property is a independent building
             $oldestFloor = collect($this->_REQUEST->floor)->sortBy('dateFrom')->first();
-            $this->_propFyearFrom = Carbon::parse($oldestFloor['dateFrom'])->format('Y');                // For Vacant Land Only
+            $this->_propFyearFrom = Carbon::parse($oldestFloor['dateFrom'])->format('Y');
         }
-        $armedForceOwners = collect($this->_REQUEST->owner)->where("isArmedForce",1);
-        if($armedForceOwners->isNotEmpty() && collect($this->_REQUEST->owner)->count()==1)
-        {
-            $this->_isSingleManArmedForce =true;
+        $armedForceOwners = collect($this->_REQUEST->owner)->where("isArmedForce", 1);
+        if ($armedForceOwners->isNotEmpty() && collect($this->_REQUEST->owner)->count() == 1) {
+            $this->_isSingleManArmedForce = true;
         }
 
         if (isset($this->_REQUEST->assessmentType) && ($this->getAssestmentTypeStr() != 'New Assessment') && ($this->getAssestmentTypeStr() != 'Amalgamation')) {
@@ -123,6 +122,9 @@ class TaxCalculator
             $this->_propFyearFrom = Carbon::parse($this->_newForm)->format('Y');
         }
 
+        if (($this->getAssestmentTypeStr() == 'Amalgamation'))
+            $this->_propFyearFrom = Carbon::parse($this->_REQUEST->dateOfPurchase)->format('Y');
+
         $currentFYear = $this->_carbonToday->format('Y');
         $this->_pendingYrs = ($currentFYear - $this->_propFyearFrom) + 1;                      // Read Total FYears
         $propMonth = Carbon::parse($this->_REQUEST->dateOfPurchase)->format('m');
@@ -150,11 +152,16 @@ class TaxCalculator
             $this->_calculationDateFrom = collect($this->_REQUEST->floor)->sortBy('dateFrom')->first()['dateFrom'];
         else
             $this->_calculationDateFrom = $this->_REQUEST->dateOfPurchase;
+
+        # For Amalgamation
+        if ($this->getAssestmentTypeStr() == 'Amalgamation')
+            $this->_calculationDateFrom = $this->_REQUEST->dateOfPurchase;
+
         if (isset($this->_REQUEST->assessmentType) && ($this->getAssestmentTypeStr() != 'New Assessment') && ($this->getAssestmentTypeStr() != 'Amalgamation')) {
             $this->_calculationDateFrom = $this->_newForm ? $this->_newForm : $this->_calculationDateFrom;
             // $this->_calculationDateFrom =  Carbon::now()->format('Y-m-d');         
         }
-        if (isset($this->_REQUEST->assessmentType) && (in_array($this->getAssestmentTypeStr(),['Reassessment','Bifurcation']))) {
+        if (isset($this->_REQUEST->assessmentType) && (in_array($this->getAssestmentTypeStr(), ['Reassessment', 'Bifurcation']))) {
             $this->_calculationDateFrom =  Carbon::now()->format('Y-m-d');
         }
         $this->_currentFyear = calculateFYear(Carbon::now()->format('Y-m-d'));
@@ -162,16 +169,14 @@ class TaxCalculator
 
     public function setOldFloors()
     {
-        if($this->getAssestmentTypeStr() != 'New Assessment')
-        {
+        if ($this->getAssestmentTypeStr() != 'New Assessment') {
             $this->_OldFloors = collect($this->_REQUEST->floor)->whereNotNull("propFloorDetailId");
         }
     }
     public function setNewFloors()
     {
         $this->_newFloors = collect($this->_REQUEST->floor)->whereNull("propFloorDetailId");
-        if($this->getAssestmentTypeStr() == 'New Assessment')
-        {
+        if ($this->getAssestmentTypeStr() == 'New Assessment') {
             $this->_newFloors = collect($this->_REQUEST->floor);
         }
     }
@@ -181,11 +186,10 @@ class TaxCalculator
         if ($this->_REQUEST->propertyType != 4) {
             $totalFloor = collect($this->_REQUEST->floor)->count();
             $totalBuildupArea = collect($this->_REQUEST->floor)->sum("buildupArea");
-            if($this->getAssestmentTypeStr()=='Bifurcation')
-            {
-               $bifurcatedFloorArea = collect($this->_REQUEST->floor)->whereNotNull('propFloorDetailId')->sum("biBuildupArea");
-               $newFloorArea = collect($this->_REQUEST->floor)->whereNull('propFloorDetailId')->sum("buildupArea");
-               $totalBuildupArea =  $bifurcatedFloorArea + $newFloorArea;
+            if ($this->getAssestmentTypeStr() == 'Bifurcation') {
+                $bifurcatedFloorArea = collect($this->_REQUEST->floor)->whereNotNull('propFloorDetailId')->sum("biBuildupArea");
+                $newFloorArea = collect($this->_REQUEST->floor)->whereNull('propFloorDetailId')->sum("buildupArea");
+                $totalBuildupArea =  $bifurcatedFloorArea + $newFloorArea;
             }
             $AllDiffArrea = ($totalBuildupArea - $this->_REQUEST->nakshaAreaOfPlot) > 0 ? $totalBuildupArea - $this->_REQUEST->nakshaAreaOfPlot : 0;
 
@@ -194,8 +198,8 @@ class TaxCalculator
                 $rate = $this->readRateByFloor($item);                // (2.1)
                 $agingPerc = $this->readAgingByFloor($item);           // (2.2)
 
-                $floorBuildupArea = roundFigure(isset($item->biBuildupArea) && $this->getAssestmentTypeStr()=='Bifurcation' ? $item->biBuildupArea * 0.092903 :  $item->buildupArea  * 0.092903);
-                $alv = ($item->occupancyType==2 && isset($item->rentAmount)) ? roundFigure($item->rentAmount * 12) : roundFigure($floorBuildupArea * $rate);
+                $floorBuildupArea = roundFigure(isset($item->biBuildupArea) && $this->getAssestmentTypeStr() == 'Bifurcation' ? $item->biBuildupArea * 0.092903 :  $item->buildupArea  * 0.092903);
+                $alv = ($item->occupancyType == 2 && isset($item->rentAmount)) ? roundFigure($item->rentAmount * 12) : roundFigure($floorBuildupArea * $rate);
                 $maintance10Perc = roundFigure(($alv * $this->_maintancePerc) / 100);
                 $valueAfterMaintanance = roundFigure($alv - $maintance10Perc);
                 $aging = roundFigure(($valueAfterMaintanance * $agingPerc) / 100);
@@ -212,12 +216,11 @@ class TaxCalculator
                 $sewerageTax = roundFigure($taxValue * 0.02);
                 $treeTax = roundFigure($taxValue * 0.01);
 
-                $isCommercial = (in_array($item->usageType,$this->_residentialUsageType)) ? false : true;                    // Residential usage type id
+                $isCommercial = (in_array($item->usageType, $this->_residentialUsageType)) ? false : true;                    // Residential usage type id
 
                 $stateTaxes = $this->readStateTaxes($floorBuildupArea, $isCommercial, $alv);                   // Read State Taxes(2.3)
-                if(in_array($item->usageType,$this->_govResidentialUsageType))
-                {
-                    $educationTax  = 0 ;
+                if (in_array($item->usageType, $this->_govResidentialUsageType)) {
+                    $educationTax  = 0;
                 }
 
                 $stateTaxes = $this->readStateTaxes($floorBuildupArea, $isCommercial, $alv);                   // Read State Taxes(2.3)
@@ -250,14 +253,14 @@ class TaxCalculator
                     'occupancyTypeVal' => Config::get("PropertyConstaint.OCCUPANCY-TYPE." . $item->occupancyType ?? ""),
                     'dateFrom' => $item->dateFrom,
                     'dateUpto' => $item->dateUpto,
-                    'appliedFrom' => getFY(),#getFY($item->dateFrom),
+                    'appliedFrom' => getFY(), #getFY($item->dateFrom),
                     'appliedUpto' => getFY($item->dateUpto),
                     'rate' => $rate,
                     'floorKey' => $key,
                     'floorNo' => $item->floorNo,
                     'floorName' => $item->floorName ?? "",
                     'buildupAreaInSqmt' => $floorBuildupArea,
-                    'rentAmount' => $item->rentAmount??0,
+                    'rentAmount' => $item->rentAmount ?? 0,
                     'alv' => $alv,
                     'maintancePerc' => $this->_maintancePerc,
                     'maintantance10Perc' => $maintance10Perc,
@@ -288,7 +291,7 @@ class TaxCalculator
                 $agingPerc = $this->readAgingByFloor($item);           // (2.2)
 
                 $floorBuildupArea = roundFigure(isset($item->biBuildupArea) ? $item->biBuildupArea * 0.092903 :  $item->buildupArea  * 0.092903);
-                $alv = ($item->occupancyType==2 && isset($item->rentAmount)) ? roundFigure($item->rentAmount * 12) : roundFigure($floorBuildupArea * $rate);
+                $alv = ($item->occupancyType == 2 && isset($item->rentAmount)) ? roundFigure($item->rentAmount * 12) : roundFigure($floorBuildupArea * $rate);
                 $maintance10Perc = roundFigure(($alv * $this->_maintancePerc) / 100);
                 $valueAfterMaintanance = roundFigure($alv - $maintance10Perc);
                 $aging = roundFigure(($valueAfterMaintanance * $agingPerc) / 100);
@@ -305,12 +308,11 @@ class TaxCalculator
                 $sewerageTax = roundFigure($taxValue * 0.02);
                 $treeTax = roundFigure($taxValue * 0.01);
 
-                $isCommercial = (in_array($item->usageType,$this->_residentialUsageType)) ? false : true;                    // Residential usage type id
+                $isCommercial = (in_array($item->usageType, $this->_residentialUsageType)) ? false : true;                    // Residential usage type id
 
                 $stateTaxes = $this->readStateTaxes($floorBuildupArea, $isCommercial, $alv);                   // Read State Taxes(2.3)
-                if(in_array($item->usageType,$this->_govResidentialUsageType))
-                {
-                    $educationTax  = 0 ;
+                if (in_array($item->usageType, $this->_govResidentialUsageType)) {
+                    $educationTax  = 0;
                 }
 
                 $stateTaxes = $this->readStateTaxes($floorBuildupArea, $isCommercial, $alv);                   // Read State Taxes(2.3)
@@ -350,7 +352,7 @@ class TaxCalculator
                     'floorNo' => $item->floorNo,
                     'floorName' => $item->floorName ?? "",
                     'buildupAreaInSqmt' => $floorBuildupArea,
-                    'rentAmount' => $item->rentAmount??0,
+                    'rentAmount' => $item->rentAmount ?? 0,
                     'alv' => $alv,
                     'maintancePerc' => $this->_maintancePerc,
                     'maintantance10Perc' => $maintance10Perc,
@@ -387,11 +389,10 @@ class TaxCalculator
         if ($this->_REQUEST->propertyType != 4) {
             $totalFloor = collect($this->_REQUEST->floor)->count();
             $totalBuildupArea = collect($this->_REQUEST->floor)->sum("buildupArea");
-            if($this->getAssestmentTypeStr()=='Bifurcation')
-            {
-               $bifurcatedFloorArea = collect($this->_REQUEST->floor)->whereNotNull('propFloorDetailId')->sum("biBuildupArea");
-               $newFloorArea = collect($this->_REQUEST->floor)->whereNull('propFloorDetailId')->sum("buildupArea");
-               $totalBuildupArea =  $bifurcatedFloorArea + $newFloorArea;
+            if ($this->getAssestmentTypeStr() == 'Bifurcation') {
+                $bifurcatedFloorArea = collect($this->_REQUEST->floor)->whereNotNull('propFloorDetailId')->sum("biBuildupArea");
+                $newFloorArea = collect($this->_REQUEST->floor)->whereNull('propFloorDetailId')->sum("buildupArea");
+                $totalBuildupArea =  $bifurcatedFloorArea + $newFloorArea;
             }
             $AllDiffArrea = ($totalBuildupArea - $this->_REQUEST->nakshaAreaOfPlot) > 0 ? $totalBuildupArea - $this->_REQUEST->nakshaAreaOfPlot : 0;
 
@@ -400,7 +401,7 @@ class TaxCalculator
                 $rate = $this->readRateByFloor($item);                 // (2.1)
                 $agingPerc = $this->readAgingByFloor($item);           // (2.2)
 
-                $floorBuildupArea = roundFigure(isset($item->biBuildupArea) && $this->getAssestmentTypeStr()=='Bifurcation' ? $item->biBuildupArea * 0.092903 :  $item->buildupArea  * 0.092903);
+                $floorBuildupArea = roundFigure(isset($item->biBuildupArea) && $this->getAssestmentTypeStr() == 'Bifurcation' ? $item->biBuildupArea * 0.092903 :  $item->buildupArea  * 0.092903);
                 $alv = roundFigure($floorBuildupArea * $rate);
                 $maintance10Perc = roundFigure(($alv * $this->_maintancePerc) / 100);
                 $valueAfterMaintanance = roundFigure($alv - $maintance10Perc);
@@ -417,13 +418,12 @@ class TaxCalculator
                 $cleanlinessTax = roundFigure($taxValue * 0.02);
                 $sewerageTax = roundFigure($taxValue * 0.02);
                 $treeTax = roundFigure($taxValue * 0.01);
-                
-                $isCommercial = (in_array($item->usageType,$this->_residentialUsageType)) ? false : true;                    // Residential usage type id
+
+                $isCommercial = (in_array($item->usageType, $this->_residentialUsageType)) ? false : true;                    // Residential usage type id
 
                 $stateTaxes = $this->readStateTaxes($floorBuildupArea, $isCommercial, $alv);                   // Read State Taxes(2.3)
-                if(in_array($item->usageType,$this->_govResidentialUsageType))
-                {
-                    $educationTax  = 0 ;
+                if (in_array($item->usageType, $this->_govResidentialUsageType)) {
+                    $educationTax  = 0;
                 }
                 $tax1 = 0;
                 $diffArrea = 0;
@@ -580,9 +580,9 @@ class TaxCalculator
             }
 
             $this->_floorsTaxes[0] = [
-                'dateFrom' => $this->_REQUEST->approvedDate ? Carbon::parse($this->_REQUEST->approvedDate)->addYears(-5)->format('Y-m-d'):Carbon::now()->addYears(-5)->format('Y-m-d'),
+                'dateFrom' => $this->_REQUEST->approvedDate ? Carbon::parse($this->_REQUEST->approvedDate)->addYears(-5)->format('Y-m-d') : Carbon::now()->addYears(-5)->format('Y-m-d'),
                 'dateUpto' => null,
-                'appliedFrom' => getFY($this->_REQUEST->approvedDate ? Carbon::parse($this->_REQUEST->approvedDate)->addYears(-5)->format('Y-m-d'):Carbon::now()->addYears(-5)->format('Y-m-d')),
+                'appliedFrom' => getFY($this->_REQUEST->approvedDate ? Carbon::parse($this->_REQUEST->approvedDate)->addYears(-5)->format('Y-m-d') : Carbon::now()->addYears(-5)->format('Y-m-d')),
                 'appliedUpto' => getFY(),
                 'rate' => $rate,
                 'floorKey' => "Vacant Land",
@@ -761,8 +761,8 @@ class TaxCalculator
         // Act Of Limitations end
         while ($this->_calculationDateFrom <= $currentFyearEndDate) {
             // $annualTaxes = collect($this->_floorsTaxes)->where('dateFrom', '<=', $this->_calculationDateFrom)->where("appliedUpto",">=",getFY($privFiveYear));
-            $annualTaxes = collect($this->_floorsTaxes)->where('appliedFrom', '<=', getFY($this->_calculationDateFrom))->where("appliedUpto",">=",getFY($privFiveYear))->filter(function($val){
-                return $val["appliedFrom"]<=$val["appliedUpto"] && $val["appliedUpto"]>=getFY($this->_calculationDateFrom);
+            $annualTaxes = collect($this->_floorsTaxes)->where('appliedFrom', '<=', getFY($this->_calculationDateFrom))->where("appliedUpto", ">=", getFY($privFiveYear))->filter(function ($val) {
+                return $val["appliedFrom"] <= $val["appliedUpto"] && $val["appliedUpto"] >= getFY($this->_calculationDateFrom);
             });
             // dd($this->_REQUEST->propertyType,$this->_REQUEST["ward"],$this->_REQUEST->all());
             if ($this->_REQUEST->propertyType == 4 && in_array($this->_REQUEST["ward"], $this->_LESS_PERSENTAGE_APPLY_WARD_IDS) && getFy($this->_calculationDateFrom) <= '2021-2023') {
@@ -798,7 +798,7 @@ class TaxCalculator
                         $priveTotalTax = $this->_lastDemand ? $this->_lastDemand->total_tax : 0;
                         $diffAmount = (($yearTax["totalTax"] - $priveTotalTax) > 0) ? ($yearTax["totalTax"] - $priveTotalTax) : 0;
                         if ($diffAmount > 0) {
-                            $diffPercent = 1;#($diffAmount / ($yearTax["totalTax"] > 0 ? $yearTax["totalTax"] : 1));
+                            $diffPercent = 1; #($diffAmount / ($yearTax["totalTax"] > 0 ? $yearTax["totalTax"] : 1));
                             // $yearTax2 = $yearTax;
                             $yearTax["agingAmt"]    = roundFigure($yearTax["agingAmt"] * $diffPercent);
                             $yearTax["generalTax"]  = roundFigure($yearTax["generalTax"] * $diffPercent);
@@ -826,7 +826,7 @@ class TaxCalculator
             $this->_calculationDateFrom = Carbon::parse($this->_calculationDateFrom)->addYear()->format('Y-m-d');
         }
 
-        $this->_GRID['fyearWiseTaxes'] = $fyearWiseTaxes;
+        return $this->_GRID['fyearWiseTaxes'] = $fyearWiseTaxes;
         $this->_GRID['demandPendingYrs'] = $fyearWiseTaxes->count();                // Update demand payment years
     }
 
