@@ -916,7 +916,7 @@ class PostPropPaymentV2
             if (strtoupper($this->_REQ['paymentMode']) != "ONLINE") {
                 foreach ($tblDemand->toArray() as $keys => $testVal) {
                     if (is_numeric($testVal) && $testVal < 0) {
-                        throw new Exception($keys . " Go On Nagative of fyear " . $tblDemand->fyear . " amount =>" . $testVal);
+                        throw new Exception($keys . " Go On Negative of fyear " . $tblDemand->fyear . " amount =>" . $testVal);
                     }
                 }
             }
