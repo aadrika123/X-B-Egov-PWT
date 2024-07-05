@@ -176,17 +176,16 @@ class ThirdPartyController extends Controller
     public function verifyOtp(Request $request)
     {
 
-        $validated = Validator::make(
-            $request->all(),
-            [
-                'otp' => "required|digits:6",
-                'mobileNo' => "required|digits:10|regex:/[0-9]{10}/|exists:otp_requests,mobile_no"
-                ]
-            );
-            if ($validated->fails())
-            return validationError($validated);
+        // $validated = Validator::make(
+        //     $request->all(),
+        //     [
+        //         'otp' => "required|digits:6",
+        //         'mobileNo' => "required|digits:10|regex:/[0-9]{10}/|exists:otp_requests,mobile_no"
+        //         ]
+        //     );
+        //     if ($validated->fails())
+        //     return validationError($validated);
         try {
-            return $request;
             # model
             $mOtpMaster     = new OtpRequest();
             $mActiveCitizen = new ActiveCitizen();
