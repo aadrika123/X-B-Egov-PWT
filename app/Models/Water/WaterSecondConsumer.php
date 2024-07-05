@@ -42,7 +42,7 @@ class WaterSecondConsumer extends Model
         $waterSecondConsumer->tab_size                  = $req->tapsize;
         $waterSecondConsumer->meter_state               = $req->meterState;
         $waterSecondConsumer->reading_date              = $req->ReadingDate;
-        $waterSecondConsumer->connection_date           = $req->ConectionDate?$req->ConectionDate:$req->connectionDate;
+        $waterSecondConsumer->connection_date           = $req->ConectionDate ? $req->ConectionDate : $req->connectionDate;
         $waterSecondConsumer->disconnection_date        = $req->DisconnectionDate;
         $waterSecondConsumer->disconned_reading         = $req->DisconnedDate;
         $waterSecondConsumer->book_no                   = $req->BookNo;
@@ -163,7 +163,7 @@ class WaterSecondConsumer extends Model
     public function getConsumerByItsDetailsV2($req, $key, $refNo, $wardId, $zoneId, $zone)
     {
         return WaterSecondConsumer::select([
-                DB::raw("
+            DB::raw("
                 water_consumer_demands.id AS demand_id,
                     water_consumer_demands.consumer_id,
                     water_consumer_demands.due_balance_amount,
@@ -188,7 +188,7 @@ class WaterSecondConsumer extends Model
                 wco.mobile_no as mobile_no               
                 "),
 
-            ])
+        ])
             ->leftJoin(
                 DB::raw("(
                             SELECT consumer_id,
@@ -260,7 +260,7 @@ class WaterSecondConsumer extends Model
                     zone_masters.zone_name,
                     ulb_ward_masters.ward_name
                 ")
-            )
+        )
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_second_consumers.id')
             ->where('water_consumer_owners.' . $key, 'ILIKE', "%$refVal%")
             ->join('water_consumer_demands', 'water_consumer_demands.consumer_id', 'water_second_consumers.id')
@@ -420,7 +420,7 @@ class WaterSecondConsumer extends Model
             )as water_consumer_owners"), 'water_consumer_owners.consumer_id', 'water_second_consumers.id')
             ->leftjoin('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
             ->leftjoin('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_second_consumers.property_type_id')
-            ->leftjoin('water_consumer_initial_meters', 'water_consumer_initial_meters.consumer_id', 'water_second_consumers.id')            
+            ->leftjoin('water_consumer_initial_meters', 'water_consumer_initial_meters.consumer_id', 'water_second_consumers.id')
             ->leftjoin('ulb_masters', 'ulb_masters.id', 'water_second_consumers.ulb_id')
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_second_consumers.ward_mstr_id')
             ->leftjoin('water_consumer_meters', 'water_consumer_meters.consumer_id', 'water_second_consumers.id')
@@ -599,7 +599,7 @@ class WaterSecondConsumer extends Model
                 zone_masters.zone_name,
                 ulb_ward_masters.ward_name,
             ")
-            )
+        )
             ->join('water_approval_application_details', 'water_approval_application_details.id', 'water_second_consumers.apply_connection_id')
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_second_consumers.id')
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
@@ -619,31 +619,42 @@ class WaterSecondConsumer extends Model
 
     public function getLastConnectionDtl()
     {
-        return $this->hasOne(WaterConsumerMeter::class,"consumer_id","id")->where("status",1)->orderBy("id","DESC")->first();
+        return $this->hasOne(WaterConsumerMeter::class, "consumer_id", "id")->where("status", 1)->orderBy("id", "DESC")->first();
     }
 
     public function getLastDemand()
     {
-        return $this->hasOne(WaterConsumerDemand::class,"consumer_id","id")->where("status",1)->orderBy("demand_upto","DESC")->first();
+        return $this->hasOne(WaterConsumerDemand::class, "consumer_id", "id")->where("status", 1)->orderBy("demand_upto", "DESC")->first();
     }
 
     public function getLastPaidDemand()
     {
-        return $this->hasOne(WaterConsumerDemand::class,"consumer_id","id")->where("status",1)->where("paid_status",1)->orderBy("demand_upto","DESC")->first();
+        return $this->hasOne(WaterConsumerDemand::class, "consumer_id", "id")->where("status", 1)->where("paid_status", 1)->orderBy("demand_upto", "DESC")->first();
     }
 
     public function getAllUnpaidDemand()
     {
-        return $this->hasMany(WaterConsumerDemand::class,"consumer_id","id")->where("status",1)->where("paid_status",0)->orderBy("demand_upto","ASC")->get();
+        return $this->hasMany(WaterConsumerDemand::class, "consumer_id", "id")->where("status", 1)->where("paid_status", 0)->orderBy("demand_upto", "ASC")->get();
     }
 
     public function getLastReading()
     {
-        return $this->hasOne(WaterConsumerInitialMeter::class,"consumer_id","id")->where("status",1)->orderBy("id","DESC")->first();
+        return $this->hasOne(WaterConsumerInitialMeter::class, "consumer_id", "id")->where("status", 1)->orderBy("id", "DESC")->first();
     }
 
     public function getProperty()
     {
-        return $this->hasOne(WaterPropertyTypeMstr::class,"id","property_type_id")->first();
+        return $this->hasOne(WaterPropertyTypeMstr::class, "id", "property_type_id")->first();
+    }
+
+    /**
+     * | Fing data according to consumer No 
+     * | @param consumerNo
+     */
+    public function getConsumerByNo($consumerNo)
+    {
+        return self::where('consumer_no', $consumerNo)
+            ->where('status', 1)
+            ->first();
     }
 }

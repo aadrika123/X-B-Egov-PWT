@@ -33,7 +33,7 @@ class WaterConsumerOwner extends Model
         $waterConsumerOwner->guardian_name       = $req->guardianName;
         $waterConsumerOwner->mobile_no           = $req->mobileNo;
         $waterConsumerOwner->email               = $req->email;
-        $waterConsumerOwner->status              = true ;
+        $waterConsumerOwner->status              = true;
         $waterConsumerOwner->save();
         return $waterConsumerOwner;
     }
@@ -44,7 +44,15 @@ class WaterConsumerOwner extends Model
         $waterConsumerOwner->guardian_name        =  $request->guardian_name       ?? $waterConsumerOwner->guardian_name;
         $waterConsumerOwner->email                =  $request->email               ?? $waterConsumerOwner->email;
         $waterConsumerOwner->mobile_no            =  $request->mobile_no           ?? $waterConsumerOwner->mobile_no;
-         $waterConsumerOwner->user_id              =  $userId;
+        $waterConsumerOwner->user_id              =  $userId;
         $waterConsumerOwner->save();
+    }
+    /**
+     * |get Consumer Owner
+     */
+    public function getOwnerDtlById($consumerId)
+    {
+        return WaterConsumerOwner::where('consumer_id', $consumerId)
+            ->first();
     }
 }

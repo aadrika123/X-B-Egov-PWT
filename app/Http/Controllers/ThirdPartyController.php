@@ -8,16 +8,71 @@ use App\Models\OtpMaster;
 use App\Models\OtpRequest;
 use App\Models\TblSmsLog;
 use App\Models\User;
+use App\Traits\Ward;
+use App\Traits\Water\WaterTrait;
+use App\Traits\Workflow\Workflow;
 use Carbon\Carbon;
 use Seshac\Otp\Otp;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\DB;
 use WpOrg\Requests\Auth;
 
 class ThirdPartyController extends Controller
 {
+
+    use Ward;
+    use Workflow;
+    use WaterTrait;
+
+    private $_waterRoles;
+    private $_waterModuleId;
+    protected $_DB_NAME;
+    protected $_DB;
+
+    public function __construct()
+    {
+        $this->_waterRoles      = Config::get('waterConstaint.ROLE-LABEL');
+        $this->_waterModuleId   = Config::get('module-constants.WATER_MODULE_ID');
+        $this->_DB_NAME = "pgsql_water";
+        $this->_DB = DB::connection($this->_DB_NAME);
+    }
+
+    /**
+     * | Database transaction
+     */
+    public function begin()
+    {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
+        DB::beginTransaction();
+        if ($db1 != $db2)
+            $this->_DB->beginTransaction();
+    }
+    /**
+     * | Database transaction
+     */
+    public function rollback()
+    {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
+        DB::rollBack();
+        if ($db1 != $db2)
+            $this->_DB->rollBack();
+    }
+    /**
+     * | Database transaction
+     */
+    public function commit()
+    {
+        $db1 = DB::connection()->getDatabaseName();
+        $db2 = $this->_DB->getDatabaseName();
+        DB::commit();
+        if ($db1 != $db2)
+            $this->_DB->commit();
+    }
     // OTP related Operations
 
 
@@ -37,7 +92,7 @@ class ThirdPartyController extends Controller
             $request->all(),
             [
                 'mobileNo' => "required|digits:10|regex:/[0-9]{10}/", #exists:active_citizens,mobile|
-                'type' => "nullable|in:Register,Forgot,Attach Holding,Update Mobile",
+                'type' => "nullable|in:Register,Forgot,Attach Holding,Update Mobile,Attached Connection",
             ]
         );
         if ($validated->fails())
@@ -78,6 +133,11 @@ class ThirdPartyController extends Controller
                 case ('Update Mobile'):
                     $otpType = 'Update Mobile';
                     break;
+                case ('Attached Connection'):
+                    $otpType = 'Attached Connection';
+                    break;
+                default:
+                    throw new Exception("Invalid type provided");
             }
 
             $generateOtp = $this->generateOtp();
@@ -113,38 +173,39 @@ class ThirdPartyController extends Controller
         | Serial No : 02
         | Working
      */
-    // public function verifyOtp(Request $request)
-    // {
-    //     $validated = Validator::make(
-    //         $request->all(),
-    //         [
-    //             'otp' => "required|digits:6",
-    //             'mobileNo' => "required|digits:10|regex:/[0-9]{10}/|exists:otp_requests,mobile_no"
-    //         ]
-    //     );
-    //     if ($validated->fails())
-    //         return validationError($validated);
-    //     try {
-    //         # model
-    //         $mOtpMaster     = new OtpRequest();
-    //         $mActiveCitizen = new ActiveCitizen();
+    public function verifyOtp(Request $request)
+    {
 
-    //         # logi 
-    //         DB::beginTransaction();
-    //         $checkOtp = $mOtpMaster->checkOtp($request);
-    //         if (!$checkOtp) {
-    //             $msg = "OTP not match!";
-    //             return responseMsgs(false, $msg, "", "", "01", ".ms", "POST", "");
-    //         }
-    //         $token = $mActiveCitizen->changeToken($request);
-    //         $checkOtp->delete();
-    //         DB::commit();
-    //         return responseMsgs(true, "OTP Validated!", remove_null($token), "", "01", ".ms", "POST", "");
-    //     } catch (Exception $e) {
-    //         DB::rollBack();
-    //         return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", "");
-    //     }
-    // }
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'otp' => "required|digits:6",
+                'mobileNo' => "required|digits:10|regex:/[0-9]{10}/|exists:otp_requests,mobile_no"
+                ]
+            );
+            if ($validated->fails())
+            return validationError($validated);
+        try {
+            return $request;
+            # model
+            $mOtpMaster     = new OtpRequest();
+            $mActiveCitizen = new ActiveCitizen();
+            # logi 
+            $this->begin();
+            $checkOtp = $mOtpMaster->checkOtp($request);
+            if (!$checkOtp) {
+                $msg = "OTP not match!";
+                return responseMsgs(false, $msg, "", "", "01", ".ms", "POST", "");
+            }
+            $token = $mActiveCitizen->changeToken($request);
+            $checkOtp->delete();
+            $this->commit();
+            return responseMsgs(true, "OTP Validated!", remove_null($token), "", "01", ".ms", "POST", "");
+        } catch (Exception $e) {
+            $this->rollback();
+            return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", "");
+        }
+    }
 
     /**
      * | Generate Random OTP 

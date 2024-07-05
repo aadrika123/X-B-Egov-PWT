@@ -36,7 +36,6 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
      */
     Route::controller(NewConnectionController::class)->group(function () {
         # Workflow
-
         Route::post('inbox', 'waterInbox');                                                             // Workflow
         Route::post('outbox', 'waterOutbox');                                                           // Workflow
         Route::post('post-next-level', 'postNextLevel');                                                // Workflow
@@ -163,10 +162,10 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('consumer/get-details', 'WaterConsumerDetails');
         Route::post('consumer/get-connection-list', 'getConnectionList');
         Route::post('consumer/demands-correction', 'updateConsumerDemands');
-        Route::post("consumer/demands-correct","AutoCorrectDemand");
-        Route::post("consumer/get-consumer-demandV2","getConsumerDemandsV2");
-        Route::post("consumer/get-demand-history","getConsumerDemandsHistory");
-        Route::post("consumer/auto-generate-fixed-demand","gerateAutoFixedDemand");
+        Route::post("consumer/demands-correct", "AutoCorrectDemand");
+        Route::post("consumer/get-consumer-demandV2", "getConsumerDemandsV2");
+        Route::post("consumer/get-demand-history", "getConsumerDemandsHistory");
+        Route::post("consumer/auto-generate-fixed-demand", "gerateAutoFixedDemand");
     });
 
 
