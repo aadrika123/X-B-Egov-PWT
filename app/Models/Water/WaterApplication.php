@@ -682,7 +682,6 @@ class WaterApplication extends Model
         $saveNewApplication->zone_mstr_id           = $req->zoneId;
         $saveNewApplication->cycle                  = $req->cycle;
         $saveNewApplication->building_type          = $req->buildingType;
-        $saveNewApplication->tap_size               = $req->tabSize;
 
         $saveNewApplication->save();
         return $saveNewApplication;
