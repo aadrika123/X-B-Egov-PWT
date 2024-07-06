@@ -607,11 +607,11 @@ class NewConnectionRepository implements iNewConnection
         })->values();
         $uniqueArray = array_unique($paymentStatus->toArray());
 
-        if (count($uniqueArray) === 1 && $uniqueArray[0] === 1) {
-            $payment = true;
-        } else {
-            throw new Exception("full payment for the application is not done!");
-        }
+        // if (count($uniqueArray) === 1 && $uniqueArray[0] === 1) {
+        //     $payment = true;
+        // } else {
+        //     throw new Exception("full payment for the application is not done!");
+        // }
     }
 
 
