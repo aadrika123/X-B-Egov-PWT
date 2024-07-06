@@ -23,6 +23,7 @@ use App\Models\Property\PropProperty;
 use App\Models\UlbWardMaster;
 use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplication;
+use App\Models\Water\WaterApprovalApplicant;
 use App\Models\Water\WaterApprovalApplicationDetail;
 use App\Models\Water\waterAudit;
 use App\Models\Water\WaterConnectionCharge;
@@ -954,12 +955,14 @@ class NewConnectionController extends Controller
             $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
             $mWaterConnectionCharge  = new WaterConnectionCharge();
             $mWaterApplication = new WaterApplication();
+            $mWaterApproveApplications   = new WaterApprovalApplicationDetail();
+            $mWaterApproveApplicants = new WaterApprovalApplicant();
             $mWaterApplicant = new WaterApplicant();
             $mWaterTran = new WaterTran();
             $roleDetails = Config::get('waterConstaint.ROLE-LABEL');
 
             # Application Details
-            $applicationDetails['applicationDetails'] = $mWaterApplication->fullWaterDetails($request)->first();
+            $applicationDetails['applicationDetails'] = $mWaterApproveApplications->fullWaterDetails($request)->first();
 
             # Document Details
             $metaReqs = [
@@ -971,7 +974,7 @@ class NewConnectionController extends Controller
             // $documentDetails['documentDetails'] = collect($document)['original']['data'];
 
             # owner details
-            $ownerDetails['ownerDetails'] = $mWaterApplicant->getOwnerList($request->applicationId)->get();
+            $ownerDetails['ownerDetails'] = $mWaterApproveApplicants->getOwnerList($request->applicationId)->get();
 
             # Payment Details 
             $refAppDetails = collect($applicationDetails)->first();
@@ -1313,7 +1316,7 @@ class NewConnectionController extends Controller
             $connectionCharges['applicationNo'] = $refApplication->application_no;
             $connectionCharges['applicationId'] = $refApplication->id;
 
-           $requiedDocType = $refWaterNewConnection->getDocumentTypeList($refApplication, $user);  # get All Related Document Type List
+            $requiedDocType = $refWaterNewConnection->getDocumentTypeList($refApplication, $user);  # get All Related Document Type List
             $refOwneres = $refWaterNewConnection->getOwnereDtlByLId($refApplication->id);    # get Owneres List
             $ownerList = collect($refOwneres)->map(function ($value) {
                 $return['applicant_name'] = $value['applicant_name'];
@@ -2035,12 +2038,12 @@ class NewConnectionController extends Controller
                 $waterApplicationDtl->doc_status = 0;
                 $waterApplicationDtl->save();
             }
-          $reqs = [
+            $reqs = [
                 'remarks'           => $req->docRemarks,
                 'verify_status'     => $status,
                 'action_taken_by'   => $userId
             ];
-       
+
             $mWfDocument->docVerifyReject($wfDocId, $reqs);
             if ($req->docStatus == 'Verified')
                 $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId);

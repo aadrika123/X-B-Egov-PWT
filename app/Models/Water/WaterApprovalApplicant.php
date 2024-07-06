@@ -15,4 +15,17 @@ class WaterApprovalApplicant extends Model
         return WaterApprovalApplicant::where('application_id', $applicationId)
             ->first();
     }
+
+    public function getOwnerList($applicationId)
+    {
+        return WaterApprovalApplicant::select(
+            'id',
+            'applicant_name',
+            'guardian_name',
+            'mobile_no',
+            'email'
+        )
+            ->where('application_id', $applicationId)
+            ->where('status', true);
+    }
 }
