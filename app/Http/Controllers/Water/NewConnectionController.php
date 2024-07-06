@@ -1124,14 +1124,14 @@ class NewConnectionController extends Controller
         $refWorkFlowMaster = Config::get('workflow-constants.WATER_MASTER_ID');
         switch ($isCitizen) {
                 # For citizen 
-            case (true):
-                if (!is_null($applicantDetals->current_role) && $applicantDetals->parked == true) {
-                    return true;
-                }
-                if (!is_null($applicantDetals->current_role)) {
-                    throw new Exception("You aren't allowed to upload document!");
-                }
-                break;
+            // case (true):
+            //     if (!is_null($applicantDetals->current_role) && $applicantDetals->parked == true) {
+            //         return true;
+            //     }
+            //     if (!is_null($applicantDetals->current_role)) {
+            //         throw new Exception("You aren't allowed to upload document!");
+            //     }
+            //     break;
                 # For user
             // case (false):
             //     $userId = $user->id;
