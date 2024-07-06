@@ -1909,15 +1909,17 @@ class NewConnectionController extends Controller
         if ($validated->fails())
             return validationError($validated);
         try {
+            // return $request->all();
             $key                = $request->filterBy;
             $parameter          = $request->parameter;
             $pages              = $request->pages ?? 10;
             $mWaterApplicant    = new WaterApplication();
+            $mWaterApplcationDetails = new WaterApprovalApplicationDetail();
             $connectionTypes    = Config::get('waterConstaint.CONNECTION_TYPE');
 
             switch ($key) {
                 case ("newConnection"):                                                                     // Static
-                    $returnData = $mWaterApplicant->getDetailsByApplicationNo($request, $connectionTypes['NEW_CONNECTION'], $parameter)->paginate($pages);
+                    $returnData = $mWaterApplcationDetails->getDetailsByApplicationNo($request, $connectionTypes['NEW_CONNECTION'], $parameter)->paginate($pages);
                     $checkVal = collect($returnData)->last();
                     if (!$checkVal || $checkVal == 0)
                         throw new Exception("Data according to " . $key . " not Found!");
