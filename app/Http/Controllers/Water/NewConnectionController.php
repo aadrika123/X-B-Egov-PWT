@@ -175,7 +175,7 @@ class NewConnectionController extends Controller
 
             // $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
             $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
-            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+           $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
             $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
                 ->whereIn('water_applications.current_role', $roleId)
@@ -1124,26 +1124,26 @@ class NewConnectionController extends Controller
         $refWorkFlowMaster = Config::get('workflow-constants.WATER_MASTER_ID');
         switch ($isCitizen) {
                 # For citizen 
-            case (true):
-                if (!is_null($applicantDetals->current_role) && $applicantDetals->parked == true) {
-                    return true;
-                }
-                if (!is_null($applicantDetals->current_role)) {
-                    throw new Exception("You aren't allowed to upload document!");
-                }
-                break;
+            // case (true):
+            //     if (!is_null($applicantDetals->current_role) && $applicantDetals->parked == true) {
+            //         return true;
+            //     }
+            //     if (!is_null($applicantDetals->current_role)) {
+            //         throw new Exception("You aren't allowed to upload document!");
+            //     }
+            //     break;
                 # For user
-            case (false):
-                $userId = $user->id;
-                $ulbId = $applicantDetals->ulb_id;
-                $role = $this->_commonFunction->getUserRoll($userId, $ulbId, $refWorkFlowMaster);
-                if (is_null($role)) {
-                    throw new Exception("You dont have any role!");
-                }
-                if ($role->can_upload_document != true) {
-                    throw new Exception("You dont have permission to upload Document!");
-                }
-                break;
+            // case (false):
+            //     $userId = $user->id;
+            //     $ulbId = $applicantDetals->ulb_id;
+            //     $role = $this->_commonFunction->getUserRoll($userId, $ulbId, $refWorkFlowMaster);
+            //     if (is_null($role)) {
+            //         throw new Exception("You dont have any role!");
+            //     }
+            //     if ($role->can_upload_document != true) {
+            //         throw new Exception("You dont have permission to upload Document!");
+            //     }
+            //     break;
         }
     }
 

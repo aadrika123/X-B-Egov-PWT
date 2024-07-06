@@ -668,6 +668,7 @@ class WaterApplication extends Model
         $saveNewApplication->workflow_id            = $ulbWorkflowId->id;
         // $saveNewApplication->connection_fee_id      = $waterFeeId;
         $saveNewApplication->initiator              = collect($initiatorRoleId)->first()->role_id;
+        $saveNewApplication->current_role           = collect($initiatorRoleId)->first()->role_id;
         $saveNewApplication->finisher               = collect($finisherRoleId)->first()->role_id;
         $saveNewApplication->application_no         = $applicationNo;
         $saveNewApplication->ulb_id                 = $ulbId;
