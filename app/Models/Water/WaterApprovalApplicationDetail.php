@@ -140,4 +140,16 @@ class WaterApprovalApplicationDetail extends Model
             ->where('water_approval_application_details.id', $request->applicationId)
             ->where('water_approval_application_details.status', 1);
     }
+
+    public function fullWaterDetail($applicationId)
+    {
+        return WaterApprovalApplicationDetail::select(
+            'water_approval_application_details.*',
+            'water_connection_charges.amount',
+            "water_connection_charges.charge_category"
+
+        )
+            ->join('water_connection_charges', 'water_connection_charges.application_id', 'water_approval_application_details.id')
+            ->where('water_approval_application_details.id', $applicationId);
+    }
 }
