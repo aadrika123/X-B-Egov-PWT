@@ -175,7 +175,7 @@ class NewConnectionController extends Controller
 
             // $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
             $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
-            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+           $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
             $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
                 ->whereIn('water_applications.current_role', $roleId)
