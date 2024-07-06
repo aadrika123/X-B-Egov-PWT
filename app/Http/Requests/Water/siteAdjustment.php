@@ -38,7 +38,7 @@ class siteAdjustment extends FormRequest
         $rules['pipeQuality']       = 'required|in:GI,HDPE,PVC 80';
         // $rules['feruleSize']        = 'required|int|in:6,10,12,16';
         $rules['feruleSize']        = 'required|';
-        $rules['roadType']          = 'required|in:RMC,PWD';
+        $rules['roadType']          = 'required|in:AMC,PWD';
         // $rules['category']          = 'required|in:APL,BPL';
         $rules['category']          = 'required|';
         $rules['tsMap']             = 'required|int|in:0,1';
