@@ -232,6 +232,7 @@ class WaterNewConnection implements IWaterNewConnection
                 ->where('paid_status', 0)
                 ->first();
             # Formating connection type id 
+            $chargeId = null;
             if (!is_null($refConnectionCharge)) {
                 switch ($refConnectionCharge['charge_category']) {
                     case ($refChargeCatagory['SITE_INSPECTON']):
