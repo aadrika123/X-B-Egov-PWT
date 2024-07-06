@@ -466,22 +466,22 @@ class NewConnectionRepository implements iNewConnection
         $refRole = Config::get("waterConstaint.ROLE-LABEL");
         switch ($senderRoleId) {
             case $wfLevels['BO']:                                                                       // Back Office Condition
-                if ($application->doc_upload_status == false || $application->payment_status != 1)
+                if ($application->doc_upload_status == false)
                     throw new Exception("Document Not Fully Uploaded or Payment in not Done!");
                 break;
             case $wfLevels['DA']:                                                                       // DA Condition
-                if ($application->doc_status == false || $application->payment_status != 1)
+                if ($application->doc_status == false)
                     throw new Exception("Document Not Fully Verified");
                 break;
             case $wfLevels['JE']:                                                                       // JE Coditon in case of site adjustment
-                if ($application->doc_status == false || $application->payment_status != 1)
+                if ($application->doc_status == false)
                     throw new Exception("Document Not Fully Verified or Payment in not Done!");
                 if ($application->doc_upload_status == false) {
                     throw new Exception("Document Not Fully Uploaded");
                 }
                 $siteDetails = $mWaterSiteInspection->getSiteDetails($application->id)
                     // ->where('order_officer', $refRole['JE'])
-                    ->where('payment_status', 1)
+                    // ->where('payment_status', 1)
                     ->first();
                 if (!$siteDetails) {
                     throw new Exception("Site Not Verified!");
@@ -778,7 +778,7 @@ class NewConnectionRepository implements iNewConnection
     {
         $collectionApplications = collect($applicationDetails)->first();
         return new Collection([
-    
+
             ['displayString' => 'Type of Connection', 'key' => 'TypeOfConnection',    'value' => $collectionApplications->connection_type],
             ['displayString' => 'Property Type',      'key' => 'PropertyType',        'value' => $collectionApplications->property_type],
             ['displayString' => 'Connection Through', 'key' => 'ConnectionThrough',   'value' => $collectionApplications->connection_through],

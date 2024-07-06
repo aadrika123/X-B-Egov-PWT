@@ -104,7 +104,7 @@ class WaterSiteInspection extends Model
         )
             ->where('apply_connection_id', $applicationId)
             ->where('status', 1)
-            ->orderByDesc('water_site_inspections.id');
+            ->orderByDesc('water_site_inspections.id'); 
     }
 
 

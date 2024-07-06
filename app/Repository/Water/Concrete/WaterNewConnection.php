@@ -1300,7 +1300,7 @@ class WaterNewConnection implements IWaterNewConnection
         // Check if user_type is not equal to 1
         if ($user->user_type == $refUserType['1']) {
             // Modify $type array for user_type not equal to 1
-            $type = ["STAMP", "ID_PROOF"];
+            $type = ["STAMP", "ID_PROOF","PROPERTY TAX"];
         }
 
        $doc = WaterParamDocumentType::select(

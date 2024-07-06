@@ -97,10 +97,17 @@ return [
             "PWD"
         ],
         "FERULE_SIZE" => [
-            "6",
-            "10",
-            "12",
-            "16"
+          "15",
+          "20",
+          "25",
+          "50",
+          "65",
+          "75",
+          "80",
+          "100",
+          "150",
+          "200"
+
         ],
         "DEACTIVATION_CRITERIA" => [
             "Double Connection",

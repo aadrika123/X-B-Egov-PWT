@@ -175,12 +175,12 @@ class NewConnectionController extends Controller
 
             // $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
             $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
-           $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
             $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
                 ->whereIn('water_applications.current_role', $roleId)
                 // ->whereIn('water_applications.ward_id', $occupiedWards)
-                ->where('water_applications.is_escalate', false)    
+                ->where('water_applications.is_escalate', false)
                 ->where('water_applications.parked', false)
                 ->orderByDesc('water_applications.id')
                 ->get();
@@ -1124,26 +1124,26 @@ class NewConnectionController extends Controller
         $refWorkFlowMaster = Config::get('workflow-constants.WATER_MASTER_ID');
         switch ($isCitizen) {
                 # For citizen 
-            // case (true):
-            //     if (!is_null($applicantDetals->current_role) && $applicantDetals->parked == true) {
-            //         return true;
-            //     }
-            //     if (!is_null($applicantDetals->current_role)) {
-            //         throw new Exception("You aren't allowed to upload document!");
-            //     }
-            //     break;
+                // case (true):
+                //     if (!is_null($applicantDetals->current_role) && $applicantDetals->parked == true) {
+                //         return true;
+                //     }
+                //     if (!is_null($applicantDetals->current_role)) {
+                //         throw new Exception("You aren't allowed to upload document!");
+                //     }
+                //     break;
                 # For user
-            // case (false):
-            //     $userId = $user->id;
-            //     $ulbId = $applicantDetals->ulb_id;
-            //     $role = $this->_commonFunction->getUserRoll($userId, $ulbId, $refWorkFlowMaster);
-            //     if (is_null($role)) {
-            //         throw new Exception("You dont have any role!");
-            //     }
-            //     if ($role->can_upload_document != true) {
-            //         throw new Exception("You dont have permission to upload Document!");
-            //     }
-            //     break;
+                // case (false):
+                //     $userId = $user->id;
+                //     $ulbId = $applicantDetals->ulb_id;
+                //     $role = $this->_commonFunction->getUserRoll($userId, $ulbId, $refWorkFlowMaster);
+                //     if (is_null($role)) {
+                //         throw new Exception("You dont have any role!");
+                //     }
+                //     if ($role->can_upload_document != true) {
+                //         throw new Exception("You dont have permission to upload Document!");
+                //     }
+                //     break;
         }
     }
 
@@ -1313,7 +1313,7 @@ class NewConnectionController extends Controller
             $connectionCharges['applicationNo'] = $refApplication->application_no;
             $connectionCharges['applicationId'] = $refApplication->id;
 
-            $requiedDocType = $refWaterNewConnection->getDocumentTypeList($refApplication, $user);  # get All Related Document Type List
+           $requiedDocType = $refWaterNewConnection->getDocumentTypeList($refApplication, $user);  # get All Related Document Type List
             $refOwneres = $refWaterNewConnection->getOwnereDtlByLId($refApplication->id);    # get Owneres List
             $ownerList = collect($refOwneres)->map(function ($value) {
                 $return['applicant_name'] = $value['applicant_name'];
@@ -1746,7 +1746,7 @@ class NewConnectionController extends Controller
         $moduleId       = Config::get('module-constants.WATER_MODULE_ID');
         $refUserType    = Config::get('waterConstaint.REF_USER_TYPE');
 
-        $type = ["FORM_SCAN_COPY", "STAMP", "ID_PROOF"];
+        $type = ["FORM_SCAN_COPY", "STAMP", "ID_PROOF", "PROPERTY TAX"];
 
         // Check if user_type is not equal to 1
         if ($user->user_type == $refUserType['1']) {
@@ -1884,7 +1884,7 @@ class NewConnectionController extends Controller
                 "last_page" => $waterReturnDetails->lastPage(),
                 "data" => $waterReturnDetails->items(),
                 "total" => $waterReturnDetails->total(),
-            ]; 
+            ];
             return responseMsgs(true, "Water Consumer Data According To Parameter!", remove_null($list), "", "01", "652 ms", "POST", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -2033,11 +2033,12 @@ class NewConnectionController extends Controller
                 $waterApplicationDtl->doc_status = 0;
                 $waterApplicationDtl->save();
             }
-            $reqs = [
+          $reqs = [
                 'remarks'           => $req->docRemarks,
                 'verify_status'     => $status,
                 'action_taken_by'   => $userId
             ];
+       
             $mWfDocument->docVerifyReject($wfDocId, $reqs);
             if ($req->docStatus == 'Verified')
                 $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId);
@@ -2083,6 +2084,59 @@ class NewConnectionController extends Controller
             return 0;
         else
             return 1;
+    }
+
+    public function isAllDocs($applicationId, $refDocList, $refapp)
+    {
+        $docList = array();
+        $verifiedDocList = array();
+        $verifiedDocList['rigDocs'] = $refDocList->where('owner_dtl_id', null)->values();
+        $collectUploadDocList = collect();
+        $rigListDocs = $this->getRigTypeDocList($refapp);
+        $docList['rigDocs'] = explode('#', $rigListDocs);
+        collect($verifiedDocList['rigDocs'])->map(function ($item) use ($collectUploadDocList) {
+            return $collectUploadDocList->push($item['doc_code']);
+        });
+        $mrigDocs = collect($docList['rigDocs']);
+        // List Documents
+        $flag = 1;
+        foreach ($mrigDocs as $item) {
+            if (!$item) {
+                continue;
+            }
+            $explodeDocs = explode(',', $item);
+            array_shift($explodeDocs);
+            foreach ($explodeDocs as $explodeDoc) {
+                $changeStatus = 0;
+                if (in_array($explodeDoc, $collectUploadDocList->toArray())) {
+                    $changeStatus = 1;
+                    break;
+                }
+            }
+            if ($changeStatus == 0) {
+                $flag = 0;
+                break;
+            }
+        }
+
+        if ($flag == 0)
+            return 0;
+        else
+            return 1;
+    }
+
+    #get doc which is required 
+    public function getRigTypeDocList($refapps)
+    {
+        $moduleId = 2;
+
+        $mrefRequiredDoc = RefRequiredDocument::firstWhere('module_id', $moduleId);
+        if ($mrefRequiredDoc && isset($mrefRequiredDoc['requirements'])) {
+            $documentLists = $mrefRequiredDoc['requirements'];
+        } else {
+            $documentLists = [];
+        }
+        return $documentLists;
     }
 
 
