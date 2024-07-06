@@ -166,7 +166,7 @@ class CaretakerController extends Controller
             $myRequest->request->add(['mobileNo' => $approveApplicant->mobile_no]);
             $myRequest->request->add(['otp' => $req->otp]);
             // return $myRequest;
-          return  $otpReturnData = $ThirdPartyController->verifyOtp($myRequest);
+           $otpReturnData = $ThirdPartyController->verifyOtp($myRequest);
            
             $verificationStatus = collect($otpReturnData)['original']['status'];
             if ($verificationStatus == false)

@@ -143,7 +143,7 @@ class WaterNewConnection implements IWaterNewConnection
         $refChargeCatagoryValue             = Config::get("waterConstaint.CONNECTION_TYPE");
 
 
-        $connection = WaterApplication::select(
+         $connection = WaterApplication::select(
             "water_applications.id",
             "water_applications.application_no",
             "water_applications.property_type_id",
@@ -190,7 +190,7 @@ class WaterNewConnection implements IWaterNewConnection
             )
             // ->whereNotIn("status",[0,6,7])
             ->leftjoin('wf_roles', 'wf_roles.id', "=", "water_applications.current_role")
-            ->join('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_applications.ward_id')
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_applications.ward_id')
             ->where("water_applications.user_id", $refUserId)
             ->orderbydesc('water_applications.id')
             ->get();
