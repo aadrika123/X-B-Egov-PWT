@@ -143,7 +143,7 @@ class WaterNewConnection implements IWaterNewConnection
         $refChargeCatagoryValue             = Config::get("waterConstaint.CONNECTION_TYPE");
 
 
-         $connection = WaterApplication::select(
+        $connection = WaterApplication::select(
             "water_applications.id",
             "water_applications.application_no",
             "water_applications.property_type_id",
@@ -225,7 +225,7 @@ class WaterNewConnection implements IWaterNewConnection
                     $value['connection_type_name'] = $refChargeCatagory['NEW_CONNECTION'];
                     break;
             }
-
+            //
             $value['transDetails'] = $mWaterTran->getTransNo($value['id'], null)->first();
             $value['calcullation'] = $mWaterParamConnFee->getCallParameter($value['property_type_id'], $value['area_sqft'])->first();
             $refConnectionCharge = $mWaterConnectionCharge->getWaterchargesById($value['id'])
