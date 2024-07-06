@@ -1133,17 +1133,17 @@ class NewConnectionController extends Controller
                 }
                 break;
                 # For user
-            case (false):
-                $userId = $user->id;
-                $ulbId = $applicantDetals->ulb_id;
-                $role = $this->_commonFunction->getUserRoll($userId, $ulbId, $refWorkFlowMaster);
-                if (is_null($role)) {
-                    throw new Exception("You dont have any role!");
-                }
-                if ($role->can_upload_document != true) {
-                    throw new Exception("You dont have permission to upload Document!");
-                }
-                break;
+            // case (false):
+            //     $userId = $user->id;
+            //     $ulbId = $applicantDetals->ulb_id;
+            //     $role = $this->_commonFunction->getUserRoll($userId, $ulbId, $refWorkFlowMaster);
+            //     if (is_null($role)) {
+            //         throw new Exception("You dont have any role!");
+            //     }
+            //     if ($role->can_upload_document != true) {
+            //         throw new Exception("You dont have permission to upload Document!");
+            //     }
+            //     break;
         }
     }
 
