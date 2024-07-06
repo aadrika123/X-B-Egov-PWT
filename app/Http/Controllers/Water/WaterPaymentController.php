@@ -471,13 +471,13 @@ class WaterPaymentController extends Controller
                 ->firstOrFail();
 
             $this->begin();
-            #if applicants details changes then store the
-            if (collect($changes)->isEmpty()) {
-                $mWaterApplicants->saveWaterApplicant($changes, $applicationId);
-            }
-            if (collect($changes)->isNotEmpty()) {
-                $mWaterApplicants->saveWaterApplicant($changes, $applicationId);
-            }
+            // #if applicants details changes then store the
+            // if (collect($changes)->isEmpty()) {
+            //     $mWaterApplicants->saveWaterApplicant($changes, $applicationId);
+            // }
+            // if (collect($changes)->isNotEmpty()) {
+            //     $mWaterApplicants->saveWaterApplicant($changes, $applicationId);
+            // }
             # Store the site inspection details
             $mWaterSiteInspection->storeInspectionDetails($request,  $waterDetails, $refRoleDetails);
             $mWaterSiteInspectionsScheduling->saveInspectionStatus($request);

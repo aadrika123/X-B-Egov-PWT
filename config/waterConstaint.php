@@ -93,7 +93,7 @@ return [
             "PVC 80"
         ],
         "ROAD_TYPE" => [
-            "RMC",
+            "AMC",
             "PWD"
         ],
         "FERULE_SIZE" => [
