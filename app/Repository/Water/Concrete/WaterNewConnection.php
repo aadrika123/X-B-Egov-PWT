@@ -143,7 +143,7 @@ class WaterNewConnection implements IWaterNewConnection
         $refChargeCatagoryValue             = Config::get("waterConstaint.CONNECTION_TYPE");
 
 
-         $connection = WaterApplication::select(
+        $connection = WaterApplication::select(
             "water_applications.id",
             "water_applications.application_no",
             "water_applications.property_type_id",
@@ -232,6 +232,7 @@ class WaterNewConnection implements IWaterNewConnection
                 ->where('paid_status', 0)
                 ->first();
             # Formating connection type id 
+            $chargeId =  null;
             if (!is_null($refConnectionCharge)) {
                 switch ($refConnectionCharge['charge_category']) {
                     case ($refChargeCatagory['SITE_INSPECTON']):
