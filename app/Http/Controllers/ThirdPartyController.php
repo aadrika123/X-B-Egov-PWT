@@ -31,13 +31,15 @@ class ThirdPartyController extends Controller
     private $_waterModuleId;
     protected $_DB_NAME;
     protected $_DB;
+    protected $_DB_MASTER;
 
     public function __construct()
     {
         $this->_waterRoles      = Config::get('waterConstaint.ROLE-LABEL');
         $this->_waterModuleId   = Config::get('module-constants.WATER_MODULE_ID');
-        $this->_DB_NAME = "pgsql_water";
+        $this->_DB_NAME         = "pgsql_water";
         $this->_DB = DB::connection($this->_DB_NAME);
+        $this->_DB_MASTER           = DB::connection("pgsql_master");
     }
 
     /**
@@ -47,6 +49,7 @@ class ThirdPartyController extends Controller
     {
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
+        $db3 = $this->_DB_MASTER->getDatabaseName();
         DB::beginTransaction();
         if ($db1 != $db2)
             $this->_DB->beginTransaction();
@@ -58,9 +61,12 @@ class ThirdPartyController extends Controller
     {
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
+        $db3 = $this->_DB_MASTER->getDatabaseName();
         DB::rollBack();
         if ($db1 != $db2)
             $this->_DB->rollBack();
+        if ($db1 != $db3 && $db2 != $db3)
+            $this->_DB_MASTER->rollBack();
     }
     /**
      * | Database transaction
@@ -69,9 +75,12 @@ class ThirdPartyController extends Controller
     {
         $db1 = DB::connection()->getDatabaseName();
         $db2 = $this->_DB->getDatabaseName();
+        $db3 = $this->_DB_MASTER->getDatabaseName();
         DB::commit();
         if ($db1 != $db2)
             $this->_DB->commit();
+        if ($db1 != $db3 && $db2 != $db3)
+            $this->_DB_MASTER->commit();
     }
     // OTP related Operations
 
