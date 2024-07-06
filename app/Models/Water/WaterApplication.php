@@ -264,7 +264,7 @@ class WaterApplication extends Model
      * | @param request
      * | @param consumerNo
      */
-    public function finalApproval($request, $consumerNo, $refJe)
+    public function finalApproval($request, $refJe)
     {
         # object creation
         $mWaterApprovalApplicationDetail = new WaterApprovalApplicationDetail();
@@ -293,7 +293,7 @@ class WaterApplication extends Model
 
         # data formating for save the consumer details 
         $siteDetails = $mWaterSiteInspection->getSiteDetails($request->applicationId)
-            ->where('payment_status', 1)
+            // ->where('payment_status', 1)
             ->where('order_officer', $refJe)
             ->first();
         if (isset($siteDetails)) {
@@ -308,7 +308,7 @@ class WaterApplication extends Model
             ];
             $approvedWaterRep = collect($approvedWater)->merge($refData);
         }
-        $consumerId = $mWaterConsumer->saveWaterConsumer($approvedWaterRep, $consumerNo);
+        // $consumerId = $mWaterConsumer->saveWaterConsumer($approvedWaterRep, $consumerNo);
 
         # dend record in the track table 
         $metaReqs = [
@@ -323,7 +323,7 @@ class WaterApplication extends Model
 
         # final delete
         $approvedWater->delete();
-        return $consumerId;
+        // return $consumerId;
     }
 
     /**

@@ -535,12 +535,12 @@ class NewConnectionRepository implements iNewConnection
         # Approval of water application 
         if ($request->status == 1) {
             # Consumer no generation
-            $idGeneration   = new PrefixIdGenerator($consumerParamId, $refWaterDetails['ulb_id']);
-            $consumerNo     = $idGeneration->generate();
-            $consumerNo     = str_replace('/', '-', $consumerNo);
+            // $idGeneration   = new PrefixIdGenerator($consumerParamId, $refWaterDetails['ulb_id']);
+            // $consumerNo     = $idGeneration->generate();
+            // $consumerNo     = str_replace('/', '-', $consumerNo);
 
-            $this->saveWaterConnInProperty($refWaterDetails, $consumerNo);
-            $consumerId = $mWaterApplication->finalApproval($request, $consumerNo, $refJe);
+            $this->saveWaterConnInProperty($refWaterDetails,);
+            $consumerId = $mWaterApplication->finalApproval($request,$refJe);
             $mWaterApplicant->finalApplicantApproval($request, $consumerId);
             $msg = "Application Successfully Approved !!";
         }
@@ -621,7 +621,7 @@ class NewConnectionRepository implements iNewConnection
      * | @param 
         | Recheck
      */
-    public function saveWaterConnInProperty($refWaterDetails, $consumerNo)
+    public function saveWaterConnInProperty($refWaterDetails, )
     {
         $appartmentsPropIds     = array();
         $mPropProperty          = new PropProperty();
@@ -639,7 +639,7 @@ class NewConnectionRepository implements iNewConnection
                     $appartmentsProperty    = $mPropProperty->getPropertyByApartmentId($apartmentId)->get();
                     $appartmentsPropIds     = collect($appartmentsProperty)->pluck('id');
                 }
-                $mPropProperty->updateWaterConnection($appartmentsPropIds, $consumerNo);
+                // $mPropProperty->updateWaterConnection($appartmentsPropIds, $consumerNo);
                 break;
                 # For Saf
             case ($refWaterDetails->connection_through == $refConnectionThrough['SAF']):
@@ -650,7 +650,7 @@ class NewConnectionRepository implements iNewConnection
                     $appartmentsSaf     = $mPropActiveSaf->getActiveSafByApartmentId($apartmentId)->get();
                     $appartmentsSafIds  = collect($appartmentsSaf)->pluck('id');
                 }
-                $mPropActiveSaf->updateWaterConnection($appartmentsSafIds, $consumerNo);
+                // $mPropActiveSaf->updateWaterConnection($appartmentsSafIds, $consumerNo);
                 break;
         }
     }

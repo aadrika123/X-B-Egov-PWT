@@ -93,18 +93,18 @@ class WaterApplicant extends Model
     /**
      * | final approval and the replication of the application details 
      */
-    public function finalApplicantApproval($request, $consumerId)
+    public function finalApplicantApproval($request,)
     {
         $approvedWaterApplicant = WaterApplicant::query()
             ->where('application_id', $request->applicationId)
             ->get();
-        $checkOwner = WaterConsumerOwner::where('consumer_id', $consumerId)->first();
-        if ($checkOwner) {
-            throw new Exception("Water Owner Already Exist!");
-        }
+        // $checkOwner = WaterConsumerOwner::where('consumer_id', $consumerId)->first();
+        // if ($checkOwner) {
+        //     throw new Exception("Water Owner Already Exist!");
+        // }
 
         # data storing in approved applicant table 
-        collect($approvedWaterApplicant)->map(function ($value) use ($consumerId) {
+        collect($approvedWaterApplicant)->map(function ($value) {                          //use ($consumerId)
             $approvedWaterOwners = $value->replicate();
             $approvedWaterOwners->setTable('water_approval_applicants');
             $approvedWaterOwners->id = $value->id;
@@ -112,7 +112,7 @@ class WaterApplicant extends Model
 
             $approvedWaterOwners = $value->replicate();
             $approvedWaterOwners->setTable('water_consumer_owners');
-            $approvedWaterOwners->consumer_id = $consumerId;
+            // $approvedWaterOwners->consumer_id = $consumerId;
             $approvedWaterOwners->save();
         });
 
