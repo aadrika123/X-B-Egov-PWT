@@ -110,10 +110,10 @@ class GetHoldingDuesV2
 
             #_Rebate in case of Mobile tower 
             # Half the genral tax in the case of mt in database
-            if ($this->_isMobileTower) {
-                $val->exempted_general_tax     = $this->_isMobileTower ? ($val->general_tax / 2) : 0;
-                $val->due_exempted_general_tax = $this->_isMobileTower ? ($val->due_general_tax / 2) : 0;
-            }
+            // if ($this->_isMobileTower) {
+            //     $val->exempted_general_tax     = $this->_isMobileTower ? ($val->general_tax / 2) : 0;
+            //     $val->due_exempted_general_tax = $this->_isMobileTower ? ($val->due_general_tax / 2) : 0;
+            // }
 
             if ($this->_isMobileTower && $this->_isSingleManArmedForce) {
                 $val->exempted_general_tax     = $this->_isMobileTower ? ($val->general_tax) : 0;
