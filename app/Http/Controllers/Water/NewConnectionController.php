@@ -3026,7 +3026,7 @@ class NewConnectionController extends Controller
                     'citizenId'         => $refRequest['citizenId'] ?? null,
                     'moduleId'          => $confModuleId,
                     'workflowId'        => $ulbWorkflowId->id,
-                    'refTableDotId'     => 'water_approval_application_details.id',             // Static                          // Static                              // Static
+                    'refTableDotId'     => 'water_applications.id',             // Static                          // Static                              // Static
                     'refTableIdValue'   => $meta['applicationId'],
                     'user_id'           => $refRequest['empId'] ?? null,
                     'ulb_id'            => $ulbId,
