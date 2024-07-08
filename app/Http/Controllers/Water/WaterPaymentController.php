@@ -2452,13 +2452,14 @@ class WaterPaymentController extends Controller
             $applicatinId   = $request->applicationId;
             $refPaymentMode = Config::get('payment-constants.REF_PAY_MODE');
             $consumerParamId    = Config::get("waterConstaint.PARAM_IDS.WCON");
-            
+
 
             $idGeneration                   = new IdGeneration;
             $mWaterTran                     = new WaterTran();
             $mWaterApplications             = new WaterApplication();
             $mWaterApprovalApplications     = new WaterApprovalApplicationDetail();
             $mWaterConsumerCharge           = new WaterConnectionCharge();
+            $mWaterConsumer                 = new WaterSecondConsumer();
 
             $offlinePaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
             $activeConRequest = $mWaterApprovalApplications->getApplicationById($applicatinId)
@@ -2486,12 +2487,12 @@ class WaterPaymentController extends Controller
             // $idGeneration   = new PrefixIdGenerator($consumerParamId, $refWaterDetails['ulb_id']);
             // $consumerNo     = $idGeneration->generate();
             // $consumerNo     = str_replace('/', '-', $consumerNo);
-            // $tranNo = $idGeneration->generateTransactionNo($user->ulb_id);
+            $tranNo = $idGeneration->generateTransactionNo($user->ulb_id);
             $request->merge([
                 'userId'            => $user->id,
                 'userType'          => $user->user_type,
                 'todayDate'         => $todayDate->format('Y-m-d'),
-                // 'tranNo'            => $tranNo,
+                'tranNo'            => $tranNo,
                 'id'                => $applicatinId,
                 'ulbId'             => $user->ulb_id,
                 'chargeCategory'    => $chargeCatagory['chargeCatagory'],                                 // Static
@@ -2517,6 +2518,9 @@ class WaterPaymentController extends Controller
             }
             # Save the transaction details for offline mode  
             $this->saveConsumerRequestStatus($request, $offlinePaymentModes, $activeConsumercharges, $waterTrans, $activeConRequest);
+
+            # After Payment Done Make consumer
+            // $consumerId = $mWaterConsumer->saveWaterConsumer($approvedWaterRep, $consumerNo);
             $this->commit();
             return responseMsgs(true, "Payment Done!", remove_null($request->all()), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
@@ -2631,7 +2635,7 @@ class WaterPaymentController extends Controller
      */
     public function saveConsumerRequestStatus($request, $offlinePaymentModes, $charges, $waterTrans, $activeConRequest)
     {
-        $mWaterApplication              = new WaterApplication();
+        $mWaterApplication              = new WaterApprovalApplicationDetail();
         $waterTranDetail                = new WaterTranDetail();
         $mWaterTran                     = new WaterTran();
         $userType                       = Config::get('waterConstaint.REF_USER_TYPE');
