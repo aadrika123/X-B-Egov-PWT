@@ -99,13 +99,15 @@ class WaterApprovalApplicationDetail extends Model
             DB::raw("string_agg(water_approval_applicants.guardian_name,',') as guardianName"),
         )
             ->join('water_approval_applicants', 'water_approval_applicants.application_id', '=', 'water_approval_application_details.id')
-            ->leftjoin('water_second_consumers','water_second_consumers.apply_connection_id','water_approval_application_details.id')
+            ->join('water_second_consumers','water_second_consumers.apply_connection_id','water_approval_application_details.id')
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_approval_application_details.ward_id')
             ->where('water_approval_application_details.status', true)
             ->where('water_approval_application_details.connection_type_id', $connectionTypes)
             ->where('water_approval_application_details.application_no', 'LIKE', '%' . $applicationNo . '%')
             ->where('water_approval_application_details.ulb_id', authUser($req)->ulb_id)
+            ->where('water_second_consumers.status',3)
             ->groupBy(
+                'water_second_consumers.id',
                 'water_approval_application_details.saf_no',
                 'water_approval_application_details.holding_no',
                 'water_approval_application_details.address',
