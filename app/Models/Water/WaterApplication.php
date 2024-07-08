@@ -264,7 +264,7 @@ class WaterApplication extends Model
      * | @param request
      * | @param consumerNo
      */
-    public function finalApproval($request, $refJe)
+    public function finalApproval($request, $refJe, $consumerNo)
     {
         # object creation
         $mWaterApprovalApplicationDetail = new WaterApprovalApplicationDetail();
@@ -308,7 +308,7 @@ class WaterApplication extends Model
             ];
             $approvedWaterRep = collect($approvedWater)->merge($refData);
         }
-        // $consumerId = $mWaterConsumer->saveWaterConsumer($approvedWaterRep, $consumerNo);
+        $consumerId = $mWaterConsumer->saveWaterConsumer($approvedWaterRep, $consumerNo);
 
         # dend record in the track table 
         $metaReqs = [
@@ -323,7 +323,7 @@ class WaterApplication extends Model
 
         # final delete
         $approvedWater->delete();
-        // return $consumerId;
+        return $consumerId;
     }
 
     /**
@@ -655,7 +655,7 @@ class WaterApplication extends Model
 
         $saveNewApplication = new WaterApplication();
         $saveNewApplication->connection_type_id     = $connectypeId;
-        $saveNewApplication->property_type_id       = $req->propertyTypeId;
+        $saveNewApplication->property_type_id       = $req->buildingType;
         $saveNewApplication->owner_type             = $req->ownerType;
         $saveNewApplication->category               = $req->category;
         $saveNewApplication->pipeline_type_id       = $req->pipelineTypeId ?? 1;

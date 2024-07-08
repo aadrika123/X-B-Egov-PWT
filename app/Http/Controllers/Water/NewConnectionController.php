@@ -179,11 +179,11 @@ class NewConnectionController extends Controller
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
             $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
-                ->whereIn('water_approval_application_details.current_role', $roleId)
+                ->whereIn('water_applications.current_role', $roleId)
                 // ->whereIn('water_approval_application_details.ward_id', $occupiedWards)
-                ->where('water_approval_application_details.is_escalate', false)
-                ->where('water_approval_application_details.parked', false)
-                ->orderByDesc('water_approval_application_details.id')
+                ->where('water_applications.is_escalate', false)
+                ->where('water_applications.parked', false)
+                ->orderByDesc('water_applications.id')
                 ->get();
             $filterWaterList = collect($waterList)->unique('id')->values();
             return responseMsgs(true, "Inbox List Details!", remove_null($filterWaterList), '', '02', '', 'Post', '');
@@ -221,9 +221,9 @@ class NewConnectionController extends Controller
 
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
             $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
-                ->whereNotIn('water_approval_application_details.current_role', $roleId)
+                ->whereNotIn('water_applications.current_role', $roleId)
                 // ->whereIn('water_approval_application_details.ward_id', $wardId)
-                ->orderByDesc('water_approval_application_details.id')
+                ->orderByDesc('water_applications.id')
                 ->get();
             $filterWaterList = collect($waterList)->unique('id')->values();
             return responseMsgs(true, "Outbox List", remove_null($filterWaterList), '', '01', '.ms', 'Post', '');
@@ -3026,7 +3026,7 @@ class NewConnectionController extends Controller
                     'citizenId'         => $refRequest['citizenId'] ?? null,
                     'moduleId'          => $confModuleId,
                     'workflowId'        => $ulbWorkflowId->id,
-                    'refTableDotId'     => 'water_approval_application_details.id',             // Static                          // Static                              // Static
+                    'refTableDotId'     => 'water_applications.id',             // Static                          // Static                              // Static
                     'refTableIdValue'   => $meta['applicationId'],
                     'user_id'           => $refRequest['empId'] ?? null,
                     'ulb_id'            => $ulbId,
