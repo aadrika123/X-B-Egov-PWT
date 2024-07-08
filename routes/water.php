@@ -55,6 +55,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         # Admin / Citizen view
         Route::post('application/delete', 'deleteWaterApplication');                                    // Citizen     
         Route::post('application/get-by-id', 'getApplicationDetails');                                  // Citizen
+        Route::post('approve-application/get-by-id', 'getApproveApplicationsDetails');                                  // Citizen
         Route::post('citizen/get-doc-list', 'getDocToUpload');                                          // Citizen  
         Route::post('application/edit', 'editWaterAppliction');                                         // Citizen/Admin
         Route::post('search-holding-saf', 'getSafHoldingDetail');                                      // Admin

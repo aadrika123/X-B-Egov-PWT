@@ -11,6 +11,7 @@ use App\Models\Ulb\UlbNewWardmap;
 use App\Models\UlbWardMaster;
 use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplication;
+use App\Models\Water\WaterApprovalApplicant;
 use App\Models\Water\WaterApprovalApplicationDetail;
 use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterConsumer;
@@ -540,7 +541,7 @@ class NewConnectionRepository implements iNewConnection
             // $consumerNo     = str_replace('/', '-', $consumerNo);
 
             $this->saveWaterConnInProperty($refWaterDetails,);
-            $consumerId = $mWaterApplication->finalApproval($request,$refJe);
+            $consumerId = $mWaterApplication->finalApproval($request, $refJe);
             $mWaterApplicant->finalApplicantApproval($request, $consumerId);
             $msg = "Application Successfully Approved !!";
         }
@@ -621,7 +622,7 @@ class NewConnectionRepository implements iNewConnection
      * | @param 
         | Recheck
      */
-    public function saveWaterConnInProperty($refWaterDetails, )
+    public function saveWaterConnInProperty($refWaterDetails,)
     {
         $appartmentsPropIds     = array();
         $mPropProperty          = new PropProperty();
@@ -920,5 +921,114 @@ class NewConnectionRepository implements iNewConnection
 
         $consumerDetails = collect($approvedWater)->merge($connectionCharge)->merge($waterOwner)->merge($water);
         return remove_null($consumerDetails);
+    }
+
+    /**
+     * |------------------------------ Get Application details --------------------------------|
+     * | @param request
+     * | @var ownerDetails
+     * | @var applicantDetails
+     * | @var applicationDetails
+     * | @var returnDetails
+     * | @return returnDetails : list of individual applications
+        | Serial No : 08
+        | Workinig 
+     */
+    public function getApproveApplicationsDetails($request)
+    {
+        # object assigning
+        $waterObj               = new WaterApprovalApplicationDetail();
+        $ownerObj               = new WaterApprovalApplicant();
+        $forwardBackward        = new WorkflowMap;
+        $mWorkflowTracks        = new WorkflowTrack();
+        $mCustomDetails         = new CustomDetail();
+        $mUlbNewWardmap         = new UlbWardMaster();
+
+        # application details
+        $applicationDetails = $waterObj->fullWaterDetails($request)->get();
+        if (collect($applicationDetails)->first() == null) {
+            return responseMsg(false, "Application Data Not found!", $request->applicationId);
+        }
+
+        // # Ward Name
+        // $refApplication = collect($applicationDetails)->first();
+        // $wardDetails = $mUlbNewWardmap->getWard($refApplication->ward_id);
+        # owner Details
+        $ownerDetails = $ownerObj->ownerByApplication($request)->get();
+        $ownerDetail = collect($ownerDetails)->map(function ($value, $key) {
+            return $value;
+        });
+        $aplictionList = [
+            'application_no' => collect($applicationDetails)->first()->application_no,
+            'apply_date' => collect($applicationDetails)->first()->apply_date
+        ];
+
+        # DataArray
+        $basicDetails = $this->getBasicDetails($applicationDetails);
+        $propertyDetails = $this->getpropertyDetails($applicationDetails);
+        $electricDetails = $this->getElectricDetails($applicationDetails);
+
+        $firstView = [
+            'headerTitle' => 'Basic Details',
+            'data' => $basicDetails
+        ];
+        $secondView = [
+            'headerTitle' => 'Applicant Property Details',
+            'data' => $propertyDetails
+        ];
+        $thirdView = [
+            'headerTitle' => 'Applicant Electricity Details',
+            'data' => $electricDetails
+        ];
+        $fullDetailsData['fullDetailsData']['dataArray'] = new collection([$firstView, $secondView, $thirdView]);
+
+        # CardArray
+        $cardDetails = $this->getCardDetails($applicationDetails, $ownerDetails);
+        $cardData = [
+            'headerTitle' => 'Water Connection',
+            'data' => $cardDetails
+        ];
+        $fullDetailsData['fullDetailsData']['cardArray'] = new Collection($cardData);
+
+        # TableArray
+        $ownerList = $this->getOwnerDetails($ownerDetail);
+        $ownerView = [
+            'headerTitle' => 'Owner Details',
+            'tableHead' => ["#", "Owner Name", "Guardian Name", "Mobile No", "Email", "City", "District"],
+            'tableData' => $ownerList
+        ];
+        $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerView]);
+
+        # Level comment
+        $mtableId = $applicationDetails->first()->id;
+        $mRefTable = "water_applications.id";
+        $levelComment['levelComment'] = $mWorkflowTracks->getTracksByRefId($mRefTable, $mtableId);
+
+        #citizen comment
+        $refCitizenId = $applicationDetails->first()->user_id;
+        $citizenComment['citizenComment'] = $mWorkflowTracks->getCitizenTracks($mRefTable, $mtableId, $refCitizenId);
+
+        # Role Details
+        $data = json_decode(json_encode($applicationDetails->first()), true);
+        $metaReqs = [
+            'customFor' => 'Water',
+            'wfRoleId' => $data['current_role'],
+            'workflowId' => $data['workflow_id'],
+            'lastRoleId' => $data['last_role_id']
+        ];
+        $request->request->add($metaReqs);
+        $forwardBackward = $forwardBackward->getRoleDetails($request);
+        $roleDetails['roleDetails'] = collect($forwardBackward)['original']['data'];
+
+        # Timeline Data
+        $timelineData['timelineData'] = collect($request);
+
+        # Departmental Post
+        $custom = $mCustomDetails->getCustomDetails($request);
+        $departmentPost['departmentalPost'] = collect($custom)['original']['data'];
+
+        # Payments Details
+        $returnValues = array_merge($aplictionList, $fullDetailsData, $levelComment, $citizenComment, $roleDetails, $timelineData, $departmentPost);
+        return responseMsgs(true, "listed Data!", remove_null($returnValues), "", "02", ".ms", "POST", "");
     }
 }
