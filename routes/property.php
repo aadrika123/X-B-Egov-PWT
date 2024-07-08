@@ -357,10 +357,10 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
    * | Serial No-16 
    */
   Route::controller(HoldingTaxController::class)->group(function () {
-    Route::post('v1/generate-holding-demand', 'generateHoldingDemand');              // (01) Property/Holding Yearly Holding Tax Generation
+    Route::post('v1/generate-holding-demand', 'generateHoldingDemand');           // (01) Property/Holding Yearly Holding Tax Generation
     Route::post('get-holding-dues', 'getHoldingDues');                            // (02) Property/ Holding Dues
-    Route::post('v1/get-referal-url', 'getReferalUrl');                            // (03) Generate Referal url
-    // Route::post('generate-prop-orderid', 'generateOrderId');                     // (03) Generate Property Order ID
+    Route::post('v1/get-referal-url', 'getReferalUrl');                           // (03) Generate Referal url
+    // Route::post('generate-prop-orderid', 'generateOrderId');                   // (03) Generate Property Order ID
     Route::post('offline-payment-holding', 'offlinePaymentHolding');              // (04) Payment Holding
     Route::post('v2/offline-payment-holding', 'offlinePaymentHoldingV2');
     Route::post('prop/get-cluster-holding-due', 'getClusterHoldingDues');         // (11) Property Cluster Dues
@@ -374,17 +374,17 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
   });
 
   Route::controller(CitizenHoldingController::class)->group(function () {
-    Route::post('citizen/get-holding-dues', 'getHoldingDues');                    // (02.1) unthicatd/Property/ Holding Dues
-    Route::post('citizen/icic-init-payment', 'ICICPaymentRequest');               // (02.2) unthicatd/Property/ initiate payment
+    Route::post('citizen/get-holding-dues', 'getHoldingDues');                    // (02.1) unAuthenticated/Property/ Holding Dues
+    Route::post('citizen/icic-init-payment', 'ICICPaymentRequest');               // (02.2) unAuthenticated/Property/ initiate payment
     Route::post('counter/icic-init-payment', 'ICICPaymentRequest');
-    Route::post('citizen/icici-payment-response', 'ICICPaymentResponse');         // (02.3) unthicatd/Property/ payment response
+    Route::post('citizen/icici-payment-response', 'ICICPaymentResponse');         // (02.3) unAuthenticated/Property/ payment response
     Route::post('citizen/test', 'testIcic');
     Route::post('citizen/icici-payment-status-list', 'getIciciPendingPaymentList');
     Route::post('citizen/icici-payment-update-status', 'updateIciciPendingPayment');
 
     #========created by Sandeep===================
     Route::post('v1/init-pine-lab-payment', 'pinLabInitPement');                        // (16) For React And Posh Machine Pine Lab Get Reference No
-    Route::post('v1/response-pine-lab-payment', 'pinLabResponse');                        // (16) For React And Posh Machine Pine Lab Payment And Update data Throw Reference No
+    Route::post('v1/response-pine-lab-payment', 'pinLabResponse');                      // (16) For React And Posh Machine Pine Lab Payment And Update data Throw Reference No
   });
 
   /**
@@ -397,9 +397,9 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('saf/verify-holding', 'verifyHoldingNo');                     // 05
     Route::post('saf/list-apartment', 'getAptList');                          // 05
     Route::post('saf/pending-geotagging-list', 'pendingGeoTaggingList');      // 06
-    Route::post('saf/get-cluster-saf-due', 'getClusterSafDues');              // (07) Saf Cluster Dues
-    Route::post('saf/cluster-saf-payment', 'clusterSafPayment');              // (08) Saf Cluster Dues
-    Route::post('saf/edit-active-saf', 'editActiveSaf');                      // (09) Edit Active Saf
+    Route::post('saf/get-cluster-saf-due', 'getClusterSafDues');              // 07 Saf Cluster Dues
+    Route::post('saf/cluster-saf-payment', 'clusterSafPayment');              // 08 Saf Cluster Dues
+    Route::post('saf/edit-active-saf', 'editActiveSaf');                      // 09 Edit Active Saf
   });
 
   /**
