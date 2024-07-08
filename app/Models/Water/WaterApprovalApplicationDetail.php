@@ -205,7 +205,8 @@ class WaterApprovalApplicationDetail extends Model
 
         )
             ->join('water_connection_charges', 'water_connection_charges.application_id', 'water_approval_application_details.id')
-            ->where('water_approval_application_details.id', $applicationId);
+            ->join('water_second_consumers', 'water_second_consumers.apply_connection_id', 'water_approval_application_details.id')
+            ->where('water_second_consumers.id', $applicationId);
     }
 
     public function getApplicationById($applicationId)
