@@ -535,9 +535,10 @@ class WaterSecondConsumer extends Model
         $mWaterConsumer->user_type                   = $consumerDetails['user_type'];
         $mWaterConsumer->area_sqmt                   = $consumerDetails['area_sqft'];
         $mWaterConsumer->rent_amount                 = $consumerDetails['rent_amount'] ?? null;
-        $mWaterConsumer->tab_size                   = $consumerDetails['tab_size'];
+        $mWaterConsumer->tab_size                    = $consumerDetails['tab_size'];
         $mWaterConsumer->approve_date                = Carbon::now();
         $mWaterConsumer->connection_date             = Carbon::now();
+        $mWaterConsumer->status                      = 3;
         $mWaterConsumer->save();
         return $mWaterConsumer->id;
     }

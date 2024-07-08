@@ -284,7 +284,7 @@ class WaterPaymentController extends Controller
 
         try {
             $mWaterTran             = new WaterTran();
-            $mWaterSecondConsumer         = new WaterSecondConsumer();
+            $mWaterSecondConsumer   = new WaterSecondConsumer();
             $mWaterConsumerDemand   = new WaterConsumerDemand();
             $mWaterTranDetail       = new WaterTranDetail();
             $transactions           = array();
@@ -369,7 +369,7 @@ class WaterPaymentController extends Controller
                 $chequeDetails = $mWaterChequeDtl->getChequeDtlsByTransId($transactionDetails['id'])->firstorfail();
             }
             # Application Deatils
-            $applicationDetails = $mWaterApplication->getDetailsByApplicationId($transactionDetails->related_id)->first();
+            $applicationDetails = $mWaterApprovalApplicationDetail->getDetailsByApplicationId($transactionDetails->related_id)->first();
             if (is_null($applicationDetails)) {
                 $applicationDetails = $mWaterApprovalApplicationDetail->getApprovedApplicationById($transactionDetails->related_id)->first();
                 if (!$applicationDetails) {
@@ -2543,6 +2543,7 @@ class WaterPaymentController extends Controller
                 $consumerNo     = str_replace('/', '-', $consumerNo);
 
                 $consumerId = $mWaterConsumer->saveWaterConsumer($approvedWaterRep, $consumerNo);
+                $mWaterApprovalApplications->updateConsumerId($applicatinId, $consumerId);
                 $this->commit();
             }
             return responseMsgs(true, "Payment Done!", remove_null($request->all()), "", "01", responseTime(), $request->getMethod(), $request->deviceId);

@@ -536,12 +536,12 @@ class NewConnectionRepository implements iNewConnection
         # Approval of water application 
         if ($request->status == 1) {
             # Consumer no generation
-            // $idGeneration   = new PrefixIdGenerator($consumerParamId, $refWaterDetails['ulb_id']);
-            // $consumerNo     = $idGeneration->generate();
-            // $consumerNo     = str_replace('/', '-', $consumerNo);
+            $idGeneration   = new PrefixIdGenerator($consumerParamId, $refWaterDetails['ulb_id']);
+            $consumerNo     = $idGeneration->generate();
+            $consumerNo     = str_replace('/', '-', $consumerNo);
 
             $this->saveWaterConnInProperty($refWaterDetails,);
-            $consumerId = $mWaterApplication->finalApproval($request, $refJe);
+            $consumerId = $mWaterApplication->finalApproval($request, $refJe, $consumerNo);
             $mWaterApplicant->finalApplicantApproval($request, $consumerId);
             $msg = "Application Successfully Approved !!";
         }
