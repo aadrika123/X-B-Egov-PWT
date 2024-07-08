@@ -152,4 +152,11 @@ class WaterApprovalApplicationDetail extends Model
             ->join('water_connection_charges', 'water_connection_charges.application_id', 'water_approval_application_details.id')
             ->where('water_approval_application_details.id', $applicationId);
     }
+
+    public function getApplicationById($applicationId)
+    {
+        return  WaterApprovalApplicationDetail::where('id', $applicationId)
+            ->where('status', 1);
+    }
+
 }

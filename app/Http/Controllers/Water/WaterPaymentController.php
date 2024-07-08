@@ -71,8 +71,10 @@ use App\BLL\Water\WaterConsumerPayment;
 use App\BLL\Water\WaterConsumerPaymentReceipt;
 use App\Http\Controllers\Water\WaterConsumer as WaterWaterConsumer;
 use App\Http\Requests\Water\ReqPayment;
+use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\Payment\IciciPaymentReq;
 use App\Models\Payment\IciciPaymentResponse;
+use App\Models\Water\WaterApprovalApplicant;
 use App\Models\Water\WaterIciciResponse;
 use App\Repository\Common\CommonFunction;
 use App\Repository\Water\Interfaces\IConsumer;
@@ -710,11 +712,11 @@ class WaterPaymentController extends Controller
             if ($refDemand->last()) {
                 $lastDemand = $refDemand->last();
                 // $startingDate = Carbon::createFromFormat('Y-m-d', $lastDemand['demand_from']);
-                $startingDate = Carbon::createFromFormat('Y-m-d', $refDemand->min("demand_from"))??null;
+                $startingDate = Carbon::createFromFormat('Y-m-d', $refDemand->min("demand_from")) ?? null;
             } else {
                 $startingDate = null;
             }
-            
+
             $endDate        = Carbon::createFromFormat('Y-m-d',  $request->demandUpto);
             $startingDate   = $startingDate->toDateString();
             $endDate        = $endDate->toDateString();
@@ -991,7 +993,7 @@ class WaterPaymentController extends Controller
             if ($refDemand->last()) {
                 $lastDemand = $refDemand->last();
                 // $startingDate = Carbon::createFromFormat('Y-m-d', $lastDemand['demand_from']);
-                $startingDate = Carbon::createFromFormat('Y-m-d', $refDemand->min("demand_from"))??null;
+                $startingDate = Carbon::createFromFormat('Y-m-d', $refDemand->min("demand_from")) ?? null;
             } else {
                 $startingDate = null;
             }
@@ -1739,7 +1741,7 @@ class WaterPaymentController extends Controller
             }
 
             $fromDate           = collect($consumerDemands)->last()->demand_from;
-            $fromDate           = !$fromDate  ? collect($consumerDemands)->last()->generation_date : $fromDate ;
+            $fromDate           = !$fromDate  ? collect($consumerDemands)->last()->generation_date : $fromDate;
             $startingDate       = Carbon::createFromFormat('Y-m-d',  $fromDate)->startOfMonth();
             $uptoDate           = collect($consumerDemands)->first()->demand_upto;
             $endingDate         = Carbon::createFromFormat('Y-m-d',  $uptoDate)->endOfMonth();
@@ -1784,7 +1786,7 @@ class WaterPaymentController extends Controller
 
             $returnValues = [
                 "transactionNo"         => $transactionDetails->tran_no,
-                "totalDemandAmt"        => ($transactionDetails->amount ? $transactionDetails->amount : 0) + ($transactionDetails->due_amount ? $transactionDetails->due_amount:0) ,
+                "totalDemandAmt"        => ($transactionDetails->amount ? $transactionDetails->amount : 0) + ($transactionDetails->due_amount ? $transactionDetails->due_amount : 0),
                 "departmentSection"     => $mDepartmentSection,
                 "accountDescription"    => $mAccDescription,
                 "transactionDate"       => $transactionDate,
@@ -1805,7 +1807,7 @@ class WaterPaymentController extends Controller
                 'finalReading'          => (int)$finalReading,
                 "address"               => $consumerDetails['address'],
                 "paidFrom"              => $paidFrom, #$startingDate->format('Y-m-d'),
-                "paidUpto"              => $paidUpto , #$endingDate->format('Y-m-d'),
+                "paidUpto"              => $paidUpto, #$endingDate->format('Y-m-d'),
                 "holdingNo"             => $consumerDetails['holding_no'],
                 "propertyNo"            => $consumerDetails['property_no'],
                 "safNo"                 => $consumerDetails['saf_no'],
@@ -1843,12 +1845,12 @@ class WaterPaymentController extends Controller
                 "ownerName"               => 'test',
                 "advancePaidAmount"       => $advanceAmt,
                 "adjustAmount"            => $adjustAmt,
-                "netAdvance"              =>$advanceAmt - $adjustAmt,
+                "netAdvance"              => $advanceAmt - $adjustAmt,
             ];
-            
+
             return responseMsgs(true, "Payment Receipt", remove_null($returnValues), "", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, [$e->getMessage(), $e->getFile(),$e->getLine()], "", "01", "ms", "POST", "");
+            return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "", "01", "ms", "POST", "");
         }
     }
 
@@ -2449,14 +2451,17 @@ class WaterPaymentController extends Controller
             $todayDate      = Carbon::now();
             $applicatinId   = $request->applicationId;
             $refPaymentMode = Config::get('payment-constants.REF_PAY_MODE');
+            $consumerParamId    = Config::get("waterConstaint.PARAM_IDS.WCON");
+            
 
             $idGeneration                   = new IdGeneration;
             $mWaterTran                     = new WaterTran();
             $mWaterApplications             = new WaterApplication();
+            $mWaterApprovalApplications     = new WaterApprovalApplicationDetail();
             $mWaterConsumerCharge           = new WaterConnectionCharge();
 
             $offlinePaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
-            $activeConRequest = $mWaterApplications->getApplicationById($applicatinId)
+            $activeConRequest = $mWaterApprovalApplications->getApplicationById($applicatinId)
                 ->where('payment_status', 0)
                 ->first();
             if (!$activeConRequest) {
@@ -2477,12 +2482,16 @@ class WaterPaymentController extends Controller
             $chargeCatagory = $this->checkConReqPayment($activeConRequest);
 
             $this->begin();
-            $tranNo = $idGeneration->generateTransactionNo($user->ulb_id);
+            # Consumer no generation
+            // $idGeneration   = new PrefixIdGenerator($consumerParamId, $refWaterDetails['ulb_id']);
+            // $consumerNo     = $idGeneration->generate();
+            // $consumerNo     = str_replace('/', '-', $consumerNo);
+            // $tranNo = $idGeneration->generateTransactionNo($user->ulb_id);
             $request->merge([
                 'userId'            => $user->id,
                 'userType'          => $user->user_type,
                 'todayDate'         => $todayDate->format('Y-m-d'),
-                'tranNo'            => $tranNo,
+                // 'tranNo'            => $tranNo,
                 'id'                => $applicatinId,
                 'ulbId'             => $user->ulb_id,
                 'chargeCategory'    => $chargeCatagory['chargeCatagory'],                                 // Static
@@ -2514,6 +2523,31 @@ class WaterPaymentController extends Controller
             $this->rollback();
             return responseMsgs(false, $e->getMessage(), [], "", "03", ".ms", "POST", $request->deviceId);
         }
+    }
+
+    public function preApprovalConditionCheck($request, $roleId)
+    {
+        $waterDetails = WaterApprovalApplicationDetail::find($request->applicationId);
+        if ($waterDetails->finisher != $roleId) {
+            throw new Exception("You're Not the finisher ie. EO!");
+        }
+        if ($waterDetails->current_role != $roleId) {
+            throw new Exception("Application has not Reached to the finisher ie. EO!");
+        }
+        if ($waterDetails->doc_status == false) {
+            throw new Exception("Documet is Not verified!");
+        }
+        if ($waterDetails->payment_status != 1) {
+            throw new Exception("Payment Not Done or not verefied!");
+        }
+        if ($waterDetails->doc_upload_status == false) {
+            throw new Exception("Full document is Not Uploaded!");
+        }
+        // if ($waterDetails->is_field_verified == 0) {
+        //     throw new Exception("Field Verification Not Done!!");
+        // }
+        $this->checkDataApprovalCondition($request, $roleId, $waterDetails);   // Reminder
+        return $waterDetails;
     }
 
     /**
@@ -2870,10 +2904,10 @@ class WaterPaymentController extends Controller
 
     public function partPaymentV2(ReqPayment $request)
     {
-        try {            
+        try {
             # check the params for part payment
             $ConsumerPayment = new WaterConsumerPayment($request);
-            $controller = App::makeWith(WaterWaterConsumer::class,["IConsumer"=>app(IConsumer::class)]);
+            $controller = App::makeWith(WaterWaterConsumer::class, ["IConsumer" => app(IConsumer::class)]);
             $ConsumerPayment->waterDemands = $controller->listConsumerDemand($request);
             $this->begin();
             $ConsumerPayment->postPayment();
@@ -2882,7 +2916,7 @@ class WaterPaymentController extends Controller
             return responseMsgs(true, "payment Done!", $response, "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             $this->rollback();
-            return responseMsgs(false,[$e->getMessage(),$e->getFile()],  "", "01", ".ms", "POST", $request->deviceId);
+            return responseMsgs(false, [$e->getMessage(), $e->getFile()],  "", "01", ".ms", "POST", $request->deviceId);
         }
     }
 
@@ -2890,9 +2924,9 @@ class WaterPaymentController extends Controller
     {
         $rules = [
             'transactionNo' => 'nullable',
-            "tranId"=>"required_without:transactionNo"
+            "tranId" => "required_without:transactionNo"
         ];
-        
+
         $validated = Validator::make($request->all(), $rules);
 
         if ($validated->fails()) {
@@ -2902,14 +2936,13 @@ class WaterPaymentController extends Controller
                 'errors' => $validated->errors()
             ], 401);
         }
-        try{
+        try {
             $generatePaymentReceipt = new WaterConsumerPaymentReceipt();
-            $generatePaymentReceipt->generateReceipt($request->transactionNo,$request->tranId);
+            $generatePaymentReceipt->generateReceipt($request->transactionNo, $request->tranId);
             $receipt = $generatePaymentReceipt->_GRID;
             return responseMsgs(true, "Payment Receipt", remove_null($receipt), "011605", "1.0", "", "POST", $request->deviceId ?? "");
-        }
-        catch (Exception $e) {
-            return responseMsgs(false, [$e->getMessage(), $e->getFile(),$e->getLine()], "", "01", "ms", "POST", "");
+        } catch (Exception $e) {
+            return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "", "01", "ms", "POST", "");
         }
     }
 
@@ -3393,7 +3426,7 @@ class WaterPaymentController extends Controller
 
     public function oldPaymentEntry(Request $request)
     {
-        try{
+        try {
             $paymentMode = Config::get("payment-constants.PAYMENT_OFFLINE_MODE");
             $paymentMode = (collect($paymentMode)->implode(","));
             $offlinePaymentModes = Config::get('payment-constants.PAYMENT_OFFLINE_MODE');
@@ -3401,8 +3434,8 @@ class WaterPaymentController extends Controller
             $online = Config::get('payment-constants.PAYMENT_OFFLINE_MODE.5');
             $rules = [
                 "consumerId" => "required|digits_between:1,9223372036854775807",
-                "tranDate" => "required|date|before:".(Carbon::now()->format("Y-m-d")),
-                "paymentMode" => "required|string|in:".$paymentMode,
+                "tranDate" => "required|date|before:" . (Carbon::now()->format("Y-m-d")),
+                "paymentMode" => "required|string|in:" . $paymentMode,
                 "amount" => "required|numeric|min:0.1|max:9999999",
             ];
             if (isset($request['paymentMode']) &&  in_array($request['paymentMode'], $offlinePaymentModes) && ($request['paymentMode'] != $cash && $request['paymentMode'] != $online)) {
@@ -3422,9 +3455,7 @@ class WaterPaymentController extends Controller
                     'errors' => $validated->errors()
                 ], 200);
             }
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
