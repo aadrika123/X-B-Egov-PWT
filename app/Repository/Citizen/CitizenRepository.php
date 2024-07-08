@@ -252,6 +252,43 @@ class CitizenRepository implements iCitizenRepository
             ->get();
         $applications['harvestings'] = $harvestingApplications;
 
+        $pendingProcessFeeApplications = DB::table('prop_safs')
+            ->leftJoin('wf_roles as r', 'r.id', '=', 'prop_safs.current_role')
+            ->leftJoin('prop_transactions as t', 't.saf_id', '=', 'prop_safs.id')
+            ->select(
+                'prop_safs.id as application_id',
+                'saf_no',
+                'pt_no',
+                'holding_no',
+                'assessment_type',
+                'r.role_name as current_level',
+                DB::raw("TO_CHAR(application_date, 'DD-MM-YYYY') as application_date,
+                    CASE WHEN prop_safs.current_role = prop_safs.initiator_role_id THEN TRUE
+                        WHEN prop_safs.current_role IS NULL THEN TRUE
+                        ELSE FALSE
+                    END AS citizen_can_edit
+                "),
+                'applicant_name',
+                'payment_status',
+                'doc_upload_status',
+                'saf_pending_status',
+                'parked as backToCitizen',
+                'workflow_id',
+                'prop_safs.created_at',
+                'prop_safs.updated_at',
+                't.tran_no as transaction_no',
+                't.tran_date as transaction_date',
+                'prop_safs.is_agency_verified',
+                'prop_safs.is_field_verified as is_ulb_verified',
+                'prop_safs.proccess_fee_paid'
+            )
+            ->where('prop_safs.citizen_id', $userId)
+            ->where('prop_safs.status', 1)
+            ->where('prop_safs.proccess_fee_paid',0)
+            ->orderByDesc('prop_safs.id')
+            ->get();
+        $applications['pendingProcessFeeSaf'] = collect($pendingProcessFeeApplications)->values();
+
         return collect($applications);
     }
 
@@ -304,7 +341,8 @@ class CitizenRepository implements iCitizenRepository
                                 o.owner_name,
                                 p.balance AS leftAmount,
                                 t.amount AS lastPaidAmount,
-                                t.tran_date AS lastPaidDate
+                                t.tran_date AS lastPaidDate,
+                                p.status    AS active_status
 
                                 FROM prop_properties p
                                 LEFT JOIN (
@@ -326,7 +364,8 @@ class CitizenRepository implements iCitizenRepository
                                     FROM prop_owners 
                                     ORDER BY id ASC 
                                     ) AS o ON o.property_id=p.id AND ROW1=1
-                                    WHERE p.citizen_id=$userId";
+                                    WHERE p.citizen_id=$userId   
+                                    AND   p.status = 1";
             $properties = DB::select($query);
             $application['applications'] = $properties;
             $application['totalApplications'] = collect($properties)->count();
