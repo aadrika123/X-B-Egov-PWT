@@ -2,6 +2,8 @@
 
 namespace App\Repository\Trade;
 
+use App\BLL\Property\Akola\GetHoldingDuesV2;
+use App\BLL\Property\Akola\TaxCalculator;
 use Illuminate\Support\Facades\Storage;
 use App\EloquentModels\Common\ModelWard;
 use App\Models\CustomDetail;
@@ -489,10 +491,10 @@ class Trade implements ITrade
                 }
                 $this->commit();
 
-               $mTradeSmsLog      = new TradeSmsLog();
-               $firstOwnerDetails = collect($request->ownerDetails)->first();
-               $firstOwnerName    = $firstOwnerDetails['businessOwnerName'];
-               $firstOwnerMobile  = $firstOwnerDetails['mobileNo'];
+                $mTradeSmsLog      = new TradeSmsLog();
+                $firstOwnerDetails = collect($request->ownerDetails)->first();
+                $firstOwnerName    = $firstOwnerDetails['businessOwnerName'];
+                $firstOwnerMobile  = $firstOwnerDetails['mobileNo'];
 
                 if (strlen($firstOwnerMobile) == 10) {
                     $sms      = "Dear " . $firstOwnerName . ", congratulations on submitting your License application. Your Ref No. is " . $mAppNo . ". For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
@@ -1606,8 +1608,18 @@ class Trade implements ITrade
             $inputs = $request->all();
 
             $propdet = $this->propertyDetailsfortradebyHoldingNo($inputs['holdingNo'], $refUlbId);
+
             if ($propdet['status']) {
+
+                $request->merge(["propId" => $propdet['property']['id']]);
+                $getHoldingDues = new GetHoldingDuesV2;
+                $demand = $getHoldingDues->getDues($request);
+
                 $response = ['status' => true, "data" => ["property" => $propdet['property'], "owner" => $propdet['owner']], "message" => ""];
+                
+                if (($demand['previousInterest']) > 0 || ($demand['arrear']) > 0) {
+                    $response = ['status' => false, "data" => '', "message" => "Please Clear The Previous Arrear Amount Of ₹" . $demand['arrearPayableAmt'] . " Before Applying The Application."];
+                }
             } else {
                 $response = ['status' => false, "data" => '', "message" => 'No Property Found'];
             }

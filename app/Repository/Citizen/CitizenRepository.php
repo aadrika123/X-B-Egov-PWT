@@ -254,7 +254,6 @@ class CitizenRepository implements iCitizenRepository
 
         $pendingProcessFeeApplications = DB::table('prop_safs')
             ->leftJoin('wf_roles as r', 'r.id', '=', 'prop_safs.current_role')
-            ->leftJoin('prop_transactions as t', 't.saf_id', '=', 'prop_safs.id')
             ->select(
                 'prop_safs.id as application_id',
                 'saf_no',
@@ -276,8 +275,6 @@ class CitizenRepository implements iCitizenRepository
                 'workflow_id',
                 'prop_safs.created_at',
                 'prop_safs.updated_at',
-                't.tran_no as transaction_no',
-                't.tran_date as transaction_date',
                 'prop_safs.is_agency_verified',
                 'prop_safs.is_field_verified as is_ulb_verified',
                 'prop_safs.proccess_fee_paid'
