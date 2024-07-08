@@ -92,6 +92,7 @@ class WaterApprovalApplicationDetail extends Model
             'water_approval_application_details.address',
             'water_approval_application_details.holding_no',
             'water_approval_application_details.saf_no',
+            'water_approval_application_details.payment_status',
             'ulb_ward_masters.ward_name',
             DB::raw("string_agg(water_approval_applicants.applicant_name,',') as applicantName"),
             DB::raw("string_agg(water_approval_applicants.mobile_no::VARCHAR,',') as mobileNo"),

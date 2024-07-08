@@ -2520,7 +2520,7 @@ class WaterPaymentController extends Controller
             }
             # Save the transaction details for offline mode  
             $this->saveConsumerRequestStatus($request, $offlinePaymentModes, $activeConsumercharges, $waterTrans, $activeConRequest);
-           $siteDetails = $mWaterSiteInspection->getSiteDetails($request->applicationId)
+            $siteDetails = $mWaterSiteInspection->getSiteDetails($request->applicationId)
                 // ->where('payment_status', 1)
                 ->where('order_officer', $refJe)
                 ->first();
@@ -2545,7 +2545,7 @@ class WaterPaymentController extends Controller
                 $consumerId = $mWaterConsumer->saveWaterConsumer($approvedWaterRep, $consumerNo);
                 $this->commit();
             }
-            return responseMsgs(true, "Payment Done!", remove_null($consumerNo), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
+            return responseMsgs(true, "Payment Done!", remove_null($request->all()), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
             $this->rollback();
             return responseMsgs(false, $e->getMessage(), [], "", "03", ".ms", "POST", $request->deviceId);

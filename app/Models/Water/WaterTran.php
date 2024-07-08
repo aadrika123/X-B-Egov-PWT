@@ -384,8 +384,8 @@ class WaterTran extends Model
             'water_trans.tran_date',
             'water_trans.tran_type',
             DB::raw('2 as moduleId'),
-                'water_trans.status'
-            )
+            'water_trans.status'
+        )
             ->where('water_trans.tran_no', $tranNo)
             ->where('status', 1)
             ->get();
