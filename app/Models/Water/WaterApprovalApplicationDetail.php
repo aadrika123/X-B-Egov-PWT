@@ -158,5 +158,39 @@ class WaterApprovalApplicationDetail extends Model
         return  WaterApprovalApplicationDetail::where('id', $applicationId)
             ->where('status', 1);
     }
+    /**
+     * | Save The payment Status 
+     * | @param ApplicationId
+     */
+    public function updateOnlyPaymentstatus($applicationId)
+    {
+        $activeSaf = WaterApprovalApplicationDetail::find($applicationId);
+        $activeSaf->payment_status = 1;
+        $activeSaf->save();
+    }
 
+    /**
+     * | Update the payment Status ini case of pending
+     * | in case of application is under verification 
+     * | @param applicationId
+     */
+    public function updatePendingStatus($applicationId)
+    {
+        $activeSaf = WaterApprovalApplicationDetail::find($applicationId);
+        $activeSaf->payment_status = 2;
+        $activeSaf->save();
+    }
+
+    /**
+     * | Save the application current role as the bo when payament is done offline
+     * | @param 
+     */
+    public function sendApplicationToRole($applicationId, $refRoleId)
+    {
+        WaterApprovalApplicationDetail::where('id', $applicationId)
+            ->where('status', 1)
+            ->update([
+                "current_role" => $refRoleId
+            ]);
+    }
 }

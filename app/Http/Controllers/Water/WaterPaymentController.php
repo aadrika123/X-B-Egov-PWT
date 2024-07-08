@@ -2451,7 +2451,8 @@ class WaterPaymentController extends Controller
             $todayDate      = Carbon::now();
             $applicatinId   = $request->applicationId;
             $refPaymentMode = Config::get('payment-constants.REF_PAY_MODE');
-            $consumerParamId    = Config::get("waterConstaint.PARAM_IDS.WCON");
+            $consumerParamId    = Config::get("waterConstaint.PARAM_IDS.WCD");
+            $refJe              = Config::get("waterConstaint.ROLE-LABEL.JE");
 
 
             $idGeneration                   = new IdGeneration;
@@ -2460,6 +2461,7 @@ class WaterPaymentController extends Controller
             $mWaterApprovalApplications     = new WaterApprovalApplicationDetail();
             $mWaterConsumerCharge           = new WaterConnectionCharge();
             $mWaterConsumer                 = new WaterSecondConsumer();
+            $mWaterSiteInspection           = new WaterSiteInspection();
 
             $offlinePaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
             $activeConRequest = $mWaterApprovalApplications->getApplicationById($applicatinId)
@@ -2487,7 +2489,7 @@ class WaterPaymentController extends Controller
             // $idGeneration   = new PrefixIdGenerator($consumerParamId, $refWaterDetails['ulb_id']);
             // $consumerNo     = $idGeneration->generate();
             // $consumerNo     = str_replace('/', '-', $consumerNo);
-            $tranNo = $idGeneration->generateTransactionNo($user->ulb_id);
+            $tranNo = $idGeneration->generateTransactionNo($activeConRequest->ulb_id);
             $request->merge([
                 'userId'            => $user->id,
                 'userType'          => $user->user_type,
@@ -2518,11 +2520,32 @@ class WaterPaymentController extends Controller
             }
             # Save the transaction details for offline mode  
             $this->saveConsumerRequestStatus($request, $offlinePaymentModes, $activeConsumercharges, $waterTrans, $activeConRequest);
+           $siteDetails = $mWaterSiteInspection->getSiteDetails($request->applicationId)
+                // ->where('payment_status', 1)
+                ->where('order_officer', $refJe)
+                ->first();
 
-            # After Payment Done Make consumer
-            // $consumerId = $mWaterConsumer->saveWaterConsumer($approvedWaterRep, $consumerNo);
-            $this->commit();
-            return responseMsgs(true, "Payment Done!", remove_null($request->all()), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
+
+            if (isset($siteDetails)) {
+                $refData = [
+                    'connection_type_id'    => $siteDetails['connection_type_id'],
+                    'connection_through'    => $siteDetails['connection_through'],
+                    'pipeline_type_id'      => $siteDetails['pipeline_type_id'],
+                    'property_type_id'      => $siteDetails['property_type_id'],
+                    'category'              => $siteDetails['category'],
+                    'area_sqft'             => $siteDetails['area_sqft'],
+                    'area_asmt'             => sqFtToSqMt($siteDetails['area_sqft'])
+                ];
+                $approvedWaterRep = collect($activeConRequest)->merge($refData);
+                # After Payment Done Make consumer
+                $idGeneration   = new PrefixIdGenerator($consumerParamId, $activeConRequest->ulb_id);
+                $consumerNo     = $idGeneration->generate();
+                $consumerNo     = str_replace('/', '-', $consumerNo);
+
+                $consumerId = $mWaterConsumer->saveWaterConsumer($approvedWaterRep, $consumerNo);
+                $this->commit();
+            }
+            return responseMsgs(true, "Payment Done!", remove_null($consumerNo), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
             $this->rollback();
             return responseMsgs(false, $e->getMessage(), [], "", "03", ".ms", "POST", $request->deviceId);
