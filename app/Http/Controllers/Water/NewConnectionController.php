@@ -1300,14 +1300,23 @@ class NewConnectionController extends Controller
             $refWaterNewConnection  = new WaterNewConnection();
             $refWfActiveDocument    = new WfActiveDocument();
             $mWaterConnectionCharge = new WaterConnectionCharge();
-            $mWaterSecondConsumer   = new WaterApplication();   // Application 
+            $mWaterApplication   = new WaterApplication();   // Application 
+            $mWaterApprovalApplications = new WaterApprovalApplicationDetail();
             $moduleId               = Config::get('module-constants.WATER_MODULE_ID');
 
             $connectionId = $request->applicationId;
-            $refApplication = $mWaterSecondConsumer->getApplicationById($connectionId)->first();
-            if (!$refApplication) {
-                throw new Exception("Application Not Found!");
+            if ($user->user_type != 'JSK') {
+                $refApplication = $mWaterApplication->getApplicationById($connectionId)->first();
+                if (!$refApplication) {
+                    throw new Exception("Application Not Found!");
+                }
+            } else {
+                $refApplication = $mWaterApprovalApplications->getApplicationById($connectionId)->first();
+                if (!$refApplication) {
+                    throw new Exception("Application Not Found!");
+                }
             }
+
 
             $connectionCharges = $mWaterConnectionCharge->getWaterchargesById($connectionId)
                 ->where('charge_category', '!=', "Site Inspection")                         # Static
@@ -2173,7 +2182,7 @@ class NewConnectionController extends Controller
             $refChargeCatagoryValue     = Config::get("waterConstaint.CONNECTION_TYPE");
 
             # Application Details
-           $applicationDetails['applicationDetails'] = $mWaterApproveApplication->fullWaterDetail($applicationId)->first();
+            $applicationDetails['applicationDetails'] = $mWaterApproveApplication->fullWaterDetail($applicationId)->first();
 
             # Payment Details 
             $refAppDetails = collect($applicationDetails)->first();
@@ -2937,7 +2946,7 @@ class NewConnectionController extends Controller
             }
 
             # collect the application charges 
-            $Charges = $mWaterChrges->getChargesByIds($connectypeId);
+            $Charges = $mWaterChrges->getChargesByIds($connectypeId,$req->TabSize);
 
             $this->begin();
             # Generating Application No
@@ -2946,6 +2955,7 @@ class NewConnectionController extends Controller
             $applicationNo  = str_replace('/', '-', $applicationNo);
 
             $applicationId = $mWaterApplication->saveWaterApplications($connectypeId, $req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo);
+
             $meta = [
                 'applicationId'     => $applicationId->id,
                 "amount"            => $Charges->amount,

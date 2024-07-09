@@ -10,15 +10,15 @@ class WaterConnectionTypeCharge extends Model
     use HasFactory;
     protected $connection = 'pgsql_water';
 
-   /**
+    /**
      * | Get the Connection charges By array of ids
      * | @param id
      */
-    public function getChargesByIds($id)
+    public function getChargesByIds($id, $tabSize)
     {
         return WaterConnectionTypeCharge::where('id', $id)
+            ->where('tab_size', $tabSize)
             ->where('status', 1)
             ->first();
     }
 }
-
