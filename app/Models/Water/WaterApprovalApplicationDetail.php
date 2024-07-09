@@ -199,7 +199,15 @@ class WaterApprovalApplicationDetail extends Model
     public function fullWaterDetail($applicationId)
     {
         return WaterApprovalApplicationDetail::select(
-            'water_approval_application_details.*',
+            'water_second_consumers.id',
+            'water_approval_application_details.id as applicationId',
+            'water_approval_application_details.application_no',
+            'water_approval_application_details.category',
+            'water_approval_application_details.address',
+            'water_approval_application_details.landmark',
+            'water_approval_application_details.payment_status',
+            'water_approval_application_details.property_no',
+            'water_approval_application_details.mobile_no',
             'water_connection_charges.amount',
             "water_connection_charges.charge_category"
 

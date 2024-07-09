@@ -2485,10 +2485,6 @@ class WaterPaymentController extends Controller
             $chargeCatagory = $this->checkConReqPayment($activeConRequest);
 
             $this->begin();
-            # Consumer no generation
-            // $idGeneration   = new PrefixIdGenerator($consumerParamId, $refWaterDetails['ulb_id']);
-            // $consumerNo     = $idGeneration->generate();
-            // $consumerNo     = str_replace('/', '-', $consumerNo);
             $tranNo = $idGeneration->generateTransactionNo($activeConRequest->ulb_id);
             $request->merge([
                 'userId'            => $user->id,
@@ -2520,32 +2516,7 @@ class WaterPaymentController extends Controller
             }
             # Save the transaction details for offline mode  
             $this->saveConsumerRequestStatus($request, $offlinePaymentModes, $activeConsumercharges, $waterTrans, $activeConRequest);
-            $siteDetails = $mWaterSiteInspection->getSiteDetails($request->applicationId)
-                // ->where('payment_status', 1)
-                ->where('order_officer', $refJe)
-                ->first();
-
-
-            if (isset($siteDetails)) {
-                $refData = [
-                    'connection_type_id'    => $siteDetails['connection_type_id'],
-                    'connection_through'    => $siteDetails['connection_through'],
-                    'pipeline_type_id'      => $siteDetails['pipeline_type_id'],
-                    'property_type_id'      => $siteDetails['property_type_id'],
-                    'category'              => $siteDetails['category'],
-                    'area_sqft'             => $siteDetails['area_sqft'],
-                    'area_asmt'             => sqFtToSqMt($siteDetails['area_sqft'])
-                ];
-                $approvedWaterRep = collect($activeConRequest)->merge($refData);
-                # After Payment Done Make consumer
-                $idGeneration   = new PrefixIdGenerator($consumerParamId, $activeConRequest->ulb_id);
-                $consumerNo     = $idGeneration->generate();
-                $consumerNo     = str_replace('/', '-', $consumerNo);
-
-                $consumerId = $mWaterConsumer->saveWaterConsumer($approvedWaterRep, $consumerNo);
-                $mWaterApprovalApplications->updateConsumerId($applicatinId, $consumerId);
-                $this->commit();
-            }
+            $this->commit();
             return responseMsgs(true, "Payment Done!", remove_null($request->all()), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
             $this->rollback();
