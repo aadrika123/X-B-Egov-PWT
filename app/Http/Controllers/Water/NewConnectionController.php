@@ -271,9 +271,9 @@ class NewConnectionController extends Controller
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
             $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
-                ->whereIn('water_applicatons.ward_id', $wardId)
+                ->whereIn('water_applications.ward_id', $wardId)
                 ->where('parked', true)
-                ->orderByDesc('water_applicatons.id')
+                ->orderByDesc('water_applications.id')
                 ->get();
 
             $filterWaterList = collect($waterList)->unique('id');
