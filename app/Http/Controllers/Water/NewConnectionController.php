@@ -1309,16 +1309,12 @@ class NewConnectionController extends Controller
             $moduleId               = Config::get('module-constants.WATER_MODULE_ID');
 
             $connectionId = $request->applicationId;
-            if ($user->user_type != 'JSK') {
-                $refApplication = $mWaterApplication->getApplicationById($connectionId)->first();
-                if (!$refApplication) {
-                    throw new Exception("Application Not Found!");
-                }
-            } else {
+            $refApplication = $mWaterApplication->getApplicationById($connectionId)->first();
+            if ($refApplication == null) {
                 $refApplication = $mWaterApprovalApplications->getApplicationById($connectionId)->first();
-                if (!$refApplication) {
-                    throw new Exception("Application Not Found!");
-                }
+            }
+            if (!$refApplication) {
+                throw new Exception("Application Not Found!");
             }
 
 
