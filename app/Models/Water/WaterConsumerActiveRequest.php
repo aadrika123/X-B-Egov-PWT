@@ -109,7 +109,7 @@ class WaterConsumerActiveRequest extends Model
             "ulb_ward_masters.ward_name"
         )
             ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'water_consumer_active_requests.ward_mstr_id')
-            ->join('water_consumer_charges', 'water_consumer_charges.related_id', 'water_consumer_active_requests.id')
+            ->leftjoin('water_consumer_charges', 'water_consumer_charges.related_id', 'water_consumer_active_requests.id')
             ->leftjoin('water_consumers', 'water_consumers.id', 'water_consumer_active_requests.consumer_id')
             ->where('water_consumer_active_requests.citizen_id', $userId)
             ->where('water_consumer_active_requests.status', 1)
