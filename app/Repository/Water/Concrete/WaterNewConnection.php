@@ -1295,15 +1295,15 @@ class WaterNewConnection implements IWaterNewConnection
 
     public function getDocumentTypeList($application, $user)
     {
-       $refUserType = Config::get('waterConstaint.REF_USER_TYPE');
-        $type = ["FORM_SCAN_COPY", "STAMP", "ID_PROOF","PROPERTY TAX"];
+        $refUserType = Config::get('waterConstaint.REF_USER_TYPE');
+        $type = ["FORM_SCAN_COPY", "STAMP", "ID_PROOF", "PROPERTY TAX"];
         // Check if user_type is not equal to 1
         if ($user->user_type == $refUserType['1']) {
             // Modify $type array for user_type not equal to 1
-            $type = ["STAMP", "ID_PROOF","PROPERTY TAX"];
+            $type = ["STAMP", "ID_PROOF", "PROPERTY TAX", "METER", "PLUMBER LICENSE", "AMC FTTER REPORT", "PIPELINE MAP "];
         }
 
-       $doc = WaterParamDocumentType::select(
+        $doc = WaterParamDocumentType::select(
             "doc_for",
             DB::raw("CASE WHEN doc_for ='OTHER' THEN 0 
             ELSE 1 END AS is_mandatory")

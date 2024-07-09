@@ -2872,6 +2872,7 @@ class NewConnectionController extends Controller
             $ulbId          = $req->ulbId;
             $owner          = $req['onwerDetails'];
             $connectypeId   = $req->connectionTypeId ?? 1;
+            $tabSize        = $req->tabSize;
 
             $ulbWorkflowObj         = new WfWorkflow();
             $mWaterNewConnection    = new WaterNewConnection();
@@ -2895,7 +2896,7 @@ class NewConnectionController extends Controller
                     $connectionType = "New Connection";                                     // Static
                     break;
             }
-            if ($req->Category == 'Slum' && $req->TabSize != 15) {
+            if ($req->Category == 'Slum' && $req->tabSize != 15) {
                 throw new Exception('Tab size must be 15 for Slum');
             }
             if ($req->PropertyType == '2' && $req->Category == 'Slum') {
@@ -2946,7 +2947,8 @@ class NewConnectionController extends Controller
             }
 
             # collect the application charges 
-            $Charges = $mWaterChrges->getChargesByIds($connectypeId,$req->TabSize);
+
+           $Charges = $mWaterChrges->getChargesByIds($tabSize);
 
             $this->begin();
             # Generating Application No

@@ -14,11 +14,8 @@ class WaterConnectionTypeCharge extends Model
      * | Get the Connection charges By array of ids
      * | @param id
      */
-    public function getChargesByIds($id, $tabSize)
+    public function getChargesByIds($tabSize)
     {
-        return WaterConnectionTypeCharge::where('id', $id)
-            ->where('tab_size', $tabSize)
-            ->where('status', 1)
-            ->first();
+        return WaterConnectionTypeCharge::where('tab_size', $tabSize)->where('status', true)->first();
     }
 }
