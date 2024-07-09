@@ -1351,7 +1351,7 @@ class NewConnectionController extends Controller
                 });
 
                 $doc['uploadDoc'] = [];
-                $uploadDoc = $refWfActiveDocument->getDocByRefIdsDocCode($refApplication->id, $refApplication->workflow_id, $moduleId, $docFor); # Check Document is Uploaded Of That Type
+                $uploadDoc = $refWfActiveDocument->getDocByRefIdsDocCodeV2($refApplication->id, $refApplication->workflow_id, $moduleId, $docFor); # Check Document is Uploaded Of That Type
                 if (isset($uploadDoc->first()->doc_path)) {
                     $path = $refWaterNewConnection->readDocumentPath($uploadDoc->first()->doc_path);
                     $doc["uploadDoc"]["doc_path"] = !empty(trim($uploadDoc->first()->doc_path)) ? $path : null;
