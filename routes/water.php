@@ -58,7 +58,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('approve-application/get-by-id', 'getApproveApplicationsDetails');                                  // Citizen
         Route::post('citizen/get-doc-list', 'getDocToUpload');                                          // Citizen  
         Route::post('application/edit', 'editWaterAppliction');                                         // Citizen/Admin
-        Route::post('search-holding-saf', 'getSafHoldingDetail');                                      // Admin
+        Route::post('search-holding-saf', 'getSafHoldingDetail');                                       // Admin
         Route::post('application/search', 'getActiveApplictaions');                                     // Admin
         Route::post('admin/application/get-details-by-id', 'getApplicationDetailById');                 // Admin
         Route::post('admin/application/list-details-by-date', 'listApplicationBydate');                 // Admin
@@ -92,13 +92,13 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         # Consumer And Citizen Transaction Operation
 
         Route::post('master/get-listed-details', 'getWaterMasterData');                                 // Admin/ Citizen
-        Route::post('consumer/get-payment-history', 'getConsumerPaymentHistory');                       // Consumer
+        Route::post('consumer/get-payment-history', 'getConsumerPaymentHistory');                       // Consumer               // use in consumer part
         Route::post('admin/application/generate-payment-receipt', 'generateOfflinePaymentReceipt');     // Citizen / Admin
         Route::post('consumer/calculate-month-demand', 'callDemandByMonth');                            // Admin/Consumer
         Route::post('application/payment/get-payment-history', 'getApplicationPaymentHistory');         // Admin/Consumer
         Route::post('consumer/offline-demand-payment', 'offlineDemandPayment');                         // Consumer
         Route::post('application/payment/offline/pay-connection-charge', 'offlineConnectionPayment');   // Admin
-        Route::post('consumer/demand/generate-payment-receipt', 'generateDemandPaymentReceipt');        // Admin/ Citizen
+        Route::post('consumer/demand/generate-payment-receipt', 'generateDemandPaymentReceipt');        // Admin/ Citizen          // use in consumer part
         Route::post('consumer/online-demand-payment', 'initiateOnlineDemandPayment');                   // Citizen
         Route::post('citizen/payment-history', 'paymentHistory');                                       // Citizen  
         Route::post('consumer/water-user-charges', 'getWaterUserCharges');                              // Admin / Citizen
@@ -111,7 +111,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('consumer/offline-request-payment', 'offlineConPayment');
         Route::post('consumer/part-payment', 'partPayment');                                             //status working
         Route::post('consumer/online-payment', 'getReferalUrl');
-        Route::post('consumer/demand-payment', 'partPaymentV2');
+        Route::post('consumer/demand-payment', 'partPaymentV2');                                                                     // use in consumer part
         Route::post('consumer/payment-receipt', 'generateDemandPaymentReceiptV2');
         Route::post('consumer/transaction-deactivation', 'transactionDeactivation');
         # for deactivation  consumer
@@ -186,6 +186,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('consumer/req/get-upload-documents', 'getConsumerDocs');            // Here
         Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');    // Here
         Route::post('get-details-applications', 'getConApplicationDetails');
+        Route::post('get-details-disconnections', 'getRequestedApplication');                       // Citizen / Changes the route name
     });
 
     /**

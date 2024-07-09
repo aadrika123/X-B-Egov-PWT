@@ -271,9 +271,9 @@ class NewConnectionController extends Controller
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
             $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
-                ->whereIn('water_approval_application_details.ward_id', $wardId)
+                ->whereIn('water_applications.ward_id', $wardId)
                 ->where('parked', true)
-                ->orderByDesc('water_approval_application_details.id')
+                ->orderByDesc('water_applications.id')
                 ->get();
 
             $filterWaterList = collect($waterList)->unique('id');
@@ -962,7 +962,7 @@ class NewConnectionController extends Controller
             $roleDetails = Config::get('waterConstaint.ROLE-LABEL');
 
             # Application Details
-            $applicationDetails['applicationDetails'] = $mWaterApplication->fullWaterDetails($request)->first();
+            $applicationDetails['applicationDetails'] = $mWaterApproveApplications->fullWaterDetails($request)->first();
 
             # Document Details
             $metaReqs = [
@@ -1300,14 +1300,23 @@ class NewConnectionController extends Controller
             $refWaterNewConnection  = new WaterNewConnection();
             $refWfActiveDocument    = new WfActiveDocument();
             $mWaterConnectionCharge = new WaterConnectionCharge();
-            $mWaterSecondConsumer   = new WaterApplication();   // Application 
+            $mWaterApplication   = new WaterApplication();   // Application 
+            $mWaterApprovalApplications = new WaterApprovalApplicationDetail();
             $moduleId               = Config::get('module-constants.WATER_MODULE_ID');
 
             $connectionId = $request->applicationId;
-            $refApplication = $mWaterSecondConsumer->getApplicationById($connectionId)->first();
-            if (!$refApplication) {
-                throw new Exception("Application Not Found!");
+            if ($user->user_type != 'JSK') {
+                $refApplication = $mWaterApplication->getApplicationById($connectionId)->first();
+                if (!$refApplication) {
+                    throw new Exception("Application Not Found!");
+                }
+            } else {
+                $refApplication = $mWaterApprovalApplications->getApplicationById($connectionId)->first();
+                if (!$refApplication) {
+                    throw new Exception("Application Not Found!");
+                }
             }
+
 
             $connectionCharges = $mWaterConnectionCharge->getWaterchargesById($connectionId)
                 ->where('charge_category', '!=', "Site Inspection")                         # Static
@@ -1342,7 +1351,7 @@ class NewConnectionController extends Controller
                 });
 
                 $doc['uploadDoc'] = [];
-                $uploadDoc = $refWfActiveDocument->getDocByRefIdsDocCode($refApplication->id, $refApplication->workflow_id, $moduleId, $docFor); # Check Document is Uploaded Of That Type
+                $uploadDoc = $refWfActiveDocument->getDocByRefIdsDocCodeV2($refApplication->id, $refApplication->workflow_id, $moduleId, $docFor); # Check Document is Uploaded Of That Type
                 if (isset($uploadDoc->first()->doc_path)) {
                     $path = $refWaterNewConnection->readDocumentPath($uploadDoc->first()->doc_path);
                     $doc["uploadDoc"]["doc_path"] = !empty(trim($uploadDoc->first()->doc_path)) ? $path : null;
@@ -2183,68 +2192,6 @@ class NewConnectionController extends Controller
             $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)
                 ->get();
             $waterTransDetail['waterTransDetail'] = $waterTransaction;
-
-            # calculation details
-            // $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])
-            //     ->orderByDesc('id')
-            //     ->firstOrFail();
-
-            // switch ($charges['charge_category']) {
-            //     case ($refChargeCatagory['SITE_INSPECTON']):
-            //         $chargeId = $refChargeCatagoryValue['SITE_INSPECTON'];
-            //         break;
-            //     case ($refChargeCatagory['NEW_CONNECTION']):
-            //         $chargeId = $refChargeCatagoryValue['NEW_CONNECTION'];
-            //         break;
-            //     case ($refChargeCatagory['REGULAIZATION']):
-            //         $chargeId = $refChargeCatagoryValue['REGULAIZATION'];
-            //         break;
-            // }
-
-            // if ($charges['paid_status'] == 0) {
-            //     $calculation['calculation'] = [
-            //         'connectionFee'     => $charges['conn_fee'],
-            //         'penalty'           => $charges['penalty'],
-            //         'totalAmount'       => $charges['amount'],
-            //         'chargeCatagory'    => $charges['charge_category'],
-            //         'chargeCatagoryId'  => $chargeId,
-            //         'paidStatus'        => $charges['paid_status']
-            //     ];
-            //     $waterTransDetail = array_merge($calculation, $waterTransDetail);
-            // } else {
-            //     $penalty['penaltyInstallments'] = $mWaterPenaltyInstallment->getPenaltyByApplicationId($request->applicationId)
-            //         ->where('paid_status', 0)
-            //         ->get();
-            //     $refPenalty = collect($penalty['penaltyInstallments'])->first();
-            //     if ($refPenalty) {
-            //         $penaltyAmount = collect($penalty['penaltyInstallments'])->map(function ($value) {
-            //             return $value['balance_amount'];
-            //         })->sum();
-
-            //         $calculation['calculation'] = [
-            //             'connectionFee'     => 0.00,           # Static
-            //             'penalty'           => $penaltyAmount,
-            //             'totalAmount'       => $penaltyAmount,
-            //             'chargeCatagory'    => $charges['charge_category'],
-            //             'chargeCatagoryId'  => $chargeId,
-            //             'paidStatus'        => $charges['paid_status']
-            //         ];
-            //         $waterTransDetail = array_merge($calculation, $waterTransDetail);
-            //     }
-            // }
-
-            // # penalty Data 
-            // if ($charges['penalty'] > 0) {
-            //     $ids = null;
-            //     $penalty['penaltyInstallments'] = $mWaterPenaltyInstallment->getPenaltyByApplicationId($request->applicationId)
-            //         ->where('paid_status', 0)
-            //         ->get();
-            //     foreach ($penalty['penaltyInstallments'] as $key => $val) {
-            //         $ids = trim(($ids . "," . $val["id"]), ",");
-            //         $penalty['penaltyInstallments'][$key]["ids"] = $ids;
-            //     }
-            //     $waterTransDetail = array_merge($penalty, $waterTransDetail);
-            // }
             $returnData = $applicationDetails;    // array_merge($applicationDetails, $waterTransDetail);
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
         } catch (Exception $e) {
@@ -2925,6 +2872,7 @@ class NewConnectionController extends Controller
             $ulbId          = $req->ulbId;
             $owner          = $req['onwerDetails'];
             $connectypeId   = $req->connectionTypeId ?? 1;
+            $tabSize        = $req->tabSize;
 
             $ulbWorkflowObj         = new WfWorkflow();
             $mWaterNewConnection    = new WaterNewConnection();
@@ -2948,7 +2896,7 @@ class NewConnectionController extends Controller
                     $connectionType = "New Connection";                                     // Static
                     break;
             }
-            if ($req->Category == 'Slum' && $req->TabSize != 15) {
+            if ($req->Category == 'Slum' && $req->tabSize != 15) {
                 throw new Exception('Tab size must be 15 for Slum');
             }
             if ($req->PropertyType == '2' && $req->Category == 'Slum') {
@@ -2999,7 +2947,8 @@ class NewConnectionController extends Controller
             }
 
             # collect the application charges 
-            $Charges = $mWaterChrges->getChargesByIds($connectypeId);
+
+            $Charges = $mWaterChrges->getChargesByIds($tabSize);
 
             $this->begin();
             # Generating Application No
@@ -3008,6 +2957,7 @@ class NewConnectionController extends Controller
             $applicationNo  = str_replace('/', '-', $applicationNo);
 
             $applicationId = $mWaterApplication->saveWaterApplications($connectypeId, $req, $ulbWorkflowId, $initiatorRoleId, $finisherRoleId, $ulbId, $applicationNo);
+
             $meta = [
                 'applicationId'     => $applicationId->id,
                 "amount"            => $Charges->amount,
@@ -3355,7 +3305,7 @@ class NewConnectionController extends Controller
             $roleDetails = Config::get('waterConstaint.ROLE-LABEL');
 
             # Application Details
-    $applicationDetails['applicationDetails'] = $mWaterApproveApplications->fullWaterDetails($request)->first();
+            $applicationDetails['applicationDetails'] = $mWaterApproveApplications->fullWaterDetails($request)->first();
 
             # Document Details
             $metaReqs = [
