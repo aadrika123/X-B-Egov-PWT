@@ -962,7 +962,11 @@ class NewConnectionController extends Controller
             $roleDetails = Config::get('waterConstaint.ROLE-LABEL');
 
             # Application Details
-            $applicationDetails['applicationDetails'] = $mWaterApproveApplications->fullWaterDetails($request)->first();
+            $applicationDetails['applicationDetails'] = $mWaterApplication->fullWaterDetails($request)->first();
+            if ($applicationDetails == null) {
+                $applicationDetails['applicationDetails'] = $mWaterApproveApplications->fullWaterDetails($request)->first();
+            }
+
 
             # Document Details
             $metaReqs = [
