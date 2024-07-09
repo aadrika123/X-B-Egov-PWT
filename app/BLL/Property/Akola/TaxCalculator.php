@@ -40,6 +40,7 @@ class TaxCalculator
     public $_oldUnpayedAmount;
     public $_lastDemand;
     public $_isSingleManArmedForce = false;
+    public $_mangalTowerId;
     private $_LESS_PERSENTAGE_APPLY_WARD_IDS;
 
     public $_OldFloors = [];
@@ -57,6 +58,7 @@ class TaxCalculator
         $this->_residentialUsageType = Config::get('akola-property-constant.RESIDENTIAL_USAGE_TYPE');
         $this->_govResidentialUsageType = Config::get('akola-property-constant.GOV_USAGE_TYPE');
         $this->_LESS_PERSENTAGE_APPLY_WARD_IDS = Config::get('akola-property-constant.LESS_PERSENTAGE_APPLY_WARD_IDS');
+        $this->_mangalTowerId  = Config::get('akola-property-constant.MANGAL_TOWER_ID');
     }
 
     /**
@@ -196,6 +198,11 @@ class TaxCalculator
             foreach ($this->_OldFloors as $key => $item) {
                 $item = (object)$item;
                 $rate = $this->readRateByFloor($item);                // (2.1)
+                if ($item->usageType == $this->_mangalTowerId)
+                {
+                    $this->mangalTower($item);
+                    break;
+                }
                 $agingPerc = $this->readAgingByFloor($item);           // (2.2)
 
                 $floorBuildupArea = roundFigure(isset($item->biBuildupArea) && $this->getAssestmentTypeStr() == 'Bifurcation' ? $item->biBuildupArea * 0.092903 :  $item->buildupArea  * 0.092903);
@@ -288,6 +295,11 @@ class TaxCalculator
             foreach ($this->_newFloors as $key => $item) {
                 $item = (object)$item;
                 $rate = $this->readRateByFloor($item);                 // (2.1)
+                if ($item->usageType == $this->_mangalTowerId)
+                {
+                    $this->mangalTower($item);
+                    break;
+                }
                 $agingPerc = $this->readAgingByFloor($item);           // (2.2)
 
                 $floorBuildupArea = roundFigure(isset($item->biBuildupArea) ? $item->biBuildupArea * 0.092903 :  $item->buildupArea  * 0.092903);
@@ -872,4 +884,98 @@ class TaxCalculator
         }
         return $assessmentType;
     }
+
+
+    /**
+     * | Managal Tower
+     */
+    public function mangalTower($item)
+    {
+        // if ($this->_REQUEST->propertyType == 4) {
+            $agingPerc = 0;                         // No Aging Percent for Vacant Land
+            // if ($this->_REQUEST->category == 1)
+            //     $rate = 11*5;
+            // elseif ($this->_REQUEST->category == 2)
+            //     $rate = 10;
+            // else
+            //     $rate = 8;
+
+            $rate = $this->readRateByFloor($item);                 // (2.1)
+            $rate = $rate * 5;
+
+            $alv = roundFigure($this->_calculatorParams['areaOfPlot'] * $rate);
+            $maintance10Perc = 0; #roundFigure(($alv * $this->_maintancePerc) / 100);
+            $valueAfterMaintanance = roundFigure($alv - ($alv * 0.1)); # 10% minuse on ALV
+            $aging = 0; #roundFigure(($valueAfterMaintanance * $agingPerc) / 100);
+            $taxValue = roundFigure($valueAfterMaintanance - $aging);
+
+            // Municipal Taxes
+            $generalTax = 0; #roundFigure($taxValue * 0.30);
+            $roadTax = 0; #roundFigure($taxValue * 0.03);
+            $firefightingTax = 0; #roundFigure($taxValue * 0.02);
+            $educationTax = 0; #roundFigure($taxValue * 0.02);
+            $waterTax = 0; #roundFigure($taxValue * 0.02);
+            $cleanlinessTax = 0; #roundFigure($taxValue * 0.02);
+            $sewerageTax = 0; #roundFigure($taxValue * 0.02);
+            $treeTax = roundFigure($taxValue * 0.01);
+            $openPloatTax = roundFigure($taxValue * 0.43);
+
+            $isCommercial = true;
+
+            $stateTaxes = $this->readStateTaxes($this->_calculatorParams['areaOfPlot'], $isCommercial, $alv);                   // Read State Taxes(3.1)
+
+            $tax1 = 0;
+            $diffArrea = 0;
+            $doubleTax1 = ($generalTax + $roadTax + $firefightingTax + $educationTax
+                + $waterTax + $cleanlinessTax + $sewerageTax
+                + $treeTax + $stateTaxes['educationTax'] + $stateTaxes['professionalTax']
+                + ($openPloatTax ?? 0));
+            if ($this->_REQUEST->nakshaAreaOfPlot) {
+                $diffArrea = ($this->_REQUEST->areaOfPlot - $this->_REQUEST->nakshaAreaOfPlot) > 0 ? $this->_REQUEST->areaOfPlot -  $this->_REQUEST->nakshaAreaOfPlot : 0;
+            }
+            # double tax apply
+            if ($this->_REQUEST->isAllowDoubleTax) {
+                $tax1 = $doubleTax1;
+            }
+            # 100% penalty apply on diff arrea
+            elseif ($diffArrea > 0) {
+                $tax1 = $doubleTax1 * ($diffArrea / ($this->_REQUEST->areaOfPlot > 0 ? $this->_REQUEST->areaOfPlot : 1));
+            }
+
+            $this->_floorsTaxes[0] = [
+                'dateFrom' => $this->_REQUEST->approvedDate ? Carbon::parse($this->_REQUEST->approvedDate)->addYears(-5)->format('Y-m-d') : Carbon::now()->addYears(-5)->format('Y-m-d'),
+                'dateUpto' => null,
+                'appliedFrom' => getFY($this->_REQUEST->approvedDate ? Carbon::parse($this->_REQUEST->approvedDate)->addYears(-5)->format('Y-m-d') : Carbon::now()->addYears(-5)->format('Y-m-d')),
+                'appliedUpto' => getFY(),
+                'rate' => $rate,
+                'floorKey' => "Vacant Land",
+                'floorNo' => "Vacant Land",
+                'alv' => $alv,
+                'maintancePerc' => $this->_maintancePerc,
+                'maintantance10Perc' => $maintance10Perc,
+                'valueAfterMaintance' => $valueAfterMaintanance,
+                'agingPerc' => $agingPerc,
+                'agingAmt' => $aging,
+                'taxValue' => $taxValue,
+                'generalTax' => $generalTax,
+                'roadTax' => $roadTax,
+                'firefightingTax' => $firefightingTax,
+                'educationTax' => $educationTax,
+                'waterTax' => $waterTax,
+                'cleanlinessTax' => $cleanlinessTax,
+                'sewerageTax' => $sewerageTax,
+                'treeTax' => $treeTax,
+                "tax1" => $tax1,
+                "openPloatTax" => $openPloatTax,
+                'isCommercial' => $isCommercial,
+                'stateEducationTaxPerc' => $stateTaxes['educationTaxPerc'],
+                'stateEducationTax' => $stateTaxes['educationTax'],
+                'professionalTaxPerc' => $stateTaxes['professionalTaxPerc'],
+                'professionalTax' => $stateTaxes['professionalTax'],
+            ];
+        // }
+
+        $this->_GRID['floorsTaxes'] = $this->_floorsTaxes;
+    }
+
 }
