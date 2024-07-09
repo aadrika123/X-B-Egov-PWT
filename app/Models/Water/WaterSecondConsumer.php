@@ -654,8 +654,24 @@ class WaterSecondConsumer extends Model
      */
     public function getConsumerByNo($consumerNo)
     {
-        return self::where('consumer_no', $consumerNo)
-            ->where('status', 1)
-            ->first();
+        return self::where('consumer_no', $consumerNo)->where('status', 1)->first();
+    }
+
+    public function getApplicationById($applicationId)
+    {
+        return  WaterSecondConsumer::select(
+            'water_second_consumers.*'
+        )
+            ->where('water_second_consumers.id', $applicationId)
+            ->join('water_approval_application_details', 'water_approval_application_details.id', 'water_second_consumers.apply_connection_id')
+            ->where('water_second_consumers.status', 3);
+    }
+
+    public function updateConsumer($consumerId)
+    {
+        return self::where('id', $consumerId)
+            ->update([
+                'status' => 1
+            ]);
     }
 }

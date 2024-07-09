@@ -2464,18 +2464,19 @@ class WaterPaymentController extends Controller
             $mWaterSiteInspection           = new WaterSiteInspection();
 
             $offlinePaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
-            $activeConRequest = $mWaterApprovalApplications->getApplicationById($applicatinId)
-                ->where('payment_status', 0)
+            $activeConRequest = $mWaterConsumer->getApplicationById($applicatinId)
+                // ->where('water_approval_application_details.payment_status', 0)
                 ->first();
             if (!$activeConRequest) {
                 throw new Exception("Application details not found!");
             }
+
             if ($request->paymentMode == 'ONLINE') {                                // Static
                 throw new Exception("Online mode is not accepted!");
             }
 
 
-            $activeConsumercharges = $mWaterConsumerCharge->getWaterchargesById($applicatinId)
+            $activeConsumercharges = $mWaterConsumerCharge->getWaterchargesById($activeConRequest->apply_connection_id)
                 // ->where('charge_category_id', $activeConRequest->charge_catagory_id)
                 ->where('paid_status', 0)
                 ->first();
@@ -2485,6 +2486,7 @@ class WaterPaymentController extends Controller
             $chargeCatagory = $this->checkConReqPayment($activeConRequest);
 
             $this->begin();
+
             $tranNo = $idGeneration->generateTransactionNo($activeConRequest->ulb_id);
             $request->merge([
                 'userId'            => $user->id,
@@ -2633,6 +2635,7 @@ class WaterPaymentController extends Controller
         $mWaterApplication              = new WaterApprovalApplicationDetail();
         $waterTranDetail                = new WaterTranDetail();
         $mWaterTran                     = new WaterTran();
+        $mWaterSecondConsumer           = new WaterSecondConsumer();
         $userType                       = Config::get('waterConstaint.REF_USER_TYPE');
         $refRole                        = Config::get("waterConstaint.ROLE-LABEL");
         $today                          = Carbon::now();
@@ -2651,7 +2654,7 @@ class WaterPaymentController extends Controller
                 "status"            => 1,
                 // "connection_date"   => $today
             ];
-            $mWaterApplication->updateOnlyPaymentstatus($activeConRequest->id, $refReq);
+            $mWaterApplication->updateOnlyPaymentstatus($activeConRequest->apply_connection_id, $refReq);
         }
         # saving Details in application table if payment is in JSK
         if ($activeConRequest->user_type == $userType['1'] && $activeConRequest->doc_upload_status == true) {
@@ -2661,7 +2664,7 @@ class WaterPaymentController extends Controller
             # write code for track table
             $mWaterApplication->sendApplicationToRole($request['id'], $refRole['BO']);                // Save current role as Bo
         }
-
+        $mWaterSecondConsumer->updateConsumer($request->applicationId);
         $charges->save();                                                   // Save Demand
         $waterTranDetail->saveDefaultTrans(
             $charges->amount,
