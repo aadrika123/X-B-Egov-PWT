@@ -271,9 +271,9 @@ class NewConnectionController extends Controller
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
             $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
-                ->whereIn('water_approval_application_details.ward_id', $wardId)
+                ->whereIn('water_applicatons.ward_id', $wardId)
                 ->where('parked', true)
-                ->orderByDesc('water_approval_application_details.id')
+                ->orderByDesc('water_applicatons.id')
                 ->get();
 
             $filterWaterList = collect($waterList)->unique('id');
@@ -2948,7 +2948,7 @@ class NewConnectionController extends Controller
 
             # collect the application charges 
 
-           $Charges = $mWaterChrges->getChargesByIds($tabSize);
+            $Charges = $mWaterChrges->getChargesByIds($tabSize);
 
             $this->begin();
             # Generating Application No
