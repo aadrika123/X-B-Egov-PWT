@@ -14,6 +14,7 @@ return [
     "GOV_USAGE_TYPE"        =>[17,40,53,54,56,57],
     "ARREAR_TILL_FYEAR" => "2022-2023",
     "ULB_TOTAL_TAXES" => 44,
+    "MANGAL_TOWER_ID" => 49,
     "LESS_PERSENTAGE_APPLY_WARD_IDS"=>[
         #ID   , #WARD NO
         "10"  , # A8
