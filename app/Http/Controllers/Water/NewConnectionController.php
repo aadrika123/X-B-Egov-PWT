@@ -967,6 +967,9 @@ class NewConnectionController extends Controller
                 $applicationDetails['applicationDetails'] = $mWaterApproveApplications->fullWaterDetails($request)->first();
             }
 
+            if ($applicationDetails) {
+                throw new Exception('Application Details Not Found');
+            }
 
             # Document Details
             $metaReqs = [
@@ -2425,7 +2428,7 @@ class NewConnectionController extends Controller
             $mWaterConnectionCharge->deactivateSiteCharges($refApplicationId, $refSiteInspection);
             $mWaterPenaltyInstallment->deactivateSitePenalty($refApplicationId, $refSiteInspection);
             # Check if the payment status is done or not 
-            $mWaterApplication->updateOnlyPaymentstatus($refApplicationId);                                 // make the payment status of the application true
+            // $mWaterApplication->updateOnlyPaymentstatus($refApplicationId);                                 // make the payment status of the application true
             if (!is_null($refSiteInspection)) {
                 $mWaterSiteInspection->deactivateSiteDetails($refSiteInspection->site_inspection_id);
             }
@@ -3313,11 +3316,93 @@ class NewConnectionController extends Controller
                 'ulbId'     => $user->ulb_id ?? $applicationDetails['applicationDetails']['ulb_id'],
             ];
             $request->request->add($metaReqs);
+            $document = $this->getDocToUpload($request);                                                    // get the doc details
+            $documentDetails['documentDetails'] = collect($document)['original']['data'];
+
+            # owner details
+            $ownerDetails['ownerDetails'] = $mWaterApproveApplicants->getOwnerList($request->applicationId)->get();
+
+            # Payment Details 
+            $refAppDetails = collect($applicationDetails)->first();
+            $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)->get();
+            $waterTransDetail['waterTransDetail'] = $waterTransaction;
+
+            # calculation details
+            $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])
+                ->where('paid_status', 0)
+                ->first();
+            if ($charges) {
+                $calculation['calculation'] = [
+                    'connectionFee'     => $charges['conn_fee'],
+                    'penalty'           => $charges['penalty'],
+                    'totalAmount'       => $charges['amount'],
+                    'chargeCatagory'    => $charges['charge_category'],
+                    'paidStatus'        => $charges['paid_status']
+                ];
+                $waterTransDetail = array_merge($waterTransDetail, $calculation);
+            }
+
+            # Site inspection schedule time/date Details 
+            if ($applicationDetails['applicationDetails']['current_role'] == $roleDetails['JE']) {
+                $inspectionTime = $mWaterSiteInspectionsScheduling->getInspectionData($applicationDetails['applicationDetails']['id'])->first();
+                $applicationDetails['applicationDetails']['scheduledTime'] = $inspectionTime->inspection_time ?? null;
+                $applicationDetails['applicationDetails']['scheduledDate'] = $inspectionTime->inspection_date ?? null;
+            }
+
+            $returnData = array_merge($applicationDetails, $ownerDetails, $waterTransDetail); //$documentDetails,
+            return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+    /**
+     * |get application when it approve by EO
+     */
+    /**
+     * | Citizen view : Get Application Details of viewind
+        | Serial No : 
+     */
+    public function getApproveAplications(Request $request)
+    {
+
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'applicationId' => 'required|integer',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $user = authUser($request);
+            $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
+            $mWaterConnectionCharge  = new WaterConnectionCharge();
+            $mWaterApplication = new WaterApplication();
+            $mWaterApproveApplications   = new WaterApprovalApplicationDetail();
+            $mWaterApproveApplicants = new WaterApprovalApplicant();
+            $mWaterApplicant = new WaterApplicant();
+            $mWaterTran = new WaterTran();
+            $roleDetails = Config::get('waterConstaint.ROLE-LABEL');
+
+            # Application Details
+
+            $applicationDetails['applicationDetails'] = $mWaterApproveApplications->fullWaterDetails($request)->first();
+            if (!$applicationDetails) {
+                throw new Exception('Application Details Not Found');
+            }
+
+            # Document Details
+            $metaReqs = [
+                'userId'    => $user->id,
+                'ulbId'     => $user->ulb_id ?? $applicationDetails['applicationDetails']['ulb_id'],
+            ];
+            $request->request->add($metaReqs);
             // $document = $this->getDocToUpload($request);                                                    // get the doc details
             // $documentDetails['documentDetails'] = collect($document)['original']['data'];
 
             # owner details
-            $ownerDetails['ownerDetails'] = $mWaterApproveApplicants->getOwnerList($request->applicationId)->get();
+            $ownerDetails['ownerDetails'] = $mWaterApplicant->getOwnerList($request->applicationId)->get();
 
             # Payment Details 
             $refAppDetails = collect($applicationDetails)->first();
