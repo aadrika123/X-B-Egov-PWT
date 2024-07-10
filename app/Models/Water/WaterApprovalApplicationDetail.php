@@ -107,7 +107,7 @@ class WaterApprovalApplicationDetail extends Model
             ->where('water_approval_application_details.application_no', 'LIKE', '%' . $applicationNo . '%')
             ->where('water_approval_application_details.ulb_id', authUser($req)->ulb_id)
             ->whereIn('water_second_consumers.status', [1, 3])
-            ->orderby('water_second_consumers.id','DESC')
+            ->orderby('water_second_consumers.id', 'DESC')
             ->groupBy(
                 'water_second_consumers.id',
                 'water_approval_application_details.saf_no',
@@ -118,8 +118,7 @@ class WaterApprovalApplicationDetail extends Model
                 'water_approval_application_details.application_no',
                 'water_approval_application_details.ward_id',
                 'ulb_ward_masters.ward_name'
-            )
-           ;
+            );
     }
     /**
      * |get details of applications which is partiallly make consumer
@@ -128,16 +127,33 @@ class WaterApprovalApplicationDetail extends Model
     public function fullWaterDetails($request)
     {
         return  WaterApprovalApplicationDetail::select(
-            'water_approval_application_details.*',
-            'water_approval_application_details.connection_through as connection_through_id',
+            'water_approval_application_details.id',
+            'water_approval_application_details.mobile_no',
+            'water_approval_application_details.tab_size',
+            'water_approval_application_details.property_no',
+            'water_approval_application_details.status',
+            'water_approval_application_details.payment_status',
+            'water_approval_application_details.user_type',
+            'water_approval_application_details.apply_date',
+            'water_approval_application_details.landmark',
+            'water_approval_application_details.address',
+            'water_approval_application_details.category',
+            'water_approval_application_details.application_no',
+            'water_property_type_mstrs.property_type',
+            'water_param_pipeline_types.pipeline_type',
+            'zone_masters.zone_name',
             'ulb_masters.ulb_name',
             'water_connection_type_mstrs.connection_type',
             'wf_roles.role_name AS current_role_name',
+            'water_connection_type_mstrs.connection_type'
         )
             ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_approval_application_details.current_role')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_approval_application_details.ulb_id')
             ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_approval_application_details.connection_type_id')
             ->join('water_second_consumers', 'water_second_consumers.apply_connection_id', 'water_approval_application_details.id')
+            ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_approval_application_details.property_type_id')
+            ->join('water_param_pipeline_types', 'water_param_pipeline_types.id', 'water_approval_application_details.pipeline_type_id')
+            ->join('zone_masters', 'zone_masters.id', 'water_approval_application_details.zone_mstr_id')
             ->where('water_second_consumers.id', $request->applicationId)
             ->whereIn('water_second_consumers.status', [1, 3])
             ->where('water_approval_application_details.status', true);
