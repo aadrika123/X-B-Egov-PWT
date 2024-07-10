@@ -127,7 +127,8 @@ class WaterApprovalApplicationDetail extends Model
     public function fullWaterDetails($request)
     {
         return  WaterApprovalApplicationDetail::select(
-            'water_approval_application_details.id',
+            'water_second_consumers.id',
+            'water_approval_application_details.id as applicationId',
             'water_approval_application_details.mobile_no',
             'water_approval_application_details.tab_size',
             'water_approval_application_details.property_no',
