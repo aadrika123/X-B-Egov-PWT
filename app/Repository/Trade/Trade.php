@@ -657,23 +657,43 @@ class Trade implements ITrade
     }
 
     # Serial No : 01.05
+    // public function transerOldOwneres($refOwner, $owners, $request)
+    // {
+    //     $newData = collect($request->ownerDetails)->where("ownerId", $owners->id)->first();
+    //     if (!$newData) {
+    //         return ($this->addNewOwners($refOwner, $newData));
+    //     }
+    //     $refOwner->owner_name      = $owners->owner_name;
+    //     $refOwner->guardian_name   = $owners->guardian_name;
+    //     $refOwner->owner_name_marathi      = $owners->owner_name_marathi;
+    //     $refOwner->guardian_name_marathi   =  $owners->guardian_name_marathi;
+
+    //     $refOwner->address         = $owners->address;
+    //     $refOwner->mobile_no          = $owners->mobile_no;
+    //     $refOwner->city            = $owners->city;
+    //     $refOwner->district        = $owners->district;
+    //     $refOwner->state           = $owners->state;
+    //     $refOwner->email_id         = $owners->email_id;
+    // }
+
     public function transerOldOwneres($refOwner, $owners, $request)
     {
         $newData = collect($request->ownerDetails)->where("ownerId", $owners->id)->first();
         if ($newData) {
+            $refOwner->owner_name      = $owners->owner_name;
+            $refOwner->guardian_name   = $owners->guardian_name;
+            $refOwner->owner_name_marathi      = $owners->owner_name_marathi;
+            $refOwner->guardian_name_marathi   =  $owners->guardian_name_marathi;
+
+            $refOwner->address         = $owners->address;
+            $refOwner->mobile_no          = $owners->mobile_no;
+            $refOwner->city            = $owners->city;
+            $refOwner->district        = $owners->district;
+            $refOwner->state           = $owners->state;
+            $refOwner->email_id         = $owners->email_id;
+        } else {
             return ($this->addNewOwners($refOwner, $newData));
         }
-        $refOwner->owner_name      = $owners->owner_name;
-        $refOwner->guardian_name   = $owners->guardian_name;
-        $refOwner->owner_name_marathi      = $owners->owner_name_marathi;
-        $refOwner->guardian_name_marathi   =  $owners->guardian_name_marathi;
-
-        $refOwner->address         = $owners->address;
-        $refOwner->mobile_no          = $owners->mobile_no;
-        $refOwner->city            = $owners->city;
-        $refOwner->district        = $owners->district;
-        $refOwner->state           = $owners->state;
-        $refOwner->email_id         = $owners->email_id;
     }
 
     # Serial No : 01.06
@@ -1616,7 +1636,7 @@ class Trade implements ITrade
                 $demand = $getHoldingDues->getDues($request);
 
                 $response = ['status' => true, "data" => ["property" => $propdet['property'], "owner" => $propdet['owner']], "message" => ""];
-                
+
                 if (($demand['previousInterest']) > 0 || ($demand['arrear']) > 0) {
                     $response = ['status' => false, "data" => '', "message" => "Please Clear The Previous Arrear Amount Of ₹" . $demand['arrearPayableAmt'] . " Before Applying The Application."];
                 }
