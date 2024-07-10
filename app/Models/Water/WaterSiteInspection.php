@@ -28,7 +28,7 @@ class WaterSiteInspection extends Model
         $saveSiteVerify->pipeline_type_id       =   $req->pipelineTypeId;
         $saveSiteVerify->connection_through     =   $waterDetails['connection_through'];
         $saveSiteVerify->category               =   $req->category;
-        $saveSiteVerify->flat_ection_type_id     =   $req->connectionTypeId;
+        $saveSiteVerify->connection_type_id     =   $req->connectionTypeId;
         $saveSiteVerify->conncount             =   $req->flatCount ?? null;
         $saveSiteVerify->ward_id                =   $waterDetails['ward_id'];
         $saveSiteVerify->area_sqft              =   $req->areaSqft;
