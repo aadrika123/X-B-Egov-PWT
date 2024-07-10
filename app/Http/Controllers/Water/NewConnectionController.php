@@ -3309,7 +3309,7 @@ class NewConnectionController extends Controller
 
             # Application Details
             $applicationDetails['applicationDetails'] = $mWaterApproveApplications->fullWaterDetails($request)->first();
-            $applicationId = $applicationDetails['applicationDetails']->id;
+            $applicationId = $applicationDetails['applicationDetails']->applicationId;
             # Document Details
             $metaReqs = [
                 'userId'    => $user->id,
