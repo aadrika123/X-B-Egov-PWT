@@ -1604,7 +1604,7 @@ class WaterPaymentController extends Controller
 
             $applicationId = $applicationDetails['applicationDetails']->id;
             # if demand transaction exist
-            $connectionTran = $mWaterTran->getTransNo($applicationId, null)->get();                        // Water Connection payment History
+            $connectionTran = $mWaterTran->getTransNo($request->applicationId, null)->get();                        // Water Connection payment History
             $checkTrans = collect($connectionTran)->first();
             if (!$checkTrans)
                 throw new Exception("Water Application Tran Details not Found!!");

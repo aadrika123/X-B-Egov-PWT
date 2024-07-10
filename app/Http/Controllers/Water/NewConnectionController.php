@@ -2185,7 +2185,7 @@ class NewConnectionController extends Controller
             $refChargeCatagoryValue     = Config::get("waterConstaint.CONNECTION_TYPE");
 
             # Application Details
-            $applicationDetails['applicationDetails'] = $mWaterApproveApplication->fullWaterDetail($applicationId)->first();
+            $applicationDetails['applicationDetails'] = $mWaterApproveApplication->fullWaterDetails($request)->first();
 
             # Payment Details 
             $refAppDetails = collect($applicationDetails)->first();
