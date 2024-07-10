@@ -298,7 +298,7 @@ class TaxCalculator
                 if ($item->usageType == $this->_mangalTowerId)
                 {
                     $this->mangalTower($item);
-                    break;
+                    continue;
                 }
                 $agingPerc = $this->readAgingByFloor($item);           // (2.2)
 
@@ -903,7 +903,7 @@ class TaxCalculator
             $rate = $this->readRateByFloor($item);                 // (2.1)
             $rate = $rate * 5;
 
-            $alv = roundFigure($this->_calculatorParams['areaOfPlot'] * $rate);
+            $alv = roundFigure($item->buildupArea * $rate);
             $maintance10Perc = 0; #roundFigure(($alv * $this->_maintancePerc) / 100);
             $valueAfterMaintanance = roundFigure($alv - ($alv * 0.1)); # 10% minuse on ALV
             $aging = 0; #roundFigure(($valueAfterMaintanance * $agingPerc) / 100);
@@ -922,7 +922,7 @@ class TaxCalculator
 
             $isCommercial = true;
 
-            $stateTaxes = $this->readStateTaxes($this->_calculatorParams['areaOfPlot'], $isCommercial, $alv);                   // Read State Taxes(3.1)
+            $stateTaxes = $this->readStateTaxes($item->buildupArea, $isCommercial, $alv);                   // Read State Taxes(3.1)
 
             $tax1 = 0;
             $diffArrea = 0;
@@ -943,10 +943,14 @@ class TaxCalculator
             }
 
             $this->_floorsTaxes[0] = [
-                'dateFrom' => $this->_REQUEST->approvedDate ? Carbon::parse($this->_REQUEST->approvedDate)->addYears(-5)->format('Y-m-d') : Carbon::now()->addYears(-5)->format('Y-m-d'),
-                'dateUpto' => null,
-                'appliedFrom' => getFY($this->_REQUEST->approvedDate ? Carbon::parse($this->_REQUEST->approvedDate)->addYears(-5)->format('Y-m-d') : Carbon::now()->addYears(-5)->format('Y-m-d')),
-                'appliedUpto' => getFY(),
+                // 'dateFrom' => $this->_REQUEST->approvedDate ? Carbon::parse($this->_REQUEST->approvedDate)->addYears(-5)->format('Y-m-d') : Carbon::now()->addYears(-5)->format('Y-m-d'),
+                // 'dateUpto' => null,
+                // 'appliedFrom' => getFY($this->_REQUEST->approvedDate ? Carbon::parse($this->_REQUEST->approvedDate)->addYears(-5)->format('Y-m-d') : Carbon::now()->addYears(-5)->format('Y-m-d')),
+                // 'appliedUpto' => getFY(),
+                'dateFrom' => $item->dateFrom,
+                'dateUpto' => $item->dateUpto,
+                'appliedFrom' => getFY($item->dateFrom),
+                'appliedUpto' => getFY($item->dateUpto),
                 'rate' => $rate,
                 'floorKey' => "Vacant Land",
                 'floorNo' => "Vacant Land",

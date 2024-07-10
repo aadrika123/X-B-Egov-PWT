@@ -1581,7 +1581,7 @@ class WaterPaymentController extends Controller
         $validated = Validator::make(
             $request->all(),
             [
-                'id' => 'required|digits_between:1,9223372036854775807'
+                'applicationId' => 'required|digits_between:1,9223372036854775807'
             ]
         );
         if ($validated->fails())
@@ -1591,17 +1591,20 @@ class WaterPaymentController extends Controller
             $mWaterApplication          = new WaterApplication();
             $mWaterConnectionCharge     = new WaterConnectionCharge();
             $mWaterPenaltyInstallment   = new WaterPenaltyInstallment();
+            $mWaterSeoncdConsumer       = new WaterSecondConsumer();
+            $mWaterApproveApplications   = new WaterApprovalApplicationDetail();
 
             $transactions = array();
-            $applicationId = $request->id;
+            // $applicationId = $request->id;
 
             # Application Details
-            $waterDtls = $mWaterApplication->getDetailsByApplicationId($applicationId)->first();
-            if (!$waterDtls)
+            $applicationDetails['applicationDetails'] = $mWaterApproveApplications->fullWaterDetails($request)->first();
+            if (!$applicationDetails)
                 throw new Exception("Water Application Not Found!");
 
+            $applicationId = $applicationDetails['applicationDetails']->id;
             # if demand transaction exist
-            $connectionTran = $mWaterTran->getTransNo($applicationId, null)->get();                        // Water Connection payment History
+            $connectionTran = $mWaterTran->getTransNo($request->applicationId, null)->get();                        // Water Connection payment History
             $checkTrans = collect($connectionTran)->first();
             if (!$checkTrans)
                 throw new Exception("Water Application Tran Details not Found!!");
