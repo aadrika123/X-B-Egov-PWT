@@ -107,6 +107,7 @@ class WaterApprovalApplicationDetail extends Model
             ->where('water_approval_application_details.application_no', 'LIKE', '%' . $applicationNo . '%')
             ->where('water_approval_application_details.ulb_id', authUser($req)->ulb_id)
             ->whereIn('water_second_consumers.status', [1, 3])
+            ->orderby('water_second_consumers.id','DESC')
             ->groupBy(
                 'water_second_consumers.id',
                 'water_approval_application_details.saf_no',
@@ -117,7 +118,8 @@ class WaterApprovalApplicationDetail extends Model
                 'water_approval_application_details.application_no',
                 'water_approval_application_details.ward_id',
                 'ulb_ward_masters.ward_name'
-            );
+            )
+           ;
     }
     /**
      * |get details of applications which is partiallly make consumer
