@@ -943,10 +943,14 @@ class TaxCalculator
             }
 
             $this->_floorsTaxes[0] = [
-                'dateFrom' => $this->_REQUEST->approvedDate ? Carbon::parse($this->_REQUEST->approvedDate)->addYears(-5)->format('Y-m-d') : Carbon::now()->addYears(-5)->format('Y-m-d'),
-                'dateUpto' => null,
-                'appliedFrom' => getFY($this->_REQUEST->approvedDate ? Carbon::parse($this->_REQUEST->approvedDate)->addYears(-5)->format('Y-m-d') : Carbon::now()->addYears(-5)->format('Y-m-d')),
-                'appliedUpto' => getFY(),
+                // 'dateFrom' => $this->_REQUEST->approvedDate ? Carbon::parse($this->_REQUEST->approvedDate)->addYears(-5)->format('Y-m-d') : Carbon::now()->addYears(-5)->format('Y-m-d'),
+                // 'dateUpto' => null,
+                // 'appliedFrom' => getFY($this->_REQUEST->approvedDate ? Carbon::parse($this->_REQUEST->approvedDate)->addYears(-5)->format('Y-m-d') : Carbon::now()->addYears(-5)->format('Y-m-d')),
+                // 'appliedUpto' => getFY(),
+                'dateFrom' => $item->dateFrom,
+                'dateUpto' => $item->dateUpto,
+                'appliedFrom' => getFY($item->dateFrom),
+                'appliedUpto' => getFY($item->dateUpto),
                 'rate' => $rate,
                 'floorKey' => "Vacant Land",
                 'floorNo' => "Vacant Land",
