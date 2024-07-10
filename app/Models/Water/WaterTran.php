@@ -427,4 +427,11 @@ class WaterTran extends Model
             ->where('water_trans.status', 1)
             ->first();
     }
+
+    public function getTransNov2($applicationId, $applicationFor)
+    {
+        return WaterTran::where('related_id', $applicationId)
+            ->where('tran_type', "NEW_CONNECTION")
+            ->where('status', 1);
+    }
 }

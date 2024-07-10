@@ -3309,7 +3309,7 @@ class NewConnectionController extends Controller
 
             # Application Details
             $applicationDetails['applicationDetails'] = $mWaterApproveApplications->fullWaterDetails($request)->first();
-
+            $applicationId = $applicationDetails['applicationDetails']->id;
             # Document Details
             $metaReqs = [
                 'userId'    => $user->id,
@@ -3320,11 +3320,11 @@ class NewConnectionController extends Controller
             $documentDetails['documentDetails'] = collect($document)['original']['data'];
 
             # owner details
-            $ownerDetails['ownerDetails'] = $mWaterApproveApplicants->getOwnerList($request->applicationId)->get();
+            $ownerDetails['ownerDetails'] = $mWaterApproveApplicants->getOwnerList($applicationId)->get();
 
             # Payment Details 
             $refAppDetails = collect($applicationDetails)->first();
-            $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)->get();
+            $waterTransaction = $mWaterTran->getTransNov2($request->applicationId, $refAppDetails->connection_type)->get();
             $waterTransDetail['waterTransDetail'] = $waterTransaction;
 
             # calculation details
