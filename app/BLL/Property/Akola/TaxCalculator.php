@@ -298,7 +298,7 @@ class TaxCalculator
                 if ($item->usageType == $this->_mangalTowerId)
                 {
                     $this->mangalTower($item);
-                    break;
+                    continue;
                 }
                 $agingPerc = $this->readAgingByFloor($item);           // (2.2)
 
