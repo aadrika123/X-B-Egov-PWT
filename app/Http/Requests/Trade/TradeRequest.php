@@ -60,7 +60,8 @@ class TradeRequest extends FormRequest
         $this->_REX_ALPHA_NUM_DOT_SPACE                     = "/^[a-zA-Z0-9][a-zA-Z0-9\. \s]+$/i";
         $this->_REX_ALPHA_NUM_OPS_DOT_MIN_COM_AND_SPACE_SL  = "/^[a-zA-Z0-9][a-zA-Z0-9\'\.\-\,\&\s\/]+$/i";
         $this->_REX_NUM_DOT                                 = "/^\d+(?:\.\d+)+$/i";
-        $this->_REX_OWNER_NAME                              = "/^([a-zA-Z0-9\.]+)(\s[a-zA-Z0-9\.\,\()']+)*$/i";
+        $this->_REX_OWNER_NAME = "/^[\p{L}\p{N}\s\.\,\(\)\'\p{Devanagari}]*$/u";
+
         $this->_REX_MOBILE_NO                               = "/[0-9]{10}/";
         $this->_ENG_MARATHI                                 = "/^[\p{Devanagari}]+$/u"; #"/^[A-Za-z0-9\x{0900}-\x{097F}\.|\-\/ ]+/gmi";
 
