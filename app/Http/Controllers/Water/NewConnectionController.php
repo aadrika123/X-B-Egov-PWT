@@ -41,6 +41,7 @@ use App\Models\Water\WaterOwnerTypeMstr;
 use App\Models\Water\WaterParamConnFee;
 use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterPropertyTypeMstr;
+use App\Models\Water\WaterRoadCutterCharge;
 use App\Models\Water\WaterSiteInspection;
 use App\Models\Water\WaterSiteInspectionsScheduling;
 use App\Models\Water\WaterTran;
@@ -2885,6 +2886,7 @@ class NewConnectionController extends Controller
             $mWorkflowTrack         = new WorkflowTrack();
             $mWaterChrges           = new WaterConnectionTypeCharge();
             $mPropProperty          = new PropProperty();
+            $mWaterRoadTypeChages   = new WaterRoadCutterCharge();
             $workflowID             = Config::get('workflow-constants.WATER_MASTER_ID');
             $refUserType            = Config::get('waterConstaint.REF_USER_TYPE');
             $refApplyFrom           = Config::get('waterConstaint.APP_APPLY_FROM');
@@ -2952,6 +2954,8 @@ class NewConnectionController extends Controller
             # collect the application charges 
 
             $Charges = $mWaterChrges->getChargesByIds($tabSize);
+            $GetRoadTypeCharges = $mWaterRoadTypeChages->getRoadCharges($req->roadType);
+            $calculatedAmount = $req->permeter *   $GetRoadTypeCharges->per_meter_amount + $Charges->amount;
 
             $this->begin();
             # Generating Application No
@@ -2963,7 +2967,7 @@ class NewConnectionController extends Controller
 
             $meta = [
                 'applicationId'     => $applicationId->id,
-                "amount"            => $Charges->amount,
+                "amount"            => $calculatedAmount,
                 "chargeCategory"    => $Charges->charge_category,
             ];
 
@@ -3143,7 +3147,8 @@ class NewConnectionController extends Controller
             $refChargeCatagoryValue             = Config::get("waterConstaint.CONNECTION_TYPE");
 
             $connection = WaterApprovalApplicationDetail::select(
-                "water_approval_application_details.id",
+                'water_second_consumers.id',
+                "water_approval_application_details.id as applicationId",
                 "water_approval_application_details.application_no",
                 "water_approval_application_details.property_type_id",
                 "water_approval_application_details.address",
@@ -3190,6 +3195,7 @@ class NewConnectionController extends Controller
                 // ->whereNotIn("status",[0,6,7])
                 ->leftjoin('wf_roles', 'wf_roles.id', "=", "water_approval_application_details.current_role")
                 ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_approval_application_details.ward_id')
+                ->join('water_second_consumers','water_second_consumers.apply_connection_id','water_approval_application_details.id')
                 ->where("water_approval_application_details.user_id", $refUserId)
                 ->orderbydesc('water_approval_application_details.id')
                 ->get();
@@ -3213,7 +3219,7 @@ class NewConnectionController extends Controller
                         $value['actualPaymentStatus'] = 0;
                     }
                 }
-                
+
 
                 # show connection charges
                 switch ($value['connection_type_id']) {
