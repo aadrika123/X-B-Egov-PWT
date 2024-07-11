@@ -144,6 +144,7 @@ class WaterApplication extends Model
             'water_applications.address',
             'water_applications.category',
             'water_applications.application_no',
+            'water_applications.ward_no',
             'water_property_type_mstrs.property_type',
             'water_param_pipeline_types.pipeline_type',
             'zone_masters.zone_name',
