@@ -83,6 +83,7 @@ class GetHoldingDuesV2
         $calculate2PercPenalty->_propSaf = $this->_propSaf =  $mPropSaf->find($propBasicDtls->saf_id);
         $this->testOldTranClear($req->propId);
         $owners = $mPropOwners->getOwnersByPropId($req->propId);
+        $guardianNamesMarathi = $owners->pluck('guardian_name_marathi')->filter()->implode(', ');
         $armedForceOwners = collect($owners)->where("is_armed_force", true);
         if ($armedForceOwners->isNotEmpty() && collect($owners)->count() == 1) {
             $this->_isSingleManArmedForce = true;
@@ -318,7 +319,7 @@ class GetHoldingDuesV2
             'land_occupation_date',
             'citizen_id',
             'user_id',
-            'applicant_name',
+            //'applicant_name',
             'property_no',
             "plot_no",
             "area_of_plot",
@@ -327,6 +328,7 @@ class GetHoldingDuesV2
         $demand['isOldTranClear'] = $this->_IsOldTranClear;
         $basicDtls['moduleId'] = 1;
         $basicDtls['workflowId'] = 0;
+        $basicDtls['applicant_name'] = $guardianNamesMarathi;
         $basicDtls["holding_type"] = $holdingType;
         $basicDtls["ownership_type"] = $ownershipType;
         $basicDtls["demand_receipt_date"] = Carbon::now()->format('d-m-Y');
