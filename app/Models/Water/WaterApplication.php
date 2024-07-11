@@ -720,6 +720,7 @@ class WaterApplication extends Model
         $saveNewApplication->cycle                  = $req->cycle;
         $saveNewApplication->building_type          = $req->buildingType;
         $saveNewApplication->trade_license          = $req->tradelicenseNo;
+        $saveNewApplication->ward_no                = $req->wardNo;
 
 
         $saveNewApplication->save();
