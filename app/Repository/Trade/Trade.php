@@ -3702,7 +3702,7 @@ class Trade implements ITrade
             if ($data['application_type_id'] == 3) {
                 $denial_amount_month = 0;
             }
-            $total_denial_amount = $denial_amount_month + $rate/2 + $pre_app_amount + $notice_amount;
+            $total_denial_amount = $denial_amount_month + $rate + $pre_app_amount + $notice_amount;
 
             # Check If Any cheque bounce charges
             if (isset($inputs['apply_licence_id'], $inputs['apply_licence_id'])) {
