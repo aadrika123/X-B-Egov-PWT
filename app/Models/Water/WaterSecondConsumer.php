@@ -347,7 +347,7 @@ class WaterSecondConsumer extends Model
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_second_consumers.ward_mstr_id')
             ->leftjoin('water_consumer_meters', 'water_consumer_meters.consumer_id', 'water_second_consumers.id')
             ->leftjoin('water_second_connection_charges', 'water_second_connection_charges.consumer_id', 'water_second_consumers.id')
-            ->join('water_consumer_demands', 'water_consumer_demands.consumer_id', '=', 'water_second_consumers.id')
+            ->leftjoin('water_consumer_demands', 'water_consumer_demands.consumer_id', '=', 'water_second_consumers.id')
             ->where('water_second_consumers.id', $applicationId)
             ->where('water_second_consumers.status', 1)
             ->orderBy('water_consumer_initial_meters.id', 'DESC')
@@ -670,7 +670,7 @@ class WaterSecondConsumer extends Model
     public function updateConsumer($consumerId)
     {
         return self::where('id', $consumerId)
-            ->update([
+            ->update([  
                 'status' => 1,
                 'payment_status' => 1
             ]);
