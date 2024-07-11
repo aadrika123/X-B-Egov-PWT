@@ -622,7 +622,7 @@ class NewConnectionRepository implements iNewConnection
      * | @param 
         | Recheck
      */
-    public function saveWaterConnInProperty($refWaterDetails,)
+    public function saveWaterConnInProperty($refWaterDetails)
     {
         $appartmentsPropIds     = array();
         $mPropProperty          = new PropProperty();
