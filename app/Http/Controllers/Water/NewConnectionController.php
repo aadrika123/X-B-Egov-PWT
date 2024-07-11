@@ -967,7 +967,7 @@ class NewConnectionController extends Controller
                 $applicationDetails['applicationDetails'] = $mWaterApproveApplications->fullWaterDetails($request)->first();
             }
 
-            if ($applicationDetails) {
+            if (!$applicationDetails) {
                 throw new Exception('Application Details Not Found');
             }
 
@@ -3128,8 +3128,6 @@ class NewConnectionController extends Controller
     {
 
         try {
-
-
             $refUser                = authUser($request);
             $refUserId              = $refUser->id;
             $roleDetails            = Config::get('waterConstaint.ROLE-LABEL');
@@ -3143,7 +3141,6 @@ class NewConnectionController extends Controller
             $mWaterSiteInspectionsScheduling    = new WaterSiteInspectionsScheduling();
             $refChargeCatagory                  = Config::get("waterConstaint.CHARGE_CATAGORY");
             $refChargeCatagoryValue             = Config::get("waterConstaint.CONNECTION_TYPE");
-
 
             $connection = WaterApprovalApplicationDetail::select(
                 "water_approval_application_details.id",
@@ -3216,6 +3213,7 @@ class NewConnectionController extends Controller
                         $value['actualPaymentStatus'] = 0;
                     }
                 }
+                
 
                 # show connection charges
                 switch ($value['connection_type_id']) {
@@ -3227,12 +3225,13 @@ class NewConnectionController extends Controller
                         $value['connection_type_name'] = $refChargeCatagory['NEW_CONNECTION'];
                         break;
                 }
-
-                $value['transDetails'] = $mWaterTran->getTransNo($value['id'], null)->first();
-                $value['calcullation'] = $mWaterParamConnFee->getCallParameter($value['property_type_id'], $value['area_sqft'])->first();
+                // $value['transDetails'] = $mWaterTran->getTransNo($value['id'], null)->first();
+                // $value['calcullation'] = $mWaterParamConnFee->getCallParameter($value['property_type_id'], $value['area_sqft'])->first();
                 $refConnectionCharge = $mWaterConnectionCharge->getWaterchargesById($value['id'])
                     ->where('paid_status', 0)
                     ->first();
+
+
                 # Formating connection type id 
                 $chargeId =  null;
                 if (!is_null($refConnectionCharge)) {
