@@ -93,33 +93,37 @@ class WaterApplicant extends Model
     /**
      * | final approval and the replication of the application details 
      */
-    public function finalApplicantApproval($request,)
+    public function finalApplicantApproval($request, $consumerId)
     {
-        $approvedWaterApplicant = WaterApplicant::query()
-            ->where('application_id', $request->applicationId)
-            ->get();
-        // $checkOwner = WaterConsumerOwner::where('consumer_id', $consumerId)->first();
-        // if ($checkOwner) {
-        //     throw new Exception("Water Owner Already Exist!");
-        // }
+        try {
+            // Fetch all water applicants with the specified application ID
+            $approvedWaterApplicants = WaterApplicant::query()
+                ->where('application_id', $request->applicationId)
+                ->get();
 
-        # data storing in approved applicant table 
-        collect($approvedWaterApplicant)->map(function ($value) {                          //use ($consumerId)
-            $approvedWaterOwners = $value->replicate();
-            $approvedWaterOwners->setTable('water_approval_applicants');
-            $approvedWaterOwners->id = $value->id;
-            $approvedWaterOwners->save();
+            // Process each applicant
+            collect($approvedWaterApplicants)->map(function ($value) use ($consumerId) {
+                // Duplicate the applicant and save to water_approval_applicants
+                $approvedWaterOwners = $value->replicate();
+                $approvedWaterOwners->setTable('water_approval_applicants');
+                $approvedWaterOwners->save();
 
-            $approvedWaterOwners = $value->replicate();
-            $approvedWaterOwners->setTable('water_consumer_owners');
-            // $approvedWaterOwners->consumer_id = $consumerId;
-            $approvedWaterOwners->save();
-        });
+                // Duplicate the applicant and save to water_consumer_owners
+                $approvedWaterOwners = $value->replicate();
+                $approvedWaterOwners->setTable('water_consumer_owners');
+                $approvedWaterOwners->consumer_id = $consumerId;
+                $approvedWaterOwners->save();
+            });
 
-        # final delete 
-        WaterApplicant::where('application_id', $request->applicationId)
-            ->delete();
+            // Delete original applicants
+            WaterApplicant::where('application_id', $request->applicationId)
+                ->delete();
+        } catch (\Exception $e) {
+            // Handle any exceptions that occur
+            throw new Exception("An error occurred while processing the applicants: " . $e->getMessage());
+        }
     }
+
 
 
     /**

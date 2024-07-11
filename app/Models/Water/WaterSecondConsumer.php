@@ -671,7 +671,8 @@ class WaterSecondConsumer extends Model
     {
         return self::where('id', $consumerId)
             ->update([
-                'status' => 1
+                'status' => 1,
+                'payment_status' => 1
             ]);
     }
 }

@@ -903,7 +903,7 @@ class TaxCalculator
             $rate = $this->readRateByFloor($item);                 // (2.1)
             $rate = $rate * 5;
 
-            $alv = roundFigure($item->buildupArea * $rate);
+            $alv = roundFigure($item->buildupArea * 0.092903  * $rate);
             $maintance10Perc = 0; #roundFigure(($alv * $this->_maintancePerc) / 100);
             $valueAfterMaintanance = roundFigure($alv - ($alv * 0.1)); # 10% minuse on ALV
             $aging = 0; #roundFigure(($valueAfterMaintanance * $agingPerc) / 100);
@@ -922,7 +922,7 @@ class TaxCalculator
 
             $isCommercial = true;
 
-            $stateTaxes = $this->readStateTaxes($item->buildupArea, $isCommercial, $alv);                   // Read State Taxes(3.1)
+            $stateTaxes = $this->readStateTaxes($this->_calculatorParams['areaOfPlot'], $isCommercial, $alv);                   // Read State Taxes(3.1)
 
             $tax1 = 0;
             $diffArrea = 0;

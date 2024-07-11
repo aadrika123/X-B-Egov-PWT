@@ -396,6 +396,7 @@ class WaterPaymentController extends Controller
                 "paidFrom"              => $connectionCharges['charge_category'] ?? $transactionDetails['tran_type'],
                 "holdingNo"             => $applicationDetails['holding_no'],
                 "safNo"                 => $applicationDetails['saf_no'],
+                "consumerNo"            => $applicationDetails['consumer_no'],
                 "paidUpto"              => "",
                 "paymentMode"           => $transactionDetails['payment_mode'],
                 "bankName"              => $chequeDetails['bank_name'] ?? null,                                  // in case of cheque,dd,nfts
