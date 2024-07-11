@@ -80,7 +80,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('application/holding', 'searchHolding');
         //check
         Route::post('check-test', 'check');
-        Route::post('citizen/approve-application', 'getCitizenApproveApplssication');
+        Route::post('citizen/approve-application', 'getCitizenApproveApplication');
         Route::post('application/jsk-get-by-id', 'getApproveAplications');                                  // Admin
     });
 
