@@ -967,7 +967,7 @@ class NewConnectionController extends Controller
                 $applicationDetails['applicationDetails'] = $mWaterApproveApplications->fullWaterDetails($request)->first();
             }
 
-            if ($applicationDetails) {
+            if (!$applicationDetails) {
                 throw new Exception('Application Details Not Found');
             }
 
