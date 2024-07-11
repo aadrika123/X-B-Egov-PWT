@@ -145,6 +145,7 @@ class WaterApplication extends Model
             'water_applications.category',
             'water_applications.application_no',
             'water_applications.ward_no',
+            'water_applications.pin',
             'water_property_type_mstrs.property_type',
             'water_param_pipeline_types.pipeline_type',
             'zone_masters.zone_name',
@@ -700,7 +701,7 @@ class WaterApplication extends Model
         $saveNewApplication->area_sqft              = $req->areaSqft;
         $saveNewApplication->address                = $req->address;
         $saveNewApplication->landmark               = $req->landmark ?? null;
-        $saveNewApplication->pin                    = $req->pin;
+        $saveNewApplication->pin                    = $req->pincode;
         $saveNewApplication->connection_through     = $req->connection_through;
         $saveNewApplication->workflow_id            = $ulbWorkflowId->id;
         // $saveNewApplication->connection_fee_id      = $waterFeeId;
