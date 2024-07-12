@@ -142,6 +142,7 @@ class WaterApprovalApplicationDetail extends Model
             'water_approval_application_details.application_no',
             'water_approval_application_details.ward_no',
             'water_approval_application_details.pin',
+            'water_approval_application_details.doc_upload_status',
             'water_property_type_mstrs.property_type',
             'water_param_pipeline_types.pipeline_type',
             'zone_masters.zone_name',

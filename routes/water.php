@@ -58,7 +58,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('approve-application/get-by-id', 'getApproveApplicationsDetails');                                  // Admin
         Route::post('citizen/get-doc-list', 'getDocToUpload');                                          // Citizen  
         Route::post('application/edit', 'editWaterAppliction');                                         // Citizen/Admin
-        Route::post('search-holding-saf', 'getSafHoldingDetail');                                         // Admin
+        Route::post('search-holding-saf', 'getSafHoldingDetail');                                       // Admin
         Route::post('application/search', 'getActiveApplictaions');                                     // Admin
         Route::post('admin/application/get-details-by-id', 'getApplicationDetailById');                 // Admin
         Route::post('admin/application/list-details-by-date', 'listApplicationBydate');                 // Admin
