@@ -197,7 +197,7 @@ class WaterConsumer extends Controller
                 $consumerDemand['totalSumDemand'] = round($sumDemandAmount, 2);
                 $consumerDemand['totalPenalty'] = round($totalPenalty, 2);
                 $consumerDemand['remainAdvance'] = round($remainAdvance ?? 0);
-                if ($consumerDemand['totalSumDemand'] == 0) 
+                if ($consumerDemand['totalSumDemand'] == 0)
                     unset($consumerDemand['consumerDemands']);
 
                 # Meter Details 
@@ -280,8 +280,7 @@ class WaterConsumer extends Controller
 
             # Calling BLL for call
             $returnData = new WaterMonthelyCall($request->consumerId, $request->demandUpto, $request->finalRading); #WaterSecondConsumer::get();
-            if(!$request->isNotstrickChek)
-            {
+            if (!$request->isNotstrickChek) {
                 $returnData->checkDemandGenerationCondition();
             }
             $calculatedDemand = $returnData->parentFunction($request);
@@ -324,9 +323,9 @@ class WaterConsumer extends Controller
                 // if (($sms["status"] !== false)) {
                 //     $respons = SMSAKGOVT(6206998554, $sms["sms"], $sms["temp_id"]);
                 // }
-                $this->commit(); 
-                $respons = $documentPath??[];   
-                $respons["consumerId"]  =   $request->consumerId;        
+                $this->commit();
+                $respons = $documentPath ?? [];
+                $respons["consumerId"]  =   $request->consumerId;
                 return responseMsgs(true, "Demand Generated! for" . " " . $request->consumerId, $respons, "", "02", ".ms", "POST", "");
             }
         } catch (Exception $e) {
@@ -438,7 +437,7 @@ class WaterConsumer extends Controller
             if ($refDemandUpto && $diffMonth < 3) {
                 throw new Exception("There should be a difference of 3 month!");
             }
-        } 
+        }
         # write the code to check the first meter reading exist and the other 
     }
 
@@ -648,11 +647,11 @@ class WaterConsumer extends Controller
         | Working
         | Common function
      */
-    public function saveDocument($request, $refImageName,$folder=null)
+    public function saveDocument($request, $refImageName, $folder = null)
     {
         $document       = $request->document;
         $docUpload      = new DocUpload;
-        $relativePath   = trim(Config::get('waterConstaint.WATER_RELATIVE_PATH')."/".$folder,"/");
+        $relativePath   = trim(Config::get('waterConstaint.WATER_RELATIVE_PATH') . "/" . $folder, "/");
 
         $imageName = $docUpload->upload($refImageName, $document, $relativePath);
         $doc = [
@@ -732,10 +731,14 @@ class WaterConsumer extends Controller
         $validated = Validator::make(
             $request->all(),
             [
-                'consumerId'    => "required|digits_between:1,9223372036854775807",
-                'ulbId'         => "nullable|",
-                'reason'        => "required",
-                'remarks'       => "required"
+                'consumerId'           => "required|digits_between:1,9223372036854775807",
+                'ulbId'                => "nullable|",
+                'reason'                => "nullable",
+                'remarks'               => "required",
+                'documents'             => 'nullable|array',
+                'documents.*.image'     => 'nullable|mimes:png,jpeg,pdf,jpg',
+                'documents.*.docCode'    => 'nullable|string',
+                'documents.*.ownerDtlId' => 'nullable|integer',
             ]
         );
         if ($validated->fails())
@@ -744,6 +747,7 @@ class WaterConsumer extends Controller
         try {
             $user                           = authUser($request);
             $refRequest                     = array();
+            $mDocuments                     = $request->documents;
             $ulbWorkflowObj                 = new WfWorkflow();
             $mWorkflowTrack                 = new WorkflowTrack();
             $mWaterSecondConsumer           = new waterSecondConsumer();
@@ -820,6 +824,9 @@ class WaterConsumer extends Controller
             ];
             $mWaterConsumerCharge->saveConsumerCharges($metaRequest, $request->consumerId, $refChargeList['2']);
             $mWaterSecondConsumer->dissconnetConsumer($request->consumerId, $metaRequest['status']);
+            #save Document
+            $this->uploadHoardDocument($deactivatedDetails['id'], $mDocuments, $request->auth);
+            $mWaterConsumerActiveRequest->updateUploadStatus($deactivatedDetails, true);
 
             # Save data in track
             $metaReqs = new Request(
@@ -847,6 +854,45 @@ class WaterConsumer extends Controller
             $this->rollback();
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", "");
         }
+    }
+
+    /*
+     * upload Document By agency At the time of Registration
+     * @param Request $req
+     * @return \Illuminate\Http\JsonResponse
+     */
+
+    public function uploadHoardDocument($ActiveRequestId, $documents, $auth)
+    {
+        $docUpload = new DocumentUpload;
+        $mWfActiveDocument = new WfActiveDocument();
+        $mActiveRequest = new WaterConsumerActiveRequest();
+        $relativePath       = Config::get('waterConstaint.WATER_RELATIVE_PATH');
+
+        collect($documents)->map(function ($doc) use ($ActiveRequestId, $docUpload, $mWfActiveDocument, $mActiveRequest, $relativePath, $auth) {
+            $metaReqs = array();
+            $getApplicationDtls = $mActiveRequest->getApplicationDtls($ActiveRequestId);
+            $refImageName = $doc['docCode'];
+            $refImageName = $getApplicationDtls->id . '-' . $refImageName;
+            $documentImg = $doc['image'];
+            $imageName = $docUpload->upload($refImageName, $documentImg, $relativePath);
+            $metaReqs['moduleId'] = Config::get('module-constants.WATER_MODULE_ID');
+            $metaReqs['activeId'] = $getApplicationDtls->id;
+            $metaReqs['workflowId'] = $getApplicationDtls->workflow_id;
+            $metaReqs['ulbId'] = $getApplicationDtls->ulb_id;
+            $metaReqs['relativePath'] = $relativePath;
+            $metaReqs['document'] = $imageName;
+            $metaReqs['docCode'] = $doc['docCode'];
+            $metaReqs['ownerDtlId'] = $doc['ownerDtlId'];
+            $a = new Request($metaReqs);
+            // $mWfActiveDocument->postDocuments($a, $auth);
+            $metaReqs =  $mWfActiveDocument->metaReqs($metaReqs);
+            $mWfActiveDocument->create($metaReqs);
+            // foreach ($metaReqs as $key => $val) {
+            //     $mWfActiveDocument->$key = $val;
+            // }
+            // $mWfActiveDocument->save();
+        });
     }
 
     /**
@@ -1905,7 +1951,7 @@ class WaterConsumer extends Controller
 
     public function updateConnectionType(reqMeterEntry $request)
     {
-        try{
+        try {
             $userDetails = Auth()->user();
             $userDetails ? $userDetails["emp_id"] = $userDetails->id : null;
             $m_consumer = new WaterSecondConsumer();
@@ -1919,29 +1965,26 @@ class WaterConsumer extends Controller
             $lastDemand = $consumerDtl->getLastDemand();
             $lastPaidDemand = $consumerDtl->getLastPaidDemand();
             $allUnpaidDemand = $consumerDtl->getAllUnpaidDemand();
-            if($lastPaidDemand && $lastPaidDemand->demand_upto > $request->connectionDate)
-            {
-                throw new Exception("Demand Already paid Upto ".Carbon::parse($lastPaidDemand->demand_upto)->format("d-m-Y").". Connection date can not befor or equal to last demand paid upto date");
+            if ($lastPaidDemand && $lastPaidDemand->demand_upto > $request->connectionDate) {
+                throw new Exception("Demand Already paid Upto " . Carbon::parse($lastPaidDemand->demand_upto)->format("d-m-Y") . ". Connection date can not befor or equal to last demand paid upto date");
             }
-            if($connectinDtl && $connectinDtl->connection_type!=3 && (($lastMeterreading->initial_reading??0) >= $request->oldMeterFinalReading))
-            {
+            if ($connectinDtl && $connectinDtl->connection_type != 3 && (($lastMeterreading->initial_reading ?? 0) >= $request->oldMeterFinalReading)) {
                 throw new Exception("old meter reading can not less than previouse reading");
             }
-            $removeDemand = collect($allUnpaidDemand)->where("demand_upto",">=",$request->connectionDate);#->where("generation_date",">=",$request->connectionDate);
+            $removeDemand = collect($allUnpaidDemand)->where("demand_upto", ">=", $request->connectionDate); #->where("generation_date",">=",$request->connectionDate);
             $demandRquest = new Request(
                 [
-                "consumerId"=>$consumerDtl->id,
-                "demandUpto"       => $request->connectionDate,
-                'finalRading'      => $request->oldMeterFinalReading,
-                "isNotstrickChek"  =>true,
-                "document"         =>$request->document,  
-                "auth"             =>$request->auth,
+                    "consumerId" => $consumerDtl->id,
+                    "demandUpto"       => $request->connectionDate,
+                    'finalRading'      => $request->oldMeterFinalReading,
+                    "isNotstrickChek"  => true,
+                    "document"         => $request->document,
+                    "auth"             => $request->auth,
                 ]
             );
-            
+
             $this->begin();
-            foreach($removeDemand as $val)
-            {
+            foreach ($removeDemand as $val) {
                 $val->status = 0;
                 $val->save();
             }
@@ -1949,31 +1992,27 @@ class WaterConsumer extends Controller
             $lastDemand = $m_demand->akolaCheckConsumerDemand($consumerDtl->id)->get()->sortByDesc("demand_upto")->first();
             $currentDemandUpdotoDate = Carbon::parse($lastDemand->demand_upto)->format("Y-m-d");
             $demandGenrationRes = $this->saveGenerateConsumerDemand($demandRquest);
-            if(!$demandGenrationRes->original["status"] && ($endOfPrivMonthEnd > $currentDemandUpdotoDate))
-            {
+            if (!$demandGenrationRes->original["status"] && ($endOfPrivMonthEnd > $currentDemandUpdotoDate)) {
                 throw new Exception($demandGenrationRes->original["message"]);
             }
             $request->merge(['finalRading'      => $request->newMeterInitialReading]);
             $documentPath = $demandGenrationRes->original["data"];
-            $oldFile = public_path()."/".($documentPath["relaivePath"]??"")."/".($documentPath["document"]??"");
-            $neFileName =  public_path()."/".($documentPath["relaivePath"]??"")."/meter_doc"."/".($documentPath["document"]??"");
-            $meterDocPath = public_path()."/".($documentPath["relaivePath"]??"")."/meter_doc2";
-            if (!file_exists($meterDocPath)) {                
+            $oldFile = public_path() . "/" . ($documentPath["relaivePath"] ?? "") . "/" . ($documentPath["document"] ?? "");
+            $neFileName =  public_path() . "/" . ($documentPath["relaivePath"] ?? "") . "/meter_doc" . "/" . ($documentPath["document"] ?? "");
+            $meterDocPath = public_path() . "/" . ($documentPath["relaivePath"] ?? "") . "/meter_doc2";
+            if (!file_exists($meterDocPath)) {
                 mkdir($meterDocPath, 0755);
             }
-            if(($documentPath["relaivePath"]??false) && copy($oldFile,$neFileName))
-            {
-                $documentPath["relaivePath"] = $documentPath["relaivePath"]."/meter_doc";
+            if (($documentPath["relaivePath"] ?? false) && copy($oldFile, $neFileName)) {
+                $documentPath["relaivePath"] = $documentPath["relaivePath"] . "/meter_doc";
             }
             $meterDetails["meterId"] = $m_meter->saveMeterDetails($request, $documentPath, 0);
-            $merterReading->saveConsumerReading($request,$meterDetails,$userDetails);
+            $merterReading->saveConsumerReading($request, $meterDetails, $userDetails);
             $this->commit();
             return responseMsgs(true, "connection type changed", "");
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             $this->rollback();
-            return responseMsgs(false, [$e->getMessage(),$e->getFile(),$e->getLine()], "", $e->getCode(), "1.0", "", 'POST', "");
+            return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "", $e->getCode(), "1.0", "", 'POST', "");
         }
     }
 
@@ -2395,15 +2434,13 @@ class WaterConsumer extends Controller
         if ($validated->fails()) {
             return validationError($validated);
         }
-        try{
+        try {
             $waterConsumerDemandReceipt = new WaterConsumerDemandReceipt($request->consumerId);
             $waterConsumerDemandReceipt->generateDemandReceipts();
             $demandReciept = $waterConsumerDemandReceipt->_GRID;
-            return responseMsgs(true,"Demand Recipt",remove_null($demandReciept));
-        }
-        catch(Exception $e)
-        {
-            responseMsgs(false,$e->getMessage(),"");
+            return responseMsgs(true, "Demand Recipt", remove_null($demandReciept));
+        } catch (Exception $e) {
+            responseMsgs(false, $e->getMessage(), "");
         }
     }
 
@@ -2438,18 +2475,18 @@ class WaterConsumer extends Controller
             return validationErrorV2($validated);
         try {
             $request->merge([
-                "propertyNo"=>$request->property_no,
-                "mobileNo"=>$request->mobile_no,
-                "applicantName"=>$request->applicant_name,
-                "guardianName"=>$request->guardian_name,
+                "propertyNo" => $request->property_no,
+                "mobileNo" => $request->mobile_no,
+                "applicantName" => $request->applicant_name,
+                "guardianName" => $request->guardian_name,
             ]);
             $now            = Carbon::now();
             $user           = Auth()->user();
             $userId         = $user->id;
             $consumerId     = $request->consumerId;
-            $relativePath   = Config::get("waterConstaint.WATER_UPDATE_RELATIVE_PATH"); 
+            $relativePath   = Config::get("waterConstaint.WATER_UPDATE_RELATIVE_PATH");
             $refImageName = $request->consumerId;
-            $imageName=null;
+            $imageName = null;
 
             $docUpload = new DocumentUpload();
             $mWaterSecondConsumer = new waterSecondConsumer();
@@ -2460,15 +2497,15 @@ class WaterConsumer extends Controller
             if (!$consumerDtls) {
                 throw new Exception("consumer details not found!");
             }
-            $owner = $mWaterConsumerOwners->where("consumer_id",$request->consumerId)->orderBy("id","ASC")->first();
-            
+            $owner = $mWaterConsumerOwners->where("consumer_id", $request->consumerId)->orderBy("id", "ASC")->first();
+
             $conUpdaleLog = $consumerDtls->replicate();
             $conUpdaleLog->setTable($mWaterConsumerLog->getTable());
-            $conUpdaleLog->purpose      =   "Consumer Update";  
-            $conUpdaleLog->consumer_id  =   $consumerDtls->id;  
+            $conUpdaleLog->purpose      =   "Consumer Update";
+            $conUpdaleLog->consumer_id  =   $consumerDtls->id;
             $conUpdaleLog->up_user_id   = $user->id;
-            $conUpdaleLog->up_user_type = $user->user_type;            
-            $conUpdaleLog->remarks       = $request->remarks; 
+            $conUpdaleLog->up_user_type = $user->user_type;
+            $conUpdaleLog->remarks       = $request->remarks;
 
             $ownerUdatesLog = $owner->replicate();
             $ownerUdatesLog->setTable($mWaterConsumerOwnersLog->getTable());
@@ -2488,8 +2525,7 @@ class WaterConsumer extends Controller
             $consumerDtls->address              =  $request->address       ? $request->address : $consumerDtls->address;
 
             #=========consumer updates=================
-            if($owner)
-            {
+            if ($owner) {
                 $owner->applicant_name       =  $request->applicant_name      ? $request->applicant_name : $owner->applicant_name;
                 $owner->guardian_name        =  $request->guardian_name       ? $request->guardian_name  : $owner->guardian_name;
                 $owner->email                =  $request->email               ? $request->email          : $owner->email;
@@ -2499,22 +2535,21 @@ class WaterConsumer extends Controller
             $this->begin();
 
             $conUpdaleLog->save();
-            if($request->document)
-            {
+            if ($request->document) {
                 $imageName = $docUpload->upload($conUpdaleLog->id, $request->document, $relativePath);
-            }            
+            }
 
-            $ownerUdatesLog->consumers_updating_log_id = $conUpdaleLog->id;            
+            $ownerUdatesLog->consumers_updating_log_id = $conUpdaleLog->id;
 
             $consumerDtls->update();
-            $owner ? $owner->update():"";
+            $owner ? $owner->update() : "";
 
-            $conUpdaleLog->relative_path = $imageName ? $relativePath : null; 
-            $conUpdaleLog->document      = $imageName ;
-            $conUpdaleLog->new_data_json = json_encode($consumerDtls->toArray(),JSON_UNESCAPED_UNICODE);
+            $conUpdaleLog->relative_path = $imageName ? $relativePath : null;
+            $conUpdaleLog->document      = $imageName;
+            $conUpdaleLog->new_data_json = json_encode($consumerDtls->toArray(), JSON_UNESCAPED_UNICODE);
             $conUpdaleLog->update();
-            $owner ? $ownerUdatesLog->new_data_json = json_encode($owner->toArray(),JSON_UNESCAPED_UNICODE):"";
-            $owner ? $ownerUdatesLog->save() :"";
+            $owner ? $ownerUdatesLog->new_data_json = json_encode($owner->toArray(), JSON_UNESCAPED_UNICODE) : "";
+            $owner ? $ownerUdatesLog->save() : "";
 
 
             $this->commit();
@@ -2543,54 +2578,49 @@ class WaterConsumer extends Controller
         );
         if ($validated->fails())
             return validationErrorV2($validated);
-        try{
-            $fromDate = $uptoDate = $now ;
+        try {
+            $fromDate = $uptoDate = $now;
             $userId = $wardId = $zoneId = null;
             $key = $request->key;
-            if($key)
-            {
+            if ($key) {
                 $fromDate = $uptoDate = null;
             }
-            if($request->fromDate)
-            {
+            if ($request->fromDate) {
                 $fromDate = $request->fromDate;
             }
-            if($request->uptoDate)
-            {
+            if ($request->uptoDate) {
                 $uptoDate = $request->uptoDate;
             }
-            if($request->wardId)
-            {
+            if ($request->wardId) {
                 $wardId = $request->wardId;
             }
-            if($request->zoneId)
-            {
+            if ($request->zoneId) {
                 $zoneId = $request->zoneId;
             }
-            if($request->userId)
-            {
+            if ($request->userId) {
                 $userId = $request->userId;
             }
-            $data = WaterConsumersUpdatingLog::select("water_consumers_updating_logs.id",
-                                            "water_consumers_updating_logs.consumer_id",
-                                            "water_consumers_updating_logs.consumer_no",
-                                            "water_consumers_updating_logs.remarks",
-                                            "water_consumers_updating_logs.purpose",
-                                            "water_consumers_updating_logs.remarks",
-                                            "water_consumers_updating_logs.address",
-                                            "water_consumers_updating_logs.up_created_at AS created_at",
-                                            "water_consumers_updating_logs.folio_no as property_no",
-                                            "zone_masters.zone_name",
-                                            "ulb_ward_masters.ward_name",
-                                            "owners.applicant_name",
-                                            "owners.guardian_name",
-                                            "owners.mobile_no",
-                                            "users.name AS user_name",
-                                            )
-                    ->leftJoin("users","users.id","water_consumers_updating_logs.up_user_id")
-                    ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers_updating_logs.ward_mstr_id')
-                    ->leftjoin('zone_masters', 'zone_masters.id', 'water_consumers_updating_logs.zone_mstr_id')
-                    ->leftJoin(DB::raw("(
+            $data = WaterConsumersUpdatingLog::select(
+                "water_consumers_updating_logs.id",
+                "water_consumers_updating_logs.consumer_id",
+                "water_consumers_updating_logs.consumer_no",
+                "water_consumers_updating_logs.remarks",
+                "water_consumers_updating_logs.purpose",
+                "water_consumers_updating_logs.remarks",
+                "water_consumers_updating_logs.address",
+                "water_consumers_updating_logs.up_created_at AS created_at",
+                "water_consumers_updating_logs.folio_no as property_no",
+                "zone_masters.zone_name",
+                "ulb_ward_masters.ward_name",
+                "owners.applicant_name",
+                "owners.guardian_name",
+                "owners.mobile_no",
+                "users.name AS user_name",
+            )
+                ->leftJoin("users", "users.id", "water_consumers_updating_logs.up_user_id")
+                ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_consumers_updating_logs.ward_mstr_id')
+                ->leftjoin('zone_masters', 'zone_masters.id', 'water_consumers_updating_logs.zone_mstr_id')
+                ->leftJoin(DB::raw("(
                         SELECT water_consumer_owner_updating_logs.consumers_updating_log_id,
                             string_agg(water_consumer_owner_updating_logs.applicant_name,',') as applicant_name,
                             string_agg(water_consumer_owner_updating_logs.guardian_name,',') as guardian_name,
@@ -2598,36 +2628,31 @@ class WaterConsumer extends Controller
                         FROM water_consumer_owner_updating_logs
                         JOIN water_consumers_updating_logs ON water_consumers_updating_logs.id = water_consumer_owner_updating_logs.consumers_updating_log_id
                         WHERE CAST(water_consumers_updating_logs.up_created_at AS DATE) BETWEEN '$fromDate' AND '$uptoDate' 
-                        ".($userId ? " AND water_consumers_updating_logs.up_user_id = $userId" : "")."
-                        ".($wardId ? " AND water_consumers_updating_logs.ward_mstr_id = $wardId" : "")."
-                        ".($zoneId ? " AND water_consumers_updating_logs.zone_mstr_id = $zoneId" : "")."
+                        " . ($userId ? " AND water_consumers_updating_logs.up_user_id = $userId" : "") . "
+                        " . ($wardId ? " AND water_consumers_updating_logs.ward_mstr_id = $wardId" : "") . "
+                        " . ($zoneId ? " AND water_consumers_updating_logs.zone_mstr_id = $zoneId" : "") . "
                         GROUP BY water_consumer_owner_updating_logs.consumers_updating_log_id
-                    )owners"),"owners.consumers_updating_log_id","water_consumers_updating_logs.id");
-            if($fromDate && $uptoDate)
-            {
-                $data->whereBetween(DB::raw("CAST(water_consumers_updating_logs.up_created_at AS DATE)"),[$fromDate,$uptoDate]);
+                    )owners"), "owners.consumers_updating_log_id", "water_consumers_updating_logs.id");
+            if ($fromDate && $uptoDate) {
+                $data->whereBetween(DB::raw("CAST(water_consumers_updating_logs.up_created_at AS DATE)"), [$fromDate, $uptoDate]);
             }
-            if($userId)
-            {
-                $data->where("water_consumers_updating_logs.up_user_id",$userId);
+            if ($userId) {
+                $data->where("water_consumers_updating_logs.up_user_id", $userId);
             }
-            if($wardId)
-            {
-                $data->where("water_consumers_updating_logs.ward_mstr_id",$wardId);
+            if ($wardId) {
+                $data->where("water_consumers_updating_logs.ward_mstr_id", $wardId);
             }
-            if($zoneId)
-            {
-                $data->where("water_consumers_updating_logs.zone_mstr_id",$zoneId);
+            if ($zoneId) {
+                $data->where("water_consumers_updating_logs.zone_mstr_id", $zoneId);
             }
-            if($key)
-            {
-                $data->where(function($where)use($key){
-                    $where->orWhere("water_consumers_updating_logs.consumer_no","ILIKE","%$key%")
-                    ->orWhere("water_consumers_updating_logs.old_consumer_no","ILIKE","%$key%")
-                    ->orWhere("water_consumers_updating_logs.address","ILIKE","%$key%")
-                    ->orWhere("owners.applicant_name","ILIKE","%$key%")
-                    ->orWhere("owners.guardian_name","ILIKE","%$key%")
-                    ->orWhere("owners.mobile_no","ILIKE","%$key%");
+            if ($key) {
+                $data->where(function ($where) use ($key) {
+                    $where->orWhere("water_consumers_updating_logs.consumer_no", "ILIKE", "%$key%")
+                        ->orWhere("water_consumers_updating_logs.old_consumer_no", "ILIKE", "%$key%")
+                        ->orWhere("water_consumers_updating_logs.address", "ILIKE", "%$key%")
+                        ->orWhere("owners.applicant_name", "ILIKE", "%$key%")
+                        ->orWhere("owners.guardian_name", "ILIKE", "%$key%")
+                        ->orWhere("owners.mobile_no", "ILIKE", "%$key%");
                 });
             }
             $perPage = $request->perPage ? $request->perPage : 10;
@@ -2640,44 +2665,40 @@ class WaterConsumer extends Controller
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $list);
-        }
-        catch(Exception $e)
-        {
-            return responseMsgs(false,$e->getMessage(),"");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "");
         }
     }
 
     public function consumerUpdateDetailLogs(Request $request)
     {
-       $logs = new  WaterConsumersUpdatingLog();
+        $logs = new  WaterConsumersUpdatingLog();
         $validated = Validator::make(
             $request->all(),
             [
-                'applicationId'         => "required|integer|exists:".$logs->getConnectionName().".".$logs->getTable().",id",
+                'applicationId'         => "required|integer|exists:" . $logs->getConnectionName() . "." . $logs->getTable() . ",id",
             ]
         );
         if ($validated->fails())
             return validationErrorV2($validated);
-        try{
+        try {
             $newConsumerData = new WaterSecondConsumer();
-            $consumerLog = $logs->find($request->applicationId);            
+            $consumerLog = $logs->find($request->applicationId);
             $users = User::find($consumerLog->up_user_id);
-            $consumerLog->property_type = $consumerLog->getProperty()->property_type??"";
-            $consumerLog->zone = ZoneMaster::find($consumerLog->zone_mstr_id)->zone_name??"";
-            $consumerLog->ward_name = UlbWardMaster::find($consumerLog->ward_mstr_id)->ward_name??"";
+            $consumerLog->property_type = $consumerLog->getProperty()->property_type ?? "";
+            $consumerLog->zone = ZoneMaster::find($consumerLog->zone_mstr_id)->zone_name ?? "";
+            $consumerLog->ward_name = UlbWardMaster::find($consumerLog->ward_mstr_id)->ward_name ?? "";
             $ownres      = $consumerLog->getOwners();
-            foreach(json_decode($consumerLog->new_data_json,true) as $key=>$val)
-            {
+            foreach (json_decode($consumerLog->new_data_json, true) as $key => $val) {
                 $newConsumerData->$key = $val;
-            } 
-            $newConsumerData->property_type = $newConsumerData->getProperty()->property_type??""; 
-            $newConsumerData->zone = ZoneMaster::find($newConsumerData->zone_mstr_id)->zone_name??"";  
-            $newConsumerData->ward_name = UlbWardMaster::find($newConsumerData->ward_mstr_id)->ward_name??"";
-            $newOwnresData = $ownres->map(function($val){
+            }
+            $newConsumerData->property_type = $newConsumerData->getProperty()->property_type ?? "";
+            $newConsumerData->zone = ZoneMaster::find($newConsumerData->zone_mstr_id)->zone_name ?? "";
+            $newConsumerData->ward_name = UlbWardMaster::find($newConsumerData->ward_mstr_id)->ward_name ?? "";
+            $newOwnresData = $ownres->map(function ($val) {
                 $owner = new WaterConsumerOwner();
-                
-                foreach(json_decode($val->new_data_json,true) as $key=>$val1)
-                {
+
+                foreach (json_decode($val->new_data_json, true) as $key => $val1) {
                     $owner->$key = $val1;
                 }
                 return $owner;
@@ -2686,23 +2707,21 @@ class WaterConsumer extends Controller
             $rols = ($commonFunction->getUserAllRoles($users->id)->first());
             $docUrl = Config::get('module-constants.DOC_URL');
             $header = [
-                "user_name" =>$users->name??"",
-                "role" =>$rols->role_name??"",
-                "remarks" =>$consumerLog->remarks??"",
-                "upate_date" =>$consumerLog->up_created_at ? Carbon::parse($consumerLog->up_created_at)->format("d-m-Y h:i:s A") :"",
-                "document" =>$consumerLog->document ? trim($docUrl."/".$consumerLog->relative_path."/".$consumerLog->document,"/") :"",
+                "user_name" => $users->name ?? "",
+                "role" => $rols->role_name ?? "",
+                "remarks" => $consumerLog->remarks ?? "",
+                "upate_date" => $consumerLog->up_created_at ? Carbon::parse($consumerLog->up_created_at)->format("d-m-Y h:i:s A") : "",
+                "document" => $consumerLog->document ? trim($docUrl . "/" . $consumerLog->relative_path . "/" . $consumerLog->document, "/") : "",
             ];
-            $data=[
+            $data = [
                 "userDtls" => $header,
-                "oldConsumer"=>$consumerLog,
-                "newConsumer"=>$newConsumerData,
-                "oldOwnere"=>$ownres,
-                "newOwnere"=>$newOwnresData,
+                "oldConsumer" => $consumerLog,
+                "newConsumer" => $newConsumerData,
+                "oldOwnere" => $ownres,
+                "newOwnere" => $newOwnresData,
             ];
-            return responseMsgs(true,"Log Details" ,remove_null($data), "", "010203", "1.0", "", 'POST', "");
-        }
-        catch(Exception $e)
-        {
+            return responseMsgs(true, "Log Details", remove_null($data), "", "010203", "1.0", "", 'POST', "");
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
         }
     }
@@ -2869,7 +2888,7 @@ class WaterConsumer extends Controller
 
     public function AutoCorrectDemand()
     {
-        try{
+        try {
             $dataSql = "
                         select water_consumer_taxes.*,demands.*
                         from water_consumer_taxes
@@ -2948,52 +2967,49 @@ class WaterConsumer extends Controller
                                         left join demand_currection_logs on demand_currection_logs.tax_id =  water_consumer_taxes.id
                                         where demand_currection_logs.id is null AND water_consumer_taxes.created_on::date <='2024-02-19'
                                         "));
-            foreach($data as $key=>$val)
-            {
+            foreach ($data as $key => $val) {
                 print_var("==============INDEX=>$key====================\n");
                 print_var($val);
-                
+
                 $taxId =  $val->id;
                 $consumerId = $val->consumer_id;
                 $paidTotalAmount = $this->_DB->select("SELECT COALESCE(SUM(amount),0) AS paid_tax FROM water_trans WHERE water_trans.related_id = $consumerId AND status =1");
-                $paidTotalAmount = $paidTotalAmount[0]->paid_tax??-1;
-                $lastTran = WaterTran::where("related_id",$consumerId)->where("status",1)->orderBy("id",'DESC')->first();
+                $paidTotalAmount = $paidTotalAmount[0]->paid_tax ?? -1;
+                $lastTran = WaterTran::where("related_id", $consumerId)->where("status", 1)->orderBy("id", 'DESC')->first();
                 $demandUpto = $val->demand_upto;
                 $finalRading = $val->final_reading;
-                $demandIds = explode(',',$val->demand_ids);
+                $demandIds = explode(',', $val->demand_ids);
                 $oldTax = WaterConsumerTax::find($taxId);
                 $consumerDetails = WaterSecondConsumer::find($consumerId);
                 $userDetails  = User::find($val->emp_details_id);
                 $lastMeterReading = (new WaterConsumerInitialMeter())->getmeterReadingAndDetails($consumerId)->orderByDesc('id')->first();
-                $demand_currection_logs["tax_log"] = json_encode($oldTax->toArray(), JSON_UNESCAPED_UNICODE); 
-                $newDemands =[];
+                $demand_currection_logs["tax_log"] = json_encode($oldTax->toArray(), JSON_UNESCAPED_UNICODE);
+                $newDemands = [];
                 $oldDemand  = [];
                 $newCreatedDemand = [];
                 $newRequst = new Request();
-                $newRequst->merge(["consumerId"=>$consumerId]);            
-                
-                try{
+                $newRequst->merge(["consumerId" => $consumerId]);
+
+                try {
                     $this->begin();
-                    if($val->charge_type!="Fixed" && $lastMeterReading)
-                    {
+                    if ($val->charge_type != "Fixed" && $lastMeterReading) {
                         $lastMeterReading->status = 0;
                         $lastMeterReading->save();
-
                     }
-                    $oldDemands = WaterConsumerDemand::whereIn("id",$demandIds)->orderby("demand_upto",'ASC')->get();
+                    $oldDemands = WaterConsumerDemand::whereIn("id", $demandIds)->orderby("demand_upto", 'ASC')->get();
 
                     $demand_currection_logs["demand_log"] = json_encode($oldDemands->toArray(), JSON_UNESCAPED_UNICODE);
 
-                    $updates  = WaterConsumerDemand::whereIn("id",$demandIds)->update(['status'=>false]);
+                    $updates  = WaterConsumerDemand::whereIn("id", $demandIds)->update(['status' => false]);
 
-                    $returnData = new WaterMonthelyCall($consumerId, $demandUpto, $finalRading); 
+                    $returnData = new WaterMonthelyCall($consumerId, $demandUpto, $finalRading);
 
                     $calculatedDemand = $returnData->parentFunction();
-                    
+
                     if ($calculatedDemand['status'] == false) {
                         throw new Exception($calculatedDemand['errors']);
                     }
-                    
+
                     $newTax = $calculatedDemand["consumer_tax"][0];
 
                     $oldTax->charge_type = $newTax["charge_type"];
@@ -3004,29 +3020,26 @@ class WaterConsumer extends Controller
                     $newTotalTax = 0;
                     print_var($newTax);
                     $n = collect();
-                    foreach($newTax["consumer_demand"] as $newDemands)
-                    {                        
-                        $demands = WaterConsumerDemand::where("consumer_tax_id",$taxId)
-                                    ->where("consumer_id",$consumerId)
-                                    ->where("demand_from",$newDemands["demand_from"])
-                                    ->where("demand_upto",$newDemands["demand_upto"])
-                                    ->orderBy("id","DESC")
-                                    ->first(); 
-                        $newTotalTax +=  $newDemands["amount"];                     
-                        if(!$demands)
-                        {
+                    foreach ($newTax["consumer_demand"] as $newDemands) {
+                        $demands = WaterConsumerDemand::where("consumer_tax_id", $taxId)
+                            ->where("consumer_id", $consumerId)
+                            ->where("demand_from", $newDemands["demand_from"])
+                            ->where("demand_upto", $newDemands["demand_upto"])
+                            ->orderBy("id", "DESC")
+                            ->first();
+                        $newTotalTax +=  $newDemands["amount"];
+                        if (!$demands) {
                             $mWaterConsumerDemand = new WaterConsumerDemand();
-                            $refDemands = $newDemands;                            
+                            $refDemands = $newDemands;
                             $newDid = $mWaterConsumerDemand->saveConsumerDemand($refDemands, $consumerDetails, $newRequst, $taxId, $userDetails);
                             $f = ($mWaterConsumerDemand->find($newDid));
                             $f->generation_date = Carbon::parse($val->created_on)->format("Y-m-d");
                             $f->save();
-                            $f->gen_type = "NEW" ;                           
+                            $f->gen_type = "NEW";
                             $n->push($f->toArray());
                             $meterImag = new WaterMeterReadingDoc();
-                            $OldmeterImag = WaterMeterReadingDoc::whereIn("demand_id",$demandIds)->orderBy("id","DESC")->first();
-                            if($val->charge_type!="Fixed" && $OldmeterImag)
-                            {
+                            $OldmeterImag = WaterMeterReadingDoc::whereIn("demand_id", $demandIds)->orderBy("id", "DESC")->first();
+                            if ($val->charge_type != "Fixed" && $OldmeterImag) {
                                 $meterImag->demand_id = $newDid;
                                 $meterImag->file_name = $OldmeterImag->file_name;
                                 $meterImag->meter_no = $OldmeterImag->meter_no;
@@ -3034,96 +3047,82 @@ class WaterConsumer extends Controller
                                 $meterImag->created_at = $OldmeterImag->created_at;
                                 $meterImag->save();
                             }
-                        }
-                        else{  
+                        } else {
                             $paidTotalTax = 0;
-                            if($demands->paid_status != 0 )
-                            {
-                                $paidTotalTax = $demands->amount - ($demands->due_balance_amount>=0 ? $demands->due_balance_amount :0);   
+                            if ($demands->paid_status != 0) {
+                                $paidTotalTax = $demands->amount - ($demands->due_balance_amount >= 0 ? $demands->due_balance_amount : 0);
                             }
-                            if($demands->amount > $newDemands["amount"])
-                            {
+                            if ($demands->amount > $newDemands["amount"]) {
                                 $newAmount = $newDemands["amount"];
-                                $newDue = $demands->paid_status == 0 ? $newDemands["amount"] : $newAmount - $demands->paid_total_tax;                                
-                            }
-                            else
-                            {
+                                $newDue = $demands->paid_status == 0 ? $newDemands["amount"] : $newAmount - $demands->paid_total_tax;
+                            } else {
                                 $oldAmount = $demands->amount;
-                                $diffAmount = $newDemands["amount"] - $oldAmount ; 
+                                $diffAmount = $newDemands["amount"] - $oldAmount;
 
                                 $newAmount = $newDemands["amount"];
                                 $newDue = $demands->paid_status == 0 ? $newDemands["amount"] : $demands->due_balance_amount + $diffAmount;
                             }
-                            if($newDue<0)
-                            {
+                            if ($newDue < 0) {
                                 $newDue = 0;
                             }
-                            
-                            if($newDue>1)
-                            {
+
+                            if ($newDue > 1) {
                                 $demands->is_full_paid = false;
                             }
-                            if($paidTotalTax > $newAmount)
-                            {
+                            if ($paidTotalTax > $newAmount) {
                                 $demands->is_full_paid = true;
                                 $demands->paid_status = 1;
                                 $newDue = 0;
                                 $advance = $advance + $paidTotalTax;
-                            }                            
+                            }
 
                             $demands->amount = $newAmount;
                             $demands->balance_amount = $demands->amount;
                             $demands->current_demand = $newAmount;
-                            $demands->due_balance_amount = $newDue ;
-                            $demands->due_current_demand = $newDue ;
+                            $demands->due_balance_amount = $newDue;
+                            $demands->due_current_demand = $newDue;
                             $demands->connection_type = $newDemands["connection_type"];
-                            $demands->current_meter_reading = $newDemands["current_reading"]??null;
+                            $demands->current_meter_reading = $newDemands["current_reading"] ?? null;
                             $demands->status = true;
                             $demands->save();
-                            $demands->gen_type = "OLD" ;     
+                            $demands->gen_type = "OLD";
                             $n->push($demands->toArray());
                         }
                     }
-                    if($val->charge_type!="Fixed" && $lastMeterReading)
-                    {
+                    if ($val->charge_type != "Fixed" && $lastMeterReading) {
                         $lastMeterReading->status = 1;
                         $lastMeterReading->save();
-
                     }
-                    if($advance>0)
-                    {
-                        print_var("Advand=====>".$advance);
+                    if ($advance > 0) {
+                        print_var("Advand=====>" . $advance);
                     }
-                    $newUpdDemand = WaterConsumerDemand::where("consumer_id",$consumerId)->where("consumer_tax_id",$taxId)->where("status",true)->orderby("demand_upto",'ASC')->get();
-                    $allActiveDemands = WaterConsumerDemand::where("consumer_id",$consumerId)->where("status",true)->orderby("demand_upto",'ASC')->get();
+                    $newUpdDemand = WaterConsumerDemand::where("consumer_id", $consumerId)->where("consumer_tax_id", $taxId)->where("status", true)->orderby("demand_upto", 'ASC')->get();
+                    $allActiveDemands = WaterConsumerDemand::where("consumer_id", $consumerId)->where("status", true)->orderby("demand_upto", 'ASC')->get();
                     print_var($key);
                     print_var($val);
                     $excelData[$key]["status"] = "Success";
-                    $demand_currection_logs["new_tax_log"] = json_encode($oldTax->toArray(), JSON_UNESCAPED_UNICODE); 
-                    $demand_currection_logs["new_demand_log"] = json_encode($n->toArray(), JSON_UNESCAPED_UNICODE); 
-                    $demand_currection_logs["tax_calculation_log"] = json_encode($calculatedDemand, JSON_UNESCAPED_UNICODE); 
+                    $demand_currection_logs["new_tax_log"] = json_encode($oldTax->toArray(), JSON_UNESCAPED_UNICODE);
+                    $demand_currection_logs["new_demand_log"] = json_encode($n->toArray(), JSON_UNESCAPED_UNICODE);
+                    $demand_currection_logs["tax_calculation_log"] = json_encode($calculatedDemand, JSON_UNESCAPED_UNICODE);
                     $newAdvand = $paidTotalAmount - collect($allActiveDemands)->sum("amount");
-                    $is_full_paid = $newAdvand < 0 ? FALSE: TRUE;
-                    $newAdvand = $newAdvand > 0 ? $newAdvand :0;
-                    print_var("newAdv=====>".$newAdvand."  %%%%%%%%% ".$paidTotalAmount - collect($allActiveDemands)->sum("amount"));
-                    print_var("new Total tax=======>".$newTotalTax."++++++ full Tax=====>".collect($allActiveDemands)->sum("amount") );
-                    print_var("Paid Total tax=======>".$paidTotalAmount);
-                    
-                    if($lastTran)
-                    {
-                        $lastTran->due_amount = (collect($allActiveDemands)->sum("amount") - $paidTotalAmount) > 0 ?  (collect($allActiveDemands)->sum("amount") - $paidTotalAmount) : 0 ;
+                    $is_full_paid = $newAdvand < 0 ? FALSE : TRUE;
+                    $newAdvand = $newAdvand > 0 ? $newAdvand : 0;
+                    print_var("newAdv=====>" . $newAdvand . "  %%%%%%%%% " . $paidTotalAmount - collect($allActiveDemands)->sum("amount"));
+                    print_var("new Total tax=======>" . $newTotalTax . "++++++ full Tax=====>" . collect($allActiveDemands)->sum("amount"));
+                    print_var("Paid Total tax=======>" . $paidTotalAmount);
+
+                    if ($lastTran) {
+                        $lastTran->due_amount = (collect($allActiveDemands)->sum("amount") - $paidTotalAmount) > 0 ?  (collect($allActiveDemands)->sum("amount") - $paidTotalAmount) : 0;
                         $lastTran->save();
                     }
                     print_var($n);
-                    $new = collect($n->where("gen_type","NEW"));
-                    $newIds = (collect($new)->implode("id",","));
-                    $old = collect($n->where("gen_type","<>","NEW"));
-                    $oldIds = (collect($old)->implode("id",","));
-                    if($new->isNotEmpty() && $lastTran && $is_full_paid)
-                    {
-                        foreach($new as $newD)
-                        {                            
-                            WaterConsumerDemand::where("id",$newD["id"])->update(["paid_status"=>1,"due_balance_amount"=>0,"is_full_paid"=>true,"due_current_demand"=>0]);
+                    $new = collect($n->where("gen_type", "NEW"));
+                    $newIds = (collect($new)->implode("id", ","));
+                    $old = collect($n->where("gen_type", "<>", "NEW"));
+                    $oldIds = (collect($old)->implode("id", ","));
+                    if ($new->isNotEmpty() && $lastTran && $is_full_paid) {
+                        foreach ($new as $newD) {
+                            WaterConsumerDemand::where("id", $newD["id"])->update(["paid_status" => 1, "due_balance_amount" => 0, "is_full_paid" => true, "due_current_demand" => 0]);
                             $newTranDtls = new WaterTranDetail();
                             $newTranDtls->tran_id = $lastTran->id;
                             $newTranDtls->application_id = $newD["consumer_id"];
@@ -3134,13 +3133,13 @@ class WaterConsumer extends Controller
                         }
                     }
                     $insertSql = "insert Into demand_currection_logs (tax_id ,consumer_id,old_demand_ids,new_demand_added_ids 
-                                                                        ".($is_full_paid ? (",is_full_paid"):"").",
+                                                                        " . ($is_full_paid ? (",is_full_paid") : "") . ",
                                                                         tax_log,new_tax_log,
                                                                         demand_log,new_demand_log,advance_amt,tax_calculation_log) 
-                                values( $taxId,$consumerId,'$oldIds','$newIds' ".($is_full_paid ? (",true"):"").",'".$demand_currection_logs["tax_log"]."','".$demand_currection_logs["new_tax_log"]."',
-                                        '".$demand_currection_logs["demand_log"]."','".$demand_currection_logs["new_demand_log"]."',
-                                        ".$newAdvand.",'".$demand_currection_logs["tax_calculation_log"]."')";
-                                        
+                                values( $taxId,$consumerId,'$oldIds','$newIds' " . ($is_full_paid ? (",true") : "") . ",'" . $demand_currection_logs["tax_log"] . "','" . $demand_currection_logs["new_tax_log"] . "',
+                                        '" . $demand_currection_logs["demand_log"] . "','" . $demand_currection_logs["new_demand_log"] . "',
+                                        " . $newAdvand . ",'" . $demand_currection_logs["tax_calculation_log"] . "')";
+
                     $insertId = $this->_DB->select($insertSql);
                     $seql = "select count(*) from demand_currection_logs";
                     print_var("=============inserData======$newAdvand==========");
@@ -3148,19 +3147,15 @@ class WaterConsumer extends Controller
                     $this->commit();
                     // dd($newTax);
                     print_var("Success");
-                }
-                catch(Exception $e)
-                {
+                } catch (Exception $e) {
                     $this->rollback();
                     print_var("Fail");
                     //dd($e->getMessage(),$e->getFile(),$e->getLine());
                 }
             }
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             $this->rollback();
-            dd($e->getMessage(),$e->getFile(),$e->getLine());
+            dd($e->getMessage(), $e->getFile(), $e->getLine());
         }
     }
 
@@ -3176,20 +3171,17 @@ class WaterConsumer extends Controller
         if ($validated->fails()) {
             return validationError($validated);
         }
-        try{
-            
-        }
-        catch(Exception $e){
-
+        try {
+        } catch (Exception $e) {
         }
     }
 
     public function gerateAutoFixedDemand(Request $request)
     {
-        $excelData[] =[
-            "consumer_id","consumer No","status","error",
-        ] ;
-        try{        
+        $excelData[] = [
+            "consumer_id", "consumer No", "status", "error",
+        ];
+        try {
             $newRequest = new Request([
                 "auth" => [
                     "id" => 18,
@@ -3252,38 +3244,34 @@ class WaterConsumer extends Controller
                     --limit 10
             ";
             $data = $this->_DB->select($sql);
-            foreach($data as $key=>$val)
-            {
+            foreach ($data as $key => $val) {
                 $consumerId = $val->id;
-                $excelData[$key+1]=[
-                    "consumer_id"=>$consumerId,
-                    "consumer_no" =>$val->consumer_no,
-                    "status"=>"Succes",
-                    "error"=>"",
+                $excelData[$key + 1] = [
+                    "consumer_id" => $consumerId,
+                    "consumer_no" => $val->consumer_no,
+                    "status" => "Succes",
+                    "error" => "",
                 ];
-                echo("\n\n=============index($key [$consumerId])=========\n\n");
-                $newRequest->merge(["consumerId"=>$consumerId]);
+                echo ("\n\n=============index($key [$consumerId])=========\n\n");
+                $newRequest->merge(["consumerId" => $consumerId]);
                 $this->begin();
                 $respons = $this->saveGenerateConsumerDemand($newRequest);
-                $respons = $respons->original;                
-                if(!$respons["status"])
-                {
-                    $excelData[$key+1]["status"] = "Fail";
-                    $excelData[$key+1]["error"] = $respons["message"];
+                $respons = $respons->original;
+                if (!$respons["status"]) {
+                    $excelData[$key + 1]["status"] = "Fail";
+                    $excelData[$key + 1]["error"] = $respons["message"];
                     $this->rollback();
                     continue;
                 }
                 $this->commit();
-                echo("\n================status(".$excelData[$key+1]["status"].")===================\n");
+                echo ("\n================status(" . $excelData[$key + 1]["status"] . ")===================\n");
             }
-            $fileName =  Carbon::now()->format("Y-m-d_H_i_s_A_")."Fixed-consumer-Demand.xlsx" ;
-            Excel::store(new DataExport($excelData), $fileName,"public");
-            echo("demand genrated=====>file====>".$fileName);
-        }
-        catch(Exception $e)
-        {
-           $this->rollback();
-           dd($e->getMessage());
+            $fileName =  Carbon::now()->format("Y-m-d_H_i_s_A_") . "Fixed-consumer-Demand.xlsx";
+            Excel::store(new DataExport($excelData), $fileName, "public");
+            echo ("demand genrated=====>file====>" . $fileName);
+        } catch (Exception $e) {
+            $this->rollback();
+            dd($e->getMessage());
         }
     }
 }
