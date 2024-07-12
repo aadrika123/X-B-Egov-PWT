@@ -3319,6 +3319,7 @@ class NewConnectionController extends Controller
             $metaReqs = [
                 'userId'    => $user->id,
                 'ulbId'     => $user->ulb_id ?? $applicationDetails['applicationDetails']['ulb_id'],
+                'applicationId' => $applicationId
             ];
             $request->request->add($metaReqs);
             $document = $this->getDocToUpload($request);                                                    // get the doc details
@@ -3354,7 +3355,7 @@ class NewConnectionController extends Controller
                 $applicationDetails['applicationDetails']['scheduledDate'] = $inspectionTime->inspection_date ?? null;
             }
 
-            $returnData = array_merge($applicationDetails, $ownerDetails, $waterTransDetail); //$documentDetails,
+            $returnData = array_merge($applicationDetails, $ownerDetails, $waterTransDetail,$documentDetails); //$documentDetails,
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
