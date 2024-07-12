@@ -982,7 +982,7 @@ class NewConnectionController extends Controller
             $documentDetails['documentDetails'] = collect($document)['original']['data'];
 
             # owner details
-            $ownerDetails['ownerDetails'] = $mWaterApplicant->getOwnerList($request->applicationId)->get(); 
+            $ownerDetails['ownerDetails'] = $mWaterApplicant->getOwnerList($request->applicationId)->get();
 
             # Payment Details 
             $refAppDetails = collect($applicationDetails)->first();
@@ -2954,8 +2954,11 @@ class NewConnectionController extends Controller
             # collect the application charges 
 
             $Charges = $mWaterChrges->getChargesByIds($tabSize);
-            $GetRoadTypeCharges = $mWaterRoadTypeChages->getRoadCharges($req->roadType);
-            $calculatedAmount = $req->permeter *   $GetRoadTypeCharges->per_meter_amount + $Charges->amount;
+            if ($req->roadType != null) {
+                $GetRoadTypeCharges = $mWaterRoadTypeChages->getRoadCharges($req->roadType);
+                $calculatedAmount = $req->permeter *   $GetRoadTypeCharges->per_meter_amount + $Charges->amount;
+            }
+
 
             $this->begin();
             # Generating Application No
@@ -2967,7 +2970,7 @@ class NewConnectionController extends Controller
 
             $meta = [
                 'applicationId'     => $applicationId->id,
-                "amount"            => $calculatedAmount,
+                "amount"            => $calculatedAmount ?? $Charges->amount,
                 "chargeCategory"    => $Charges->charge_category,
             ];
 
@@ -3195,7 +3198,7 @@ class NewConnectionController extends Controller
                 // ->whereNotIn("status",[0,6,7])
                 ->leftjoin('wf_roles', 'wf_roles.id', "=", "water_approval_application_details.current_role")
                 ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_approval_application_details.ward_id')
-                ->join('water_second_consumers','water_second_consumers.apply_connection_id','water_approval_application_details.id')
+                ->join('water_second_consumers', 'water_second_consumers.apply_connection_id', 'water_approval_application_details.id')
                 ->where("water_approval_application_details.user_id", $refUserId)
                 ->orderbydesc('water_approval_application_details.id')
                 ->get();
@@ -3356,7 +3359,7 @@ class NewConnectionController extends Controller
                 $applicationDetails['applicationDetails']['scheduledDate'] = $inspectionTime->inspection_date ?? null;
             }
 
-            $returnData = array_merge($applicationDetails, $ownerDetails, $waterTransDetail,$documentDetails); //$documentDetails,
+            $returnData = array_merge($applicationDetails, $ownerDetails, $waterTransDetail, $documentDetails); //$documentDetails,
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
