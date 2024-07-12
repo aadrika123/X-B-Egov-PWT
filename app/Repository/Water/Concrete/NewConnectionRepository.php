@@ -918,7 +918,11 @@ class NewConnectionRepository implements iNewConnection
             ->where('charge_category', '!=', 'Site Inspection')                                     # Static
             ->first();
         $waterOwner['ownerDetails'] = $mWaterConsumerOwner->getConsumerOwner($approvedWater['consumer_id'])->get();
-        $water['calcullation']      = $mWaterParamConnFee->getCallParameter($approvedWater['property_type_id'], $approvedWater['area_sqft'])->first();
+        $water = []; 
+        if ($approvedWater['area_sqft'] != null) {
+            $water['calcullation']      = $mWaterParamConnFee->getCallParameter($approvedWater['property_type_id'], $approvedWater['area_sqft'])->first();
+        }
+
 
         $consumerDetails = collect($approvedWater)->merge($connectionCharge)->merge($waterOwner)->merge($water);
         return remove_null($consumerDetails);
