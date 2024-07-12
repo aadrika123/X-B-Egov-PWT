@@ -225,7 +225,8 @@ class CaretakerController extends Controller
         try {
             $req->validate([
                 'moduleId' => 'required|integer',
-                'referenceNo' => 'required|regex:/^[A-Z]+\/\d+$/'
+                //'referenceNo' => 'required|regex:/^[A-Z]+\/\d+$/'
+                'referenceNo' => 'required'
             ]);
             $data = array();
             $response = app(Pipeline::class)
