@@ -149,6 +149,7 @@ class WaterApplication extends Model
             'water_applications.current_role',
             'water_applications.workflow_id',
             'water_applications.last_role_id',
+            'water_applications.doc_upload_status',
             'water_property_type_mstrs.property_type',
             'water_param_pipeline_types.pipeline_type',
             'zone_masters.zone_name',
