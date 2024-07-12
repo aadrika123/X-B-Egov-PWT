@@ -3319,7 +3319,8 @@ class NewConnectionController extends Controller
             $metaReqs = [
                 'userId'    => $user->id,
                 'ulbId'     => $user->ulb_id ?? $applicationDetails['applicationDetails']['ulb_id'],
-                'applicationId' => $applicationId
+                'applicationId' => $applicationId,
+                'approveId' => $request->applicationId
             ];
             $request->request->add($metaReqs);
             $document = $this->getDocToUpload($request);                                                    // get the doc details
@@ -3330,12 +3331,12 @@ class NewConnectionController extends Controller
 
             # Payment Details 
             $refAppDetails = collect($applicationDetails)->first();
-            $waterTransaction = $mWaterTran->getTransNov2($request->applicationId, $refAppDetails->connection_type)->get();
+            $waterTransaction = $mWaterTran->getTransNov2($request->approveId, $refAppDetails->connection_type)->get();
             $waterTransDetail['waterTransDetail'] = $waterTransaction;
 
             # calculation details
-            $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])
-                ->where('paid_status', 0)
+            $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['applicationId'])
+                // ->where('paid_status', 1)
                 ->first();
             if ($charges) {
                 $calculation['calculation'] = [
