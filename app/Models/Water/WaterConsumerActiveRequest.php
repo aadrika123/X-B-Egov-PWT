@@ -160,4 +160,25 @@ class WaterConsumerActiveRequest extends Model
         return WaterConsumerActiveRequest::where('id',$applicationId)
         ->where('status',1);
     }
+
+     /**
+     * | Deactivate the doc Upload Status 
+     */
+    public function updateUploadStatus($applicationId, $status)
+    {
+        return  WaterConsumerActiveRequest::where('id', $applicationId)
+            ->where('status', true)
+            ->update([
+                "doc_upload_status" => $status
+            ]);
+    }
+     /**
+     * | Get application details by Id
+     */
+    public function getApplicationDtls($appId)
+    {
+        return self::select('*')
+            ->where('id', $appId)
+            ->first();
+    }
 }
