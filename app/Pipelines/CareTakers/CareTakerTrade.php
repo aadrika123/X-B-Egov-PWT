@@ -52,12 +52,14 @@ class CareTakerTrade
         $this->_licenseNo = $referenceNo;
         $this->isTradeAlreadyTagged();                                                      // function (1.1)
         $tradeOwner = $this->_mTradeOwners->getFirstOwner($this->_tradeId);
-        if (is_null($tradeOwner->mobile_no)) {
+        $mobileNo = (int) $tradeOwner->mobile_no;
+
+        if (is_null($mobileNo)) {
             throw new Exception('This license does not have an associated mobile number.');
         }
         $myRequest = new \Illuminate\Http\Request();
         $myRequest->setMethod('POST');
-        $myRequest->request->add(['mobileNo' => $tradeOwner->mobile_no]);
+        $myRequest->request->add(['mobileNo' => $mobileNo]);
         $myRequest->request->add(['type' => "Attached Connection"]);
         $otpResponse = $this->_ThirdPartyController->sendOtp($myRequest);
         $verificationStatus = collect($otpResponse)['original']['status'];

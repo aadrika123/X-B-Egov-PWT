@@ -53,7 +53,7 @@ class TradeOwner extends TradeParamModel    #Model
 
     public function getFirstOwner($licenseId)
     {
-        return self::select('owner_name', 'mobile_no')
+        return self::select("*")
             ->where('temp_id', $licenseId)
             ->where('is_active', true)
             ->first();
