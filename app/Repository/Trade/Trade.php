@@ -1821,7 +1821,7 @@ class Trade implements ITrade
     {
         try {
             $refUser    = Auth()->user();
-            $refUlbId   = $refUser->ulb_id;
+            $refUlbId   = $refUser->ulb_id??2;
             $mInputs    = $request->all();
             DB::enableQueryLog();
             $licence = ActiveTradeLicence::select(
@@ -1985,7 +1985,7 @@ class Trade implements ITrade
             }
             $licence = $licence->union($aropved)->union($old)
                 ->orderBy("id", "DESC")
-                ->limit(10)
+                //->limit(10)
                 ->get();
             // dd(DB::getQueryLog());
             if ($licence->isEmpty()) {

@@ -156,6 +156,7 @@ class ThirdPartyController extends Controller
             $mOtpRequest->saveOtp($request, $generateOtp);
 
             $smsReqs = [
+                //"emp_id" => $request->userId ?? (auth()->user()->id) ?? 0,
                 "emp_id" => $request->userId ?? authUser($request)->id ?? 0,
                 "ref_id" => isset($userDetails) ? $userDetails->id : 0,
                 "ref_type" => 'Active Citizen',
