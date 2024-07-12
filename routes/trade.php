@@ -136,6 +136,7 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         Route::post('application/surrenderable-list', 'surrenderList');             #id = c10
 
         Route::post('application/attached-list', "readAtachedLicenseDtl");
+        Route::post('application/attached-list-citizen', "readAtachedLicenseDtlV1");
 
         Route::post('application/citizen-application-list', "citizenApplicationByCitizenId");
         Route::post('application/citizen-history', "citizenHistory");
