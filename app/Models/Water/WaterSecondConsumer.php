@@ -675,4 +675,32 @@ class WaterSecondConsumer extends Model
                 'payment_status' => 1
             ]);
     }
+
+    /**
+     * | get the water consumer detaials by consumr No / accurate search
+     * | @param consumerNo
+     * | @var 
+     * | @return 
+     */
+    public function getConsumerByConsumerNo($key, $parameter)
+    {
+        return WaterSecondConsumer::select(
+            'water_second_consumers.*',
+            'water_second_consumers.id as consumer_id',
+            'ulb_ward_masters.ward_name',
+            'water_second_consumers.connection_through_id',
+            'ulb_masters.ulb_name',
+            'water_connection_type_mstrs.connection_type',
+            'water_property_type_mstrs.property_type',
+            'water_connection_through_mstrs.connection_through',
+        )
+            ->leftjoin('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_second_consumers.connection_through_id')
+            ->join('ulb_masters', 'ulb_masters.id', '=', 'water_second_consumers.ulb_id')
+            ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_second_consumers.connection_type_id')
+            ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', '=', 'water_second_consumers.property_type_id')
+            ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')   
+            ->where('water_second_consumers.' . $key, $parameter)
+            ->where('water_second_consumers.status', 1)
+            ->firstOrFail();
+    }
 }

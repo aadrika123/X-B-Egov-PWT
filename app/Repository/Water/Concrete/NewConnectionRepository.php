@@ -18,6 +18,7 @@ use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterConsumerOwner;
 use App\Models\Water\WaterParamConnFee;
 use App\Models\Water\WaterPenaltyInstallment;
+use App\Models\Water\WaterSecondConsumer;
 use App\Models\Water\WaterSiteInspection;
 use App\Models\Water\WaterTran;
 use App\Models\Water\WaterTranDetail;
@@ -902,7 +903,7 @@ class NewConnectionRepository implements iNewConnection
      */
     public function getApprovedWater($request)
     {
-        $mWaterConsumer         = new WaterConsumer();
+        $mWaterSecondConsumer         = new WaterSecondConsumer();
         $mWaterConnectionCharge = new WaterConnectionCharge();
         $mWaterConsumerOwner    = new WaterConsumerOwner();
         $mWaterParamConnFee     = new WaterParamConnFee();
@@ -912,7 +913,7 @@ class NewConnectionRepository implements iNewConnection
         })->first();
         $string         = preg_replace("/([A-Z])/", "_$1", $key);
         $refstring      = strtolower($string);
-        $approvedWater  = $mWaterConsumer->getConsumerByConsumerNo($refstring, $request->id);
+        $approvedWater  = $mWaterSecondConsumer->getConsumerByConsumerNo($refstring, $request->id);
         $connectionCharge['connectionCharg'] = $mWaterConnectionCharge->getWaterchargesById($approvedWater['apply_connection_id'])
             ->where('charge_category', '!=', 'Site Inspection')                                     # Static
             ->first();
