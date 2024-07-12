@@ -58,6 +58,7 @@ class CareTakerTrade
         $myRequest = new \Illuminate\Http\Request();
         $myRequest->setMethod('POST');
         $myRequest->request->add(['mobileNo' => $tradeOwner->mobile_no]);
+        $myRequest->request->add(['type' => "Attached Connection"]);
         $otpResponse = $this->_ThirdPartyController->sendOtp($myRequest);
         $verificationStatus = collect($otpResponse)['original']['status'];
         if ($verificationStatus == false)
