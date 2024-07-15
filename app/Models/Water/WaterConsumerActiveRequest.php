@@ -28,6 +28,7 @@ class WaterConsumerActiveRequest extends Model
         // $mWaterConsumerActiveRequest->amount                    = $refRequest['amount'];
         $mWaterConsumerActiveRequest->remarks                   = $req['remarks'];
         $mWaterConsumerActiveRequest->apply_from                = $refRequest['applyFrom'];
+        $mWaterConsumerActiveRequest->current_role              = $refRequest['initiatorRoleId'];
         $mWaterConsumerActiveRequest->initiator                 = $refRequest['initiatorRoleId'];
         $mWaterConsumerActiveRequest->workflow_id               = $refRequest['ulbWorkflowId'];
         $mWaterConsumerActiveRequest->ulb_id                    = $req['ulbId'];
@@ -102,7 +103,7 @@ class WaterConsumerActiveRequest extends Model
             // DB::raw('REPLACE(water_consumer_charges.charge_category, \'_\', \' \') as charge_category'),
             "water_consumer_active_requests.corresponding_address",
             "water_consumer_active_requests.corresponding_mobile_no",
-            "water_consumers.consumer_no",
+            "water_second_consumers.consumer_no",
             "water_consumer_active_requests.ward_mstr_id",
             "water_consumer_active_requests.apply_date",
             "water_consumer_active_requests.payment_status",
@@ -110,7 +111,7 @@ class WaterConsumerActiveRequest extends Model
         )
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_consumer_active_requests.ward_mstr_id')
             // ->leftjoin('water_consumer_charges', 'water_consumer_charges.related_id', 'water_consumer_active_requests.id')
-            ->leftjoin('water_consumers', 'water_consumers.id', 'water_consumer_active_requests.consumer_id')
+            ->join('water_second_consumers', 'water_second_consumers.id', 'water_consumer_active_requests.consumer_id')
             ->where('water_consumer_active_requests.citizen_id', $userId)
             ->where('water_consumer_active_requests.status', 1)
             ->orderByDesc('water_consumer_active_requests.id');
@@ -152,16 +153,16 @@ class WaterConsumerActiveRequest extends Model
         $mWaterConsumeActive->save();
         return $mWaterConsumeActive;
     }
-      /**
+    /**
      * | Get active request
      */
-    public function getActiveRequest($applicationId )
+    public function getActiveRequest($applicationId)
     {
-        return WaterConsumerActiveRequest::where('id',$applicationId)
-        ->where('status',1);
+        return WaterConsumerActiveRequest::where('id', $applicationId)
+            ->where('status', 1);
     }
 
-     /**
+    /**
      * | Deactivate the doc Upload Status 
      */
     public function updateUploadStatus($applicationId, $status)
@@ -172,7 +173,7 @@ class WaterConsumerActiveRequest extends Model
                 "doc_upload_status" => $status
             ]);
     }
-     /**
+    /**
      * | Get application details by Id
      */
     public function getApplicationDtls($appId)

@@ -115,17 +115,23 @@ class WaterConsumerWfController extends Controller
 
             $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
                 ->whereIn('water_consumer_active_requests.current_role', $roleId)
-                ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
+                // ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
                 ->where('water_consumer_active_requests.is_escalate', false)
                 ->where('water_consumer_active_requests.parked', false)
-                ->orderByDesc('water_consumer_active_requests.id')
-                ->paginate($pages);
-
-            $isDataExist = collect($inboxDetails)->last();
-            if (!$isDataExist || $isDataExist == 0) {
-                throw new Exception('Data not Found!');
-            }
-            return responseMsgs(true, "Successfully listed consumer req inbox details!", $inboxDetails, "", "01", responseTime(), "POST", $req->deviceId);
+                ->orderByDesc('water_consumer_active_requests.id');
+            // ->paginate($pages);
+            $paginator = $inboxDetails->paginate($pages);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ];
+            // $isDataExist = collect($inboxDetails)->last();
+            // if (!$isDataExist || $isDataExist == 0) {
+            //     throw new Exception('Data not Found!');
+            // }
+            return responseMsgs(true, "Successfully listed consumer req inbox details!",  remove_null($list), "", "01", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), "POST", $req->deviceId);
         }
