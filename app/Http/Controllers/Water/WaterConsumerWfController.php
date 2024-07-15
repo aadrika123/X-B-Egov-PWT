@@ -457,15 +457,16 @@ class WaterConsumerWfController extends Controller
         $mwaterConsumerActive   = new WaterConsumerActiveRequest();
         $mwaterOwner            = new WaterConsumerOwner();
         # applicatin details
-        $applicationDetails = $mwaterConsumerActive->fullWaterDisconnection($request)->get();
+        $applicationDetails = $mwaterConsumerActive->fullWaterDetails($request)->get();
         if (collect($applicationDetails)->first() == null) {
             return responseMsg(false, "Application Data Not found!", $request->applicationId);
         }
+         $consumerId = $applicationDetails->pluck('consumer_id');
         # Ward Name
         $refApplication = collect($applicationDetails)->first();
-        $wardDetails = $mUlbNewWardmap->getWard($refApplication->ward_mstr_id);
+        // $wardDetails = $mUlbNewWardmap->getWard($refApplication->ward_mstr_id);
         # owner Details
-        $ownerDetails = $mwaterOwner->getOwner($request)->get();
+        $ownerDetails = $mwaterOwner->getConsumerOwner($consumerId)->get();
         $ownerDetail = collect($ownerDetails)->map(function ($value, $key) {
             return $value;
         });

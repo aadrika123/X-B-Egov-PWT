@@ -182,4 +182,44 @@ class WaterConsumerActiveRequest extends Model
             ->where('id', $appId)
             ->first();
     }
+
+    public function fullWaterDetails($request)
+    {
+        return  WaterConsumerActiveRequest::select(
+            'water_consumer_active_requests.id',
+            'water_consumer_active_requests.consumer_id',
+            'water_consumer_active_requests.id as applicationId',
+            // 'water_consumer_active_requests.mobile_no',
+            'water_second_consumers.tab_size',
+            'water_second_consumers.property_no',
+            'water_consumer_active_requests.status',
+            'water_second_consumers.payment_status',
+            'water_second_consumers.user_type',
+            'water_consumer_active_requests.apply_date',
+            'water_second_consumers.address',
+            'water_second_consumers.category',
+            'water_consumer_active_requests.application_no',
+            'water_second_consumers.pin',
+            'water_consumer_active_requests.current_role',
+            'water_consumer_active_requests.workflow_id',
+            'water_consumer_active_requests.last_role_id',
+            'water_consumer_active_requests.doc_upload_status',
+            'water_property_type_mstrs.property_type',
+            // 'water_param_pipeline_types.pipeline_type',
+            'zone_masters.zone_name',
+            'ulb_masters.ulb_name',
+            'water_connection_type_mstrs.connection_type',
+            'wf_roles.role_name AS current_role_name',
+            'water_connection_type_mstrs.connection_type',
+        )
+            ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_consumer_active_requests.current_role')
+            ->leftjoin('ulb_masters', 'ulb_masters.id', '=', 'water_consumer_active_requests.ulb_id')
+            ->join('water_second_consumers', 'water_second_consumers.id', '=', 'water_consumer_active_requests.consumer_id')
+            ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_second_consumers.connection_type_id')
+            ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_second_consumers.property_type_id')
+            // ->join('water_param_pipeline_types', 'water_param_pipeline_types.id', 'water_second_consumers.pipeline_type_id')
+            ->leftjoin('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
+            ->where('water_consumer_active_requests.id', $request->applicationId)
+            ->where('water_consumer_active_requests.status', true);
+    }
 }
