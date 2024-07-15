@@ -710,6 +710,7 @@ class PostPropPaymentV2
         }
         if (isset($this->_REQ->isArrear) && $this->_REQ->isArrear) {
             $this->_REQ->merge(['paidAmount' =>  $this->_propCalculation->original['data']['arrearPayableAmt']]);
+            $this->_REQ->merge(['amount' => $this->_REQ->paidAmount]);
         }
         if (isset($this->_REQ->paymentType ) && $this->_REQ->paymentType == "isFullPayment") {
             $this->_REQ->merge(['paidAmount' =>  $this->_REQ['amount']]);
