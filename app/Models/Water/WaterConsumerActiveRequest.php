@@ -25,7 +25,7 @@ class WaterConsumerActiveRequest extends Model
         $mWaterConsumerActiveRequest->emp_details_id            = $refRequest['empId'] ?? null;
         $mWaterConsumerActiveRequest->ward_mstr_id              = $consumerDetails->ward_mstr_id;
         $mWaterConsumerActiveRequest->reason                    = $req['reason'] ?? null;
-        $mWaterConsumerActiveRequest->amount                    = $refRequest['amount'];
+        // $mWaterConsumerActiveRequest->amount                    = $refRequest['amount'];
         $mWaterConsumerActiveRequest->remarks                   = $req['remarks'];
         $mWaterConsumerActiveRequest->apply_from                = $refRequest['applyFrom'];
         $mWaterConsumerActiveRequest->initiator                 = $refRequest['initiatorRoleId'];

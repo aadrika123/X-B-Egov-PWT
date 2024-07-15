@@ -50,6 +50,24 @@ class WfActiveDocument extends Model
         ];
     }
 
+    public function metaRequest($req)
+    {
+        return [
+            "active_id" => $req['activeId'],
+            "workflow_id" => $req['workflowId'],
+            "ulb_id" => $req['ulbId'],
+            "module_id" => $req['moduleId'],
+            "relative_path" => $req['relativePath'],
+            "document" => $req['document'],
+            "uploaded_by" =>  Auth()->user()->id,
+            "uploaded_by_type" => Auth()->user()->user_type,
+            "remarks" => $req->remarks ?? null,
+            "doc_code" => $req['docCode'],
+            "owner_dtl_id" => $req['ownerDtlId'],
+            "doc_category" => $req['docCategory'] ?? null
+        ];
+    }
+
     /**
      * | Post Workflow Document
      */
