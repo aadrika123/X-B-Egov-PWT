@@ -99,7 +99,7 @@ class WaterConsumerActiveRequest extends Model
             'water_consumer_active_requests.remarks',
             'water_consumer_active_requests.amount',
             'water_consumer_active_requests.application_no',
-            DB::raw('REPLACE(water_consumer_charges.charge_category, \'_\', \' \') as charge_category'),
+            // DB::raw('REPLACE(water_consumer_charges.charge_category, \'_\', \' \') as charge_category'),
             "water_consumer_active_requests.corresponding_address",
             "water_consumer_active_requests.corresponding_mobile_no",
             "water_consumers.consumer_no",
@@ -108,8 +108,8 @@ class WaterConsumerActiveRequest extends Model
             "water_consumer_active_requests.payment_status",
             "ulb_ward_masters.ward_name"
         )
-            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'water_consumer_active_requests.ward_mstr_id')
-            ->leftjoin('water_consumer_charges', 'water_consumer_charges.related_id', 'water_consumer_active_requests.id')
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_consumer_active_requests.ward_mstr_id')
+            // ->leftjoin('water_consumer_charges', 'water_consumer_charges.related_id', 'water_consumer_active_requests.id')
             ->leftjoin('water_consumers', 'water_consumers.id', 'water_consumer_active_requests.consumer_id')
             ->where('water_consumer_active_requests.citizen_id', $userId)
             ->where('water_consumer_active_requests.status', 1)
