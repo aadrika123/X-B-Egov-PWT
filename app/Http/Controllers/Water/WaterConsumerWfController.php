@@ -154,19 +154,12 @@ class WaterConsumerWfController extends Controller
             $roleId         = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
             $workflowIds    = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
-            $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
+            $outboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
                 ->whereNotIn('water_consumer_active_requests.current_role', $roleId)
                 ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
-                ->orderByDesc('water_consumer_active_requests.id');
-
-            $paginator = $inboxDetails->paginate($pages);
-            $list = [
-                "current_page" => $paginator->currentPage(),
-                "last_page" => $paginator->lastPage(),
-                "data" => $paginator->items(),
-                "total" => $paginator->total(),
-            ];
-            return responseMsgs(true, "Successfully listed consumer req inbox details!",  remove_null($list), "", "01", responseTime(), "POST", $req->deviceId);
+                ->orderByDesc('water_consumer_active_requests.id')
+                ->get();
+            return responseMsgs(true, "Successfully listed consumer req inbox details!",  remove_null($outboxDetails), "", "01", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), "POST", $req->deviceId);
         }
@@ -583,7 +576,7 @@ class WaterConsumerWfController extends Controller
     }
 
     /**
-      * |Get the upoaded docunment
+     * |Get the upoaded docunment
         | Serial No : 
         | Working
      */
@@ -608,7 +601,7 @@ class WaterConsumerWfController extends Controller
                 throw new Exception("Application Not Found for this application Id");
 
             $workflowId = $waterDetails->workflow_id;
-           $documents = $mWfActiveDocument->getWaterDocsByAppNo($req->applicationId, $workflowId, $moduleId);
+            $documents = $mWfActiveDocument->getWaterDocsByAppNo($req->applicationId, $workflowId, $moduleId);
             $returnData = collect($documents)->map(function ($value) {                          // Static
                 $path =  $this->readDocumentPath($value->ref_doc_path);
                 $value->doc_path = !empty(trim($value->ref_doc_path)) ? $path : null;
@@ -627,5 +620,123 @@ class WaterConsumerWfController extends Controller
     {
         $path = (config('app.url') . "/" . $path);
         return $path;
+    }
+
+    /**
+     * | Document Verify Reject
+     * | @param req
+        | Serial No :  
+        | Discuss about the doc_upload_status should be 0 or not 
+     */
+    public function consumerDocVerifyReject(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'id'            => 'required|digits_between:1,9223372036854775807',
+                'applicationId' => 'required|digits_between:1,9223372036854775807',
+                'docRemarks'    =>  $req->docStatus == "Rejected" ? 'required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/' : "nullable",
+                'docStatus'     => 'required|in:Verified,Rejected'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        try {
+            # Variable Assignments
+            $mWfDocument                 = new WfActiveDocument();
+            $mWaterActiveReqApplication  = new WaterConsumerActiveRequest();
+            $mWfRoleusermap              = new WfRoleusermap();
+            $wfDocId                     = $req->id;
+            $applicationId               = $req->applicationId;
+            $userId                      = authUser($req)->id;
+            $wfLevel                     = Config::get('waterConstaint.ROLE-LABEL');
+
+            # validating application
+            $waterApplicationDtl = $mWaterActiveReqApplication->getActiveRequest($applicationId)
+                ->firstOrFail();
+            if (!$waterApplicationDtl || collect($waterApplicationDtl)->isEmpty())
+                throw new Exception("Application Details Not Found");
+
+            # validating roles
+            $waterReq = new Request([
+                'userId'        => $userId,
+                'workflowId'    => $waterApplicationDtl['workflow_id']
+            ]);
+            $senderRoleDtls = $mWfRoleusermap->getRoleByUserWfId($waterReq);
+            if (!$senderRoleDtls || collect($senderRoleDtls)->isEmpty())
+                throw new Exception("Role Not Available");
+
+            # validating role for DA
+            $senderRoleId = $senderRoleDtls->wf_role_id;
+            if ($senderRoleId != $wfLevel['DA'])                                    // Authorization for Dealing Assistant Only
+                throw new Exception("You are not Authorized");
+
+            # validating if full documet is uploaded
+            $ifFullDocVerified = $this->ifFullDocVerified($applicationId);          // (Current Object Derivative Function 0.1)
+            if ($ifFullDocVerified == 1)
+                throw new Exception("Document Fully Verified");
+
+            $this->begin();
+            if ($req->docStatus == "Verified") {
+                $status = 1;
+            }
+            if ($req->docStatus == "Rejected") {
+                # For Rejection Doc Upload Status and Verify Status will disabled 
+                $status = 2;
+                // $waterApplicationDtl->doc_upload_status = 0;
+                $waterApplicationDtl->doc_status = 0;
+                $waterApplicationDtl->save();
+            }
+            $reqs = [
+                'remarks'           => $req->docRemarks,
+                'verify_status'     => $status,
+                'action_taken_by'   => $userId
+            ];
+
+            $mWfDocument->docVerifyReject($wfDocId, $reqs);
+            if ($req->docStatus == 'Verified')
+                $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId);
+            else
+                $ifFullDocVerifiedV1 = 0;
+
+            if ($ifFullDocVerifiedV1 == 1) {                                        // If The Document Fully Verified Update Verify Status
+                $mWaterActiveReqApplication->updateAppliVerifyStatus($applicationId);
+            }
+            $this->commit();
+            return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            $this->rollback();
+            return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | Check if the Document is Fully Verified or Not (0.1) | up
+     * | @param
+     * | @var 
+     * | @return
+        | Serial No :  
+        | Working 
+     */
+    public function ifFullDocVerified($applicationId)
+    {
+        $mWaterApplication = new WaterConsumerActiveRequest();
+        $mWfActiveDocument = new WfActiveDocument();
+        $refapplication = $mWaterApplication->getActiveRequest($applicationId)
+            ->firstOrFail();
+
+        $refReq = [
+            'activeId'      => $applicationId,
+            'workflowId'    => $refapplication['workflow_id'],
+            'moduleId'      => Config::get('module-constants.WATER_MODULE_ID')
+        ];
+
+        $req = new Request($refReq);
+        $refDocList = $mWfActiveDocument->getDocsByActiveId($req);
+        $ifPropDocUnverified = $refDocList->contains('verify_status', 0);
+        if ($ifPropDocUnverified == true)
+            return 0;
+        else
+            return 1;
     }
 }

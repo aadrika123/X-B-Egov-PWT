@@ -163,6 +163,18 @@ class WaterConsumerActiveRequest extends Model
     }
 
     /**
+     * | Update the application Doc Verify status
+     * | @param applicationId
+     */
+    public function updateAppliVerifyStatus($applicationId)
+    {
+        WaterConsumerActiveRequest::where('id', $applicationId)
+            ->update([
+                'doc_verify_status' => true
+            ]);
+    }
+
+    /**
      * | Deactivate the doc Upload Status 
      */
     public function updateUploadStatus($applicationId, $status)
