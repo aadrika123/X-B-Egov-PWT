@@ -185,7 +185,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('consumer/req/list-req-docs', 'listDocToUpload');                   // Here
         Route::post('consumer/req/doc-verify-reject', 'consumerDocVerifyReject');       // Here
         Route::post('consumer/req/get-upload-document', 'getDiscUploadDocuments');               // Here
-        Route::post('consumer/req/get-upload-documents', 'getConsumerDocs');            // Here
+        // Route::post('consumer/req/get-upload-documents', 'getConsumerDocs');            // Here
         Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');    // Here
         Route::post('get-details-applications', 'getConApplicationDetails');
         Route::post('get-details-disconnections', 'getRequestedApplication');                       // Citizen / Changes the route name
