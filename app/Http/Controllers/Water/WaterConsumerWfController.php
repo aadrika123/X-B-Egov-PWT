@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
+use App\Models\Workflows\WfActiveDocument;
 use App\Models\CustomDetail;
 use App\Models\UlbWardMaster;
 use App\Models\Water\WaterConsumerActiveRequest;
@@ -115,17 +116,12 @@ class WaterConsumerWfController extends Controller
 
             $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
                 ->whereIn('water_consumer_active_requests.current_role', $roleId)
-                ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
+                // ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
                 ->where('water_consumer_active_requests.is_escalate', false)
                 ->where('water_consumer_active_requests.parked', false)
                 ->orderByDesc('water_consumer_active_requests.id')
-                ->paginate($pages);
-
-            $isDataExist = collect($inboxDetails)->last();
-            if (!$isDataExist || $isDataExist == 0) {
-                throw new Exception('Data not Found!');
-            }
-            return responseMsgs(true, "Successfully listed consumer req inbox details!", $inboxDetails, "", "01", responseTime(), "POST", $req->deviceId);
+                ->get();
+            return responseMsgs(true, "Successfully listed consumer req inbox details!",  remove_null($inboxDetails), "", "01", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), "POST", $req->deviceId);
         }
@@ -161,14 +157,16 @@ class WaterConsumerWfController extends Controller
             $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
                 ->whereNotIn('water_consumer_active_requests.current_role', $roleId)
                 ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
-                ->orderByDesc('water_consumer_active_requests.id')
-                ->paginate($pages);
+                ->orderByDesc('water_consumer_active_requests.id');
 
-            $isDataExist = collect($inboxDetails)->last();
-            if (!$isDataExist || $isDataExist == 0) {
-                throw new Exception('Data not Found!');
-            }
-            return responseMsgs(true, "Successfully listed consumer req inbox details!", $inboxDetails, "", "01", responseTime(), "POST", $req->deviceId);
+            $paginator = $inboxDetails->paginate($pages);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ];
+            return responseMsgs(true, "Successfully listed consumer req inbox details!",  remove_null($list), "", "01", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), "POST", $req->deviceId);
         }
@@ -460,15 +458,16 @@ class WaterConsumerWfController extends Controller
         $mwaterConsumerActive   = new WaterConsumerActiveRequest();
         $mwaterOwner            = new WaterConsumerOwner();
         # applicatin details
-        $applicationDetails = $mwaterConsumerActive->fullWaterDisconnection($request)->get();
+        $applicationDetails = $mwaterConsumerActive->fullWaterDetails($request)->get();
         if (collect($applicationDetails)->first() == null) {
             return responseMsg(false, "Application Data Not found!", $request->applicationId);
         }
+        $consumerId = $applicationDetails->pluck('consumer_id');
         # Ward Name
         $refApplication = collect($applicationDetails)->first();
-        $wardDetails = $mUlbNewWardmap->getWard($refApplication->ward_mstr_id);
+        // $wardDetails = $mUlbNewWardmap->getWard($refApplication->ward_mstr_id);
         # owner Details
-        $ownerDetails = $mwaterOwner->getOwner($request)->get();
+        $ownerDetails = $mwaterOwner->getConsumerOwner($consumerId)->get();
         $ownerDetail = collect($ownerDetails)->map(function ($value, $key) {
             return $value;
         });
@@ -541,7 +540,7 @@ class WaterConsumerWfController extends Controller
         $collectionApplications = collect($applicationDetails)->first();
         return new Collection([
             ['displayString' => 'Ward No',            'key' => 'WardNo',              'value' => $collectionApplications->ward_name],
-            ['displayString' => 'Charge Category',    'key' => 'chargeCategory',      'value' => $collectionApplications->charge_category],
+            // ['displayString' => 'Charge Category',    'key' => 'chargeCategory',      'value' => $collectionApplications->charge_category],
             ['displayString' => 'Ubl Id',             'key' => 'ulbId',               'value' => $collectionApplications->ulb_id],
             ['displayString' => 'ApplyDate',           'key' => 'applyDate',          'value' => $collectionApplications->apply_date],
         ]);
@@ -581,5 +580,52 @@ class WaterConsumerWfController extends Controller
                 $value['district']
             ];
         });
+    }
+
+    /**
+      * |Get the upoaded docunment
+        | Serial No : 
+        | Working
+     */
+    public function getDiscUploadDocuments(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'applicationId' => 'required|numeric'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $mWfActiveDocument    = new WfActiveDocument();
+            $mWaterActiveRequestApplication = new WaterConsumerActiveRequest();
+            $moduleId = Config::get('module-constants.WATER_MODULE_ID');
+
+            $waterDetails = $mWaterActiveRequestApplication->getActiveRequest($req->applicationId)->first();
+            if (!$waterDetails)
+                throw new Exception("Application Not Found for this application Id");
+
+            $workflowId = $waterDetails->workflow_id;
+           $documents = $mWfActiveDocument->getWaterDocsByAppNo($req->applicationId, $workflowId, $moduleId);
+            $returnData = collect($documents)->map(function ($value) {                          // Static
+                $path =  $this->readDocumentPath($value->ref_doc_path);
+                $value->doc_path = !empty(trim($value->ref_doc_path)) ? $path : null;
+                return $value;
+            });
+            return responseMsgs(true, "Uploaded Documents", remove_null($returnData), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+    /**
+     * |----------------------------- Read the server url ------------------------------|
+        | Serial No : 
+     */
+    public function readDocumentPath($path)
+    {
+        $path = (config('app.url') . "/" . $path);
+        return $path;
     }
 }

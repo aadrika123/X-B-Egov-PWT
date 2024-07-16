@@ -734,7 +734,7 @@ class WaterConsumer extends Controller
                 'consumerId'           => "required|digits_between:1,9223372036854775807",
                 'ulbId'                => "nullable|",
                 'reason'                => "nullable",
-                'remarks'               => "required",
+                'remarks'               => "nullable",
                 'documents'             => 'nullable|array',
                 'documents.*.image'     => 'nullable|mimes:png,jpeg,pdf,jpg',
                 'documents.*.docCode'    => 'nullable|string',
@@ -798,7 +798,7 @@ class WaterConsumer extends Controller
             }
 
             # Get chrages for deactivation
-            $chargeAmount = $mWaterConsumerChargeCategory->getChargesByid($refConsumerCharges['WATER_DISCONNECTION']);
+            // $chargeAmount = $mWaterConsumerChargeCategory->getChargesByid($refConsumerCharges['WATER_DISCONNECTION']);
             $refChargeList = collect($refConsumerCharges)->flip();
 
             $refRequest["initiatorRoleId"]   = collect($initiatorRoleId)->first()->role_id;
@@ -806,7 +806,7 @@ class WaterConsumer extends Controller
             $refRequest["roleId"]            = $roleId ?? null;
             $refRequest["ulbWorkflowId"]     = $ulbWorkflowId->id;
             $refRequest["chargeCategoryId"]  = $refConsumerCharges['WATER_DISCONNECTION'];
-            $refRequest["amount"]            = $chargeAmount->amount;
+            // $refRequest["amount"]            = $chargeAmount->amount;
             $refRequest['userType']          = $user->user_type;
 
             $this->begin();
@@ -815,15 +815,15 @@ class WaterConsumer extends Controller
             $applicationNo      = str_replace('/', '-', $applicationNo);
             $deactivatedDetails = $mWaterConsumerActiveRequest->saveRequestDetails($request, $refDetails['consumerDetails'], $refRequest, $applicationNo);
             $metaRequest = [
-                'chargeAmount'      => $chargeAmount->amount,
-                'amount'            => $chargeAmount->amount,
+                // 'chargeAmount'      => $chargeAmount->amount,
+                // 'amount'            => $chargeAmount->amount,
                 'ruleSet'           => null,
                 'chargeCategoryId'  => $refConsumerCharges['WATER_DISCONNECTION'],
                 'relatedId'         => $deactivatedDetails['id'],
                 'status'            => 2                                                    // Static
             ];
-            $mWaterConsumerCharge->saveConsumerCharges($metaRequest, $request->consumerId, $refChargeList['2']);
-            $mWaterSecondConsumer->dissconnetConsumer($request->consumerId, $metaRequest['status']);
+            // $mWaterConsumerCharge->saveConsumerCharges($metaRequest, $request->consumerId, $refChargeList['2']);
+            // $mWaterSecondConsumer->dissconnetConsumer($request->consumerId, $metaRequest['status']);
             #save Document
             $this->uploadHoardDocument($deactivatedDetails['id'], $mDocuments, $request->auth);
             $mWaterConsumerActiveRequest->updateUploadStatus($deactivatedDetails, true);
@@ -868,6 +868,8 @@ class WaterConsumer extends Controller
         $mWfActiveDocument = new WfActiveDocument();
         $mActiveRequest = new WaterConsumerActiveRequest();
         $relativePath       = Config::get('waterConstaint.WATER_RELATIVE_PATH');
+        $documents;
+        
 
         collect($documents)->map(function ($doc) use ($ActiveRequestId, $docUpload, $mWfActiveDocument, $mActiveRequest, $relativePath, $auth) {
             $metaReqs = array();
@@ -879,14 +881,15 @@ class WaterConsumer extends Controller
             $metaReqs['moduleId'] = Config::get('module-constants.WATER_MODULE_ID');
             $metaReqs['activeId'] = $getApplicationDtls->id;
             $metaReqs['workflowId'] = $getApplicationDtls->workflow_id;
-            $metaReqs['ulbId'] = $getApplicationDtls->ulb_id;
+            $metaReqs['ulbId'] = $getApplicationDtls->ulb_id ?? 2;
             $metaReqs['relativePath'] = $relativePath;
             $metaReqs['document'] = $imageName;
             $metaReqs['docCode'] = $doc['docCode'];
             $metaReqs['ownerDtlId'] = $doc['ownerDtlId'];
+            
             $a = new Request($metaReqs);
             // $mWfActiveDocument->postDocuments($a, $auth);
-            $metaReqs =  $mWfActiveDocument->metaReqs($metaReqs);
+            $metaReqs =  $mWfActiveDocument->metaRequest($metaReqs);
             $mWfActiveDocument->create($metaReqs);
             // foreach ($metaReqs as $key => $val) {
             //     $mWfActiveDocument->$key = $val;
@@ -928,7 +931,8 @@ class WaterConsumer extends Controller
         // }
         $activeReq = $mWaterConsumerActiveRequest->getRequestByConId($consumerId)->first();
         if ($activeReq) {
-            throw new Exception("There are other request applied for respective consumer connection!");
+            // throw new Exception("There are other request applied for respective consumer connection!");
+            throw new Exception("Already Disconnection Applied");
         }
         return [
             "consumerDetails" => $refConsumerDetails

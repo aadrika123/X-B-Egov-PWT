@@ -519,6 +519,7 @@ class WaterSecondConsumer extends Model
         $mWaterConsumer->saf_no                      = $consumerDetails['saf_no'];
         $mWaterConsumer->category                    = $consumerDetails['category'];
         $mWaterConsumer->ward_mstr_id                = $consumerDetails['ward_id'];
+        $mWaterConsumer->zone_mstr_id                = $consumerDetails['zone_mstr_id'];
         $mWaterConsumer->consumer_no                 = $consumerNo;
         $mWaterConsumer->address                     = $consumerDetails['address'];
         $mWaterConsumer->apply_from                  = $consumerDetails['apply_from'];

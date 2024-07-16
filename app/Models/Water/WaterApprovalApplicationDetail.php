@@ -162,7 +162,7 @@ class WaterApprovalApplicationDetail extends Model
             ->join('zone_masters', 'zone_masters.id', 'water_approval_application_details.zone_mstr_id')
             ->join('water_connection_charges', 'water_connection_charges.application_id', 'water_approval_application_details.id')
             ->where('water_second_consumers.id', $request->applicationId)
-            ->whereIn('water_second_consumers.status', [1, 3])
+            ->whereIn('water_second_consumers.status', [1,2, 3])
             ->where('water_approval_application_details.status', true);
     }
 
