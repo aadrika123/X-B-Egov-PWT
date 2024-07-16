@@ -162,7 +162,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('consumer/update-consumer-details', 'updateConsumerDetails');
         Route::post('consumer/update-consumer-log-search', 'searchUpdateConsumerLog');
         Route::post('consumer/update-consumer-log-dtl', 'consumerUpdateDetailLogs');
-        Route::post('consumer/get-details', 'WaterConsumerDetails');                               
+        Route::post('consumer/get-details', 'WaterConsumerDetails');
         Route::post('consumer/get-connection-list', 'getConnectionList');
         Route::post('consumer/demands-correction', 'updateConsumerDemands');
         Route::post("consumer/demands-correct", "AutoCorrectDemand");
@@ -178,19 +178,19 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
      * |------------ Water Consumer Workflow -------------|
      */
     Route::controller(WaterConsumerWfController::class)->group(function () {
-        Route::post('consumer/req/inbox', 'consumerInbox');                                         // Workflow
-        Route::post('consumer/req/outbox', 'consumerOutbox');                                       // Workflow
+        Route::post('consumer/req/inbox', 'consumerInbox');                                               // Workflow
+        Route::post('consumer/req/outbox', 'consumerOutbox');                                            // Workflow
         Route::post('consumer/req/get-details-by', 'getWorkflow');                                       // Workflow
         Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');           // Here
         Route::post('consumer/req/list-req-docs', 'listDocToUpload');                   // Here
         Route::post('consumer/req/doc-verify-reject', 'consumerDocVerifyReject');       // Here
-        Route::post('consumer/req/upload-document', 'consumerDocUpload');               // Here
+        Route::post('consumer/req/upload-document', 'getDiscUploadDocuments');               // Here
         Route::post('consumer/req/get-upload-documents', 'getConsumerDocs');            // Here
         Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');    // Here
         Route::post('get-details-applications', 'getConApplicationDetails');
         Route::post('get-details-disconnections', 'getRequestedApplication');                       // Citizen / Changes the route name
     });
-
+    
     /**
      * | Created On : 17-04-2023
      * | Created By : Sam kerketta
