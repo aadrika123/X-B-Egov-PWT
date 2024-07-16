@@ -54,7 +54,7 @@ class CareTakerTrade
         $tradeOwner = $this->_mTradeOwners->getFirstOwner($this->_tradeId);
         $mobileNo = (int) $tradeOwner->mobile_no;
 
-        if (is_null($mobileNo)) {
+        if ($mobileNo == 0) {
             throw new Exception('This license does not have an associated mobile number.');
         }
         $myRequest = new \Illuminate\Http\Request();
