@@ -1312,7 +1312,7 @@ class TradeCitizenController extends Controller
                         $join->on("owner.temp_id", "licences.id");
                     })
                     ->where("licences.is_active", true)
-                    ->where("licences.citizen_id",$refUserId)
+                    //->where("licences.citizen_id",$refUserId)
                     ->WHERE(FUNCTION($where) use( $licenseNo){
                         $where->WHEREIN("licences.application_no", $licenseNo)
                         ->ORWHEREIN("licences.license_no", $licenseNo);
@@ -1372,7 +1372,7 @@ class TradeCitizenController extends Controller
                         $join->on("owner.temp_id", "licences.id");
                     })
                     ->where("licences.is_active", true)    
-                    ->where("licences.citizen_id",$refUserId)                
+                    //->where("licences.citizen_id",$refUserId)                
                     ->WHERE(FUNCTION($where) use( $licenseNo){
                         $where->WHEREIN("licences.application_no", $licenseNo)
                         ->ORWHEREIN("licences.license_no", $licenseNo);
@@ -1401,7 +1401,7 @@ class TradeCitizenController extends Controller
                         $join->on("owner.temp_id", "licences.id");
                     })
                     ->where("licences.is_active", true)
-                    ->where("licences.citizen_id",$refUserId)
+                    //->where("licences.citizen_id",$refUserId)
                     ->WHERE(FUNCTION($where) use( $licenseNo){
                         $where->WHEREIN("licences.application_no", $licenseNo)
                         ->ORWHEREIN("licences.license_no", $licenseNo);
