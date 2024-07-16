@@ -10,11 +10,13 @@ use App\Models\Trade\TradeParamItemType;
 use App\Models\Trade\TradeParamLicenceRate;
 use App\Models\Trade\TradeParamOwnershipType;
 use App\Repository\Common\CommonFunction;
+use App\Repository\Trade\Trade;
 use Exception;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
 
 class TradeController extends Controller
 {
@@ -38,6 +40,7 @@ class TradeController extends Controller
     protected $_MODULE_ID;
     protected $_REF_TABLE;
     protected $_TRADE_CONSTAINT;
+    protected $_REPOSITORY_TRADE;
 
     public function __construct()
     {
@@ -49,6 +52,7 @@ class TradeController extends Controller
         $this->_ITEM_TYPE           = new TradeParamItemType();
         $this->_RATES               = new TradeParamLicenceRate();
         $this->_OWNERSHIP_TYPE      = new TradeParamOwnershipType();
+        $this->_REPOSITORY_TRADE = new Trade();
 
         #roleId = 1 -> SUPER ADMIN,
         #         2 -> ADMIN
@@ -943,4 +947,37 @@ class TradeController extends Controller
         }
     }
     #============= End Ownership Type Crud =================
+
+
+    public function updateMobile(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                "applicationId" => "required|integer",
+                "ownerId"    => "required|integer",
+                "mobileNo"   => "required|digits:10|regex:/[0-9]{10}/",
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $trade = new Trade();
+            $ownerDetails = $trade->getAllOwnereDtlByLId($req->applicationId)
+                                ->where('id', $req->ownerId)
+                                ->first();
+
+            if (!$ownerDetails)
+                throw new Exception("No Data Found Against this Owner");
+
+            $ownerDetails->old_mobile_no = $ownerDetails->mobile_no;
+            $ownerDetails->mobile_no = $req->mobileNo;
+            $ownerDetails->save();
+
+            return responseMsgs(true, "Mobile No Updated", [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
 }

@@ -199,6 +199,7 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         Route::post('ownership-type-list', 'ownershipTypeList');
         Route::post('ownership-type', 'ownershipType');
         // Route::post('ownership-type-update', 'updateOwnershipType');
+        Route::post('update-mobile', 'updateMobile');
     });
 });
 
