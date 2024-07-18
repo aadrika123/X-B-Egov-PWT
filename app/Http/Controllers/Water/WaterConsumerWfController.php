@@ -867,4 +867,31 @@ class WaterConsumerWfController extends Controller
         else
             return 1;
     }
+
+    # get Details of Disconnections
+    public function getDetailsDisconnections(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'id'            => 'required|digits_between:1,9223372036854775807',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        try {
+            $user                           = authUser($request);
+            $mWaterConsumerActiveRequest    = new WaterConsumerActiveRequest();
+            $refUserType                    = Config::get('waterConstaint.REF_USER_TYPE');
+
+            # User type changes 
+            $detailsDisconnections = $mWaterConsumerActiveRequest->getApplicationsById($request->id)->first();
+            if (!collect($detailsDisconnections)->first()) {
+                throw new Exception("Data not found!");
+            }
+            return responseMsgs(true, "Data Disconnection", remove_null($detailsDisconnections), "", "1.0", "350ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", $e->getCode(), "1.0", "", 'POST', "");
+        }
+    }
 }
