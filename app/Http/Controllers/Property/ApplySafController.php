@@ -10,6 +10,7 @@ use App\EloquentClass\Property\InsertTax;
 use App\EloquentClass\Property\PenaltyRebateCalculation;
 use App\EloquentClass\Property\SafCalculation;
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Water\WaterConsumer;
 use App\Http\Requests\Property\reqApplySaf;
 use App\Http\Requests\ReqGBSaf;
 use App\Models\Property\Logs\PropSmsLog;
@@ -23,6 +24,8 @@ use App\Models\Property\PropFloor;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafsDemand;
+use App\Models\TradeLicence;
+use App\Models\Water\WaterSecondConsumer;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
 use App\Repository\Auth\EloquentAuthRepository;
@@ -118,7 +121,7 @@ class ApplySafController extends Controller
             if ($prop = PropProperty::find($request->previousHoldingId)) {
                 $request->merge(["propertyNo" => $prop->property_no ?? null]);
             }
-            if($request->assessmentType == 4 || $request->assessmentType == "Bifurcation"){
+            if ($request->assessmentType == 4 || $request->assessmentType == "Bifurcation") {
                 $request->merge(["propertyNo" => null]);
             }
             // Derivative Assignments
@@ -170,9 +173,8 @@ class ApplySafController extends Controller
             // }
             DB::beginTransaction();
             $createSaf = $saf->store($request);                                         // Store SAF Using Model function 
-            if($request->assessmentType == 5 || $request->assessmentType == "Amalgamation")
-            {
-                $request->merge(["safId"=>$createSaf->original['safId']]);
+            if ($request->assessmentType == 5 || $request->assessmentType == "Amalgamation") {
+                $request->merge(["safId" => $createSaf->original['safId']]);
                 $SafAmalgamatePropLog = new SafAmalgamatePropLog();
                 $SafAmalgamatePropLog->store($request);
             }
@@ -235,6 +237,106 @@ class ApplySafController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "010102", "1.0", "1s", "POST", $request->deviceId);
         }
     }
+
+    public function applySafTc(Request $request)
+    {
+        $request->validate([
+            'propAddress' => 'required',
+            'mobileNo' => 'required|digits:10|regex:/[0-9]{10}/',
+            'ownerName' => 'required|string|max:255',
+            'ward' => 'required',
+            'zone' => 'required',
+            'consumerNo' => 'nullable',
+            'licenseNo'=>'nullable'
+        ]);
+
+        try {
+            // Fetch current date
+            $mApplyDate = Carbon::now()->format("Y-m-d");
+
+            // Authenticate user
+            $user = authUser($request);
+            $user_id = $user->id;
+            $ulb_id = 2;
+            $userType = $user->user_type;
+            $metaReqs = array();
+
+            // Initialize models
+            $saf = new PropActiveSaf();
+            $mOwner = new PropActiveSafsOwner();
+
+            // Fetch workflow details
+            $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
+            $ulbWorkflowId = WfWorkflow::where('wf_master_id', $workflow_id)
+                ->where('ulb_id', $ulb_id)
+                ->first();
+
+            // Fetch initiator role ID
+            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);
+            $initiatorRoleId = collect(DB::select($refInitiatorRoleId))->first();
+            if (is_null($initiatorRoleId))
+                throw new Exception("Initiator Role Not Available");
+
+            // Fetch finisher role ID
+            $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
+            $finisherRoleId = collect(DB::select($refFinisherRoleId))->first();
+            if (is_null($finisherRoleId))
+                throw new Exception("Finisher Role Not Available");
+
+            // Prepare meta request data
+            $metaReqs['workflowId'] = $ulbWorkflowId->id;
+            $metaReqs['assessmentType'] = "New Assessment";
+            $metaReqs['ulbId'] = $ulb_id;
+            $metaReqs['userId'] = $user_id;
+            $metaReqs['initiatorRoleId'] = collect($initiatorRoleId)['role_id'];
+
+            if ($userType == $this->_citizenUserType) {
+                $metaReqs['userId'] = null;
+                $metaReqs['citizenId'] = $user_id;
+            }
+            $metaReqs['finisherRoleId'] = collect($finisherRoleId)['role_id'];
+
+            $request->merge($metaReqs);
+            $this->_REQUEST = $request;
+
+            $water = new WaterSecondConsumer();
+            $waterDetail = $water->getDetailByConsumerNoforProperty($request->consumerNo);
+            if (!$waterDetail) {
+                throw new Exception("Invalid consumer_no");
+            }
+            $mTrade = new TradeLicence();
+            $tradeDetail = $mTrade->getDetailsByLicenceNov2($request->licenseNo);
+            if (!$tradeDetail) {
+                throw new Exception("Invalid license No");
+            }
+
+            DB::beginTransaction();
+            // Store SAF data
+            $createSaf = $saf->storeV1($request);
+            $safId = $createSaf->original['safId'];
+            $safNo = $createSaf->original['safNo'];
+            $mOwner->owner_name = strtoupper($request->ownerName);
+            $mOwner->mobile_no = $request->mobileNo ?? null;
+            $mOwner->saf_id = $safId;
+            $mOwner->save();
+            // Send data to workflow
+            $this->sendToWorkflow($createSaf, $user_id);
+            DB::commit();
+            return responseMsgs(true, "Successfully Submitted Your Application. Your SAF No. $safNo", [
+                "safNo" => $safNo,
+                "applyDate" => ymdToDmyDate($mApplyDate),
+                "safId" => $safId,
+                "waterDetails" => $waterDetail,
+                "tradeDetails" => $tradeDetail
+            ], "010102", "1.0", responseTime(), "POST", $request->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "010102", "1.0", responseTime(), "POST", $request->deviceId);
+        }
+    }
+
+
+
 
     /**
      * | Read Assessment Type and Ulb Workflow Id(2.1)
@@ -367,7 +469,7 @@ class ApplySafController extends Controller
                 $newAreaOfPlot  = $propFloorArea - $safFloorArea;
 
                 if (($safFloorArea + $currentFloorArea) > $propFloorArea)
-                    throw new Exception("You have excedeed the floor area. Please insert plot area below " . $newAreaOfPlot . " of floor " . $index+1);
+                    throw new Exception("You have excedeed the floor area. Please insert plot area below " . $newAreaOfPlot . " of floor " . $index + 1);
             }
         }
     }
