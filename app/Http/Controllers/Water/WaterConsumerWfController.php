@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\CustomDetail;
 use App\Models\UlbWardMaster;
+use App\Models\Water\WaterApprovalApplicationDetail;
 use App\Models\Water\WaterConsumerActiveRequest;
 use App\Models\Water\WaterConsumerOwner;
+use App\Models\Water\WaterSecondConsumer;
 use App\Models\Water\WaterSiteInspection;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWorkflow;
@@ -387,7 +389,7 @@ class WaterConsumerWfController extends Controller
         $this->preApprovalConditionCheck($request, $roleId);
 
         # Approval of water application 
-        if ($request->status == 1) {
+        if ($request->status == 1) { 
 
             $mWaterConsumerActive->finalApproval($request);
             $msg = "Application Successfully Approved !!";
@@ -422,6 +424,73 @@ class WaterConsumerWfController extends Controller
         // }
         // $this->checkDataApprovalCondition($request, $roleId, $waterDetails);   // Reminder
         return $waterDetails;
+    }
+
+    /**
+     * |------------------- Final Approval of the water disconnection application -------------------|
+     * | @param request
+     * | @param consumerNo
+     */
+    public function finalApproval($request, $refJe, $consumerNo)
+    {
+        # object creation
+        $mWaterApprovalApplicationDetail  = new WaterApprovalApplicationDetail();
+        $mWaterSiteInspection             = new WaterSiteInspection();
+        $mWaterConsumer                   = new WaterSecondConsumer();
+        $waterTrack                       = new WorkflowTrack();
+
+        # checking if consumer already exist 
+        $approvedWater = WaterApplication::query()
+            ->where('id', $request->applicationId)
+            ->first();
+        $checkExist = $mWaterApprovalApplicationDetail->getApproveApplication($approvedWater->id);
+        if ($checkExist) {
+            throw new Exception("Access Denied ! Consumer Already Exist!");
+        }
+        $checkconsumer = $mWaterConsumer->getConsumerByAppId($approvedWater->id);
+        if ($checkconsumer) {
+            throw new Exception("Access Denied ! Consumer Already Exist!");
+        }
+
+        # saving the data in the approved application table
+        $approvedWaterRep = $approvedWater->replicate();
+        $approvedWaterRep->setTable('water_approval_application_details');
+        $approvedWaterRep->id = $approvedWater->id;
+        $approvedWaterRep->save();
+
+        # data formating for save the consumer details 
+        $siteDetails = $mWaterSiteInspection->getSiteDetails($request->applicationId)
+            // ->where('payment_status', 1)
+            ->where('order_officer', $refJe)
+            ->first();
+        if (isset($siteDetails)) {
+            $refData = [
+                'connection_type_id'    => $siteDetails['connection_type_id'],
+                'connection_through'    => $siteDetails['connection_through'],
+                'pipeline_type_id'      => $siteDetails['pipeline_type_id'],
+                'property_type_id'      => $siteDetails['property_type_id'],
+                'category'              => $siteDetails['category'],
+                'area_sqft'             => $siteDetails['area_sqft'],
+                'area_asmt'             => sqFtToSqMt($siteDetails['area_sqft'])
+            ];
+            $approvedWaterRep = collect($approvedWater)->merge($refData);
+        }
+        $consumerId = $mWaterConsumer->saveWaterConsumer($approvedWaterRep, $consumerNo);
+
+        # dend record in the track table 
+        $metaReqs = [
+            'moduleId'          => Config::get("module-constants.WATER_MODULE_ID"),
+            'workflowId'        => $approvedWater->workflow_id,
+            'refTableDotId'     => 'water_applications.id',
+            'refTableIdValue'   => $approvedWater->id,
+            'user_id'           => authUser($request)->id,
+        ];
+        $request->request->add($metaReqs);
+        $waterTrack->saveTrack($request);
+
+        # final delete
+        $approvedWater->delete();
+        return $consumerId;
     }
     /**
      * get all applications details by id from workflow

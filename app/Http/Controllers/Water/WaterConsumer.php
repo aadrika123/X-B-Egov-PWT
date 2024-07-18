@@ -798,7 +798,7 @@ class WaterConsumer extends Controller
             }
 
             # Get chrages for deactivation
-            // $chargeAmount = $mWaterConsumerChargeCategory->getChargesByid($refConsumerCharges['WATER_DISCONNECTION']);
+            $chargeAmount = $mWaterConsumerChargeCategory->getChargesByid($refConsumerCharges['WATER_DISCONNECTION']);
             $refChargeList = collect($refConsumerCharges)->flip();
 
             $refRequest["initiatorRoleId"]   = collect($initiatorRoleId)->first()->role_id;
