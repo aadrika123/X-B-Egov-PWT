@@ -31,7 +31,7 @@ class WaterConsumerActiveRequest extends Model
         $mWaterConsumerActiveRequest->current_role              = $refRequest['initiatorRoleId'];
         $mWaterConsumerActiveRequest->initiator                 = $refRequest['initiatorRoleId'];
         $mWaterConsumerActiveRequest->workflow_id               = $refRequest['ulbWorkflowId'];
-        $mWaterConsumerActiveRequest->ulb_id                    = $req['ulbId'];
+        $mWaterConsumerActiveRequest->ulb_id                    = $req['ulbId'] ?? 2;
         $mWaterConsumerActiveRequest->finisher                  = $refRequest['finisherRoleId'];
         $mWaterConsumerActiveRequest->user_type                 = $refRequest['userType'];
         $mWaterConsumerActiveRequest->application_no            = $applicationNo;
@@ -101,16 +101,19 @@ class WaterConsumerActiveRequest extends Model
             'water_consumer_active_requests.amount',
             'water_consumer_active_requests.application_no',
             // DB::raw('REPLACE(water_consumer_charges.charge_category, \'_\', \' \') as charge_category'),
+            'water_consumer_active_requests.verify_status',
             "water_consumer_active_requests.corresponding_address",
             "water_consumer_active_requests.corresponding_mobile_no",
             "water_second_consumers.consumer_no",
             "water_consumer_active_requests.ward_mstr_id",
             "water_consumer_active_requests.apply_date",
             "water_consumer_active_requests.payment_status",
-            "ulb_ward_masters.ward_name"
+            "ulb_ward_masters.ward_name",
+            "water_consumer_charge_categories.charge_category"
         )
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_consumer_active_requests.ward_mstr_id')
-            // ->leftjoin('water_consumer_charges', 'water_consumer_charges.related_id', 'water_consumer_active_requests.id')
+            ->leftjoin('water_consumer_charges', 'water_consumer_charges.related_id', 'water_consumer_active_requests.id')
+            ->join('water_consumer_charge_categories', 'water_consumer_charge_categories.id', 'water_consumer_active_requests.charge_catagory_id')
             ->join('water_second_consumers', 'water_second_consumers.id', 'water_consumer_active_requests.consumer_id')
             ->where('water_consumer_active_requests.citizen_id', $userId)
             ->where('water_consumer_active_requests.status', 1)
@@ -223,17 +226,77 @@ class WaterConsumerActiveRequest extends Model
             'water_connection_type_mstrs.connection_type',
             'wf_roles.role_name AS current_role_name',
             'water_connection_type_mstrs.connection_type',
-            'ulb_ward_masters.ward_name'
+            'ulb_ward_masters.ward_name',
+            'water_consumer_charge_categories.charge_category'
         )
             ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_consumer_active_requests.current_role')
             ->leftjoin('ulb_masters', 'ulb_masters.id', '=', 'water_consumer_active_requests.ulb_id')
-            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'water_consumer_active_requests.ward_mstr_id')
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_consumer_active_requests.ward_mstr_id')
             ->join('water_second_consumers', 'water_second_consumers.id', '=', 'water_consumer_active_requests.consumer_id')
             ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_second_consumers.connection_type_id')
             ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_second_consumers.property_type_id')
-            // ->join('water_param_pipeline_types', 'water_param_pipeline_types.id', 'water_second_consumers.pipeline_type_id')
+            ->join('water_consumer_charge_categories', 'water_consumer_charge_categories.id', 'water_consumer_active_requests.charge_catagory_id')
             ->leftjoin('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
             ->where('water_consumer_active_requests.id', $request->applicationId)
             ->where('water_consumer_active_requests.status', true);
+    }
+
+    /**
+     * | Get approved appliaction using the id 
+     */
+    public function getApproveApplication($applicationId)
+    {
+        return WaterConsumerActiveRequest::where('id', $applicationId)
+            ->where('status', 1)
+            ->where('verify_status', 0)
+            ->orderByDesc('id')
+            ->first();
+    }
+    /**
+     * | Deactivate the doc Upload Status 
+     */
+    public function updateVerifystatus($applicationId, $status)
+    {
+        return  WaterConsumerActiveRequest::where('id', $applicationId)
+            ->where('status', true)
+            ->update([
+                "verify_status" => $status
+            ]);
+    }
+
+    /**
+     * | Get the Application according to user details 
+     */
+    public function getApplicationsById($applicationId)
+    {
+        return WaterConsumerActiveRequest::select(
+            'water_consumer_active_requests.id',
+            'water_consumer_active_requests.reason',
+            'water_consumer_active_requests.remarks',
+            'water_consumer_active_requests.amount',
+            'water_consumer_active_requests.application_no',
+            // DB::raw('REPLACE(water_consumer_charges.charge_category, \'_\', \' \') as charge_category'),
+            'water_consumer_active_requests.verify_status',
+            "water_consumer_active_requests.corresponding_address",
+            "water_consumer_active_requests.corresponding_mobile_no",
+            "water_second_consumers.consumer_no",
+            "water_second_consumers.category",
+            "water_second_consumers.address",
+            "water_second_consumers.tab_size",
+            "water_consumer_active_requests.ward_mstr_id",
+            "water_consumer_active_requests.apply_date",
+            "water_consumer_active_requests.payment_status",
+            "ulb_ward_masters.ward_name",
+            "water_consumer_owners.applicant_name as ownerName",
+            "water_consumer_charge_categories.charge_category"
+        )
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_consumer_active_requests.ward_mstr_id')
+            ->leftjoin('water_consumer_charges', 'water_consumer_charges.related_id', 'water_consumer_active_requests.id')
+            ->join('water_consumer_charge_categories', 'water_consumer_charge_categories.id', 'water_consumer_active_requests.charge_catagory_id')
+            ->join('water_second_consumers', 'water_second_consumers.id', 'water_consumer_active_requests.consumer_id')
+            ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_consumer_active_requests.consumer_id')
+            ->where('water_consumer_active_requests.id', $applicationId)
+            ->where('water_consumer_active_requests.status', 1)
+            ->where('water_consumer_active_requests.verify_status', 1);
     }
 }

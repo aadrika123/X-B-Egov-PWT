@@ -29,7 +29,8 @@ return [
         "TRN"   => 37,
         "WCD"   => 39,
         "WFC"   => 42,
-        "WPS"   => 43
+        "WPS"   => 43,
+        "DISC"  => 57,
     ],
     "ACCOUNT_DESCRIPTION" => "Water",
     "DEPARTMENT_SECTION" => "Revenue Section",
