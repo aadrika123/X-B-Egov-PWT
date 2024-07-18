@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
+use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\CustomDetail;
 use App\Models\UlbWardMaster;
@@ -382,25 +383,60 @@ class WaterConsumerWfController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    /**
+     * | Function for Final Approval Or Rejection 
+     */
     public function approvalRejectionWater($request, $roleId)
     {
 
         $mWaterConsumerActive  =  new WaterConsumerActiveRequest();
-        $this->preApprovalConditionCheck($request, $roleId);
+        $consumerParamId    = Config::get("waterConstaint.PARAM_IDS.DISC");
+        $refJe              = Config::get("waterConstaint.ROLE-LABEL.JE");
+        $refWaterDetails  = $this->preApprovalConditionCheck($request, $roleId);
+
 
         # Approval of water application 
-        if ($request->status == 1) { 
+        if ($request->status == 1) {
+            $idGeneration   = new PrefixIdGenerator($consumerParamId, $refWaterDetails['ulb_id']);
+            $consumerNo     = $idGeneration->generate();
+            $consumerNo     = str_replace('/', '-', $consumerNo);
 
-            $mWaterConsumerActive->finalApproval($request);
+            $this->finalApproval($request, $refJe, $consumerNo);
             $msg = "Application Successfully Approved !!";
         }
         # Rejection of water application
         if ($request->status == 0) {
-            $mWaterConsumerActive->finalRejectionOfAppication($request);
+            $this->finalRejectionOfAppication($request);
             $msg = "Application Successfully Rejected !!";
         }
         return responseMsgs(true, $msg, $request ?? "Empty", '', 01, '.ms', 'Post', $request->deviceId);
     }
+    /**
+    //  * | Check in the database for the final approval of application
+    //  * | only for EO
+    //  * | @param request
+    //  * | @param roleId
+    //     | working
+    //     | Check payment,docUpload,docVerify,feild
+    //  */
+    // public function checkDataApprovalCondition($request, $roleId, $waterDetails)
+    // {
+    //     $mWaterConnectionCharge = new WaterConnectionCharge();
+
+    //     $applicationCharges = $mWaterConnectionCharge->getWaterchargesById($waterDetails->id)->get();
+    //     $paymentStatus = collect($applicationCharges)->map(function ($value) {
+    //         return $value['paid_status'];
+    //     })->values();
+    //     $uniqueArray = array_unique($paymentStatus->toArray());
+
+    //     // if (count($uniqueArray) === 1 && $uniqueArray[0] === 1) {
+    //     //     $payment = true;
+    //     // } else {
+    //     //     throw new Exception("full payment for the application is not done!");
+    //     // }
+    // }
+
     /**
      * function for check pre condition for 
      * approval and reject 
@@ -434,30 +470,28 @@ class WaterConsumerWfController extends Controller
     public function finalApproval($request, $refJe, $consumerNo)
     {
         # object creation
-        $mWaterApprovalApplicationDetail  = new WaterApprovalApplicationDetail();
+        $mwaterConsumerActiveRequest      = new WaterConsumerActiveRequest();
         $mWaterSiteInspection             = new WaterSiteInspection();
         $mWaterConsumer                   = new WaterSecondConsumer();
         $waterTrack                       = new WorkflowTrack();
 
         # checking if consumer already exist 
-        $approvedWater = WaterApplication::query()
+        $approvedWater = WaterConsumerActiveRequest::query()
             ->where('id', $request->applicationId)
             ->first();
-        $checkExist = $mWaterApprovalApplicationDetail->getApproveApplication($approvedWater->id);
-        if ($checkExist) {
-            throw new Exception("Access Denied ! Consumer Already Exist!");
+        $checkExist = $mwaterConsumerActiveRequest->getApproveApplication($approvedWater->id);
+        if (!$checkExist) {
+            throw new Exception("Application Not Found");
+        } elseif ($checkExist->verify_status == 1) {
+
+            throw new Exception('Already Approve Application');
+        } elseif ($checkExist->verify_status == 2) {
+            throw new Exception('Already Rejected Applications');
         }
         $checkconsumer = $mWaterConsumer->getConsumerByAppId($approvedWater->id);
         if ($checkconsumer) {
             throw new Exception("Access Denied ! Consumer Already Exist!");
         }
-
-        # saving the data in the approved application table
-        $approvedWaterRep = $approvedWater->replicate();
-        $approvedWaterRep->setTable('water_approval_application_details');
-        $approvedWaterRep->id = $approvedWater->id;
-        $approvedWaterRep->save();
-
         # data formating for save the consumer details 
         $siteDetails = $mWaterSiteInspection->getSiteDetails($request->applicationId)
             // ->where('payment_status', 1)
@@ -475,7 +509,6 @@ class WaterConsumerWfController extends Controller
             ];
             $approvedWaterRep = collect($approvedWater)->merge($refData);
         }
-        $consumerId = $mWaterConsumer->saveWaterConsumer($approvedWaterRep, $consumerNo);
 
         # dend record in the track table 
         $metaReqs = [
@@ -487,10 +520,36 @@ class WaterConsumerWfController extends Controller
         ];
         $request->request->add($metaReqs);
         $waterTrack->saveTrack($request);
+        # update verify status
+        $mwaterConsumerActiveRequest->updateVerifystatus($request->applicationId, $request->status);
 
-        # final delete
-        $approvedWater->delete();
-        return $consumerId;
+        #deactivate Consumer Permantly
+        $mWaterConsumer->dissconnetConsumer($checkExist->consumer_id);
+    }
+
+    /**
+     * |------------------- Final rejection of the Application -------------------|
+     * | Transfer the data to new table
+     */
+    public function finalRejectionOfAppication($request)
+    {
+        $rejectedWater = WaterConsumerActiveRequest::query()
+            ->where('id', $request->applicationId)
+            ->first();
+
+
+        # save record in track table 
+        $waterTrack = new WorkflowTrack();
+        $metaReqs['moduleId'] =  Config::get("module-constants.WATER_MODULE_ID");
+        $metaReqs['workflowId'] = $rejectedWater->workflow_id;
+        $metaReqs['refTableDotId'] = 'water_applications.id';
+        $metaReqs['refTableIdValue'] = $rejectedWater->id;
+        $metaReqs['user_id'] = authUser($request)->id;
+        $request->request->add($metaReqs);
+        $waterTrack->saveTrack($request);
+
+        #update Verify Status
+        $rejectedWater->updateVerifystatus($request->applicationId, $request->status);
     }
     /**
      * get all applications details by id from workflow

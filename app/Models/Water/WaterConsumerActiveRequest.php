@@ -31,7 +31,7 @@ class WaterConsumerActiveRequest extends Model
         $mWaterConsumerActiveRequest->current_role              = $refRequest['initiatorRoleId'];
         $mWaterConsumerActiveRequest->initiator                 = $refRequest['initiatorRoleId'];
         $mWaterConsumerActiveRequest->workflow_id               = $refRequest['ulbWorkflowId'];
-        $mWaterConsumerActiveRequest->ulb_id                    = $req['ulbId'];
+        $mWaterConsumerActiveRequest->ulb_id                    = $req['ulbId'] ?? 2;
         $mWaterConsumerActiveRequest->finisher                  = $refRequest['finisherRoleId'];
         $mWaterConsumerActiveRequest->user_type                 = $refRequest['userType'];
         $mWaterConsumerActiveRequest->application_no            = $applicationNo;
@@ -101,6 +101,7 @@ class WaterConsumerActiveRequest extends Model
             'water_consumer_active_requests.amount',
             'water_consumer_active_requests.application_no',
             // DB::raw('REPLACE(water_consumer_charges.charge_category, \'_\', \' \') as charge_category'),
+            'water_consumer_active_requests.verify_status',
             "water_consumer_active_requests.corresponding_address",
             "water_consumer_active_requests.corresponding_mobile_no",
             "water_second_consumers.consumer_no",
@@ -238,5 +239,28 @@ class WaterConsumerActiveRequest extends Model
             ->leftjoin('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
             ->where('water_consumer_active_requests.id', $request->applicationId)
             ->where('water_consumer_active_requests.status', true);
+    }
+
+    /**
+     * | Get approved appliaction using the id 
+     */
+    public function getApproveApplication($applicationId)
+    {
+        return WaterConsumerActiveRequest::where('id', $applicationId)
+            ->where('status', 1)
+            ->where('verify_status', 0)
+            ->orderByDesc('id')
+            ->first();
+    }
+    /**
+     * | Deactivate the doc Upload Status 
+     */
+    public function updateVerifystatus($applicationId, $status)
+    {
+        return  WaterConsumerActiveRequest::where('id', $applicationId)
+            ->where('status', true)
+            ->update([
+                "verify_status" => $status
+            ]);
     }
 }

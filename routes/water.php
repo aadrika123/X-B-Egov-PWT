@@ -181,12 +181,12 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('consumer/req/inbox', 'consumerInbox');                                               // Workflow
         Route::post('consumer/req/outbox', 'consumerOutbox');                                            // Workflow
         Route::post('consumer/req/get-details-by', 'getWorkflow');                                       // Workflow
-        Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');           // Here
-        Route::post('consumer/req/list-req-docs', 'listDocToUpload');                   // Here
-        Route::post('consumer/req/doc-verify-reject', 'consumerDocVerifyReject');       // Here
-        Route::post('consumer/req/get-upload-documents', 'getDiscUploadDocuments');               // Here
-        // Route::post('consumer/req/get-upload-documents', 'getConsumerDocs');            // Here
-        Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');    // Here
+        Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');                            // Here
+        Route::post('consumer/req/list-req-docs', 'listDocToUpload');                                    // Here
+        Route::post('consumer/req/doc-verify-reject', 'consumerDocVerifyReject');                       // Here
+        Route::post('consumer/req/get-upload-documents', 'getDiscUploadDocuments');                    // Here
+        // Route::post('consumer/req/get-upload-documents', 'getConsumerDocs');                      // Here
+        Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');                // Here
         Route::post('get-details-applications', 'getConApplicationDetails');
         Route::post('get-details-disconnections', 'getRequestedApplication');                       // Citizen / Changes the route name
     });

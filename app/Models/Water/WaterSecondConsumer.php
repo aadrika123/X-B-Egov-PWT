@@ -443,11 +443,11 @@ class WaterSecondConsumer extends Model
      * | Dectivate the water Consumer 
      * | @param req
      */
-    public function dissconnetConsumer($consumerId, $status)
+    public function dissconnetConsumer($consumerId)
     {
         WaterSecondConsumer::where('id', $consumerId)
             ->update([
-                'status' => $status
+                'status' => 3
             ]);
     }
 
@@ -671,7 +671,7 @@ class WaterSecondConsumer extends Model
     public function updateConsumer($consumerId)
     {
         return self::where('id', $consumerId)
-            ->update([  
+            ->update([
                 'status' => 1,
                 'payment_status' => 1
             ]);
@@ -699,7 +699,7 @@ class WaterSecondConsumer extends Model
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_second_consumers.ulb_id')
             ->leftjoin('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_second_consumers.connection_type_id')
             ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', '=', 'water_second_consumers.property_type_id')
-            ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')   
+            ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
             ->where('water_second_consumers.' . $key, $parameter)
             ->where('water_second_consumers.status', 1)
             ->firstOrFail();
