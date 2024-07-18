@@ -225,7 +225,8 @@ class WaterConsumerActiveRequest extends Model
             'water_connection_type_mstrs.connection_type',
             'wf_roles.role_name AS current_role_name',
             'water_connection_type_mstrs.connection_type',
-            'ulb_ward_masters.ward_name'
+            'ulb_ward_masters.ward_name',
+            'water_consumer_charge_categories.charge_category'
         )
             ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_consumer_active_requests.current_role')
             ->leftjoin('ulb_masters', 'ulb_masters.id', '=', 'water_consumer_active_requests.ulb_id')
@@ -233,7 +234,7 @@ class WaterConsumerActiveRequest extends Model
             ->join('water_second_consumers', 'water_second_consumers.id', '=', 'water_consumer_active_requests.consumer_id')
             ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_second_consumers.connection_type_id')
             ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_second_consumers.property_type_id')
-            // ->join('water_param_pipeline_types', 'water_param_pipeline_types.id', 'water_second_consumers.pipeline_type_id')
+            ->join('water_consumer_charge_categories', 'water_consumer_charge_categories.id', 'water_consumer_active_requests.charge_catagory_id')
             ->leftjoin('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
             ->where('water_consumer_active_requests.id', $request->applicationId)
             ->where('water_consumer_active_requests.status', true);
