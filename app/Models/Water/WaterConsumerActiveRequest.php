@@ -280,16 +280,21 @@ class WaterConsumerActiveRequest extends Model
             "water_consumer_active_requests.corresponding_address",
             "water_consumer_active_requests.corresponding_mobile_no",
             "water_second_consumers.consumer_no",
+            "water_second_consumers.category",
+            "water_second_consumers.address",
+            "water_second_consumers.tab_size",
             "water_consumer_active_requests.ward_mstr_id",
             "water_consumer_active_requests.apply_date",
             "water_consumer_active_requests.payment_status",
             "ulb_ward_masters.ward_name",
+            "water_consumer_owners.applicant_name as ownerName",
             "water_consumer_charge_categories.charge_category"
         )
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_consumer_active_requests.ward_mstr_id')
             ->leftjoin('water_consumer_charges', 'water_consumer_charges.related_id', 'water_consumer_active_requests.id')
             ->join('water_consumer_charge_categories', 'water_consumer_charge_categories.id', 'water_consumer_active_requests.charge_catagory_id')
             ->join('water_second_consumers', 'water_second_consumers.id', 'water_consumer_active_requests.consumer_id')
+            ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_consumer_active_requests.consumer_id')
             ->where('water_consumer_active_requests.id', $applicationId)
             ->where('water_consumer_active_requests.status', 1)
             ->where('water_consumer_active_requests.verify_status', 1);
