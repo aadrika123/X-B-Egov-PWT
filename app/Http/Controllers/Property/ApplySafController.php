@@ -248,9 +248,9 @@ class ApplySafController extends Controller
             'zone' => 'required',
             'consumerNo' => 'nullable',
             'licenseNo' => 'nullable',
-            'propertyType'=>'required|int',
-            'isWaterHarvesting'=>'nullable|bool',
-            'harvestingDate'=>'nullable|date'
+            'propertyType' => 'required|int',
+            'isWaterHarvesting' => 'nullable|bool',
+            'harvestingDate' => 'nullable|date'
         ]);
 
         try {
@@ -378,6 +378,52 @@ class ApplySafController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "010102", "1.0", responseTime(), "POST", $request->deviceId);
         }
     }
+
+    public function verifyConsumer(Request $request)
+    {
+        $request->validate([
+            'consumerNo' => 'nullable',
+        ]);
+
+        try {
+            $waterDetail = null;
+
+            if ($request->consumerNo) {
+                $water = new WaterSecondConsumer();
+                $waterDetail = $water->getDetailByConsumerNoforProperty($request->consumerNo);
+                if (!$waterDetail) {
+                    throw new Exception("Consumer number does not exist.");
+                }
+            } 
+            return responseMsgs(true, "Consumer details retrieved successfully.", $waterDetail, "010102", "1.0", responseTime(), "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010102", "1.0", responseTime(), "POST", $request->deviceId);
+        }
+    }
+
+    public function verifyLicense(Request $request)
+    {
+        $request->validate([
+            'licenseNo' => 'nullable',
+        ]);
+
+        try {
+            $tradeDetail = null;
+
+            if ($request->licenseNo) {
+                $mTrade = new TradeLicence();
+                $tradeDetail = $mTrade->getDetailsByLicenceNov2($request->licenseNo);
+                if (!$tradeDetail) {
+                    throw new Exception("License number does not exist.");
+                }
+            }
+            
+            return responseMsgs(true, "License details retrieved successfully.", $tradeDetail, "010102", "1.0", responseTime(), "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010102", "1.0", responseTime(), "POST", $request->deviceId);
+        }
+    }
+
 
 
 
