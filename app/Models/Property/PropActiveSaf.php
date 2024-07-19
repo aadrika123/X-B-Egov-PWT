@@ -329,7 +329,7 @@ class  PropActiveSaf extends PropParamModel #Model
             ->leftJoin('zone_masters', 'zone_masters.id', 'prop_active_safs.zone_mstr_id')
             ->leftJoin('ref_prop_gbbuildingusagetypes as gbu', 'gbu.id', 'prop_active_safs.gb_usage_types')
             ->leftJoin('ref_prop_gbpropusagetypes as gbp', 'gbp.id', 'prop_active_safs.gb_prop_usage_types')
-            ->join('ref_prop_categories as cat', 'cat.id', '=', 'prop_active_safs.category_id');
+            ->leftjoin('ref_prop_categories as cat', 'cat.id', '=', 'prop_active_safs.category_id');
     }
 
     /**
