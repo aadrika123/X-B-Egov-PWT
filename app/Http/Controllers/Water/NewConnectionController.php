@@ -3207,6 +3207,9 @@ class NewConnectionController extends Controller
 
             $returnValue = collect($connection)->map(function ($value)
             use ($mWaterPenaltyInstallment, $refChargeCatagoryValue, $refChargeCatagory, $mWaterTran, $mWaterParamConnFee, $mWaterConnectionCharge, $mWaterSiteInspection, $mWaterSiteInspectionsScheduling, $roleDetails) {
+                # Checking Data Approval Condition
+                $paymentStatusFlag = $this->checkAllPayment($value->id);
+                $value['payment_status_flag'] = $paymentStatusFlag;
 
                 # checking Penalty payment
                 if ($value['payment_status'] == 1 && $value['connection_type_id'] == $refChargeCatagoryValue['REGULAIZATION']) {
@@ -3285,6 +3288,25 @@ class NewConnectionController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    public function checkAllPayment($consumerId)
+    {
+        $mWaterConsumerDemand = new WaterConsumerDemand();
+
+        $demands = $mWaterConsumerDemand->getDeamandByID($consumerId)->get();
+        // If no demands are found, assume no pending payments
+        if ($demands->isEmpty()) {
+            return true;
+        }
+        $paymentStatus = collect($demands)->map(function ($value) {
+            return $value['is_full_paid'];
+        })->values();
+        $uniqueArray = array_unique($paymentStatus->toArray());
+
+        return (count($uniqueArray) === 1 && $uniqueArray[0] === 1);
+    }
+
+
 
     /**
      * | Citizen view : Get Application Details of viewind
