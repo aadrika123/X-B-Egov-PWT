@@ -2,6 +2,7 @@
 
 namespace App\Repository\Citizen;
 
+use App\Http\Controllers\Property\HoldingTaxController;
 use Illuminate\Http\Request;
 use App\Repository\Citizen\iCitizenRepository;
 use App\Models\ActiveCitizen;
@@ -281,7 +282,7 @@ class CitizenRepository implements iCitizenRepository
             )
             ->where('prop_safs.citizen_id', $userId)
             ->where('prop_safs.status', 1)
-            ->where('prop_safs.proccess_fee_paid',0)
+            ->where('prop_safs.proccess_fee_paid', 0)
             ->orderByDesc('prop_safs.id')
             ->get();
         $applications['pendingProcessFeeSaf'] = collect($pendingProcessFeeApplications)->values();
@@ -337,13 +338,23 @@ class CitizenRepository implements iCitizenRepository
                                 p.application_date AS apply_date,
                                 o.owner_name,
                                 p.balance AS leftAmount,
-                                t.amount AS lastPaidAmount,
+                              
                                 t.tran_date AS lastPaidDate,
-                                p.status    AS active_status
+                                p.status    AS active_status,
+                                p.prop_address,
+                                zone_masters.zone_name,
+                                ulb_ward_masters.ward_name,
+                                t.payment_mode,
+                              
 
+                COALESCE(t.demand_amt, 0) AS totalTax,
+                COALESCE(t.amount, 0) AS lastPaidAmount,
+                (COALESCE(t.demand_amt, 0) - COALESCE(t.amount, 0)) AS balanceCalculate
+                
+    
                                 FROM prop_properties p
                                 LEFT JOIN (
-                                    SELECT property_id,amount,tran_date,
+                                    SELECT property_id,amount,tran_date,payment_mode,demand_amt,
                                         ROW_NUMBER() OVER(
                                             PARTITION BY property_id
                                             ORDER BY id desc
@@ -351,7 +362,8 @@ class CitizenRepository implements iCitizenRepository
                                     FROM prop_transactions 
                                     ORDER BY id DESC
                                 ) AS t ON t.property_id=p.id AND row_num =1
-
+                                   JOIN zone_masters ON zone_masters.id = p.zone_mstr_id
+                                  join ulb_ward_masters on  ulb_ward_masters.id =  p.ward_mstr_id
                                 LEFT JOIN (
                                     SELECT property_id,owner_name,
                                     row_number() over(
