@@ -1834,6 +1834,7 @@ class Trade implements ITrade
                 "active_trade_licences.apply_from",
                 "active_trade_licences.valid_upto",
                 "owner.owner_name",
+                "owner.id as owner_id",
                 "owner.guardian_name",
                 "owner.mobile_no",
                 "owner.email_id",

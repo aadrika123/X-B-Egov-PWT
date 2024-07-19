@@ -247,7 +247,7 @@ class ApplySafController extends Controller
             'ward' => 'required',
             'zone' => 'required',
             'consumerNo' => 'nullable',
-            'licenseNo'=>'nullable'
+            'licenseNo' => 'nullable'
         ]);
 
         try {
@@ -297,20 +297,20 @@ class ApplySafController extends Controller
             $metaReqs['finisherRoleId'] = collect($finisherRoleId)['role_id'];
 
             $request->merge($metaReqs);
-            if ($request->consumerNo){
-            $water = new WaterSecondConsumer();
-            $waterDetail = $water->getDetailByConsumerNoforProperty($request->consumerNo);
-            if (!$waterDetail) {
-                throw new Exception("Invalid consumer_no");
+            if ($request->consumerNo) {
+                $water = new WaterSecondConsumer();
+                $waterDetail = $water->getDetailByConsumerNoforProperty($request->consumerNo);
+                if (!$waterDetail) {
+                    throw new Exception("Invalid consumer_no");
+                }
             }
-        } 
-        if ($request->licenseNo){
-            $mTrade = new TradeLicence();
-            $tradeDetail = $mTrade->getDetailsByLicenceNov2($request->licenseNo);
-            if (!$tradeDetail) {
-                throw new Exception("Invalid license No");
+            if ($request->licenseNo) {
+                $mTrade = new TradeLicence();
+                $tradeDetail = $mTrade->getDetailsByLicenceNov2($request->licenseNo);
+                if (!$tradeDetail) {
+                    throw new Exception("Invalid license No");
+                }
             }
-        }
             DB::beginTransaction();
             // Store SAF data
             $createSaf = $saf->storeV1($request);
@@ -327,11 +327,51 @@ class ApplySafController extends Controller
                 "safNo" => $safNo,
                 "applyDate" => ymdToDmyDate($mApplyDate),
                 "safId" => $safId,
-                "waterDetails" => $waterDetail ?? null ,
+                "waterDetails" => $waterDetail ?? null,
                 "tradeDetails" => $tradeDetail ?? null
             ], "010102", "1.0", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "010102", "1.0", responseTime(), "POST", $request->deviceId);
+        }
+    }
+
+
+    public function applySafTcDetail(Request $request)
+    {
+        $request->validate([
+            'safId' => 'required'
+        ]);
+
+        try {
+            $user = authUser($request);
+            $user_id = $user->id;
+            $ulb_id = 2;
+
+            $saf = new PropActiveSaf();
+            $basicDetail = $saf->getSafDetail($request->safId);
+
+            $waterDetail = null;
+            $tradeDetail = null;
+
+            if ($basicDetail->water_conn_no != null) {
+                $water = new WaterSecondConsumer();
+                $waterDetail = $water->getDetailByConsumerNoforProperty($basicDetail->water_conn_no);
+            }
+
+            if ($basicDetail->trade_license_no != null) {
+                $mTrade = new TradeLicence();
+                $tradeDetail = $mTrade->getDetailsByLicenceNov2($basicDetail->trade_license_no);
+            }
+
+            $list = [
+                'BasicDetail' => $basicDetail,
+                'WaterDetail' => $waterDetail,
+                'TradeDetail' => $tradeDetail,
+            ];
+
+            return responseMsgs(true, "Saf Details", $list, "010102", "1.0", responseTime(), "POST", $request->deviceId);
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010102", "1.0", responseTime(), "POST", $request->deviceId);
         }
     }

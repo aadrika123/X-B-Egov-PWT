@@ -143,7 +143,7 @@ class  PropActiveSaf extends PropParamModel #Model
             'workflow_id' => $propActiveSafs->workflow_id,
             'current_role' => $propActiveSafs->current_role,
             'ulb_id' => $propActiveSafs->ulb_id,
-            
+
         ]);
     }
 
@@ -1131,6 +1131,15 @@ class  PropActiveSaf extends PropParamModel #Model
 
     public function getAmalgamateLogs()
     {
-        return $this->hasMany(SafAmalgamatePropLog::class,"saf_id","id")->get();
+        return $this->hasMany(SafAmalgamatePropLog::class, "saf_id", "id")->get();
+    }
+
+    public function getSafDetail($safId)
+    {
+        return PropActiveSaf::select('prop_active_safs.id as saf_if', 'prop_active_safs.saf_no', 'prop_active_safs_owners.owner_name', 'prop_active_safs_owners.mobile_no', 'prop_active_safs.prop_address', 'prop_active_safs.water_conn_no', 'prop_active_safs.trade_license_no')
+            ->join('prop_active_safs_owners', 'prop_active_safs_owners.saf_id', '=', 'prop_active_safs.id')
+            ->where('prop_active_safs.id', $safId)
+            ->where('prop_active_safs.status',1)
+            ->first();
     }
 }

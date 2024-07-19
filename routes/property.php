@@ -75,6 +75,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('saf/gb-apply', 'applyGbSaf');                                                          // Applying GB Saf (3)
 
     Route::post('saf/apply-by-tc', 'applySafTc'); 
+    Route::post('saf/apply-by-tc-detail', 'applySafTcDetail'); 
   });
 
   Route::controller(ActiveSafController::class)->group(function () {
