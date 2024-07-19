@@ -269,7 +269,7 @@ class WaterConsumerWfController extends Controller
 
         DB::beginTransaction();
         if ($req->action == 'forward') {
-            // $this->checkPostCondition($req->senderRoleId, $wfLevels, $waterConsumerActive);            // Check Post Next level condition
+            $this->checkPostCondition($req->senderRoleId, $wfLevels, $waterConsumerActive);            // Check Post Next level condition
             if ($waterConsumerActive->current_role == $wfLevels['JE']) {
                 $waterConsumerActive->is_field_verified = true;
             }
@@ -316,35 +316,23 @@ class WaterConsumerWfController extends Controller
 
         $refRole = Config::get("waterConstaint.ROLE-LABEL");
         switch ($senderRoleId) {
-            case $wfLevels['DA']:                                                                       // DA Condition
-                if ($application->payment_status != 1)
-                    throw new Exception("payment Not Fully paid");
-                break;
-            case $wfLevels['JE']:                                                                       // JE Coditon in case of site adjustment
-                if ($application->doc_status == false || $application->payment_status != 1)
-                    throw new Exception("Document Not Fully Verified or Payment in not Done!");
+            case $wfLevels['DA']:
                 if ($application->doc_upload_status == false) {
                     throw new Exception("Document Not Fully Uploaded");
+                }                                                                       // DA Condition
+                if ($application->doc_status == false)
+                    throw new Exception("Document Not Fully Verified");
+                break;
+            case $wfLevels['JE']:                                                                       // JE Coditon in case of site adjustment
+                if ($application->is_field_verified == false) {
+                    throw new Exception("Document Not Fully Uploaded or site inspection not done!");
                 }
                 $siteDetails = $mWaterSiteInspection->getSiteDetails($application->id)
                     ->where('order_officer', $refRole['JE'])
-                    ->where('payment_status', 1)
                     ->first();
                 if (!$siteDetails) {
                     throw new Exception("Site Not Verified!");
                 }
-                break;
-            case $wfLevels['SH']:                                                                       // SH conditional checking
-                if ($application->doc_status == false || $application->payment_status != 1)
-                    throw new Exception("Document Not Fully Verified or Payment in not Done!");
-                if ($application->doc_upload_status == false || $application->is_field_verified == false) {
-                    throw new Exception("Document Not Fully Uploaded or site inspection not done!");
-                }
-                break;
-            case $wfLevels['AE']:                                                                       // AE conditional checking
-                if ($application->payment_status != 1)
-                    throw new Exception(" Payment in not Done!");
-
                 break;
         }
     }
