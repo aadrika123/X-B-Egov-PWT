@@ -229,7 +229,6 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('reports/device-type/collection', 'deviceTypeCollection');
     });
 
-
     /**
      * | Created On:09-12-2022 
      * | Created by:Sandeep Bara
