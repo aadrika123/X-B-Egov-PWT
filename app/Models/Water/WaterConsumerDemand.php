@@ -32,7 +32,7 @@ class WaterConsumerDemand extends Model
      */
     public function getDemandBydemandIds($consumerId)
     {
-        
+
         $currrentQuareter = calculateQuarterStartDate(Carbon::now()->format("Y-m-d"));
         // dd($currrentQuareter);
         return WaterConsumerDemand::select(
@@ -564,5 +564,15 @@ class WaterConsumerDemand extends Model
         return WaterConsumerDemand::whereIn('id', $demandIds)
             ->where('status', 1)
             ->get();
+    }
+
+    public function getDeamandByID($applicationId)
+    {
+        return WaterConsumerDemand::select(
+            'id',
+            'is_full_paid'
+        )
+            ->where('consumer_id', $applicationId)
+            ->where('status', 1);
     }
 }
