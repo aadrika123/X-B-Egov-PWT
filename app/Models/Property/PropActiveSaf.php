@@ -133,7 +133,10 @@ class  PropActiveSaf extends PropParamModel #Model
             'assessment_type' => $req->assessmentType,
             'zone_mstr_id' => $req->zone,
             "water_conn_no" => $req->consumerNo ?? null,
-            "trade_license_no" => $req->licenseNo ?? null
+            "trade_license_no" => $req->licenseNo ?? null,
+            "prop_type_mstr_id" =>$req->propertyType,
+           "is_water_harvesting" => $req->isWaterHarvesting,
+            'rwh_date_from' => $req->harvestingDate ?? null
 
         ];
         $propActiveSafs = PropActiveSaf::create($reqs);                 // SAF No is Created Using Observer
@@ -1136,8 +1139,9 @@ class  PropActiveSaf extends PropParamModel #Model
 
     public function getSafDetail($safId)
     {
-        return PropActiveSaf::select('prop_active_safs.id as saf_if', 'prop_active_safs.saf_no', 'prop_active_safs_owners.owner_name', 'prop_active_safs_owners.mobile_no', 'prop_active_safs.prop_address', 'prop_active_safs.water_conn_no', 'prop_active_safs.trade_license_no')
+        return PropActiveSaf::select('prop_active_safs.id as saf_if', 'prop_active_safs.saf_no', 'prop_active_safs_owners.owner_name', 'prop_active_safs_owners.mobile_no', 'prop_active_safs.prop_address',"prop_active_safs.is_water_harvesting","prop_active_safs.rwh_date_from" ,'prop_active_safs.water_conn_no', 'prop_active_safs.trade_license_no','ref_prop_types.property_type')
             ->join('prop_active_safs_owners', 'prop_active_safs_owners.saf_id', '=', 'prop_active_safs.id')
+            ->leftjoin('ref_prop_types','ref_prop_types.id','=','prop_active_safs.prop_type_mstr_id')
             ->where('prop_active_safs.id', $safId)
             ->where('prop_active_safs.status',1)
             ->first();

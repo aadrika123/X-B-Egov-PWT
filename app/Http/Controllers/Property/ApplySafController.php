@@ -247,7 +247,10 @@ class ApplySafController extends Controller
             'ward' => 'required',
             'zone' => 'required',
             'consumerNo' => 'nullable',
-            'licenseNo' => 'nullable'
+            'licenseNo' => 'nullable',
+            'propertyType'=>'required|int',
+            'isWaterHarvesting'=>'nullable|bool',
+            'harvestingDate'=>'nullable|date'
         ]);
 
         try {
