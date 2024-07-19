@@ -297,19 +297,20 @@ class ApplySafController extends Controller
             $metaReqs['finisherRoleId'] = collect($finisherRoleId)['role_id'];
 
             $request->merge($metaReqs);
-            $this->_REQUEST = $request;
-
+            if ($request->consumerNo){
             $water = new WaterSecondConsumer();
             $waterDetail = $water->getDetailByConsumerNoforProperty($request->consumerNo);
             if (!$waterDetail) {
                 throw new Exception("Invalid consumer_no");
             }
+        } 
+        if ($request->licenseNo){
             $mTrade = new TradeLicence();
             $tradeDetail = $mTrade->getDetailsByLicenceNov2($request->licenseNo);
             if (!$tradeDetail) {
                 throw new Exception("Invalid license No");
             }
-
+        }
             DB::beginTransaction();
             // Store SAF data
             $createSaf = $saf->storeV1($request);
@@ -326,8 +327,8 @@ class ApplySafController extends Controller
                 "safNo" => $safNo,
                 "applyDate" => ymdToDmyDate($mApplyDate),
                 "safId" => $safId,
-                "waterDetails" => $waterDetail,
-                "tradeDetails" => $tradeDetail
+                "waterDetails" => $waterDetail ?? null ,
+                "tradeDetails" => $tradeDetail ?? null
             ], "010102", "1.0", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();

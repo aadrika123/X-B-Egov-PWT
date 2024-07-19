@@ -132,8 +132,8 @@ class  PropActiveSaf extends PropParamModel #Model
             'ward_mstr_id' => $req->ward,
             'assessment_type' => $req->assessmentType,
             'zone_mstr_id' => $req->zone,
-            "water_conn_no" => $req->consumerNo,
-            "trade_license_no" => $req->licenseNo
+            "water_conn_no" => $req->consumerNo ?? null,
+            "trade_license_no" => $req->licenseNo ?? null
 
         ];
         $propActiveSafs = PropActiveSaf::create($reqs);                 // SAF No is Created Using Observer
