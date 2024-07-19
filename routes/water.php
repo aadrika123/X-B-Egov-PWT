@@ -99,7 +99,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('application/payment/get-payment-history', 'getApplicationPaymentHistory');         // Admin/Consumer
         Route::post('consumer/offline-demand-payment', 'offlineDemandPayment');                         // Consumer
         Route::post('application/payment/offline/pay-connection-charge', 'offlineConnectionPayment');   // Admin
-        Route::post('consumer/demand/generate-payment-receipt', 'generateDemandPaymentReceipt');        // Admin/ Citizen          // use in consumer part
+        
         Route::post('consumer/online-demand-payment', 'initiateOnlineDemandPayment');                   // Citizen
         Route::post('citizen/payment-history', 'paymentHistory');                                       // Citizen  
         Route::post('consumer/water-user-charges', 'getWaterUserCharges');                              // Admin / Citizen
@@ -267,6 +267,7 @@ Route::controller(WaterPaymentController::class)->group(function () {
     Route::post('citizen/icici-payment', 'initiateOnlineDemandPayment');
     Route::post('citizen/demand/generate-payment-receipt', 'generateDemandPaymentReceipt');
     Route::post('citizen/get-payment-history', 'getConsumerPaymentHistory');
+    Route::post('consumer/demand/generate-payment-receipt', 'generateDemandPaymentReceipt');        // Admin/ Citizen          // use in consumer part
     // Route::post('')
 });
 
