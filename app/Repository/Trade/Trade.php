@@ -1834,7 +1834,7 @@ class Trade implements ITrade
                 "active_trade_licences.apply_from",
                 "active_trade_licences.valid_upto",
                 "owner.owner_name",
-                "owner.id as owner_id",
+                "owner.owner_id",
                 "owner.guardian_name",
                 "owner.mobile_no",
                 "owner.email_id",
@@ -1846,7 +1846,7 @@ class Trade implements ITrade
                                         STRING_AGG(guardian_name,',') AS guardian_name,
                                         STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
                                         STRING_AGG(email_id,',') AS email_id,
-                                        temp_id
+                                        temp_id,id as owner_id
                                     FROM active_trade_owners 
                                     WHERE is_active  =TRUE
                                     GROUP BY temp_id
