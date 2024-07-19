@@ -704,4 +704,24 @@ class WaterSecondConsumer extends Model
             ->where('water_second_consumers.status', 1)
             ->firstOrFail();
     }
+
+    public function getDetailByConsumerNoforProperty($consumerNo)
+    {
+        return WaterSecondConsumer::select(
+            'water_second_consumers.id',
+            'water_second_consumers.consumer_no',
+            'water_second_consumers.category',
+            DB::raw("string_agg(water_consumer_owners.applicant_name,',') as applicant_name"),
+            'water_property_type_mstrs.property_type as building_type'
+        )
+            ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_second_consumers.id')
+            ->leftjoin('water_property_type_mstrs','water_property_type_mstrs.id','=','water_second_consumers.property_type_id')
+            ->where('water_second_consumers.status', 1)
+            ->where('water_second_consumers.consumer_no', $consumerNo)
+            ->groupBy(
+                'water_second_consumers.consumer_no',
+                 'water_second_consumers.id',
+                 'water_property_type_mstrs.property_type'
+            )->first();
+    }
 }

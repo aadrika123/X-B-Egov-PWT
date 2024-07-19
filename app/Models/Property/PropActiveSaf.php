@@ -114,7 +114,36 @@ class  PropActiveSaf extends PropParamModel #Model
             'safNo' => $propActiveSafs->saf_no,
             'workflow_id' => $propActiveSafs->workflow_id,
             'current_role' => $propActiveSafs->current_role,
-            'ulb_id' => $propActiveSafs->ulb_id
+            'ulb_id' => $propActiveSafs->ulb_id,
+        ]);
+    }
+
+    public function storeV1($req)
+    {
+        $reqs = [
+            'prop_address' => $req->propAddress,
+            'user_id' => $req->userId,
+            'workflow_id' => $req->workflowId,
+            'ulb_id' => $req->ulbId,
+            'current_role' => $req->initiatorRoleId,
+            'initiator_role_id' => $req->initiatorRoleId,
+            'finisher_role_id' => $req->finisherRoleId,
+            'citizen_id' => $req->citizenId ?? null,
+            'ward_mstr_id' => $req->ward,
+            'assessment_type' => $req->assessmentType,
+            'zone_mstr_id' => $req->zone,
+            "water_conn_no" => $req->consumerNo ?? null,
+            "trade_license_no" => $req->licenseNo ?? null
+
+        ];
+        $propActiveSafs = PropActiveSaf::create($reqs);                 // SAF No is Created Using Observer
+        return response()->json([
+            'safId' => $propActiveSafs->id,
+            'safNo' => $propActiveSafs->saf_no,
+            'workflow_id' => $propActiveSafs->workflow_id,
+            'current_role' => $propActiveSafs->current_role,
+            'ulb_id' => $propActiveSafs->ulb_id,
+            
         ]);
     }
 
