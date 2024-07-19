@@ -3170,6 +3170,8 @@ class NewConnectionController extends Controller
                 "ulb_ward_masters.ward_name",
                 "charges.amount",
                 "wf_roles.role_name as current_role_name",
+                "water_second_consumers.payment_status as NewConnectionStatus",
+                "water_second_consumers.status",
                 DB::raw("'connection' AS type,
                                         water_approval_application_details.apply_date::date AS apply_date")
             )
@@ -3179,10 +3181,6 @@ class NewConnectionController extends Controller
                                         FROM water_approval_application_details 
                                         LEFT JOIN water_connection_charges 
                                             ON water_approval_application_details.id = water_connection_charges.application_id 
-                                            AND ( 
-                                                water_connection_charges.paid_status ISNULL  
-                                                OR water_connection_charges.paid_status= 0 
-                                            )  
                                             AND( 
                                                     water_connection_charges.status = TRUE
                                                     OR water_connection_charges.status ISNULL  
