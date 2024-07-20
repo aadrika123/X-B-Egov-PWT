@@ -803,6 +803,12 @@ class ActiveSafController extends Controller
                 'headerTitle' => 'Electricity & Water Details',
                 'data' => $electDetails
             ];
+
+            $docDetails = $this->generateDocDetails($data);   // Trait function to get Property Details
+            $docElement = [
+                'headerTitle' => "Received Doc Details ",
+                'data' => $docDetails
+            ];
             $jahirnama = $jahirnamaDoc->getJahirnamaBysafIdOrm($data->id)->first();
             $fullDetailsData['application_no'] = $data->saf_no;
             $fullDetailsData['apply_date'] = $data->application_date;
@@ -814,7 +820,7 @@ class ActiveSafController extends Controller
             $fullDetailsData['doc_verify_status'] = $data->doc_verify_status;
             $fullDetailsData['doc_upload_status'] = $data->doc_upload_status;
             $fullDetailsData['payment_status'] = $data->payment_status;
-            $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement, $propertyElement, $corrElement, $electElement]);
+            $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement, $propertyElement, $corrElement, $electElement,$docElement]);
             // Table Array
             // Owner Details
             $getOwnerDetails = $mPropActiveSafOwner->getOwnersBySafId($data->id);    // Model function to get Owner Details
