@@ -484,7 +484,7 @@ class WaterPaymentController extends Controller
             # Store the site inspection details
             $mWaterSiteInspection->storeInspectionDetails($request,  $waterDetails, $refRoleDetails);
             $mWaterSiteInspectionsScheduling->saveInspectionStatus($request);
-            $waterDetails->is_field_verified ==  true;
+            $waterDetails->is_field_verified =true;
 
             $waterDetails->save();
             $this->commit();
