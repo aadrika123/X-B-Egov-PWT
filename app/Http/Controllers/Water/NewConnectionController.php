@@ -181,6 +181,7 @@ class NewConnectionController extends Controller
 
             $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
                 ->whereIn('water_applications.current_role', $roleId)
+                ->where('water_applications.doc_upload_status', true)
                 // ->whereIn('water_approval_application_details.ward_id', $occupiedWards)
                 ->where('water_applications.is_escalate', false)
                 ->where('water_applications.parked', false)
@@ -260,25 +261,17 @@ class NewConnectionController extends Controller
             $ulbId = authUser($req)->ulb_id;
             $mDeviceId = $req->deviceId ?? "";
 
-            $workflowRoles = $this->getRoleIdByUserId($userId);
-            $roleId = $workflowRoles->map(function ($value) {                         // Get user Workflow Roles
-                return $value->wf_role_id;
-            });
-
-            $refWard = $mWfWardUser->getWardsByUserId($userId);
-            $wardId = $refWard->map(function ($value) {
-                return $value->ward_id;
-            });
+            $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
             $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
-                // ->whereIn('water_applications.ward_id', $wardId)
-                ->where('parked', true)
+                ->whereIn('water_applications.current_role', $roleId)
+                // ->whereIn('water_approval_application_details.ward_id', $occupiedWards)
+                ->where('water_applications.is_escalate', false)
+                ->where('water_applications.parked', true)
                 ->orderByDesc('water_applications.id')
                 ->get();
-
-            $filterWaterList = collect($waterList)->unique('id');
-            $filterWaterList = $filterWaterList->values();
+            $filterWaterList = collect($waterList)->unique('id')->values();
             return responseMsgs(true, "BTC Inbox List", remove_null($filterWaterList), "", 1.0, "560ms", "POST", $mDeviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", 010123, 1.0, "271ms", "POST", $mDeviceId);
