@@ -22,8 +22,7 @@ trait SafDetailsTrait
             ['displayString' => 'Zone', 'key' => 'zone', 'value' => ($data->zone_mstr_id == 1) ? 'Zone 1' : 'Zone 2', 'canBtc' => 'true', 'canEdit' => 'false'],
             ['displayString' => 'Property has Mobile Tower(s) ?', 'key' => 'isMobileTower', 'value' => ($data->is_mobile_tower == false) ? 'No' : 'Yes', 'canBtc' => 'true', 'canEdit' => 'true'],
             ['displayString' => 'Property has Hoarding Board(s) ?', 'key' => 'isHoardingBoard', 'value' => ($data->is_hoarding_board == false) ? 'No' : 'Yes', 'canBtc' => 'true', 'canEdit' => 'true'],
-            ['displayString' => 'Property has Rain Water Harvesting ?', 'key' => 'isWaterHarvesting', 'value' => ($data->is_water_harvesting == false) ? 'No' : 'Yes', 'canBtc' => 'true', 'canEdit' => 'true'],
-            ['displayString' => 'AppliedBy', 'key' => 'AppliedBy', 'value' => $data->applied_by]
+            ['displayString' => 'Property has Rain Water Harvesting ?', 'key' => 'isWaterHarvesting', 'value' => ($data->is_water_harvesting == false) ? 'No' : 'Yes', 'canBtc' => 'true', 'canEdit' => 'true']
         ]);
     }
 
