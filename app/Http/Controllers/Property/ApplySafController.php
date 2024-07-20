@@ -250,7 +250,16 @@ class ApplySafController extends Controller
             'licenseNo' => 'nullable',
             'propertyType' => 'required|int',
             'isWaterHarvesting' => 'nullable|bool',
-            'harvestingDate' => 'nullable|date'
+            'harvestingDate' => 'nullable|date',
+            'isApplicationFormDoc'=>'nullable|boolean',
+            'isSaleDeedDoc'=>'nullable|boolean',
+            'isLayoutSactionMapDoc'=>'nullable|boolean',
+            'isNaOrderDoc'=>'nullable|boolean',
+            'isNamunaDDoc'=>'nullable|boolean',
+            'isOthersDoc'=>'nullable|boolean',
+            'isMeasurementDoc'=>'nullable|boolean',
+            'isPhotoDoc'=>'nullable|boolean',
+            'isIdProofDoc'=>'nullable|boolean'
         ]);
 
         try {
