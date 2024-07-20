@@ -162,6 +162,7 @@ return [
     ],
     "APP_APPLY_FROM" => [
         "1" => "Online",
+        "2" => "Citizen",
     ],
     "REF_USER_TYPE" => [
         "1" => "Citizen",

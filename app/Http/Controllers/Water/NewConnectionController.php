@@ -673,7 +673,7 @@ class NewConnectionController extends Controller
 
             $this->begin();
             # if application is not applied by citizen 
-            if ($mWaterApplication->apply_from != $refApplyFrom['1']) {
+            if ($mWaterApplication->user_type != $refApplyFrom['2']) {
                 $mWaterApplication->current_role = $mWaterApplication->initiator_role_id;
                 $mWaterApplication->parked = true;                          //  Pending Status true
                 $mWaterApplication->doc_upload_status = false;              //  Docupload Status false
