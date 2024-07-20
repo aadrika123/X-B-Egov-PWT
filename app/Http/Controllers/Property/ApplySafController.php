@@ -297,6 +297,7 @@ class ApplySafController extends Controller
 
             // Prepare meta request data
             $metaReqs['workflowId'] = $ulbWorkflowId->id;
+            $metaReqs['applyDate'] = $mApplyDate;
             $metaReqs['assessmentType'] = "New Assessment";
             $metaReqs['appliedBy'] = "TC";
             $metaReqs['ulbId'] = $ulb_id;

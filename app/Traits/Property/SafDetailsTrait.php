@@ -51,6 +51,25 @@ trait SafDetailsTrait
     }
 
     /**
+     * /Generating doc detail
+     */
+
+     public function generateDocDetails($data)
+    {
+        return new Collection([
+            ['displayString' => 'isApplicationFormDoc', 'key' => 'isApplicationFormDoc', 'value' => $data->is_application_form_doc],
+            ['displayString' => 'isSaleDeedDoc', 'key' => 'isSaleDeedDoc', 'value' => $data->is_sale_deed_doc],
+            ['displayString' => 'isLayoutSactionMapDoc', 'key' => 'isLayoutSactionMapDoc', 'value' => $data->is_layout_section_map_doc],
+            ['displayString' => 'isNaOrderDoc', 'key' => 'isNaOrderDoc', 'value' => $data->is_na_order_doc],
+            ['displayString' => 'isNamunaDDoc', 'key' => 'isNamunaDDoc', 'value' => $data->is_namuna_doc],
+            ['displayString' => 'isOthersDoc', 'key' => 'isOthersDoc', 'value' => $data->is_other_doc],
+            ['displayString' => 'isMeasurementDoc', 'key' => 'isMeasurementDoc', 'value' => $data->is_measurement_doc],
+            ['displayString' => 'isPhotoDoc', 'key' => 'isPhotoDoc', 'value' => $data->is_photo_doc],
+            ['displayString' => 'isIdProofDoc', 'key' => 'isIdProofDoc', 'value' => $data->is_id_proof_doc],
+            
+        ]);
+    }
+    /**
      * | Generate Corresponding Details
      */
     public function generateCorrDtls($data)

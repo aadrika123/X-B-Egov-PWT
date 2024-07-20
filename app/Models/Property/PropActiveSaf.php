@@ -93,7 +93,7 @@ class  PropActiveSaf extends PropParamModel #Model
             'initiator_role_id' => $req->initiatorRoleId,
             'finisher_role_id' => $req->finisherRoleId,
             'citizen_id' => $req->citizenId ?? null,
-
+            'application_date' =>  $req->applyDate,
             'building_name' => $req->buildingName,
             'street_name' => $req->streetName,
             'location' => $req->location,
