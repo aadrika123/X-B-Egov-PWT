@@ -136,8 +136,8 @@ class  PropActiveSaf extends PropParamModel #Model
             "trade_license_no" => $req->licenseNo ?? null,
             "prop_type_mstr_id" =>$req->propertyType,
            "is_water_harvesting" => $req->isWaterHarvesting,
-            'rwh_date_from' => $req->harvestingDate ?? null
-
+            'rwh_date_from' => $req->harvestingDate ?? null,
+            'applied_by' => $req->appliedBy
         ];
         $propActiveSafs = PropActiveSaf::create($reqs);                 // SAF No is Created Using Observer
         return response()->json([
