@@ -137,7 +137,16 @@ class  PropActiveSaf extends PropParamModel #Model
             "prop_type_mstr_id" =>$req->propertyType,
            "is_water_harvesting" => $req->isWaterHarvesting,
             'rwh_date_from' => $req->harvestingDate ?? null,
-            'applied_by' => $req->appliedBy
+            'applied_by' => $req->appliedBy,
+            'is_application_form_doc' => $req->isApplicationFormDoc,
+            'is_sale_deed_doc' => $req->isSaleDeedDoc,
+            'is_layout_section_map_doc'=> $req->isLayoutSactionMapDoc,
+            'is_na_order_doc'=> $req->isNaOrderDoc,
+            'is_namuna_doc'=> $req->isNamunaDDoc,
+            'is_other_doc'=> $req->isOthersDoc,
+            'is_measurement_doc'=> $req->isMeasurementDoc,
+            'is_photo_doc'=> $req->isPhotoDoc,
+            'is_id_proof_doc'=> $req->isIdProofDoc
         ];
         $propActiveSafs = PropActiveSaf::create($reqs);                 // SAF No is Created Using Observer
         return response()->json([
