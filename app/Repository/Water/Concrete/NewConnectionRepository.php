@@ -467,51 +467,26 @@ class NewConnectionRepository implements iNewConnection
         $mWaterSiteInspection = new WaterSiteInspection();
         $refRole = Config::get("waterConstaint.ROLE-LABEL");
         switch ($senderRoleId) {
-            case $wfLevels['BO']:                                                                       // Back Office Condition
-                if ($application->doc_upload_status == false)
-                    throw new Exception("Document Not Fully Uploaded or Payment in not Done!");
-                break;
-            case $wfLevels['DA']:                                                                       // DA Condition
+            case $wfLevels['DA']:
+                if ($application->doc_upload_status == false) {
+                    throw new Exception("Document Not Fully Uploaded");
+                }                                                                       // DA Condition
                 if ($application->doc_status == false)
                     throw new Exception("Document Not Fully Verified");
                 break;
             case $wfLevels['JE']:                                                                       // JE Coditon in case of site adjustment
-                if ($application->doc_status == false)
-                    throw new Exception("Document Not Fully Verified or Payment in not Done!");
-                if ($application->doc_upload_status == false) {
-                    throw new Exception("Document Not Fully Uploaded");
+                if ($application->is_field_verified == false) {
+                    throw new Exception("site inspection not done!");
                 }
                 $siteDetails = $mWaterSiteInspection->getSiteDetails($application->id)
-                    // ->where('order_officer', $refRole['JE'])
-                    // ->where('payment_status', 1)
+                    ->where('order_officer', $refRole['JE'])
                     ->first();
                 if (!$siteDetails) {
                     throw new Exception("Site Not Verified!");
                 }
                 break;
-            case $wfLevels['SH']:                                                                       // SH conditional checking
-                if ($application->doc_status == false || $application->payment_status != 1)
-                    throw new Exception("Document Not Fully Verified or Payment in not Done!");
-                if ($application->doc_upload_status == false || $application->is_field_verified == false) {
-                    throw new Exception("Document Not Fully Uploaded or site inspection not done!");
-                }
-                break;
-            case $wfLevels['AE']:                                                                       // AE conditional checking
-                if ($application->doc_status == false || $application->payment_status != 1)
-                    throw new Exception("Document Not Fully Verified or Payment in not Done!");
-                if ($application->doc_upload_status == false || $application->is_field_verified == false) {
-                    throw new Exception("Document Not Fully Uploaded or site inspection not done!");
-                }
-                $siteDetails = $mWaterSiteInspection->getSiteDetails($application->id)
-                    ->where('order_officer', $refRole['AE'])
-                    ->first();
-                if (is_null($siteDetails)) {
-                    throw new Exception("Technical Inspection is not done!");
-                }
-                break;
         }
     }
-
 
     /**
      * |------------------------------ Approval Rejection Water -------------------------------|
@@ -702,7 +677,7 @@ class NewConnectionRepository implements iNewConnection
         # DataArray
         $basicDetails = $this->getBasicDetails($applicationDetails);
         $propertyDetails = $this->getpropertyDetails($applicationDetails);
-        $electricDetails = $this->getElectricDetails($applicationDetails);
+        // $electricDetails = $this->getElectricDetails($applicationDetails);
 
         $firstView = [
             'headerTitle' => 'Basic Details',
@@ -712,11 +687,11 @@ class NewConnectionRepository implements iNewConnection
             'headerTitle' => 'Applicant Property Details',
             'data' => $propertyDetails
         ];
-        $thirdView = [
-            'headerTitle' => 'Applicant Electricity Details',
-            'data' => $electricDetails
-        ];
-        $fullDetailsData['fullDetailsData']['dataArray'] = new collection([$firstView, $secondView, $thirdView]);
+        // $thirdView = [
+        //     'headerTitle' => 'Applicant Electricity Details',
+        //     'data' => $electricDetails
+        // ];
+        $fullDetailsData['fullDetailsData']['dataArray'] = new collection([$firstView, $secondView]);    // $thirdView
 
         # CardArray
         $cardDetails = $this->getCardDetails($applicationDetails, $ownerDetails);
@@ -785,10 +760,10 @@ class NewConnectionRepository implements iNewConnection
             ['displayString' => 'Property Type',      'key' => 'PropertyType',        'value' => $collectionApplications->property_type],
             ['displayString' => 'Connection Through', 'key' => 'ConnectionThrough',   'value' => $collectionApplications->connection_through],
             ['displayString' => 'Category',           'key' => 'Category',            'value' => $collectionApplications->category],
-            ['displayString' => 'Flat Count',         'key' => 'FlatCount',           'value' => $collectionApplications->flat_count],
-            ['displayString' => 'Pipeline Type',      'key' => 'PipelineType',        'value' => $collectionApplications->pipeline_type],
-            ['displayString' => 'Apply From',         'key' => 'ApplyFrom',           'value' => $collectionApplications->apply_from],
-            ['displayString' => 'Apply Date',         'key' => 'ApplyDate',           'value' => $collectionApplications->apply_date]
+            ['displayString' => 'Apply From',         'key' => 'ApplyFrom',           'value' => $collectionApplications->user_type],
+            ['displayString' => 'Apply Date',         'key' => 'ApplyDate',           'value' => $collectionApplications->apply_date],
+            ['displayString' => 'Ward Number',        'key' => 'WardNumber',          'value' => $collectionApplications->ward_name],
+            ['displayString' => 'Zone',               'key' => 'zone',                'value' => $collectionApplications->zone_name]
         ]);
     }
 
@@ -918,7 +893,7 @@ class NewConnectionRepository implements iNewConnection
             ->where('charge_category', '!=', 'Site Inspection')                                     # Static
             ->first();
         $waterOwner['ownerDetails'] = $mWaterConsumerOwner->getConsumerOwner($approvedWater['consumer_id'])->get();
-        $water = []; 
+        $water = [];
         if ($approvedWater['area_sqft'] != null) {
             $water['calcullation']      = $mWaterParamConnFee->getCallParameter($approvedWater['property_type_id'], $approvedWater['area_sqft'])->first();
         }

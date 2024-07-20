@@ -462,7 +462,7 @@ class WaterPaymentController extends Controller
             $mWaterApplicants       = new WaterApplicant();
             $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
 
-            $connectionCatagory = Config::get('waterConstaint.CHARGE_CATAGORY');
+            $connectionCatagory = Config::get('waterConstaint.CHARGE_CATAGORY');    
             $waterDetails = WaterApplication::findOrFail($request->applicationId);
 
             # Check Related Condition
@@ -484,6 +484,9 @@ class WaterPaymentController extends Controller
             # Store the site inspection details
             $mWaterSiteInspection->storeInspectionDetails($request,  $waterDetails, $refRoleDetails);
             $mWaterSiteInspectionsScheduling->saveInspectionStatus($request);
+            $waterDetails->is_field_verified =true;
+
+            $waterDetails->save();
             $this->commit();
             return responseMsgs(true, "Site Inspection Done!", $request->applicationId, "", "01", "ms", "POST", "");
         } catch (Exception $e) {
