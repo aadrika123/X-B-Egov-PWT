@@ -3016,14 +3016,14 @@ class NewConnectionController extends Controller
         if ($validated->fails())
             return validationError($validated);
         try {
-            $holding    = $request->PropertyNo;
-            $mPropPerty = new PropProperty();
-            $mPropOwner = new PropOwner();
+            $holding           = $request->PropertyNo;
+            $mPropPerty        = new PropProperty();
+            $mPropOwner        = new PropOwner();
             $mWfActiveDocument = new WfActiveDocument();
-            $mActiveSafs = new PropActiveSaf();
-            $mPropSaf = new PropSaf();
-            $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
-            $holdingDetails = $mPropPerty->getPropert($holding);
+            $mActiveSafs       = new PropActiveSaf();
+            $mPropSaf          = new PropSaf();
+            $moduleId          = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $holdingDetails    = $mPropPerty->getPropert($holding);
             if (!$holdingDetails) {
                 throw new Exception('holding not found !');
             }
@@ -3044,7 +3044,7 @@ class NewConnectionController extends Controller
                 return $value;
             });
             $holdingDetails['ownerDetails'] = $holdingOwnerDeails;
-            $holdingDetails['docDetails'] = $returnData;
+            $holdingDetails['docDetails']   = $returnData;
             return responseMsgs(true, "Property Details!", remove_null($holdingDetails), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
