@@ -20,6 +20,7 @@ use App\Models\Property\PropApartmentDtl;
 use App\Models\Property\PropFloor;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
+use App\Models\Property\PropSaf;
 use App\Models\UlbWardMaster;
 use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplication;
@@ -673,7 +674,7 @@ class NewConnectionController extends Controller
 
             $this->begin();
             # if application is not applied by citizen 
-            if ($mWaterApplication->user_type != $refApplyFrom['2']) {
+            if ($mWaterApplication->apply_from != $refApplyFrom['1']) {
                 $mWaterApplication->current_role = $mWaterApplication->initiator_role_id;
                 $mWaterApplication->parked = true;                          //  Pending Status true
                 $mWaterApplication->doc_upload_status = false;              //  Docupload Status false
@@ -3018,12 +3019,32 @@ class NewConnectionController extends Controller
             $holding    = $request->PropertyNo;
             $mPropPerty = new PropProperty();
             $mPropOwner = new PropOwner();
+            $mWfActiveDocument = new WfActiveDocument();
+            $mActiveSafs = new PropActiveSaf();
+            $mPropSaf = new PropSaf();
+            $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $holdingDetails = $mPropPerty->getPropert($holding);
             if (!$holdingDetails) {
                 throw new Exception('holding not found !');
             }
+            $safID = $holdingDetails->saf_id;
+            $safDetails = $mActiveSafs->getSafNo($safID);
+            if (!$safDetails)
+                $safDetails = $mPropSaf->find($safID);
+            if (!$safDetails)
+                throw new Exception("Application Not Found for this application Id");
+
+            $workflowId = $safDetails->workflow_id;
+
             $holdingOwnerDeails = $mPropOwner->getOwnerByPropId($holdingDetails->id);
+            $documents = $mWfActiveDocument->getPropDocsByAppNo($safID, $workflowId, $moduleId);
+            $returnData = collect($documents)->map(function ($value) {                          // Static
+                $path =  $this->readDocumentPath($value->ref_doc_path);
+                $value->doc_path = !empty(trim($value->ref_doc_path)) ? $path : null;
+                return $value;
+            });
             $holdingDetails['ownerDetails'] = $holdingOwnerDeails;
+            $holdingDetails['docDetails'] = $returnData;
             return responseMsgs(true, "Property Details!", remove_null($holdingDetails), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");

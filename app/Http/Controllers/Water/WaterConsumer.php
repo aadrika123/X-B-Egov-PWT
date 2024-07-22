@@ -823,7 +823,7 @@ class WaterConsumer extends Controller
                 'status'            => 2                                                    // Static
             ];
             // $mWaterConsumerCharge->saveConsumerCharges($metaRequest, $request->consumerId, $refChargeList['2']);
-            // $mWaterSecondConsumer->dissconnetConsumer($request->consumerId, $metaRequest['status']);
+            $mWaterSecondConsumer->dissconnetConsumer($request->consumerId, $metaRequest['status']);
             #save Document
             $this->uploadHoardDocument($deactivatedDetails['id'], $mDocuments, $request->auth);
             $mWaterConsumerActiveRequest->updateUploadStatus($deactivatedDetails, true);
