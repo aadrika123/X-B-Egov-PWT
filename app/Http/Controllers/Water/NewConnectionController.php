@@ -21,6 +21,7 @@ use App\Models\Property\PropFloor;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSaf;
+use App\Models\TradeLicence;
 use App\Models\UlbWardMaster;
 use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplication;
@@ -3012,7 +3013,7 @@ class NewConnectionController extends Controller
             [
                 'PropertyNo'   => 'required',
                 'consumerId'   => 'nullable',
-                'tradeLisence' => 'nullbale'  
+                'licenseNo' => 'nullable'
             ]
         );
         if ($validated->fails())
@@ -3028,11 +3029,13 @@ class NewConnectionController extends Controller
             $refConsumerId          = $request->consumerId;
             $moduleId          = Config::get('module-constants.PROPERTY_MODULE_ID');
             $refConnectionName      = Config::get('waterConstaint.METER_CONN_TYPE');
+            #get hoding details 
             $holdingDetails    = $mPropPerty->getPropert($holding);
             if (!$holdingDetails) {
                 throw new Exception('holding not found !');
             }
             $safID = $holdingDetails->saf_id;
+            #get saf details 
             $safDetails = $mActiveSafs->getSafNo($safID);
             if (!$safDetails)
                 $safDetails = $mPropSaf->find($safID);
@@ -3040,8 +3043,9 @@ class NewConnectionController extends Controller
                 throw new Exception("Application Not Found for this application Id");
 
             $workflowId = $safDetails->workflow_id;
-
-            $holdingOwnerDeails = $mPropOwner->getOwnerByPropId($holdingDetails->id);
+            #get owner details 
+            $holdingOwnerDeails = $mPropOwner->getPropOwners($holdingDetails->id);
+            #Fecth All Documents 
             $documents = $mWfActiveDocument->getPropDocsByAppNo($safID, $workflowId, $moduleId);
             # meter Details 
             $refMeterData = $mWaterConsumerMeter->getMeterDetailsByConsumerIdV2($refConsumerId)->first();
@@ -3056,23 +3060,33 @@ class NewConnectionController extends Controller
                         break;
                 }
             }
+            #Doc Details From Property
             $returnData = collect($documents)->map(function ($value) {
                 $path =  $this->readDocumentPath($value->ref_doc_path);
                 $value->doc_path = !empty(trim($value->ref_doc_path)) ? $path : null;
                 return $value;
             });
+            #Get Trade License Details 
+            if ($request->licenseNo) {
+                $mTrade = new TradeLicence();
+                $tradeDetail = $mTrade->getDetailsByLicenceNov2($request->licenseNo);
+                if (!$tradeDetail) {
+                    throw new Exception("Invalid license No");
+                }
+            }
+
             $holdingDetails['ownerDetails'] = $holdingOwnerDeails;
             $holdingDetails['docDetails']   = $returnData;
             $holdingDetails['connectionName'] = $connectionName ?? "";
             $holdingDetails['ConnectionTypeName'] = $connectionName ?? "";
             $holdingDetails['meterDetails'] = array($refMeterData);
+            $holdingDetails['tradeDetail'] = array($tradeDetail);
             return responseMsgs(true, "Property Details!", remove_null($holdingDetails), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
-
-
+   
     public function getPropUsageTypes($request, $id)
     {
         $mPropActiveSafsFloor   = new PropActiveSafsFloor();
