@@ -3012,7 +3012,7 @@ class NewConnectionController extends Controller
             [
                 'PropertyNo'   => 'required',
                 'consumerId'   => 'nullable',
-                'tradeLisence' => 'nullbale'
+                'tradeLisence' => 'nullbale'  
             ]
         );
         if ($validated->fails())
@@ -3065,7 +3065,7 @@ class NewConnectionController extends Controller
             $holdingDetails['docDetails']   = $returnData;
             $holdingDetails['connectionName'] = $connectionName ?? "";
             $holdingDetails['ConnectionTypeName'] = $connectionName ?? "";
-            $holdingDetails['meterDetails'] = $refMeterData;
+            $holdingDetails['meterDetails'] = array($refMeterData);
             return responseMsgs(true, "Property Details!", remove_null($holdingDetails), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
