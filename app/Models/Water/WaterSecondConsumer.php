@@ -708,9 +708,7 @@ class WaterSecondConsumer extends Model
     public function getDetailByConsumerNoforProperty($consumerNo)
     {
         return WaterSecondConsumer::select(
-            'water_second_consumers.id',
-            'water_second_consumers.consumer_no',
-            'water_second_consumers.category',
+            'water_second_consumers.*',
             DB::raw("string_agg(water_consumer_owners.applicant_name,',') as applicant_name"),
             'water_property_type_mstrs.property_type as building_type'
         )
