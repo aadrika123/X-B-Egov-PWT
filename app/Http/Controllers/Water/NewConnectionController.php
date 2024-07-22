@@ -3067,6 +3067,7 @@ class NewConnectionController extends Controller
                 return $value;
             });
             #Get Trade License Details 
+            $tradeDetail = [];
             if ($request->licenseNo) {
                 $mTrade = new TradeLicence();
                 $tradeDetail = $mTrade->getDetailsByLicenceNov2($request->licenseNo);
