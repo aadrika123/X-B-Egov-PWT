@@ -3010,7 +3010,9 @@ class NewConnectionController extends Controller
         $validated = Validator::make(
             $request->all(),
             [
-                'PropertyNo' => 'required',
+                'PropertyNo'   => 'required',
+                'consumerId'   => 'nullable',
+                'tradeLisence' => 'nullbale'
             ]
         );
         if ($validated->fails())
@@ -3022,7 +3024,10 @@ class NewConnectionController extends Controller
             $mWfActiveDocument = new WfActiveDocument();
             $mActiveSafs       = new PropActiveSaf();
             $mPropSaf          = new PropSaf();
+            $mWaterConsumerMeter    = new WaterConsumerMeter();
+            $refConsumerId          = $request->consumerId;
             $moduleId          = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $refConnectionName      = Config::get('waterConstaint.METER_CONN_TYPE');
             $holdingDetails    = $mPropPerty->getPropert($holding);
             if (!$holdingDetails) {
                 throw new Exception('holding not found !');
@@ -3038,13 +3043,29 @@ class NewConnectionController extends Controller
 
             $holdingOwnerDeails = $mPropOwner->getOwnerByPropId($holdingDetails->id);
             $documents = $mWfActiveDocument->getPropDocsByAppNo($safID, $workflowId, $moduleId);
-            $returnData = collect($documents)->map(function ($value) {                          // Static
+            # meter Details 
+            $refMeterData = $mWaterConsumerMeter->getMeterDetailsByConsumerIdV2($refConsumerId)->first();
+            if ($refMeterData) {
+                $refMeterData->ref_initial_reading = (float)($refMeterData->ref_initial_reading);
+                switch ($refMeterData['connection_type']) {
+                    case (1):
+                        $connectionName = $refConnectionName['1'];                                      // Meter 
+                        break;
+                    case (3):
+                        $connectionName = $refConnectionName['3'];                                      // Fixed - Non Meter
+                        break;
+                }
+            }
+            $returnData = collect($documents)->map(function ($value) {
                 $path =  $this->readDocumentPath($value->ref_doc_path);
                 $value->doc_path = !empty(trim($value->ref_doc_path)) ? $path : null;
                 return $value;
             });
             $holdingDetails['ownerDetails'] = $holdingOwnerDeails;
             $holdingDetails['docDetails']   = $returnData;
+            $holdingDetails['connectionName'] = $connectionName ?? "";
+            $holdingDetails['ConnectionTypeName'] = $connectionName ?? "";
+            $holdingDetails['meterDetails'] = $refMeterData;
             return responseMsgs(true, "Property Details!", remove_null($holdingDetails), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
