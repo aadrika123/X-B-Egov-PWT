@@ -713,13 +713,29 @@ class WaterSecondConsumer extends Model
             'water_property_type_mstrs.property_type as building_type'
         )
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_second_consumers.id')
-            ->leftjoin('water_property_type_mstrs','water_property_type_mstrs.id','=','water_second_consumers.property_type_id')
+            ->leftjoin('water_property_type_mstrs', 'water_property_type_mstrs.id', '=', 'water_second_consumers.property_type_id')
             ->where('water_second_consumers.status', 1)
             ->where('water_second_consumers.consumer_no', $consumerNo)
             ->groupBy(
                 'water_second_consumers.consumer_no',
-                 'water_second_consumers.id',
-                 'water_property_type_mstrs.property_type'
+                'water_second_consumers.id',
+                'water_property_type_mstrs.property_type'
             )->first();
+    }
+
+    /**
+     * | Get consumer 
+     */
+    public function getConsumerDtlsByID($consumerId)
+    {
+        return WaterSecondConsumer::select(
+            'water_second_consumers.id as consumerId',
+            'water_second_consumers.consumer_no',
+            'water_second_consumers.category',
+            'water_property_type_mstrs.property_type'
+        )
+            ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_second_consumers.property_type_id')
+            ->where('water_second_consumers.id', $consumerId)
+            ->where('water_second_consumers.status', 1);
     }
 }

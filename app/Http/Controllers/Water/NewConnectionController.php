@@ -3013,7 +3013,7 @@ class NewConnectionController extends Controller
             [
                 'PropertyNo'   => 'required',
                 'consumerId'   => 'nullable',
-                'licenseNo' => 'nullable'
+                'licenseNo'    => 'nullable'
             ]
         );
         if ($validated->fails())
@@ -3026,6 +3026,7 @@ class NewConnectionController extends Controller
             $mActiveSafs       = new PropActiveSaf();
             $mPropSaf          = new PropSaf();
             $mWaterConsumerMeter    = new WaterConsumerMeter();
+            $mWaterSecondConsumer   = new WaterSecondConsumer();
             $refConsumerId          = $request->consumerId;
             $moduleId          = Config::get('module-constants.PROPERTY_MODULE_ID');
             $refConnectionName      = Config::get('waterConstaint.METER_CONN_TYPE');
@@ -3075,19 +3076,23 @@ class NewConnectionController extends Controller
                     throw new Exception("Invalid license No");
                 }
             }
-
+            $refConsumer = $mWaterSecondConsumer->getConsumerDtlsByID($refConsumerId)->first();
+            if (!$refConsumer) {
+                throw new Exception("Consumer Not Found!");
+            }
             $holdingDetails['ownerDetails'] = $holdingOwnerDeails;
             $holdingDetails['docDetails']   = $returnData;
             $holdingDetails['connectionName'] = $connectionName ?? "";
             $holdingDetails['ConnectionTypeName'] = $connectionName ?? "";
             $holdingDetails['meterDetails'] = array($refMeterData);
             $holdingDetails['tradeDetail'] = array($tradeDetail);
+            $holdingDetails['ConsumerDetails'] = $refConsumer;
             return responseMsgs(true, "Property Details!", remove_null($holdingDetails), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
-   
+
     public function getPropUsageTypes($request, $id)
     {
         $mPropActiveSafsFloor   = new PropActiveSafsFloor();
