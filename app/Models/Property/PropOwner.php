@@ -104,7 +104,8 @@ class PropOwner extends PropParamModel #Model
                 'prop_owners.is_specially_abled',
                 'ulb_ward_masters.ward_name',
                 'zone_masters.zone_name',
-                'prop_properties.prop_address'
+                'prop_properties.prop_address',
+                'prop_properties.holding_no',
             )
             ->join('prop_properties', 'prop_properties.id', 'prop_owners.property_id')
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
