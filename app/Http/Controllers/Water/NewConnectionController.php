@@ -3028,6 +3028,7 @@ class NewConnectionController extends Controller
             $mWaterConsumerMeter    = new WaterConsumerMeter();
             $mWaterSecondConsumer   = new WaterSecondConsumer();
             $refConsumerId          = $request->consumerId;
+            $workflowId = null;
             $moduleId          = Config::get('module-constants.PROPERTY_MODULE_ID');
             $refConnectionName      = Config::get('waterConstaint.METER_CONN_TYPE');
             #get hoding details 
@@ -3040,14 +3041,15 @@ class NewConnectionController extends Controller
             $safDetails = $mActiveSafs->getSafNo($safID);
             if (!$safDetails)
                 $safDetails = $mPropSaf->find($safID);
-            if (!$safDetails)
-                throw new Exception("Application Not Found for this application Id");
 
-            $workflowId = $safDetails->workflow_id;
-            #get owner details 
-            $holdingOwnerDeails = $mPropOwner->getPropOwners($holdingDetails->id);
+            if ($safDetails != null) {
+                $workflowId = $safDetails->workflow_id;
+            }
             #Fecth All Documents 
             $documents = $mWfActiveDocument->getPropDocsByAppNo($safID, $workflowId, $moduleId);
+            #get owner details 
+            $holdingOwnerDeails = $mPropOwner->getPropOwners($holdingDetails->id);
+
             # meter Details 
             $refMeterData = $mWaterConsumerMeter->getMeterDetailsByConsumerIdV2($refConsumerId)->first();
             if ($refMeterData) {

@@ -50,9 +50,13 @@ class WaterConsumerActiveRequest extends Model
      */
     public function getRequestByConId($consumerId)
     {
-        return WaterConsumerActiveRequest::where('consumer_id', $consumerId)
-            ->where('status', 1)
-            ->orderByDesc('id');
+        return WaterConsumerActiveRequest::select(
+            'water_consumer_charge_categories.charge_category'
+        )
+            ->join('water_consumer_charge_categories','water_consumer_charge_categories.id','water_consumer_active_requests.charge_catagory_id')
+            ->where('water_consumer_active_requests.consumer_id', $consumerId)
+            ->where('water_consumer_active_requests.status', 1)
+            ->orderByDesc('water_consumer_active_requests.id');
     }
 
     /**

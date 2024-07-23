@@ -808,7 +808,6 @@ class WaterConsumer extends Controller
                 'status'            => 2                                                    // Static
             ];
             // $mWaterConsumerCharge->saveConsumerCharges($metaRequest, $request->consumerId, $refChargeList['2']);
-            // $mWaterSecondConsumer->dissconnetConsumer($request->consumerId, $metaRequest['status']);
             #save Document
             $this->uploadHoardDocument($deactivatedDetails['id'], $mDocuments, $request->auth);
             $mWaterConsumerActiveRequest->updateUploadStatus($deactivatedDetails, true);
@@ -884,7 +883,7 @@ class WaterConsumer extends Controller
     }
 
     /**
-     * | Check the condition before appling for deactivation
+     * | Check the condition before applying for citizen Request
      * | @param
      * | @var 
         | Not Working
@@ -902,23 +901,26 @@ class WaterConsumer extends Controller
         $refUserType                    = Config::get('waterConstaint.REF_USER_TYPE');
 
         $refConsumerDetails = $mWaterSecondConsumer->getConsumerDetails($consumerId)->first();
-        $pendingDemand      = $mWaterConsumerDemand->getConsumerDemand($consumerId);
-        $firstPendingDemand = collect($pendingDemand)->first();
+        // if ($request->requestType == 2) {
+        //     $pendingDemand      = $mWaterConsumerDemand->getConsumerDemand($consumerId);
+        //     $firstPendingDemand = collect($pendingDemand)->first();
 
-        if (isset($firstPendingDemand)) {
-            throw new Exception("There are unpaid pending demand!");
-        }
-        if (isset($request->ulbId) && $request->ulbId != $refConsumerDetails->ulb_id) {
-            throw new Exception("Ulb not matched according to consumer connection!");
-        }
-        // if ($refConsumerDetails->user_type == $refUserType['1'] && $user->id != $refConsumerDetails->user_id) {
-        //     throw new Exception("You are not the autherised user who filled before the connection!");
+        //     if (isset($firstPendingDemand)) {
+        //         throw new Exception("There are unpaid pending demand!");
+        //     }
         // }
-        $activeReq = $mWaterConsumerActiveRequest->getRequestByConId($consumerId)->first();
-        if ($activeReq) {
-            // throw new Exception("There are other request applied for respective consumer connection!");
-            throw new Exception("Already Disconnection Applied");
-        }
+
+        // if (isset($request->ulbId) && $request->ulbId != $refConsumerDetails->ulb_id) {
+        //     throw new Exception("Ulb not matched according to consumer connection!");
+        // }
+        // // if ($refConsumerDetails->user_type == $refUserType['1'] && $user->id != $refConsumerDetails->user_id) {
+        // //     throw new Exception("You are not the autherised user who filled before the connection!");
+        // // }
+        // $activeReq = $mWaterConsumerActiveRequest->getRequestByConId($consumerId)->first();
+        // if ($activeReq) {
+        //     // throw new Exception("There are other request applied for respective consumer connection!");
+        //     throw new Exception("Already $activeReq->charge_category Applied");
+        // }
         return [
             "consumerDetails" => $refConsumerDetails
         ];
