@@ -541,7 +541,7 @@ class HoldingTaxController extends Controller
 
             $postPropPayment->_propCalculation = $propCalculation;
             // Transaction is beginning in Prop Payment Class
-            $postPropPayment->postPayment();
+            $postPropPayment->postPayment($req);
             DB::commit();
             DB::connection("pgsql_master")->commit();
 
