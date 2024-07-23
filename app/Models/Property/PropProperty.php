@@ -40,7 +40,7 @@ class PropProperty extends  PropParamModel #Model
     // Get SAf id by Prop Id
     public function getSafByPropId($propId)
     {
-        return PropProperty::select('saf_id')
+        return PropProperty::select('saf_id','assessment_type')
             ->where('id', $propId)
             ->first();
     }
