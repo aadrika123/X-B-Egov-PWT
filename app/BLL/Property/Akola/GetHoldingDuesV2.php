@@ -171,7 +171,8 @@ class GetHoldingDuesV2
 
         if ($grandTaxes['balance'] <= 0)
             $paymentStatus = 1;
-
+        $demand["safApproved"] = $this->_propSaf->saf_approved_date??"";
+        $demand["safId"] = $this->_propSaf->id??"";
         $demand['isSingleManArmedForce'] = $this->_isSingleManArmedForce;
         $demand['isMobileTower']         = $this->_isMobileTower;
         $demand['fromFyear'] = collect($demandList)->first()['fyear'] ?? "";

@@ -47,6 +47,9 @@ class Calculate2PercPenalty
                 }
                 $uptoDate = new Carbon($uptoYear . "-09-01");
                 $noOfPenalMonths = $uptoDate->diffInMonths($now);
+                if($uptoDate->greaterThan($now)){
+                    $noOfPenalMonths = 0;
+                }
             }
             if (!$demand->is_old) {
                 list($fromYear, $uptoYear) = explode("-", $demand->fyear);
@@ -56,6 +59,9 @@ class Calculate2PercPenalty
                 $uptoDate = new Carbon($uptoYear . "-04-01");
                 // $now = Carbon::now()->firstOfMonth()->format("Y-m-d");
                 $noOfPenalMonths = $uptoDate->diffInMonths($now) + 1;
+                if($uptoDate->greaterThan($now)){
+                    $noOfPenalMonths = 0;
+                }
             }
 
             if (!$demand->is_old &&  $prop_type_mstr_id == 4 && $demand->created_at) {
@@ -89,6 +95,7 @@ class Calculate2PercPenalty
         // if($this->_assesmentType==Config::get("PropertyConstaint.ASSESSMENT-TYPE.1") && $this->_propSaf && $demand->fyear <= getFY($this->_propSaf->saf_approved_date) && getFY($demand->created_at)<getFY()) {
         //     $penalAmt =0;
         // }
+        $demand->noOfPenalMonths = $noOfPenalMonths;
         $demand->monthlyPenalty = roundFigure($penalAmt);
     }
 
