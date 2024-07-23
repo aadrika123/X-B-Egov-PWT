@@ -165,7 +165,6 @@ class GeneratePaymentReceiptV2
                 $demandsList = $this->_mPropDemands->getDemandsListByIds($demandIds);
                 $this->_GRID['penaltyRebates'] = $this->_mPropPenaltyRebates->getPenaltyRebatesHeads($trans->id, "Saf");
             }
-
             $this->_GRID['arrearPenalty'] = collect($this->_GRID['penaltyRebates'])->where('head_name', 'Monthly Penalty')->first()->amount ?? 0;
             $this->_GRID['arrearPenaltyRebate'] = collect($this->_GRID['penaltyRebates'])->where('head_name', 'Shasti Abhay Yojana')->where("is_rebate", true)->first()->amount ?? 0;
             $this->_GRID['quarterlyRebates'] = collect($this->_GRID['penaltyRebates'])->whereIn('head_name', ['First Quieter Rebate', 'Second Quieter Rebate', 'Third Quieter Rebate', 'Forth Quieter Rebate'])->where("is_rebate", true)->first()->amount ?? 0;

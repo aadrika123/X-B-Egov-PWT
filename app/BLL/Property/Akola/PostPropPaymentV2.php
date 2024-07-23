@@ -347,6 +347,7 @@ class PostPropPaymentV2
                 "paid_light_cess" => $paidTaxes->paidLightCess,
                 "paid_major_building" => $paidTaxes->paidMajorBuilding,
                 "paid_open_ploat_tax" => $paidTaxes->paidOpenPloatTax ?? 0,
+                "payment_type" => $propTrans['payment_type'],
             ];
             $this->_mPropTranDtl->create($tranDtlReq);
         }
@@ -679,6 +680,7 @@ class PostPropPaymentV2
     }
     public function postPayment()
     {
+        
         $this->readPaymentParams();
 
         // 🔴🔴🔴🔴Begining Transactions 🔴🔴🔴
@@ -926,7 +928,7 @@ class PostPropPaymentV2
                 $tblDemand->has_partwise_paid = $isPartWisePaid;
 
             $tblDemand->save();
-
+            // dd($this->_REQ);
             // ✅✅✅✅✅ Tran details insertion
             $tranDtlReq = [
                 "tran_id" => $propTrans['id'],
@@ -956,7 +958,7 @@ class PostPropPaymentV2
                 "paid_major_building" => $paidTaxes->paidMajorBuilding,
                 "paid_open_ploat_tax" => $paidTaxes->paidOpenPloatTax ?? 0,
                 "paid_exempted_general_tax" => $paidTaxes->paidExemptedGeneralTax ?? 0,
-                "payment_type" => $this->_REQ->paymentType
+                "payment_type" => $this->_REQ['paymentType']
             ];
             $trDtl[] = $tranDtlReq;
             $this->_mPropTranDtl->create($tranDtlReq);
