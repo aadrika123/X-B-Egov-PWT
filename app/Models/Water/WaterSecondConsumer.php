@@ -732,6 +732,7 @@ class WaterSecondConsumer extends Model
             'water_second_consumers.id as consumerId',
             'water_second_consumers.consumer_no',
             'water_second_consumers.category',
+            'water_second_consumers.tab_size',
             'water_property_type_mstrs.property_type'
         )
             ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_second_consumers.property_type_id')
