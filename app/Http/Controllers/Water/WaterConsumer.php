@@ -726,23 +726,8 @@ class WaterConsumer extends Controller
         | Differenciate btw citizen and user 
         | check if the ulb is same as the consumer details 
      */
-    public function applyDeactivation(Request $request)
+    public function applyDeactivation(reqDeactivate $request)
     {
-        $validated = Validator::make(
-            $request->all(),
-            [
-                'consumerId'           => "required|digits_between:1,9223372036854775807",
-                'ulbId'                => "nullable|",
-                'reason'                => "nullable",
-                'remarks'               => "nullable",
-                'documents'             => 'nullable|array',
-                'documents.*.image'     => 'nullable|mimes:png,jpeg,pdf,jpg',
-                'documents.*.docCode'    => 'nullable|string',
-                'documents.*.ownerDtlId' => 'nullable|integer',
-            ]
-        );
-        if ($validated->fails())
-            return validationError($validated);
 
         try {
             $user                           = authUser($request);
@@ -798,14 +783,14 @@ class WaterConsumer extends Controller
             }
 
             # Get chrages for deactivation
-            $chargeAmount = $mWaterConsumerChargeCategory->getChargesByid($refConsumerCharges['WATER_DISCONNECTION']);
+            $chargeDetails = $mWaterConsumerChargeCategory->getChargesByid($request->requestType);
             $refChargeList = collect($refConsumerCharges)->flip();
 
             $refRequest["initiatorRoleId"]   = collect($initiatorRoleId)->first()->role_id;
             $refRequest["finisherRoleId"]    = collect($finisherRoleId)->first()->role_id;
             $refRequest["roleId"]            = $roleId ?? null;
             $refRequest["ulbWorkflowId"]     = $ulbWorkflowId->id;
-            $refRequest["chargeCategoryId"]  = $refConsumerCharges['WATER_DISCONNECTION'];
+            $refRequest["chargeCategoryId"]  = $chargeDetails->id;
             // $refRequest["amount"]            = $chargeAmount->amount;
             $refRequest['userType']          = $user->user_type;
 
@@ -869,7 +854,7 @@ class WaterConsumer extends Controller
         $mActiveRequest = new WaterConsumerActiveRequest();
         $relativePath       = Config::get('waterConstaint.WATER_RELATIVE_PATH');
         $documents;
-        
+
 
         collect($documents)->map(function ($doc) use ($ActiveRequestId, $docUpload, $mWfActiveDocument, $mActiveRequest, $relativePath, $auth) {
             $metaReqs = array();
@@ -886,7 +871,7 @@ class WaterConsumer extends Controller
             $metaReqs['document'] = $imageName;
             $metaReqs['docCode'] = $doc['docCode'];
             $metaReqs['ownerDtlId'] = $doc['ownerDtlId'];
-            
+
             $a = new Request($metaReqs);
             // $mWfActiveDocument->postDocuments($a, $auth);
             $metaReqs =  $mWfActiveDocument->metaRequest($metaReqs);

@@ -20,6 +20,8 @@ use App\Models\Property\PropApartmentDtl;
 use App\Models\Property\PropFloor;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
+use App\Models\Property\PropSaf;
+use App\Models\TradeLicence;
 use App\Models\UlbWardMaster;
 use App\Models\Water\WaterApplicant;
 use App\Models\Water\WaterApplication;
@@ -673,7 +675,7 @@ class NewConnectionController extends Controller
 
             $this->begin();
             # if application is not applied by citizen 
-            if ($mWaterApplication->user_type != $refApplyFrom['2']) {
+            if ($mWaterApplication->apply_from != $refApplyFrom['1']) {
                 $mWaterApplication->current_role = $mWaterApplication->initiator_role_id;
                 $mWaterApplication->parked = true;                          //  Pending Status true
                 $mWaterApplication->doc_upload_status = false;              //  Docupload Status false
@@ -3009,27 +3011,87 @@ class NewConnectionController extends Controller
         $validated = Validator::make(
             $request->all(),
             [
-                'PropertyNo' => 'required',
+                'PropertyNo'   => 'required',
+                'consumerId'   => 'nullable',
+                'licenseNo'    => 'nullable'
             ]
         );
         if ($validated->fails())
             return validationError($validated);
         try {
-            $holding    = $request->PropertyNo;
-            $mPropPerty = new PropProperty();
-            $mPropOwner = new PropOwner();
-            $holdingDetails = $mPropPerty->getPropert($holding);
+            $holding           = $request->PropertyNo;
+            $mPropPerty        = new PropProperty();
+            $mPropOwner        = new PropOwner();
+            $mWfActiveDocument = new WfActiveDocument();
+            $mActiveSafs       = new PropActiveSaf();
+            $mPropSaf          = new PropSaf();
+            $mWaterConsumerMeter    = new WaterConsumerMeter();
+            $mWaterSecondConsumer   = new WaterSecondConsumer();
+            $refConsumerId          = $request->consumerId;
+            $moduleId          = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $refConnectionName      = Config::get('waterConstaint.METER_CONN_TYPE');
+            #get hoding details 
+            $holdingDetails    = $mPropPerty->getPropert($holding);
             if (!$holdingDetails) {
                 throw new Exception('holding not found !');
             }
-            $holdingOwnerDeails = $mPropOwner->getOwnerByPropId($holdingDetails->id);
+            $safID = $holdingDetails->saf_id;
+            #get saf details 
+            $safDetails = $mActiveSafs->getSafNo($safID);
+            if (!$safDetails)
+                $safDetails = $mPropSaf->find($safID);
+            if (!$safDetails)
+                throw new Exception("Application Not Found for this application Id");
+
+            $workflowId = $safDetails->workflow_id;
+            #get owner details 
+            $holdingOwnerDeails = $mPropOwner->getPropOwners($holdingDetails->id);
+            #Fecth All Documents 
+            $documents = $mWfActiveDocument->getPropDocsByAppNo($safID, $workflowId, $moduleId);
+            # meter Details 
+            $refMeterData = $mWaterConsumerMeter->getMeterDetailsByConsumerIdV2($refConsumerId)->first();
+            if ($refMeterData) {
+                $refMeterData->ref_initial_reading = (float)($refMeterData->ref_initial_reading);
+                switch ($refMeterData['connection_type']) {
+                    case (1):
+                        $connectionName = $refConnectionName['1'];                                      // Meter 
+                        break;
+                    case (3):
+                        $connectionName = $refConnectionName['3'];                                      // Fixed - Non Meter
+                        break;
+                }
+            }
+            #Doc Details From Property
+            $returnData = collect($documents)->map(function ($value) {
+                $path =  $this->readDocumentPath($value->ref_doc_path);
+                $value->doc_path = !empty(trim($value->ref_doc_path)) ? $path : null;
+                return $value;
+            });
+            #Get Trade License Details 
+            $tradeDetail = [];
+            if ($request->licenseNo) {
+                $mTrade = new TradeLicence();
+                $tradeDetail = $mTrade->getDetailsByLicenceNov2($request->licenseNo);
+                if (!$tradeDetail) {
+                    throw new Exception("Invalid license No");
+                }
+            }
+            $refConsumer = $mWaterSecondConsumer->getConsumerDtlsByID($refConsumerId)->first();
+            if (!$refConsumer) {
+                throw new Exception("Consumer Not Found!");
+            }
             $holdingDetails['ownerDetails'] = $holdingOwnerDeails;
+            $holdingDetails['docDetails']   = $returnData;
+            $holdingDetails['connectionName'] = $connectionName ?? "";
+            $holdingDetails['ConnectionTypeName'] = $connectionName ?? "";
+            $holdingDetails['meterDetails'] = array($refMeterData);
+            $holdingDetails['tradeDetail'] = array($tradeDetail);
+            $holdingDetails['ConsumerDetails'] = $refConsumer;
             return responseMsgs(true, "Property Details!", remove_null($holdingDetails), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
-
 
     public function getPropUsageTypes($request, $id)
     {

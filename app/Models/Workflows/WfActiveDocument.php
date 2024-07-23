@@ -445,4 +445,28 @@ class WfActiveDocument extends Model
             ->where('status', 1)
             ->get();
     }
+
+    # water document View
+    public function getPropDocsByAppNo($applicationId, $workflowId, $moduleId)
+    {
+        return DB::connection('pgsql_water')
+            ->table('wf_active_documents as d')
+            ->select(
+                'd.id',
+                'd.document',
+                DB::raw("concat(relative_path,'/',document) as ref_doc_path"),
+                'd.remarks',
+                'd.verify_status',
+                'd.doc_code',
+                'd.doc_category',
+                'd.status',
+                'o.applicant_name as owner_name'
+            )
+            ->leftJoin('water_applicants as o', 'o.id', '=', 'd.owner_dtl_id')
+            ->where('d.active_id', $applicationId)
+            ->where('d.workflow_id', $workflowId)
+            ->where('d.module_id', $moduleId)
+            ->where('d.status', '!=', 0)
+            ->get();
+    }
 }

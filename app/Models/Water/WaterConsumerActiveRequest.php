@@ -37,6 +37,8 @@ class WaterConsumerActiveRequest extends Model
         $mWaterConsumerActiveRequest->application_no            = $applicationNo;
         $mWaterConsumerActiveRequest->charge_catagory_id        = $refRequest['chargeCategoryId'];
         $mWaterConsumerActiveRequest->corresponding_mobile_no   = $req->mobileNo ?? null;
+        $mWaterConsumerActiveRequest->new_name                  = $req->newName ?? null;
+        $mWaterConsumerActiveRequest->request_type              = $req->requestTypeReason ?? null;
         $mWaterConsumerActiveRequest->save();
         return [
             "id" => $mWaterConsumerActiveRequest->id
