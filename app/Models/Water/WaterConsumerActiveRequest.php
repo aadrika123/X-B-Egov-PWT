@@ -224,6 +224,7 @@ class WaterConsumerActiveRequest extends Model
             'water_second_consumers.payment_status',
             'water_second_consumers.user_type',
             'water_consumer_active_requests.apply_date',
+            'water_consumer_active_requests.charge_catagory_id',
             'water_second_consumers.address',
             'water_second_consumers.category',
             'water_consumer_active_requests.application_no',

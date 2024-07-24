@@ -649,13 +649,15 @@ class WaterConsumerWfController extends Controller
     public function getBasicDetails($applicationDetails)
     {
         $collectionApplications = collect($applicationDetails)->first();
-        return new Collection([
-            ['displayString' => 'Ward No',            'key' => 'WardNo',              'value' => $collectionApplications->ward_name],
-            ['displayString' => 'ApplyDate',           'key' => 'applyDate',          'value' => $collectionApplications->apply_date],
-            ['displayString' => 'TapSize',             'key' => 'taPSize',             'value' => $collectionApplications->tab_size],
-            ['displayString' => 'PropertyType',        'key' => 'propertyType',        'value' => $collectionApplications->property_type],
-            ['displayString' => 'Address',             'key' => 'Address ',            'value' => $collectionApplications->address],
-        ]);
+            return new Collection([
+                ['displayString' => 'Ward No',            'key' => 'WardNo',              'value' => $collectionApplications->ward_name],
+                ['displayString' => 'ApplyDate',           'key' => 'applyDate',          'value' => $collectionApplications->apply_date],
+                ['displayString' => 'TapSize',             'key' => 'taPSize',             'value' => $collectionApplications->tab_size],
+                ['displayString' => 'PropertyType',        'key' => 'propertyType',        'value' => $collectionApplications->property_type],
+                ['displayString' => 'Address',             'key' => 'Address ',            'value' => $collectionApplications->address],
+                ['displayString' => 'Category',            'key' => 'category ',            'value' => $collectionApplications->category],
+            ]);
+        
     }
     /**
      * return data fro card details 
