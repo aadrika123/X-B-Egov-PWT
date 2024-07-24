@@ -219,6 +219,7 @@ class WaterConsumerActiveRequest extends Model
             'water_consumer_active_requests.id as applicationId',
             // 'water_consumer_active_requests.mobile_no',
             'water_second_consumers.tab_size',
+            'water_second_consumers.consumer_no',
             'water_second_consumers.property_no',
             'water_consumer_active_requests.status',
             'water_second_consumers.payment_status',
