@@ -46,6 +46,7 @@ class WaterConsumerActiveRequest extends Model
         $mWaterConsumerActiveRequest->tab_size                  = $req->tapsize ?? null;
         $mWaterConsumerActiveRequest->property_type             = $req->buildingType ?? null;
         $mWaterConsumerActiveRequest->category                  = $req->category ?? null;
+        $mWaterConsumerActiveRequest->meter_number              = $req->meterNo ?? null;
         $mWaterConsumerActiveRequest->save();
         return [
             "id" => $mWaterConsumerActiveRequest->id
@@ -230,6 +231,7 @@ class WaterConsumerActiveRequest extends Model
             'water_second_consumers.category',
             'water_consumer_active_requests.application_no',
             'water_second_consumers.pin',
+            'water_second_consumers.meter_no as oldMeterNo',
             'water_consumer_active_requests.current_role',
             'water_consumer_active_requests.workflow_id',
             'water_consumer_active_requests.last_role_id',
@@ -242,7 +244,12 @@ class WaterConsumerActiveRequest extends Model
             'wf_roles.role_name AS current_role_name',
             'water_connection_type_mstrs.connection_type',
             'ulb_ward_masters.ward_name',
-            'water_consumer_charge_categories.charge_category'
+            'water_consumer_charge_categories.charge_category',
+            'water_consumer_active_requests.new_name',
+            'water_consumer_active_requests.meter_number as newMeterNo',
+            'water_consumer_active_requests.tab_size as newTabSize',
+            'water_consumer_active_requests.property_type as newPropertyType',
+            'water_consumer_active_requests.category as newCategory',
         )
             ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_consumer_active_requests.current_role')
             ->leftjoin('ulb_masters', 'ulb_masters.id', '=', 'water_consumer_active_requests.ulb_id')

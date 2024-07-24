@@ -324,10 +324,10 @@ class WaterConsumerWfController extends Controller
                 if ($application->doc_verify_status == false)
                     throw new Exception("Document Not Fully Verified");
                 break;
-            // case $wfLevels['JE']:                                                                       // JE Coditon in case of site adjustment
-            //     if ($application->is_field_verified == false) {
-            //         throw new Exception("Document Not Fully Uploaded or site inspection not done!");
-            //     }
+                // case $wfLevels['JE']:                                                                       // JE Coditon in case of site adjustment
+                //     if ($application->is_field_verified == false) {
+                //         throw new Exception("Document Not Fully Uploaded or site inspection not done!");
+                //     }
                 $siteDetails = $mWaterSiteInspection->getSiteDetails($application->id)
                     ->where('order_officer', $refRole['JE'])
                     ->first();
@@ -569,6 +569,7 @@ class WaterConsumerWfController extends Controller
         $mwaterOwner            = new WaterConsumerOwner();
         # applicatin details
         $applicationDetails = $mwaterConsumerActive->fullWaterDetails($request)->get();
+
         if (collect($applicationDetails)->first() == null) {
             return responseMsg(false, "Application Data Not found!", $request->applicationId);
         }
@@ -644,21 +645,36 @@ class WaterConsumerWfController extends Controller
         return responseMsgs(true, "listed Data!", remove_null($returnValues), "", "02", ".ms", "POST", "");
     }
     /**
-     * function for return data of basic details
+     * Function for returning basic details data
      */
     public function getBasicDetails($applicationDetails)
     {
         $collectionApplications = collect($applicationDetails)->first();
-        return new Collection([
-            ['displayString' => 'Ward No',            'key' => 'WardNo',              'value' => $collectionApplications->ward_name],
-            ['displayString' => 'ApplyDate',           'key' => 'applyDate',          'value' => $collectionApplications->apply_date],
-            ['displayString' => 'TapSize',             'key' => 'taPSize',             'value' => $collectionApplications->tab_size],
-            ['displayString' => 'PropertyType',        'key' => 'propertyType',        'value' => $collectionApplications->property_type],
-            ['displayString' => 'Address',             'key' => 'Address ',            'value' => $collectionApplications->address],
-            ['displayString' => 'Category',            'key' => 'category ',            'value' => $collectionApplications->category],
-            ['displayString' => 'Zone',                'key' => 'Zone ',                'value' => $collectionApplications->zone_name],
-        ]);
+
+        // Basic details common to all applications
+        $basicDetails = [
+            ['displayString' => 'Ward No',            'key' => 'WardNo',            'value' => $collectionApplications->ward_name],
+            ['displayString' => 'ApplyDate',          'key' => 'applyDate',         'value' => $collectionApplications->apply_date],
+            ['displayString' => 'TapSize',            'key' => 'taPSize',           'value' => $collectionApplications->tab_size],
+            ['displayString' => 'PropertyType',       'key' => 'propertyType',      'value' => $collectionApplications->property_type],
+            ['displayString' => 'Address',            'key' => 'Address',           'value' => $collectionApplications->address],
+            ['displayString' => 'Category',           'key' => 'category',          'value' => $collectionApplications->category],
+            ['displayString' => 'Zone',               'key' => 'Zone',              'value' => $collectionApplications->zone_name],
+        ];
+
+        // If charge category ID is 6, add the new field
+        if ($collectionApplications->charge_catagory_id == 6) {
+            $basicDetails[] = ['displayString' => 'New Name', 'key' => 'NewName', 'value' => $collectionApplications->new_name];
+        } elseif ($collectionApplications->charge_catagory_id == 7) {
+            $basicDetails[] = ['displayString' => 'New meter No', 'key' => 'NewMeterNo', 'value' => $collectionApplications->newMeterNo];
+            $basicDetails[] = ['displayString' => 'Old Meter No ', 'key' => 'OldMeterNo', 'value' => $collectionApplications->meter_no];
+        } elseif ($collectionApplications->charge_catagory_id == 8) {
+            $basicDetails[] = ['displayString' => 'New Property Type', 'key' => 'NewPropertyType', 'value' => $collectionApplications->newPropertyType];
+            $basicDetails[] = ['displayString' => 'New Category', 'key' => 'NewCategory', 'value' => $collectionApplications->newCategory];
+        }
+        return new Collection($basicDetails);
     }
+
     /**
      * return data fro card details 
      */
