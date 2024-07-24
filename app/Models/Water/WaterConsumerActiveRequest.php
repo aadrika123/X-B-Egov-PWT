@@ -43,6 +43,9 @@ class WaterConsumerActiveRequest extends Model
         $mWaterConsumerActiveRequest->corresponding_mobile_no   = $req->mobileNo ?? null;
         $mWaterConsumerActiveRequest->new_name                  = $req->newName ?? null;
         $mWaterConsumerActiveRequest->request_type              = $req->requestTypeReason ?? null;
+        $mWaterConsumerActiveRequest->tab_size                  = $req->tapsize ?? null;
+        $mWaterConsumerActiveRequest->property_type             = $req->buildingType ?? null;
+        $mWaterConsumerActiveRequest->category                  = $req->category ?? null;
         $mWaterConsumerActiveRequest->save();
         return [
             "id" => $mWaterConsumerActiveRequest->id
