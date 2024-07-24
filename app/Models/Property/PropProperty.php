@@ -104,7 +104,7 @@ class PropProperty extends  PropParamModel #Model
                 'a.apt_code as apartment_code',
                 'z.zone_name',
                 'cat.category AS categoryType',
-                DB::raw("string_agg(prop_owners.owner_name, ', ') as owner_names"),
+                DB::raw("string_agg(prop_owners.owner_name, ', ') as owner_name"),
                 DB::raw("string_agg(prop_owners.owner_name_marathi, ', ') as owner_names_marathi")
             )
             ->leftJoin('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
