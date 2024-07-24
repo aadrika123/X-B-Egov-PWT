@@ -373,7 +373,8 @@ class GeneratePaymentReceiptV2
             "receiptNo" => isset($this->_trans->book_no) ? (explode('-', $this->_trans->book_no)[1] ?? "0") : "",
             'duration' => ($duration),
             'mobileDuration' => ($mobileDuration),
-            'currentFinancialYear' => getFY()
+            'currentFinancialYear' => getFY(),
+            'payment_type'=>$this->_trans->payment_type ?? "",
         ];
 
         $this->_GRID['receiptDtls'] = $receiptDtls;

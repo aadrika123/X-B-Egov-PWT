@@ -958,7 +958,6 @@ class PostPropPaymentV2
                 "paid_major_building" => $paidTaxes->paidMajorBuilding,
                 "paid_open_ploat_tax" => $paidTaxes->paidOpenPloatTax ?? 0,
                 "paid_exempted_general_tax" => $paidTaxes->paidExemptedGeneralTax ?? 0,
-                "payment_type" => $this->_REQ['paymentType']
             ];
             $trDtl[] = $tranDtlReq;
             $this->_mPropTranDtl->create($tranDtlReq);

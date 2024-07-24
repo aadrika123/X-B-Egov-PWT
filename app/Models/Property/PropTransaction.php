@@ -203,6 +203,7 @@ class PropTransaction extends PropParamModel #Model
         $propTrans->is_arrear_settled = $req['isArrearSettled']??false;
         $propTrans->book_no = $req['bookNo'] ?? null;
         $propTrans->device_type = $req['deviceType'] ?? null;
+        $propTrans->payment_type = $req['paymentType'] ?? null;
         if($req['isCitizen'])
         {
             $propTrans->user_id     = null;
