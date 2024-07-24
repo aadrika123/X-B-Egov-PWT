@@ -469,4 +469,35 @@ class WfActiveDocument extends Model
             ->where('d.status', '!=', 0)
             ->get();
     }
+
+    /**
+     * | Get total uploaded documents
+     */
+    public function totalUploadedDocs($applicationId, $workflowId, $moduleId)
+    {
+        return WfActiveDocument::where('active_id', $applicationId)
+            ->where('workflow_id', $workflowId)
+            ->where('module_id', $moduleId)
+            // ->where('current_status', '1')
+            ->where('status', 1)
+            ->count();
+    }
+
+    /**
+     * | Upload document funcation
+     */
+    public function updateDocuments($req, $auth, $docId)
+    {
+        $metaReqs =  WfActiveDocument::where('id', $docId)->first();
+        // $metaReqs->module_id            = $req->moduleId;
+        $metaReqs->uploaded_by          = $auth['id'];
+        $metaReqs->uploaded_by_type     = $auth['user_type'];
+        $metaReqs->verify_status        = 0;
+        // $metaReqs->unique_id            = $req->unique_id ?? null;
+        // $metaReqs->reference_no         = $req->reference_no ?? null;
+        $metaReqs->document             = $req->document ?? null;
+
+        $metaReqs->save();
+        return $metaReqs->active_id;
+    }
 }

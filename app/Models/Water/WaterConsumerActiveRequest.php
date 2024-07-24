@@ -2,9 +2,13 @@
 
 namespace App\Models\Water;
 
+use App\MicroServices\DocumentUpload;
+use App\Models\Workflows\WfActiveDocument;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 class WaterConsumerActiveRequest extends Model
@@ -53,7 +57,7 @@ class WaterConsumerActiveRequest extends Model
         return WaterConsumerActiveRequest::select(
             'water_consumer_charge_categories.charge_category'
         )
-            ->join('water_consumer_charge_categories','water_consumer_charge_categories.id','water_consumer_active_requests.charge_catagory_id')
+            ->join('water_consumer_charge_categories', 'water_consumer_charge_categories.id', 'water_consumer_active_requests.charge_catagory_id')
             ->where('water_consumer_active_requests.consumer_id', $consumerId)
             ->where('water_consumer_active_requests.status', 1)
             ->orderByDesc('water_consumer_active_requests.id');
@@ -304,5 +308,27 @@ class WaterConsumerActiveRequest extends Model
             ->where('water_consumer_active_requests.id', $applicationId)
             ->where('water_consumer_active_requests.status', 1)
             ->where('water_consumer_active_requests.verify_status', 1);
+    }
+    /**
+     * | Reupload Documents
+     */
+    public function reuploadDocument($req, $Image, $docId)
+    {
+        $docUpload = new DocumentUpload;
+        $docDetails =  WfActiveDocument::where('id', $docId)->first();
+        $relativePath       = Config::get('waterConstaint.WATER_RELATIVE_PATH');
+        $user = collect(authUser($req));
+        $refImageName = $docDetails['doc_code'];
+        $refImageName = $docDetails['active_id'] . '-' . $refImageName;
+        $documentImg = $req->image;
+        $imageName = $docUpload->upload($refImageName, $documentImg, $relativePath);
+
+        $metaReqs['document'] = $imageName;
+        $a = new Request($metaReqs);
+        $mWfActiveDocument = new WfActiveDocument();
+        $activeId = $mWfActiveDocument->updateDocuments(new Request($metaReqs), $user, $docId);
+        // $docDetails->current_status = '0';
+        $docDetails->save();
+        return $activeId;
     }
 }

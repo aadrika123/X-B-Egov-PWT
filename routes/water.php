@@ -190,6 +190,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('get-details-applications', 'getConApplicationDetails');
         Route::post('get-details-disconnections', 'getRequestedApplication');                       // Citizen / Changes the route name
         Route::post('consumer/req/get-disconnected-details', 'getDetailsDisconnections');
+        Route::post('consumer/reqs/reupload-document', 'reuploadDocument');                                                // 21 ( Reupload Document for Pending Documents)
     });
 
     /**

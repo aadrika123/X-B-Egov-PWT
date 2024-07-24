@@ -27,6 +27,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use App\Models\Masters\RefRequiredDocument;
 
 /**
  * | ----------------------------------------------------------------------------------
@@ -880,6 +881,61 @@ class WaterConsumerWfController extends Controller
             return responseMsgs(true, "Data Disconnection", remove_null($detailsDisconnections), "", "1.0", "350ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", $e->getCode(), "1.0", "", 'POST', "");
+        }
+    }
+    /**
+     * | Reupload Rejected Documents
+     * | Function - 24
+     * | API - 21
+     */
+    public function reuploadDocument(Request $req)
+    {
+        $validator = Validator::make($req->all(), [
+            'id' => 'required|digits_between:1,9223372036854775807',
+            'image' => 'required|mimes:png,jpeg,pdf,jpg'
+        ]);
+        if ($validator->fails()) {
+            return ['status' => false, 'message' => $validator->errors()];
+        }
+        try {
+            // Variable initialization
+            $mWaterConsumerActiveRequest = new WaterConsumerActiveRequest();
+            $Image                   = $req->image;
+            $docId                   = $req->id;
+            $this->begin();
+            $appId = $mWaterConsumerActiveRequest->reuploadDocument($req,$Image,$docId);
+            $this->checkFullUpload($appId, $req);
+            $this->commit();
+
+            return responseMsgs(true, "Document Uploaded Successfully", "", "050821", 1.0, responseTime(), "POST", "", "");
+        } catch (Exception $e) {
+            $this->rollback();
+            return responseMsgs(false, "Document Not Uploaded", "050821", 010717, 1.0, "", "POST", "", "");
+        }
+    }
+
+    /**
+     * | Check full document uploaded or not
+     * | Function - 23
+     */
+    public function checkFullUpload($applicationId, $req)
+    {
+        $docCode = $req->docCode;
+        $mWfActiveDocument = new WfActiveDocument();
+        $mRefRequirement = new RefRequiredDocument();
+        $moduleId = $this->_waterModuleId;
+        $totalRequireDocs = $mRefRequirement->totalNoOfDocs($moduleId, $docCode);
+        $appDetails = WaterConsumerActiveRequest::find($applicationId);
+        $totalUploadedDocs = $mWfActiveDocument->totalUploadedDocs($applicationId, $appDetails->workflow_id, $moduleId);
+        if ($totalRequireDocs == $totalUploadedDocs) {
+            $appDetails->doc_upload_status = '1';
+            $appDetails->doc_verify_status = '0';
+            $appDetails->parked = NULL;
+            $appDetails->save();
+        } else {
+            $appDetails->doc_upload_status = '0';
+            $appDetails->doc_verify_status = '0';
+            $appDetails->save();
         }
     }
 }
