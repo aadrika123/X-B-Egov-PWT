@@ -321,7 +321,7 @@ class WaterConsumerWfController extends Controller
                 if ($application->doc_upload_status == false) {
                     throw new Exception("Document Not Fully Uploaded");
                 }                                                                       // DA Condition
-                if ($application->doc_status == false)
+                if ($application->doc_verify_status == false)
                     throw new Exception("Document Not Fully Verified");
                 break;
             case $wfLevels['JE']:                                                                       // JE Coditon in case of site adjustment
@@ -903,7 +903,7 @@ class WaterConsumerWfController extends Controller
             $Image                   = $req->image;
             $docId                   = $req->id;
             $this->begin();
-            $appId = $mWaterConsumerActiveRequest->reuploadDocument($req,$Image,$docId);
+            $appId = $mWaterConsumerActiveRequest->reuploadDocument($req, $Image, $docId);
             $this->checkFullUpload($appId, $req);
             $this->commit();
 
