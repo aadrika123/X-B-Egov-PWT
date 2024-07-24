@@ -597,8 +597,9 @@ class WaterConsumerWfController extends Controller
         $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$firstView]);
         # CardArray
         $cardDetails = $this->getCardDetails($applicationDetails, $ownerDetail);
+       $chargeCatgory =  $applicationDetails->pluck('charge_category');
         $cardData = [
-            'headerTitle' => 'Water Disconnection',
+            'headerTitle' => $chargeCatgory,
             'data' => $cardDetails
         ];
         $fullDetailsData['fullDetailsData']['cardArray'] = new Collection($cardData);
