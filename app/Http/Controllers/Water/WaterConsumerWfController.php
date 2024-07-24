@@ -324,10 +324,10 @@ class WaterConsumerWfController extends Controller
                 if ($application->doc_verify_status == false)
                     throw new Exception("Document Not Fully Verified");
                 break;
-            case $wfLevels['JE']:                                                                       // JE Coditon in case of site adjustment
-                if ($application->is_field_verified == false) {
-                    throw new Exception("Document Not Fully Uploaded or site inspection not done!");
-                }
+            // case $wfLevels['JE']:                                                                       // JE Coditon in case of site adjustment
+            //     if ($application->is_field_verified == false) {
+            //         throw new Exception("Document Not Fully Uploaded or site inspection not done!");
+            //     }
                 $siteDetails = $mWaterSiteInspection->getSiteDetails($application->id)
                     ->where('order_officer', $refRole['JE'])
                     ->first();
