@@ -683,7 +683,7 @@ class WaterConsumerWfController extends Controller
         return collect($ownerDetails)->map(function ($value, $key) {
             return [
                 $key + 1,
-                $value['owner_name'],
+                $value['applicant_name'],
                 $value['guardian_name'],
                 $value['mobile_no'],
                 $value['email'],
