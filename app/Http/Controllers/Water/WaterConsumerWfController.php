@@ -597,7 +597,7 @@ class WaterConsumerWfController extends Controller
         $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$firstView]);
         # CardArray
         $cardDetails = $this->getCardDetails($applicationDetails, $ownerDetail);
-       $chargeCatgory =  $applicationDetails->pluck('charge_category');
+        $chargeCatgory =  $applicationDetails->pluck('charge_category');
         $cardData = [
             'headerTitle' => $chargeCatgory,
             'data' => $cardDetails
@@ -651,9 +651,10 @@ class WaterConsumerWfController extends Controller
         $collectionApplications = collect($applicationDetails)->first();
         return new Collection([
             ['displayString' => 'Ward No',            'key' => 'WardNo',              'value' => $collectionApplications->ward_name],
-            // ['displayString' => 'Charge Category',    'key' => 'chargeCategory',      'value' => $collectionApplications->charge_category],
-            // ['displayString' => 'Ubl Id',             'key' => 'ulbId',               'value' => $collectionApplications->ulb_id],
             ['displayString' => 'ApplyDate',           'key' => 'applyDate',          'value' => $collectionApplications->apply_date],
+            ['displayString' => 'TapSize',             'key' => 'taPSize',             'value' => $collectionApplications->tab_size],
+            ['displayString' => 'PropertyType',        'key' => 'propertyType',        'value' => $collectionApplications->property_type],
+            ['displayString' => 'Address',             'key' => 'Address ',            'value' => $collectionApplications->address],
         ]);
     }
     /**
