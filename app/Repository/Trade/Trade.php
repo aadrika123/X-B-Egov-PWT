@@ -597,7 +597,7 @@ class Trade implements ITrade
 
         $refActiveLicense->licence_for_years   = $request->licenseDetails['licenseFor'];
         //$refActiveLicense->address             = $refOldLicece->address;
-        $refActiveLicense->address             = $request->licenseDetails['businessAddress'];
+        $refActiveLicense->address             = $request->firmDetails['businessAddress'];
         //$refActiveLicense->landmark            = $refOldLicece->landmark;
         $refActiveLicense->landmark            = $request->licenseDetails['landmark'];
         // $refActiveLicense->pin_code            = $refOldLicece->pin_code;
