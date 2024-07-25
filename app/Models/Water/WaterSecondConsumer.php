@@ -737,6 +737,6 @@ class WaterSecondConsumer extends Model
         )
             ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_second_consumers.property_type_id')
             ->where('water_second_consumers.id', $consumerId)
-            ->where('water_second_consumers.status', 1);
+            ->where('water_second_consumers.status','!=',3);
     }
 }
