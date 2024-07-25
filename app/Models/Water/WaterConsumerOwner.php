@@ -55,4 +55,21 @@ class WaterConsumerOwner extends Model
         return WaterConsumerOwner::where('consumer_id', $consumerId)
             ->first();
     }
+
+    /**
+     * save owner details for akola 
+     */
+
+    public function createOwner($consumerOwnedetails,$checkExist)
+    {
+        $waterConsumerOwner   = new WaterConsumerOwner();
+        $waterConsumerOwner->consumer_id         = $consumerOwnedetails->consumer_id;
+        $waterConsumerOwner->applicant_name      = $checkExist->new_name;
+        $waterConsumerOwner->guardian_name       = $consumerOwnedetails->guardian_name;
+        $waterConsumerOwner->mobile_no           = $consumerOwnedetails->mobile_no;
+        $waterConsumerOwner->email               = $consumerOwnedetails->email;
+        $waterConsumerOwner->status              = true;
+        $waterConsumerOwner->save();
+        return $waterConsumerOwner;
+    }
 }
