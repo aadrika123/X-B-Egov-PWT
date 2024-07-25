@@ -1049,6 +1049,8 @@ class ActiveSafController extends Controller
             }
             $data["can_deactivate_saf"] =$adminAllows;
             $data["can_take_payment"] = ($is_approved && collect($testRole)->isNotEmpty() && ($data["proccess_fee_paid"] ?? 1) == 0) ? true : false;
+            $document = $this->getUploadDoc($req);
+            $data["documents"] = $document;
             if ($this->_COMMONFUNCTION->checkUsersWithtocken("active_citizens")) {
                 $data["can_take_payment"] = (($data["proccess_fee_paid"] ?? 1) == 0 && $is_approved) ? true : false;
             }
