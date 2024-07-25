@@ -28,6 +28,8 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use App\Models\Masters\RefRequiredDocument;
+use App\Models\Water\WaterConsumerDemand;
+use App\Models\Water\WaterConsumerMeter;
 
 /**
  * | ----------------------------------------------------------------------------------
@@ -363,12 +365,12 @@ class WaterConsumerWfController extends Controller
             if ($roleId != $waterDetails->finisher) {
                 throw new Exception("You are not the Finisher!");
             }
-            DB::beginTransaction();
+            $this->begin();
             $this->approvalRejectionWater($request, $roleId);
             DB::commit();
             return responseMsg(true, "Request approved/rejected successfully", "");;
         } catch (Exception $e) {
-            // DB::rollBack();
+            DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -462,6 +464,8 @@ class WaterConsumerWfController extends Controller
         $mwaterConsumerActiveRequest      = new WaterConsumerActiveRequest();
         $mWaterSiteInspection             = new WaterSiteInspection();
         $mWaterConsumer                   = new WaterSecondConsumer();
+        $mWaterConsumerMeter              = new WaterConsumerMeter();
+        $mWaterConsumerDemand             = new WaterConsumerDemand();
         $mWaterConsumerOwner              = new WaterConsumerOwner();
         $waterTrack                       = new WorkflowTrack();
 
@@ -513,12 +517,13 @@ class WaterConsumerWfController extends Controller
         # update verify status
         $mwaterConsumerActiveRequest->updateVerifystatus($request->applicationId, $request->status);
         $consumerOwnedetails = $mWaterConsumerOwner->getConsumerOwner($checkExist->consumer_id)->first();
-
         #deactivate Consumer Permantly
         if ($checkExist->charge_catagory_id == 2) {                                                    // this for Disconnection 
             $mWaterConsumer->dissconnetConsumer($consumerOwnedetails->consumer_id);
         } elseif ($checkExist->charge_catagory_id == 6) {                                              // this for Name Change 
-            $mWaterConsumerOwner->createOwner($consumerOwnedetails,$checkExist);
+            $mWaterConsumerOwner->createOwner($consumerOwnedetails, $checkExist);
+        } elseif ($checkExist->charge_catagory_id == 7) {
+            $mWaterConsumerMeter->updateMeterNo($consumerOwnedetails, $checkExist);
         }
     }
 
