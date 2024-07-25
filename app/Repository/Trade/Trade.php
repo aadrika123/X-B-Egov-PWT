@@ -581,8 +581,8 @@ class Trade implements ITrade
         // $refActiveLicense->nature_of_bussiness = $request->firmDetails['firmName']??null;
         $refActiveLicense->firm_name           = $request->firmDetails['firmName']??null;
         $refActiveLicense->firm_name_marathi   = $refOldLicece->firm_name_marathi ? $refOldLicece->firm_name_marathi : ($request->firmDetails['firmNameMarathi'] ?? null);
-        // $refActiveLicense->premises_owner_name = $refOldLicece->premises_owner_name;
-        $refActiveLicense->premises_owner_name = $request->firmDetails['premisesOwner'];
+        $refActiveLicense->premises_owner_name = $refOldLicece->premises_owner_name;
+        // $refActiveLicense->premises_owner_name = $request->firmDetails['premisesOwner'];
         $refActiveLicense->brief_firm_desc     = $request->firmDetails['businessDescription']; //$refOldLicece->brife_desp_firm;
         $refActiveLicense->area_in_sqft        = $request->firmDetails['areaSqft']; //$refOldLicece->area_in_sqft;
 
