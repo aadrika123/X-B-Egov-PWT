@@ -87,11 +87,13 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
 use App\MicroServices\IdGenerator\HoldingNoGenerator;
+use App\Models\ActiveCitizen;
 use App\Models\Property\Logs\PropSmsLog;
 use App\Models\Property\Logs\SafAmalgamatePropLog;
 use App\Models\Property\PropSafJahirnamaDoc;
 use App\Models\Property\RefPropCategory;
 use App\Models\Property\SecondaryDocVerification;
+use App\Models\User;
 use App\Models\Workflows\WfMaster;
 use App\Models\Workflows\WfRole;
 use App\Repository\Common\CommonFunction;
@@ -1047,6 +1049,8 @@ class ActiveSafController extends Controller
             }
             $data["can_deactivate_saf"] =$adminAllows;
             $data["can_take_payment"] = ($is_approved && collect($testRole)->isNotEmpty() && ($data["proccess_fee_paid"] ?? 1) == 0) ? true : false;
+            $document = $this->getUploadDoc($req);
+            $data["documents"] = $document;
             if ($this->_COMMONFUNCTION->checkUsersWithtocken("active_citizens")) {
                 $data["can_take_payment"] = (($data["proccess_fee_paid"] ?? 1) == 0 && $is_approved) ? true : false;
             }
@@ -1075,6 +1079,7 @@ class ActiveSafController extends Controller
             $mVerification = new PropSafVerification();
             $verificationDtl = collect();
             $mVerificationDtls = new PropSafVerificationDtl();
+            //$safdoc = new SafDocController();
             $memoDtls = array();
             $data = array();
             $user = Auth()->user();
@@ -1195,6 +1200,7 @@ class ActiveSafController extends Controller
                 // $val->construction_type = null ; 
                 $getFloorDtls->push($val);
             });
+            $document = $this->getUploadDoc($req);
             $data['floors'] = $getFloorDtls;
             $data["tranDtl"] = $mPropTransaction->getSafTranList($data['id']);
             $data["userDtl"] = [
@@ -1216,6 +1222,7 @@ class ActiveSafController extends Controller
             }
             $data["lastTcVerificationData"] = $lastTcVerificationData;
             $data["lastTcFloorVerificationData"] = $lastTcFloorVerificationData;
+            $data["documents"] = $document;
             return responseMsgs(true, "Saf Dtls", remove_null($data), "010127", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(true, $e->getMessage(), [], "010127", "1.0", "", "POST", $req->deviceId ?? "");
@@ -5573,4 +5580,71 @@ class ActiveSafController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+    public function getUploadDoc(Request $req)
+    {
+        $req->validate([
+            'applicationId' => 'required|numeric'
+        ]);
+        try {
+            $refUser = Auth()->user();
+            $refUserId = $refUser->id ?? 0;
+            $mWfActiveDocument = new WfActiveDocument();
+            $mActiveSafs = new PropActiveSaf();
+            $mActiveSafsOwners = new PropActiveSafsOwner();
+            $mPropSaf = new PropSaf();
+            $mSafsOwners = new PropSafsOwner();
+            $mCOMMON_FUNCTION = new CommonFunction();
+            $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');              // 1
+
+            $safDetails = $mActiveSafs->getSafNo($req->applicationId);
+            if (!$safDetails)
+                $safDetails = $mPropSaf->find($req->applicationId);
+            if (!$safDetails)
+                throw new Exception("Application Not Found for this application Id");
+
+            $workflowId = $safDetails->workflow_id;
+            $documents = $mWfActiveDocument->getDocByRefIds($req->applicationId, $workflowId, $moduleId);
+            $refUlbId = $safDetails->ulb_id;
+            $userRole = $mCOMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $workflowId);
+            $sameWorkRoles = $mCOMMON_FUNCTION->getReactionActionTakenRole($refUserId, $refUlbId, $workflowId, "doc_verify");
+            $owners = $mActiveSafs->getTable()=="prop_active_safs" ? $mActiveSafsOwners->getOwnersBySafId($safDetails->id) : $mSafsOwners->getOwnersBySafId($safDetails->id) ;            
+            $documents = $documents->map(function ($val) use ($sameWorkRoles, $userRole,$owners) {
+                $seconderyData = (new SecondaryDocVerification())->SeconderyWfActiveDocumentById($val->id);
+                $val->verify_status_secondery = $seconderyData ? $seconderyData->verify_status : 0;
+                $val->remarks_secondery = $seconderyData ? $seconderyData->remarks :  "";
+                $val->owner_name = (collect($owners)->where("id",$val->owner_dtl_id)->first())->owner_name?? "";
+                if (count($sameWorkRoles) > 1 && $userRole && $userRole->role_id != ($sameWorkRoles->first())["id"] && $userRole->can_verify_document) {
+                    $val->verify_status = $seconderyData ? $val->verify_status_secondery : $val->verify_status;
+                    $val->remarks = $seconderyData ? $val->remarks_secondery : $val->remarks;
+                }
+                if ($val->doc_code  == 'PHOTOGRAPH') {
+                    $val->verify_status = 1;
+                    $val->remarks = "";
+                }
+                return $val;
+            });
+            #======getjahinama Doc=======#
+            $ActiveSafController = App::makeWith(ActiveSafController::class,["iSafRepository"=>iSafRepository::class]);
+            $jahirnamaDoc = $ActiveSafController->getJahirnamaDoc($req);
+            if($jahirnamaDoc->original["status"])
+            {
+                $jahirnamaDoc = collect($jahirnamaDoc->original["data"])->sortByDesc("id");
+                foreach($jahirnamaDoc as $val)
+                {
+                    $documents->push($val );
+                }
+            }
+            $documents = $documents->map(function($val){
+                $uploadeUser = isset($val["uploaded_by_type"]) && $val["uploaded_by_type"] !="Citizen"? User::find($val["uploaded_by"]??0) : ActiveCitizen::find($val["uploaded_by"]??0);
+                $val["uploadedBy"] = ($uploadeUser->name ?? ($uploadeUser->user_name??"")) ." (".($val["uploaded_by_type"]??"").")";
+                return $val;
+            });
+            return remove_null($documents);
+            // return responseMsgs(true, ["docVerifyStatus" => $safDetails->doc_verify_status], remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, [$e->getMessage(),$e->getFile(),$e->getLine()], "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
 }

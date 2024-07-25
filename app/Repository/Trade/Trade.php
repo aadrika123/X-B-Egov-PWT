@@ -404,13 +404,15 @@ class Trade implements ITrade
                         $owner->user_id  = $refUserId;
                         $owner->save();
                     }
-                    // foreach ($request->ownerDetails as $owners) {
-                    //     $owner = new ActiveTradeOwner();
-                    //     $owner->temp_id      = $licenceId;
-                    //     $this->addNewOwners($owner, $owners);
-                    //     $owner->user_id  = $refUserId;
-                    //     $owner->save();
-                    // }
+                    foreach ($request->ownerDetails as $owners) {
+                        if (!isset($owners['ownerId']) || empty($owners['ownerId'])) { 
+                        $owner = new ActiveTradeOwner();
+                        $owner->temp_id      = $licenceId;
+                        $this->addNewOwners($owner, $owners);
+                        $owner->user_id  = $refUserId;
+                        $owner->save();
+                    }
+                }
                 } elseif ($mApplicationTypeId == 1) # code for New License
                 {
                     $wardId = $request->firmDetails['wardNo'];
@@ -597,11 +599,11 @@ class Trade implements ITrade
 
         $refActiveLicense->licence_for_years   = $request->licenseDetails['licenseFor'];
         //$refActiveLicense->address             = $refOldLicece->address;
-        $refActiveLicense->address             = $request->licenseDetails['businessAddress'];
+        $refActiveLicense->address             = $request->firmDetails['businessAddress'];
         //$refActiveLicense->landmark            = $refOldLicece->landmark;
-        $refActiveLicense->landmark            = $request->licenseDetails['landmark'];
+        $refActiveLicense->landmark            = $request->firmDetails['landmark'];
         // $refActiveLicense->pin_code            = $refOldLicece->pin_code;
-        $refActiveLicense->pin_code            = $request->licenseDetails['pincode'];
+        $refActiveLicense->pin_code            = $request->firmDetails['pincode'];
         $refActiveLicense->street_name         = $refOldLicece->street_name;
         $refActiveLicense->property_type       = $refOldLicece->property_type;
         $refActiveLicense->valid_from          = $refOldLicece->valid_upto;
@@ -669,44 +671,44 @@ class Trade implements ITrade
     }
 
     # Serial No : 01.05
-    // public function transerOldOwneres($refOwner, $owners, $request)
-    // {
-    //     $newData = collect($request->ownerDetails)->where("ownerId", $owners->id)->first();
-    //     if (!$newData) {
-    //         return ($this->addNewOwners($refOwner, $newData));
-    //     }
-    //     $refOwner->owner_name      = $owners->owner_name;
-    //     $refOwner->guardian_name   = $owners->guardian_name;
-    //     $refOwner->owner_name_marathi      = $owners->owner_name_marathi;
-    //     $refOwner->guardian_name_marathi   =  $owners->guardian_name_marathi;
-
-    //     $refOwner->address         = $owners->address;
-    //     $refOwner->mobile_no          = $owners->mobile_no;
-    //     $refOwner->city            = $owners->city;
-    //     $refOwner->district        = $owners->district;
-    //     $refOwner->state           = $owners->state;
-    //     $refOwner->email_id         = $owners->email_id;
-    // }
-
     public function transerOldOwneres($refOwner, $owners, $request)
     {
         $newData = collect($request->ownerDetails)->where("ownerId", $owners->id)->first();
-        if ($newData != null) {
-            $refOwner->owner_name      = $owners->owner_name;
-            $refOwner->guardian_name   = $owners->guardian_name;
-            $refOwner->owner_name_marathi      = $owners->owner_name_marathi;
-            $refOwner->guardian_name_marathi   =  $owners->guardian_name_marathi;
-
-            $refOwner->address         = $owners->address;
-            $refOwner->mobile_no          = $owners->mobile_no;
-            $refOwner->city            = $owners->city;
-            $refOwner->district        = $owners->district;
-            $refOwner->state           = $owners->state;
-            $refOwner->email_id         = $owners->email_id;
-        } else {
+        if (!$newData) {
             return ($this->addNewOwners($refOwner, $newData));
         }
+        $refOwner->owner_name      = $owners->owner_name;
+        $refOwner->guardian_name   = $owners->guardian_name;
+        $refOwner->owner_name_marathi      = $owners->owner_name_marathi;
+        $refOwner->guardian_name_marathi   =  $owners->guardian_name_marathi;
+
+        $refOwner->address         = $owners->address;
+        $refOwner->mobile_no          = $owners->mobile_no;
+        $refOwner->city            = $owners->city;
+        $refOwner->district        = $owners->district;
+        $refOwner->state           = $owners->state;
+        $refOwner->email_id         = $owners->email_id;
     }
+
+    // public function transerOldOwneres($refOwner, $owners, $request)
+    // {
+    //     $newData = collect($request->ownerDetails)->where("ownerId", $owners->id)->first();
+    //     if ($newData != null) {
+    //         $refOwner->owner_name      = $owners->owner_name;
+    //         $refOwner->guardian_name   = $owners->guardian_name;
+    //         $refOwner->owner_name_marathi      = $owners->owner_name_marathi;
+    //         $refOwner->guardian_name_marathi   =  $owners->guardian_name_marathi;
+
+    //         $refOwner->address         = $owners->address;
+    //         $refOwner->mobile_no          = $owners->mobile_no;
+    //         $refOwner->city            = $owners->city;
+    //         $refOwner->district        = $owners->district;
+    //         $refOwner->state           = $owners->state;
+    //         $refOwner->email_id         = $owners->email_id;
+    //     } else {
+    //         return ($this->addNewOwners($refOwner, $newData));
+    //     }
+    // }
 
     # Serial No : 01.06
     public function transferExpire(int $licenceId)
