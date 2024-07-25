@@ -27,6 +27,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use App\Models\Masters\RefRequiredDocument;
 
 /**
  * | ----------------------------------------------------------------------------------
@@ -320,13 +321,13 @@ class WaterConsumerWfController extends Controller
                 if ($application->doc_upload_status == false) {
                     throw new Exception("Document Not Fully Uploaded");
                 }                                                                       // DA Condition
-                if ($application->doc_status == false)
+                if ($application->doc_verify_status == false)
                     throw new Exception("Document Not Fully Verified");
                 break;
-            case $wfLevels['JE']:                                                                       // JE Coditon in case of site adjustment
-                if ($application->is_field_verified == false) {
-                    throw new Exception("Document Not Fully Uploaded or site inspection not done!");
-                }
+                // case $wfLevels['JE']:                                                                       // JE Coditon in case of site adjustment
+                //     if ($application->is_field_verified == false) {
+                //         throw new Exception("Document Not Fully Uploaded or site inspection not done!");
+                //     }
                 $siteDetails = $mWaterSiteInspection->getSiteDetails($application->id)
                     ->where('order_officer', $refRole['JE'])
                     ->first();
@@ -568,6 +569,7 @@ class WaterConsumerWfController extends Controller
         $mwaterOwner            = new WaterConsumerOwner();
         # applicatin details
         $applicationDetails = $mwaterConsumerActive->fullWaterDetails($request)->get();
+
         if (collect($applicationDetails)->first() == null) {
             return responseMsg(false, "Application Data Not found!", $request->applicationId);
         }
@@ -596,8 +598,9 @@ class WaterConsumerWfController extends Controller
         $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$firstView]);
         # CardArray
         $cardDetails = $this->getCardDetails($applicationDetails, $ownerDetail);
+        $chargeCatgory =  $applicationDetails->pluck('charge_category');
         $cardData = [
-            'headerTitle' => 'Water Disconnection',
+            'headerTitle' => $chargeCatgory,
             'data' => $cardDetails
         ];
         $fullDetailsData['fullDetailsData']['cardArray'] = new Collection($cardData);
@@ -642,18 +645,36 @@ class WaterConsumerWfController extends Controller
         return responseMsgs(true, "listed Data!", remove_null($returnValues), "", "02", ".ms", "POST", "");
     }
     /**
-     * function for return data of basic details
+     * Function for returning basic details data
      */
     public function getBasicDetails($applicationDetails)
     {
         $collectionApplications = collect($applicationDetails)->first();
-        return new Collection([
-            ['displayString' => 'Ward No',            'key' => 'WardNo',              'value' => $collectionApplications->ward_name],
-            // ['displayString' => 'Charge Category',    'key' => 'chargeCategory',      'value' => $collectionApplications->charge_category],
-            // ['displayString' => 'Ubl Id',             'key' => 'ulbId',               'value' => $collectionApplications->ulb_id],
-            ['displayString' => 'ApplyDate',           'key' => 'applyDate',          'value' => $collectionApplications->apply_date],
-        ]);
+
+        // Basic details common to all applications
+        $basicDetails = [
+            ['displayString' => 'Ward No',            'key' => 'WardNo',            'value' => $collectionApplications->ward_name],
+            ['displayString' => 'ApplyDate',          'key' => 'applyDate',         'value' => $collectionApplications->apply_date],
+            ['displayString' => 'TapSize',            'key' => 'taPSize',           'value' => $collectionApplications->tab_size],
+            ['displayString' => 'PropertyType',       'key' => 'propertyType',      'value' => $collectionApplications->property_type],
+            ['displayString' => 'Address',            'key' => 'Address',           'value' => $collectionApplications->address],
+            ['displayString' => 'Category',           'key' => 'category',          'value' => $collectionApplications->category],
+            ['displayString' => 'Zone',               'key' => 'Zone',              'value' => $collectionApplications->zone_name],
+        ];
+
+        // If charge category ID is 6, add the new field
+        if ($collectionApplications->charge_catagory_id == 6) {
+            $basicDetails[] = ['displayString' => 'New Name', 'key' => 'NewName', 'value' => $collectionApplications->new_name];
+        } elseif ($collectionApplications->charge_catagory_id == 7) {
+            $basicDetails[] = ['displayString' => 'New meter No', 'key' => 'NewMeterNo', 'value' => $collectionApplications->newMeterNo];
+            $basicDetails[] = ['displayString' => 'Old Meter No ', 'key' => 'OldMeterNo', 'value' => $collectionApplications->meter_no];
+        } elseif ($collectionApplications->charge_catagory_id == 8) {
+            $basicDetails[] = ['displayString' => 'New Property Type', 'key' => 'NewPropertyType', 'value' => $collectionApplications->newPropertyType];
+            $basicDetails[] = ['displayString' => 'New Category', 'key' => 'NewCategory', 'value' => $collectionApplications->newCategory];
+        }
+        return new Collection($basicDetails);
     }
+
     /**
      * return data fro card details 
      */
@@ -667,10 +688,8 @@ class WaterConsumerWfController extends Controller
         return new Collection([
             ['displayString' => 'Ward No.',             'key' => 'WardNo.',           'value' => $collectionApplications->ward_name],
             ['displayString' => 'Application No.',      'key' => 'ApplicationNo.',    'value' => $collectionApplications->application_no],
-            ['displayString' => 'Owner Name',           'key' => 'OwnerName',         'value' => $ownerDetail],
             ['displayString' => 'Request Type',         'key' => 'RequestType',       'value' => $collectionApplications->charge_category],
-
-
+            ['displayString' => 'Consumer No ',         'key' => 'Consumer',           'value' => $collectionApplications->consumer_no],
         ]);
     }
     /**
@@ -681,7 +700,7 @@ class WaterConsumerWfController extends Controller
         return collect($ownerDetails)->map(function ($value, $key) {
             return [
                 $key + 1,
-                $value['owner_name'],
+                $value['applicant_name'],
                 $value['guardian_name'],
                 $value['mobile_no'],
                 $value['email'],
@@ -880,6 +899,61 @@ class WaterConsumerWfController extends Controller
             return responseMsgs(true, "Data Disconnection", remove_null($detailsDisconnections), "", "1.0", "350ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", $e->getCode(), "1.0", "", 'POST', "");
+        }
+    }
+    /**
+     * | Reupload Rejected Documents
+     * | Function - 24
+     * | API - 21
+     */
+    public function reuploadDocument(Request $req)
+    {
+        $validator = Validator::make($req->all(), [
+            'id' => 'required|digits_between:1,9223372036854775807',
+            'image' => 'required|mimes:png,jpeg,pdf,jpg'
+        ]);
+        if ($validator->fails()) {
+            return ['status' => false, 'message' => $validator->errors()];
+        }
+        try {
+            // Variable initialization
+            $mWaterConsumerActiveRequest = new WaterConsumerActiveRequest();
+            $Image                   = $req->image;
+            $docId                   = $req->id;
+            $this->begin();
+            $appId = $mWaterConsumerActiveRequest->reuploadDocument($req, $Image, $docId);
+            $this->checkFullUpload($appId, $req);
+            $this->commit();
+
+            return responseMsgs(true, "Document Uploaded Successfully", "", "050821", 1.0, responseTime(), "POST", "", "");
+        } catch (Exception $e) {
+            $this->rollback();
+            return responseMsgs(false, "Document Not Uploaded", "050821", 010717, 1.0, "", "POST", "", "");
+        }
+    }
+
+    /**
+     * | Check full document uploaded or not
+     * | Function - 23
+     */
+    public function checkFullUpload($applicationId, $req)
+    {
+        $docCode = $req->docCode;
+        $mWfActiveDocument = new WfActiveDocument();
+        $mRefRequirement = new RefRequiredDocument();
+        $moduleId = $this->_waterModuleId;
+        $totalRequireDocs = $mRefRequirement->totalNoOfDocs($moduleId, $docCode);
+        $appDetails = WaterConsumerActiveRequest::find($applicationId);
+        $totalUploadedDocs = $mWfActiveDocument->totalUploadedDocs($applicationId, $appDetails->workflow_id, $moduleId);
+        if ($totalRequireDocs == $totalUploadedDocs) {
+            $appDetails->doc_upload_status = '1';
+            $appDetails->doc_verify_status = '0';
+            $appDetails->parked = NULL;
+            $appDetails->save();
+        } else {
+            $appDetails->doc_upload_status = '0';
+            $appDetails->doc_verify_status = '0';
+            $appDetails->save();
         }
     }
 }

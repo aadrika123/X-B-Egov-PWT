@@ -99,7 +99,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('application/payment/get-payment-history', 'getApplicationPaymentHistory');         // Admin/Consumer
         Route::post('consumer/offline-demand-payment', 'offlineDemandPayment');                         // Consumer
         Route::post('application/payment/offline/pay-connection-charge', 'offlineConnectionPayment');   // Admin
-        
+
         Route::post('consumer/online-demand-payment', 'initiateOnlineDemandPayment');                   // Citizen
         Route::post('citizen/payment-history', 'paymentHistory');                                       // Citizen  
         Route::post('consumer/water-user-charges', 'getWaterUserCharges');                              // Admin / Citizen
@@ -190,6 +190,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('get-details-applications', 'getConApplicationDetails');
         Route::post('get-details-disconnections', 'getRequestedApplication');                       // Citizen / Changes the route name
         Route::post('consumer/req/get-disconnected-details', 'getDetailsDisconnections');
+        Route::post('consumer/reqs/reupload-document', 'reuploadDocument');                                                // 21 ( Reupload Document for Pending Documents)
     });
 
     /**

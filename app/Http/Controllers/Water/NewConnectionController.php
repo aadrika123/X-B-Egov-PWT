@@ -34,6 +34,7 @@ use App\Models\Water\WaterConnectionThroughMstrs;
 use App\Models\Water\WaterConnectionTypeCharge;
 use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterConsumer;
+use App\Models\Water\WaterConsumerActiveRequest;
 use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterConsumerInitialMeter;
 use App\Models\Water\WaterConsumerMeter;
@@ -3028,7 +3029,7 @@ class NewConnectionController extends Controller
             $mWaterConsumerMeter    = new WaterConsumerMeter();
             $mWaterSecondConsumer   = new WaterSecondConsumer();
             $refConsumerId          = $request->consumerId;
-            $workflowId = null;
+            $workflowId             = null;
             $moduleId          = Config::get('module-constants.PROPERTY_MODULE_ID');
             $refConnectionName      = Config::get('waterConstaint.METER_CONN_TYPE');
             #get hoding details 
@@ -3078,10 +3079,14 @@ class NewConnectionController extends Controller
                     throw new Exception("Invalid license No");
                 }
             }
-            $refConsumer = $mWaterSecondConsumer->getConsumerDtlsByID($refConsumerId)->first();
-            if (!$refConsumer) {
-                throw new Exception("Consumer Not Found!");
+            $refConsumer = [];
+            if ($refConsumerId != null) {
+                $refConsumer = $mWaterSecondConsumer->getConsumerDtlsByID($refConsumerId)->first();
+                if (!$refConsumer) {
+                    throw new Exception("Consumer Not Found!");
+                }
             }
+
             $holdingDetails['ownerDetails'] = $holdingOwnerDeails;
             $holdingDetails['docDetails']   = $returnData;
             $holdingDetails['connectionName'] = $connectionName ?? "";

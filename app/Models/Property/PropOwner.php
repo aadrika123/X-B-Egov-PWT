@@ -106,10 +106,11 @@ class PropOwner extends PropParamModel #Model
                 'zone_masters.zone_name',
                 'prop_properties.prop_address',
                 'prop_properties.holding_no',
+                'prop_properties.holding_type',
             )
             ->join('prop_properties', 'prop_properties.id', 'prop_owners.property_id')
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
-            ->leftjoin('zone_masters','zone_masters.id','prop_properties.zone_mstr_id')
+            ->leftjoin('zone_masters', 'zone_masters.id', 'prop_properties.zone_mstr_id')
             ->where('prop_owners.status', 1)
             ->orderBy('prop_owners.id')
             ->get();

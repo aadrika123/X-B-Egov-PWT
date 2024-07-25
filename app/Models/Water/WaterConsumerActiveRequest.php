@@ -2,9 +2,13 @@
 
 namespace App\Models\Water;
 
+use App\MicroServices\DocumentUpload;
+use App\Models\Workflows\WfActiveDocument;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 class WaterConsumerActiveRequest extends Model
@@ -39,6 +43,10 @@ class WaterConsumerActiveRequest extends Model
         $mWaterConsumerActiveRequest->corresponding_mobile_no   = $req->mobileNo ?? null;
         $mWaterConsumerActiveRequest->new_name                  = $req->newName ?? null;
         $mWaterConsumerActiveRequest->request_type              = $req->requestTypeReason ?? null;
+        $mWaterConsumerActiveRequest->tab_size                  = $req->tapsize ?? null;
+        $mWaterConsumerActiveRequest->property_type             = $req->buildingType ?? null;
+        $mWaterConsumerActiveRequest->category                  = $req->category ?? null;
+        $mWaterConsumerActiveRequest->meter_number              = $req->meterNo ?? null;
         $mWaterConsumerActiveRequest->save();
         return [
             "id" => $mWaterConsumerActiveRequest->id
@@ -53,7 +61,7 @@ class WaterConsumerActiveRequest extends Model
         return WaterConsumerActiveRequest::select(
             'water_consumer_charge_categories.charge_category'
         )
-            ->join('water_consumer_charge_categories','water_consumer_charge_categories.id','water_consumer_active_requests.charge_catagory_id')
+            ->join('water_consumer_charge_categories', 'water_consumer_charge_categories.id', 'water_consumer_active_requests.charge_catagory_id')
             ->where('water_consumer_active_requests.consumer_id', $consumerId)
             ->where('water_consumer_active_requests.status', 1)
             ->orderByDesc('water_consumer_active_requests.id');
@@ -212,15 +220,18 @@ class WaterConsumerActiveRequest extends Model
             'water_consumer_active_requests.id as applicationId',
             // 'water_consumer_active_requests.mobile_no',
             'water_second_consumers.tab_size',
+            'water_second_consumers.consumer_no',
             'water_second_consumers.property_no',
             'water_consumer_active_requests.status',
             'water_second_consumers.payment_status',
             'water_second_consumers.user_type',
             'water_consumer_active_requests.apply_date',
+            'water_consumer_active_requests.charge_catagory_id',
             'water_second_consumers.address',
             'water_second_consumers.category',
             'water_consumer_active_requests.application_no',
             'water_second_consumers.pin',
+            'water_second_consumers.meter_no as oldMeterNo',
             'water_consumer_active_requests.current_role',
             'water_consumer_active_requests.workflow_id',
             'water_consumer_active_requests.last_role_id',
@@ -233,7 +244,12 @@ class WaterConsumerActiveRequest extends Model
             'wf_roles.role_name AS current_role_name',
             'water_connection_type_mstrs.connection_type',
             'ulb_ward_masters.ward_name',
-            'water_consumer_charge_categories.charge_category'
+            'water_consumer_charge_categories.charge_category',
+            'water_consumer_active_requests.new_name',
+            'water_consumer_active_requests.meter_number as newMeterNo',
+            'water_consumer_active_requests.tab_size as newTabSize',
+            'water_consumer_active_requests.property_type as newPropertyType',
+            'water_consumer_active_requests.category as newCategory',
         )
             ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_consumer_active_requests.current_role')
             ->leftjoin('ulb_masters', 'ulb_masters.id', '=', 'water_consumer_active_requests.ulb_id')
@@ -304,5 +320,27 @@ class WaterConsumerActiveRequest extends Model
             ->where('water_consumer_active_requests.id', $applicationId)
             ->where('water_consumer_active_requests.status', 1)
             ->where('water_consumer_active_requests.verify_status', 1);
+    }
+    /**
+     * | Reupload Documents
+     */
+    public function reuploadDocument($req, $Image, $docId)
+    {
+        $docUpload = new DocumentUpload;
+        $docDetails =  WfActiveDocument::where('id', $docId)->first();
+        $relativePath       = Config::get('waterConstaint.WATER_RELATIVE_PATH');
+        $user = collect(authUser($req));
+        $refImageName = $docDetails['doc_code'];
+        $refImageName = $docDetails['active_id'] . '-' . $refImageName;
+        $documentImg = $req->image;
+        $imageName = $docUpload->upload($refImageName, $documentImg, $relativePath);
+
+        $metaReqs['document'] = $imageName;
+        $a = new Request($metaReqs);
+        $mWfActiveDocument = new WfActiveDocument();
+        $activeId = $mWfActiveDocument->updateDocuments(new Request($metaReqs), $user, $docId);
+        // $docDetails->current_status = '0';
+        $docDetails->save();
+        return $activeId;
     }
 }

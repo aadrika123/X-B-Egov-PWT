@@ -43,4 +43,18 @@ class RefRequiredDocument extends Model
             ->whereIn('code', $docCodes)
             ->get();
     }
+
+    /**
+     * | Get Total no of document for upload
+     */
+    public function totalNoOfDocs($moduleId,$docCode)
+    {
+        $noOfDocs = RefRequiredDocument::select('requirements')
+            // ->where('code', $docCode)
+            ->where('module_id',$moduleId)
+            ->where('code',$docCode)
+            ->first();
+        $totalNoOfDocs = explode("#", $noOfDocs);
+        return count($totalNoOfDocs);
+    }
 }
