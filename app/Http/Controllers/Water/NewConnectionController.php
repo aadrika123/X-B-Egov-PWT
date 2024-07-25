@@ -3029,7 +3029,7 @@ class NewConnectionController extends Controller
             $mWaterConsumerMeter    = new WaterConsumerMeter();
             $mWaterSecondConsumer   = new WaterSecondConsumer();
             $refConsumerId          = $request->consumerId;
-            $workflowId = null;
+            $workflowId             = null;
             $moduleId          = Config::get('module-constants.PROPERTY_MODULE_ID');
             $refConnectionName      = Config::get('waterConstaint.METER_CONN_TYPE');
             #get hoding details 
