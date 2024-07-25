@@ -462,6 +462,7 @@ class WaterConsumerWfController extends Controller
         $mwaterConsumerActiveRequest      = new WaterConsumerActiveRequest();
         $mWaterSiteInspection             = new WaterSiteInspection();
         $mWaterConsumer                   = new WaterSecondConsumer();
+        $mWaterConsumerOwner              = new WaterConsumerOwner();
         $waterTrack                       = new WorkflowTrack();
 
         # checking if consumer already exist 
@@ -511,9 +512,14 @@ class WaterConsumerWfController extends Controller
         $waterTrack->saveTrack($request);
         # update verify status
         $mwaterConsumerActiveRequest->updateVerifystatus($request->applicationId, $request->status);
+        $consumerOwnedetails = $mWaterConsumerOwner->getConsumerOwner($checkExist->consumer_id)->first();
 
         #deactivate Consumer Permantly
-        $mWaterConsumer->dissconnetConsumer($checkExist->consumer_id);
+        if ($checkExist->charge_catagory_id == 2) {                                                    // this for Disconnection 
+            $mWaterConsumer->dissconnetConsumer($consumerOwnedetails->consumer_id);
+        } elseif ($checkExist->charge_catagory_id == 6) {                                              // this for Name Change 
+            $mWaterConsumerOwner->createOwner($consumerOwnedetails,$checkExist);
+        }
     }
 
     /**

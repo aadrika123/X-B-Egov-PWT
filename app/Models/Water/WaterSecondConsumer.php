@@ -665,7 +665,7 @@ class WaterSecondConsumer extends Model
         )
             ->where('water_second_consumers.id', $applicationId)
             ->join('water_approval_application_details', 'water_approval_application_details.id', 'water_second_consumers.apply_connection_id')
-            ->where('water_second_consumers.status', 3);
+            ->where('water_second_consumers.status', 1);
     }
 
     public function updateConsumer($consumerId)
