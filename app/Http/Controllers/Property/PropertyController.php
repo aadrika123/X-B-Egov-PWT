@@ -708,7 +708,7 @@ class PropertyController extends Controller
             }
             $users = User::select("*")->where("id", $application->user_id)->first();
             if(!$users){
-            $citizen = ActiveCitizen::select("*")->where("id", $application->user_id)->first();}
+            $citizen = ActiveCitizen::select("*")->where("id", $application->citizen_id)->first();}
             $docUrl = Config::get('module-constants.DOC_URL');
             $data["userDtl"] = [
                 "employeeName" => $users->name ?? $citizen->user_name,
