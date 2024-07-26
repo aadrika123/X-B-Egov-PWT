@@ -517,13 +517,19 @@ class WaterConsumerWfController extends Controller
         # update verify status
         $mwaterConsumerActiveRequest->updateVerifystatus($request->applicationId, $request->status);
         $consumerOwnedetails = $mWaterConsumerOwner->getConsumerOwner($checkExist->consumer_id)->first();
-        #deactivate Consumer Permantly
+
+        #here update all the entities related to request of consumers
+        
         if ($checkExist->charge_catagory_id == 2) {                                                    // this for Disconnection 
             $mWaterConsumer->dissconnetConsumer($consumerOwnedetails->consumer_id);
         } elseif ($checkExist->charge_catagory_id == 6) {                                              // this for Name Change 
             $mWaterConsumerOwner->createOwner($consumerOwnedetails, $checkExist);
-        } elseif ($checkExist->charge_catagory_id == 7) {
+        } elseif ($checkExist->charge_catagory_id == 7) {                                              // this is for meter number
             $mWaterConsumerMeter->updateMeterNo($consumerOwnedetails, $checkExist);
+        } elseif ($checkExist->charge_catagory_id == 8) {                                              // this is for change property type & category
+            $mWaterConsumer->updateConnectionType($consumerOwnedetails, $checkExist);
+        } elseif ($checkExist->charge_catagory_id == 9) {                                              // this is for change property type & category
+            $mWaterConsumer->updateTabSize($consumerOwnedetails, $checkExist);
         }
     }
 
