@@ -138,7 +138,7 @@ class ObjectionRepository implements iObjectionRepository
                 $objection->prop_address = $propDtl->prop_address;
                 $objection->prop_city = $propDtl->prop_city ?? null;
                 $objection->prop_dist = $propDtl->prop_dist ?? null;
-                $objection->prop_pin_code = $propDtl->prop_pin_code ?? null ;
+                $objection->prop_pin_code = $propDtl->prop_pin_code ?? null;
                 $objection->prop_state = $propDtl->prop_state ?? null;
                 $objection->is_mobile_tower = $propDtl->is_mobile_tower ?? null;
                 $objection->tower_area = $propDtl->tower_area ?? null;
@@ -158,7 +158,7 @@ class ObjectionRepository implements iObjectionRepository
                 $objection->flat_registry_date = $propDtl->flat_registry_date ?? null;
                 $objection->assessment_type = $propDtl->assessment_type;
                 $objection->holding_type = $propDtl->holding_type ?? null;
-                $objection->is_old = $propDtl->is_old ?? null ;
+                $objection->is_old = $propDtl->is_old ?? null;
                 $objection->apartment_details_id = $propDtl->apartment_details_id ?? null;
                 $objection->road_width = $propDtl->road_width ?? null;
                 $objection->saf_no = $propDtl->saf_no;
@@ -215,6 +215,7 @@ class ObjectionRepository implements iObjectionRepository
                 $objectionOwner->guardian_name_marathi = $request->occupantNameMarathi;
                 $objectionOwner->dob = $request->dob;
                 $objectionOwner->created_at = Carbon::now();
+                $objectionOwner->logs = json_encode($objectionOwner->toArray(), JSON_UNESCAPED_UNICODE);
                 $objectionOwner->save();
 
                 //name document
@@ -386,107 +387,107 @@ class ObjectionRepository implements iObjectionRepository
                 //     $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);              // Get Finisher ID
                 //     $initiatorRoleId = DB::select($refInitiatorRoleId);
                 //     $finisherRoleId = DB::select($refFinisherRoleId);
-        
-                        //saving objection details
-                        # Flag : call model <-----
-                        // $objection = new PropActiveObjection();
-                        $objection = new PropPropertyUpdateRequest();
-                        $objection->ulb_id = $ulbId;
-                        $objection->user_id = $userId;
-                        $objection->objection_for =  $objectionFor;
-                        $objection->prop_id = $request->propId;
-                        $objection->objection_remarks = $request->remarks;
-                        $objection->application_date = Carbon::now();
-                        $objection->created_at = Carbon::now();
-                        $objection->workflow_id = $ulbWorkflowId->id;
-                        $objection->current_role_id = $finisherRoleId[0]->role_id;
-                        $objection->initiator_role_id = collect($finisherRoleId)->first()->role_id;
-                        // $objection->last_role_id = collect($finisherRoleId)->first()->role_id;
-                        $objection->finisher_role_id = collect($finisherRoleId)->first()->role_id;
-                        $objection->corr_address = $request->corrAddress??$propDtl->corr_address??null;
-                        $objection->corr_city = $request->corrCity??$propDtl->corr_city??null;
-                        $objection->corr_dist = $request->corrDist??$propDtl->corr_dist??null;
-                        $objection->corr_pin_code = $request->corrPinCode??$propDtl->corr_pin_code??null;
-                        $objection->corr_state = $request->corrState??$propDtl->corr_state??null;
-                        $objection->holding_no = $propDtl->holding_no;
-                        $objection->saf_id = $propDtl->saf_id;
-                        $objection->applicant_name = $propDtl->applicant_name;
-                        $objection->ward_mstr_id = $propDtl->ward_mstr_id;
-                        $objection->ownership_type_mstr_id = $propDtl->ownership_type_mstr_id;
-                        $objection->prop_type_mstr_id = $request->propTypeMasterId??$propDtl->prop_type_mstr_id;
-                        $objection->appartment_name = $propDtl->appartment_name ?? null;
-                        $objection->no_electric_connection = $propDtl->no_electric_connection ?? null;
-                        $objection->elect_consumer_no = $propDtl->elect_consumer_no ?? null;
-                        $objection->elect_acc_no = $propDtl->elect_acc_no ?? null;
-                        $objection->elect_bind_book_no = $propDtl->elect_bind_book_no ?? null;
-                        $objection->elect_cons_category = $propDtl->elect_cons_category ?? null;
-                        $objection->building_plan_approval_no = $propDtl->building_plan_approval_no ?? null;
-                        $objection->building_plan_approval_date = $propDtl->building_plan_approval_date ?? null;
-                        $objection->water_conn_no = $propDtl->water_conn_no ?? null;
-                        $objection->water_conn_date = $propDtl->water_conn_date ?? null;
-                        $objection->khata_no = $propDtl->khata_no;
-                        $objection->plot_no = $propDtl->plot_no;
-                        $objection->village_mauja_name = $propDtl->village_mauja_name ?? null;
-                        $objection->road_type_mstr_id = $propDtl->road_type_mstr_id;
-                        $objection->area_of_plot = $request->area??$propDtl->area_of_plot;
-                        $objection->prop_address = $propDtl->prop_address;
-                        $objection->prop_city = $propDtl->prop_city ?? null;
-                        $objection->prop_dist = $propDtl->prop_dist ?? null;
-                        $objection->prop_pin_code = $propDtl->prop_pin_code ?? null ;
-                        $objection->prop_state = $propDtl->prop_state ?? null;
-                        $objection->is_mobile_tower = $propDtl->is_mobile_tower ?? null;
-                        $objection->tower_area = $propDtl->tower_area ?? null;
-                        $objection->tower_installation_date = $propDtl->tower_installation_date ?? null;
-                        $objection->is_hoarding_board = $propDtl->is_hoarding_board ?? null;
-                        $objection->hoarding_area = $propDtl->hoarding_area ?? null;
-                        $objection->hoarding_installation_date = $propDtl->hoarding_installation_date ?? null;
-                        $objection->is_petrol_pump = $propDtl->is_petrol_pump ?? null;
-                        $objection->under_ground_area = $propDtl->under_ground_area ?? null;
-                        $objection->petrol_pump_completion_date = $propDtl->petrol_pump_completion_date ?? null;
-                        $objection->is_water_harvesting = $request->isWaterHarvesting??$propDtl->is_water_harvesting ?? null;
-                        $objection->land_occupation_date = $request->landOccupationDate??$propDtl->land_occupation_date ?? null;
-                        $objection->new_ward_mstr_id = $propDtl->new_ward_mstr_id ?? null;
-                        $objection->entry_type = $propDtl->entry_type ?? null;
-                        $objection->zone_mstr_id = $propDtl->zone_mstr_id ?? null;
-                        $objection->new_holding_no = $propDtl->new_holding_no ?? null;
-                        $objection->flat_registry_date = $propDtl->flat_registry_date ?? null;
-                        $objection->assessment_type = $propDtl->assessment_type;
-                        $objection->holding_type = $propDtl->holding_type ?? null;
-                        $objection->is_old = $propDtl->is_old ?? null ;
-                        $objection->apartment_details_id = $propDtl->apartment_details_id ?? null;
-                        $objection->road_width = $propDtl->road_width ?? null;
-                        $objection->saf_no = $propDtl->saf_no;
-                        $objection->pt_no = $propDtl->pt_no ?? null;
-                        $objection->building_name = $propDtl->building_name ?? null;
-                        $objection->street_name = $propDtl->street_name ?? null;
-                        $objection->location = $propDtl->location ?? null;
-                        $objection->landmark = $propDtl->landmark ?? null;
-                        $objection->is_gb_saf = $propDtl->is_gb_saf ?? null;
-                        $objection->gb_office_name = $propDtl->gb_office_name ?? null;
-                        $objection->gb_usage_types = $propDtl->gb_usage_types ?? null;
-                        $objection->gb_prop_usage_types = $propDtl->gb_prop_usage_types ?? null;
-                        $objection->is_trust = $propDtl->is_trust ?? null;
-                        $objection->trust_type = $propDtl->trust_type ?? null;
-                        $objection->gb_prop_usage_types = $propDtl->gb_prop_usage_types ?? null;
-                        $objection->is_trust_verified = $propDtl->is_trust_verified ?? null;
-                        $objection->rwh_date_from = $request->rwhDate??$propDtl->rwh_date_from ?? null;
-                        $objection->category_id =$request->categoryId??$propDtl->category_id ?? null;
-                        $objection->is_waived_off = $propDtl->is_waived_off ?? null;
-                        $objection->property_no = $propDtl->property_no ?? null;
-                        $objection->pending_status = 1;
-                        $objection->ip_address = getClientIpAddress();
-                        $objection->logs = json_encode($objection->toArray(), JSON_UNESCAPED_UNICODE);
-        
-                        if ($userType == 'Citizen') {
-                            // $objection->current_role = collect($initiatorRoleId)->first()->forward_role_id;
-                            // $objection->initiator_role_id = collect($initiatorRoleId)->first()->forward_role_id;      // Send to DA in Case of Citizen
-                            // $objection->last_role_id = collect($initiatorRoleId)->first()->forward_role_id;
-                            $objection->user_id = null;
-                            $objection->citizen_id = $userId;
-                            //$objection->doc_upload_status = 1;
-                        }
-                        $objection->save();
-                        $objectionNo = $objection->request_no;
+
+                //saving objection details
+                # Flag : call model <-----
+                // $objection = new PropActiveObjection();
+                $objection = new PropPropertyUpdateRequest();
+                $objection->ulb_id = $ulbId;
+                $objection->user_id = $userId;
+                $objection->objection_for =  $objectionFor;
+                $objection->prop_id = $request->propId;
+                $objection->objection_remarks = $request->remarks;
+                $objection->application_date = Carbon::now();
+                $objection->created_at = Carbon::now();
+                $objection->workflow_id = $ulbWorkflowId->id;
+                $objection->current_role_id = $finisherRoleId[0]->role_id;
+                $objection->initiator_role_id = collect($finisherRoleId)->first()->role_id;
+                // $objection->last_role_id = collect($finisherRoleId)->first()->role_id;
+                $objection->finisher_role_id = collect($finisherRoleId)->first()->role_id;
+                $objection->corr_address = $request->corrAddress ?? $propDtl->corr_address ?? null;
+                $objection->corr_city = $request->corrCity ?? $propDtl->corr_city ?? null;
+                $objection->corr_dist = $request->corrDist ?? $propDtl->corr_dist ?? null;
+                $objection->corr_pin_code = $request->corrPinCode ?? $propDtl->corr_pin_code ?? null;
+                $objection->corr_state = $request->corrState ?? $propDtl->corr_state ?? null;
+                $objection->holding_no = $propDtl->holding_no;
+                $objection->saf_id = $propDtl->saf_id;
+                $objection->applicant_name = $propDtl->applicant_name;
+                $objection->ward_mstr_id = $propDtl->ward_mstr_id;
+                $objection->ownership_type_mstr_id = $propDtl->ownership_type_mstr_id;
+                $objection->prop_type_mstr_id = $request->propTypeMasterId ?? $propDtl->prop_type_mstr_id;
+                $objection->appartment_name = $propDtl->appartment_name ?? null;
+                $objection->no_electric_connection = $propDtl->no_electric_connection ?? null;
+                $objection->elect_consumer_no = $propDtl->elect_consumer_no ?? null;
+                $objection->elect_acc_no = $propDtl->elect_acc_no ?? null;
+                $objection->elect_bind_book_no = $propDtl->elect_bind_book_no ?? null;
+                $objection->elect_cons_category = $propDtl->elect_cons_category ?? null;
+                $objection->building_plan_approval_no = $propDtl->building_plan_approval_no ?? null;
+                $objection->building_plan_approval_date = $propDtl->building_plan_approval_date ?? null;
+                $objection->water_conn_no = $propDtl->water_conn_no ?? null;
+                $objection->water_conn_date = $propDtl->water_conn_date ?? null;
+                $objection->khata_no = $propDtl->khata_no;
+                $objection->plot_no = $propDtl->plot_no;
+                $objection->village_mauja_name = $propDtl->village_mauja_name ?? null;
+                $objection->road_type_mstr_id = $propDtl->road_type_mstr_id;
+                $objection->area_of_plot = $request->area ?? $propDtl->area_of_plot;
+                $objection->prop_address = $propDtl->prop_address;
+                $objection->prop_city = $propDtl->prop_city ?? null;
+                $objection->prop_dist = $propDtl->prop_dist ?? null;
+                $objection->prop_pin_code = $propDtl->prop_pin_code ?? null;
+                $objection->prop_state = $propDtl->prop_state ?? null;
+                $objection->is_mobile_tower = $propDtl->is_mobile_tower ?? null;
+                $objection->tower_area = $propDtl->tower_area ?? null;
+                $objection->tower_installation_date = $propDtl->tower_installation_date ?? null;
+                $objection->is_hoarding_board = $propDtl->is_hoarding_board ?? null;
+                $objection->hoarding_area = $propDtl->hoarding_area ?? null;
+                $objection->hoarding_installation_date = $propDtl->hoarding_installation_date ?? null;
+                $objection->is_petrol_pump = $propDtl->is_petrol_pump ?? null;
+                $objection->under_ground_area = $propDtl->under_ground_area ?? null;
+                $objection->petrol_pump_completion_date = $propDtl->petrol_pump_completion_date ?? null;
+                $objection->is_water_harvesting = $request->isWaterHarvesting ?? $propDtl->is_water_harvesting ?? null;
+                $objection->land_occupation_date = $request->landOccupationDate ?? $propDtl->land_occupation_date ?? null;
+                $objection->new_ward_mstr_id = $propDtl->new_ward_mstr_id ?? null;
+                $objection->entry_type = $propDtl->entry_type ?? null;
+                $objection->zone_mstr_id = $propDtl->zone_mstr_id ?? null;
+                $objection->new_holding_no = $propDtl->new_holding_no ?? null;
+                $objection->flat_registry_date = $propDtl->flat_registry_date ?? null;
+                $objection->assessment_type = $propDtl->assessment_type;
+                $objection->holding_type = $propDtl->holding_type ?? null;
+                $objection->is_old = $propDtl->is_old ?? null;
+                $objection->apartment_details_id = $propDtl->apartment_details_id ?? null;
+                $objection->road_width = $propDtl->road_width ?? null;
+                $objection->saf_no = $propDtl->saf_no;
+                $objection->pt_no = $propDtl->pt_no ?? null;
+                $objection->building_name = $propDtl->building_name ?? null;
+                $objection->street_name = $propDtl->street_name ?? null;
+                $objection->location = $propDtl->location ?? null;
+                $objection->landmark = $propDtl->landmark ?? null;
+                $objection->is_gb_saf = $propDtl->is_gb_saf ?? null;
+                $objection->gb_office_name = $propDtl->gb_office_name ?? null;
+                $objection->gb_usage_types = $propDtl->gb_usage_types ?? null;
+                $objection->gb_prop_usage_types = $propDtl->gb_prop_usage_types ?? null;
+                $objection->is_trust = $propDtl->is_trust ?? null;
+                $objection->trust_type = $propDtl->trust_type ?? null;
+                $objection->gb_prop_usage_types = $propDtl->gb_prop_usage_types ?? null;
+                $objection->is_trust_verified = $propDtl->is_trust_verified ?? null;
+                $objection->rwh_date_from = $request->rwhDate ?? $propDtl->rwh_date_from ?? null;
+                $objection->category_id = $request->categoryId ?? $propDtl->category_id ?? null;
+                $objection->is_waived_off = $propDtl->is_waived_off ?? null;
+                $objection->property_no = $propDtl->property_no ?? null;
+                $objection->pending_status = 1;
+                $objection->ip_address = getClientIpAddress();
+                $objection->logs = json_encode($objection->toArray(), JSON_UNESCAPED_UNICODE);
+
+                if ($userType == 'Citizen') {
+                    // $objection->current_role = collect($initiatorRoleId)->first()->forward_role_id;
+                    // $objection->initiator_role_id = collect($initiatorRoleId)->first()->forward_role_id;      // Send to DA in Case of Citizen
+                    // $objection->last_role_id = collect($initiatorRoleId)->first()->forward_role_id;
+                    $objection->user_id = null;
+                    $objection->citizen_id = $userId;
+                    //$objection->doc_upload_status = 1;
+                }
+                $objection->save();
+                $objectionNo = $objection->request_no;
 
                 // if (is_string($request->assessmentData)) {
                 //     $request->assessmentData = json_decode($request->assessmentData);
@@ -567,22 +568,25 @@ class ObjectionRepository implements iObjectionRepository
                     $assement_floor->request_id = $objection->id;
                     $assement_floor->property_id = $request->propId;
                     $assement_floor->floor_id = $request->propFloorId;
-                    $assement_floor->floor_mstr_id = $request->floorNo??$floors['floorNo'];
-                    $assement_floor->usage_type_mstr_id = $request->usageType??$floors['usageType'];
+                    $assement_floor->floor_mstr_id = $request->floorNo ?? $floors['floorNo'];
+                    $assement_floor->usage_type_mstr_id = $request->usageType ?? $floors['usageType'];
 
-                    $assement_floor->occupancy_type_mstr_id = $request->occupancyType??$floors['occupancyType'];
-                    $assement_floor->const_type_mstr_id = $request->constructionType??$floors['constructionType'];
-                    $assement_floor->builtup_area = $request->buildupArea??$floors['buildupArea'];
+                    $assement_floor->occupancy_type_mstr_id = $request->occupancyType ?? $floors['occupancyType'];
+                    $assement_floor->const_type_mstr_id = $request->constructionType ?? $floors['constructionType'];
+                    $assement_floor->builtup_area = $request->buildupArea ?? $floors['buildupArea'];
                     if ($floors['usageType'] == 1)
                         $assement_floor->carpet_area = $floors['buildupArea'] * 0.70;
                     else
                         $assement_floor->carpet_area = $floors['buildupArea'] * 0.80;
                     $assement_floor->date_from = $floors->dateFrom ?? null;
                     $assement_floor->date_upto = $floors->dateUpto ?? null;
+                    $assement_floor->no_of_rooms = $request->noOfRooms ?? $floors->no_of_rooms ?? null;
+                    $assement_floor->no_of_toilets =  $request->noOfToilet ?? $floors->no_of_toilets ?? null;
+                    $assement_floor->logs = json_encode($assement_floor->toArray(), JSON_UNESCAPED_UNICODE) ?? null;
                     $assement_floor->save();
                 }
             }
-        
+
             if ($request->document) {
                 $docUpload = new DocUpload;
                 $mWfActiveDocument = new WfActiveDocument();
