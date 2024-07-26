@@ -180,6 +180,7 @@ class ObjectionRepository implements iObjectionRepository
                 $objection->property_no = $propDtl->property_no ?? null;
                 $objection->pending_status = 1;
                 $objection->ip_address = getClientIpAddress();
+                $objection->logs = json_encode($objection->toArray(), JSON_UNESCAPED_UNICODE);
 
                 if ($userType == 'Citizen') {
                     // $objection->current_role = collect($initiatorRoleId)->first()->forward_role_id;
