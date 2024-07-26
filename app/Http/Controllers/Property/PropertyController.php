@@ -707,10 +707,12 @@ class PropertyController extends Controller
                 throw new Exception("Data Not Found");
             }
             $users = User::select("*")->where("id", $application->user_id)->first();
+            if(!$users){
+            $citizen = ActiveCitizen::select("*")->where("id", $application->user_id)->first();}
             $docUrl = Config::get('module-constants.DOC_URL');
             $data["userDtl"] = [
-                "employeeName" => $users->name,
-                "mobile" => $users->mobile,
+                "employeeName" => $users->name ?? $citizen->user_name,
+                "mobile" => $users->mobile ?? $citizen->mobile ?? null,
                 "document" => $application->supporting_doc ? ($docUrl . "/" . $application->supporting_doc) : "",
                 "applicationDate" => $application->created_at ? Carbon::parse($application->created_at)->format("m-d-Y H:s:i A") : null,
                 "requestNo" => $application->request_no,
