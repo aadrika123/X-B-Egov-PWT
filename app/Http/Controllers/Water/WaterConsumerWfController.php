@@ -519,7 +519,7 @@ class WaterConsumerWfController extends Controller
         $consumerOwnedetails = $mWaterConsumerOwner->getConsumerOwner($checkExist->consumer_id)->first();
 
         #here update all the entities related to request of consumers
-        
+
         if ($checkExist->charge_catagory_id == 2) {                                                    // this for Disconnection 
             $mWaterConsumer->dissconnetConsumer($consumerOwnedetails->consumer_id);
         } elseif ($checkExist->charge_catagory_id == 6) {                                              // this for Name Change 
@@ -688,6 +688,8 @@ class WaterConsumerWfController extends Controller
         } elseif ($collectionApplications->charge_catagory_id == 8) {
             $basicDetails[] = ['displayString' => 'New Property Type', 'key' => 'NewPropertyType', 'value' => $collectionApplications->newPropertyType];
             $basicDetails[] = ['displayString' => 'New Category', 'key' => 'NewCategory', 'value' => $collectionApplications->newCategory];
+        } elseif ($collectionApplications->charge_catagory_id == 9) {
+            $basicDetails[] = ['displayString' => 'New Tab Size', 'key' => 'NewTabSize', 'value' => $collectionApplications->newTabSize];
         }
         return new Collection($basicDetails);
     }
