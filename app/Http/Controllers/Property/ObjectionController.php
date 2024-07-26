@@ -1258,7 +1258,24 @@ class ObjectionController extends Controller
                     ->first();
                 $code = $this->filterCitizenDoc($data);
                 break;
-
+            case ('occupantName'):
+                $data =  RefRequiredDocument::select('*')
+                    ->where('code', 'OBJECTION_CLERICAL_ID')
+                    ->first();
+                $code = $this->filterCitizenDoc($data);
+                break;
+            case ('dob'):
+                $data =  RefRequiredDocument::select('*')
+                    ->where('code', 'OBJECTION_CLERICAL_ID')
+                    ->first();
+                $code = $this->filterCitizenDoc($data);
+                break;
+            case ('gender'):
+                $data =  RefRequiredDocument::select('*')
+                    ->where('code', 'OBJECTION_CLERICAL_ID')
+                    ->first();
+                $code = $this->filterCitizenDoc($data);
+                break;
             case ('addOwner'):
                 $data =  RefRequiredDocument::select('*')
                     ->where('code', 'OBJECTION_CLERICAL_ADD_OWNER')
