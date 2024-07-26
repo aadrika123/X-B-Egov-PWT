@@ -250,6 +250,7 @@ class WaterConsumerActiveRequest extends Model
             'water_consumer_active_requests.tab_size as newTabSize',
             'water_consumer_active_requests.property_type as newPropertyType',
             'water_consumer_active_requests.category as newCategory',
+            'water_consumer_active_requests.tab_size as newTabSize',
         )
             ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_consumer_active_requests.current_role')
             ->leftjoin('ulb_masters', 'ulb_masters.id', '=', 'water_consumer_active_requests.ulb_id')

@@ -737,6 +737,29 @@ class WaterSecondConsumer extends Model
         )
             ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_second_consumers.property_type_id')
             ->where('water_second_consumers.id', $consumerId)
-            ->where('water_second_consumers.status','!=',3);
+            ->where('water_second_consumers.status', '!=', 3);
+    }
+    /**
+     * |update
+     */
+    public function updateConnectionType($consumerOwnedetails, $checkExist)
+    {
+        $propertyTypeId = $checkExist->property_type == 'Residential' ? 1 : 2;
+
+        return self::where('id', $consumerOwnedetails->consumer_id)
+            ->where('status', true)
+            ->update([
+                'category' => $checkExist->category,
+                'property_type_id' => $propertyTypeId
+            ]);
+    }
+    # Update tab size
+    public function updateTabSize($consumerOwnedetails, $checkExist)
+    {
+        return self::where('id', $consumerOwnedetails->consumer_id)
+            ->where('status', true)
+            ->update([
+                'tab_size' => $checkExist->tab_size
+            ]);
     }
 }

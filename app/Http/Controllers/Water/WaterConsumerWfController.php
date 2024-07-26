@@ -28,6 +28,8 @@ use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use App\Models\Masters\RefRequiredDocument;
+use App\Models\Water\WaterConsumerDemand;
+use App\Models\Water\WaterConsumerMeter;
 
 /**
  * | ----------------------------------------------------------------------------------
@@ -363,12 +365,12 @@ class WaterConsumerWfController extends Controller
             if ($roleId != $waterDetails->finisher) {
                 throw new Exception("You are not the Finisher!");
             }
-            DB::beginTransaction();
+            $this->begin();
             $this->approvalRejectionWater($request, $roleId);
             DB::commit();
             return responseMsg(true, "Request approved/rejected successfully", "");;
         } catch (Exception $e) {
-            // DB::rollBack();
+            DB::rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -462,6 +464,8 @@ class WaterConsumerWfController extends Controller
         $mwaterConsumerActiveRequest      = new WaterConsumerActiveRequest();
         $mWaterSiteInspection             = new WaterSiteInspection();
         $mWaterConsumer                   = new WaterSecondConsumer();
+        $mWaterConsumerMeter              = new WaterConsumerMeter();
+        $mWaterConsumerDemand             = new WaterConsumerDemand();
         $mWaterConsumerOwner              = new WaterConsumerOwner();
         $waterTrack                       = new WorkflowTrack();
 
@@ -514,11 +518,18 @@ class WaterConsumerWfController extends Controller
         $mwaterConsumerActiveRequest->updateVerifystatus($request->applicationId, $request->status);
         $consumerOwnedetails = $mWaterConsumerOwner->getConsumerOwner($checkExist->consumer_id)->first();
 
-        #deactivate Consumer Permantly
+        #here update all the entities related to request of consumers
+
         if ($checkExist->charge_catagory_id == 2) {                                                    // this for Disconnection 
             $mWaterConsumer->dissconnetConsumer($consumerOwnedetails->consumer_id);
         } elseif ($checkExist->charge_catagory_id == 6) {                                              // this for Name Change 
-            $mWaterConsumerOwner->createOwner($consumerOwnedetails,$checkExist);
+            $mWaterConsumerOwner->createOwner($consumerOwnedetails, $checkExist);
+        } elseif ($checkExist->charge_catagory_id == 7) {                                              // this is for meter number
+            $mWaterConsumerMeter->updateMeterNo($consumerOwnedetails, $checkExist);
+        } elseif ($checkExist->charge_catagory_id == 8) {                                              // this is for change property type & category
+            $mWaterConsumer->updateConnectionType($consumerOwnedetails, $checkExist);
+        } elseif ($checkExist->charge_catagory_id == 9) {                                              // this is for change property type & category
+            $mWaterConsumer->updateTabSize($consumerOwnedetails, $checkExist);
         }
     }
 
@@ -677,6 +688,8 @@ class WaterConsumerWfController extends Controller
         } elseif ($collectionApplications->charge_catagory_id == 8) {
             $basicDetails[] = ['displayString' => 'New Property Type', 'key' => 'NewPropertyType', 'value' => $collectionApplications->newPropertyType];
             $basicDetails[] = ['displayString' => 'New Category', 'key' => 'NewCategory', 'value' => $collectionApplications->newCategory];
+        } elseif ($collectionApplications->charge_catagory_id == 9) {
+            $basicDetails[] = ['displayString' => 'New Tab Size', 'key' => 'NewTabSize', 'value' => $collectionApplications->newTabSize];
         }
         return new Collection($basicDetails);
     }
