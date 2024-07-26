@@ -2095,6 +2095,7 @@ class PropertyController extends Controller
             if (!$objectionDetails){
                 $objectionDetails = $obj->getDetail($req->applicationId);
             }
+            if (!$objectionDetails)
                 throw new Exception("Application Not Found for this application Id");
 
             $workflowId = $objectionDetails->workflow_id;
