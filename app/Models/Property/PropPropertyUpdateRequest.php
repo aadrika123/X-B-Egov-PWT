@@ -199,7 +199,8 @@ class PropPropertyUpdateRequest extends PropParamModel #Model
 
     public function getDetail($applicationId)
     {
-        return PropPropertyUpdateRequest::select('*')
-            ->where('prop_property_update_requests.id', $applicationId);
+        $data =  PropPropertyUpdateRequest::select('*')
+            ->where('prop_property_update_requests.id', $applicationId)->get();
+            return $data;
     }
 }
