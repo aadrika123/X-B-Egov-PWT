@@ -367,10 +367,10 @@ class WaterConsumerWfController extends Controller
             }
             $this->begin();
             $this->approvalRejectionWater($request, $roleId);
-            DB::commit();
+            $this->commit();
             return responseMsg(true, "Request approved/rejected successfully", "");;
         } catch (Exception $e) {
-            DB::rollBack();
+            $this->rollback();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
