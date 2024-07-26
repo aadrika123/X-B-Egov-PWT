@@ -137,7 +137,7 @@ class PropPropertyUpdateRequest extends PropParamModel #Model
             DB::raw("TO_CHAR(CAST(prop_property_update_requests.created_at AS DATE), 'DD-MM-YYYY') as application_date"),
             "ward_name"
         )
-            ->leftjoin('ulb_ward_masters','ulb_ward_masters.id','prop_property_update_requests.ward_mstr_id')
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_property_update_requests.ward_mstr_id')
             ->join("prop_properties", "prop_properties.id", "prop_property_update_requests.prop_id")
             ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
                             STRING_AGG(guardian_name,',') AS guardian_name,
@@ -195,5 +195,11 @@ class PropPropertyUpdateRequest extends PropParamModel #Model
             ->join('zone_masters', 'zone_masters.id', 'prop_property_update_requests.zone_mstr_id')
             ->join('users as u', 'u.id', 'prop_property_update_requests.user_id')
             ->leftjoin('users as uu', 'uu.id', 'prop_property_update_requests.approved_by');
+    }
+
+    public function getDetail($applicationId)
+    {
+        return PropPropertyUpdateRequest::select('*')
+            ->where('prop_property_update_requests.id', $applicationId);
     }
 }
