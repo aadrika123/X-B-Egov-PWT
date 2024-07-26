@@ -720,17 +720,17 @@ class PropertyController extends Controller
                 "requestNo" => $application->request_no,
                 "updationType" => $application->is_full_update ? "Full Update" : "Basice Update",
             ];
-            if ($application->objection_for) {
-                $document = $this->getUploadDoc($request);
-                $data["userDtl"] = [
-                    "employeeName" => $users->name ?? $citizen->user_name,
-                    "mobile" => $users->mobile ?? $citizen->mobile ?? null,
-                    "document" => $document,
-                    "applicationDate" => $application->created_at ? Carbon::parse($application->created_at)->format("m-d-Y H:s:i A") : null,
-                    "requestNo" => $application->request_no,
-                    "updationType" => $application->is_full_update ? "Full Update" : "Basice Update",
-                ];
-            }
+            // if ($application->objection_for) {
+            //     $document = $this->getUploadDoc($request);
+            //     $data["userDtl"] = [
+            //         "employeeName" => $users->name ?? $citizen->user_name,
+            //         "mobile" => $users->mobile ?? $citizen->mobile ?? null,
+            //         "document" => $document,
+            //         "applicationDate" => $application->created_at ? Carbon::parse($application->created_at)->format("m-d-Y H:s:i A") : null,
+            //         "requestNo" => $application->request_no,
+            //         "updationType" => $application->is_full_update ? "Full Update" : "Basice Update",
+            //     ];
+            // }
             $data["propCom"] = $this->PropUpdateCom($application);
             $data["ownerCom"] = $this->OwerUpdateCom($application);
             $data["floorCom"] = $this->FloorUpdateCom($application);
