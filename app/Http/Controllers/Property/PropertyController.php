@@ -703,6 +703,7 @@ class PropertyController extends Controller
                     'errors' => $validated->errors()
                 ]);
             }
+
             $application = PropPropertyUpdateRequest::find($request->applicationId);
             if (!$application) {
                 throw new Exception("Data Not Found");
@@ -720,17 +721,10 @@ class PropertyController extends Controller
                 "requestNo" => $application->request_no,
                 "updationType" => $application->is_full_update ? "Full Update" : "Basice Update",
             ];
-            // if ($application->objection_for) {
-            //     $document = $this->getUploadDoc($request);
-            //     $data["userDtl"] = [
-            //         "employeeName" => $users->name ?? $citizen->user_name,
-            //         "mobile" => $users->mobile ?? $citizen->mobile ?? null,
-            //         "document" => $document,
-            //         "applicationDate" => $application->created_at ? Carbon::parse($application->created_at)->format("m-d-Y H:s:i A") : null,
-            //         "requestNo" => $application->request_no,
-            //         "updationType" => $application->is_full_update ? "Full Update" : "Basice Update",
-            //     ];
-            // }
+            if ($application->objection_for) {
+                $document = $this->getUploadedDocuments($request);
+                $data["userDtl"]["document"] =  $document;       
+            }
             $data["propCom"] = $this->PropUpdateCom($application);
             $data["ownerCom"] = $this->OwerUpdateCom($application);
             $data["floorCom"] = $this->FloorUpdateCom($application);
@@ -2086,32 +2080,28 @@ class PropertyController extends Controller
         }
     }
 
-
-
-
-    public function getUploadDoc(Request $req)
+    public function getUploadedDocuments(Request $req)
     {
         $req->validate([
             'applicationId' => 'required|numeric'
         ]);
         try {
-            $refUser = Auth()->user();
-            $refUserId = $refUser->id ?? 0;
             $mWfActiveDocument = new WfActiveDocument();
-            $propdoc = new PropPropertyUpdateRequest();
-            $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID')??1;              // 1
+            $obj = new PropPropertyUpdateRequest();
+            $mPropActiveObjection = new PropActiveObjection();
+            $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
 
-            $Details = $propdoc->getDetail($req->applicationId);
-            if (!$Details)
+            $objectionDetails = $mPropActiveObjection->getObjectionNo($req->applicationId);
+            if (!$objectionDetails){
+                $objectionDetails = $obj->getDetail($req->applicationId);
+            }
                 throw new Exception("Application Not Found for this application Id");
 
-            $workflowId = $Details->workflow_id;
-            $documents = $mWfActiveDocument->getDocByRefIds($req->applicationId, $workflowId, $moduleId);
-            $data = $documents->getDocUrl($documents);
-            return $data;
-            // return responseMsgs(true, ["docVerifyStatus" => $safDetails->doc_verify_status], remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+            $workflowId = $objectionDetails->workflow_id;
+            $documents = $mWfActiveDocument->getDocsByAppId($req->applicationId, $workflowId, $moduleId);
+            return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 }
