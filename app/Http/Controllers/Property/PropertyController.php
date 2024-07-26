@@ -2098,8 +2098,8 @@ class PropertyController extends Controller
             if (!$objectionDetails)
                 throw new Exception("Application Not Found for this application Id");
 
-            //$workflowId = $objectionDetails->workflow_id;
-            $documents = $mWfActiveDocument->getDocsByAppId($req->applicationId, 10, $moduleId);
+            $workflowId = $objectionDetails->workflow_id;
+            $documents = $mWfActiveDocument->getDocsByAppId($req->applicationId, $workflowId, $moduleId);
             return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
