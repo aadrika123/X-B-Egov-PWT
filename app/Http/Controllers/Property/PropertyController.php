@@ -2107,7 +2107,7 @@ class PropertyController extends Controller
 
             $workflowId = $Details->workflow_id;
             $documents = $mWfActiveDocument->getDocByRefIds($req->applicationId, $workflowId, $moduleId);
-            return remove_null($documents);
+            return $documents;
             // return responseMsgs(true, ["docVerifyStatus" => $safDetails->doc_verify_status], remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
