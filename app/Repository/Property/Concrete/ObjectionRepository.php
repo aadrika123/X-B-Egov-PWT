@@ -19,7 +19,10 @@ use App\Models\PropActiveObjectionDtl;
 use App\Models\PropActiveObjectionFloor;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Property\MPropForgeryType;
+use App\Models\Property\PropOwnerUpdateRequest;
+use App\Models\Property\PropPropertyUpdateRequest;
 use App\Models\WorkflowTrack;
+use App\Observers\PropUpdateRequestObserver;
 use App\Repository\Property\Concrete\PropertyBifurcation;
 use Illuminate\Http\Request;
 use stdClass;
@@ -64,8 +67,11 @@ class ObjectionRepository implements iObjectionRepository
         try {
             $user = authUser($request);
             $userId = $user->id;
+            //$userId = 10;
             $ulbId = $request->ulbId ?? $user->ulb_id;
-            $userType = $user->user_type;
+            //$ulbId=2;
+             $userType = $user->user_type;
+            //$userType = 'Citizen';
             $objectionFor = $request->objectionFor;
             $tracks = new WorkflowTrack();
             $objParamId = Config::get('PropertyConstaint.OBJ_PARAM_ID');
@@ -86,50 +92,59 @@ class ObjectionRepository implements iObjectionRepository
 
                 //saving objection details
                 # Flag : call model <-----
-                $objection = new PropActiveObjection();
+               // $objection = new PropActiveObjection();
+               $objection = new PropPropertyUpdateRequest();
                 $objection->ulb_id = $ulbId;
                 $objection->user_id = $userId;
                 $objection->objection_for =  $objectionFor;
-                $objection->property_id = $request->propId;
-                $objection->remarks = $request->remarks;
-                $objection->date = Carbon::now();
+                $objection->prop_id = $request->propId;
+                $objection->objection_remarks = $request->remarks;
+                $objection->application_date = Carbon::now();
                 $objection->created_at = Carbon::now();
                 $objection->workflow_id = $ulbWorkflowId->id;
-                $objection->current_role = $initiatorRoleId[0]->role_id;
-                $objection->initiator_role_id = collect($initiatorRoleId)->first()->role_id;
-                $objection->last_role_id = collect($initiatorRoleId)->first()->role_id;
+                $objection->current_role_id = $finisherRoleId[0]->role_id;
+                $objection->initiator_role_id = collect($finisherRoleId)->first()->role_id;
+               // $objection->last_role_id = collect($finisherRoleId)->first()->role_id;
                 $objection->finisher_role_id = collect($finisherRoleId)->first()->role_id;
+                $objection->corr_address = $request->corrAddress;
+                $objection->corr_city = $request->corrCity;
+                $objection->corr_dist = $request->corrDist;
+                $objection->corr_pin_code = $request->corrPinCode;
+                $objection->corr_state = $request->corrState;
+                $objection->pending_status = 1;
+                $objection->ip_address = getClientIpAddress();
 
                 if ($userType == 'Citizen') {
-                    $objection->current_role = collect($initiatorRoleId)->first()->forward_role_id;
-                    $objection->initiator_role_id = collect($initiatorRoleId)->first()->forward_role_id;      // Send to DA in Case of Citizen
-                    $objection->last_role_id = collect($initiatorRoleId)->first()->forward_role_id;
+                    // $objection->current_role = collect($initiatorRoleId)->first()->forward_role_id;
+                    // $objection->initiator_role_id = collect($initiatorRoleId)->first()->forward_role_id;      // Send to DA in Case of Citizen
+                    // $objection->last_role_id = collect($initiatorRoleId)->first()->forward_role_id;
                     $objection->user_id = null;
                     $objection->citizen_id = $userId;
-                    $objection->doc_upload_status = 1;
+                    //$objection->doc_upload_status = 1;
                 }
                 $objection->save();
 
                 //objection No through id generation
-                $idGeneration = new PrefixIdGenerator($objParamId, $objection->ulb_id);
-                $objectionNo = $idGeneration->generate();
+                // $idGeneration = new PrefixIdGenerator($objParamId, $objection->ulb_id);
+                // $objectionNo = $idGeneration->generate();
+                $objectionNo = $objection->request_no;
 
                 # Flag : call model <---------- 
-                PropActiveObjection::where('id', $objection->id)
-                    ->update(['objection_no' => $objectionNo]);
+                // PropActiveObjection::where('id', $objection->id)
+                //     ->update(['objection_no' => $objectionNo]);
 
                 //saving objection owner details
                 # Flag : call model <----------
-                $objectionOwner = new PropActiveObjectionOwner();
-                $objectionOwner->objection_id = $objection->id;
-                $objectionOwner->prop_owner_id = $request->ownerId;
+                // $objectionOwner = new PropActiveObjectionOwner();
+                $objectionOwner = new PropOwnerUpdateRequest();
+                $objectionOwner->request_id = $objection->id;
+                $objectionOwner->owner_id = $request->ownerId;
+                $objectionOwner->property_id = $request->propId;
                 $objectionOwner->owner_name = $request->ownerName;
-                $objectionOwner->owner_mobile = $request->mobileNo;
-                $objectionOwner->corr_address = $request->corrAddress;
-                $objectionOwner->corr_city = $request->corrCity;
-                $objectionOwner->corr_dist = $request->corrDist;
-                $objectionOwner->corr_pin_code = $request->corrPinCode;
-                $objectionOwner->corr_state = $request->corrState;
+                $objectionOwner->owner_name_marathi = $request->ownerNameMarathi;
+                $objectionOwner->guardian_name = $request->occupantName;
+                $objectionOwner->guardian_name_marathi = $request->occupantNameMarathi;
+                $objectionOwner->dob = $request->dob;
                 $objectionOwner->created_at = Carbon::now();
                 $objectionOwner->save();
 
