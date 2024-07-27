@@ -30,6 +30,8 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Masters\RefRequiredDocument;
 use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterConsumerMeter;
+use App\Http\Controllers\Water\WaterConsumer;
+use App\Repository\Water\Interfaces\IConsumer;
 
 /**
  * | ----------------------------------------------------------------------------------
@@ -50,13 +52,15 @@ class WaterConsumerWfController extends Controller
     private $_waterModuleId;
     protected $_DB_NAME;
     protected $_DB;
+    protected $waterConsumer;
 
-    public function __construct()
+    public function __construct(WaterConsumer $waterConsumer)
     {
         $this->_waterRoles      = Config::get('waterConstaint.ROLE-LABEL');
         $this->_waterModuleId   = Config::get('module-constants.WATER_MODULE_ID');
         $this->_DB_NAME = "pgsql_water";
         $this->_DB = DB::connection($this->_DB_NAME);
+        $this->waterConsumer = $waterConsumer;
     }
 
     /**
@@ -476,15 +480,15 @@ class WaterConsumerWfController extends Controller
         $checkExist = $mwaterConsumerActiveRequest->getApproveApplication($approvedWater->id);
         if (!$checkExist) {
             throw new Exception("Application Not Found");
-        } elseif ($checkExist->verify_status == 1) {
+            } elseif ($checkExist->verify_status == 1) {
 
-            throw new Exception('Already Approve Application');
+                throw new Exception('Already Approve Application');
         } elseif ($checkExist->verify_status == 2) {
             throw new Exception('Already Rejected Applications');
         }
-        $checkconsumer = $mWaterConsumer->getConsumerByAppId($approvedWater->id);
-        if ($checkconsumer) {
-            throw new Exception("Access Denied ! Consumer Already Exist!");
+        $checkconsumer = $mWaterConsumer->getConsumerById($approvedWater->consumer_id);
+        if (!$checkconsumer) {
+            throw new Exception("Consumer Not Found");
         }
         # data formating for save the consumer details 
         $siteDetails = $mWaterSiteInspection->getSiteDetails($request->applicationId)
@@ -515,22 +519,110 @@ class WaterConsumerWfController extends Controller
         $request->request->add($metaReqs);
         $waterTrack->saveTrack($request);
         # update verify status
-        $mwaterConsumerActiveRequest->updateVerifystatus($request->applicationId, $request->status);
+        $mwaterConsumerActiveRequest->updateVerifystatus($metaReqs, $request->status);
         $consumerOwnedetails = $mWaterConsumerOwner->getConsumerOwner($checkExist->consumer_id)->first();
-
-        #here update all the entities related to request of consumers
-
-        if ($checkExist->charge_catagory_id == 2) {                                                    // this for Disconnection 
+        // Here update all the entities related to request of consumers
+        if ($checkExist->charge_catagory_id == 2) { // This for Disconnection
             $mWaterConsumer->dissconnetConsumer($consumerOwnedetails->consumer_id);
-        } elseif ($checkExist->charge_catagory_id == 6) {                                              // this for Name Change 
-            $mWaterConsumerOwner->createOwner($consumerOwnedetails, $checkExist);
-        } elseif ($checkExist->charge_catagory_id == 7) {                                              // this is for meter number
-            $mWaterConsumerMeter->updateMeterNo($consumerOwnedetails, $checkExist);
-        } elseif ($checkExist->charge_catagory_id == 8) {                                              // this is for change property type & category
-            $mWaterConsumer->updateConnectionType($consumerOwnedetails, $checkExist);
-        } elseif ($checkExist->charge_catagory_id == 9) {                                              // this is for change property type & category
-            $mWaterConsumer->updateTabSize($consumerOwnedetails, $checkExist);
         }
+
+        # Prepare request data for updating consumer details
+        $updateData = [];
+        # Prepare request data for updating consumer details
+        $updateData = [];
+        if ($checkExist->charge_catagory_id == 6) {
+            // Only pass tapsize when charge_catagory_id is 9
+            $updateData = [
+                'consumerId'    => $consumerOwnedetails->consumer_id,
+                'mobile_no'     => $request->mobile_no ?? $consumerOwnedetails->mobile_no,
+                'email'         => $request->email ?? $consumerOwnedetails->email,
+                'applicant_name' => $request->applicant_name ?? $checkExist->new_name,
+                'guardian_name' => $request->guardian_name ?? $consumerOwnedetails->guardian_name,
+                'zoneId'        => $request->zoneId ?? $checkconsumer->zone_mstr_id,
+                'wardId'        => $request->wardId ?? $checkconsumer->ward_mstr_id,
+                'address'       => $request->address ?? $checkconsumer->address,
+                'property_no'   => $request->property_no ?? $checkconsumer->property_no,
+                'dtcCode'       => $request->dtcCode ?? $checkconsumer->dtc_code,
+                'oldConsumerNo' => $request->oldConsumerNo ?? $checkconsumer->old_consumer_no,
+                'category'      => $request->category ?? $checkconsumer->category,
+                'propertytype'  => $request->propertytype ?? $checkconsumer->property_type_id,
+                'landmark'      => $request->landmark ?? $checkconsumer->landmark,
+                'document'      => $request->document,
+                'remarks'       => $checkExist->remarks,
+                'tapsize'       => $request->tapsize ?? $checkconsumer->tab_size,
+            ];
+        } elseif ($checkExist->charge_catagory_id == 7) {                                                                // this is change for 
+
+            $updateData = [
+                'consumerId'    => $consumerOwnedetails->consumer_id,
+                'mobile_no'     => $request->mobile_no ?? $consumerOwnedetails->mobile_no,
+                'email'         => $request->email ?? $consumerOwnedetails->email,
+                'applicant_name' => $request->applicant_name ?? $consumerOwnedetails->applicant_name,
+                'guardian_name' => $request->guardian_name ?? $consumerOwnedetails->guardian_name,
+                'zoneId'        => $request->zoneId ?? $checkconsumer->zone_mstr_id,
+                'wardId'        => $request->wardId ?? $checkconsumer->ward_mstr_id,
+                'address'       => $request->address ?? $checkconsumer->address,
+                'property_no'   => $request->property_no ?? $checkconsumer->property_no,
+                'dtcCode'       => $request->dtcCode ?? $checkconsumer->dtc_code,
+                'oldConsumerNo' => $request->oldConsumerNo ?? $checkconsumer->old_consumer_no,
+                'category'      => $request->category ?? $checkconsumer->category,
+                'propertytype'  => $request->propertytype ?? $checkconsumer->property_type_id,
+                'landmark'      => $request->landmark ?? $checkconsumer->landmark,
+                'document'      => $request->document,
+                'remarks'       => $checkExist->remarks,
+                'meterNo'       => $checkExist->meter_number,
+            ];
+        } elseif ($checkExist->charge_catagory_id == 8) {
+            // Pass all other fields when charge_catagory_id is not 9
+            $propertyTypeId = $checkExist->property_type == 'Residential' ? 1 : 2;
+            $updateData = [
+                'consumerId'    => $consumerOwnedetails->consumer_id,
+                'mobile_no'     => $request->mobile_no ?? $consumerOwnedetails->mobile_no,
+                'email'         => $request->email ?? $consumerOwnedetails->email,
+                'applicant_name' => $request->applicant_name ?? $consumerOwnedetails->applicant_name,
+                'guardian_name' => $request->guardian_name ?? $consumerOwnedetails->guardian_name,
+                'zoneId'        => $request->zoneId ?? $checkconsumer->zone_mstr_id,
+                'wardId'        => $request->wardId ?? $checkconsumer->ward_mstr_id,
+                'address'       => $request->address ?? $checkconsumer->address,
+                'property_no'   => $request->property_no ?? $checkconsumer->property_no,
+                'dtcCode'       => $request->dtcCode ?? $checkconsumer->dtc_code,
+                'oldConsumerNo' => $request->oldConsumerNo ?? $checkconsumer->old_consumer_no,
+                'category'      => $request->category ?? $checkExist->category,
+                'propertytype'  => $propertyTypeId,
+                'landmark'      => $request->landmark ?? $checkconsumer->landmark,
+                'document'      => $request->document,
+                'remarks'       => $checkExist->remarks,
+            ];
+        } elseif ($checkExist->charge_catagory_id == 9) {
+            // Pass all other fields when charge_catagory_id is not 9
+
+            $updateData = [
+                'consumerId'    => $consumerOwnedetails->consumer_id,
+                'mobile_no'     => $request->mobile_no ?? $consumerOwnedetails->mobile_no,
+                'email'         => $request->email ?? $consumerOwnedetails->email,
+                'applicant_name' => $request->applicant_name ?? $consumerOwnedetails->applicant_name,
+                'guardian_name' => $request->guardian_name ?? $consumerOwnedetails->guardian_name,
+                'zoneId'        => $request->zoneId ?? $checkconsumer->zone_mstr_id,
+                'wardId'        => $request->wardId ?? $checkconsumer->ward_mstr_id,
+                'address'       => $request->address ?? $checkconsumer->address,
+                'property_no'   => $request->property_no ?? $checkconsumer->property_no,
+                'dtcCode'       => $request->dtcCode ?? $checkconsumer->dtc_code,
+                'oldConsumerNo' => $request->oldConsumerNo ?? $checkconsumer->old_consumer_no,
+                'category'      => $request->category ?? $checkExist->category,
+                'propertytype'  => $$request->propertytype ?? $checkconsumer->property_type_id,
+                'landmark'      => $request->landmark ?? $checkconsumer->landmark,
+                'document'      => $request->document,
+                'remarks'       => $checkExist->remarks,
+                'tapsize'       => $request->tapsize ?? $checkconsumer->tab_size,
+            ];
+        }
+
+        # Create a request object
+        $updateRequest = new Request($updateData);
+
+        # Call updateConsumerDetails function
+        // $otherController = new WaterConsumer();
+        $this->waterConsumer->updateConsumerDetails($updateRequest);
     }
 
     /**

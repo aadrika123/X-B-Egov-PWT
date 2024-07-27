@@ -3412,7 +3412,7 @@ class NewConnectionController extends Controller
             $documentDetails['documentDetails'] = collect($document)['original']['data'];
 
             # owner details
-            $ownerDetails['ownerDetails'] = $mWaterApproveApplicants->getOwnerList($applicationId)->get();
+            $ownerDetails['ownerDetails'] = $mWaterApproveApplicants->getOwnerList($metaReqs['approveId'])->get();
 
             # Payment Details 
             $refAppDetails = collect($applicationDetails)->first();

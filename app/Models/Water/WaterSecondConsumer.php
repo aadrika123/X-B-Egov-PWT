@@ -501,6 +501,16 @@ class WaterSecondConsumer extends Model
             ->first();
     }
     /**
+     * | Get water consumer according to apply connection id 
+     */
+    public function getConsumerById($consumerId)
+    {
+        return WaterSecondConsumer::where('id', $consumerId)
+            ->where('status', 1)
+            ->orderByDesc('id')
+            ->first();
+    }
+    /**
      * | Save the approved application to water Consumer
      * | @param consumerDetails
      * | @return

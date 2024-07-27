@@ -35,6 +35,7 @@ use App\Models\Water\WaterConsumerActiveRequest;
 use App\Models\Water\WaterConsumerOwner;
 use App\Models\Water\WaterConsumerCharge;
 use App\Models\Water\WaterConsumerChargeCategory;
+use App\Models\Water\WaterConsumerComplain;
 use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterConsumerDemandRecord;
 use App\Models\Water\WaterConsumerDisconnection;
@@ -739,18 +740,22 @@ class WaterConsumer extends Controller
             $mWaterConsumerCharge           = new WaterConsumerCharge();
             $mWaterConsumerChargeCategory   = new WaterConsumerChargeCategory();
             $mWaterConsumerActiveRequest    = new WaterConsumerActiveRequest();
+            $mWaterConsumerComplain         = new WaterConsumerComplain();
             $refUserType                    = Config::get('waterConstaint.REF_USER_TYPE');
             $refConsumerCharges             = Config::get('waterConstaint.CONSUMER_CHARGE_CATAGORY');
             $refApplyFrom                   = Config::get('waterConstaint.APP_APPLY_FROM');
             $refWorkflow                    = Config::get('workflow-constants.WATER_DISCONNECTION');
             $refConParamId                  = Config::get('waterConstaint.PARAM_IDS');
             $confModuleId                   = Config::get('module-constants.WATER_MODULE_ID');
-
+            
             # Check the condition for deactivation
             $refDetails = $this->PreConsumerDeactivationCheck($request, $user);
             $ulbId      = $request->ulbId ?? $refDetails['consumerDetails']['ulb_id'];
 
             # Get initiater and finisher
+            if ($request->requestType == 10) {
+                $refWorkflow = 41;                                                               // static for water Complain workflow
+            }
             $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($refWorkflow, $ulbId);
             if (!$ulbWorkflowId) {
                 throw new Exception("Respective Ulb is not maped to Water Workflow!");
@@ -799,6 +804,11 @@ class WaterConsumer extends Controller
             $applicationNo      = $idGeneration->generate();
             $applicationNo      = str_replace('/', '-', $applicationNo);
             $deactivatedDetails = $mWaterConsumerActiveRequest->saveRequestDetails($request, $refDetails['consumerDetails'], $refRequest, $applicationNo);
+            # Complain Data 
+            if ($request->requestType == 10) {
+                $mWaterConsumerComplain->AddConsumerComplain($request, $deactivatedDetails);
+            }
+
             $metaRequest = [
                 // 'chargeAmount'      => $chargeAmount->amount,
                 // 'amount'            => $chargeAmount->amount,
@@ -2418,21 +2428,22 @@ class WaterConsumer extends Controller
             [
                 'consumerId'         => 'required|integer',
                 'mobile_no'          => 'nullable|digits:10|regex:/[0-9]{10}/',
-                'email'              => 'nullable|email',
+                'email'              => 'nullable|',
                 'applicant_name'     => 'nullable|',
                 'guardian_name'      => 'nullable|',
                 'zoneId'             => 'nullable|',
-                'wardId'             => 'nullable|integer',
+                'wardId'             => 'nullable|',
                 'address'            => 'nullable|',
                 'property_no'        => 'nullable',
-                'dtcCode'            => 'nullble',
+                'dtcCode'            => 'nullable',
                 'oldConsumerNo'      => 'nullable',
                 "category"           => "nullable|in:General,Slum",
                 "propertytype"       =>  "nullable|in:1,2",
                 "tapsize"            =>  "nullable",
                 "landmark"           =>  "nullable",
-                "document"           =>  "required|mimes:pdf,jpeg,png,jpg,gif",
-                "remarks"           =>  "required",
+                "document"           =>  "nullable|mimes:pdf,jpeg,png,jpg,gif",
+                "remarks"            =>  "nullable",
+                "meterNo"            =>  "nullable",
             ]
         );
         if ($validated->fails())

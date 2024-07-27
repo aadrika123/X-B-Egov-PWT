@@ -278,12 +278,13 @@ class WaterConsumerActiveRequest extends Model
     /**
      * | Deactivate the doc Upload Status 
      */
-    public function updateVerifystatus($applicationId, $status)
+    public function updateVerifystatus($metaReqs, $status)
     {
-        return  WaterConsumerActiveRequest::where('id', $applicationId)
+        return  WaterConsumerActiveRequest::where('id', $metaReqs['refTableIdValue'])
             ->where('status', true)
             ->update([
-                "verify_status" => $status
+                "verify_status" => $status,
+                "emp_details_id" => $metaReqs['user_id']
             ]);
     }
 
