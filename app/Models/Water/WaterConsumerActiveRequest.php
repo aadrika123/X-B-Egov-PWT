@@ -345,4 +345,53 @@ class WaterConsumerActiveRequest extends Model
         $docDetails->save();
         return $activeId;
     }
+
+    /**
+     * | Deactivate the Doc Upload Status
+     * | @param applicationId
+     */
+    public function deactivateUploadStatus($applicationId)
+    {
+        WaterConsumerActiveRequest::where('id', $applicationId)
+            ->update([
+                'doc_upload_status' => false
+            ]);
+    }
+    /**
+     * | Activate the Doc Upload Status
+     */
+    public function activateUploadStatus($applicationId)
+    {
+        WaterConsumerActiveRequest::where('id', $applicationId)
+            ->update([
+                'doc_upload_status' => true
+            ]);
+    }
+    /**
+     * | update the current role in case of online citizen apply
+     */
+    public function updateCurrentRoleForDa($applicationId, $waterRole)
+    {
+        WaterConsumerActiveRequest::where('id', $applicationId)
+            ->update([
+                'current_role' => $waterRole
+            ]);
+    }
+    /**
+     * | Update the parked status false 
+     */
+    public function updateParkedstatus($status, $applicationId)
+    {
+        $mWaterApplication = WaterConsumerActiveRequest::find($applicationId);
+        switch ($status) {
+            case (true):
+                $mWaterApplication->parked = $status;
+                break;
+
+            case (false):
+                $mWaterApplication->parked = $status;
+                break;
+        }
+        $mWaterApplication->save();
+    }
 }
