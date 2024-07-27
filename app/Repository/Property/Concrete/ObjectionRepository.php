@@ -419,7 +419,7 @@ class ObjectionRepository implements iObjectionRepository
                 $objection->applicant_name = $propDtl->applicant_name;
                 $objection->ward_mstr_id = $propDtl->ward_mstr_id;
                 $objection->ownership_type_mstr_id = $propDtl->ownership_type_mstr_id;
-                $objection->prop_type_mstr_id = $request->propTypeMasterId ?? $propDtl->prop_type_mstr_id;
+                $objection->prop_type_mstr_id = $request->propertyType ?? $propDtl->prop_type_mstr_id;
                 $objection->appartment_name = $propDtl->appartment_name ?? null;
                 $objection->no_electric_connection = $propDtl->no_electric_connection ?? null;
                 $objection->elect_consumer_no = $propDtl->elect_consumer_no ?? null;
@@ -434,15 +434,15 @@ class ObjectionRepository implements iObjectionRepository
                 $objection->plot_no = $propDtl->plot_no;
                 $objection->village_mauja_name = $propDtl->village_mauja_name ?? null;
                 $objection->road_type_mstr_id = $propDtl->road_type_mstr_id;
-                $objection->area_of_plot = $request->area ?? $propDtl->area_of_plot;
+                $objection->area_of_plot = $request->areaOfPlot ?? $propDtl->area_of_plot;
                 $objection->prop_address = $propDtl->prop_address;
                 $objection->prop_city = $propDtl->prop_city ?? null;
                 $objection->prop_dist = $propDtl->prop_dist ?? null;
                 $objection->prop_pin_code = $propDtl->prop_pin_code ?? null;
                 $objection->prop_state = $propDtl->prop_state ?? null;
-                $objection->is_mobile_tower = $propDtl->is_mobile_tower ?? null;
-                $objection->tower_area = $propDtl->tower_area ?? null;
-                $objection->tower_installation_date = $propDtl->tower_installation_date ?? null;
+                $objection->is_mobile_tower = $request->isMobileTower ?? $propDtl->is_mobile_tower ?? null;
+                $objection->tower_area = $request->mobileArea ?? $propDtl->tower_area ?? null;
+                $objection->tower_installation_date = $request->mobileDate ?? $propDtl->tower_installation_date ?? null;
                 $objection->is_hoarding_board = $propDtl->is_hoarding_board ?? null;
                 $objection->hoarding_area = $propDtl->hoarding_area ?? null;
                 $objection->hoarding_installation_date = $propDtl->hoarding_installation_date ?? null;
@@ -450,7 +450,7 @@ class ObjectionRepository implements iObjectionRepository
                 $objection->under_ground_area = $propDtl->under_ground_area ?? null;
                 $objection->petrol_pump_completion_date = $propDtl->petrol_pump_completion_date ?? null;
                 $objection->is_water_harvesting = $request->isWaterHarvesting ?? $propDtl->is_water_harvesting ?? null;
-                $objection->land_occupation_date = $request->landOccupationDate ?? $propDtl->land_occupation_date ?? null;
+                $objection->land_occupation_date = $request->dateOfPurchase ?? $propDtl->land_occupation_date ?? null;
                 $objection->new_ward_mstr_id = $propDtl->new_ward_mstr_id ?? null;
                 $objection->entry_type = $propDtl->entry_type ?? null;
                 $objection->zone_mstr_id = $propDtl->zone_mstr_id ?? null;
@@ -475,8 +475,8 @@ class ObjectionRepository implements iObjectionRepository
                 $objection->trust_type = $propDtl->trust_type ?? null;
                 $objection->gb_prop_usage_types = $propDtl->gb_prop_usage_types ?? null;
                 $objection->is_trust_verified = $propDtl->is_trust_verified ?? null;
-                $objection->rwh_date_from = $request->rwhDate ?? $propDtl->rwh_date_from ?? null;
-                $objection->category_id = $request->categoryId ?? $propDtl->category_id ?? null;
+                $objection->rwh_date_from = $request->rwhDateFrom ?? $propDtl->rwh_date_from ?? null;
+                $objection->category_id = $request->category ?? $propDtl->category_id ?? null;
                 $objection->is_waived_off = $propDtl->is_waived_off ?? null;
                 $objection->property_no = $propDtl->property_no ?? null;
                 $objection->pending_status = 1;
@@ -576,20 +576,20 @@ class ObjectionRepository implements iObjectionRepository
                     $assement_floor->property_id = $request->propId;
                     // $assement_floor->floor_id = $request->propFloorId;
                     $assement_floor->floor_id = $floors['propFloorId'];
-                    $assement_floor->floor_mstr_id = $request->floorNo ?? $floors['floorNo'];
-                    $assement_floor->usage_type_mstr_id = $request->usageType ?? $floors['usageType'];
+                    $assement_floor->floor_mstr_id = $floors['floorNo '] ?? $floorDtl->id;
+                    $assement_floor->usage_type_mstr_id = $floors['usageType'] ?? $floorDtl->usageType;
 
-                    $assement_floor->occupancy_type_mstr_id = $request->occupancyType ?? $floors['occupancyType'];
-                    $assement_floor->const_type_mstr_id = $request->constructionType ?? $floors['constructionType'];
-                    $assement_floor->builtup_area = $request->buildupArea ?? $floors['buildupArea'];
+                    $assement_floor->occupancy_type_mstr_id = $floors['occupancyType'] ?? $floorDtl->occupancyType;
+                    $assement_floor->const_type_mstr_id = $floors['constructionType'] ?? $floorDtl->constructionType;
+                    $assement_floor->builtup_area = $floors['buildupArea'] ?? $floorDtl->buildupArea;
                     if ($floors['usageType'] == 1)
                         $assement_floor->carpet_area = $floors['buildupArea'] * 0.70;
                     else
                         $assement_floor->carpet_area = $floors['buildupArea'] * 0.80;
-                    $assement_floor->date_from = $request->dateFrom ?? $floors->dateFrom ?? null;
-                    $assement_floor->date_upto = $request->dateUpto ?? $floors->dateUpto ?? null;
-                    $assement_floor->no_of_rooms = $request->noOfRooms ?? $floors->no_of_rooms ?? null;
-                    $assement_floor->no_of_toilets =  $request->noOfToilet ?? $floors->no_of_toilets ?? null;
+                    $assement_floor->date_from = $floors->dateFrom ?? $floorDtl->dateFrom ?? null;
+                    $assement_floor->date_upto = $floors->dateUpto ?? $floorDtl->dateUpto ?? null;
+                    $assement_floor->no_of_rooms = $floors->no_of_rooms ?? $floorDtl->no_of_rooms ?? null;
+                    $assement_floor->no_of_toilets =  $floors->no_of_toilets ?? $floorDtl->no_of_toilets ?? null;
                     $assement_floor->logs = json_encode($floorDtl->toArray(), JSON_UNESCAPED_UNICODE) ?? null;
                     $assement_floor->save();
                 }
