@@ -130,7 +130,10 @@ class WaterConsumerWfController extends Controller
             $workflowIds    = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
             if ($req->workFlow == 204) {
                 $workflowIds = ['204'];
+            } else {
+                $workflowIds = ['193'];
             }
+
 
             $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
                 ->whereIn('water_consumer_active_requests.current_role', $roleId)
