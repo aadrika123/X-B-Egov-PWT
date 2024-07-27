@@ -480,9 +480,9 @@ class WaterConsumerWfController extends Controller
         $checkExist = $mwaterConsumerActiveRequest->getApproveApplication($approvedWater->id);
         if (!$checkExist) {
             throw new Exception("Application Not Found");
-            } elseif ($checkExist->verify_status == 1) {
+        } elseif ($checkExist->verify_status == 1) {
 
-                throw new Exception('Already Approve Application');
+            throw new Exception('Already Approve Application');
         } elseif ($checkExist->verify_status == 2) {
             throw new Exception('Already Rejected Applications');
         }
@@ -914,11 +914,13 @@ class WaterConsumerWfController extends Controller
 
             # validating role for DA
             $senderRoleId = $senderRoleDtls->wf_role_id;
-            if ($senderRoleId != $wfLevel['DA'])                                    // Authorization for Dealing Assistant Only
+            $authorizedRoles = [$wfLevel['DA'], $wfLevel['JE']];
+            if (!in_array($senderRoleId, $authorizedRoles)) {                                    // Authorization for Dealing Assistant Only
                 throw new Exception("You are not Authorized");
+            }
 
             # validating if full documet is uploaded
-            $ifFullDocVerified = $this->ifFullDocVerified($applicationId);          // (Current Object Derivative Function 0.1)
+            $ifFullDocVerified = $this->ifFullDocVerified($applicationId);                          // (Current Object Derivative Function 0.1)
             if ($ifFullDocVerified == 1)
                 throw new Exception("Document Fully Verified");
 
@@ -1066,5 +1068,143 @@ class WaterConsumerWfController extends Controller
             $appDetails->doc_verify_status = '0';
             $appDetails->save();
         }
+    }
+    /**
+     * | get doc to upload on JE Side
+     */
+    public function getDocListForJe(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'applicationId' => 'required|numeric'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $mWaterApplication  = new WaterConsumerActiveRequest();
+            $refWaterApplication = $mWaterApplication->getActiveReqById($req->applicationId)->first();                      // Get Saf Details
+            if (!$refWaterApplication) {
+                throw new Exception("Application Not Found for this id");
+            }
+            // $refWaterApplicant = $mWaterApplicant->getOwnerList($req->applicationId)->get();
+            $documentList = $this->getWaterDocLists($refWaterApplication, $req);
+            $waterTypeDocs['listDocs'] = collect($documentList)->map(function ($value, $key) use ($refWaterApplication) {
+                return $this->filterDocument($value, $refWaterApplication)->first();
+            });
+
+            // $waterOwnerDocs['ownerDocs'] = collect($refWaterApplicant)->map(function ($owner) use ($refWaterApplication) {
+            //     return $this->getOwnerDocLists($owner, $refWaterApplication);
+            // });
+            // $waterOwnerDocs;
+
+            $totalDocLists = collect($waterTypeDocs); //->merge($waterOwnerDocs);
+            $totalDocLists['docUploadStatus'] = $refWaterApplication->doc_upload_status;
+            $totalDocLists['docVerifyStatus'] = $refWaterApplication->doc_status;
+            return responseMsgs(true, "", remove_null($totalDocLists), "010203", "", "", 'POST', "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
+        }
+    }
+
+    /**
+     * |---------------------------- List of the doc to upload For Je ----------------------------|
+     * | Calling function
+     * | 01.01
+        | Serial No :  
+     */
+    public function getWaterDocLists($application, $req)
+    {
+        $user           = authUser($req);
+        $mRefReqDocs    = new RefRequiredDocument();
+        $moduleId       = Config::get('module-constants.WATER_MODULE_ID');
+        $refUserType    = Config::get('waterConstaint.REF_USER_TYPE');
+
+        $type = ["INSPECTION_REPORT", "QUALITY_REPORT",];
+
+        // Check if user_type is not equal to 1
+        // if ($user->user_type == $refUserType['1']) {
+        //     // Modify $type array for user_type not equal to 1
+        //     $type = ["STAMP", "ID_PROOF"];
+        // }
+
+        return $mRefReqDocs->getCollectiveDocByCode($moduleId, $type);
+    }
+    /**
+     * |---------------------------- Filter The Document For Viewing ----------------------------|
+     * | @param documentList
+     * | @param refWaterApplication
+     * | @param ownerId
+     * | @var mWfActiveDocument
+     * | @var applicationId
+     * | @var workflowId
+     * | @var moduleId
+     * | @var uploadedDocs
+     * | Calling Function 01.01.01/ 01.02.01
+        | Serial No : 
+     */
+    public function filterDocument($documentList, $refWaterApplication, $ownerId = null)
+    {
+        $mWfActiveDocument  = new WfActiveDocument();
+        $applicationId      = $refWaterApplication->id;
+        $workflowId         = $refWaterApplication->workflow_id;
+        $moduleId           = Config::get('module-constants.WATER_MODULE_ID');
+        $uploadedDocs       = $mWfActiveDocument->getDocByRefIds($applicationId, $workflowId, $moduleId);
+
+        $explodeDocs = collect(explode('#', $documentList->requirements));
+        $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $ownerId, $documentList) {
+
+            # var defining
+            $document   = explode(',', $explodeDoc);
+            $key        = array_shift($document);
+            $label      = array_shift($document);
+            $documents  = collect();
+
+            collect($document)->map(function ($item) use ($uploadedDocs, $documents, $ownerId, $documentList) {
+                $uploadedDoc = $uploadedDocs->where('doc_code', $item)
+                    ->where('owner_dtl_id', $ownerId)
+                    ->first();
+                if ($uploadedDoc) {
+                    $path = $this->readDocumentPath($uploadedDoc->doc_path);
+                    $fullDocPath = !empty(trim($uploadedDoc->doc_path)) ? $path : null;
+                    $response = [
+                        "uploadedDocId" => $uploadedDoc->id ?? "",
+                        "documentCode"  => $item,
+                        "ownerId"       => $uploadedDoc->owner_dtl_id ?? "",
+                        "docPath"       => $fullDocPath ?? "",
+                        "verifyStatus"  => $uploadedDoc->verify_status ?? "",
+                        "remarks"       => $uploadedDoc->remarks ?? "",
+                    ];
+                    $documents->push($response);
+                }
+            });
+            $reqDoc['docType']      = $key;
+            $reqDoc['uploadedDoc']  = $documents->last();
+            $reqDoc['docName']      = substr($label, 1, -1);
+            // $reqDoc['refDocName'] = substr($label, 1, -1);
+
+            $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
+                $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
+                $strLower = strtolower($doc);
+                $strReplace = str_replace('_', ' ', $strLower);
+                if (isset($uploadedDoc)) {
+                    $path =  $this->readDocumentPath($uploadedDoc->doc_path);
+                    $fullDocPath = !empty(trim($uploadedDoc->doc_path)) ? $path : null;
+                }
+                $arr = [
+                    "documentCode"  => $doc,
+                    "docVal"        => ucwords($strReplace),
+                    "uploadedDoc"   => $fullDocPath ?? "",
+                    "uploadedDocId" => $uploadedDoc->id ?? "",
+                    "verifyStatus'" => $uploadedDoc->verify_status ?? "",
+                    "remarks"       => $uploadedDoc->remarks ?? "",
+                ];
+                return $arr;
+            });
+            return $reqDoc;
+        });
+        return $filteredDocs;
     }
 }
