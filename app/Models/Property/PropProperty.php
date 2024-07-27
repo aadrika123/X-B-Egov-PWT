@@ -106,7 +106,7 @@ class PropProperty extends  PropParamModel #Model
                 'cat.category AS categoryType',
                 DB::raw("string_agg(prop_owners.owner_name, ', ') as owner_name"),
                 DB::raw("string_agg(prop_owners.owner_name_marathi, ', ') as owner_names_marathi"),
-                'prop_demands.total_tax'
+                DB::raw("SUM(prop_demands.total_tax) as total_tax")
             )
             ->leftJoin('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
             ->leftJoin('ulb_ward_masters as w', 'w.id', '=', 'prop_properties.ward_mstr_id')
@@ -127,7 +127,7 @@ class PropProperty extends  PropParamModel #Model
                 'a.apt_code',
                 'z.zone_name',
                 'cat.category',
-                'prop_demands.total_tax'
+                //'prop_demands.total_tax'
             );
     }
 
