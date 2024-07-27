@@ -963,7 +963,7 @@ class PropertyController extends Controller
                         $ownerUpdate = (new PropOwner)->postOwner((object)$ownerArr);
                     }
                 }
-               // if (true) {
+                if (true) {
                     foreach ($floors as $val) {
                         $floorArr = $this->updatePropFloorPrimary($val);
                         if ($val->floor_id)
@@ -979,7 +979,7 @@ class PropertyController extends Controller
                             $floorUpdate = (new PropFloor)->postFloor((object)$floorArr);
                         }
                     }
-                //}
+                }
                 $application->pending_status = 5;
                 $msg =  $application->holding_no . " Updated Successfull";
             }
