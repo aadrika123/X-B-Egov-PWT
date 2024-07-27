@@ -84,6 +84,7 @@ class ObjectionRepository implements iObjectionRepository
             $owner = new PropOwner();
             $floor = new PropFloor();
             $propDtl = $property->getPropById($request->propId);
+            $ownerDtl =  $owner->getPropOwnerByOwnerId($request->ownerId);
             //return $propDtl;
             $ulbWorkflowId = WfWorkflow::where('wf_master_id', $this->_workflow_id_clerical)
                 ->where('ulb_id', $ulbId)
@@ -185,7 +186,7 @@ class ObjectionRepository implements iObjectionRepository
                 $objection->property_no = $propDtl->property_no ?? null;
                 $objection->pending_status = 1;
                 $objection->ip_address = getClientIpAddress();
-                $objection->logs = json_encode($property->toArray(), JSON_UNESCAPED_UNICODE);
+                $objection->logs = json_encode($propDtl->toArray(), JSON_UNESCAPED_UNICODE);
 
                 if ($userType == 'Citizen') {
                     // $objection->current_role = collect($initiatorRoleId)->first()->forward_role_id;
@@ -219,7 +220,7 @@ class ObjectionRepository implements iObjectionRepository
                 $objectionOwner->guardian_name_marathi = $request->occupantNameMarathi;
                 $objectionOwner->dob = $request->dob;
                 $objectionOwner->created_at = Carbon::now();
-                $objectionOwner->logs = json_encode($owner->toArray(), JSON_UNESCAPED_UNICODE);
+                $objectionOwner->logs = json_encode($ownerDtl->toArray(), JSON_UNESCAPED_UNICODE);
                 $objectionOwner->save();
 
                 //name document
