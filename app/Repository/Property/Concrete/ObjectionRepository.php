@@ -574,7 +574,8 @@ class ObjectionRepository implements iObjectionRepository
                     $assement_floor = new PropFloorsUpdateRequest();
                     $assement_floor->request_id = $objection->id;
                     $assement_floor->property_id = $request->propId;
-                    $assement_floor->floor_id = $request->propFloorId;
+                    // $assement_floor->floor_id = $request->propFloorId;
+                    $assement_floor->floor_id = $floors['propFloorId'];
                     $assement_floor->floor_mstr_id = $request->floorNo ?? $floors['floorNo'];
                     $assement_floor->usage_type_mstr_id = $request->usageType ?? $floors['usageType'];
 
@@ -585,8 +586,8 @@ class ObjectionRepository implements iObjectionRepository
                         $assement_floor->carpet_area = $floors['buildupArea'] * 0.70;
                     else
                         $assement_floor->carpet_area = $floors['buildupArea'] * 0.80;
-                    $assement_floor->date_from = $floors->dateFrom ?? null;
-                    $assement_floor->date_upto = $floors->dateUpto ?? null;
+                    $assement_floor->date_from = $request->dateFrom ?? $floors->dateFrom ?? null;
+                    $assement_floor->date_upto = $request->dateUpto ?? $floors->dateUpto ?? null;
                     $assement_floor->no_of_rooms = $request->noOfRooms ?? $floors->no_of_rooms ?? null;
                     $assement_floor->no_of_toilets =  $request->noOfToilet ?? $floors->no_of_toilets ?? null;
                     $assement_floor->logs = json_encode($floorDtl->toArray(), JSON_UNESCAPED_UNICODE) ?? null;
