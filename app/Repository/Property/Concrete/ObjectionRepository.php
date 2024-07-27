@@ -82,9 +82,9 @@ class ObjectionRepository implements iObjectionRepository
             $objNo = "";
             $property = new PropProperty();
             $owner = new PropOwner();
-            $floor = new PropFloor();
             $propDtl = $property->getPropById($request->propId);
             $ownerDtl =  $owner->getPropOwnerByOwnerId($request->ownerId);
+
             //return $propDtl;
             $ulbWorkflowId = WfWorkflow::where('wf_master_id', $this->_workflow_id_clerical)
                 ->where('ulb_id', $ulbId)
@@ -481,7 +481,7 @@ class ObjectionRepository implements iObjectionRepository
                 $objection->property_no = $propDtl->property_no ?? null;
                 $objection->pending_status = 1;
                 $objection->ip_address = getClientIpAddress();
-                $objection->logs = json_encode($property->toArray(), JSON_UNESCAPED_UNICODE);
+                $objection->logs = json_encode($propDtl->toArray(), JSON_UNESCAPED_UNICODE);
 
                 if ($userType == 'Citizen') {
                     // $objection->current_role = collect($initiatorRoleId)->first()->forward_role_id;
@@ -568,6 +568,8 @@ class ObjectionRepository implements iObjectionRepository
                     if ($floors instanceof stdClass) {
                         $floors = (array)$floors;
                     }
+                    $floorabc = new PropFloor();
+                    $floorDtl = $floorabc->getFloorByFloorId($floors['propFloorId']);
                     //$assement_floor = new PropActiveObjectionFloor;  request_id
                     $assement_floor = new PropFloorsUpdateRequest();
                     $assement_floor->request_id = $objection->id;
@@ -587,7 +589,7 @@ class ObjectionRepository implements iObjectionRepository
                     $assement_floor->date_upto = $floors->dateUpto ?? null;
                     $assement_floor->no_of_rooms = $request->noOfRooms ?? $floors->no_of_rooms ?? null;
                     $assement_floor->no_of_toilets =  $request->noOfToilet ?? $floors->no_of_toilets ?? null;
-                    $assement_floor->logs = json_encode($floor->toArray(), JSON_UNESCAPED_UNICODE) ?? null;
+                    $assement_floor->logs = json_encode($floorDtl->toArray(), JSON_UNESCAPED_UNICODE) ?? null;
                     $assement_floor->save();
                 }
             }

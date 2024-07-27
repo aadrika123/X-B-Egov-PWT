@@ -203,4 +203,12 @@ class PropPropertyUpdateRequest extends PropParamModel #Model
             ->where('prop_property_update_requests.id', $applicationId)->get();
             return $data;
     }
+
+    public function getWfDetail($applicationId)
+    {
+        $data =  PropPropertyUpdateRequest::select('workflow_id')
+            ->where('prop_property_update_requests.id', $applicationId)->first();
+            return $data;
+    }
+
 }
