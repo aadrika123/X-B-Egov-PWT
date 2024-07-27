@@ -105,7 +105,8 @@ class PropProperty extends  PropParamModel #Model
                 'z.zone_name',
                 'cat.category AS categoryType',
                 DB::raw("string_agg(prop_owners.owner_name, ', ') as owner_name"),
-                DB::raw("string_agg(prop_owners.owner_name_marathi, ', ') as owner_names_marathi")
+                DB::raw("string_agg(prop_owners.owner_name_marathi, ', ') as owner_names_marathi"),
+                DB::raw("SUM(prop_demands.total_tax) as total_tax")
             )
             ->leftJoin('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
             ->leftJoin('ulb_ward_masters as w', 'w.id', '=', 'prop_properties.ward_mstr_id')
@@ -115,6 +116,7 @@ class PropProperty extends  PropParamModel #Model
             ->leftJoin('prop_apartment_dtls as a', 'a.id', '=', 'prop_properties.apartment_details_id')
             ->leftJoin('zone_masters as z', 'z.id', '=', 'prop_properties.zone_mstr_id')
             ->leftJoin('ref_prop_categories as cat', 'cat.id', '=', 'prop_properties.category_id')
+            ->leftJoin('prop_demands', 'prop_demands.property_id', '=', 'prop_properties.id')
             ->groupBy(
                 'prop_properties.id',
                 'w.ward_name',
@@ -124,7 +126,8 @@ class PropProperty extends  PropParamModel #Model
                 'a.apartment_name',
                 'a.apt_code',
                 'z.zone_name',
-                'cat.category'
+                'cat.category',
+                //'prop_demands.total_tax'
             );
     }
 
