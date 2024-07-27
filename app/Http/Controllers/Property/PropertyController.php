@@ -723,7 +723,7 @@ class PropertyController extends Controller
             ];
             if ($application->objection_for) {
                 $document = $this->getUploadedDocuments($request);
-                $data["userDtl"]["document"] =  $document;       
+                $data["userDtl"]["document"] =  $document;
             }
             $data["propCom"] = $this->PropUpdateCom($application);
             $data["ownerCom"] = $this->OwerUpdateCom($application);
@@ -1098,8 +1098,10 @@ class PropertyController extends Controller
                 $req->merge(["propId" => $propertyId]);
                 $getHoldingDues = new GetHoldingDuesV2;
                 $demand = $getHoldingDues->getDues($req);
-                if (($demand['previousInterest']) > 0 || ($demand['arrear']) > 0) {
-                    $sms = "Please Clear The Previous Arrear Amount Of ₹" . $demand['arrearPayableAmt'] . " Before Applying The Application.";
+                if (in_array($req->type, ['Mutation', 'Concession', 'Objection', 'Harvesting', 'Bifurcation'])) {
+                    if (($demand['previousInterest']) > 0 || ($demand['arrear']) > 0) {
+                        $sms = "Please Clear The Previous Arrear Amount Of ₹" . $demand['arrearPayableAmt'] . " Before Applying The Application.";
+                    }
                 }
                 if ($sms) {
                     $msg['inWorkflow'] = true;
@@ -2092,7 +2094,7 @@ class PropertyController extends Controller
             $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
 
             $objectionDetails = $mPropActiveObjection->getObjectionNo($req->applicationId);
-            if (!$objectionDetails){
+            if (!$objectionDetails) {
                 $objectionDetails = $obj->getDetail($req->applicationId);
             }
             if (!$objectionDetails)
