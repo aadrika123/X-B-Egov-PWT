@@ -31,6 +31,10 @@ use App\Models\Masters\RefRequiredDocument;
 use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterConsumerMeter;
 use App\Http\Controllers\Water\WaterConsumer;
+use App\MicroServices\DocUpload;
+use App\Models\Water\WaterConnectionCharge;
+use App\Models\Water\WaterTran;
+use App\Repository\Water\Concrete\WaterNewConnection;
 use App\Repository\Water\Interfaces\IConsumer;
 
 /**
@@ -1206,5 +1210,342 @@ class WaterConsumerWfController extends Controller
             return $reqDoc;
         });
         return $filteredDocs;
+    }
+
+    /**
+     * | Upload Application Documents 
+     * | @param req
+        | Serial No :
+        | Working 
+        | Look on the concept of deactivation of the rejected documents 
+        | Put the static "verify status" 2 in config  
+     */
+    public function uploadWaterDocJe(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                "applicationId" => "required|numeric",
+                "document"      => "required|mimes:pdf,jpeg,png,jpg|max:2048",
+                "docCode"       => "required",
+                "docCategory"   => "required",                                  // Recheck in case of undefined
+                "ownerId"       => "nullable|numeric"
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $user               = authUser($req);
+            $metaReqs           = array();
+            $applicationId      = $req->applicationId;
+            $document           = $req->document;
+            $docUpload          = new DocUpload;
+            $mWfActiveDocument  = new WfActiveDocument();
+            $mWaterApplication  = new WaterConsumerActiveRequest();
+            $relativePath       = Config::get('waterConstaint.WATER_RELATIVE_PATH');
+            $refmoduleId        = Config::get('module-constants.WATER_MODULE_ID');
+
+            $getWaterDetails    = $mWaterApplication->fullWaterDetails($req)->firstOrFail();;
+            $refImageName       = $req->docRefName;
+            $refImageName       = $getWaterDetails->id . '-' . str_replace(' ', '_', $refImageName);
+            $imageName          = $docUpload->upload($refImageName, $document, $relativePath);
+
+            $metaReqs = [
+                'moduleId'      => $refmoduleId,
+                'activeId'      => $getWaterDetails->id,
+                'workflowId'    => $getWaterDetails->workflow_id,
+                'ulbId'         => $getWaterDetails->ulb_id ?? 2,
+                'relativePath'  => $relativePath,
+                'document'      => $imageName,
+                'docCode'       => $req->docCode,
+                'ownerDtlId'    => $req->ownerId,
+                'docCategory'   => $req->docCategory,
+                'auth'          => $req->auth
+            ];
+
+            # Check the diff in user and citizen
+            if ($user->user_type == "Citizen") {                                                // Static
+                $isCitizen = true;
+                $this->checkParamForDocUpload($isCitizen, $getWaterDetails, $user);
+            } else {
+                $isCitizen = false;
+                $this->checkParamForDocUpload($isCitizen, $getWaterDetails, $user);
+            }
+
+            $this->begin();
+            $ifDocExist = $mWfActiveDocument->isDocCategoryExists($getWaterDetails->id, $getWaterDetails->workflow_id, $refmoduleId, $req->docCategory, $req->ownerId)->first();   // Checking if the document is already existing or not
+            $metaReqs = new Request($metaReqs);
+            if (collect($ifDocExist)->isEmpty()) {
+                $mWfActiveDocument->postDocuments($metaReqs);
+            }
+            if (collect($ifDocExist)->isNotEmpty()) {
+                $mWfActiveDocument->editDocuments($ifDocExist, $metaReqs);
+            }
+
+            #check full doc upload
+            $refCheckDocument = $this->checkFullDocUpload($req);
+
+            # Update the Doc Upload Satus in Application Table
+            if ($refCheckDocument->contains(false)) {
+                $mWaterApplication->deactivateUploadStatus($applicationId);
+            } else {
+                $this->updateWaterStatus($req, $getWaterDetails);
+            }
+
+            # if the application is parked and btc s
+            if ($getWaterDetails->parked == true) {
+                $mWfActiveDocument->deactivateRejectedDoc($metaReqs);
+                $refReq = new Request([
+                    'applicationId' => $applicationId
+                ]);
+                $documentList = $this->getDocListForJe($refReq);
+                $DocList = collect($documentList)['original']['data'];
+                $refVerifyStatus = $DocList->where('doc_category', '!=', $req->docCategory)->pluck('verify_status');
+                if (!in_array(2, $refVerifyStatus->toArray())) {                                    // Static "2"
+                    $status = false;
+                    $mWaterApplication->updateParkedstatus($status, $applicationId);
+                }
+            }
+            $this->commit();
+            return responseMsgs(true, "Document Uploadation Successful", "", "", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            $this->rollback();
+            return responseMsgs(false, $e->getMessage(), "", "", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | Check if the params for document upload
+     * | @param isCitizen
+     * | @param applicantDetals
+     * | @param user
+        | Serial No : 
+     */
+    public function checkParamForDocUpload($isCitizen, $applicantDetals, $user)
+    {
+        $refWorkFlowMaster = Config::get('workflow-constants.WATER_MASTER_ID');
+        switch ($isCitizen) {
+                # For citizen 
+                // case (true):
+                //     if (!is_null($applicantDetals->current_role) && $applicantDetals->parked == true) {
+                //         return true;
+                //     }
+                //     if (!is_null($applicantDetals->current_role)) {
+                //         throw new Exception("You aren't allowed to upload document!");
+                //     }
+                //     break;
+                # For user
+                // case (false):
+                //     $userId = $user->id;
+                //     $ulbId = $applicantDetals->ulb_id;
+                //     $role = $this->_commonFunction->getUserRoll($userId, $ulbId, $refWorkFlowMaster);
+                //     if (is_null($role)) {
+                //         throw new Exception("You dont have any role!");
+                //     }
+                //     if ($role->can_upload_document != true) {
+                //         throw new Exception("You dont have permission to upload Document!");
+                //     }
+                //     break;
+        }
+    }
+
+    /**
+     * | Caheck the Document if Fully Upload or not
+     * | @param req
+        | Up
+        | Serial No :
+     */
+    public function checkFullDocUpload($req)
+    {
+        # Check the Document upload Status
+        $documentList = $this->getDocToUpload($req);
+        $refDoc = collect($documentList)['original']['data']['documentsList'];
+        // $refOwnerDoc = collect($documentList)['original']['data']['ownersDocList'];
+        $checkDocument = collect($refDoc)->map(function ($value, $key) {
+            if ($value['isMadatory'] == 1) {
+                $doc = collect($value['uploadDoc'])->first();
+                if (is_null($doc)) {
+                    return false;
+                }
+                return true;
+            }
+            return true;
+        });
+        // $checkOwnerDocument = collect($refOwnerDoc)->map(function ($value) {
+        //     if ($value['isMadatory'] == 1) {
+        //         $doc = collect($value['uploadDoc'])->first();
+        //         if (is_null($doc)) {
+        //             return false;
+        //         }
+        //         return true;
+        //     }
+        //     return true;
+        // });
+        return $checkDocument; //->merge($checkOwnerDocument);
+    }
+    /**
+     * | Updating the water Application Status
+     * | @param req
+     * | @param application
+        | Serial No :  
+        | Up 
+        | Check the concept of auto forward
+     */
+    public function updateWaterStatus($req, $application)
+    {
+        $mWaterTran         = new WaterTran();
+        $mWaterApplication  = new WaterConsumerActiveRequest();
+        $refApplyFrom       = Config::get("waterConstaint.APP_APPLY_FROM");
+        $mWaterApplication->activateUploadStatus($req->applicationId);
+        # Auto forward to Da
+        if ($application->payment_status == 1) {
+            $waterTransaction = $mWaterTran->getTransNo($application->id, true)->first();
+            if (is_null($waterTransaction)) {
+                throw new Exception("Transaction Details not found!");
+            }
+            if ($application->apply_from == $refApplyFrom['1']) {
+                $this->autoForwardProcess($waterTransaction, $req, $application);
+            }
+        }
+    }
+    /**
+     * | Auto forward process 
+        | Serial No : 
+     */
+    public function autoForwardProcess($waterTransaction, $req, $application)
+    {
+        $waterRoles         = $this->_waterRoles;
+        $refChargeCatagory  = Config::get("waterConstaint.CHARGE_CATAGORY");
+        $mWaterApplication  = new WaterConsumerActiveRequest();
+        if ($waterTransaction->tran_type == $refChargeCatagory['SITE_INSPECTON']) {
+            throw new Exception("Error there is different charge catagory in application!");
+        }
+        if ($application->current_role == null) {
+            $mWaterApplication->updateCurrentRoleForDa($req->applicationId, $waterRoles['DA']);
+        }
+    }
+
+    /**
+     * | Get the document to be upoaded with list of dock uploaded 
+        | Serial No :  
+        | Working / Citizen Upload
+     */
+    public function getDocToUpload(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'applicationId' => 'required|numeric'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        try {
+            $user                   = authUser($request);
+            $refApplication         = (array)null;
+            $refOwneres             = (array)null;
+            $requiedDocs            = (array)null;
+            $testOwnersDoc          = (array)null;
+            $data                   = (array)null;
+            $refWaterNewConnection  = new WaterNewConnection();
+            $refWfActiveDocument    = new WfActiveDocument();
+            $mWaterConnectionCharge = new WaterConnectionCharge();
+            $mWaterApplication      = new WaterConsumerActiveRequest();   // Application 
+            $mWaterApprovalApplications = new WaterApprovalApplicationDetail();
+            $moduleId               = Config::get('module-constants.WATER_MODULE_ID');
+
+            $connectionId = $request->applicationId;
+            $refApplication = $mWaterApplication->getApplicationDtls($connectionId)->first();
+            if ($refApplication == null) {
+                $refApplication = $mWaterApprovalApplications->getApplicationById($connectionId)->first();
+            }
+            if (!$refApplication) {
+                throw new Exception("Application Not Found!");
+            }
+            $connectionCharges = $mWaterConnectionCharge->getWaterchargesById($connectionId)
+                ->where('charge_category', '!=', "Site Inspection")                         # Static
+                ->first();
+            $connectionCharges['type'] = Config::get('waterConstaint.New_Connection');
+            $connectionCharges['applicationNo'] = $refApplication->application_no;
+            $connectionCharges['applicationId'] = $refApplication->id;
+
+            $requiedDocType = $refWaterNewConnection->getDocumentTypeList($refApplication, $user);  # get All Related Document Type List
+            $refOwneres = $refWaterNewConnection->getOwnereDtlByLId($refApplication->id);    # get Owneres List
+            $ownerList = collect($refOwneres)->map(function ($value) {
+                $return['applicant_name'] = $value['applicant_name'];
+                $return['ownerID'] = $value['id'];
+                return $return;
+            });
+            foreach ($requiedDocType as $val) {
+                $doc = (array) null;
+                $doc["ownerName"] = $ownerList;
+                $doc['docName'] = $val->doc_for;
+                $refDocName  = str_replace('_', ' ', $val->doc_for);
+                $doc["refDocName"] = ucwords(strtolower($refDocName));
+                $doc['isMadatory'] = $val->is_mandatory;
+                $ref['docValue'] = $refWaterNewConnection->getDocumentList($val->doc_for);  # get All Related Document List
+                $doc['docVal'] = $docFor = collect($ref['docValue'])->map(function ($value) {
+                    $refDoc = $value['doc_name'];
+                    $refText = str_replace('_', ' ', $refDoc);
+                    $value['dispayName'] = ucwords(strtolower($refText));
+                    return $value;
+                });
+                $docFor = collect($ref['docValue'])->map(function ($value) {
+                    return $value['doc_name'];
+                });
+
+                $doc['uploadDoc'] = [];
+                $uploadDoc = $refWfActiveDocument->getDocByRefIdsDocCodeV2($refApplication->id, $refApplication->workflow_id, $moduleId, $docFor); # Check Document is Uploaded Of That Type
+                if (isset($uploadDoc->first()->doc_path)) {
+                    $path = $refWaterNewConnection->readDocumentPath($uploadDoc->first()->doc_path);
+                    $doc["uploadDoc"]["doc_path"] = !empty(trim($uploadDoc->first()->doc_path)) ? $path : null;
+                    $doc["uploadDoc"]["doc_code"] = $uploadDoc->first()->doc_code;
+                    $doc["uploadDoc"]["verify_status"] = $uploadDoc->first()->verify_status;
+                }
+                array_push($requiedDocs, $doc);
+            }
+            // foreach ($refOwneres as $key => $val) {
+            //     $docRefList = ["ID_PROOF"];
+            //     foreach ($docRefList as $key => $refOwnerDoc) {
+            //         $doc = (array) null;
+            //         $testOwnersDoc[] = (array) null;
+            //         $doc["ownerId"] = $val->id;
+            //         $doc["ownerName"] = $val->applicant_name;
+            //         $doc["docName"]   = $refOwnerDoc;
+            //         $refDocName  = str_replace('_', ' ', $refOwnerDoc);
+            //         $doc["refDocName"] = ucwords(strtolower($refDocName));
+            //         $doc['isMadatory'] = 1;
+            //         $ref['docValue'] = $refWaterNewConnection->getDocumentList([$refOwnerDoc]);   #"CONSUMER_PHOTO"
+            //         $doc['docVal'] = $docFor = collect($ref['docValue'])->map(function ($value) {
+            //             $refDoc = $value['doc_name'];
+            //             $refText = str_replace('_', ' ', $refDoc);
+            //             $value['dispayName'] = ucwords(strtolower($refText));
+            //             return $value;
+            //         });
+            //         $refdocForId = collect($ref['docValue'])->map(function ($value, $key) {
+            //             return $value['doc_name'];
+            //         });
+            //         $doc['uploadDoc'] = [];
+            //         $uploadDoc = $refWfActiveDocument->getOwnerDocByRefIdsDocCode($refApplication->id, $refApplication->workflow_id, $moduleId, $refdocForId, $doc["ownerId"]); # Check Document is Uploaded Of That Type
+            //         if (isset($uploadDoc->first()->doc_path)) {
+            //             $path = $refWaterNewConnection->readDocumentPath($uploadDoc->first()->doc_path);
+            //             $doc["uploadDoc"]["doc_path"] = !empty(trim($uploadDoc->first()->doc_path)) ? $path : null;
+            //             $doc["uploadDoc"]["doc_code"] = $uploadDoc->first()->doc_code;
+            //             $doc["uploadDoc"]["verify_status"] = $uploadDoc->first()->verify_status;
+            //         }
+            //         array_push($testOwnersDoc, $doc);
+            //     }
+            // }
+            // $ownerDoc = collect($testOwnersDoc)->filter()->values();
+
+            $data["documentsList"]  = $requiedDocs;
+            // $data["ownersDocList"]  = $ownerDoc;
+            $data['doc_upload_status'] = $refApplication['doc_upload_status'];
+            $data['connectionCharges'] = $connectionCharges;
+            return responseMsg(true, "Document Uploaded!", $data);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
     }
 }
