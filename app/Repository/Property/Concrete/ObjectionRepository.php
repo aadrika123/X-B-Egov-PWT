@@ -19,7 +19,9 @@ use App\Models\PropActiveObjectionDtl;
 use App\Models\PropActiveObjectionFloor;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Property\MPropForgeryType;
+use App\Models\Property\PropFloor;
 use App\Models\Property\PropFloorsUpdateRequest;
+use App\Models\Property\PropOwner;
 use App\Models\Property\PropOwnerUpdateRequest;
 use App\Models\Property\PropPropertyUpdateRequest;
 use App\Models\WorkflowTrack;
@@ -79,6 +81,8 @@ class ObjectionRepository implements iObjectionRepository
             $objectionNo = "";
             $objNo = "";
             $property = new PropProperty();
+            $owner = new PropOwner();
+            $floor = new PropFloor();
             $propDtl = $property->getPropById($request->propId);
             //return $propDtl;
             $ulbWorkflowId = WfWorkflow::where('wf_master_id', $this->_workflow_id_clerical)
@@ -181,7 +185,7 @@ class ObjectionRepository implements iObjectionRepository
                 $objection->property_no = $propDtl->property_no ?? null;
                 $objection->pending_status = 1;
                 $objection->ip_address = getClientIpAddress();
-                $objection->logs = json_encode($objection->toArray(), JSON_UNESCAPED_UNICODE);
+                $objection->logs = json_encode($property->toArray(), JSON_UNESCAPED_UNICODE);
 
                 if ($userType == 'Citizen') {
                     // $objection->current_role = collect($initiatorRoleId)->first()->forward_role_id;
@@ -215,7 +219,7 @@ class ObjectionRepository implements iObjectionRepository
                 $objectionOwner->guardian_name_marathi = $request->occupantNameMarathi;
                 $objectionOwner->dob = $request->dob;
                 $objectionOwner->created_at = Carbon::now();
-                $objectionOwner->logs = json_encode($objectionOwner->toArray(), JSON_UNESCAPED_UNICODE);
+                $objectionOwner->logs = json_encode($owner->toArray(), JSON_UNESCAPED_UNICODE);
                 $objectionOwner->save();
 
                 //name document
@@ -476,7 +480,7 @@ class ObjectionRepository implements iObjectionRepository
                 $objection->property_no = $propDtl->property_no ?? null;
                 $objection->pending_status = 1;
                 $objection->ip_address = getClientIpAddress();
-                $objection->logs = json_encode($objection->toArray(), JSON_UNESCAPED_UNICODE);
+                $objection->logs = json_encode($property->toArray(), JSON_UNESCAPED_UNICODE);
 
                 if ($userType == 'Citizen') {
                     // $objection->current_role = collect($initiatorRoleId)->first()->forward_role_id;
@@ -582,7 +586,7 @@ class ObjectionRepository implements iObjectionRepository
                     $assement_floor->date_upto = $floors->dateUpto ?? null;
                     $assement_floor->no_of_rooms = $request->noOfRooms ?? $floors->no_of_rooms ?? null;
                     $assement_floor->no_of_toilets =  $request->noOfToilet ?? $floors->no_of_toilets ?? null;
-                    $assement_floor->logs = json_encode($assement_floor->toArray(), JSON_UNESCAPED_UNICODE) ?? null;
+                    $assement_floor->logs = json_encode($floor->toArray(), JSON_UNESCAPED_UNICODE) ?? null;
                     $assement_floor->save();
                 }
             }
