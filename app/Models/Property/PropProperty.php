@@ -116,7 +116,7 @@ class PropProperty extends  PropParamModel #Model
             ->leftJoin('prop_apartment_dtls as a', 'a.id', '=', 'prop_properties.apartment_details_id')
             ->leftJoin('zone_masters as z', 'z.id', '=', 'prop_properties.zone_mstr_id')
             ->leftJoin('ref_prop_categories as cat', 'cat.id', '=', 'prop_properties.category_id')
-            ->leftJoin('prop_demands','prop_demands.property_id','=','prop_properties.id')
+            ->leftJoin('prop_demands', 'prop_demands.property_id', '=', 'prop_properties.id')
             ->groupBy(
                 'prop_properties.id',
                 'w.ward_name',
@@ -126,7 +126,8 @@ class PropProperty extends  PropParamModel #Model
                 'a.apartment_name',
                 'a.apt_code',
                 'z.zone_name',
-                'cat.category'
+                'cat.category',
+                'prop_demands.total_tax'
             );
     }
 
