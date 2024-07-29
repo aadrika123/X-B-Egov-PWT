@@ -518,6 +518,7 @@ class WaterSecondConsumer extends Model
     public function saveWaterConsumer($consumerDetails, $consumerNo)
     {
         $mWaterConsumer = new WaterSecondConsumer();
+        
         $mWaterConsumer->apply_connection_id         = $consumerDetails['id'];
         $mWaterConsumer->connection_type_id          = $consumerDetails['connection_type_id'];
         $mWaterConsumer->connection_through_id       = $consumerDetails['connection_through'];
