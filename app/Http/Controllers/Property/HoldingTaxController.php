@@ -689,7 +689,7 @@ class HoldingTaxController extends Controller
     /**
      * | Property Payment History
      */
-    public function propPaymentHistoryv1(Request $req)
+    public function propPaymentHistory(Request $req)
     {
         $validated = Validator::make(
             $req->all(),
@@ -738,40 +738,40 @@ class HoldingTaxController extends Controller
     }
 
     // written by prity pandey
-    public function propPaymentHistory(Request $req)
-    {
-        $validated = Validator::make(
-            $req->all(),
-            ['propId' => 'required|digits_between:1,9223372036854775807']
-        );
-        if ($validated->fails()) {
-            return validationError($validated);
-        }
+    // public function propPaymentHistory(Request $req)
+    // {
+    //     $validated = Validator::make(
+    //         $req->all(),
+    //         ['propId' => 'required|digits_between:1,9223372036854775807']
+    //     );
+    //     if ($validated->fails()) {
+    //         return validationError($validated);
+    //     }
 
-        try {
-            $propId = $req->propId;
+    //     try {
+    //         $propId = $req->propId;
 
-            // Initialize the result array with empty collections
-            $result = [
-                'Holding' => collect(),
-                'Saf' => collect()
-            ];
+    //         // Initialize the result array with empty collections
+    //         $result = [
+    //             'Holding' => collect(),
+    //             'Saf' => collect()
+    //         ];
 
-            // Get transactions and SAF details
-            $result = $this->getTransactionsAndSafDetails($propId, $result);
+    //         // Get transactions and SAF details
+    //         $result = $this->getTransactionsAndSafDetails($propId, $result);
 
-            if ($result['Holding']->isEmpty() && $result['Saf']->isEmpty()) {
-                throw new Exception("No Transaction Found");
-            }
+    //         if ($result['Holding']->isEmpty() && $result['Saf']->isEmpty()) {
+    //             throw new Exception("No Transaction Found");
+    //         }
 
-            $result['Holding'] = $result['Holding']->sortByDesc('id')->values();
-            $result['Saf'] = $result['Saf']->sortByDesc('id')->values();
+    //         $result['Holding'] = $result['Holding']->sortByDesc('id')->values();
+    //         $result['Saf'] = $result['Saf']->sortByDesc('id')->values();
 
-            return responseMsgs(true, "", remove_null($result), "011606", "1.0", "", "POST", $req->deviceId ?? "");
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011606", "1.0", "", "POST", $req->deviceId ?? "");
-        }
-    }
+    //         return responseMsgs(true, "", remove_null($result), "011606", "1.0", "", "POST", $req->deviceId ?? "");
+    //     } catch (Exception $e) {
+    //         return responseMsgs(false, $e->getMessage(), "", "011606", "1.0", "", "POST", $req->deviceId ?? "");
+    //     }
+    // }
 
     private function getTransactionsAndSafDetails($propId, $result)
     {
