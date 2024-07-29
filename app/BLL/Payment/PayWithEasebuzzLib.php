@@ -52,8 +52,9 @@ class PayWithEasebuzzLib
         }
         $taxId = $this->getOderId($param["moduleId"]??0);
         $param["txnid"] = $taxId;
-        $param["surl"]=url("/")."/api/payment/easebuzz/collect-callback-data";
-        $param["furl"]=url("/")."/api/payment/easebuzz/collect-callback-data";
+        dd(config('app.url'));
+        $param["surl"]=config('app.url')."/api/payment/easebuzz/collect-callback-data";
+        $param["furl"]=config('app.url')."/api/payment/easebuzz/collect-callback-data";
         $param["productinfo"] = "AKOLA ULB TAX";        
         $result =  json_decode(json_encode($this->initiatePaymentAPI($param)),true);
         if($result["status"]){
