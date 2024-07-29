@@ -380,6 +380,7 @@ class WaterConsumerActiveRequest extends Model
     /**
      * | Update the parked status false 
      */
+    
     public function updateParkedstatus($status, $applicationId)
     {
         $mWaterApplication = WaterConsumerActiveRequest::find($applicationId);
