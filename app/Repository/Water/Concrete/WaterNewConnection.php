@@ -228,6 +228,7 @@ class WaterNewConnection implements IWaterNewConnection
             }
 
             // $value['transDetails'] = $mWaterTran->getTransNo($value['id'], null)->first();
+            
             // $value['calcullation'] = $mWaterParamConnFee->getCallParameter($value['property_type_id'], $value['area_sqft'])->first();
         
             $refConnectionCharge = $mWaterConnectionCharge->getWaterchargesById($value['id'])
