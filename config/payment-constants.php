@@ -91,4 +91,11 @@ return [
     "ICICI_ID"=>env("ICICI_ID","378278"),
     "ICICI_AESKEY"=>env("ICICI_AESKEY","3705200682705002"),
     "ICICI_MERCHANT_ID"=>env("ICICI_MERCHANT_ID","45"),
+
+    "EASEBUZZ_BASE_URL"=>env("ICICI_BASE_URL","https://eazypay.icicibank.com"),
+    "EASEBUZZ_RETURN_URL"=>env("EASEBUZZ_RETURN_URL","https://egov.modernulb.com/api/payment/v1/collect-callback-data"),
+    
+    "EASEBUZZ_ENV"=>env("EASEBUZZ_ENV","test"),
+    "EASEBUZZ_SALT"=>env("EASEBUZZ_SALT","RDBCE6SNO"),
+    "EASEBUZZ_MERCHANT_KEY"=>env("EASEBUZZ_MERCHANT_KEY","BFTG4OT2L"),
 ];

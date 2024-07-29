@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Trade;
 
+use App\BLL\Payment\PayWithEasebuzzLib;
 use App\EloquentModels\Common\ModelWard;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Payment\PaymentController;
@@ -11,6 +12,8 @@ use App\Http\Requests\Trade\ReqCitizenAddRecorde;
 use App\Models\Trade\ActiveTradeLicence;
 use App\Models\Citizen\ActiveCitizenUndercare;
 use App\Models\Trade\RejectedTradeLicence;
+use App\Models\Trade\TradeEasebuzzPayRequest;
+use App\Models\Trade\TradeEasebuzzPayResponse;
 use App\Models\Trade\TradeFineRebete;
 use App\Models\Trade\TradeLicence;
 use App\Models\Trade\TradePinelabPayRequest;
@@ -71,6 +74,10 @@ class TradeCitizenController extends Controller
     protected $_QUERY_RUN_TIME;
     protected $_API_ID;
 
+    protected $_TradeLicence;
+    protected $_TradeEasebuzzPayRequest;
+    protected $_TradeEasebuzzPayResponse;
+
     public function __construct(ITradeCitizen $TradeRepository)
     {
         $this->_DB_NAME = "pgsql_trade";
@@ -100,6 +107,10 @@ class TradeCitizenController extends Controller
             "version" => 1.1,
             'queryRunTime' => $this->_QUERY_RUN_TIME,
         ];
+
+        $this->_TradeLicence = new TradeLicence();
+        $this->_TradeEasebuzzPayRequest = new TradeEasebuzzPayRequest();
+        $this->_TradeEasebuzzPayResponse = new TradeEasebuzzPayResponse();
     }
 
     public function begin()
@@ -359,7 +370,7 @@ class TradeCitizenController extends Controller
             $refLecenceData = $this->_REPOSITORY_TRADE->getAllLicenceById($request->licenceId);
             if(!$request->licenseFor)
             {
-                $request->merge(["licenseFor"=>$$refLecenceData->licence_for_years??1]);
+                $request->merge(["licenseFor"=>$refLecenceData->licence_for_years??1]);
             }
             if (!$refLecenceData) {
                 throw new Exception("Licence Data Not Found !!!!!");
@@ -1643,6 +1654,127 @@ class TradeCitizenController extends Controller
         }
         catch (Exception $e) 
         {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    public function initPayment(Request $request){
+        try
+        {
+            $user = Auth()->user();
+            $rules=[
+                "applicationId"=>"required|exists:".$this->_DB_NAME.".".$this->_TradeLicence->getTable().",id",
+            ];
+            $validator = Validator::make($request->all(),$rules);
+            if($validator->fails()){
+                return validationErrorV2($validator);
+            }
+
+            $application = $this->_TradeLicence->find($request->applicationId);
+            if($application->payment_status!=0){
+                throw new Exception("Payment Alreay done");
+            }
+            $applicationType = (collect($this->_TRADE_CONSTAINT["APPLICATION-TYPE-BY-ID"])[$application->application_type_id]);
+            $owners = $application->owneres()->get();
+            $chargeData = ($this->getCharge($request));
+            if(!$chargeData->original["status"]){
+                throw new Exception($chargeData->original["message"]);
+            }
+            $chargeData = $chargeData->original["data"]; 
+            $data = [
+                "userId"=>$user && $user->getTable()=="users"?$user->id : null,
+                "applicationNo"=>$application->application_no,
+                "moduleId"=>$this->_MODULE_ID ,
+                "email"=>($owners->whereNotNull("email_id")->first())->email_id,
+                "phone"=>($owners->whereNotNull("mobile_no")->first())->mobile_no,
+                "amount"=>$chargeData["total_charge"],
+                "firstname"=>$owners->implode("owner_name"," & "),
+                "frontSuccessUrl"=>$request->frontSuccessUrl,
+                "frontFailUrl"=>$request->frontFailUrl,
+            ];          
+            $easebuzzObj = new PayWithEasebuzzLib();            
+            $result =  $easebuzzObj->initPayment($data);
+            if(!$result["status"]){
+                throw new Exception("Payment Not Initiat Due To Internal Server Error");
+            }
+            $data["url"]= $result["data"];
+            $data = collect($data)->merge($chargeData)->merge($result);
+            $request->merge($data->toArray());
+            $this->_TradeEasebuzzPayRequest->temp_id = $application->id;
+            $this->_TradeEasebuzzPayRequest->tran_type = $applicationType;
+            $this->_TradeEasebuzzPayRequest->order_id = $data["txnid"]??"";
+            $this->_TradeEasebuzzPayRequest->demand_amt = $data["total_charge"]??"0";
+            $this->_TradeEasebuzzPayRequest->payable_amount = $data["total_charge"]??"0";
+            $this->_TradeEasebuzzPayRequest->penalty_amount = 0;
+            $this->_TradeEasebuzzPayRequest->rebate_amount = 0;
+            $this->_TradeEasebuzzPayRequest->request_json = json_encode($request->all(),JSON_UNESCAPED_UNICODE);
+            $this->_TradeEasebuzzPayRequest->save();
+            return responseMsg(true,"Payment Initiat",remove_null($data));
+        }
+        catch(Exception $e){
+            return responseMsg(false ,$e->getMessage(),"");
+        }
+    }
+
+    public function getCharge(Request $request){
+        $refLecenceData = $this->_REPOSITORY_TRADE->getAllLicenceById($request->applicationId);
+        $applicationType = (collect($this->_TRADE_CONSTAINT["APPLICATION-TYPE"])->flip())[$refLecenceData->application_type_id];
+        $natureOfBusiness = (collect(explode(",",$refLecenceData->nature_of_bussiness))->map(function($val){
+            return["id"=>$val];
+        }));
+        $args['firmEstdDate'] = !empty(trim($refLecenceData->valid_from)) ? $refLecenceData->valid_from : $refLecenceData->apply_date;
+        $args['curdate'] = Carbon::parse($refLecenceData->application_date)->format("Y-m-d");
+        if ($refLecenceData->application_type_id == 1) {
+            $args['firmEstdDate'] = $refLecenceData->establishment_date;
+        }
+        $request->merge($args);
+        $request->merge([
+            "applicationType"=>$applicationType,
+            "areaSqft"=>$refLecenceData->area_in_sqft,
+            "licenseFor"=>$refLecenceData->licence_for_years,
+            "natureOfBusiness"=>$natureOfBusiness->toArray(),            
+            "tocStatus"=> "0",
+        ]);
+        return $this->_REPOSITORY_TRADE->getPaybleAmount($request);
+    }
+
+    public function easebuzzHandelResponse(Request $request)
+    {
+        try {
+            $refUser        = Auth()->user();
+            $requestData = $this->_TradeEasebuzzPayRequest->where("order_id",$request->txnid)->where("status",2)->first();
+            if(!$requestData){
+                throw new Exception("Request Data Not Found");
+            }
+            $refLecenceData = $this->_REPOSITORY_TRADE->getAllLicenceById($requestData->temp_id);
+            $requestPayload = json_decode($requestData->request_json,true);
+            $request->merge($requestPayload);
+            $request->merge(["paymentMode"=>"ONLINE",
+                            "licenceId"=>$requestData->temp_id,
+                            "totalCharge"=>$requestData->payable_amount,
+                            "ulbId"=>$refLecenceData->ulb_id,
+                            "paymentGatewayType"=>$request->payment_source,
+                        ]);
+            $respnse = $this->_REPOSITORY_TRADE->paymentCounter($request);
+            $tranId = $respnse->original["data"]["transactionId"];
+            // dd(TradeTransaction::find($tranId),$request->all());
+            $this->_TradeEasebuzzPayResponse->request_id = $requestData->id;
+            $this->_TradeEasebuzzPayResponse->temp_id = $requestData->temp_id;            
+            $this->_TradeEasebuzzPayResponse->module_id = $request->moduleId;
+            $this->_TradeEasebuzzPayResponse->order_id = $request->txnid;
+            $this->_TradeEasebuzzPayResponse->payable_amount = $requestData->payable_amount;
+            $this->_TradeEasebuzzPayResponse->payment_id = $request->easepayid;
+            $this->_TradeEasebuzzPayResponse->tran_id = $request->tranId;
+            $this->_TradeEasebuzzPayResponse->error_message = $request->error_message;
+            $this->_TradeEasebuzzPayResponse->user_id = $request->userId;
+            $this->_TradeEasebuzzPayResponse->response_data = json_encode($request->all(),JSON_UNESCAPED_UNICODE);
+            $this->_TradeEasebuzzPayResponse->save();
+            $requestData->status =1;
+            $requestData->update();
+
+            return $respnse ;
+        } catch (Exception $e) {
+            $this->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }

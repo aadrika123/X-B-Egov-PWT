@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Payment\BankReconcillationController;
 use App\Http\Controllers\Payment\CashVerificationController;
+use App\Http\Controllers\Payment\EasebuzzPaymentContoller;
 use App\Http\Controllers\Payment\IciciPaymentController;
 use App\Http\Controllers\Payment\PaymentController;
 use App\Http\Controllers\Payment\RazorpayPaymentController;
@@ -69,4 +70,9 @@ Route::controller(IciciPaymentController::class)->group(function () {
     Route::post('v1/eazypayuat/get-webhook-data', 'getWebhookData');
     Route::post('v1/get-referal-url', 'getReferalUrl');
     Route::post('testV7', 'testV7');
+});
+
+# Easebuzz payament operation
+Route::controller(EasebuzzPaymentContoller::class)->group(function () {
+    Route::post('easebuzz/collect-callback-data', 'callBackResponse');
 });
