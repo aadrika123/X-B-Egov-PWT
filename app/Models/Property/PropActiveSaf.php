@@ -93,7 +93,7 @@ class  PropActiveSaf extends PropParamModel #Model
             'initiator_role_id' => $req->initiatorRoleId,
             'finisher_role_id' => $req->finisherRoleId,
             'citizen_id' => $req->citizenId ?? null,
-
+            'application_date' =>  $req->applyDate,
             'building_name' => $req->buildingName,
             'street_name' => $req->streetName,
             'location' => $req->location,
@@ -114,7 +114,48 @@ class  PropActiveSaf extends PropParamModel #Model
             'safNo' => $propActiveSafs->saf_no,
             'workflow_id' => $propActiveSafs->workflow_id,
             'current_role' => $propActiveSafs->current_role,
-            'ulb_id' => $propActiveSafs->ulb_id
+            'ulb_id' => $propActiveSafs->ulb_id,
+        ]);
+    }
+
+    public function storeV1($req)
+    {
+        $reqs = [
+            'prop_address' => $req->propAddress,
+            'user_id' => $req->userId,
+            'workflow_id' => $req->workflowId,
+            'ulb_id' => $req->ulbId,
+            'current_role' => $req->initiatorRoleId,
+            'initiator_role_id' => $req->initiatorRoleId,
+            'finisher_role_id' => $req->finisherRoleId,
+            'citizen_id' => $req->citizenId ?? null,
+            'ward_mstr_id' => $req->ward,
+            'assessment_type' => $req->assessmentType,
+            'zone_mstr_id' => $req->zone,
+            "water_conn_no" => $req->consumerNo ?? null,
+            "trade_license_no" => $req->licenseNo ?? null,
+            "prop_type_mstr_id" => $req->propertyType,
+            "is_water_harvesting" => $req->isWaterHarvesting,
+            'rwh_date_from' => $req->harvestingDate ?? null,
+            'applied_by' => $req->appliedBy,
+            'is_application_form_doc' => $req->isApplicationFormDoc,
+            'is_sale_deed_doc' => $req->isSaleDeedDoc,
+            'is_layout_section_map_doc' => $req->isLayoutSactionMapDoc,
+            'is_na_order_doc' => $req->isNaOrderDoc,
+            'is_namuna_doc' => $req->isNamunaDDoc,
+            'is_other_doc' => $req->isOthersDoc,
+            'is_measurement_doc' => $req->isMeasurementDoc,
+            'is_photo_doc' => $req->isPhotoDoc,
+            'is_id_proof_doc' => $req->isIdProofDoc
+        ];
+        $propActiveSafs = PropActiveSaf::create($reqs);                 // SAF No is Created Using Observer
+        return response()->json([
+            'safId' => $propActiveSafs->id,
+            'safNo' => $propActiveSafs->saf_no,
+            'workflow_id' => $propActiveSafs->workflow_id,
+            'current_role' => $propActiveSafs->current_role,
+            'ulb_id' => $propActiveSafs->ulb_id,
+
         ]);
     }
 
@@ -297,7 +338,7 @@ class  PropActiveSaf extends PropParamModel #Model
             ->leftJoin('zone_masters', 'zone_masters.id', 'prop_active_safs.zone_mstr_id')
             ->leftJoin('ref_prop_gbbuildingusagetypes as gbu', 'gbu.id', 'prop_active_safs.gb_usage_types')
             ->leftJoin('ref_prop_gbpropusagetypes as gbp', 'gbp.id', 'prop_active_safs.gb_prop_usage_types')
-            ->join('ref_prop_categories as cat', 'cat.id', '=', 'prop_active_safs.category_id');
+            ->leftjoin('ref_prop_categories as cat', 'cat.id', '=', 'prop_active_safs.category_id');
     }
 
     /**
@@ -1102,6 +1143,35 @@ class  PropActiveSaf extends PropParamModel #Model
 
     public function getAmalgamateLogs()
     {
-        return $this->hasMany(SafAmalgamatePropLog::class,"saf_id","id")->get();
+        return $this->hasMany(SafAmalgamatePropLog::class, "saf_id", "id")->get();
+    }
+
+    public function getSafDetail($safId)
+    {
+        return PropActiveSaf::select('prop_active_safs.id as saf_if', 'prop_active_safs.saf_no', 'prop_active_safs_owners.owner_name', 'prop_active_safs_owners.mobile_no', 'prop_active_safs.prop_address', "prop_active_safs.is_water_harvesting", "prop_active_safs.rwh_date_from", 'prop_active_safs.water_conn_no', 'prop_active_safs.trade_license_no', 'ref_prop_types.property_type')
+            ->join('prop_active_safs_owners', 'prop_active_safs_owners.saf_id', '=', 'prop_active_safs.id')
+            ->leftjoin('ref_prop_types', 'ref_prop_types.id', '=', 'prop_active_safs.prop_type_mstr_id')
+            ->where('prop_active_safs.id', $safId)
+            ->where('prop_active_safs.status', 1)
+            ->first();
+    }
+
+    public function getDocDetail($safId)
+    {
+        return PropActiveSaf::select(
+            'is_application_form_doc',
+            'is_sale_deed_doc',
+            'is_layout_section_map_doc',
+            'is_na_order_doc',
+            'is_namuna_doc',
+            'is_other_doc',
+            'is_other_doc',
+            'is_measurement_doc',
+            'is_photo_doc',
+            'is_id_proof_doc',
+            'applied_by'
+        )
+            ->where('id', $safId)
+            ->first();
     }
 }

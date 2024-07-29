@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Trade;
 
+use App\BLL\Payment\PayWithEasebuzzLib;
 use App\EloquentModels\Common\ModelWard;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Payment\PaymentController;
@@ -11,6 +12,8 @@ use App\Http\Requests\Trade\ReqCitizenAddRecorde;
 use App\Models\Trade\ActiveTradeLicence;
 use App\Models\Citizen\ActiveCitizenUndercare;
 use App\Models\Trade\RejectedTradeLicence;
+use App\Models\Trade\TradeEasebuzzPayRequest;
+use App\Models\Trade\TradeEasebuzzPayResponse;
 use App\Models\Trade\TradeFineRebete;
 use App\Models\Trade\TradeLicence;
 use App\Models\Trade\TradePinelabPayRequest;
@@ -71,6 +74,10 @@ class TradeCitizenController extends Controller
     protected $_QUERY_RUN_TIME;
     protected $_API_ID;
 
+    protected $_TradeLicence;
+    protected $_TradeEasebuzzPayRequest;
+    protected $_TradeEasebuzzPayResponse;
+
     public function __construct(ITradeCitizen $TradeRepository)
     {
         $this->_DB_NAME = "pgsql_trade";
@@ -100,6 +107,10 @@ class TradeCitizenController extends Controller
             "version" => 1.1,
             'queryRunTime' => $this->_QUERY_RUN_TIME,
         ];
+
+        $this->_TradeLicence = new TradeLicence();
+        $this->_TradeEasebuzzPayRequest = new TradeEasebuzzPayRequest();
+        $this->_TradeEasebuzzPayResponse = new TradeEasebuzzPayResponse();
     }
 
     public function begin()
@@ -359,7 +370,7 @@ class TradeCitizenController extends Controller
             $refLecenceData = $this->_REPOSITORY_TRADE->getAllLicenceById($request->licenceId);
             if(!$request->licenseFor)
             {
-                $request->merge(["licenseFor"=>$$refLecenceData->licence_for_years??1]);
+                $request->merge(["licenseFor"=>$refLecenceData->licence_for_years??1]);
             }
             if (!$refLecenceData) {
                 throw new Exception("Licence Data Not Found !!!!!");
@@ -1242,6 +1253,208 @@ class TradeCitizenController extends Controller
         }
     }
 
+    public function readAtachedLicenseDtlV1(Request $request)
+    {
+        try{
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $refWorkflowId      = $this->_WF_MASTER_Id;  
+            $data = (array)null;
+            $licenseNo = (new ActiveCitizenUndercare())->getDetailsByCitizenId()
+                        ->WHERENOTNULL("license_id"); 
+
+            $licenseNo = $licenseNo->implode("license_id",',');
+            if($licenseNo)
+            { 
+                $licenseNo = explode(",",$licenseNo);
+                $rowLicenseNo = collect($licenseNo)->map(function($val){
+                    return "'".$val."'";
+                });
+                $rowLicenseNo = ($rowLicenseNo->implode(","));
+                $select = [
+                    "licences.id",
+                    "trade_param_application_types.application_type",
+                    "licences.application_no",
+                    "licences.provisional_license_no",
+                    "licences.license_no",
+                    "licences.license_date",
+                    "licences.valid_from",
+                    "licences.valid_upto",
+                    "licences.document_upload_status",
+                    "licences.payment_status",
+                    "licences.pending_status",
+                    "licences.firm_name",
+                    "licences.application_date",
+                    "licences.apply_from",
+                    "licences.application_type_id",
+                    "licences.ulb_id",
+                    "owner.owner_name",
+                    "owner.guardian_name",
+                    "owner.mobile_no",
+                    "owner.email_id",
+                    "ulb_masters.ulb_name",
+                    DB::RAW("TO_CHAR( CAST(licences.license_date AS DATE), 'DD-MM-YYYY') as license_date,
+                            TO_CHAR( CAST(licences.valid_from AS DATE), 'DD-MM-YYYY') as valid_from,
+                            TO_CHAR( CAST(licences.valid_upto AS DATE), 'DD-MM-YYYY') as valid_upto,
+                            TO_CHAR( CAST(licences.application_date AS DATE), 'DD-MM-YYYY') as application_date
+                    "),
+                ];
+    
+                $ActiveSelect = $select;
+                $ActiveSelect[] = DB::raw("'active' as license_type");
+                $ActiveLicence = $this->_DB->TABLE("active_trade_licences AS licences")
+                    ->select($ActiveSelect)
+                    ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
+                    ->join("trade_param_application_types","trade_param_application_types.id","licences.application_type_id")
+                    ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
+                                        STRING_AGG(guardian_name,',') AS guardian_name,
+                                        STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
+                                        STRING_AGG(email_id,',') AS email_id,
+                                        active_trade_owners.temp_id
+                                        FROM active_trade_owners 
+                                        JOIN active_trade_licences on active_trade_licences.id = active_trade_owners.temp_id
+                                            AND (
+                                                active_trade_licences.application_no IN($rowLicenseNo)
+                                                OR  active_trade_licences.license_no IN($rowLicenseNo)
+                                             )
+                                        WHERE active_trade_owners.is_active = true
+                                        GROUP BY active_trade_owners.temp_id
+                                        )owner"), function ($join) {
+                        $join->on("owner.temp_id", "licences.id");
+                    })
+                    ->where("licences.is_active", true)
+                    //->where("licences.citizen_id",$refUserId)
+                    ->WHERE(FUNCTION($where) use( $licenseNo){
+                        $where->WHEREIN("licences.application_no", $licenseNo)
+                        ->ORWHEREIN("licences.license_no", $licenseNo);
+                    });
+
+                $RejectedSelect = $select;        
+                $RejectedSelect[] = DB::raw("'rejected' as license_type");
+                $RejectedLicence = $this->_DB->TABLE("rejected_trade_licences AS licences")
+                    ->select($RejectedSelect)
+                    ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
+                    ->join("trade_param_application_types","trade_param_application_types.id","licences.application_type_id")
+                    ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
+                                        STRING_AGG(guardian_name,',') AS guardian_name,
+                                        STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
+                                        STRING_AGG(email_id,',') AS email_id,
+                                        rejected_trade_owners.temp_id
+                                        FROM rejected_trade_owners
+                                        JOIN rejected_trade_licences on rejected_trade_licences.id = rejected_trade_owners.temp_id 
+                                            AND(
+                                                rejected_trade_licences.application_no IN($rowLicenseNo)
+                                                OR  rejected_trade_licences.license_no IN($rowLicenseNo)
+                                            )
+                                        WHERE rejected_trade_owners.is_active = true
+                                        GROUP BY rejected_trade_owners.temp_id
+                                        )owner"), function ($join) {
+                        $join->on("owner.temp_id", "licences.id");
+                    })
+                    ->where("licences.is_active", true)
+                    ->where("licences.citizen_id",$refUserId)
+                    ->WHERE(FUNCTION($where) use( $licenseNo){
+                        $where->WHEREIN("licences.application_no", $licenseNo)
+                        ->ORWHEREIN("licences.license_no", $licenseNo);
+                    });
+                    
+                    // ->get();
+
+                $ApprovedSelect = $select;        
+                $ApprovedSelect[] = DB::raw("'approved' as license_type");
+                $ApprovedLicence = $this->_DB->TABLE("trade_licences AS licences")
+                    ->select($ApprovedSelect)
+                    ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
+                    ->join("trade_param_application_types","trade_param_application_types.id","licences.application_type_id")
+                    ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
+                                            STRING_AGG(guardian_name,',') AS guardian_name,
+                                            STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
+                                            STRING_AGG(email_id,',') AS email_id,
+                                            trade_owners.temp_id
+                                            FROM trade_owners
+                                            JOIN trade_licences on trade_licences.id = trade_owners.temp_id 
+                                                AND(
+                                                    trade_licences.application_no IN($rowLicenseNo)
+                                                    OR  trade_licences.license_no IN($rowLicenseNo)
+                                                )
+                                            WHERE trade_owners.is_active = true
+                                            GROUP BY trade_owners.temp_id
+                                            )owner"), function ($join) {
+                        $join->on("owner.temp_id", "licences.id");
+                    })
+                    ->where("licences.is_active", true)    
+                    //->where("licences.citizen_id",$refUserId)                
+                    ->WHERE(FUNCTION($where) use( $licenseNo){
+                        $where->WHEREIN("licences.application_no", $licenseNo)
+                        ->ORWHEREIN("licences.license_no", $licenseNo);
+                    });
+
+                $OldSelect = $select;        
+                $OldSelect[] = DB::raw("'old' as license_type");
+                $OldLicence = $this->_DB->TABLE("trade_renewals AS licences")
+                    ->select($OldSelect)
+                    ->join("ulb_masters","ulb_masters.id","licences.ulb_id")
+                    ->join("trade_param_application_types","trade_param_application_types.id","licences.application_type_id")
+                    ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
+                                            STRING_AGG(guardian_name,',') AS guardian_name,
+                                            STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
+                                            STRING_AGG(email_id,',') AS email_id,
+                                            trade_owners.temp_id
+                                            FROM trade_owners
+                                            JOIN trade_renewals on trade_renewals.id = trade_owners.temp_id 
+                                                AND(
+                                                    trade_renewals.application_no IN($rowLicenseNo)
+                                                    OR  trade_renewals.license_no IN($rowLicenseNo)
+                                                )
+                                            WHERE trade_owners.is_active = true
+                                            GROUP BY trade_owners.temp_id
+                                            )owner"), function ($join) {
+                        $join->on("owner.temp_id", "licences.id");
+                    })
+                    ->where("licences.is_active", true)
+                    //->where("licences.citizen_id",$refUserId)
+                    ->WHERE(FUNCTION($where) use( $licenseNo){
+                        $where->WHEREIN("licences.application_no", $licenseNo)
+                        ->ORWHEREIN("licences.license_no", $licenseNo);
+                    });
+            
+                $data = $ActiveLicence->union($RejectedLicence)
+                        ->union($ApprovedLicence)->union($OldLicence)
+                        ->get();
+                $data->map(function($val){
+                    $option = [];
+                    $nextMonth = Carbon::now()->addMonths(1)->format('Y-m-d');
+                    $validUpto="";
+                    if($val->valid_upto)
+                    {
+                        $validUpto = Carbon::createFromFormat("d-m-Y",$val->valid_upto)->format('Y-m-d');
+                    }
+                    if(trim($val->license_type)=="approved" && $val->pending_status == 5 && $validUpto < $nextMonth)
+                    {
+                        $option[]="RENEWAL";
+                    }
+                    if(trim($val->license_type)=="approved" && $val->pending_status == 5 && $validUpto >= Carbon::now()->format('Y-m-d'))
+                    {
+                        $option[]="AMENDMENT";
+                        $option[]="SURRENDER";
+                    }
+                    if(trim($val->license_type)=="approved" && $val->pending_status == 5 && $val->application_type_id == 4 && $validUpto >= Carbon::now()->format('Y-m-d'))
+                    {                    
+                        $option=[];
+                    }
+                    $val->option = $option;
+                    return $val;
+                });
+            }
+            
+            return responseMsg(true, "", remove_null($data));
+        }
+        catch (Exception $e) 
+        {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
     /**
      * =========grivance function================
      */
@@ -1441,6 +1654,126 @@ class TradeCitizenController extends Controller
         }
         catch (Exception $e) 
         {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    public function initPayment(Request $request){
+        try
+        {
+            $user = Auth()->user();
+            $rules=[
+                "applicationId"=>"required|exists:".$this->_DB_NAME.".".$this->_TradeLicence->getTable().",id",
+            ];
+            $validator = Validator::make($request->all(),$rules);
+            if($validator->fails()){
+                return validationErrorV2($validator);
+            }
+
+            $application = $this->_TradeLicence->find($request->applicationId);
+            if($application->payment_status!=0){
+                throw new Exception("Payment Alreay done");
+            }
+            $applicationType = (collect($this->_TRADE_CONSTAINT["APPLICATION-TYPE-BY-ID"])[$application->application_type_id]);
+            $owners = $application->owneres()->get();
+            $chargeData = ($this->getCharge($request));
+            if(!$chargeData->original["status"]){
+                throw new Exception($chargeData->original["message"]);
+            }
+            $chargeData = $chargeData->original["data"]; 
+            $data = [
+                "userId"=>$user && $user->getTable()=="users"?$user->id : null,
+                "applicationNo"=>$application->application_no,
+                "moduleId"=>$this->_MODULE_ID ,
+                "email"=>($owners->whereNotNull("email_id")->first())->email_id??"test@gmail.com",
+                "phone"=>($owners->whereNotNull("mobile_no")->first())->mobile_no??"",
+                "amount"=>$chargeData["total_charge"],
+                "firstname"=>$owners->implode("owner_name"," & "),
+                "frontSuccessUrl"=>$request->frontSuccessUrl,
+                "frontFailUrl"=>$request->frontFailUrl,
+            ];          
+            $easebuzzObj = new PayWithEasebuzzLib();            
+            $result =  $easebuzzObj->initPayment($data);
+            if(!$result["status"]){
+                throw new Exception("Payment Not Initiat Due To Internal Server Error");
+            }
+            $data["url"]= $result["data"];
+            $data = collect($data)->merge($chargeData)->merge($result);
+            $request->merge($data->toArray());
+            $this->_TradeEasebuzzPayRequest->temp_id = $application->id;
+            $this->_TradeEasebuzzPayRequest->tran_type = $applicationType;
+            $this->_TradeEasebuzzPayRequest->order_id = $data["txnid"]??"";
+            $this->_TradeEasebuzzPayRequest->demand_amt = $data["total_charge"]??"0";
+            $this->_TradeEasebuzzPayRequest->payable_amount = $data["total_charge"]??"0";
+            $this->_TradeEasebuzzPayRequest->penalty_amount = 0;
+            $this->_TradeEasebuzzPayRequest->rebate_amount = 0;
+            $this->_TradeEasebuzzPayRequest->request_json = json_encode($request->all(),JSON_UNESCAPED_UNICODE);
+            $this->_TradeEasebuzzPayRequest->save();
+            return responseMsg(true,"Payment Initiat",remove_null($data));
+        }
+        catch(Exception $e){
+            return responseMsg(false ,$e->getMessage(),"");
+        }
+    }
+
+    public function getCharge(Request $request){
+        $refLecenceData = $this->_REPOSITORY_TRADE->getAllLicenceById($request->applicationId);
+        $applicationType = (collect($this->_TRADE_CONSTAINT["APPLICATION-TYPE"])->flip())[$refLecenceData->application_type_id];
+        $natureOfBusiness = (collect(explode(",",$refLecenceData->nature_of_bussiness))->map(function($val){
+            return["id"=>$val];
+        }));
+        $args['firmEstdDate'] = !empty(trim($refLecenceData->valid_from)) ? $refLecenceData->valid_from : $refLecenceData->apply_date;
+        $args['curdate'] = Carbon::parse($refLecenceData->application_date)->format("Y-m-d");
+        if ($refLecenceData->application_type_id == 1) {
+            $args['firmEstdDate'] = $refLecenceData->establishment_date;
+        }
+        $request->merge($args);
+        $request->merge([
+            "applicationType"=>$applicationType,
+            "areaSqft"=>$refLecenceData->area_in_sqft,
+            "licenseFor"=>$refLecenceData->licence_for_years,
+            "natureOfBusiness"=>$natureOfBusiness->toArray(),            
+            "tocStatus"=> "0",
+        ]);
+        return $this->_REPOSITORY_TRADE->getPaybleAmount($request);
+    }
+
+    public function easebuzzHandelResponse(Request $request)
+    {
+        try {
+            $refUser        = Auth()->user();
+            $requestData = $this->_TradeEasebuzzPayRequest->where("order_id",$request->txnid)->where("status",2)->first();
+            if(!$requestData){
+                throw new Exception("Request Data Not Found");
+            }
+            $refLecenceData = $this->_REPOSITORY_TRADE->getAllLicenceById($requestData->temp_id);
+            $requestPayload = json_decode($requestData->request_json,true);
+            $request->merge($requestPayload);
+            $request->merge(["paymentMode"=>"ONLINE",
+                            "licenceId"=>$requestData->temp_id,
+                            "totalCharge"=>$requestData->payable_amount,
+                            "ulbId"=>$refLecenceData->ulb_id,
+                            "paymentGatewayType"=>$request->payment_source,
+                        ]);
+            $respnse = $this->_REPOSITORY_TRADE->paymentCounter($request);
+            $tranId = $respnse->original["data"]["transactionId"];
+            // dd(TradeTransaction::find($tranId),$request->all());
+            $this->_TradeEasebuzzPayResponse->request_id = $requestData->id;
+            $this->_TradeEasebuzzPayResponse->temp_id = $requestData->temp_id;            
+            $this->_TradeEasebuzzPayResponse->module_id = $request->moduleId;
+            $this->_TradeEasebuzzPayResponse->order_id = $request->txnid;
+            $this->_TradeEasebuzzPayResponse->payable_amount = $requestData->payable_amount;
+            $this->_TradeEasebuzzPayResponse->payment_id = $request->easepayid;
+            $this->_TradeEasebuzzPayResponse->tran_id = $request->tranId;
+            $this->_TradeEasebuzzPayResponse->error_message = $request->error_message;
+            $this->_TradeEasebuzzPayResponse->user_id = $request->userId;
+            $this->_TradeEasebuzzPayResponse->response_data = json_encode($request->all(),JSON_UNESCAPED_UNICODE);
+            $this->_TradeEasebuzzPayResponse->save();
+            $requestData->status =1;
+            $requestData->update();
+
+            return $respnse ;
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }

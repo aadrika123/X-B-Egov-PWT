@@ -347,7 +347,7 @@ class WaterSecondConsumer extends Model
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_second_consumers.ward_mstr_id')
             ->leftjoin('water_consumer_meters', 'water_consumer_meters.consumer_id', 'water_second_consumers.id')
             ->leftjoin('water_second_connection_charges', 'water_second_connection_charges.consumer_id', 'water_second_consumers.id')
-            ->join('water_consumer_demands', 'water_consumer_demands.consumer_id', '=', 'water_second_consumers.id')
+            ->leftjoin('water_consumer_demands', 'water_consumer_demands.consumer_id', '=', 'water_second_consumers.id')
             ->where('water_second_consumers.id', $applicationId)
             ->where('water_second_consumers.status', 1)
             ->orderBy('water_consumer_initial_meters.id', 'DESC')
@@ -443,11 +443,11 @@ class WaterSecondConsumer extends Model
      * | Dectivate the water Consumer 
      * | @param req
      */
-    public function dissconnetConsumer($consumerId, $status)
+    public function dissconnetConsumer($consumerId)
     {
         WaterSecondConsumer::where('id', $consumerId)
             ->update([
-                'status' => $status
+                'status' => 3
             ]);
     }
 
@@ -501,6 +501,16 @@ class WaterSecondConsumer extends Model
             ->first();
     }
     /**
+     * | Get water consumer according to apply connection id 
+     */
+    public function getConsumerById($consumerId)
+    {
+        return WaterSecondConsumer::where('id', $consumerId)
+            ->where('status', 1)
+            ->orderByDesc('id')
+            ->first();
+    }
+    /**
      * | Save the approved application to water Consumer
      * | @param consumerDetails
      * | @return
@@ -519,6 +529,7 @@ class WaterSecondConsumer extends Model
         $mWaterConsumer->saf_no                      = $consumerDetails['saf_no'];
         $mWaterConsumer->category                    = $consumerDetails['category'];
         $mWaterConsumer->ward_mstr_id                = $consumerDetails['ward_id'];
+        $mWaterConsumer->zone_mstr_id                = $consumerDetails['zone_mstr_id'];
         $mWaterConsumer->consumer_no                 = $consumerNo;
         $mWaterConsumer->address                     = $consumerDetails['address'];
         $mWaterConsumer->apply_from                  = $consumerDetails['apply_from'];
@@ -535,9 +546,10 @@ class WaterSecondConsumer extends Model
         $mWaterConsumer->user_type                   = $consumerDetails['user_type'];
         $mWaterConsumer->area_sqmt                   = $consumerDetails['area_sqft'];
         $mWaterConsumer->rent_amount                 = $consumerDetails['rent_amount'] ?? null;
-        $mWaterConsumer->tab_size                   = $consumerDetails['tab_size'];
+        $mWaterConsumer->tab_size                    = $consumerDetails['tab_size'];
         $mWaterConsumer->approve_date                = Carbon::now();
         $mWaterConsumer->connection_date             = Carbon::now();
+        $mWaterConsumer->status                      = 3;
         $mWaterConsumer->save();
         return $mWaterConsumer->id;
     }
@@ -653,8 +665,111 @@ class WaterSecondConsumer extends Model
      */
     public function getConsumerByNo($consumerNo)
     {
-        return self::where('consumer_no', $consumerNo)
-            ->where('status', 1)
-            ->first();
+        return self::where('consumer_no', $consumerNo)->where('status', 1)->first();
+    }
+
+    public function getApplicationById($applicationId)
+    {
+        return  WaterSecondConsumer::select(
+            'water_second_consumers.*'
+        )
+            ->where('water_second_consumers.id', $applicationId)
+            ->join('water_approval_application_details', 'water_approval_application_details.id', 'water_second_consumers.apply_connection_id')
+            ->where('water_second_consumers.status', 1);
+    }
+
+    public function updateConsumer($consumerId)
+    {
+        return self::where('id', $consumerId)
+            ->update([
+                'status' => 1,
+                'payment_status' => 1
+            ]);
+    }
+
+    /**
+     * | get the water consumer detaials by consumr No / accurate search
+     * | @param consumerNo
+     * | @var 
+     * | @return 
+     */
+    public function getConsumerByConsumerNo($key, $parameter)
+    {
+        return WaterSecondConsumer::select(
+            'water_second_consumers.*',
+            'water_second_consumers.id as consumer_id',
+            'ulb_ward_masters.ward_name',
+            'water_second_consumers.connection_through_id',
+            'ulb_masters.ulb_name',
+            'water_connection_type_mstrs.connection_type',
+            'water_property_type_mstrs.property_type',
+            'water_connection_through_mstrs.connection_through',
+        )
+            ->leftjoin('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_second_consumers.connection_through_id')
+            ->join('ulb_masters', 'ulb_masters.id', '=', 'water_second_consumers.ulb_id')
+            ->leftjoin('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_second_consumers.connection_type_id')
+            ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', '=', 'water_second_consumers.property_type_id')
+            ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
+            ->where('water_second_consumers.' . $key, $parameter)
+            ->where('water_second_consumers.status', 1)
+            ->firstOrFail();
+    }
+
+    public function getDetailByConsumerNoforProperty($consumerNo)
+    {
+        return WaterSecondConsumer::select(
+            'water_second_consumers.*',
+            DB::raw("string_agg(water_consumer_owners.applicant_name,',') as applicant_name"),
+            'water_property_type_mstrs.property_type as building_type'
+        )
+            ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_second_consumers.id')
+            ->leftjoin('water_property_type_mstrs', 'water_property_type_mstrs.id', '=', 'water_second_consumers.property_type_id')
+            ->where('water_second_consumers.status', 1)
+            ->where('water_second_consumers.consumer_no', $consumerNo)
+            ->groupBy(
+                'water_second_consumers.consumer_no',
+                'water_second_consumers.id',
+                'water_property_type_mstrs.property_type'
+            )->first();
+    }
+
+    /**
+     * | Get consumer 
+     */
+    public function getConsumerDtlsByID($consumerId)
+    {
+        return WaterSecondConsumer::select(
+            'water_second_consumers.id as consumerId',
+            'water_second_consumers.consumer_no',
+            'water_second_consumers.category',
+            'water_second_consumers.tab_size',
+            'water_property_type_mstrs.property_type'
+        )
+            ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_second_consumers.property_type_id')
+            ->where('water_second_consumers.id', $consumerId)
+            ->where('water_second_consumers.status', '!=', 3);
+    }
+    /**
+     * |update
+     */
+    public function updateConnectionType($consumerOwnedetails, $checkExist)
+    {
+        $propertyTypeId = $checkExist->property_type == 'Residential' ? 1 : 2;
+
+        return self::where('id', $consumerOwnedetails->consumer_id)
+            ->where('status', true)
+            ->update([
+                'category' => $checkExist->category,
+                'property_type_id' => $propertyTypeId
+            ]);
+    }
+    # Update tab size
+    public function updateTabSize($consumerOwnedetails, $checkExist)
+    {
+        return self::where('id', $consumerOwnedetails->consumer_id)
+            ->where('status', true)
+            ->update([
+                'tab_size' => $checkExist->tab_size
+            ]);
     }
 }

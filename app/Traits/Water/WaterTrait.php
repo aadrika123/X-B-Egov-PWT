@@ -48,7 +48,6 @@ trait WaterTrait
             ->leftjoin('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_applications.connection_through')
             ->leftjoin('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_applications.connection_type_id')
             ->where('water_applications.status', 1)
-            ->where('water_applications.payment_status', 1)
             ->where('water_applications.ulb_id', $ulbId)
             ->whereIn('water_applications.workflow_id', $workflowIds)
             ->orderByDesc('water_applicants.id');
@@ -131,12 +130,12 @@ trait WaterTrait
     public function getConsumerWfBaseQuerry($workflowIds, $ulbId)
     {
         return WaterConsumerActiveRequest::select('water_consumer_active_requests.*')
-            ->join('water_consumer_owners AS wco', 'wco.consumer_id', 'water_consumer_active_requests.consumer_id')
-            ->join('ulb_ward_masters AS uwm', 'uwm.id', 'water_consumer_active_requests.ward_mstr_id')
-            ->join('ulb_masters AS um', 'um.id', 'water_consumer_active_requests.ulb_id')
+            ->leftjoin('water_consumer_owners AS wco', 'wco.consumer_id', 'water_consumer_active_requests.consumer_id')
+            ->leftjoin('ulb_ward_masters AS uwm', 'uwm.id', 'water_consumer_active_requests.ward_mstr_id')
+            // ->leftjoin('ulb_masters AS um', 'um.id', 'water_consumer_active_requests.ulb_id')
             ->where('water_consumer_active_requests.status', 1)
-            ->where('water_consumer_active_requests.payment_status', 1)
-            ->where('water_consumer_active_requests.ulb_id', $ulbId)
+            // ->where('water_consumer_active_requests.payment_status', 1)
+            // ->where('water_consumer_active_requests.ulb_id', $ulbId)
             ->whereIn('water_consumer_active_requests.workflow_id', $workflowIds);
     }
 

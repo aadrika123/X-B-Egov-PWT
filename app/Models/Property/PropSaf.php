@@ -258,6 +258,8 @@ class PropSaf extends PropParamModel #Model
             ->select(
                 'p.holding_no as application_no',
                 'p.prop_address',
+                'p.previous_holding_id',
+                'p.assessment_type',
                 'p.ulb_id',
                 'o.owner_name',
                 'o.guardian_name',

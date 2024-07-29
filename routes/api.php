@@ -225,7 +225,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken']], function
         Route::get('get-citizen-by-id/{id}', 'getCitizenByID');                                                // Get Citizen By ID
         Route::get('get-all-citizens', 'getAllCitizens');                                                      // Get All Citizens
         Route::post('edit-citizen-profile', 'citizenEditProfile');                                             // Approve Or Reject Citizen by Id
-        Route::match(['get', 'post'], 'property/citizens/applied-applications', 'getAllAppliedApplications');           // Get Applied Applications
+        Route::match(['get', 'post'], 'property/citizens/applied-applications', 'getAllAppliedApplications');  // Get Applied Applications
         Route::post('citizens/independent-comment', 'commentIndependent');                                     // Independent Comment for the Citizen to be Tracked
         Route::get('citizens/get-transactions', 'getTransactionHistory');                                      // Get User Transaction History
         Route::post('change-citizen-pass', 'changeCitizenPass');                                               // Change the Password of The Citizen Using its Old Password 

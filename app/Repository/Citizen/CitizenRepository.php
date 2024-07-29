@@ -2,6 +2,7 @@
 
 namespace App\Repository\Citizen;
 
+use App\Http\Controllers\Property\HoldingTaxController;
 use Illuminate\Http\Request;
 use App\Repository\Citizen\iCitizenRepository;
 use App\Models\ActiveCitizen;
@@ -252,6 +253,40 @@ class CitizenRepository implements iCitizenRepository
             ->get();
         $applications['harvestings'] = $harvestingApplications;
 
+        $pendingProcessFeeApplications = DB::table('prop_safs')
+            ->leftJoin('wf_roles as r', 'r.id', '=', 'prop_safs.current_role')
+            ->select(
+                'prop_safs.id as application_id',
+                'saf_no',
+                'pt_no',
+                'holding_no',
+                'assessment_type',
+                'r.role_name as current_level',
+                DB::raw("TO_CHAR(application_date, 'DD-MM-YYYY') as application_date,
+                    CASE WHEN prop_safs.current_role = prop_safs.initiator_role_id THEN TRUE
+                        WHEN prop_safs.current_role IS NULL THEN TRUE
+                        ELSE FALSE
+                    END AS citizen_can_edit
+                "),
+                'applicant_name',
+                'payment_status',
+                'doc_upload_status',
+                'saf_pending_status',
+                'parked as backToCitizen',
+                'workflow_id',
+                'prop_safs.created_at',
+                'prop_safs.updated_at',
+                'prop_safs.is_agency_verified',
+                'prop_safs.is_field_verified as is_ulb_verified',
+                'prop_safs.proccess_fee_paid'
+            )
+            ->where('prop_safs.citizen_id', $userId)
+            ->where('prop_safs.status', 1)
+            ->where('prop_safs.proccess_fee_paid', 0)
+            ->orderByDesc('prop_safs.id')
+            ->get();
+        $applications['pendingProcessFeeSaf'] = collect($pendingProcessFeeApplications)->values();
+
         return collect($applications);
     }
 
@@ -303,12 +338,23 @@ class CitizenRepository implements iCitizenRepository
                                 p.application_date AS apply_date,
                                 o.owner_name,
                                 p.balance AS leftAmount,
-                                t.amount AS lastPaidAmount,
-                                t.tran_date AS lastPaidDate
+                              
+                                t.tran_date AS lastPaidDate,
+                                p.status    AS active_status,
+                                p.prop_address,
+                                zone_masters.zone_name,
+                                ulb_ward_masters.ward_name,
+                                t.payment_mode,
+                              
 
+                COALESCE(t.demand_amt, 0) AS totalTax,
+                COALESCE(t.amount, 0) AS lastPaidAmount,
+                (COALESCE(t.demand_amt, 0) - COALESCE(t.amount, 0)) AS balanceCalculate
+                
+    
                                 FROM prop_properties p
                                 LEFT JOIN (
-                                    SELECT property_id,amount,tran_date,
+                                    SELECT property_id,amount,tran_date,payment_mode,demand_amt,
                                         ROW_NUMBER() OVER(
                                             PARTITION BY property_id
                                             ORDER BY id desc
@@ -316,7 +362,8 @@ class CitizenRepository implements iCitizenRepository
                                     FROM prop_transactions 
                                     ORDER BY id DESC
                                 ) AS t ON t.property_id=p.id AND row_num =1
-
+                                   JOIN zone_masters ON zone_masters.id = p.zone_mstr_id
+                                  join ulb_ward_masters on  ulb_ward_masters.id =  p.ward_mstr_id
                                 LEFT JOIN (
                                     SELECT property_id,owner_name,
                                     row_number() over(
@@ -326,7 +373,8 @@ class CitizenRepository implements iCitizenRepository
                                     FROM prop_owners 
                                     ORDER BY id ASC 
                                     ) AS o ON o.property_id=p.id AND ROW1=1
-                                    WHERE p.citizen_id=$userId";
+                                    WHERE p.citizen_id=$userId   
+                                    AND   p.status = 1";
             $properties = DB::select($query);
             $application['applications'] = $properties;
             $application['totalApplications'] = collect($properties)->count();

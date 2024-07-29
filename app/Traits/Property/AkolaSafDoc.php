@@ -21,6 +21,49 @@ trait AkolaSafDoc
 {
     use SafDoc;
 
+    // public function getPropTypeDocList($refSafs)
+    // {
+    //     $propTypes = Config::get('PropertyConstaint.PROPERTY-TYPE');
+    //     $transferTypes = Config::get('PropertyConstaint.TRANSFER_MODES');
+    //     $flippedTransferMode = flipConstants($transferTypes);
+    //     $propType = $refSafs->prop_type_mstr_id;
+    //     $transferType = $refSafs->transfer_mode_mstr_id;
+    //     $flip = flipConstants($propTypes);
+    //     $this->_refSafs = $refSafs;
+    //     $this->_documentLists = "";
+    //     $this->_documentLists = collect($this->_propDocList)->where('code', 'AKOLA_APP_DOCS')->first()->requirements;
+    //     // switch ($propType) {
+    //     //     case $flip['FLATS / UNIT IN MULTI STORIED BUILDING']:
+    //     //         $this->_documentLists .= collect($this->_propDocList)->where('code', 'AKOLA_BULDING')->first()->requirements;
+    //     //         break;
+    //     //     case $flip['INDEPENDENT BUILDING']:
+    //     //         $this->_documentLists .= collect($this->_propDocList)->where('code', 'AKOLA_BULDING')->first()->requirements;
+    //     //         break;
+    //     //     case $flip['SUPER STRUCTURE']:
+    //     //         $this->_documentLists .= collect($this->_propDocList)->where('code', 'AKOLA_BULDING')->first()->requirements;
+    //     //         break;
+    //     //     case $flip['VACANT LAND']:
+    //     //         $this->_documentLists .= collect($this->_propDocList)->where('code', 'AKOLA_SALE')->first()->requirements;
+    //     //         break;
+    //     //     case $flip['OCCUPIED PROPERTY']:
+    //     //         $this->_documentLists .= collect($this->_propDocList)->where('code', 'AKOLA_BULDING')->first()->requirements;
+    //     //         break;
+    //     // }
+    //     // if ($refSafs->assessment_type == 'Mutation' && $propType!=$flip['VACANT LAND'])
+    //     {
+    //         $this->_documentLists .= collect($this->_propDocList)->where('code', 'AKOLA_SALE')->first()->requirements;
+    //         $this->_documentLists .= collect($this->_propDocList)->where('code', 'AKOLA_BULDING')->first()->requirements;
+    //     }
+    //     if ($flippedTransferMode['Imla'] == $transferType){
+    //         $this->_documentLists = collect($this->_propDocList)->where('code', 'AKOLA_APP_DOCS')->first()->requirements;
+    //         $this->_documentLists .= collect($this->_propDocList)->where('code', 'AKOLA_IMLA')->first()->requirements;
+    //     }
+
+
+    //     return $this->_documentLists;
+    // }
+
+    # Added measuremrnt form for back office by prity pandey
     public function getPropTypeDocList($refSafs)
     {
         $propTypes = Config::get('PropertyConstaint.PROPERTY-TYPE');
@@ -29,6 +72,9 @@ trait AkolaSafDoc
         $propType = $refSafs->prop_type_mstr_id;
         $transferType = $refSafs->transfer_mode_mstr_id;
         $flip = flipConstants($propTypes);
+        $user = Auth()->user();
+        $userRole = (new \App\Repository\Common\CommonFunction())->getUserRoll($user->id,$user->ulb_id??0,$refSafs->workflow_id);
+        // dd($userRole);
         $this->_refSafs = $refSafs;
         $this->_documentLists = "";
         $this->_documentLists = collect($this->_propDocList)->where('code', 'AKOLA_APP_DOCS')->first()->requirements;
@@ -52,14 +98,15 @@ trait AkolaSafDoc
         // if ($refSafs->assessment_type == 'Mutation' && $propType!=$flip['VACANT LAND'])
         {
             $this->_documentLists .= collect($this->_propDocList)->where('code', 'AKOLA_SALE')->first()->requirements;
+            if($userRole && $userRole->role_id==11 && strtoupper($this->_refSafs->applied_by)=="TC"){
+                $this->_documentLists .= collect($this->_propDocList)->where('code', 'MEASUREMENT_FORM')->first()->requirements;
+            }
             $this->_documentLists .= collect($this->_propDocList)->where('code', 'AKOLA_BULDING')->first()->requirements;
         }
         if ($flippedTransferMode['Imla'] == $transferType){
             $this->_documentLists = collect($this->_propDocList)->where('code', 'AKOLA_APP_DOCS')->first()->requirements;
             $this->_documentLists .= collect($this->_propDocList)->where('code', 'AKOLA_IMLA')->first()->requirements;
         }
-
-
         return $this->_documentLists;
     }
 

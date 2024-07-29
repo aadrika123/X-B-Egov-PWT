@@ -16,6 +16,7 @@ use App\Models\Property\PropActiveConcession;
 use App\Models\Property\PropActiveHarvesting;
 use App\Models\Property\PropActiveObjection;
 use App\Models\Property\PropActiveSaf;
+use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropFloor;
 use App\Models\Property\PropFloorsUpdateRequest;
@@ -551,7 +552,8 @@ class PropertyController extends Controller
             $data = (new PropPropertyUpdateRequest)->WorkFlowMetaList()
                 ->where("prop_properties.ulb_id", $refUlbId);
             if (!in_array(strtoupper($mUserType), Config::get("TradeConstant.CANE-NO-HAVE-WARD"))) {
-                $data = $data->where("current_role_id", $mRoleId);
+                $data = $data;
+                //->where("current_role_id", $mRoleId);
             }
             if ($request->wardNo && $request->wardNo != "ALL") {
                 $mWardIds = [$request->wardNo];
@@ -701,20 +703,28 @@ class PropertyController extends Controller
                     'errors' => $validated->errors()
                 ]);
             }
+
             $application = PropPropertyUpdateRequest::find($request->applicationId);
             if (!$application) {
                 throw new Exception("Data Not Found");
             }
             $users = User::select("*")->where("id", $application->user_id)->first();
+            if (!$users) {
+                $citizen = ActiveCitizen::select("*")->where("id", $application->citizen_id)->first();
+            }
             $docUrl = Config::get('module-constants.DOC_URL');
             $data["userDtl"] = [
-                "employeeName" => $users->name,
-                "mobile" => $users->mobile,
+                "employeeName" => $users->name ?? $citizen->user_name,
+                "mobile" => $users->mobile ?? $citizen->mobile ?? null,
                 "document" => $application->supporting_doc ? ($docUrl . "/" . $application->supporting_doc) : "",
                 "applicationDate" => $application->created_at ? Carbon::parse($application->created_at)->format("m-d-Y H:s:i A") : null,
                 "requestNo" => $application->request_no,
                 "updationType" => $application->is_full_update ? "Full Update" : "Basice Update",
             ];
+            if ($application->objection_for) {
+                $document = $this->getUploadedDocuments($request);
+                $data["userDtl"]["document"] =  $document;
+            }
             $data["propCom"] = $this->PropUpdateCom($application);
             $data["ownerCom"] = $this->OwerUpdateCom($application);
             $data["floorCom"] = $this->FloorUpdateCom($application);
@@ -1088,8 +1098,10 @@ class PropertyController extends Controller
                 $req->merge(["propId" => $propertyId]);
                 $getHoldingDues = new GetHoldingDuesV2;
                 $demand = $getHoldingDues->getDues($req);
-                if (($demand['previousInterest']) > 0 || ($demand['arrear']) > 0) {
-                    $sms = "Please Clear The Previous Arrear Amount Of ₹" . $demand['arrearPayableAmt'] . " Before Applying The Application.";
+                if (in_array($req->type, ['Mutation', 'Concession', 'Objection', 'Harvesting', 'Bifurcation'])) {
+                    if (($demand['previousInterest']) > 0 || ($demand['arrear']) > 0) {
+                        $sms = "Please Clear The Previous Arrear Amount Of ₹" . $demand['arrearPayableAmt'] . " Before Applying The Application.";
+                    }
                 }
                 if ($sms) {
                     $msg['inWorkflow'] = true;
@@ -2067,6 +2079,33 @@ class PropertyController extends Controller
             return responseMsgs(true, "Master Holding Data", $masterData, '', '01', responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
+
+    public function getUploadedDocuments(Request $req)
+    {
+        $req->validate([
+            'applicationId' => 'required|numeric'
+        ]);
+        try {
+            $mWfActiveDocument = new WfActiveDocument();
+            $obj = new PropPropertyUpdateRequest();
+            $mPropActiveObjection = new PropActiveObjection();
+            $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+
+            $objectionDetails = $mPropActiveObjection->getObjectionNo($req->applicationId);
+            if (!$objectionDetails) {
+                $objectionDetails = $obj->getDetail($req->applicationId);
+            }
+            if (!$objectionDetails)
+                throw new Exception("Application Not Found for this application Id");
+
+            $workflowId = $obj->getWfDetail($req->applicationId);
+            $wid = $workflowId->workflow_id;
+            $documents = $mWfActiveDocument->getDocsByAppId($req->applicationId, $wid, $moduleId);
+            return responseMsgs(true, "Uploaded Documents", remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 }

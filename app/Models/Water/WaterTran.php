@@ -384,8 +384,8 @@ class WaterTran extends Model
             'water_trans.tran_date',
             'water_trans.tran_type',
             DB::raw('2 as moduleId'),
-                'water_trans.status'
-            )
+            'water_trans.status'
+        )
             ->where('water_trans.tran_no', $tranNo)
             ->where('status', 1)
             ->get();
@@ -426,5 +426,12 @@ class WaterTran extends Model
             ->leftJoin("users as u", "u.id", "water_trans.emp_dtl_id")
             ->where('water_trans.status', 1)
             ->first();
+    }
+
+    public function getTransNov2($applicationId, $applicationFor)
+    {
+        return WaterTran::where('related_id', $applicationId)
+            ->where('tran_type', "NEW_CONNECTION")
+            ->where('status', 1);
     }
 }

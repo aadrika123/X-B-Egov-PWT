@@ -29,7 +29,8 @@ return [
         "TRN"   => 37,
         "WCD"   => 39,
         "WFC"   => 42,
-        "WPS"   => 43
+        "WPS"   => 43,
+        "DISC"  => 57,
     ],
     "ACCOUNT_DESCRIPTION" => "Water",
     "DEPARTMENT_SECTION" => "Revenue Section",
@@ -93,14 +94,21 @@ return [
             "PVC 80"
         ],
         "ROAD_TYPE" => [
-            "RMC",
+            "AMC",
             "PWD"
         ],
         "FERULE_SIZE" => [
-            "6",
-            "10",
-            "12",
-            "16"
+          "15",
+          "20",
+          "25",
+          "50",
+          "65",
+          "75",
+          "80",
+          "100",
+          "150",
+          "200"
+
         ],
         "DEACTIVATION_CRITERIA" => [
             "Double Connection",
@@ -154,6 +162,7 @@ return [
     ],
     "APP_APPLY_FROM" => [
         "1" => "Online",
+        "2" => "Citizen",
     ],
     "REF_USER_TYPE" => [
         "1" => "Citizen",

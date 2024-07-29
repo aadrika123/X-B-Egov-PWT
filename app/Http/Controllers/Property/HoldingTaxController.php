@@ -689,7 +689,7 @@ class HoldingTaxController extends Controller
     /**
      * | Property Payment History
      */
-    public function propPaymentHistory(Request $req)
+    public function propPaymentHistoryv1(Request $req)
     {
         $validated = Validator::make(
             $req->all(),
@@ -736,6 +736,93 @@ class HoldingTaxController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "011606", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
+
+    // written by prity pandey
+    public function propPaymentHistory(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            ['propId' => 'required|digits_between:1,9223372036854775807']
+        );
+        if ($validated->fails()) {
+            return validationError($validated);
+        }
+
+        try {
+            $propId = $req->propId;
+
+            // Initialize the result array with empty collections
+            $result = [
+                'Holding' => collect(),
+                'Saf' => collect()
+            ];
+
+            // Get transactions and SAF details
+            $result = $this->getTransactionsAndSafDetails($propId, $result);
+
+            if ($result['Holding']->isEmpty() && $result['Saf']->isEmpty()) {
+                throw new Exception("No Transaction Found");
+            }
+
+            $result['Holding'] = $result['Holding']->sortByDesc('id')->values();
+            $result['Saf'] = $result['Saf']->sortByDesc('id')->values();
+
+            return responseMsgs(true, "", remove_null($result), "011606", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011606", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    private function getTransactionsAndSafDetails($propId, $result)
+    {
+        $mPropTrans = new PropTransaction();
+        $mPropProperty = new PropProperty();
+        $mSafs = new PropSaf();
+
+        // Fetch property details to get the saf_id
+        $propertyDtls = $mPropProperty->getSafByPropId($propId);
+        if (!$propertyDtls) {
+            throw new Exception("Property Not Found");
+        }
+
+        // Get saf_id from property details
+        $safId = $propertyDtls->saf_id;
+
+        // Get transactions using the property_id
+        $propTrans = $mPropTrans->getPropTransactions($propId, 'property_id');
+        if ($propTrans && !$propTrans->isEmpty()) {
+            $propTrans->map(function ($propTran) {
+                $propTran['tran_date'] = Carbon::parse($propTran->tran_date)->format('d-m-Y');
+            });
+            $result['Holding'] = $result['Holding']->concat($propTrans);
+        }
+
+        // Get SAF transactions using the saf_id
+        if (!is_null($safId)) {
+            $safTrans = $mPropTrans->getPropTransactions($safId, 'saf_id');
+            if ($safTrans && !$safTrans->isEmpty()) {
+                $safTrans->map(function ($safTran) {
+                    $safTran['tran_date'] = Carbon::parse($safTran->tran_date)->format('d-m-Y');
+                });
+                $result['Saf'] = $result['Saf']->concat($safTrans);
+            }
+        }
+
+        // Get SAF details to check for previous_holding_id
+        $msafDetail = $mSafs->getBasicDetails($safId);
+
+        if ($msafDetail && $msafDetail->previous_holding_id) {
+            // Recursive call with previous_holding_id
+            $result = $this->getTransactionsAndSafDetails($msafDetail->previous_holding_id, $result);
+        }
+
+        return $result;
+    }
+
+
+
+
+
 
     /**
      * | Generate Ulb Payment Receipt
@@ -2203,6 +2290,164 @@ class HoldingTaxController extends Controller
                         "response" => $response['status'],
                         "smgid" => $response['msg'],
                         "stampdate" => Carbon::now(),
+                    ];
+                    $mPropSmsLog->create($smsReqs);
+                } catch (Exception $e) {
+                    print_var([$e->getMessage(), $e->getFile(), $e->getLine()]);
+                }
+            }
+
+            return responseMsgs(true, "SMS Send Successfully of " . collect($propDetails)->count() . " Property", [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | Holding Rebate SMS
+     */
+    public function holdingRebate(Request $req)
+    {
+        try {
+
+            $mPropSmsLog    = new PropSmsLog();
+            $getHoldingDues = new GetHoldingDuesV2;
+            $templateId     = 1707172052969180033;
+
+            // $propDetails = PropDemand::select(
+            //     'prop_sms_logs.id as sms_log_id',
+            //     'prop_demands.property_id',
+            //     DB::raw('SUM(due_total_tax) as total_tax, MAX(fyear) as max_fyear'),
+            //     DB::raw('DISTINCT prop_owners.mobile_no'),
+            //     // 'prop_owners.mobile_no',
+            // )
+            //     ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_demands.property_id')
+            //     ->leftJoin('prop_sms_logs', function ($join) {
+            //         $join->on('prop_sms_logs.ref_id', '=', 'prop_demands.property_id')
+            //             ->where('prop_sms_logs.ref_type', 'PROPERTY')
+            //             ->where('prop_sms_logs.response', 'success')
+            //             ->where('prop_sms_logs.purpose', 'Seven Percent');
+            //     })
+            //     ->whereNull('prop_sms_logs.id')
+            //     ->where('due_total_tax', '>', 0.9)
+            //     ->where('paid_status', 0)
+            //     ->where(DB::raw('LENGTH(prop_owners.mobile_no)'), '=', 10)
+            //     ->groupBy('prop_demands.property_id', 'prop_owners.mobile_no','prop_sms_logs.id')
+            //     ->orderByDesc('prop_demands.property_id')
+            //     // ->limit(1)
+            //     // // ->count();
+            //     ->get();
+
+            $excludedNumbers = [
+                "0000000000",
+                "0123456789",
+                "0123456798",
+                "0976766947",
+                "1234567890",
+                "1234567980",
+                "7276697080",
+                "7507400637",
+                "7666652353",
+                "7768057380",
+                "8007630909",
+                "8208797389",
+                "8421361147",
+                "8446476541",
+                "8552004988",
+                "8805936867",
+                "8888888888",
+                "8983083044",
+                "9011639025",
+                "9011994455",
+                "9028451248",
+                "9049747878",
+                "9325378260",
+                "9421593900",
+                "9423129711",
+                "9623032000",
+                "9730017161",
+                "9822221420",
+                "9822225172",
+                "9822578752",
+                "9822728239",
+                "9822739215",
+                "9822908009",
+                "9823067383",
+                "9823351800",
+                "9823360433",
+                "9823457170",
+                "9823574842",
+                "9823602339",
+                "9834647256",
+                "9850314158",
+                "9881935087",
+                "9890601568",
+                "9921043253",
+                "9921108888",
+                "9921978872",
+                "9922284221",
+                "9922892999",
+                "9922932921",
+                "9960590192",
+            ];
+
+            $rawQuery =
+                "SELECT DISTINCT ON (prop_owners.mobile_no) 
+                                prop_sms_logs.id as sms_log_id,
+                                prop_demands.property_id,
+                                SUM(due_total_tax) as total_tax,
+                                MAX(fyear) as max_fyear,
+                                prop_owners.mobile_no
+                            FROM prop_demands
+                            JOIN prop_owners ON prop_owners.property_id = prop_demands.property_id
+                            LEFT JOIN prop_sms_logs ON prop_sms_logs.ref_id = prop_demands.property_id
+                                AND prop_sms_logs.ref_type = 'PROPERTY'
+                                AND prop_sms_logs.response = 'success'
+                                AND prop_sms_logs.purpose = '6% Holding Rebate'
+                            WHERE prop_sms_logs.id IS NULL
+                                AND due_total_tax > 0.9
+                                AND paid_status = 0
+                                --AND LENGTH(prop_owners.mobile_no) = 10
+                                AND prop_owners.mobile_no NOT IN ('" . implode("', '", $excludedNumbers) . "')
+                            GROUP BY prop_demands.property_id, prop_owners.mobile_no, prop_sms_logs.id
+                            ORDER BY prop_owners.mobile_no, prop_demands.property_id DESC";
+
+
+            $propDetails = DB::select(DB::raw($rawQuery));
+
+            $totalList = collect($propDetails)->count();
+
+            foreach ($propDetails as $key => $propDetail) {
+                try {
+
+                    // $newReq = new Request(['propId' => $propDetail->property_id]);
+                    // $demand = $getHoldingDues->getDues($newReq);
+
+                    $ownerMobile     = $propDetail->mobile_no;
+                    $propertyId      = $propDetail->property_id;
+                    $var1            = "14 जुलै 2024";
+                    $var2            = "6%";
+                    $var3            = "https://amcakola.in";
+                    $var4            = "8069493299";
+
+                    $sms      = "$var1 पर्यंत आपले मालमत्ता कराचा भरणा करा आणि सामान्य करात $var2 सुटी मिळवा. ऑनलाइन भरण्यासाठी, $var3 या लिंक वर क्लिक करा किंवा कॅश संग्रहकासाठी $var4. या मोबाइल नंबर वर कॉल करा. स्वाती इंडस्ट्रीज";
+                    $response = send_sms($ownerMobile, $sms, $templateId);
+                    print_var("==================index($key) remaining(" . $totalList - ($key + 1) . ")=========================\n");
+                    print_var("property_id=======>" . $propDetail->property_id . "\n");
+                    print_var("sms=======>" . $sms . "\n");
+                    print_var($response);
+
+                    $smsReqs = [
+                        "emp_id"      => 5695,
+                        "ref_id"      => $propertyId,
+                        "ref_type"    => 'PROPERTY',
+                        "mobile_no"   => $ownerMobile,
+                        "purpose"     => '6% Holding Rebate',
+                        "template_id" => $templateId,
+                        "message"     => $sms,
+                        "response"    => $response['status'],
+                        "smgid"       => $response['msg'],
+                        "stampdate"   => Carbon::now(),
                     ];
                     $mPropSmsLog->create($smsReqs);
                 } catch (Exception $e) {

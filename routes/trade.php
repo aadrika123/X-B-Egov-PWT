@@ -136,10 +136,14 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         Route::post('application/surrenderable-list', 'surrenderList');             #id = c10
 
         Route::post('application/attached-list', "readAtachedLicenseDtl");
+        Route::post('application/attached-list-citizen', "readAtachedLicenseDtlV1");
 
         Route::post('application/citizen-application-list', "citizenApplicationByCitizenId");
         Route::post('application/citizen-history', "citizenHistory");
         Route::post('application/status', "citizenApplicationStatus");
+
+        Route::post('application/init-payment', "initPayment");
+        Route::post('application/easebuzz-handel-response', "easebuzzHandelResponse");
     });
 
     #-----------report----------------------------------
@@ -198,6 +202,7 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         Route::post('ownership-type-list', 'ownershipTypeList');
         Route::post('ownership-type', 'ownershipType');
         // Route::post('ownership-type-update', 'updateOwnershipType');
+        Route::post('update-mobile', 'updateMobile');
     });
 });
 

@@ -18,6 +18,15 @@ class PropOwner extends PropParamModel #Model
             'prop_owners.id',
             'prop_owners.owner_name',
             'prop_owners.mobile_no',
+            'prop_owners.guardian_name',
+            'prop_owners.relation_type',
+            'prop_owners.email',
+            'prop_owners.pan_no',
+            'prop_owners.aadhar_no',
+            'prop_owners.gender',
+            'prop_owners.dob',
+            'prop_owners.owner_name_marathi',
+            'prop_owners.guardian_name_marathi',
             'corr_address',
             'corr_city',
             'corr_dist',
@@ -53,7 +62,7 @@ class PropOwner extends PropParamModel #Model
         return DB::table('prop_owners')
             ->where('property_id', $propertyId)
             ->where('status', 1)
-            ->orderBy('id','ASC')
+            ->orderBy('id', 'ASC')
             ->get();
     }
 
@@ -85,6 +94,34 @@ class PropOwner extends PropParamModel #Model
             )
             ->where('status', 1)
             ->orderBy('id')
+            ->get();
+    }
+    /**
+     * | Get The Owner by Property Id
+     */
+    public function getPropOwners($propId)
+    {
+        return PropOwner::where('prop_owners.property_id', $propId)
+            ->select(
+                'prop_owners.id',
+                'prop_owners.owner_name as ownerName',
+                'prop_owners.mobile_no as mobileNo',
+                'prop_owners.guardian_name as guardianName',
+                'prop_owners.email',
+                'prop_owners.gender',
+                'prop_owners.is_armed_force',
+                'prop_owners.is_specially_abled',
+                'ulb_ward_masters.ward_name',
+                'zone_masters.zone_name',
+                'prop_properties.prop_address',
+                'prop_properties.holding_no',
+                'prop_properties.holding_type',
+            )
+            ->join('prop_properties', 'prop_properties.id', 'prop_owners.property_id')
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
+            ->leftjoin('zone_masters', 'zone_masters.id', 'prop_properties.zone_mstr_id')
+            ->where('prop_owners.status', 1)
+            ->orderBy('prop_owners.id')
             ->get();
     }
 
@@ -217,7 +254,7 @@ class PropOwner extends PropParamModel #Model
             'is_armed_force',
             'guardian_name_marathi',
             'guardian_name',
-            
+
         )
             ->where('property_id', $propertyId)
             ->orderBy('id')

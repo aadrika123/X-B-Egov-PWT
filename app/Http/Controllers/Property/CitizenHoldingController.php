@@ -103,7 +103,7 @@ class CitizenHoldingController extends Controller
             }
             if(round($request->paidAmount) > round($payableAmt))
             {
-                throw new Exception("Can not pay advance amount throw online");
+                throw new Exception("Cannot pay advance amount through online");
             }
 
             $newReqs = new ReqPayment($request->all());

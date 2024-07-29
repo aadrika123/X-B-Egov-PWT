@@ -192,6 +192,7 @@ class WaterNewConnection implements IWaterNewConnection
             ->leftjoin('wf_roles', 'wf_roles.id', "=", "water_applications.current_role")
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_applications.ward_id')
             ->where("water_applications.user_id", $refUserId)
+            ->where("water_applications.status",true)                            
             ->orderbydesc('water_applications.id')
             ->get();
 
@@ -225,14 +226,15 @@ class WaterNewConnection implements IWaterNewConnection
                     $value['connection_type_name'] = $refChargeCatagory['NEW_CONNECTION'];
                     break;
             }
-            //
-            $value['transDetails'] = $mWaterTran->getTransNo($value['id'], null)->first();
-            $value['calcullation'] = $mWaterParamConnFee->getCallParameter($value['property_type_id'], $value['area_sqft'])->first();
+
+            // $value['transDetails'] = $mWaterTran->getTransNo($value['id'], null)->first();
+            // $value['calcullation'] = $mWaterParamConnFee->getCallParameter($value['property_type_id'], $value['area_sqft'])->first();
+        
             $refConnectionCharge = $mWaterConnectionCharge->getWaterchargesById($value['id'])
                 ->where('paid_status', 0)
                 ->first();
             # Formating connection type id 
-            $chargeId = null;
+            $chargeId =  null;
             if (!is_null($refConnectionCharge)) {
                 switch ($refConnectionCharge['charge_category']) {
                     case ($refChargeCatagory['SITE_INSPECTON']):
@@ -1296,11 +1298,11 @@ class WaterNewConnection implements IWaterNewConnection
     public function getDocumentTypeList($application, $user)
     {
         $refUserType = Config::get('waterConstaint.REF_USER_TYPE');
-        $type = ["FORM_SCAN_COPY", "STAMP", "ID_PROOF"];
+        $type = ["FORM_SCAN_COPY", "STAMP", "ID_PROOF", "PROPERTY TAX"];
         // Check if user_type is not equal to 1
         if ($user->user_type == $refUserType['1']) {
             // Modify $type array for user_type not equal to 1
-            $type = ["STAMP", "ID_PROOF"];
+            $type = ["STAMP", "ID_PROOF", "PROPERTY TAX", "METER", "PLUMBER LICENSE", "AMC FTTER REPORT", "PIPELINE MAP "];
         }
 
         $doc = WaterParamDocumentType::select(

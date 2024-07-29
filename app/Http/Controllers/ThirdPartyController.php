@@ -156,7 +156,8 @@ class ThirdPartyController extends Controller
             $mOtpRequest->saveOtp($request, $generateOtp);
 
             $smsReqs = [
-                "emp_id" => $request->userId ?? authUser($request)->id ?? 0,
+                "emp_id" => $request->userId ?? (auth()->user()->id) ?? 0,
+               // "emp_id" => $request->userId ?? authUser($request)->id ?? 0,
                 "ref_id" => isset($userDetails) ? $userDetails->id : 0,
                 "ref_type" => 'Active Citizen',
                 "mobile_no" => $mobileNo,
@@ -221,7 +222,7 @@ class ThirdPartyController extends Controller
     public function generateOtp()
     {
         $otp = str_pad(Carbon::createFromDate()->milli . random_int(100, 999), 6, 0);
-        // $otp = 123123;
+        $otp = 123123;
         return $otp;
     }
 }

@@ -103,30 +103,74 @@ class WaterApplication extends Model
      * | @param request
      * | @return 
      */
+    // public function fullWaterDetails($request)
+    // {
+    //     return  WaterApplication::select(
+    //         'water_applications.*',
+    //         'water_applications.connection_through as connection_through_id',
+    //         // 'ulb_ward_masters.ward_name',
+    //         'ulb_masters.ulb_name',
+    //         'water_connection_type_mstrs.connection_type',
+    //         // 'water_property_type_mstrs.property_type',
+    //         // 'water_connection_through_mstrs.connection_through',
+    //         'wf_roles.role_name AS current_role_name',
+    //         // 'water_owner_type_mstrs.owner_type AS owner_char_type',
+    //         // 'water_param_pipeline_types.pipeline_type'
+    //     )
+    //         ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_applications.current_role')
+    //         // ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'water_applications.ward_id')
+    //         // ->join('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_applications.connection_through')
+    //         ->join('ulb_masters', 'ulb_masters.id', '=', 'water_applications.ulb_id')
+    //         ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_applications.connection_type_id')
+    //         // ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', '=', 'water_applications.property_type_id')
+    //         // ->join('water_owner_type_mstrs', 'water_owner_type_mstrs.id', '=', 'water_applications.owner_type')
+    //         // ->leftjoin('water_param_pipeline_types', 'water_param_pipeline_types.id', '=', 'water_applications.pipeline_type_id')
+    //         ->where('water_applications.id', $request->applicationId)
+    //         ->where('water_applications.status', 1);
+    // }
     public function fullWaterDetails($request)
     {
         return  WaterApplication::select(
-            'water_applications.*',
-            'water_applications.connection_through as connection_through_id',
-            // 'ulb_ward_masters.ward_name',
+            'water_applications.id',
+            'water_applications.id as applicationId',
+            'water_applications.mobile_no',
+            'water_applications.tab_size',
+            'water_applications.property_no',
+            'water_applications.status',
+            'water_applications.payment_status',
+            'water_applications.user_type',
+            'water_applications.apply_date',
+            'water_applications.landmark',
+            'water_applications.address',
+            'water_applications.category',
+            'water_applications.application_no',
+            'water_applications.ward_no',
+            'water_applications.pin',
+            'water_applications.current_role',
+            'water_applications.workflow_id',
+            'water_applications.last_role_id',
+            'water_applications.doc_upload_status',
+            'water_property_type_mstrs.property_type',
+            'water_param_pipeline_types.pipeline_type',
+            'zone_masters.zone_name',
             'ulb_masters.ulb_name',
             'water_connection_type_mstrs.connection_type',
-            // 'water_property_type_mstrs.property_type',
-            // 'water_connection_through_mstrs.connection_through',
             'wf_roles.role_name AS current_role_name',
-            // 'water_owner_type_mstrs.owner_type AS owner_char_type',
-            // 'water_param_pipeline_types.pipeline_type'
+            'water_connection_type_mstrs.connection_type',
+            'water_connection_charges.amount',
+            "water_connection_charges.charge_category",
+            "ulb_ward_masters.ward_name",
         )
             ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_applications.current_role')
-            // ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'water_applications.ward_id')
-            // ->join('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_applications.connection_through')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_applications.ulb_id')
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_applications.ward_id')
             ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_applications.connection_type_id')
-            // ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', '=', 'water_applications.property_type_id')
-            // ->join('water_owner_type_mstrs', 'water_owner_type_mstrs.id', '=', 'water_applications.owner_type')
-            // ->leftjoin('water_param_pipeline_types', 'water_param_pipeline_types.id', '=', 'water_applications.pipeline_type_id')
+            ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_applications.property_type_id')
+            ->join('water_param_pipeline_types', 'water_param_pipeline_types.id', 'water_applications.pipeline_type_id')
+            ->join('zone_masters', 'zone_masters.id', 'water_applications.zone_mstr_id')
+            ->join('water_connection_charges', 'water_connection_charges.application_id', 'water_applications.id')
             ->where('water_applications.id', $request->applicationId)
-            ->where('water_applications.status', 1);
+            ->where('water_applications.status', true);
     }
 
 
@@ -264,7 +308,7 @@ class WaterApplication extends Model
      * | @param request
      * | @param consumerNo
      */
-    public function finalApproval($request, $consumerNo, $refJe)
+    public function finalApproval($request, $refJe, $consumerNo)
     {
         # object creation
         $mWaterApprovalApplicationDetail = new WaterApprovalApplicationDetail();
@@ -293,7 +337,7 @@ class WaterApplication extends Model
 
         # data formating for save the consumer details 
         $siteDetails = $mWaterSiteInspection->getSiteDetails($request->applicationId)
-            ->where('payment_status', 1)
+            // ->where('payment_status', 1)
             ->where('order_officer', $refJe)
             ->first();
         if (isset($siteDetails)) {
@@ -655,7 +699,7 @@ class WaterApplication extends Model
 
         $saveNewApplication = new WaterApplication();
         $saveNewApplication->connection_type_id     = $connectypeId;
-        $saveNewApplication->property_type_id       = $req->propertyTypeId;
+        $saveNewApplication->property_type_id       = $req->buildingType;
         $saveNewApplication->owner_type             = $req->ownerType;
         $saveNewApplication->category               = $req->category;
         $saveNewApplication->pipeline_type_id       = $req->pipelineTypeId ?? 1;
@@ -663,11 +707,12 @@ class WaterApplication extends Model
         $saveNewApplication->area_sqft              = $req->areaSqft;
         $saveNewApplication->address                = $req->address;
         $saveNewApplication->landmark               = $req->landmark ?? null;
-        $saveNewApplication->pin                    = $req->pin;
+        $saveNewApplication->pin                    = $req->pincode;
         $saveNewApplication->connection_through     = $req->connection_through;
         $saveNewApplication->workflow_id            = $ulbWorkflowId->id;
         // $saveNewApplication->connection_fee_id      = $waterFeeId;
         $saveNewApplication->initiator              = collect($initiatorRoleId)->first()->role_id;
+        $saveNewApplication->current_role           = collect($initiatorRoleId)->first()->role_id;
         $saveNewApplication->finisher               = collect($finisherRoleId)->first()->role_id;
         $saveNewApplication->application_no         = $applicationNo;
         $saveNewApplication->ulb_id                 = $ulbId;
@@ -682,6 +727,9 @@ class WaterApplication extends Model
         $saveNewApplication->zone_mstr_id           = $req->zoneId;
         $saveNewApplication->cycle                  = $req->cycle;
         $saveNewApplication->building_type          = $req->buildingType;
+        $saveNewApplication->trade_license          = $req->tradelicenseNo;
+        $saveNewApplication->ward_no                = $req->wardNo;
+
 
         $saveNewApplication->save();
         return $saveNewApplication;

@@ -26,9 +26,9 @@ class WaterSiteInspection extends Model
         $saveSiteVerify->apply_connection_id    =   $req->applicationId;
         $saveSiteVerify->property_type_id       =   $req->propertyTypeId;
         $saveSiteVerify->pipeline_type_id       =   $req->pipelineTypeId;
-        $saveSiteVerify->connection_type_id     =   $req->connectionTypeId;
         $saveSiteVerify->connection_through     =   $waterDetails['connection_through'];
         $saveSiteVerify->category               =   $req->category;
+        $saveSiteVerify->connection_type_id     =   $req->connectionTypeId;
         $saveSiteVerify->flat_count             =   $req->flatCount ?? null;
         $saveSiteVerify->ward_id                =   $waterDetails['ward_id'];
         $saveSiteVerify->area_sqft              =   $req->areaSqft;
@@ -104,7 +104,7 @@ class WaterSiteInspection extends Model
         )
             ->where('apply_connection_id', $applicationId)
             ->where('status', 1)
-            ->orderByDesc('water_site_inspections.id');
+            ->orderByDesc('water_site_inspections.id'); 
     }
 
 

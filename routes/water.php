@@ -55,9 +55,10 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         # Admin / Citizen view
         Route::post('application/delete', 'deleteWaterApplication');                                    // Citizen     
         Route::post('application/get-by-id', 'getApplicationDetails');                                  // Citizen
+        Route::post('approve-application/get-by-id', 'getApproveApplicationsDetails');                                  // Admin
         Route::post('citizen/get-doc-list', 'getDocToUpload');                                          // Citizen  
         Route::post('application/edit', 'editWaterAppliction');                                         // Citizen/Admin
-        Route::post('search-holding-saf', 'getSafHoldingDetail');                                      // Admin
+        Route::post('search-holding-saf', 'getSafHoldingDetail');                                       // Admin
         Route::post('application/search', 'getActiveApplictaions');                                     // Admin
         Route::post('admin/application/get-details-by-id', 'getApplicationDetailById');                 // Admin
         Route::post('admin/application/list-details-by-date', 'listApplicationBydate');                 // Admin
@@ -79,6 +80,8 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('application/holding', 'searchHolding');
         //check
         Route::post('check-test', 'check');
+        Route::post('citizen/approve-application', 'getCitizenApproveApplication');
+        Route::post('application/jsk-get-by-id', 'getApproveAplications');                                  // Admin
     });
 
     /**
@@ -90,13 +93,13 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         # Consumer And Citizen Transaction Operation
 
         Route::post('master/get-listed-details', 'getWaterMasterData');                                 // Admin/ Citizen
-        Route::post('consumer/get-payment-history', 'getConsumerPaymentHistory');                       // Consumer
+        Route::post('consumer/get-payment-history', 'getConsumerPaymentHistory');                       // Consumer               // use in consumer part
         Route::post('admin/application/generate-payment-receipt', 'generateOfflinePaymentReceipt');     // Citizen / Admin
         Route::post('consumer/calculate-month-demand', 'callDemandByMonth');                            // Admin/Consumer
         Route::post('application/payment/get-payment-history', 'getApplicationPaymentHistory');         // Admin/Consumer
         Route::post('consumer/offline-demand-payment', 'offlineDemandPayment');                         // Consumer
         Route::post('application/payment/offline/pay-connection-charge', 'offlineConnectionPayment');   // Admin
-        Route::post('consumer/demand/generate-payment-receipt', 'generateDemandPaymentReceipt');        // Admin/ Citizen
+
         Route::post('consumer/online-demand-payment', 'initiateOnlineDemandPayment');                   // Citizen
         Route::post('citizen/payment-history', 'paymentHistory');                                       // Citizen  
         Route::post('consumer/water-user-charges', 'getWaterUserCharges');                              // Admin / Citizen
@@ -109,7 +112,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('consumer/offline-request-payment', 'offlineConPayment');
         Route::post('consumer/part-payment', 'partPayment');                                             //status working
         Route::post('consumer/online-payment', 'getReferalUrl');
-        Route::post('consumer/demand-payment', 'partPaymentV2');
+        Route::post('consumer/demand-payment', 'partPaymentV2');                                                                     // use in consumer part
         Route::post('consumer/payment-receipt', 'generateDemandPaymentReceiptV2');
         Route::post('consumer/transaction-deactivation', 'transactionDeactivation');
         # for deactivation  consumer
@@ -175,15 +178,21 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
      * |------------ Water Consumer Workflow -------------|
      */
     Route::controller(WaterConsumerWfController::class)->group(function () {
-        Route::post('consumer/req/inbox', 'consumerInbox');                                         // Workflow
-        Route::post('consumer/req/outbox', 'consumerOutbox');                                       // Workflow
-        Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');           // Here
-        Route::post('consumer/req/list-req-docs', 'listDocToUpload');                   // Here
-        Route::post('consumer/req/doc-verify-reject', 'consumerDocVerifyReject');       // Here
-        Route::post('consumer/req/upload-document', 'consumerDocUpload');               // Here
-        Route::post('consumer/req/get-upload-documents', 'getConsumerDocs');            // Here
-        Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');    // Here
+        Route::post('consumer/req/inbox', 'consumerInbox');                                               // Workflow
+        Route::post('consumer/req/outbox', 'consumerOutbox');                                            // Workflow
+        Route::post('consumer/req/get-details-by', 'getWorkflow');                                       // Workflow
+        Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');                            // Here
+        Route::post('consumer/req/list-req-docs', 'listDocToUpload');                                    // Here
+        Route::post('consumer/req/doc-verify-reject', 'consumerDocVerifyReject');                       // Here
+        Route::post('consumer/req/get-upload-documents', 'getDiscUploadDocuments');                    // Here
+        // Route::post('consumer/req/get-upload-documents', 'getConsumerDocs');                      // Here
+        Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');                // Here
         Route::post('get-details-applications', 'getConApplicationDetails');
+        Route::post('get-details-disconnections', 'getRequestedApplication');                       // Citizen / Changes the route name
+        Route::post('consumer/req/get-disconnected-details', 'getDetailsDisconnections');
+        Route::post('consumer/reqs/reupload-document', 'reuploadDocument');                                                // 21 ( Reupload Document for Pending Documents)
+        Route::post('workflow/get-doc-list-je', 'getDocListForJe');                                             // Workflow
+        Route::post('workflow/upload-doc-je', 'uploadWaterDocJe');                                             // Workflow
     });
 
     /**
@@ -223,7 +232,6 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('reports/device-type/collection', 'deviceTypeCollection');
     });
 
-
     /**
      * | Created On:09-12-2022 
      * | Created by:Sandeep Bara
@@ -262,6 +270,7 @@ Route::controller(WaterPaymentController::class)->group(function () {
     Route::post('citizen/icici-payment', 'initiateOnlineDemandPayment');
     Route::post('citizen/demand/generate-payment-receipt', 'generateDemandPaymentReceipt');
     Route::post('citizen/get-payment-history', 'getConsumerPaymentHistory');
+    Route::post('consumer/demand/generate-payment-receipt', 'generateDemandPaymentReceipt');        // Admin/ Citizen          // use in consumer part
     // Route::post('')
 });
 

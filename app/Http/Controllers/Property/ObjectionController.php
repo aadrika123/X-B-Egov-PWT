@@ -21,6 +21,7 @@ use App\Traits\Property\Objection;
 use App\Models\Property\RefPropObjectionType;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
+use App\Models\Property\PropPropertyUpdateRequest;
 use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWorkflow;
@@ -115,8 +116,8 @@ class ObjectionController extends Controller
     public function inbox(Request $req)
     {
         try {
-            $userId = authUser()->id;
-            $ulbId = authUser()->ulb_id;
+            $userId = authUser($req)->id;
+            $ulbId = authUser($req)->ulb_id;
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $perPage = $req->perPage ?? 10;
 
@@ -455,8 +456,8 @@ class ObjectionController extends Controller
     public function btcInboxList(Request $req)
     {
         try {
-            $userId = authUser()->id;
-            $ulbId = authUser()->ulb_id;
+            $userId = authUser($req)->id;
+            $ulbId = authUser($req)->ulb_id;
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
             $perPage = $req->perPage ?? 10;
 
@@ -848,11 +849,14 @@ class ObjectionController extends Controller
         ]);
         try {
             $mWfActiveDocument = new WfActiveDocument();
+            $obj = new PropPropertyUpdateRequest();
             $mPropActiveObjection = new PropActiveObjection();
             $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
 
             $objectionDetails = $mPropActiveObjection->getObjectionNo($req->applicationId);
-            if (!$objectionDetails)
+            if (!$objectionDetails){
+                $objectionDetails = $obj->getDetail($req->applicationId);
+            }
                 throw new Exception("Application Not Found for this application Id");
 
             $workflowId = $objectionDetails->workflow_id;
@@ -1258,7 +1262,24 @@ class ObjectionController extends Controller
                     ->first();
                 $code = $this->filterCitizenDoc($data);
                 break;
-
+            case ('occupantName'):
+                $data =  RefRequiredDocument::select('*')
+                    ->where('code', 'OBJECTION_CLERICAL_ID')
+                    ->first();
+                $code = $this->filterCitizenDoc($data);
+                break;
+            case ('dob'):
+                $data =  RefRequiredDocument::select('*')
+                    ->where('code', 'OBJECTION_CLERICAL_ID')
+                    ->first();
+                $code = $this->filterCitizenDoc($data);
+                break;
+            case ('gender'):
+                $data =  RefRequiredDocument::select('*')
+                    ->where('code', 'OBJECTION_CLERICAL_ID')
+                    ->first();
+                $code = $this->filterCitizenDoc($data);
+                break;
             case ('addOwner'):
                 $data =  RefRequiredDocument::select('*')
                     ->where('code', 'OBJECTION_CLERICAL_ADD_OWNER')
