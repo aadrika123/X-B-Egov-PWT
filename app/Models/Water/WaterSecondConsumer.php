@@ -549,7 +549,7 @@ class WaterSecondConsumer extends Model
         $mWaterConsumer->tab_size                    = $consumerDetails['tab_size'];
         $mWaterConsumer->approve_date                = Carbon::now();
         $mWaterConsumer->connection_date             = Carbon::now();
-        $mWaterConsumer->status                      = 3;
+        $mWaterConsumer->status                      = 4;
         $mWaterConsumer->save();
         return $mWaterConsumer->id;
     }

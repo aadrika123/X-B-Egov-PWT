@@ -106,7 +106,7 @@ class WaterApprovalApplicationDetail extends Model
             ->where('water_approval_application_details.connection_type_id', $connectionTypes)
             ->where('water_approval_application_details.application_no', 'LIKE', '%' . $applicationNo . '%')
             ->where('water_approval_application_details.ulb_id', authUser($req)->ulb_id)
-            ->whereIn('water_second_consumers.status', [1, 3])
+            ->whereIn('water_second_consumers.status', [1, 4])
             ->orderby('water_second_consumers.id', 'DESC')
             ->groupBy(
                 'water_second_consumers.id',
