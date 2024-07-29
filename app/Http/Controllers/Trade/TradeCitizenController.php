@@ -1685,8 +1685,8 @@ class TradeCitizenController extends Controller
                 "userId"=>$user && $user->getTable()=="users"?$user->id : null,
                 "applicationNo"=>$application->application_no,
                 "moduleId"=>$this->_MODULE_ID ,
-                "email"=>($owners->whereNotNull("email_id")->first())->email_id,
-                "phone"=>($owners->whereNotNull("mobile_no")->first())->mobile_no,
+                "email"=>($owners->whereNotNull("email_id")->first())->email_id??"test@gmail.com",
+                "phone"=>($owners->whereNotNull("mobile_no")->first())->mobile_no??"",
                 "amount"=>$chargeData["total_charge"],
                 "firstname"=>$owners->implode("owner_name"," & "),
                 "frontSuccessUrl"=>$request->frontSuccessUrl,
@@ -1774,7 +1774,6 @@ class TradeCitizenController extends Controller
 
             return $respnse ;
         } catch (Exception $e) {
-            $this->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }
