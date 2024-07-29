@@ -3260,6 +3260,7 @@ class NewConnectionController extends Controller
                 ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_approval_application_details.ward_id')
                 ->join('water_second_consumers', 'water_second_consumers.apply_connection_id', 'water_approval_application_details.id')
                 ->where("water_approval_application_details.user_id", $refUserId)
+                ->where("water_approval_application_details.status",true)
                 ->orderbydesc('water_approval_application_details.id')
                 ->get();
 
