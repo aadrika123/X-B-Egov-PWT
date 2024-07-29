@@ -142,7 +142,7 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         Route::post('application/citizen-history', "citizenHistory");
         Route::post('application/status', "citizenApplicationStatus");
 
-        Route::get('application/init-payment', "initPayment");
+        Route::post('application/init-payment', "initPayment");
         Route::post('application/easebuzz-handel-response', "easebuzzHandelResponse");
     });
 
