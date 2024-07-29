@@ -911,26 +911,26 @@ class WaterConsumer extends Controller
         $refUserType                    = Config::get('waterConstaint.REF_USER_TYPE');
 
         $refConsumerDetails = $mWaterSecondConsumer->getConsumerDetails($consumerId)->first();
-        // if ($request->requestType == 2) {
-        //     $pendingDemand      = $mWaterConsumerDemand->getConsumerDemand($consumerId);
-        //     $firstPendingDemand = collect($pendingDemand)->first();
+        if ($request->requestType == 2) {
+            $pendingDemand      = $mWaterConsumerDemand->getConsumerDemand($consumerId);
+            $firstPendingDemand = collect($pendingDemand)->first();
 
-        //     if (isset($firstPendingDemand)) {
-        //         throw new Exception("There are unpaid pending demand!");
-        //     }
-        // }
+            if (isset($firstPendingDemand)) {
+                throw new Exception("There are unpaid pending demand!");
+            }
+        }
 
-        // if (isset($request->ulbId) && $request->ulbId != $refConsumerDetails->ulb_id) {
-        //     throw new Exception("Ulb not matched according to consumer connection!");
+        if (isset($request->ulbId) && $request->ulbId != $refConsumerDetails->ulb_id) {
+            throw new Exception("Ulb not matched according to consumer connection!");
+        }
+        // if ($refConsumerDetails->user_type == $refUserType['1'] && $user->id != $refConsumerDetails->user_id) {
+        //     throw new Exception("You are not the autherised user who filled before the connection!");
         // }
-        // // if ($refConsumerDetails->user_type == $refUserType['1'] && $user->id != $refConsumerDetails->user_id) {
-        // //     throw new Exception("You are not the autherised user who filled before the connection!");
-        // // }
-        // $activeReq = $mWaterConsumerActiveRequest->getRequestByConId($consumerId)->first();
-        // if ($activeReq) {
-        //     // throw new Exception("There are other request applied for respective consumer connection!");
-        //     throw new Exception("Already $activeReq->charge_category Applied");
-        // }
+        $activeReq = $mWaterConsumerActiveRequest->getRequestByConId($consumerId)->first();
+        if ($activeReq) {
+            // throw new Exception("There are other request applied for respective consumer connection!");
+            throw new Exception("Already $activeReq->charge_category Applied");
+        }
         return [
             "consumerDetails" => $refConsumerDetails
         ];
