@@ -825,8 +825,8 @@ class Trade implements ITrade
     {
         try {
             $refUser        = Auth()->user();
-            $refUserId      = $refUser->id;
-            $refUlbId       = $refUser->ulb_id;
+            $refUserId      = $refUser ? $refUser->id : $request->userId;
+            $refUlbId       = $refUser ? $refUser->ulb_id : $request->ulbId;
             $refWorkflowId  = $this->_WF_MASTER_Id;
             $refWorkflows   = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
             $refNoticeDetails = null;
@@ -927,8 +927,11 @@ class Trade implements ITrade
             $Tradetransaction->rate_id          = $rate_id;
             $Tradetransaction->paid_amount      = $totalCharge;
             $Tradetransaction->penalty          = $chargeData['penalty'] + $mDenialAmount + $chargeData['arear_amount'];
-            if ($request->paymentMode != 'CASH') {
+            if (!in_array($request->paymentMode ,['CASH',"ONLINE"])) {
                 $Tradetransaction->status = 2;
+            }
+            if($request->paymentMode=="ONLINE"){
+                $Tradetransaction->payment_gateway_type = $request->paymentGatewayType;
             }
             $Tradetransaction->emp_dtl_id       = $refUserId;
             $Tradetransaction->created_at       = $mTimstamp;
@@ -956,7 +959,7 @@ class Trade implements ITrade
                 $TradeFineRebet2->save();
             }
 
-            if ($request->paymentMode != 'CASH') {
+            if (!in_array($request->paymentMode ,['CASH',"ONLINE"])) {
                 $tradeChq = new TradeChequeDtl;
                 $tradeChq->tran_id = $transaction_id;
                 $tradeChq->temp_id = $licenceId;
@@ -1550,7 +1553,7 @@ class Trade implements ITrade
     {
         try {
             $mNoticeDate = null;
-            $data['curdate']        = Carbon::now()->format('Y-m-d');
+            $data['curdate']        = $request->curdate ? $request->curdate : Carbon::now()->format('Y-m-d');
             $data['application_type_id'] = $this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType];
             if (!$data['application_type_id']) {
                 throw new Exception("Invalide Application Type");

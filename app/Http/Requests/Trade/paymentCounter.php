@@ -33,7 +33,7 @@ class paymentCounter extends TradeRequest
         $rules["licenceId"]="required||digits_between:1,9223372036854775807"; 
         $rules["licenseFor"]="required|int";
         $rules["totalCharge"] = "required|numeric";               
-        if(isset($this->paymentMode) && $this->paymentMode!="CASH")
+        if(isset($this->paymentMode) && !in_array($this->paymentMode,["CASH","ONLINE"]))
         {
             $rules["chequeNo"] ="required";
             $rules["chequeDate"] ="required|date|date_format:Y-m-d|after_or_equal:$mNowDate";
