@@ -160,6 +160,7 @@ class CitizenRepository implements iCitizenRepository
                 'pt_no',
                 'holding_no',
                 'assessment_type',
+                'current_role',
                 'r.role_name as current_level',
                 DB::raw("TO_CHAR(application_date, 'DD-MM-YYYY') as application_date,
                     CASE WHEN prop_active_safs.current_role = prop_active_safs.initiator_role_id THEN TRUE
