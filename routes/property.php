@@ -76,6 +76,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
 
     //wrtitten by prity pandey
     Route::post('saf/apply-by-tc', 'applySafTc'); 
+    Route::post('saf/apply-by-tc-reassesment', 'applySafTcReassesment');
     Route::post('saf/apply-by-tc-detail', 'applySafTcDetail'); 
     Route::post('saf/consumer-verify', 'verifyConsumer');
     Route::post('saf/license-verify', 'verifyLicense');
@@ -660,8 +661,8 @@ Route::controller(HoldingTaxController::class)->group(function () {
   Route::post('independent/get-holding-dues', 'getHoldingDues');                            // (07) Property/ Holding Dues
   Route::post('independent/bulk-get-holding-dues', 'bulkGetHoldingDues');                            // (07.1) Property/ Holding Dues
   Route::post('independent/generate-prop-orderid', 'generateOrderId');                      // (08) Generate Property Order ID
-  //Route::post('prop-payment-history', 'propPaymentHistoryv4');   
-  Route::post('prop-payment-history', 'propPaymentHistory');                              // (06) Property Payment History
+  Route::post('prop-payment-history', 'propPaymentHistoryv4');   
+  // Route::post('prop-payment-history', 'propPaymentHistory');                              // (06) Property Payment History
   Route::post('prop-ulb-receipt', 'proUlbReceipt');                                         // (09) Property Ulb Payment Receipt
   Route::post('prop-comparative-demand', 'comparativeDemand');                              // (10) Property Comparative Demand
   Route::post('cluster/payment-history', 'clusterPaymentHistory');                           // (13) Cluster Payment History
