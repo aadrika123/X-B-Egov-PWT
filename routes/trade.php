@@ -48,12 +48,14 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         Route::post('application/document-verify', 'documentVerify');
 
         Route::post('application/dtl-by-id', 'getLicenceDtl');
+        Route::post('application/dtl-by-id-direct', 'getLicenceDtl');
 
         Route::post('notice/details', "getDenialDetails");
 
         Route::post('application/search-for-renew', 'searchLicence');
 
         Route::post('application/list', 'readApplication');
+        Route::post('application/list-direct', 'readApplication');
 
         Route::post('application/escalate', 'postEscalate');
 
