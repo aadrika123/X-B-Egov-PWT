@@ -21,6 +21,7 @@ interface ITrade
     public function searchLicenceByNo(Request $request);
     public function searchLicence(string $licence_no, $ulb_id);
     public function readApplication(Request $request);
+    public function readApplicationv1(Request $request);
     public function postEscalate(Request $request);
     public function updateLicenseBo(Request $request);
     public function updateBasicDtl(Request $request);

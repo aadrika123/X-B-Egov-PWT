@@ -55,7 +55,7 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         Route::post('application/search-for-renew', 'searchLicence');
 
         Route::post('application/list', 'readApplication');
-        Route::post('application/list-direct', 'readApplication');
+        Route::post('application/list-direct', 'readApplicationv1');
 
         Route::post('application/escalate', 'postEscalate');
 
