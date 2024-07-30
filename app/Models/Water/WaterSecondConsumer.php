@@ -675,7 +675,7 @@ class WaterSecondConsumer extends Model
         )
             ->where('water_second_consumers.id', $applicationId)
             ->join('water_approval_application_details', 'water_approval_application_details.id', 'water_second_consumers.apply_connection_id')
-            ->where('water_second_consumers.status', 1);
+            ->whereIn('water_second_consumers.status', [1, 4]);
     }
 
     public function updateConsumer($consumerId)
@@ -772,5 +772,4 @@ class WaterSecondConsumer extends Model
                 'tab_size' => $checkExist->tab_size
             ]);
     }
-   
 }
