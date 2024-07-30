@@ -737,7 +737,10 @@ class HoldingTaxController extends Controller
         }
     }
 
-    // written by prity pandey
+    /**
+     * | written by prity pandey all previous tran details function
+     */
+    
     // public function propPaymentHistory(Request $req)
     // {
     //     $validated = Validator::make(
@@ -819,94 +822,6 @@ class HoldingTaxController extends Controller
     //     return $result;
     // }
 
-
-    public function propPaymentHistoryv1(Request $req)
-    {
-        $validated = Validator::make(
-            $req->all(),
-            ['propId' => 'required|digits_between:1,9223372036854775807']
-        );
-        if ($validated->fails()) {
-            return validationError($validated);
-        }
-
-        try {
-            $propId = $req->propId;
-            $result = [
-                'Holding' => collect(),
-                'Saf' => collect()
-            ];
-
-            $mPropTrans = new PropTransaction();
-            $mPropProperty = new PropProperty();
-            $mSafs = new PropSaf();
-            $propertyDtls = $mPropProperty->getSafByPropId($propId);
-            if (!$propertyDtls) {
-                throw new Exception("Property Not Found");
-            }
-
-            // Get saf_id from property details
-            $safId = $propertyDtls->saf_id;
-
-            // Get transactions using the property_id
-            $propTrans = $mPropTrans->getPropTransactions($propId, 'property_id');
-            if ($propTrans && !$propTrans->isEmpty()) {
-                $propTrans->map(function ($propTran) {
-                    $propTran['tran_date'] = Carbon::parse($propTran->tran_date)->format('d-m-Y');
-                });
-                $result['Holding'] = $result['Holding']->concat($propTrans);
-            }
-
-            // Get SAF transactions using the saf_id
-            if (!is_null($safId)) {
-                $safTrans = $mPropTrans->getPropTransactions($safId, 'saf_id');
-                if ($safTrans && !$safTrans->isEmpty()) {
-                    $safTrans->map(function ($safTran) {
-                        $safTran['tran_date'] = Carbon::parse($safTran->tran_date)->format('d-m-Y');
-                    });
-                    $result['Saf'] = $result['Saf']->concat($safTrans);
-                }
-            }
-
-            // Check for previous_holding_id to prevent further recursion if needed
-            $msafDetail = $mSafs->getBasicDetails($safId);
-            if ($msafDetail && $msafDetail->previous_holding_id) {
-                // Get transactions for the previous holding (stopping after one previous holding)
-                $previousHoldingId = $msafDetail->previous_holding_id;
-
-                // Fetch transactions and SAF details for the previous holding
-                $propTransPrevious = $mPropTrans->getPropTransactions($previousHoldingId, 'property_id');
-                if ($propTransPrevious && !$propTransPrevious->isEmpty()) {
-                    $propTransPrevious->map(function ($propTran) {
-                        $propTran['tran_date'] = Carbon::parse($propTran->tran_date)->format('d-m-Y');
-                    });
-                    $result['Holding'] = $result['Holding']->concat($propTransPrevious);
-                }
-
-                // // Fetch SAF transactions for the previous holding
-                // $safTransPrevious = $mPropTrans->getPropTransactions($previousHoldingId, 'saf_id');
-                // if ($safTransPrevious && !$safTransPrevious->isEmpty()) {
-                //     $safTransPrevious->map(function ($safTran) {
-                //         $safTran['tran_date'] = Carbon::parse($safTran->tran_date)->format('d-m-Y');
-                //     });
-                //     $result['Saf'] = $result['Saf']->concat($safTransPrevious);
-                // }
-            }
-
-            if ($result['Holding']->isEmpty() && $result['Saf']->isEmpty()) {
-                throw new Exception("No Transaction Found");
-            }
-
-            $result['Holding'] = $result['Holding']->sortByDesc('id')->values();
-            $result['Saf'] = $result['Saf']->sortByDesc('id')->values();
-
-            return responseMsgs(true, "", remove_null($result), "011606", "1.0", "", "POST", $req->deviceId ?? "");
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", "011606", "1.0", "", "POST", $req->deviceId ?? "");
-        }
-    }
-
-
     public function propPaymentHistoryv4(Request $req)
     {
         $validated = Validator::make(
@@ -959,10 +874,6 @@ class HoldingTaxController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "011606", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
-
-
-
-
 
 
 
