@@ -405,14 +405,14 @@ class Trade implements ITrade
                         $owner->save();
                     }
                     foreach ($request->ownerDetails as $owners) {
-                        if (!isset($owners['ownerId']) || empty($owners['ownerId'])) { 
-                        $owner = new ActiveTradeOwner();
-                        $owner->temp_id      = $licenceId;
-                        $this->addNewOwners($owner, $owners);
-                        $owner->user_id  = $refUserId;
-                        $owner->save();
+                        if (!isset($owners['ownerId']) || empty($owners['ownerId'])) {
+                            $owner = new ActiveTradeOwner();
+                            $owner->temp_id      = $licenceId;
+                            $this->addNewOwners($owner, $owners);
+                            $owner->user_id  = $refUserId;
+                            $owner->save();
+                        }
                     }
-                }
                 } elseif ($mApplicationTypeId == 1) # code for New License
                 {
                     $wardId = $request->firmDetails['wardNo'];
@@ -575,13 +575,13 @@ class Trade implements ITrade
 
         //modified by prity pandey
         $refActiveLicense->zone_id             = $request->firmDetails['zoneId'];
-        $refActiveLicense->ward_id             = $request->firmDetails['wardNo']??null;
-        $refActiveLicense->new_ward_id         = $request->firmDetails['newWardNo']??null;
+        $refActiveLicense->ward_id             = $request->firmDetails['wardNo'] ?? null;
+        $refActiveLicense->new_ward_id         = $request->firmDetails['newWardNo'] ?? null;
         $refActiveLicense->holding_no          = $request->firmDetails['holdingNo'];
         $refActiveLicense->nature_of_bussiness = $refOldLicece->nature_of_bussiness;
         //$refActiveLicense->firm_name           = $refOldLicece->firm_name;
         // $refActiveLicense->nature_of_bussiness = $request->firmDetails['firmName']??null;
-        $refActiveLicense->firm_name           = $request->firmDetails['firmName']??null;
+        $refActiveLicense->firm_name           = $request->firmDetails['firmName'] ?? null;
         $refActiveLicense->firm_name_marathi   = $refOldLicece->firm_name_marathi ? $refOldLicece->firm_name_marathi : ($request->firmDetails['firmNameMarathi'] ?? null);
         $refActiveLicense->premises_owner_name = $refOldLicece->premises_owner_name;
         // $refActiveLicense->premises_owner_name = $request->firmDetails['premisesOwner'];
@@ -927,10 +927,10 @@ class Trade implements ITrade
             $Tradetransaction->rate_id          = $rate_id;
             $Tradetransaction->paid_amount      = $totalCharge;
             $Tradetransaction->penalty          = $chargeData['penalty'] + $mDenialAmount + $chargeData['arear_amount'];
-            if (!in_array($request->paymentMode ,['CASH',"ONLINE"])) {
+            if (!in_array($request->paymentMode, ['CASH', "ONLINE"])) {
                 $Tradetransaction->status = 2;
             }
-            if($request->paymentMode=="ONLINE"){
+            if ($request->paymentMode == "ONLINE") {
                 $Tradetransaction->payment_gateway_type = $request->paymentGatewayType;
             }
             $Tradetransaction->emp_dtl_id       = $refUserId;
@@ -959,7 +959,7 @@ class Trade implements ITrade
                 $TradeFineRebet2->save();
             }
 
-            if (!in_array($request->paymentMode ,['CASH',"ONLINE"])) {
+            if (!in_array($request->paymentMode, ['CASH', "ONLINE"])) {
                 $tradeChq = new TradeChequeDtl;
                 $tradeChq->tran_id = $transaction_id;
                 $tradeChq->temp_id = $licenceId;
@@ -1508,6 +1508,138 @@ class Trade implements ITrade
         }
     }
 
+    public function readLicenceDtlv1($request)
+    {
+
+        try {
+            $mWorkflowTracks = new WorkflowTrack();
+            $mCustomDetails = new CustomDetail();
+            $forwardBackward = new WorkflowMap;
+            $id = $request->applicationId;
+            // $refUser        = Auth()->user();
+            // $refUserId      = $refUser->id;
+            //$refUlbId       = $refUser->ulb_id;
+            $refUlbId       = 2;
+            $refWorkflowId  = $this->_WF_MASTER_Id;
+            $mRefTable = $this->_REF_TABLE;
+
+            // $init_finish = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
+            // $finisher = $init_finish['finisher'];
+            // $role = $this->_COMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $refWorkflowId);
+            // $finisher['short_user_name'] = $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][strtoupper($init_finish['finisher']['role_name'])];
+            $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId);
+            $refApplication = $this->getAllLicenceById($id);
+            if (!$refApplication) {
+                throw new Exception("Data Not Found");
+            }
+            $refApplication->application_date = $refApplication->application_date ? Carbon::parse($refApplication->application_date)->format("d-m-Y") : "";
+            $refApplication->license_date = $refApplication->license_date ? Carbon::parse($refApplication->license_date)->format("d-m-Y") : "";
+            $refApplication->valid_from = $refApplication->valid_from ? Carbon::parse($refApplication->valid_from)->format("d-m-Y") : "";
+            $refApplication->valid_upto = $refApplication->valid_upto ? Carbon::parse($refApplication->valid_upto)->format("d-m-Y") : "";
+            $refApplication->establishment_date = $refApplication->establishment_date ? Carbon::parse($refApplication->establishment_date)->format("d-m-Y") : "";
+
+            $mStatus = $this->applicationStatus($id);
+            $mItemName      = "";
+            $mCods          = "";
+            if (trim($refApplication->nature_of_bussiness)) {
+                $items = AkolaTradeParamItemType::itemsById($refApplication->nature_of_bussiness);
+                foreach ($items as $val) {
+                    $mItemName  .= $val->trade_item . ",";
+                    $mCods      .= $val->trade_code . ",";
+                }
+                $mItemName = trim($mItemName, ',');
+                $mCods = trim($mCods, ',');
+            }
+            $refApplication->items      = $mItemName;
+            $refApplication->items_code = $mCods;
+            $refOwnerDtl                = $this->getAllOwnereDtlByLId($id);
+            $refTransactionDtl          = TradeTransaction::listByLicId($id)->map(function ($val) {
+                $val->tran_date = $val->tran_date ? Carbon::parse($val->tran_date)->format("d-m-Y") : "";
+                return $val;
+            });
+            $refTimeLine                = $this->getTimelin($id);
+
+            // $mworkflowRoles = $this->_COMMON_FUNCTION->getWorkFlowAllRoles($refUserId, $refUlbId, $refWorkflowId, true);
+            // $mileSton = $this->_COMMON_FUNCTION->sortsWorkflowRols($mworkflowRoles);
+
+
+            $licenseDetail =  $refApplication;
+            $ownerDetails  = $refOwnerDtl;
+            $transactionDtl = $refTransactionDtl;
+            $data['pendingStatus']  = $mStatus;
+            $data['remarks']        = $refTimeLine;
+            $data["userType"]       = $mUserType;
+            //$data["roles"]          = $mileSton;
+
+
+            $newData = array();
+            $fullDetailsData = array();
+            $basicDetails = $this->generateBasicDetails($licenseDetail);      // Trait function to get Basic Details
+            $basicElement = [
+                'headerTitle' => "Basic Details",
+                "data" => $basicDetails
+            ];
+
+
+            $paymentDetail = sizeOf($transactionDtl) > 0 ? $this->generatepaymentDetails($transactionDtl) : (array) null;      // Trait function to get payment Details
+            $paymentElement = [
+                'headerTitle' => "Transaction Details",
+                'tableHead' => ["#", "Payment For", "Tran No", "Payment Mode", "Date"],
+                'tableData' => $paymentDetail,
+
+            ];
+
+            $ownerDetailsTable = $this->generateOwnerDetails($ownerDetails);
+            $ownerElement = [
+                'headerTitle' => 'Owner Details',
+                // 'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "Address"],
+                'tableHead' => ["#", "Owner Name",  "Guardian Name",  "Mobile No",  "Email",],
+                'tableData' => $ownerDetailsTable
+            ];
+
+            $cardDetails = $this->generateCardDetails($licenseDetail, $ownerDetails);
+            $cardElement = [
+                'headerTitle' => "About Trade",
+                'data' => $cardDetails
+            ];
+            $fullDetailsData["propId"]         = $licenseDetail->property_id;
+            $fullDetailsData["workflowId"]     = $licenseDetail->workflow_id;
+            $fullDetailsData['application_no'] = $licenseDetail->application_no;
+            $fullDetailsData['apply_date'] = $licenseDetail->application_date;
+            $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement]);
+            $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement, $paymentElement]);
+            $fullDetailsData['fullDetailsData']['cardArray'] = $cardElement;
+
+            $metaReqs['customFor'] = 'Trade';
+            //$metaReqs['wfRoleId'] = ($role && $role->is_initiator && $licenseDetail->is_parked) ? $role->role_id : $licenseDetail->current_role;
+            $metaReqs['workflowId'] = $licenseDetail->workflow_id;
+            $metaReqs['lastRoleId'] = $licenseDetail->last_role_id;
+            $levelComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $licenseDetail->id)->map(function ($val) {
+                $val->forward_date = $val->forward_date ? Carbon::parse($val->forward_date)->format("d-m-Y") : "";
+                $val->track_date = $val->track_date ? Carbon::parse($val->track_date)->format("d-m-Y") : "";
+                $val->duration = (Carbon::parse($val->forward_date)->diffInDays(Carbon::parse($val->track_date))) . " Days";
+                return $val;
+            });
+            $fullDetailsData['levelComment'] = $levelComment;
+
+            $citizenComment = $mWorkflowTracks->getCitizenTracks($mRefTable, $licenseDetail->id, $licenseDetail->user_id);
+            $fullDetailsData['citizenComment'] = $citizenComment;
+
+            $request->request->add($metaReqs);
+            $forwardBackward = $forwardBackward->getRoleDetails($request);
+            $fullDetailsData['roleDetails'] = collect($forwardBackward)['original']['data'];
+
+            $fullDetailsData['timelineData'] = collect($request);
+
+            $custom = $mCustomDetails->getCustomDetails($request);
+            $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
+
+            return responseMsgs(true, 'Data Fetched', remove_null($fullDetailsData), "010104", "1.0", "303ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), '');
+        }
+    }
+
     # Serial No : 09 
     /**
      * | Get Notice Data
@@ -1838,7 +1970,7 @@ class Trade implements ITrade
     {
         try {
             $refUser    = Auth()->user();
-            $refUlbId   = $refUser->ulb_id??2;
+            $refUlbId   = $refUser->ulb_id ?? 2;
             $mInputs    = $request->all();
             DB::enableQueryLog();
             $licence = ActiveTradeLicence::select(

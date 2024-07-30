@@ -459,6 +459,17 @@ class TradeApplication extends Controller
         }
         return $this->_REPOSITORY->readLicenceDtl($request);
     }
+
+    public function getLicenceDtlv1(Request $request)
+    {
+
+        $rules["applicationId"] = "required|digits_between:1,9223372036854775807";
+        $validator = Validator::make($request->all(), $rules,);
+        if ($validator->fails()) {
+            return responseMsg(false, $validator->errors(), $request->all());
+        }
+        return $this->_REPOSITORY->readLicenceDtlv1($request);
+    }
     # Serial No : 09 
     public function getDenialDetails(Request $request)
     {
