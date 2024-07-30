@@ -1052,9 +1052,13 @@ class PropProperty extends  PropParamModel #Model
     {
         $propDetails = PropProperty::select(
             'ulb_ward_masters.*',
-            'prop_properties.*'
+            'prop_properties.saf_id',
+            'prop_properties.holding_no',
+            'prop_properties.holding_type',
+            'prop_owners.owner_name as applicant_name'
         )
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
+            ->join('prop_owners','prop_owners.property_id','prop_properties.id')
             ->where('holding_no', $holdingNo)
             ->where('prop_properties.status', 1)
             ->first();

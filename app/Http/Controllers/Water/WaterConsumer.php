@@ -926,11 +926,11 @@ class WaterConsumer extends Controller
         // if ($refConsumerDetails->user_type == $refUserType['1'] && $user->id != $refConsumerDetails->user_id) {
         //     throw new Exception("You are not the autherised user who filled before the connection!");
         // }
-        $activeReq = $mWaterConsumerActiveRequest->getRequestByConId($consumerId)->first();
-        if ($activeReq) {
-            // throw new Exception("There are other request applied for respective consumer connection!");
-            throw new Exception("Already $activeReq->charge_category Applied");
-        }
+        // $activeReq = $mWaterConsumerActiveRequest->getRequestByConId($consumerId)->first();
+        // if ($activeReq) {
+        //     // throw new Exception("There are other request applied for respective consumer connection!");
+        //     throw new Exception("Already $activeReq->charge_category Applied");
+        // }
         return [
             "consumerDetails" => $refConsumerDetails
         ];
@@ -1065,7 +1065,7 @@ class WaterConsumer extends Controller
     public function viewCaretakenConnection(Request $request)
     {
         try {
-            $mWaterWaterConsumer        = new WaterWaterConsumer();
+            $mWaterWaterConsumer        = new WaterSecondConsumer();
             $mActiveCitizenUndercare    = new ActiveCitizenUndercare();
 
             $connectionDetails = $mActiveCitizenUndercare->getDetailsByCitizenId();

@@ -59,7 +59,8 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('citizen/get-doc-list', 'getDocToUpload');                                          // Citizen  
         Route::post('application/edit', 'editWaterAppliction');                                         // Citizen/Admin
         Route::post('search-holding-saf', 'getSafHoldingDetail');                                       // Admin
-        Route::post('application/search', 'getActiveApplictaions');                                     // Admin
+        Route::post('application/search', 'getAprroveApplictaions');                                     // Admin
+        Route::post('application/applied-application-search', 'getAppliedApplictaions');                 // Applied Apllication Admin Side (jsk)
         Route::post('admin/application/get-details-by-id', 'getApplicationDetailById');                 // Admin
         Route::post('admin/application/list-details-by-date', 'listApplicationBydate');                 // Admin
         Route::post('search-consumer', 'searchWaterConsumer');                                          // Admin/Consumer   

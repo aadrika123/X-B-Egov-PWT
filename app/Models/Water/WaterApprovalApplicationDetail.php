@@ -160,7 +160,7 @@ class WaterApprovalApplicationDetail extends Model
             ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_approval_application_details.current_role')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_approval_application_details.ulb_id')
             ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_approval_application_details.connection_type_id')
-            ->join('water_second_consumers', 'water_second_consumers.apply_connection_id', 'water_approval_application_details.id')
+            ->rightjoin('water_second_consumers', 'water_second_consumers.apply_connection_id', 'water_approval_application_details.id')
             ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_approval_application_details.property_type_id')
             ->join('water_param_pipeline_types', 'water_param_pipeline_types.id', 'water_approval_application_details.pipeline_type_id')
             ->join('zone_masters', 'zone_masters.id', 'water_approval_application_details.zone_mstr_id')
