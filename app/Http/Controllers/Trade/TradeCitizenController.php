@@ -1639,7 +1639,7 @@ class TradeCitizenController extends Controller
                 "email" => ($owners->whereNotNull("email_id")->first())->email_id ?? "test@gmail.com",
                 "phone" => ($owners->whereNotNull("mobile_no")->first())->mobile_no ?? "",
                 "amount" => $chargeData["total_charge"],
-                "firstname" => ($owners->whereNotNull("owner_name")->first())->owner_name ?? "No Name",
+                "firstname" => "No Name",
                 "frontSuccessUrl" => $request->frontSuccessUrl,
                 "frontFailUrl" => $request->frontFailUrl,
             ];
