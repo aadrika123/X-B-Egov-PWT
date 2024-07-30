@@ -2092,8 +2092,10 @@ class NewConnectionController extends Controller
         ];
 
         $req = new Request($refReq);
-        $refDocList = $mWfActiveDocument->getDocsByActiveId($req);
-        $ifPropDocUnverified = $refDocList->contains('verify_status', 0);
+        $refDocList = $mWfActiveDocument->getDocsByReqIds($req);
+        $ifPropDocUnverified = $refDocList->contains(function ($value, $key) {
+            return in_array($value['verify_status'], [0, 2]);
+        });
         if ($ifPropDocUnverified == true)
             return 0;
         else
