@@ -1925,25 +1925,28 @@ class NewConnectionController extends Controller
             $key                = $request->filterBy;
             $parameter          = $request->parameter;
             $pages              = $request->pages ?? 10;
-            $mWaterApplicant    = new WaterApplication();
+            $mWaterApplication    = new WaterApplication();
             $mWaterApplcationDetails = new WaterApprovalApplicationDetail();
             $connectionTypes    = Config::get('waterConstaint.CONNECTION_TYPE');
 
             switch ($key) {
-                case ("newConnection"):                                                                     // Static
-                    $returnData = $mWaterApplcationDetails->getDetailsByApplicationNo($request, $connectionTypes['NEW_CONNECTION'], $parameter)->paginate($pages);
+                case ("newConnection"):
+                    $returnData = $mWaterApplication->getDetailsByApplicationNo($request, $connectionTypes['NEW_CONNECTION'], $parameter)->paginate($pages);                                                                  // Static
+                    if ($returnData->total() == 0) {
+                        $returnData = $mWaterApplcationDetails->getDetailsByApplicationNo($request, $connectionTypes['NEW_CONNECTION'], $parameter)->paginate($pages);
+                    }
                     $checkVal = collect($returnData)->last();
                     if (!$checkVal || $checkVal == 0)
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("regularization"):                                                                    // Static
-                    $returnData = $mWaterApplicant->getDetailsByApplicationNo($request, $connectionTypes['REGULAIZATION'], $parameter)->paginate($pages);
+                    $returnData = $mWaterApplication->getDetailsByApplicationNo($request, $connectionTypes['REGULAIZATION'], $parameter)->paginate($pages);
                     $checkVal = collect($returnData)->last();
                     if (!$checkVal || $checkVal == 0)
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("name"):                                                                              // Static
-                    $returnData = $mWaterApplicant->getDetailsByParameters($request)
+                    $returnData = $mWaterApplication->getDetailsByParameters($request)
                         ->where("water_applicants.applicant_name", 'ILIKE', '%' . $parameter . '%')
                         ->paginate($pages);
                     $checkVal = collect($returnData)->last();
@@ -1951,7 +1954,7 @@ class NewConnectionController extends Controller
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("mobileNo"):                                                                          // Static
-                    $returnData = $mWaterApplicant->getDetailsByParameters($request)
+                    $returnData = $mWaterApplication->getDetailsByParameters($request)
                         ->where("water_applicants.mobile_no", $parameter)
                         ->paginate($pages);
                     $checkVal = collect($returnData)->last();
@@ -1959,7 +1962,7 @@ class NewConnectionController extends Controller
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("safNo"):                                                                             // Static
-                    $returnData = $mWaterApplicant->getDetailsByParameters($request)
+                    $returnData = $mWaterApplication->getDetailsByParameters($request)
                         ->where("water_approval_application_details.saf_no", 'LIKE', '%' . $parameter . '%')
                         ->paginate($pages);
                     $checkVal = collect($returnData)->last();
@@ -1967,7 +1970,7 @@ class NewConnectionController extends Controller
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ("holdingNo"):                                                                         // Static
-                    $returnData = $mWaterApplicant->getDetailsByParameters($request)
+                    $returnData = $mWaterApplication->getDetailsByParameters($request)
                         ->where("water_approval_application_details.holding_no", 'LIKE', '%' . $parameter . '%')
                         ->paginate($pages);
                     $checkVal = collect($returnData)->last();
