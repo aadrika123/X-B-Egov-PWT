@@ -852,8 +852,8 @@ class WaterSecondConsumer extends Model
             ->leftjoin('water_connection_charges', 'water_connection_charges.application_id', 'water_approval_application_details.id')
             ->join('water_consumer_owners','water_consumer_owners.consumer_id','water_second_consumers.id')
             ->leftjoin('water_consumer_meters','water_consumer_meters.consumer_id','water_second_consumers.id')
-            ->where('water_second_consumers.id', $request->applicationId) 
-            ->whereIn('water_second_consumers.status', [1, 2,4]);
+            ->where('water_second_consumers.id', $request->applicationId) ;
+            // ->whereIn('water_second_consumers.status', [1, 2,4]);
             // ->where('water_approval_application_details.status', true);
     }
 }
