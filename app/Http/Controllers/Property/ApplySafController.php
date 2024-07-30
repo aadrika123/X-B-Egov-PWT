@@ -354,6 +354,7 @@ class ApplySafController extends Controller
     {
         $request->validate([
             'propAddress' => 'required',
+            'propId'=>'required',
             'mobileNo' => 'required|digits:10|regex:/[0-9]{10}/',
             'ownerName' => 'required|string|max:255',
             'ward' => 'required',
@@ -376,6 +377,9 @@ class ApplySafController extends Controller
 
         try {
             // Fetch current date
+            $prop = $request->propId;
+            $property = new PropProperty();
+            $propDtl = $property->getPropById($prop);
             $mApplyDate = Carbon::now()->format("Y-m-d");
 
             // Authenticate user
@@ -439,7 +443,7 @@ class ApplySafController extends Controller
             }
             DB::beginTransaction();
             // Store SAF data
-            $createSaf = $saf->storeV1($request);
+            $createSaf = $saf->storeV1($request,$propDtl);
             $safId = $createSaf->original['safId'];
             $safNo = $createSaf->original['safNo'];
             $mOwner->owner_name = strtoupper($request->ownerName);
