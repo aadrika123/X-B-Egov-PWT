@@ -137,7 +137,7 @@ class WaterConsumerWfController extends Controller
 
             $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
                 ->whereIn('water_consumer_active_requests.current_role', $roleId)
-                // ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
+                ->where('water_consumer_active_requests.verify_status', 0)
                 ->where('water_consumer_active_requests.is_escalate', false)
                 ->where('water_consumer_active_requests.parked', false)
                 ->orderByDesc('water_consumer_active_requests.id')
@@ -178,6 +178,7 @@ class WaterConsumerWfController extends Controller
             $outboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
                 ->whereNotIn('water_consumer_active_requests.current_role', $roleId)
                 ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
+                // ->where('water_consumer_active_requests.verify_status', 1)
                 ->orderByDesc('water_consumer_active_requests.id')
                 ->get();
             return responseMsgs(true, "Successfully listed consumer req inbox details!",  remove_null($outboxDetails), "", "01", responseTime(), "POST", $req->deviceId);
