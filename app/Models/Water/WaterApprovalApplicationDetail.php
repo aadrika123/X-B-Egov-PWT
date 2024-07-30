@@ -151,7 +151,9 @@ class WaterApprovalApplicationDetail extends Model
             'wf_roles.role_name AS current_role_name',
             'water_connection_type_mstrs.connection_type',
             'water_connection_charges.amount',
-            "water_connection_charges.charge_category"
+            "water_connection_charges.charge_category",
+            "water_consumer_owners.applicant_name as owner_name",
+            "water_consumer_owners.guardian_name"
         )
             ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_approval_application_details.current_role')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_approval_application_details.ulb_id')
@@ -161,8 +163,9 @@ class WaterApprovalApplicationDetail extends Model
             ->join('water_param_pipeline_types', 'water_param_pipeline_types.id', 'water_approval_application_details.pipeline_type_id')
             ->join('zone_masters', 'zone_masters.id', 'water_approval_application_details.zone_mstr_id')
             ->join('water_connection_charges', 'water_connection_charges.application_id', 'water_approval_application_details.id')
+            ->join('water_consumer_owners','water_consumer_owners.application_id','water_approval_application_details.id')
             ->where('water_second_consumers.id', $request->applicationId)
-            ->whereIn('water_second_consumers.status', [1, 2, 3])
+            ->whereIn('water_second_consumers.status', [1, 2,])
             ->where('water_approval_application_details.status', true);
     }
 

@@ -72,4 +72,20 @@ class WaterConsumerOwner extends Model
         $waterConsumerOwner->save();
         return $waterConsumerOwner;
     }
+
+     /**
+     * |get consumer details 
+     */
+    public function getOwnerList($consumerId)
+    {
+        return WaterConsumerOwner::select(
+            'id',
+            'applicant_name',
+            'guardian_name',
+            'mobile_no',
+            'email'
+        )
+            ->where('consumer_id', $consumerId)
+            ->where('status', true);
+    }
 }
