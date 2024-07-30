@@ -500,4 +500,21 @@ class WfActiveDocument extends Model
         $metaReqs->save();
         return $metaReqs->active_id;
     }
+    /**
+     * | Get Uploaded documents
+     */
+    public function getDocsByReqIds($req)
+    {
+        return WfActiveDocument::where('active_id', $req->activeId)
+            ->select(
+                'doc_code',
+                'owner_dtl_id',
+                'verify_status'
+            )
+            ->where('workflow_id', $req->workflowId)
+            ->where('module_id', $req->moduleId)
+            // ->where('verify_status', '!=', 2)
+            ->where('status', 1)
+            ->get();
+    }
 }

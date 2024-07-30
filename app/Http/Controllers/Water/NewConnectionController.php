@@ -2092,8 +2092,10 @@ class NewConnectionController extends Controller
         ];
 
         $req = new Request($refReq);
-        $refDocList = $mWfActiveDocument->getDocsByActiveId($req);
-        $ifPropDocUnverified = $refDocList->contains('verify_status', 0);
+        $refDocList = $mWfActiveDocument->getDocsByReqIds($req);
+        $ifPropDocUnverified = $refDocList->contains(function ($value, $key) {
+            return in_array($value['verify_status'], [0, 2]);
+        });
         if ($ifPropDocUnverified == true)
             return 0;
         else
@@ -3260,7 +3262,7 @@ class NewConnectionController extends Controller
                 ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_approval_application_details.ward_id')
                 ->join('water_second_consumers', 'water_second_consumers.apply_connection_id', 'water_approval_application_details.id')
                 ->where("water_approval_application_details.user_id", $refUserId)
-                ->where("water_approval_application_details.status",true)
+                ->where("water_approval_application_details.status", true)
                 ->orderbydesc('water_approval_application_details.id')
                 ->get();
 
@@ -3390,13 +3392,14 @@ class NewConnectionController extends Controller
         try {
             $user = authUser($request);
             $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
-            $mWaterConnectionCharge  = new WaterConnectionCharge();
-            $mWaterApplication = new WaterApplication();
-            $mWaterApproveApplications   = new WaterApprovalApplicationDetail();
-            $mWaterApproveApplicants = new WaterApprovalApplicant();
-            $mWaterApplicant = new WaterApplicant();
-            $mWaterTran = new WaterTran();
-            $roleDetails = Config::get('waterConstaint.ROLE-LABEL');
+            $mWaterConnectionCharge          = new WaterConnectionCharge();
+            $mWaterApplication               = new WaterApplication();
+            $mWaterApproveApplications       = new WaterApprovalApplicationDetail();
+            $mWaterApproveApplicants         = new WaterApprovalApplicant();
+            $mWaterApplicant                 = new WaterApplicant();
+            $mWaterTran                      = new WaterTran();
+            $mWaterConsumerOwners            = new WaterConsumerOwner();
+            $roleDetails                     = Config::get('waterConstaint.ROLE-LABEL');
 
             # Application Details
             $applicationDetails['applicationDetails'] = $mWaterApproveApplications->fullWaterDetails($request)->first();
@@ -3413,7 +3416,7 @@ class NewConnectionController extends Controller
             $documentDetails['documentDetails'] = collect($document)['original']['data'];
 
             # owner details
-            $ownerDetails['ownerDetails'] = $mWaterApproveApplicants->getOwnerList($metaReqs['approveId'])->get();
+            $ownerDetails['ownerDetails'] = $mWaterConsumerOwners->getOwnerList($metaReqs['approveId'])->get();
 
             # Payment Details 
             $refAppDetails = collect($applicationDetails)->first();

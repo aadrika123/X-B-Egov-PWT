@@ -689,7 +689,7 @@ class HoldingTaxController extends Controller
     /**
      * | Property Payment History
      */
-    public function propPaymentHistoryv1(Request $req)
+    public function propPaymentHistory(Request $req)
     {
         $validated = Validator::make(
             $req->all(),
@@ -737,8 +737,92 @@ class HoldingTaxController extends Controller
         }
     }
 
-    // written by prity pandey
-    public function propPaymentHistory(Request $req)
+    /**
+     * | written by prity pandey all previous tran details function
+     */
+    
+    // public function propPaymentHistory(Request $req)
+    // {
+    //     $validated = Validator::make(
+    //         $req->all(),
+    //         ['propId' => 'required|digits_between:1,9223372036854775807']
+    //     );
+    //     if ($validated->fails()) {
+    //         return validationError($validated);
+    //     }
+
+    //     try {
+    //         $propId = $req->propId;
+
+    //         // Initialize the result array with empty collections
+    //         $result = [
+    //             'Holding' => collect(),
+    //             'Saf' => collect()
+    //         ];
+
+    //         // Get transactions and SAF details
+    //         $result = $this->getTransactionsAndSafDetails($propId, $result);
+
+    //         if ($result['Holding']->isEmpty() && $result['Saf']->isEmpty()) {
+    //             throw new Exception("No Transaction Found");
+    //         }
+
+    //         $result['Holding'] = $result['Holding']->sortByDesc('id')->values();
+    //         $result['Saf'] = $result['Saf']->sortByDesc('id')->values();
+
+    //         return responseMsgs(true, "", remove_null($result), "011606", "1.0", "", "POST", $req->deviceId ?? "");
+    //     } catch (Exception $e) {
+    //         return responseMsgs(false, $e->getMessage(), "", "011606", "1.0", "", "POST", $req->deviceId ?? "");
+    //     }
+    // }
+
+    // private function getTransactionsAndSafDetails($propId, $result)
+    // {
+    //     $mPropTrans = new PropTransaction();
+    //     $mPropProperty = new PropProperty();
+    //     $mSafs = new PropSaf();
+
+    //     // Fetch property details to get the saf_id
+    //     $propertyDtls = $mPropProperty->getSafByPropId($propId);
+    //     if (!$propertyDtls) {
+    //         throw new Exception("Property Not Found");
+    //     }
+
+    //     // Get saf_id from property details
+    //     $safId = $propertyDtls->saf_id;
+
+    //     // Get transactions using the property_id
+    //     $propTrans = $mPropTrans->getPropTransactions($propId, 'property_id');
+    //     if ($propTrans && !$propTrans->isEmpty()) {
+    //         $propTrans->map(function ($propTran) {
+    //             $propTran['tran_date'] = Carbon::parse($propTran->tran_date)->format('d-m-Y');
+    //         });
+    //         $result['Holding'] = $result['Holding']->concat($propTrans);
+    //     }
+
+    //     // Get SAF transactions using the saf_id
+    //     if (!is_null($safId)) {
+    //         $safTrans = $mPropTrans->getPropTransactions($safId, 'saf_id');
+    //         if ($safTrans && !$safTrans->isEmpty()) {
+    //             $safTrans->map(function ($safTran) {
+    //                 $safTran['tran_date'] = Carbon::parse($safTran->tran_date)->format('d-m-Y');
+    //             });
+    //             $result['Saf'] = $result['Saf']->concat($safTrans);
+    //         }
+    //     }
+
+    //     // Get SAF details to check for previous_holding_id
+    //     $msafDetail = $mSafs->getBasicDetails($safId);
+
+    //     if ($msafDetail && $msafDetail->previous_holding_id) {
+    //         // Recursive call with previous_holding_id
+    //         $result = $this->getTransactionsAndSafDetails($msafDetail->previous_holding_id, $result);
+    //     }
+
+    //     return $result;
+    // }
+
+    public function propPaymentHistoryv4(Request $req)
     {
         $validated = Validator::make(
             $req->all(),
@@ -749,78 +833,47 @@ class HoldingTaxController extends Controller
         }
 
         try {
-            $propId = $req->propId;
+            $mPropTrans = new PropTransaction();
+            $mPropProperty = new PropProperty();
+            $mSafs = new PropSaf();
+            $transactions = array();
 
-            // Initialize the result array with empty collections
-            $result = [
-                'Holding' => collect(),
-                'Saf' => collect()
-            ];
+            $propertyDtls = $mPropProperty->getSafByPropId($req->propId);
+            if (!$propertyDtls)
+                throw new Exception("Property Not Found");
 
-            // Get transactions and SAF details
-            $result = $this->getTransactionsAndSafDetails($propId, $result);
-
-            if ($result['Holding']->isEmpty() && $result['Saf']->isEmpty()) {
+            $propTrans = $mPropTrans->getPropTransactions($req->propId, 'property_id');         // Holding Payment History
+            if (!$propTrans || $propTrans->isEmpty())
                 throw new Exception("No Transaction Found");
+
+            $propTrans->map(function ($propTran) {
+                $propTran['tran_date'] = Carbon::parse($propTran->tran_date)->format('d-m-Y');
+            });
+
+            $propSafId = $propertyDtls->saf_id;
+
+            if (is_null($propSafId))
+                $safTrans = array();
+            else {
+                $safTrans = $mPropTrans->getPropTransactions($propSafId, 'saf_id');                 // Saf payment History
+                $safTrans->map(function ($safTran) {
+                    $safTran['tran_date'] = Carbon::parse($safTran->tran_date)->format('d-m-Y');
+                });
             }
+            $msafDetail = $mSafs->getBasicDetails($propSafId);
+            if ($msafDetail && $msafDetail->previous_holding_id) {
+                $previousHoldingId = $msafDetail->previous_holding_id;
+                $propTransPrevious = $mPropTrans->getPropTransactions($previousHoldingId, 'property_id');
+                $transactions['PreviousHolding'] = collect($propTransPrevious)->sortByDesc('id')->values();
+            }
+            $transactions['Holding'] = collect($propTrans)->sortByDesc('id')->values();
+            $transactions['Saf'] = collect($safTrans)->sortByDesc('id')->values();
 
-            $result['Holding'] = $result['Holding']->sortByDesc('id')->values();
-            $result['Saf'] = $result['Saf']->sortByDesc('id')->values();
-
-            return responseMsgs(true, "", remove_null($result), "011606", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "", remove_null($transactions), "011606", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011606", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
-
-    private function getTransactionsAndSafDetails($propId, $result)
-    {
-        $mPropTrans = new PropTransaction();
-        $mPropProperty = new PropProperty();
-        $mSafs = new PropSaf();
-
-        // Fetch property details to get the saf_id
-        $propertyDtls = $mPropProperty->getSafByPropId($propId);
-        if (!$propertyDtls) {
-            throw new Exception("Property Not Found");
-        }
-
-        // Get saf_id from property details
-        $safId = $propertyDtls->saf_id;
-
-        // Get transactions using the property_id
-        $propTrans = $mPropTrans->getPropTransactions($propId, 'property_id');
-        if ($propTrans && !$propTrans->isEmpty()) {
-            $propTrans->map(function ($propTran) {
-                $propTran['tran_date'] = Carbon::parse($propTran->tran_date)->format('d-m-Y');
-            });
-            $result['Holding'] = $result['Holding']->concat($propTrans);
-        }
-
-        // Get SAF transactions using the saf_id
-        if (!is_null($safId)) {
-            $safTrans = $mPropTrans->getPropTransactions($safId, 'saf_id');
-            if ($safTrans && !$safTrans->isEmpty()) {
-                $safTrans->map(function ($safTran) {
-                    $safTran['tran_date'] = Carbon::parse($safTran->tran_date)->format('d-m-Y');
-                });
-                $result['Saf'] = $result['Saf']->concat($safTrans);
-            }
-        }
-
-        // Get SAF details to check for previous_holding_id
-        $msafDetail = $mSafs->getBasicDetails($safId);
-
-        if ($msafDetail && $msafDetail->previous_holding_id) {
-            // Recursive call with previous_holding_id
-            $result = $this->getTransactionsAndSafDetails($msafDetail->previous_holding_id, $result);
-        }
-
-        return $result;
-    }
-
-
-
 
 
 
