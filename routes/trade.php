@@ -170,7 +170,7 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         Route::post('ward-list', 'WardList');
         Route::post('tc-list', 'TcList');
     });
-    
+
     #-----------mdm-------------------------------------
     Route::controller(TradeController::class)->group(function () {
         // Route::post('firm-type-add', 'addFirmType');
@@ -212,4 +212,8 @@ Route::controller(TradeApplication::class)->group(function () {
     Route::get('license-certificate/{id}', 'licenceCertificate');
     Route::post('application/list-direct', 'readApplicationv1');
     Route::post('application/dtl-by-id-direct', 'getLicenceDtlv1');
+});
+
+Route::controller(TradeCitizenController::class)->group(function () {
+    Route::post('application/citizen-by-id-direct', 'readCitizenLicenceDtl');
 });
