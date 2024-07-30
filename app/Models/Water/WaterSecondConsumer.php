@@ -772,4 +772,5 @@ class WaterSecondConsumer extends Model
                 'tab_size' => $checkExist->tab_size
             ]);
     }
+   
 }
