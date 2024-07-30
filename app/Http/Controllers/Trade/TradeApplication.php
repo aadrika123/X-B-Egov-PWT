@@ -493,6 +493,19 @@ class TradeApplication extends Controller
         }
         return $this->_REPOSITORY->readApplication($request);
     }
+
+    public function readApplicationv1(Request $request)
+    {
+        $rules = [
+            "entityValue"   =>  "required",
+            "entityName"    =>  "required",
+        ];
+        $validator = Validator::make($request->all(), $rules,);
+        if ($validator->fails()) {
+            return responseMsg(false, $validator->errors(), "");
+        }
+        return $this->_REPOSITORY->readApplicationv1($request);
+    }
     public function workflowDashordDetails(Request $request)
     {
         try {
