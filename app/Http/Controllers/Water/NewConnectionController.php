@@ -3399,10 +3399,11 @@ class NewConnectionController extends Controller
             $mWaterApplicant                 = new WaterApplicant();
             $mWaterTran                      = new WaterTran();
             $mWaterConsumerOwners            = new WaterConsumerOwner();
+            $mWaterSecondConsumer            = new WaterSecondConsumer();
             $roleDetails                     = Config::get('waterConstaint.ROLE-LABEL');
 
             # Application Details
-           $applicationDetails['applicationDetails'] = $mWaterApproveApplications->fullWaterDetails($request)->first();
+           $applicationDetails['applicationDetails'] = $mWaterSecondConsumer->fullWaterDetailsV1($request)->first();
             $applicationId = $applicationDetails['applicationDetails']->applicationId;
             # Document Details
             $metaReqs = [

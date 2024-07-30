@@ -806,4 +806,54 @@ class WaterSecondConsumer extends Model
                 'ulb_ward_masters.ward_name'
             );
     }
+    /**
+     * |get details of applications which is partiallly make consumer
+     * | before it payments
+     */
+    public function fullWaterDetailsV1($request)
+    {
+        return  self::select(
+            'water_second_consumers.id',
+            'water_approval_application_details.id as applicationId',
+            'water_second_consumers.mobile_no',
+            'water_second_consumers.tab_size',
+            'water_second_consumers.property_no',
+            'water_approval_application_details.status',
+            'water_second_consumers.payment_status',
+            'water_approval_application_details.user_type',
+            'water_second_consumers.application_apply_date as apply_date',
+            'water_approval_application_details.landmark',
+            'water_approval_application_details.address',
+            'water_approval_application_details.category',
+            'water_approval_application_details.application_no',
+            'water_approval_application_details.ward_no',
+            'water_approval_application_details.pin',
+            'water_approval_application_details.doc_upload_status',
+            'water_property_type_mstrs.property_type',
+            'water_param_pipeline_types.pipeline_type',
+            'zone_masters.zone_name',
+            'ulb_masters.ulb_name',
+            'water_connection_type_mstrs.connection_type',
+            // 'wf_roles.role_name AS current_role_name',
+            'water_connection_charges.amount',
+            "water_connection_charges.charge_category",
+            "water_consumer_owners.applicant_name as owner_name",
+            "water_consumer_owners.guardian_name",
+            "water_consumer_meters.connection_type",
+            "water_consumer_meters.meter_no"
+        )
+            // ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_approval_application_details.current_role')
+            ->join('ulb_masters', 'ulb_masters.id', '=', 'water_second_consumers.ulb_id')
+            ->leftjoin('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_second_consumers.connection_type_id')
+            ->leftjoin('water_approval_application_details', 'water_approval_application_details.id', 'water_second_consumers.apply_connection_id')
+            ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_second_consumers.property_type_id')
+            ->leftjoin('water_param_pipeline_types', 'water_param_pipeline_types.id', 'water_second_consumers.pipeline_type_id')
+            ->leftjoin('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
+            ->leftjoin('water_connection_charges', 'water_connection_charges.application_id', 'water_approval_application_details.id')
+            ->join('water_consumer_owners','water_consumer_owners.consumer_id','water_second_consumers.id')
+            ->leftjoin('water_consumer_meters','water_consumer_meters.consumer_id','water_second_consumers.id')
+            ->where('water_second_consumers.id', $request->applicationId) 
+            ->whereIn('water_second_consumers.status', [1, 2,4]);
+            // ->where('water_approval_application_details.status', true);
+    }
 }
