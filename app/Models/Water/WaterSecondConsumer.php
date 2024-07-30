@@ -772,4 +772,38 @@ class WaterSecondConsumer extends Model
                 'tab_size' => $checkExist->tab_size
             ]);
     }
+    /** 
+     * | Get consumer by consumer id
+     */
+    public function getConsumerByIds($consumerIds)
+    {
+        return self::select(
+            'water_second_consumers.id',
+            'water_second_consumers.consumer_no',
+            'water_second_consumers.ward_mstr_id',
+            'water_second_consumers.address',
+            'water_second_consumers.holding_no',
+            'water_second_consumers.saf_no',
+            'water_second_consumers.ulb_id',
+            'ulb_ward_masters.ward_name',
+            DB::raw("string_agg(water_consumer_owners.applicant_name,',') as applicant_name"),
+            DB::raw("string_agg(water_consumer_owners.mobile_no::VARCHAR,',') as mobile_no"),
+            DB::raw("string_agg(water_consumer_owners.guardian_name,',') as guardian_name"),
+        )
+            ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_second_consumers.id')
+            ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
+            ->whereIn("water_second_consumers.id", $consumerIds)
+            ->where('water_second_consumers.status', 1)
+            ->groupBy(
+                'water_second_consumers.saf_no',
+                'water_second_consumers.holding_no',
+                'water_second_consumers.address',
+                'water_second_consumers.id',
+                'water_second_consumers.ulb_id',
+                'water_consumer_owners.consumer_id',
+                'water_second_consumers.consumer_no',
+                'water_second_consumers.ward_mstr_id',
+                'ulb_ward_masters.ward_name'
+            );
+    }
 }

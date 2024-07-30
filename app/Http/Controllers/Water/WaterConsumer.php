@@ -1065,7 +1065,7 @@ class WaterConsumer extends Controller
     public function viewCaretakenConnection(Request $request)
     {
         try {
-            $mWaterWaterConsumer        = new WaterWaterConsumer();
+            $mWaterWaterConsumer        = new WaterSecondConsumer();
             $mActiveCitizenUndercare    = new ActiveCitizenUndercare();
 
             $connectionDetails = $mActiveCitizenUndercare->getDetailsByCitizenId();

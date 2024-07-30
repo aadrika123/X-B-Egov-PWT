@@ -1908,7 +1908,7 @@ class NewConnectionController extends Controller
      * | @param request
         | Serial No :  
      */
-    public function getActiveApplictaions(Request $request)
+    public function getAprroveApplictaions(Request $request)
     {
         $validated = Validator::make(
             $request->all(),
@@ -1930,11 +1930,8 @@ class NewConnectionController extends Controller
             $connectionTypes    = Config::get('waterConstaint.CONNECTION_TYPE');
 
             switch ($key) {
-                case ("newConnection"):
-                    $returnData = $mWaterApplication->getDetailsByApplicationNo($request, $connectionTypes['NEW_CONNECTION'], $parameter)->paginate($pages);                                                                  // Static
-                    if ($returnData->total() == 0) {
-                        $returnData = $mWaterApplcationDetails->getDetailsByApplicationNo($request, $connectionTypes['NEW_CONNECTION'], $parameter)->paginate($pages);
-                    }
+                case ("newConnection"):                                                                     // Static
+                    $returnData = $mWaterApplcationDetails->getDetailsByApplicationNo($request, $connectionTypes['NEW_CONNECTION'], $parameter)->paginate($pages);
                     $checkVal = collect($returnData)->last();
                     if (!$checkVal || $checkVal == 0)
                         throw new Exception("Data according to " . $key . " not Found!");
@@ -3405,7 +3402,7 @@ class NewConnectionController extends Controller
             $roleDetails                     = Config::get('waterConstaint.ROLE-LABEL');
 
             # Application Details
-            $applicationDetails['applicationDetails'] = $mWaterApproveApplications->fullWaterDetails($request)->first();
+           $applicationDetails['applicationDetails'] = $mWaterApproveApplications->fullWaterDetails($request)->first();
             $applicationId = $applicationDetails['applicationDetails']->applicationId;
             # Document Details
             $metaReqs = [
@@ -3534,6 +3531,84 @@ class NewConnectionController extends Controller
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Search the Active Application 
+     * | @param request
+        | Serial No :  
+     */
+    public function getAppliedApplictaions(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'filterBy'  => 'required|in:newConnection,regularization,name,mobileNo,safNo,holdingNo',
+                'parameter' => $request->filterBy == 'mobileNo' ? 'required|numeric|digits:10' : "required",
+                'pages'     => 'nullable|integer',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        try {
+            // return $request->all();
+            $key                = $request->filterBy;
+            $parameter          = $request->parameter;
+            $pages              = $request->pages ?? 10;
+            $mWaterApplication    = new WaterApplication();
+            $mWaterApplcationDetails = new WaterApprovalApplicationDetail();
+            $connectionTypes    = Config::get('waterConstaint.CONNECTION_TYPE');
+
+            switch ($key) {
+                case ("newConnection"):                                                                     // Static
+                    $returnData = $mWaterApplication->getDetailsByApplicationNo($request, $connectionTypes['NEW_CONNECTION'], $parameter)->paginate($pages);
+                    $checkVal = collect($returnData)->last();
+                    if (!$checkVal || $checkVal == 0)
+                        throw new Exception("Data according to " . $key . " not Found!");
+                    break;
+                case ("regularization"):                                                                    // Static
+                    $returnData = $mWaterApplication->getDetailsByApplicationNo($request, $connectionTypes['REGULAIZATION'], $parameter)->paginate($pages);
+                    $checkVal = collect($returnData)->last();
+                    if (!$checkVal || $checkVal == 0)
+                        throw new Exception("Data according to " . $key . " not Found!");
+                    break;
+                case ("name"):                                                                              // Static
+                    $returnData = $mWaterApplication->getDetailsByParameters($request)
+                        ->where("water_applicants.applicant_name", 'ILIKE', '%' . $parameter . '%')
+                        ->paginate($pages);
+                    $checkVal = collect($returnData)->last();
+                    if (!$checkVal || $checkVal == 0)
+                        throw new Exception("Data according to " . $key . " not Found!");
+                    break;
+                case ("mobileNo"):                                                                          // Static
+                    $returnData = $mWaterApplication->getDetailsByParameters($request)
+                        ->where("water_applicants.mobile_no", $parameter)
+                        ->paginate($pages);
+                    $checkVal = collect($returnData)->last();
+                    if (!$checkVal || $checkVal == 0)
+                        throw new Exception("Data according to " . $key . " not Found!");
+                    break;
+                case ("safNo"):                                                                             // Static
+                    $returnData = $mWaterApplication->getDetailsByParameters($request)
+                        ->where("water_approval_application_details.saf_no", 'LIKE', '%' . $parameter . '%')
+                        ->paginate($pages);
+                    $checkVal = collect($returnData)->last();
+                    if (!$checkVal || $checkVal == 0)
+                        throw new Exception("Data according to " . $key . " not Found!");
+                    break;
+                case ("holdingNo"):                                                                         // Static
+                    $returnData = $mWaterApplication->getDetailsByParameters($request)
+                        ->where("water_approval_application_details.holding_no", 'LIKE', '%' . $parameter . '%')
+                        ->paginate($pages);
+                    $checkVal = collect($returnData)->last();
+                    if (!$checkVal || $checkVal == 0)
+                        throw new Exception("Data according to " . $key . " not Found!");
+                    break;
+            }
+            return responseMsgs(true, "List of Appication!", $returnData, "", "01", "723 ms", "POST", "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
         }
     }
 }
