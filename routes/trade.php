@@ -48,7 +48,6 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         Route::post('application/document-verify', 'documentVerify');
 
         Route::post('application/dtl-by-id', 'getLicenceDtl');
-        Route::post('application/dtl-by-id-direct', 'getLicenceDtl');
 
         Route::post('notice/details', "getDenialDetails");
 
@@ -212,4 +211,5 @@ Route::controller(TradeApplication::class)->group(function () {
     Route::get('provisional-certificate/{id}', 'provisionalCertificate');
     Route::get('license-certificate/{id}', 'licenceCertificate');
     Route::post('application/list-direct', 'readApplicationv1');
+    Route::post('application/dtl-by-id-direct', 'getLicenceDtl');
 });
