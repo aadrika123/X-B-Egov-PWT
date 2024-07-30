@@ -55,7 +55,6 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         Route::post('application/search-for-renew', 'searchLicence');
 
         Route::post('application/list', 'readApplication');
-        Route::post('application/list-direct', 'readApplicationv1');
 
         Route::post('application/escalate', 'postEscalate');
 
@@ -212,4 +211,5 @@ Route::controller(TradeApplication::class)->group(function () {
     Route::get('payment-receipt/{id}/{transectionId}', 'paymentReceipt');
     Route::get('provisional-certificate/{id}', 'provisionalCertificate');
     Route::get('license-certificate/{id}', 'licenceCertificate');
+    Route::post('application/list-direct', 'readApplicationv1');
 });
