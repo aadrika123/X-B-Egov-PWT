@@ -76,6 +76,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
 
     //wrtitten by prity pandey
     Route::post('saf/apply-by-tc', 'applySafTc'); 
+    Route::post('saf/apply-by-tc-reassesment', 'applySafTcReassesment');
     Route::post('saf/apply-by-tc-detail', 'applySafTcDetail'); 
     Route::post('saf/consumer-verify', 'verifyConsumer');
     Route::post('saf/license-verify', 'verifyLicense');
