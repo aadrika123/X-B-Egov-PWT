@@ -1122,7 +1122,7 @@ class WaterConsumerWfController extends Controller
         }
     }
 
-    /**
+    /** 
      * |---------------------------- List of the doc to upload For Je ----------------------------|
      * | Calling function
      * | 01.01
@@ -1134,15 +1134,14 @@ class WaterConsumerWfController extends Controller
         $mRefReqDocs    = new RefRequiredDocument();
         $moduleId       = Config::get('module-constants.WATER_MODULE_ID');
         $refUserType    = Config::get('waterConstaint.REF_USER_TYPE');
-
-        $type = ["INSPECTION_REPORT", "QUALITY_REPORT",];
-
-        // Check if user_type is not equal to 1
-        // if ($user->user_type == $refUserType['1']) {
-        //     // Modify $type array for user_type not equal to 1
-        //     $type = ["STAMP", "ID_PROOF"];
-        // }
-
+        $type = [];
+        if ($application->charge_catagory_id == 10) {
+            $type = ["INSPECTION_REPORT"];
+        }elseif($application->charge_catagory_id == 11){
+            $type = ["PRESSURE REPORT"];
+        }elseif($application->charge_catagory_id == 12){
+            $type = ["QUALITY_REPORT"];
+        }
         return $mRefReqDocs->getCollectiveDocByCode($moduleId, $type);
     }
     /**
