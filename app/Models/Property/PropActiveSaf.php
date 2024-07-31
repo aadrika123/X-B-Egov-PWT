@@ -146,7 +146,8 @@ class  PropActiveSaf extends PropParamModel #Model
             'is_other_doc' => $req->isOthersDoc,
             'is_measurement_doc' => $req->isMeasurementDoc,
             'is_photo_doc' => $req->isPhotoDoc,
-            'is_id_proof_doc' => $req->isIdProofDoc
+            'is_id_proof_doc' => $req->isIdProofDoc,
+            'application_date' =>  Carbon::now()->format('Y-m-d'),
 
         ];
         $propActiveSafs = PropActiveSaf::create($reqs);                 // SAF No is Created Using Observer
@@ -190,6 +191,7 @@ class  PropActiveSaf extends PropParamModel #Model
             'is_photo_doc' => $req->isPhotoDoc,
             'is_id_proof_doc' => $req->isIdProofDoc,
             'has_previous_holding_no' => $req->hasPreviousHoldingNo ?? $propDtl->has_previous_holding_no,
+            'application_date' =>  Carbon::now()->format('Y-m-d'),
             'previous_holding_id' => $req->previousHoldingId ?? $propDtl->previous_holding_id,
             'previous_ward_mstr_id' => $req->previousWard ?? $propDtl->previous_ward_mstr_id,
             'is_owner_changed' => $req->isOwnerChanged ?? $propDtl->is_owner_changed,
