@@ -1138,7 +1138,7 @@ class WaterConsumerWfController extends Controller
         if ($application->charge_catagory_id == 10) {
             $type = ["INSPECTION_REPORT"];
         }elseif($application->charge_catagory_id == 11){
-            $type = ["PRESSURE COMPLAIN"];
+            $type = ["PRESSURE REPORT"];
         }elseif($application->charge_catagory_id == 12){
             $type = ["QUALITY_REPORT"];
         }
