@@ -912,6 +912,9 @@ class WaterConsumer extends Controller
         $refUserType                    = Config::get('waterConstaint.REF_USER_TYPE');
 
         $refConsumerDetails = $mWaterSecondConsumer->getConsumerDetails($consumerId)->first();
+        if($refConsumerDetails->status == 4){
+            throw new Exception ('Please paid Your Connection Fee First');
+        }
         if ($request->requestType == 2) {
             $pendingDemand      = $mWaterConsumerDemand->getConsumerDemand($consumerId);
             $firstPendingDemand = collect($pendingDemand)->first();

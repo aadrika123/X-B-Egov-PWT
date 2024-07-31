@@ -436,8 +436,11 @@ class WaterSecondConsumer extends Model
      */
     public function getConsumerDetails($applicationId)
     {
-        return WaterSecondConsumer::where('id', $applicationId)
-            ->where('status', 1);
+        return WaterSecondConsumer::select(
+            'water_second_consumers.status'
+        )
+            ->where('id', $applicationId)
+            ->whereIn('status', [1, 4]);
     }
     /**
      * | Dectivate the water Consumer 
@@ -851,10 +854,10 @@ class WaterSecondConsumer extends Model
             ->leftjoin('water_param_pipeline_types', 'water_param_pipeline_types.id', 'water_second_consumers.pipeline_type_id')
             ->leftjoin('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
             ->leftjoin('water_connection_charges', 'water_connection_charges.application_id', 'water_approval_application_details.id')
-            ->join('water_consumer_owners','water_consumer_owners.consumer_id','water_second_consumers.id')
-            ->leftjoin('water_consumer_meters','water_consumer_meters.consumer_id','water_second_consumers.id')
-            ->where('water_second_consumers.id', $request->applicationId) ;
-            // ->whereIn('water_second_consumers.status', [1, 2,4]);
-            // ->where('water_approval_application_details.status', true);
+            ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_second_consumers.id')
+            ->leftjoin('water_consumer_meters', 'water_consumer_meters.consumer_id', 'water_second_consumers.id')
+            ->where('water_second_consumers.id', $request->applicationId);
+        // ->whereIn('water_second_consumers.status', [1, 2,4]);
+        // ->where('water_approval_application_details.status', true);
     }
 }
