@@ -820,7 +820,7 @@ class WaterSecondConsumer extends Model
             'water_approval_application_details.id as applicationId',
             'water_second_consumers.mobile_no',
             'water_second_consumers.tab_size',
-            'water_second_consumers.property_no',
+            'water_approval_application_details.property_no',
             'water_approval_application_details.status',
             'water_second_consumers.payment_status',
             'water_approval_application_details.user_type',
