@@ -236,7 +236,7 @@ class  PropActiveSaf extends PropParamModel #Model
             'doc_verify_cancel_remarks' => $req->docVerifyCancelRemark ?? $propDtl->doc_verify_cancel_remarks,
             'assessment_type' => $req->assessmentType,
             'saf_distributed_dtl_id' => $req->safDistributedDtl ?? $propDtl->saf_distributed_dtl_id,
-            'prop_dtl_id' => $req->propDtl ?? $propDtl->prop_dtl_id,
+            'prop_dtl_id' => $propDtl->id,
             'prop_state' => $req->propState ?? $propDtl->prop_state,
             'corr_state' => $req->corrState ?? $propDtl->corr_state,
             'ip_address' => getClientIpAddress(),
