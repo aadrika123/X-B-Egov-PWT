@@ -747,15 +747,16 @@ class WaterConsumer extends Controller
             $refWorkflow                    = Config::get('workflow-constants.WATER_DISCONNECTION');
             $refConParamId                  = Config::get('waterConstaint.PARAM_IDS');
             $confModuleId                   = Config::get('module-constants.WATER_MODULE_ID');
-            
+
             # Check the condition for deactivation
             $refDetails = $this->PreConsumerDeactivationCheck($request, $user);
             $ulbId      = $request->ulbId ?? $refDetails['consumerDetails']['ulb_id'];
 
             # Get initiater and finisher
-            if ($request->requestType == 10) {
-                $refWorkflow = 41;                                                               // static for water Complain workflow
+            if ($request->requestType == 10 || $request->requestType == 11) {                // static for water Complain workflow
+                $refWorkflow = 41; 
             }
+
             $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($refWorkflow, $ulbId);
             if (!$ulbWorkflowId) {
                 throw new Exception("Respective Ulb is not maped to Water Workflow!");
