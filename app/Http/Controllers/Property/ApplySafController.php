@@ -261,7 +261,8 @@ class ApplySafController extends Controller
             'isMeasurementDoc' => 'nullable|boolean',
             'isPhotoDoc' => 'nullable|boolean',
             'isIdProofDoc' => 'nullable|boolean',
-            'plotArea'=>'nullable'
+            'plotArea'=>'nullable',
+            'apartmentId' => 'nullable',
         ]);
 
         try {

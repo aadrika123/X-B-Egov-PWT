@@ -148,7 +148,8 @@ class  PropActiveSaf extends PropParamModel #Model
             'is_photo_doc' => $req->isPhotoDoc,
             'is_id_proof_doc' => $req->isIdProofDoc,
             'application_date' =>  Carbon::now()->format('Y-m-d'),
-            'area_of_plot' => $req->plotArea ??null
+            'area_of_plot' => $req->plotArea ??null,
+            'apartment_details_id' => $req->apartmentId ??null
 
         ];
         $propActiveSafs = PropActiveSaf::create($reqs);                 // SAF No is Created Using Observer
