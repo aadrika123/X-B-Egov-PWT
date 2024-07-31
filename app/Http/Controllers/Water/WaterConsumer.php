@@ -2431,7 +2431,7 @@ class WaterConsumer extends Controller
             $request->all(),
             [
                 'consumerId'         => 'required|integer',
-                'mobile_no'          => 'nullable|digits:10|regex:/[0-9]{10}/',
+                'mobile_no'          => 'nullable|',            // 'nullable|digits:10|regex:/[0-9]{10}/',
                 'email'              => 'nullable|',
                 'applicant_name'     => 'nullable|',
                 'guardian_name'      => 'nullable|',
