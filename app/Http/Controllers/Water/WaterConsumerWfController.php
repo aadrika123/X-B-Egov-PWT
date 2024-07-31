@@ -171,13 +171,14 @@ class WaterConsumerWfController extends Controller
             $ulbId                  = $user->ulb_id;
             $mWfWorkflowRoleMaps    = new WfWorkflowrolemap();
 
-            $occupiedWards  = $this->getWardByUserId($userId)->pluck('ward_id');
-            $roleId         = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
-            $workflowIds    = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
-
+            $workflowRoles = $this->getRoleIdByUserId($userId);
+            $roleId = $workflowRoles->map(function ($value) {                         // Get user Workflow Roles
+                return $value->wf_role_id;
+            });
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
             $outboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
                 ->whereNotIn('water_consumer_active_requests.current_role', $roleId)
-                ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
+                // ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
                 // ->where('water_consumer_active_requests.verify_status', 1)
                 ->orderByDesc('water_consumer_active_requests.id')
                 ->get();
