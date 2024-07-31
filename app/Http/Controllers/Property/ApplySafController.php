@@ -366,7 +366,7 @@ class ApplySafController extends Controller
             'isWaterHarvesting' => 'nullable|bool',
             'harvestingDate' => 'nullable|date',
             'harvestingDate' => 'nullable|date',
-            'apartmentId'=>'nullable',
+            'apartmentId' => 'nullable',
             'isApplicationFormDoc' => 'nullable|boolean',
             'isSaleDeedDoc' => 'nullable|boolean',
             'isLayoutSactionMapDoc' => 'nullable|boolean',
@@ -402,8 +402,6 @@ class ApplySafController extends Controller
 
             // Initialize models
             $saf = new PropActiveSaf();
-            $mOwner = new PropActiveSafsOwner();
-            $mfloor = new  PropActiveSafsFloor();
 
             // Fetch workflow details
             $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
@@ -463,11 +461,12 @@ class ApplySafController extends Controller
             // $mOwner->saf_id = $safId;
 
             foreach ($ownerDtl as $ownerfirstdtl) {
+                $mOwner = new PropActiveSafsOwner();
                 $mOwner->owner_name = $ownerfirstdtl->owner_name;
                 $mOwner->saf_id = $safId;
                 $mOwner->guardian_name = $ownerfirstdtl->guardian_name;
                 $mOwner->relation_type = $ownerfirstdtl->relation_type;
-                $mOwner->mobile_no = $request->mobileNo??$ownerfirstdtl->mobile_no;
+                $mOwner->mobile_no = $request->mobileNo ?? $ownerfirstdtl->mobile_no;
                 $mOwner->email = $ownerfirstdtl->email;
                 $mOwner->pan_no = $ownerfirstdtl->pan_no;
                 $mOwner->aadhar_no = $ownerfirstdtl->aadhar_no;
@@ -476,9 +475,10 @@ class ApplySafController extends Controller
                 $mOwner->prop_owner_id = $ownerfirstdtl->id;
                 $mOwner->save();
             }
-            
+
 
             foreach ($flrDtl as $floorFirstDtl) {
+                $mfloor = new  PropActiveSafsFloor();
                 $mfloor->saf_id = $safId;
                 $mfloor->floor_mstr_id = $floorFirstDtl->floor_mstr_id;
                 $mfloor->usage_type_mstr_id = $floorFirstDtl->usage_type_mstr_id;

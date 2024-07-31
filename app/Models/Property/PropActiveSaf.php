@@ -165,12 +165,12 @@ class  PropActiveSaf extends PropParamModel #Model
     {
         $reqs = ([
             'prop_address' => $req->propAddress ?? $propDtl->prop_address,
-            'user_id' => $req->userId ?? $propDtl->user_id,
-            'workflow_id' => $req->workflowId ?? $propDtl->workflow_id,
+            'user_id' => $req->userId ?? null,
+            'workflow_id' => $req->workflowId ?? null ,
             'ulb_id' => $req->ulbId ?? $propDtl->ulb_id,
-            'current_role' => $req->initiatorRoleId ?? $propDtl->current_role,
-            'initiator_role_id' => $req->initiatorRoleId ?? $propDtl->initiator_role_id,
-            'finisher_role_id' => $req->finisherRoleId ?? $propDtl->finisher_role_id,
+            'current_role' => $req->initiatorRoleId ?? null,
+            'initiator_role_id' => $req->initiatorRoleId ?? null,
+            'finisher_role_id' => $req->finisherRoleId ?? null,
             'citizen_id' => $req->citizenId ?? null,
             'ward_mstr_id' => $req->ward ?? $propDtl->ward_mstr_id,
             'assessment_type' => $req->assessmentType,
