@@ -461,7 +461,7 @@ class ApplySafController extends Controller
             // $mOwner->owner_name = strtoupper($request->ownerName);
             // $mOwner->mobile_no = $request->mobileNo ?? null;
             // $mOwner->saf_id = $safId;
-            
+
             foreach ($ownerDtl as $ownerfirstdtl) {
                 $mOwner->owner_name = $ownerfirstdtl->owner_name;
                 $mOwner->saf_id = $safId;
@@ -474,8 +474,9 @@ class ApplySafController extends Controller
                 $mOwner->gender = $ownerfirstdtl->gender;
                 $mOwner->dob = $ownerfirstdtl->dob;
                 $mOwner->prop_owner_id = $ownerfirstdtl->id;
+                $mOwner->save();
             }
-            $mOwner->save();
+            
 
             foreach ($flrDtl as $floorFirstDtl) {
                 $mfloor->saf_id = $safId;
@@ -490,8 +491,8 @@ class ApplySafController extends Controller
                 $mfloor->prop_floor_details_id = $floorFirstDtl->id;
                 $mfloor->old_floor_id = $floorFirstDtl->old_floor_id;
                 $mfloor->bifurcated_from_buildup_area = $floorFirstDtl->bifurcated_from_buildup_area;
+                $mfloor->save();
             }
-            $mfloor->save();
             $property->where('id', $prop)->update(['reassessment_applied' => 1]);
             // Send data to workflow
             $this->sendToWorkflow($createSaf, $user_id);
