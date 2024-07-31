@@ -3215,6 +3215,7 @@ class NewConnectionController extends Controller
 
             $connection = WaterApprovalApplicationDetail::select(
                 'water_second_consumers.id',
+                'water_second_consumers.consumer_no',
                 "water_approval_application_details.id as applicationId",
                 "water_approval_application_details.application_no",
                 "water_approval_application_details.property_type_id",
@@ -3403,7 +3404,7 @@ class NewConnectionController extends Controller
             $roleDetails                     = Config::get('waterConstaint.ROLE-LABEL');
 
             # Application Details
-           $applicationDetails['applicationDetails'] = $mWaterSecondConsumer->fullWaterDetailsV1($request)->first();
+            $applicationDetails['applicationDetails'] = $mWaterSecondConsumer->fullWaterDetailsV1($request)->first();
             $applicationId = $applicationDetails['applicationDetails']->applicationId;
             # Document Details
             $metaReqs = [

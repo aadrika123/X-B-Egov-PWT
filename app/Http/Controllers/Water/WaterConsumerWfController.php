@@ -361,7 +361,7 @@ class WaterConsumerWfController extends Controller
     public function consumerApprovalRejection(Request $request)
     {
         $request->validate([
-            "applicationId" => "required",
+            "applicationId" => "required",                          
             "status"        => "required",
             "comment"       => "required"
         ]);

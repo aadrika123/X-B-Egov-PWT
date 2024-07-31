@@ -506,7 +506,7 @@ class WaterSecondConsumer extends Model
     public function getConsumerById($consumerId)
     {
         return WaterSecondConsumer::where('id', $consumerId)
-            ->where('status', 1)
+            // ->where('status', 1)
             ->orderByDesc('id')
             ->first();
     }
