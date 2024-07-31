@@ -129,16 +129,24 @@ trait WaterTrait
      */
     public function getConsumerWfBaseQuerry($workflowIds, $ulbId)
     {
-        return WaterConsumerActiveRequest::select('water_consumer_active_requests.*')
+        return WaterConsumerActiveRequest::select(
+            'water_consumer_active_requests.id',
+            'wco.id as owner_id',
+            'water_consumer_active_requests.application_no',
+            'water_consumer_active_requests.apply_date',
+            'water_consumer_active_requests.charge_catagory_id',  
+            'wco.applicant_name as owner_name',
+            'water_second_consumers.consumer_no',
+        )
             ->leftjoin('water_consumer_owners AS wco', 'wco.consumer_id', 'water_consumer_active_requests.consumer_id')
-            ->leftjoin('ulb_ward_masters AS uwm', 'uwm.id', 'water_consumer_active_requests.ward_mstr_id')
+            ->leftjoin('ulb_ward_masters AS uwm', 'uwm.id', 'water_consumer_active_requests.ward_mstr_id')   
+            ->join('water_second_consumers','water_second_consumers.id','water_consumer_active_requests.consumer_id')
             // ->leftjoin('ulb_masters AS um', 'um.id', 'water_consumer_active_requests.ulb_id')
             ->where('water_consumer_active_requests.status', 1)
             // ->where('water_consumer_active_requests.payment_status', 1)
             // ->where('water_consumer_active_requests.ulb_id', $ulbId)
             ->whereIn('water_consumer_active_requests.workflow_id', $workflowIds);
     }
-
 
     /**
      * | Get the Consumer Request active appliation details for view 
