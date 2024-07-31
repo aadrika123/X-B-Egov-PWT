@@ -625,7 +625,7 @@ class WaterConsumerWfController extends Controller
                 'landmark'      => $request->landmark ?? $checkconsumer->landmark,
                 'document'      => $request->document,
                 'remarks'       => $checkExist->remarks,
-                'tapsize'       => $request->tapsize ?? $checkconsumer->tab_size,
+                'tapsize'       => $request->tapsize ?? $checkExist->tab_size,
             ];
         }
 
