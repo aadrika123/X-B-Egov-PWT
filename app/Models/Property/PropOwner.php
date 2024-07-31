@@ -101,7 +101,7 @@ class PropOwner extends PropParamModel #Model
      */
     public function getPropOwners($propId)
     {
-        return PropOwner::where('prop_owners.saf_id', $propId)
+        return PropOwner::where('prop_owners.property_id', $propId)
             ->select(
                 'prop_owners.id',
                 'prop_owners.owner_name as ownerName',

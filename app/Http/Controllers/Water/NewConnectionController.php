@@ -3051,7 +3051,7 @@ class NewConnectionController extends Controller
             #Fecth All Documents 
             $documents = $mWfActiveDocument->getPropDocsByAppNo($safID, $workflowId, $moduleId);
             #get owner details 
-            $holdingOwnerDeails = $mPropOwner->getPropOwners($safID);
+            $holdingOwnerDeails = $mPropOwner->getPropOwners($holdingDetails->id);
 
             # meter Details 
             $refMeterData = $mWaterConsumerMeter->getMeterDetailsByConsumerIdV2($refConsumerId)->first();
