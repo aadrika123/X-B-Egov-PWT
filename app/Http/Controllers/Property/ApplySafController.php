@@ -455,7 +455,7 @@ class ApplySafController extends Controller
             }
             DB::beginTransaction();
             // Store SAF data
-            $createSaf = $saf->storeV1($request, $propDtl);
+            $createSaf = $saf->storeReassessment($request, $propDtl);
             $safId = $createSaf->original['safId'];
             $safNo = $createSaf->original['safNo'];
             // $mOwner->owner_name = strtoupper($request->ownerName);

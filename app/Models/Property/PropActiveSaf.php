@@ -118,7 +118,49 @@ class  PropActiveSaf extends PropParamModel #Model
         ]);
     }
 
-    public function storeV1($req, $propDtl)
+    public function storeV1($req)
+    {
+        $reqs = [
+            'prop_address' => $req->propAddress,
+            'user_id' => $req->userId,
+            'workflow_id' => $req->workflowId,
+            'ulb_id' => $req->ulbId,
+            'current_role' => $req->initiatorRoleId,
+            'initiator_role_id' => $req->initiatorRoleId,
+            'finisher_role_id' => $req->finisherRoleId,
+            'citizen_id' => $req->citizenId ?? null,
+            'ward_mstr_id' => $req->ward,
+            'assessment_type' => $req->assessmentType,
+            'zone_mstr_id' => $req->zone,
+            "water_conn_no" => $req->consumerNo ?? null,
+            "trade_license_no" => $req->licenseNo ?? null,
+            "prop_type_mstr_id" => $req->propertyType,
+            "is_water_harvesting" => $req->isWaterHarvesting,
+            'rwh_date_from' => $req->harvestingDate ?? null,
+            'applied_by' => $req->appliedBy,
+            'is_application_form_doc' => $req->isApplicationFormDoc,
+            'is_sale_deed_doc' => $req->isSaleDeedDoc,
+            'is_layout_section_map_doc' => $req->isLayoutSactionMapDoc,
+            'is_na_order_doc' => $req->isNaOrderDoc,
+            'is_namuna_doc' => $req->isNamunaDDoc,
+            'is_other_doc' => $req->isOthersDoc,
+            'is_measurement_doc' => $req->isMeasurementDoc,
+            'is_photo_doc' => $req->isPhotoDoc,
+            'is_id_proof_doc' => $req->isIdProofDoc
+
+        ];
+        $propActiveSafs = PropActiveSaf::create($reqs);                 // SAF No is Created Using Observer
+        return response()->json([
+            'safId' => $propActiveSafs->id,
+            'safNo' => $propActiveSafs->saf_no,
+            'workflow_id' => $propActiveSafs->workflow_id,
+            'current_role' => $propActiveSafs->current_role,
+            'ulb_id' => $propActiveSafs->ulb_id,
+
+        ]);
+    }
+
+    public function storeReassessment($req, $propDtl)
     {
         $reqs = ([
             'prop_address' => $req->propAddress ?? $propDtl->prop_address,
@@ -224,6 +266,7 @@ class  PropActiveSaf extends PropParamModel #Model
 
         ]);
     }
+
 
     /**
      * | Store GB Saf
