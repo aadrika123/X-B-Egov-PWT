@@ -491,6 +491,7 @@ class ApplySafController extends Controller
                 $mfloor->bifurcated_from_buildup_area = $floorFirstDtl->bifurcated_from_buildup_area;
             }
             $mfloor->save();
+            $property->where('id', $prop)->update(['reassessment_applied' => 1]);
             // Send data to workflow
             $this->sendToWorkflow($createSaf, $user_id);
             DB::commit();
