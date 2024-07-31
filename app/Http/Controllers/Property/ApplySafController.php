@@ -466,7 +466,7 @@ class ApplySafController extends Controller
                 $mOwner->saf_id = $safId;
                 $mOwner->guardian_name = $ownerfirstdtl->guardian_name;
                 $mOwner->relation_type = $ownerfirstdtl->relation_type;
-                $mOwner->mobile_no = $ownerfirstdtl->mobile_no;
+                $mOwner->mobile_no = $request->mobileNo??$ownerfirstdtl->mobile_no;
                 $mOwner->email = $ownerfirstdtl->email;
                 $mOwner->pan_no = $ownerfirstdtl->pan_no;
                 $mOwner->aadhar_no = $ownerfirstdtl->aadhar_no;
