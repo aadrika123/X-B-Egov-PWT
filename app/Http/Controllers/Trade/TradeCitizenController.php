@@ -1710,6 +1710,7 @@ class TradeCitizenController extends Controller
             ]);
             $respnse = $this->_REPOSITORY_TRADE->paymentCounter($request);
             $tranId = $respnse->original["data"]["transactionId"];
+            $request->merge(["tranId"=>$tranId]);
             // dd(TradeTransaction::find($tranId),$request->all());
             $this->_TradeEasebuzzPayResponse->request_id = $requestData->id;
             $this->_TradeEasebuzzPayResponse->temp_id = $requestData->temp_id;
