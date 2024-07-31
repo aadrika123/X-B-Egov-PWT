@@ -21,6 +21,7 @@ use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropFloor;
+use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafsDemand;
@@ -251,15 +252,15 @@ class ApplySafController extends Controller
             'propertyType' => 'required|int',
             'isWaterHarvesting' => 'nullable|bool',
             'harvestingDate' => 'nullable|date',
-            'isApplicationFormDoc'=>'nullable|boolean',
-            'isSaleDeedDoc'=>'nullable|boolean',
-            'isLayoutSactionMapDoc'=>'nullable|boolean',
-            'isNaOrderDoc'=>'nullable|boolean',
-            'isNamunaDDoc'=>'nullable|boolean',
-            'isOthersDoc'=>'nullable|boolean',
-            'isMeasurementDoc'=>'nullable|boolean',
-            'isPhotoDoc'=>'nullable|boolean',
-            'isIdProofDoc'=>'nullable|boolean'
+            'isApplicationFormDoc' => 'nullable|boolean',
+            'isSaleDeedDoc' => 'nullable|boolean',
+            'isLayoutSactionMapDoc' => 'nullable|boolean',
+            'isNaOrderDoc' => 'nullable|boolean',
+            'isNamunaDDoc' => 'nullable|boolean',
+            'isOthersDoc' => 'nullable|boolean',
+            'isMeasurementDoc' => 'nullable|boolean',
+            'isPhotoDoc' => 'nullable|boolean',
+            'isIdProofDoc' => 'nullable|boolean'
         ]);
 
         try {
@@ -354,7 +355,7 @@ class ApplySafController extends Controller
     {
         $request->validate([
             'propAddress' => 'required',
-            'propId'=>'required',
+            'propId' => 'required',
             'mobileNo' => 'required|digits:10|regex:/[0-9]{10}/',
             'ownerName' => 'required|string|max:255',
             'ward' => 'required',
@@ -364,15 +365,17 @@ class ApplySafController extends Controller
             'propertyType' => 'required|int',
             'isWaterHarvesting' => 'nullable|bool',
             'harvestingDate' => 'nullable|date',
-            'isApplicationFormDoc'=>'nullable|boolean',
-            'isSaleDeedDoc'=>'nullable|boolean',
-            'isLayoutSactionMapDoc'=>'nullable|boolean',
-            'isNaOrderDoc'=>'nullable|boolean',
-            'isNamunaDDoc'=>'nullable|boolean',
-            'isOthersDoc'=>'nullable|boolean',
-            'isMeasurementDoc'=>'nullable|boolean',
-            'isPhotoDoc'=>'nullable|boolean',
-            'isIdProofDoc'=>'nullable|boolean'
+            'harvestingDate' => 'nullable|date',
+            'apartmentId'=>'nullable',
+            'isApplicationFormDoc' => 'nullable|boolean',
+            'isSaleDeedDoc' => 'nullable|boolean',
+            'isLayoutSactionMapDoc' => 'nullable|boolean',
+            'isNaOrderDoc' => 'nullable|boolean',
+            'isNamunaDDoc' => 'nullable|boolean',
+            'isOthersDoc' => 'nullable|boolean',
+            'isMeasurementDoc' => 'nullable|boolean',
+            'isPhotoDoc' => 'nullable|boolean',
+            'isIdProofDoc' => 'nullable|boolean'
         ]);
 
         try {
@@ -381,6 +384,14 @@ class ApplySafController extends Controller
             $property = new PropProperty();
             $propDtl = $property->getPropById($prop);
             $mApplyDate = Carbon::now()->format("Y-m-d");
+
+            $ownr = new PropOwner();
+            $ownerDtl = $ownr->getOwnersByPropId($prop);
+
+            $flr = new PropFloor();
+            $flrDtl = $flr->getPropFloors($prop);
+
+
 
             // Authenticate user
             $user = authUser($request);
@@ -392,6 +403,7 @@ class ApplySafController extends Controller
             // Initialize models
             $saf = new PropActiveSaf();
             $mOwner = new PropActiveSafsOwner();
+            $mfloor = new  PropActiveSafsFloor();
 
             // Fetch workflow details
             $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
@@ -443,13 +455,42 @@ class ApplySafController extends Controller
             }
             DB::beginTransaction();
             // Store SAF data
-            $createSaf = $saf->storeV1($request,$propDtl);
+            $createSaf = $saf->storeV1($request, $propDtl);
             $safId = $createSaf->original['safId'];
             $safNo = $createSaf->original['safNo'];
-            $mOwner->owner_name = strtoupper($request->ownerName);
-            $mOwner->mobile_no = $request->mobileNo ?? null;
-            $mOwner->saf_id = $safId;
+            // $mOwner->owner_name = strtoupper($request->ownerName);
+            // $mOwner->mobile_no = $request->mobileNo ?? null;
+            // $mOwner->saf_id = $safId;
+            foreach ($ownerDtl as $ownerfirstdtl) {
+                $mOwner->owner_name = $ownerfirstdtl->owner_name;
+                $mOwner->saf_id = $safId;
+                $mOwner->guardian_name = $ownerfirstdtl->guardian_name;
+                $mOwner->relation_type = $ownerfirstdtl->relation_type;
+                $mOwner->mobile_no = $ownerfirstdtl->mobile_no;
+                $mOwner->email = $ownerfirstdtl->email;
+                $mOwner->pan_no = $ownerfirstdtl->pan_no;
+                $mOwner->aadhar_no = $ownerfirstdtl->aadhar_no;
+                $mOwner->gender = $ownerfirstdtl->gender;
+                $mOwner->dob = $ownerfirstdtl->dob;
+                $mOwner->prop_owner_id = $ownerfirstdtl->id;
+            }
             $mOwner->save();
+
+            foreach ($flrDtl as $floorFirstDtl) {
+                $mfloor->saf_id = $safId;
+                $mfloor->floor_mstr_id = $floorFirstDtl->floor_mstr_id;
+                $mfloor->usage_type_mstr_id = $floorFirstDtl->usage_type_mstr_id;
+                $mfloor->const_type_mstr_id = $floorFirstDtl->const_type_mstr_id;
+                $mfloor->occupancy_type_mstr_id = $floorFirstDtl->occupancy_type_mstr_id;
+                $mfloor->builtup_area = $floorFirstDtl->builtup_area;
+                $mfloor->date_from = $floorFirstDtl->date_from;
+                $mfloor->date_upto = $floorFirstDtl->date_upto;
+                $mfloor->carpet_area = $floorFirstDtl->carpet_area;
+                $mfloor->prop_floor_details_id = $floorFirstDtl->id;
+                $mfloor->old_floor_id = $floorFirstDtl->old_floor_id;
+                $mfloor->bifurcated_from_buildup_area = $floorFirstDtl->bifurcated_from_buildup_area;
+            }
+            $mfloor->save();
             // Send data to workflow
             $this->sendToWorkflow($createSaf, $user_id);
             DB::commit();
@@ -521,7 +562,7 @@ class ApplySafController extends Controller
                 if (!$waterDetail) {
                     throw new Exception("Consumer number does not exist.");
                 }
-            } 
+            }
             return responseMsgs(true, "Consumer details retrieved successfully.", $waterDetail, "010102", "1.0", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010102", "1.0", responseTime(), "POST", $request->deviceId);
@@ -544,7 +585,7 @@ class ApplySafController extends Controller
                     throw new Exception("License number does not exist.");
                 }
             }
-            
+
             return responseMsgs(true, "License details retrieved successfully.", $tradeDetail, "010102", "1.0", responseTime(), "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010102", "1.0", responseTime(), "POST", $request->deviceId);
