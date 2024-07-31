@@ -1634,6 +1634,7 @@ class TradeCitizenController extends Controller
             $chargeData = $chargeData->original["data"];
             $data = [
                 "userId" => $user && $user->getTable() == "users" ? $user->id : null,
+                "applicationId"=>$application->id,
                 "applicationNo" => $application->application_no,
                 "moduleId" => $this->_MODULE_ID,
                 "email" => ($owners->whereNotNull("email_id")->first())->email_id ?? "test@gmail.com",
