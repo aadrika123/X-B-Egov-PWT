@@ -192,7 +192,7 @@ class  PropActiveSaf extends PropParamModel #Model
             'is_id_proof_doc' => $req->isIdProofDoc,
             'has_previous_holding_no' => $req->hasPreviousHoldingNo ?? $propDtl->has_previous_holding_no,
             'application_date' =>  Carbon::now()->format('Y-m-d'),
-            'previous_holding_id' => $req->previousHoldingId ?? $propDtl->previous_holding_id,
+            'previous_holding_id' => $propDtl->id,
             'previous_ward_mstr_id' => $req->previousWard ?? $propDtl->previous_ward_mstr_id,
             'is_owner_changed' => $req->isOwnerChanged ?? $propDtl->is_owner_changed,
             'transfer_mode_mstr_id' => $req->transferModeId ?? null,
