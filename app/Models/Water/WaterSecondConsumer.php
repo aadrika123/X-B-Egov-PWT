@@ -437,7 +437,7 @@ class WaterSecondConsumer extends Model
     public function getConsumerDetails($applicationId)
     {
         return WaterSecondConsumer::select(
-            'water_second_consumers.status'
+            'water_second_consumers.*'
         )
             ->where('id', $applicationId)
             ->whereIn('status', [1, 4]);
