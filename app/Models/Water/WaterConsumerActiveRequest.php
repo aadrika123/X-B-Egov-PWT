@@ -271,7 +271,7 @@ class WaterConsumerActiveRequest extends Model
     {
         return WaterConsumerActiveRequest::where('id', $applicationId)
             ->where('status', 1)
-            // ->where('verify_status', 0)
+            ->where('verify_status', 0)
             ->orderByDesc('id')
             ->first();
     }
