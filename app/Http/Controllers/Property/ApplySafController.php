@@ -461,6 +461,7 @@ class ApplySafController extends Controller
             // $mOwner->owner_name = strtoupper($request->ownerName);
             // $mOwner->mobile_no = $request->mobileNo ?? null;
             // $mOwner->saf_id = $safId;
+            
             foreach ($ownerDtl as $ownerfirstdtl) {
                 $mOwner->owner_name = $ownerfirstdtl->owner_name;
                 $mOwner->saf_id = $safId;
