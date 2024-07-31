@@ -137,6 +137,7 @@ trait WaterTrait
             'water_consumer_active_requests.charge_catagory_id',  
             'wco.applicant_name as owner_name',
             'water_second_consumers.consumer_no',
+            'water_consumer_active_requests.workflow_id'
         )
             ->leftjoin('water_consumer_owners AS wco', 'wco.consumer_id', 'water_consumer_active_requests.consumer_id')
             ->leftjoin('ulb_ward_masters AS uwm', 'uwm.id', 'water_consumer_active_requests.ward_mstr_id')   
