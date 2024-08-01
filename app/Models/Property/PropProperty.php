@@ -92,8 +92,8 @@ class PropProperty extends  PropParamModel #Model
             ->select(
                 'prop_properties.*',
                 DB::raw("REPLACE(prop_properties.holding_type, '_', ' ') AS holding_type"),
-                DB::raw("CASE WHEN TRIM(applicant_name) <> '' THEN applicant_name ELSE applicant_marathi END AS ref_applicant_name"),
-                'applicant_marathi as applicant_name',
+                // DB::raw("CASE WHEN TRIM(applicant_name) <> '' THEN applicant_name ELSE applicant_marathi END AS ref_applicant_name"),
+                // 'applicant_marathi as applicant_name',
                 'prop_properties.status as active_status',
                 'prop_properties.assessment_type as assessment',
                 'w.ward_name as ward_no',
@@ -104,11 +104,11 @@ class PropProperty extends  PropParamModel #Model
                 'a.apt_code as apartment_code',
                 'z.zone_name',
                 'cat.category AS categoryType',
-                DB::raw("string_agg(prop_owners.owner_name, ', ') as owner_name"),
-                DB::raw("string_agg(prop_owners.owner_name_marathi, ', ') as owner_names_marathi"),
+                DB::raw("string_agg(DISTINCT prop_owners.owner_name, ', ') as owner_name"),
+                DB::raw("string_agg(DISTINCT prop_owners.owner_name_marathi, ', ') as owner_names_marathi"),
                 DB::raw("SUM(prop_demands.total_tax) as total_tax")
             )
-            ->leftJoin('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
+            ->Join('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
             ->leftJoin('ulb_ward_masters as w', 'w.id', '=', 'prop_properties.ward_mstr_id')
             ->leftJoin('ref_prop_ownership_types as o', 'o.id', '=', 'prop_properties.ownership_type_mstr_id')
             ->leftJoin('ref_prop_types', 'ref_prop_types.id', '=', 'prop_properties.prop_type_mstr_id')
