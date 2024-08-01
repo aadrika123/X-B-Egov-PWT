@@ -1019,7 +1019,7 @@ class PropProperty extends  PropParamModel #Model
                 'p.area_of_plot',
                 'p.building_name',
                 "p.saf_id",
-
+                "p.khata_no",
                 'z.zone_name',
                 'o.owner_name as eng_owner_name',
                 'o.owner_name_marathi as owner_name',

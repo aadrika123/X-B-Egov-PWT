@@ -367,6 +367,7 @@ class GeneratePaymentReceiptV2
             "isArrearReceipt" => $this->_isArrearReceipt,
             "bookNo" => $this->_trans->book_no ?? "",
             "plot_no" => $this->_propertyDtls->plot_no ?? "",
+            "khata_no" => $this->_propertyDtls->khata_no ?? "",
             "area_of_plot" => $this->_propertyDtls->area_of_plot ?? "",
             "building_name" => $this->_propertyDtls->building_name ?? "",
 
