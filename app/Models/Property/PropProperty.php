@@ -92,8 +92,8 @@ class PropProperty extends  PropParamModel #Model
             ->select(
                 'prop_properties.*',
                 DB::raw("REPLACE(prop_properties.holding_type, '_', ' ') AS holding_type"),
-                // DB::raw("CASE WHEN TRIM(applicant_name) <> '' THEN applicant_name ELSE applicant_marathi END AS ref_applicant_name"),
-                // 'applicant_marathi as applicant_name',
+                DB::raw("CASE WHEN TRIM(applicant_name) <> '' THEN applicant_name ELSE applicant_marathi END AS ref_applicant_name"),
+                'applicant_marathi as applicant_name',
                 'prop_properties.status as active_status',
                 'prop_properties.assessment_type as assessment',
                 'w.ward_name as ward_no',
