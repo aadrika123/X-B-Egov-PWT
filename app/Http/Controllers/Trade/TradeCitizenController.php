@@ -1637,7 +1637,7 @@ class TradeCitizenController extends Controller
                 "applicationNo" => $application->application_no,
                 "moduleId" => $this->_MODULE_ID,
                 "email" => ($owners->whereNotNull("email_id")->first())->email_id ?? "test@gmail.com",
-                "phone" => ($owners->whereNotNull("mobile_no")->first())->mobile_no ?? "",
+                "phone" => ($owners->whereNotNull("mobile_no")->first())->mobile_no ?? "0123456789",
                 "amount" => $chargeData["total_charge"],
                 "firstname" => "No Name",
                 "frontSuccessUrl" => $request->frontSuccessUrl,
