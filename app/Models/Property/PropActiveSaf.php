@@ -148,6 +148,8 @@ class  PropActiveSaf extends PropParamModel #Model
             'is_photo_doc' => $req->isPhotoDoc,
             'is_id_proof_doc' => $req->isIdProofDoc,
             'application_date' =>  Carbon::now()->format('Y-m-d'),
+            'area_of_plot' => $req->plotArea ??null,
+            'apartment_details_id' => $req->apartmentId ??null
 
         ];
         $propActiveSafs = PropActiveSaf::create($reqs);                 // SAF No is Created Using Observer
@@ -212,7 +214,7 @@ class  PropActiveSaf extends PropParamModel #Model
             'plot_no' => $req->plotNo ?? $propDtl->plot_no,
             'village_mauja_name' => $req->villageMaujaName ?? $propDtl->village_mauja_name,
             'road_type_mstr_id' => $req->roadWidthType ?? $propDtl->road_type_mstr_id,
-            'area_of_plot' => $req->areaOfPlot ?? $propDtl->area_of_plot,
+            'area_of_plot' => $req->plotArea ?? $propDtl->area_of_plot,
             'prop_city' => $req->propCity ?? $propDtl->prop_city,
             'prop_dist' => $req->propDist ?? $propDtl->prop_dist,
             'prop_pin_code' => $req->propPinCode ?? $propDtl->prop_pin_code,

@@ -1634,6 +1634,7 @@ class TradeCitizenController extends Controller
             $chargeData = $chargeData->original["data"];
             $data = [
                 "userId" => $user && $user->getTable() == "users" ? $user->id : null,
+                "applicationId"=>$application->id,
                 "applicationNo" => $application->application_no,
                 "moduleId" => $this->_MODULE_ID,
                 "email" => ($owners->whereNotNull("email_id")->first())->email_id ?? "test@gmail.com",
@@ -1709,6 +1710,7 @@ class TradeCitizenController extends Controller
             ]);
             $respnse = $this->_REPOSITORY_TRADE->paymentCounter($request);
             $tranId = $respnse->original["data"]["transactionId"];
+            $request->merge(["tranId"=>$tranId]);
             // dd(TradeTransaction::find($tranId),$request->all());
             $this->_TradeEasebuzzPayResponse->request_id = $requestData->id;
             $this->_TradeEasebuzzPayResponse->temp_id = $requestData->temp_id;

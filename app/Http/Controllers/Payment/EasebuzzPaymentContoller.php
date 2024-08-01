@@ -43,7 +43,8 @@ class EasebuzzPaymentContoller extends Controller
         $this->_EasebuzzPaymentResponse->tran_amt = $request->amount;
         $this->_EasebuzzPaymentResponse->hash_val = $request->hash;
         $this->_EasebuzzPaymentResponse->response_json = json_encode($request->all(),JSON_UNESCAPED_UNICODE);
-        // $this->_EasebuzzPaymentResponse->save();        
+        $this->_EasebuzzPaymentResponse->save();  
+        $requestData ? $requestData->payment_status = (strtolower($request->status)=='success' ? 1 : 2) :"";       
         $refData = [
             "callBack"          => $requestData ? ($requestData->front_success_url  ? $requestData->front_success_url : Config::get("payment-constants.FRONT_URL")): Config::get("payment-constants.FRONT_URL") ,
             "UniqueRefNumber"   => $req_ref_no?? "",
@@ -69,8 +70,6 @@ class EasebuzzPaymentContoller extends Controller
                         break;
                 
             }
-            
-            // dd($newRequest->all(),$requestExtraData, $refData);
             return view('icici_payment_call_back', $refData);
         }
         $erroData = [
