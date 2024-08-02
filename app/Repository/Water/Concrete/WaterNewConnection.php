@@ -1307,15 +1307,15 @@ class WaterNewConnection implements IWaterNewConnection
             // $type=["PROPERTY TAX"];
         }
         $doc = WaterParamDocumentType::select(
-            "document_name",
-            DB::raw("CASE WHEN doc_for ='OTHER' THEN 0 
+            "doc_for",
+            DB::raw("CASE WHEN status = 0 THEN 0 
             ELSE 1 END AS is_mandatory")
         )
-            ->whereIn("document_name", $type)
-            ->where("status", 1)
+            ->whereIn("doc_for", $type)
+            // ->where("status", 1)
             ->groupBy(
-                "document_name",
-                "doc_for"
+                "doc_for",
+                "status"
                 )
             ->get();
         return $doc;

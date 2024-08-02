@@ -1335,8 +1335,8 @@ class NewConnectionController extends Controller
             foreach ($requiedDocType as $val) {
                 $doc = (array) null;
                 $doc["ownerName"] = $ownerList;
-                $doc['docName'] = $val->document_name;
-                $refDocName  = str_replace('_', ' ', $val->document_name);
+                $doc['docName'] = $val->doc_for;
+                $refDocName  = str_replace('_', ' ', $val->doc_for);
                 $doc["refDocName"] = ucwords(strtolower($refDocName));
                 $doc['isMadatory'] = $val->is_mandatory;
                 $ref['docValue'] = $refWaterNewConnection->getDocumentList($val->doc_for);  # get All Related Document List
