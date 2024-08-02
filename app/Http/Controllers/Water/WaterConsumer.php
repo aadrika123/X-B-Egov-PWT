@@ -754,7 +754,7 @@ class WaterConsumer extends Controller
 
             # Get initiater and finisher
             if ($request->requestType == 10 || $request->requestType == 11) {                // static for water Complain workflow
-                $refWorkflow = 41; 
+                $refWorkflow = 41;
             }
 
             $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($refWorkflow, $ulbId);
@@ -912,8 +912,8 @@ class WaterConsumer extends Controller
         $refUserType                    = Config::get('waterConstaint.REF_USER_TYPE');
 
         $refConsumerDetails = $mWaterSecondConsumer->getConsumerDetails($consumerId)->first();
-        if($refConsumerDetails->status == 4){
-            throw new Exception ('Please paid Your Connection Fee First');
+        if ($refConsumerDetails->status == 4) {
+            throw new Exception('Please paid Your Connection Fee First');
         }
         if ($request->requestType == 2) {
             $pendingDemand      = $mWaterConsumerDemand->getConsumerDemand($consumerId);
@@ -3251,6 +3251,107 @@ class WaterConsumer extends Controller
         } catch (Exception $e) {
             $this->rollback();
             dd($e->getMessage());
+        }
+    }
+
+    /**
+     * |consumer Demand Due Report
+     * | Arshad 
+     */
+    public function consumeDemandDuesReport(Request $request)
+    {
+        $now = Carbon::now()->format("Y-m-d");
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "fromDate" => "nullable|date|before_or_equal:$now|date_format:Y-m-d",
+                "uptoDate" => "nullable|date|before_or_equal:$now|date_format:Y-m-d",
+                "userId" => "nullable|digits_between:1,9223372036854775807",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "zoneId" => "nullable|digits_between:1,9223372036854775807",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        if ($validated->fails()) {
+            return validationErrorV2($validated);
+        }
+
+        try {
+            $fromDate = $uptoDate = $now;
+            $userId = $wardId = $zoneId = null;
+            // $key = $request->key;
+
+            // if ($key) {
+            //     $fromDate = $uptoDate = null;
+            // }
+            if ($request->fromDate) {
+                $fromDate = $request->fromDate;
+            }
+            if ($request->uptoDate) {
+                $uptoDate = $request->uptoDate;
+            }
+            if ($request->wardId) {
+                $wardId = $request->wardId;
+            }
+            if ($request->zoneId) {
+                $zoneId = $request->zoneId;
+            }
+            if ($request->userId) {
+                $userId = $request->userId;
+            }
+            // Original query for detailed information
+            $data = waterConsumerDemand::select(
+                "water_consumer_demands.id",
+                "water_consumer_demands.consumer_id",
+                "water_second_consumers.consumer_no",
+                "water_second_consumers.folio_no as property_no",
+                "zone_masters.zone_name",
+                "ulb_ward_masters.ward_name",
+                "owners.applicant_name",
+                "owners.guardian_name",
+                "owners.mobile_no",
+                "water_second_consumers.category",
+                "water_property_type_mstrs.property_type",
+                "water_consumer_demands.amount"
+                // "users.name AS user_name",
+            )
+                // ->leftJoin("users", "users.id", "water_consumer_demands.emp_details_id")
+                ->join('water_second_consumers', 'water_second_consumers.id', 'water_consumer_demands.consumer_id')
+                ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
+                ->leftjoin('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
+                ->join('water_property_type_mstrs','water_property_type_mstrs.id','water_second_consumers.property_type_id')
+                ->Join('water_consumer_owners as owners', 'owners.id', 'water_consumer_demands.consumer_id')
+                ->where('water_consumer_demands.is_full_paid',false)
+                ->where('water_consumer_demands.amount',"<>",0);
+            if ($fromDate && $uptoDate) {
+                $data->where('demand_from', '>=', $fromDate)
+                    ->where('demand_upto', '<=', $uptoDate);
+            }
+            if ($userId) {
+                $data->where('water_consumer_demands.emp_details_id', $userId);
+            }
+            if ($wardId) {
+                $data->where('water_second_consumers.ward_mstr_id', $wardId);
+            }
+            if ($zoneId) {
+                $data->where('water_second_consumers.zone_mstr_id', $zoneId);
+            }
+
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $paginator = $data->paginate($perPage);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+                // "unpaid_consumers_count" => $unpaidConsumersCount
+            ];
+
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true, "", $list);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "");
         }
     }
 }
