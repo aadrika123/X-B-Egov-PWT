@@ -1316,8 +1316,6 @@ class NewConnectionController extends Controller
             if (!$refApplication) {
                 throw new Exception("Application Not Found!");
             }
-
-
             $connectionCharges = $mWaterConnectionCharge->getWaterchargesById($connectionId)
                 ->where('charge_category', '!=', "Site Inspection")                         # Static
                 ->first();
@@ -3581,6 +3579,82 @@ class NewConnectionController extends Controller
             return responseMsgs(true, "List of Appication!", $returnData, "", "01", "723 ms", "POST", "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", ".ms", "POST", $request->deviceId);
+        }
+    }
+
+
+    public function sendToLevel(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'applicationId'    => 'required|digits_between:1,9223372036854775807',
+            ]
+        );
+        if ($validated->fails()) {
+            return validationError($validated);
+        }
+
+        try {
+            $user                   = authUser($req);
+            $refUserId              = $user->id;
+            $refUlbId               = $user->ulb_id ?? 2;
+            $workflowID             = Config::get('workflow-constants.WATER_MASTER_ID');
+            $track                  = new WorkflowTrack();
+            $ulbWorkflowObj         = new WfWorkflow();
+            $mWaterApplication      = new WaterApplication();
+            $refApplyFrom           = Config::get('waterConstaint.APP_APPLY_FROM');
+            $refUserType            = Config::get('waterConstaint.REF_USER_TYPE');
+            # get initiater and finisher
+            $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($workflowID, $refUlbId);
+            if (!$ulbWorkflowId) {
+                throw new Exception("Respective Ulb is not maped to Water Workflow!");
+            }
+            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);
+            $refFinisherRoleId  = $this->getFinisherId($ulbWorkflowId->id);
+            $finisherRoleId     = DB::select($refFinisherRoleId);
+            $initiatorRoleId    = DB::select($refInitiatorRoleId);
+            if (!$finisherRoleId || !$initiatorRoleId) {
+                throw new Exception("initiatorRoleId or finisherRoleId not found for respective Workflow!");
+            }
+            #coonection charges 
+            $refRequest["initiatorRoleId"]   = collect($initiatorRoleId)->first()->role_id;
+            $refRequest["finisherRoleId"]    = collect($finisherRoleId)->first()->role_id;
+            $refRequest['roleId']            = $roleId ?? null;
+            $refRequest['userType']          = $user->user_type;
+
+            # Get the role details and distinguish btw user and employ
+            # If the user is not citizen
+            if ($user->user_type != $refUserType['1']) {
+                $req->merge(['workflowId' => $ulbWorkflowId->id]);
+                $roleDetails = $this->getRole($req);
+                if (!$roleDetails) {
+                    throw new Exception("Role detail Not found!");
+                }
+                $roleId = $roleDetails['wf_role_id'];
+                $refRequest = [
+                    "applyFrom" => $user->user_type,
+                    "empId"     => $user->id
+                ];
+            } else {
+                $refRequest = [
+                    "applyFrom" => $refApplyFrom['1'],
+                    "citizenId" => $user->id
+                ];
+            }
+
+            $this->begin();
+            #check Application 
+            $checkApplication = $mWaterApplication->getApplicationById($req->applicationId);
+            if(!$checkApplication){
+                throw new Exception('Application Not Found');
+            }
+            $updateCurrentRole = $mWaterApplication->updateCurrentRole($req);
+            $this->commit();
+            return responseMsg(true, "Successfully Saved!", "", "02", "", "POST", "");
+        } catch (Exception $e) {
+            $this->rollback();
+            return responseMsg(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "",);
         }
     }
 }

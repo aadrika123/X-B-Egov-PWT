@@ -1314,9 +1314,11 @@ class WaterNewConnection implements IWaterNewConnection
             ->whereIn("doc_for", $type)
             // ->where("status", 1)
             ->groupBy(
+                "id",
                 "doc_for",
                 "status"
                 )
+                ->orderBy('id', 'ASC')
             ->get();
         return $doc;
     }
