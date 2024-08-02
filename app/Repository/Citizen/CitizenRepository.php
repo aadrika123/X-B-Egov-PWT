@@ -205,32 +205,11 @@ class CitizenRepository implements iCitizenRepository
             ->get();
         $applications['concessions'] = $concessionApplications;
 
-        $objectionApplications = DB::table('prop_active_objections')
-            ->join('wf_roles as r', 'r.id', '=', 'prop_active_objections.current_role')
-            ->join('prop_properties as p', 'p.id', '=', 'prop_active_objections.property_id')
-            ->join('prop_owners', 'prop_owners.property_id', '=', 'p.id')
-            ->select(
-                'prop_active_objections.id as application_id',
-                'prop_active_objections.objection_no',
-                DB::raw("TO_CHAR(prop_active_objections.date, 'DD-MM-YYYY') as apply_date"),
-                'p.holding_no',
-                'p.new_holding_no',
-                'p.pt_no',
-                DB::raw("string_agg(prop_owners.owner_name,',') as applicant_name"),
-                'r.role_name as pending_at',
-                'prop_active_objections.workflow_id',
-                'prop_active_objections.objection_for'
-            )
-            ->where('prop_active_objections.citizen_id', $userId)
-            ->groupBy(
-                'prop_active_objections.id',
-                'objection_no',
-                'date',
-                'p.id',
-                'r.role_name',
-                'prop_active_objections.workflow_id',
-                'prop_active_objections.objection_for'
-            )
+        $objectionApplications = DB::table('prop_property_update_requests')
+            ->select('prop_property_update_requests.*','prop_owner_update_requests.owner_id','prop_owner_update_requests.owner_name','prop_owner_update_requests.guardian_name','prop_owner_update_requests.mobile_no','prop_owner_update_requests.email','prop_owner_update_requests.dob','prop_floors_update_requests.floor_id','prop_floors_update_requests.builtup_area','prop_floors_update_requests.carpet_area','prop_floors_update_requests.date_from','prop_floors_update_requests.date_upto')
+            ->leftjoin('prop_owner_update_requests','prop_owner_update_requests.request_id','=','prop_property_update_requests.id')
+            ->leftjoin('prop_floors_update_requests','prop_floors_update_requests.request_id','=','prop_property_update_requests.id')
+            ->where('prop_property_update_requests.citizen_id', $userId)
             ->get();
         $applications['objections'] = $objectionApplications;
 
