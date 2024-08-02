@@ -401,6 +401,7 @@ class PostPropPaymentV2
             ];
             $this->_REQ['paymentMode'] == $online_r ? $chequeReqs["status"]=1:null;
             $this->_REQ['paymentMode'] == "DD" ? $chequeReqs["status"]=1:null;
+            $this->_REQ['paymentMode'] == "NEFT" ? $chequeReqs["status"]=1:null;
             $mPropChequeDtl->postChequeDtl($chequeReqs);
         }
 
