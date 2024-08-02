@@ -1303,7 +1303,7 @@ class WaterNewConnection implements IWaterNewConnection
         // Check if user_type is not equal to 1
         if ($user->user_type == $refUserType['1']) {
             // Modify $type array for user_type not equal to 1
-            $type = ["AADHAR CARD", "PROPERTY TAX RECEIPT", "METER PURCHASE BILL", "PLUMBER LICENSE", "AMC FTTER REPORT", "PIPELINE MAP "];
+            $type = ["AADHAR CARD", "PROPERTY TAX RECEIPT", "METER PURCHASE BILL", "PLUMBER LICENSE", "AMC FTTER REPORT", "PIPELINE MAP"];
             // $type=["PROPERTY TAX"];
         }
 
