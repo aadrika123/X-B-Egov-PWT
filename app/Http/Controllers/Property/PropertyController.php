@@ -709,6 +709,7 @@ class PropertyController extends Controller
                 throw new Exception("Data Not Found");
             }
             $users = User::select("*")->where("id", $application->user_id)->first();
+            $approve = User::select("*")->where("id", $application->approved_by)->first();
             if (!$users) {
                 $citizen = ActiveCitizen::select("*")->where("id", $application->citizen_id)->first();
             }
@@ -720,6 +721,8 @@ class PropertyController extends Controller
                 "applicationDate" => $application->created_at ? Carbon::parse($application->created_at)->format("m-d-Y H:s:i A") : null,
                 "requestNo" => $application->request_no,
                 "updationType" => $application->is_full_update ? "Full Update" : "Basice Update",
+                "objectionFor"=>$application->objection_for,
+                "verifiedBy" =>$approve->name 
             ];
             if ($application->objection_for) {
                 $document = $this->getUploadedDocuments($request);
