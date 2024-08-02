@@ -33,8 +33,8 @@ return [
     ],
 
     "VERIFICATION_PAYMENT_MODES" => [           // The Verification payment modes which needs the verification
-        "CHEQUE",
-        "NEFT"
+        "CHEQUE"
+       # "NEFT"
     ],
 
 
