@@ -210,7 +210,7 @@ class CitizenRepository implements iCitizenRepository
             ->leftjoin('prop_owner_update_requests','prop_owner_update_requests.request_id','=','prop_property_update_requests.id')
             ->leftjoin('prop_floors_update_requests','prop_floors_update_requests.request_id','=','prop_property_update_requests.id')
             ->where('prop_property_update_requests.citizen_id', $userId)
-            ->where('prop_property_update_requests.pending_status',1)
+            //->where('prop_property_update_requests.pending_status',1)
             ->get();
         $applications['objections'] = $objectionApplications;
 
