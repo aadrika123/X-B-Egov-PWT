@@ -722,7 +722,7 @@ class PropertyController extends Controller
                 "requestNo" => $application->request_no,
                 "updationType" => $application->is_full_update ? "Full Update" : "Basice Update",
                 "objectionFor"=>$application->objection_for,
-                "verifiedBy" =>$approve->name 
+                "verifiedBy" =>$approve->name?? null
             ];
             if ($application->objection_for) {
                 $document = $this->getUploadedDocuments($request);
