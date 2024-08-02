@@ -180,7 +180,7 @@ class CashVerificationController extends Controller
             $data['Cash'] = collect($details)->where('payment_mode', '=', 'CASH')->sum('amount');
             $data['Cheque'] = collect($details)->where('payment_mode', '=', 'CHEQUE')->sum('amount');
             $data['DD'] = collect($details)->where('payment_mode', '=', 'DD')->sum('amount');
-            // $data['Neft'] = collect($details)->where('payment_mode', '=', 'Neft')->first()->amount;
+            $data['Neft'] = collect($details)->where('payment_mode', '=', 'NEFT')->sum('amount');
             // $data['RTGS'] = collect($details)->where('payment_mode', '=', 'RTGS')->first()->amount;
             $data['totalAmount'] =  $details->sum('amount');
             $data['numberOfTransaction'] =  $details->count();
