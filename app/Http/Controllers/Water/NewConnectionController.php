@@ -1360,39 +1360,9 @@ class NewConnectionController extends Controller
                 }
                 array_push($requiedDocs, $doc);
             }
-            // foreach ($refOwneres as $key => $val) {
-            //     $docRefList = ["ID_PROOF"];
-            //     foreach ($docRefList as $key => $refOwnerDoc) {
-            //         $doc = (array) null;
-            //         $testOwnersDoc[] = (array) null;
-            //         $doc["ownerId"] = $val->id;
-            //         $doc["ownerName"] = $val->applicant_name;
-            //         $doc["docName"]   = $refOwnerDoc;
-            //         $refDocName  = str_replace('_', ' ', $refOwnerDoc);
-            //         $doc["refDocName"] = ucwords(strtolower($refDocName));
-            //         $doc['isMadatory'] = 1;
-            //         $ref['docValue'] = $refWaterNewConnection->getDocumentList([$refOwnerDoc]);   #"CONSUMER_PHOTO"
-            //         $doc['docVal'] = $docFor = collect($ref['docValue'])->map(function ($value) {
-            //             $refDoc = $value['doc_name'];
-            //             $refText = str_replace('_', ' ', $refDoc);
-            //             $value['dispayName'] = ucwords(strtolower($refText));
-            //             return $value;
-            //         });
-            //         $refdocForId = collect($ref['docValue'])->map(function ($value, $key) {
-            //             return $value['doc_name'];
-            //         });
-            //         $doc['uploadDoc'] = [];
-            //         $uploadDoc = $refWfActiveDocument->getOwnerDocByRefIdsDocCode($refApplication->id, $refApplication->workflow_id, $moduleId, $refdocForId, $doc["ownerId"]); # Check Document is Uploaded Of That Type
-            //         if (isset($uploadDoc->first()->doc_path)) {
-            //             $path = $refWaterNewConnection->readDocumentPath($uploadDoc->first()->doc_path);
-            //             $doc["uploadDoc"]["doc_path"] = !empty(trim($uploadDoc->first()->doc_path)) ? $path : null;
-            //             $doc["uploadDoc"]["doc_code"] = $uploadDoc->first()->doc_code;
-            //             $doc["uploadDoc"]["verify_status"] = $uploadDoc->first()->verify_status;
-            //         }
-            //         array_push($testOwnersDoc, $doc);
-            //     }
-            // }
-            // $ownerDoc = collect($testOwnersDoc)->filter()->values();
+            usort($requiedDocs, function ($a, $b) {
+                return $b['isMadatory'] <=> $a['isMadatory'];
+            });
 
             $data["documentsList"]  = $requiedDocs;
             // $data["ownersDocList"]  = $ownerDoc;

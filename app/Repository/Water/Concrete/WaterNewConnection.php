@@ -1306,7 +1306,6 @@ class WaterNewConnection implements IWaterNewConnection
             $type = ["AADHAR CARD", "PROPERTY TAX RECEIPT", "METER PURCHASE BILL", "PLUMBER LICENSE", "AMC FTTER REPORT", "PIPELINE MAP"];
             // $type=["PROPERTY TAX"];
         }
-
         $doc = WaterParamDocumentType::select(
             "document_name",
             DB::raw("CASE WHEN doc_for ='OTHER' THEN 0 
