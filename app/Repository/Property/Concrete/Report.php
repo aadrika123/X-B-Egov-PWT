@@ -120,7 +120,7 @@ class Report implements IReport
                 ->JOIN("prop_properties", "prop_properties.id", "prop_transactions.property_id")
                 ->LEFTJOIN(
                     DB::RAW("(
-                        SELECT STRING_AGG(owner_name, ', ') AS owner_name, STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no, prop_owners.property_id 
+                        SELECT STRING_AGG(distinct owner_name, ', ') AS owner_name, STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no, prop_owners.property_id 
                             FROM prop_properties 
                         JOIN prop_transactions on prop_transactions.property_id = prop_properties.id
                         JOIN prop_owners on prop_owners.property_id = prop_properties.id
