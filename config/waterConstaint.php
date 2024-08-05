@@ -39,6 +39,7 @@ return [
     "WATER_DEPAPRTMENT_ID" => "2",
     "WATER_RELATIVE_PATH" => "Uploads/Water",
     "WATER_UPDATE_RELATIVE_PATH" => "Uploads/Water/Consumer/UpdateLog",
+    "WATER_REF_TABLE" => "water_applications.id",
 
     "PROPERTY_TYPE" => [
         "Residential"       => 1,
