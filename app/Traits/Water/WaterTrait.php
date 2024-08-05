@@ -35,7 +35,7 @@ trait WaterTrait
             'water_applicants.id as owner_id',
             'water_applicants.applicant_name as owner_name',
             // 'water_applications.ward_id',
-            // 'water_connection_through_mstrs.connection_through',
+            'water_connection_through_mstrs.connection_through',
             'water_connection_type_mstrs.connection_type',
             // 'u.ward_name as ward_no',
             'water_applications.workflow_id',
@@ -46,7 +46,7 @@ trait WaterTrait
         )
             // ->join('ulb_ward_masters as u', 'u.id', '=', 'water_applications.ward_id')
             ->join('water_applicants', 'water_applicants.application_id', '=', 'water_applications.id')
-            // ->leftjoin('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_applications.connection_through')
+            ->leftjoin('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_applications.connection_through')
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_applications.ward_id')
             ->leftjoin('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_applications.connection_type_id')
             ->where('water_applications.status', 1)

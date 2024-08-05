@@ -654,16 +654,32 @@ class NewConnectionRepository implements iNewConnection
         $mWorkflowTracks        = new WorkflowTrack();
         $mCustomDetails         = new CustomDetail();
         $mUlbNewWardmap         = new UlbWardMaster();
+        $mPropPerty             = new PropProperty();
+
 
         # application details
         $applicationDetails = $waterObj->fullWaterDetails($request)->get();
         if (collect($applicationDetails)->first() == null) {
             return responseMsg(false, "Application Data Not found!", $request->applicationId);
         }
+        $holding = $applicationDetails->pluck('property_no')->toArray();
 
-        // # Ward Name
-        // $refApplication = collect($applicationDetails)->first();
-        // $wardDetails = $mUlbNewWardmap->getWard($refApplication->ward_id);
+        $holdingDetails = $mPropPerty->getPropert($holding);
+        if (!$holdingDetails) {
+            throw new Exception('Holding not found!');
+        }
+       $applicationDetail  = collect($applicationDetails) ;
+
+        $applicationDetails = $applicationDetails->map(function ($applicationDetail) use ($holdingDetails) {
+            if (isset($holdingDetails)) {
+                $applicationDetail->setAttribute('area_of_plot',$holdingDetails->area_of_plot);
+            } else {
+                $applicationDetail->setAttribute('area_of_plot',null);  // Set to null or a default value if not found
+            }
+            return $applicationDetail;
+        });
+
+
         # owner Details
         $ownerDetails = $ownerObj->ownerByApplication($request)->get();
         $ownerDetail = collect($ownerDetails)->map(function ($value, $key) {
@@ -758,12 +774,13 @@ class NewConnectionRepository implements iNewConnection
 
             ['displayString' => 'Type of Connection', 'key' => 'TypeOfConnection',    'value' => $collectionApplications->connection_type],
             ['displayString' => 'Property Type',      'key' => 'PropertyType',        'value' => $collectionApplications->property_type],
-            // ['displayString' => 'Connection Through', 'key' => 'ConnectionThrough',   'value' => $collectionApplications->connection_through],
+            // ['displayString' => 'Connection Through', 'key' => 'ConnectionThrough',   'value' => $collectionApplications->connection_through ],
             ['displayString' => 'Category',           'key' => 'Category',            'value' => $collectionApplications->category],
             ['displayString' => 'Apply From',         'key' => 'ApplyFrom',           'value' => $collectionApplications->user_type],
             ['displayString' => 'Apply Date',         'key' => 'ApplyDate',           'value' => $collectionApplications->apply_date],
             ['displayString' => 'Ward Number',        'key' => 'WardNumber',          'value' => $collectionApplications->ward_name],
-            ['displayString' => 'Zone',               'key' => 'zone',                'value' => $collectionApplications->zone_name]
+            ['displayString' => 'Zone',               'key' => 'zone',                'value' => $collectionApplications->zone_name],
+            ['displayString' => 'Holding',             'key' => 'HoldingNumber',                'value' => $collectionApplications->property_no]
         ]);
     }
 
@@ -788,7 +805,7 @@ class NewConnectionRepository implements iNewConnection
         if (is_null($collectionApplications->saf_no) && is_null($collectionApplications->holding_no)) {
             array_push($propertyDetails, ['displayString' => 'Applied By',    'key' => 'AppliedBy',   'value' => 'Id Proof']);
         }
-        // array_push($propertyDetails, ['displayString' => 'Area in Sqft',  'key' => 'AreaInSqft',  'value' => $collectionApplications->area_sqft]);
+        array_push($propertyDetails, ['displayString' => 'Area in Sqft',  'key' => 'AreaInSqft',  'value' => $collectionApplications->area_sqft]);
         array_push($propertyDetails, ['displayString' => 'Address',       'key' => 'Address',     'value' => $collectionApplications->address]);
         array_push($propertyDetails, ['displayString' => 'Landmark',      'key' => 'Landmark',    'value' => $collectionApplications->landmark]);
         array_push($propertyDetails, ['displayString' => 'Pin',           'key' => 'Pin',         'value' => $collectionApplications->pin]);
@@ -858,9 +875,9 @@ class NewConnectionRepository implements iNewConnection
             ['displayString' => 'Owner Name',           'key' => 'OwnerName',         'value' => $ownerDetail],
             ['displayString' => 'Property Type',        'key' => 'PropertyType',      'value' => $collectionApplications->property_type],
             ['displayString' => 'Connection Type',      'key' => 'ConnectionType',    'value' => $collectionApplications->connection_type],
-            // ['displayString' => 'Connection Through',   'key' => 'ConnectionThrough', 'value' => $collectionApplications->connection_through],
+            ['displayString' => 'Connection Through',   'key' => 'ConnectionThrough', 'value' => $collectionApplications->connection_through ?? "HOLDING"],
             ['displayString' => 'Apply-Date',           'key' => 'ApplyDate',         'value' => $collectionApplications->apply_date],
-            // ['displayString' => 'Total Area (sqt)',     'key' => 'TotalArea',         'value' => $collectionApplications->area_sqft]
+            ['displayString' => 'Total Area (sqt)',     'key' => 'TotalArea',         'value' => $collectionApplications->area_of_plot]
         ]);
     }
 
