@@ -36,7 +36,7 @@ class WaterTran extends Model
     public function ConsumerTransaction($applicationId)
     {
         return WaterTran::where('related_id', $applicationId)
-            ->where('tran_type', "=", "Demand Collection")
+            // ->where('tran_type', "=", "Demand Collection")
             ->where('status', 1)
             ->orderByDesc('id');
     }

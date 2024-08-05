@@ -672,7 +672,7 @@ class NewConnectionController extends Controller
             $refApplyFrom       = config::get("waterConstaint.APP_APPLY_FROM");
             $mWaterApplication  = WaterApplication::findOrFail($req->applicationId);
 
-            $role = $this->_commonFunction->getUserRoll($user->id, $mWaterApplication->ulb_id, $refWorkflowId);
+            $role = $this->_COMMONFUNCTION->getUserRoll($user->id, $mWaterApplication->ulb_id, $refWorkflowId);
             $this->btcParamcheck($role, $mWaterApplication);
 
             $this->begin();
