@@ -1058,6 +1058,7 @@ class PropProperty extends  PropParamModel #Model
             'prop_properties.ward_mstr_id',
             'prop_properties.prop_address',
             'prop_properties.prop_pin_code',
+            'prop_properties.area_of_plot', 
             'prop_properties.landmark',
             'prop_owners.owner_name as applicant_name',
             'prop_owners.mobile_no',
