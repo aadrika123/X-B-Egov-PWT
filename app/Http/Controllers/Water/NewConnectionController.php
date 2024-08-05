@@ -3586,6 +3586,7 @@ class NewConnectionController extends Controller
 
     /**
      * |send to officer 
+     * | Arshad 
      */
     public function sendToLevel(Request $request)
     {
@@ -3604,7 +3605,6 @@ class NewConnectionController extends Controller
             $refUserId      = $refUser->id;
             $refUlbId       = $refUser->ulb_id ?? 0;
             $track = new WorkflowTrack();
-            // $safDocController = App::makeWith(SafDocController::class);
             $WaterApplications = WaterApplication::find($request->applicationId);
             if (!$WaterApplications) {
                 throw new Exception("Data Not Found!!!");
