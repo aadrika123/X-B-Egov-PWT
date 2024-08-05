@@ -1055,7 +1055,13 @@ class PropProperty extends  PropParamModel #Model
             'prop_properties.saf_id',
             'prop_properties.holding_no',
             'prop_properties.holding_type',
-            'prop_owners.owner_name as applicant_name'
+            'prop_properties.ward_mstr_id',
+            'prop_properties.prop_address',
+            'prop_properties.prop_pin_code',
+            'prop_properties.landmark',
+            'prop_owners.owner_name as applicant_name',
+            'prop_owners.mobile_no',
+            'prop_owners.email',
         )
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
             ->join('prop_owners','prop_owners.property_id','prop_properties.id')

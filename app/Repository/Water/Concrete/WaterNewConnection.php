@@ -1328,7 +1328,7 @@ class WaterNewConnection implements IWaterNewConnection
     {
         try {
             $data = WaterParamDocumentType::select("id", "document_name as doc_name")
-                ->where("status", 1)
+                // ->where("status", 1)
                 ->where("doc_for", $doc_for)
                 ->get();
             return $data;

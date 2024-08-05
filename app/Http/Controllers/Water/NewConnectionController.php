@@ -75,6 +75,7 @@ use Illuminate\Validation\Rules\Unique;
 use Ramsey\Collection\Collection as CollectionCollection;
 use SebastianBergmann\Type\VoidType;
 use Symfony\Contracts\Service\Attribute\Required;
+use App\Models\Workflows\WfRole;
 
 class NewConnectionController extends Controller
 {
@@ -86,7 +87,7 @@ class NewConnectionController extends Controller
     private iNewConnection $newConnection;
     private $_dealingAssistent;
     private $_waterRoles;
-    protected $_commonFunction;
+    protected $_COMMONFUNCTION;
     private $_waterModulId;
     protected $_DB_NAME;
     protected $_DB;
@@ -95,7 +96,7 @@ class NewConnectionController extends Controller
     {
         $this->_DB_NAME = "pgsql_water";
         $this->_DB = DB::connection($this->_DB_NAME);
-        $this->_commonFunction = new CommonFunction();
+        $this->_COMMONFUNCTION = new CommonFunction();
         $this->newConnection = $newConnection;
         $this->_dealingAssistent = Config::get('workflow-constants.DEALING_ASSISTENT_WF_ID');
         $this->_waterRoles = Config::get('waterConstaint.ROLE-LABEL');
@@ -671,7 +672,7 @@ class NewConnectionController extends Controller
             $refApplyFrom       = config::get("waterConstaint.APP_APPLY_FROM");
             $mWaterApplication  = WaterApplication::findOrFail($req->applicationId);
 
-            $role = $this->_commonFunction->getUserRoll($user->id, $mWaterApplication->ulb_id, $refWorkflowId);
+            $role = $this->_COMMONFUNCTION->getUserRoll($user->id, $mWaterApplication->ulb_id, $refWorkflowId);
             $this->btcParamcheck($role, $mWaterApplication);
 
             $this->begin();
@@ -1365,6 +1366,7 @@ class NewConnectionController extends Controller
             $data["documentsList"]  = $requiedDocs;
             // $data["ownersDocList"]  = $ownerDoc;
             $data['doc_upload_status'] = $refApplication['doc_upload_status'];
+            $data['current_role']      = $refApplication['current_role'];
             $data['connectionCharges'] = $connectionCharges;
             return responseMsg(true, "Document Uploaded!", $data);
         } catch (Exception $e) {
@@ -3582,11 +3584,14 @@ class NewConnectionController extends Controller
         }
     }
 
-
-    public function sendToLevel(Request $req)
+    /**
+     * |send to officer 
+     * | Arshad 
+     */
+    public function sendToLevel(Request $request)
     {
         $validated = Validator::make(
-            $req->all(),
+            $request->all(),
             [
                 'applicationId'    => 'required|digits_between:1,9223372036854775807',
             ]
@@ -3596,64 +3601,72 @@ class NewConnectionController extends Controller
         }
 
         try {
-            $user                   = authUser($req);
-            $refUserId              = $user->id;
-            $refUlbId               = $user->ulb_id ?? 2;
-            $workflowID             = Config::get('workflow-constants.WATER_MASTER_ID');
-            $track                  = new WorkflowTrack();
-            $ulbWorkflowObj         = new WfWorkflow();
-            $mWaterApplication      = new WaterApplication();
-            $refApplyFrom           = Config::get('waterConstaint.APP_APPLY_FROM');
-            $refUserType            = Config::get('waterConstaint.REF_USER_TYPE');
-            # get initiater and finisher
-            $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($workflowID, $refUlbId);
-            if (!$ulbWorkflowId) {
-                throw new Exception("Respective Ulb is not maped to Water Workflow!");
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $refUlbId       = $refUser->ulb_id ?? 0;
+            $track = new WorkflowTrack();
+            $WaterApplications = WaterApplication::find($request->applicationId);
+            if (!$WaterApplications) {
+                throw new Exception("Data Not Found!!!");
             }
-            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);
-            $refFinisherRoleId  = $this->getFinisherId($ulbWorkflowId->id);
-            $finisherRoleId     = DB::select($refFinisherRoleId);
-            $initiatorRoleId    = DB::select($refInitiatorRoleId);
-            if (!$finisherRoleId || !$initiatorRoleId) {
-                throw new Exception("initiatorRoleId or finisherRoleId not found for respective Workflow!");
-            }
-            #coonection charges 
-            $refRequest["initiatorRoleId"]   = collect($initiatorRoleId)->first()->role_id;
-            $refRequest["finisherRoleId"]    = collect($finisherRoleId)->first()->role_id;
-            $refRequest['roleId']            = $roleId ?? null;
-            $refRequest['userType']          = $user->user_type;
-
-            # Get the role details and distinguish btw user and employ
-            # If the user is not citizen
-            if ($user->user_type != $refUserType['1']) {
-                $req->merge(['workflowId' => $ulbWorkflowId->id]);
-                $roleDetails = $this->getRole($req);
-                if (!$roleDetails) {
-                    throw new Exception("Role detail Not found!");
-                }
-                $roleId = $roleDetails['wf_role_id'];
-                $refRequest = [
-                    "applyFrom" => $user->user_type,
-                    "empId"     => $user->id
-                ];
-            } else {
-                $refRequest = [
-                    "applyFrom" => $refApplyFrom['1'],
-                    "citizenId" => $user->id
-                ];
+            $wfMasters = WfWorkflow::find($WaterApplications->workflow_id);
+            if (!$wfMasters) {
+                throw new Exception("Workflow Not Find");
             }
 
-            $this->begin();
-            #check Application 
-            $checkApplication = $mWaterApplication->getApplicationById($req->applicationId);
-            if(!$checkApplication){
-                throw new Exception('Application Not Found');
+            $refWorkflowId  = $wfMasters->wf_master_id;
+            if (!$refUlbId) {
+                $refUlbId = $WaterApplications->ulb_id;
             }
-            $updateCurrentRole = $mWaterApplication->updateCurrentRole($req);
-            $this->commit();
-            return responseMsg(true, "Successfully Saved!", "", "02", "", "POST", "");
+            $request->merge(["ulb_id" => $refUlbId]);
+            $refWorkflows   = $this->_COMMONFUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
+            $allRolse     = collect($this->_COMMONFUNCTION->getAllRoles($refUserId, $refUlbId, $refWorkflowId, 0, true));
+
+            $docUploadStatus = $this->checkFullDocUpload($request);
+            if (!$docUploadStatus) {
+                throw new Exception("All Document Are Not Uploded");
+            }
+
+            $metaReqs['moduleId'] = Config::get('module-constants.WATER_MODULE_ID');
+            $metaReqs['workflowId'] = $WaterApplications->workflow_id;
+            $metaReqs['refTableDotId'] = Config::get('waterConstaint.WATER_REF_TABLE');
+            $metaReqs['refTableIdValue'] = $WaterApplications->id;
+            $metaReqs['citizenId'] = $refUserId;
+            $metaReqs['ulb_id'] = $refUlbId;
+            $metaReqs['trackDate'] = Carbon::now()->format('Y-m-d H:i:s');
+            $metaReqs['forwardDate'] = Carbon::now()->format('Y-m-d');
+            $metaReqs['forwardTime'] = Carbon::now()->format('H:i:s');
+            $metaReqs['senderRoleId'] = $refWorkflows['initiator']['id'];
+            $metaReqs["receiverRoleId"] = $refWorkflows['initiator']['forward_role_id'];
+            $metaReqs['verificationStatus'] = 1;
+            $metaReqs['comment'] = "Citizen Send For Verification";
+            $request->merge($metaReqs);
+
+            $receiverRole = array_values(objToArray($allRolse->where("id", $request->receiverRoleId)))[0] ?? [];
+            $sms = "";
+            DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
+            $track->saveTrack($request);
+
+            if (!$WaterApplications->current_role || ($WaterApplications->current_role == $refWorkflows['initiator']['id'])) {
+                $WaterApplications->current_role = $refWorkflows['initiator']['forward_role_id'];
+                $WaterApplications->last_role_id = $refWorkflows['initiator']['forward_role_id'];
+                $WaterApplications->doc_upload_status = 1;
+                $WaterApplications->update();
+                $sms = "Application Forwarded To " . ($receiverRole["role_name"] ?? "");
+            } elseif ($WaterApplications->parked) {
+                $role = WfRole::find($WaterApplications->current_role);
+                $WaterApplications->parked = false;
+                $WaterApplications->doc_upload_status = 1;
+                $WaterApplications->update();
+                $sms = "Application Forwarded To " . ($role->role_name ?? "");
+            }
+            DB::commit();
+            DB::connection('pgsql_master')->commit();
+            return responseMsg(true, $sms, "",);
         } catch (Exception $e) {
-            $this->rollback();
+            DB::rollback();
+            DB::connection('pgsql_master')->rollback();
             return responseMsg(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "",);
         }
     }

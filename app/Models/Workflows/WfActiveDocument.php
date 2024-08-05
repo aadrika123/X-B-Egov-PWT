@@ -429,7 +429,8 @@ class WfActiveDocument extends Model
             ->where('doc_code', $metaReqs->docCode)
             ->where('verify_status', 2)
             ->update([
-                "status" => 0
+                "status" => 1,
+                "verify_status" => 0
             ]);
     }
 
