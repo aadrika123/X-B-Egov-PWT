@@ -3629,7 +3629,7 @@ class NewConnectionController extends Controller
 
             $metaReqs['moduleId'] = Config::get('module-constants.WATER_MODULE_ID');
             $metaReqs['workflowId'] = $WaterApplications->workflow_id;
-            $metaReqs['refTableDotId'] = Config::get('waterConstaints.WATER_REF_TABLE');
+            $metaReqs['refTableDotId'] = Config::get('waterConstaint.WATER_REF_TABLE');
             $metaReqs['refTableIdValue'] = $WaterApplications->id;
             $metaReqs['citizenId'] = $refUserId;
             $metaReqs['ulb_id'] = $refUlbId;
