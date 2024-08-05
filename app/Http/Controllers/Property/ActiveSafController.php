@@ -4981,7 +4981,7 @@ class ActiveSafController extends Controller
                     $data = $data->where("p.ptn", $request->value);
                     break;
                 case "holding":
-                    $data = $data->where("p.holding", $request->value);
+                    $data = $data->where("p.holding_no", $request->value);
                     break;
                 case "name":
                     $data = $data->where("o.owner_name", "ILIKE", "%" . $request->value . "%");
