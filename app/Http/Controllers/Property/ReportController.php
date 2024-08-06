@@ -6398,49 +6398,20 @@ class ReportController extends Controller
         }
     }
 
-    // public function tcNewAssessment(Request $request)
-    // {
-    //     $validator = Validator::make($request->all(), [
-    //         "fromDate" => "nullable|date|date_format:Y-m-d",
-    //         "uptoDate" => "nullable|date|date_format:Y-m-d",
-    //         'zoneId' => "nullable|integer",
-    //         'wardId' => "nullable|integer"
-    //     ]);
 
-    //     if ($validator->fails()) {
-    //         return response()->json([
-    //             'status' => false,
-    //             'message' => 'Validation error',
-    //             'errors' => $validator->errors()
-    //         ], 200);
-    //     }
-    //     try {
-    //         $perPage = $request->perPage ?? 5;
-    //         $fromDate = $uptoDate = Carbon::now()->format('Y-m-d');
-    //         $activeSaf = new PropActiveSaf();
-    //         $safDtl = $activeSaf->getActiveSafDtls()->where('applied_by', "TC")->get();
-    //         if ($request->wardId)
-    //             $safDtl = $safDtl->where('ward_mstr_id', $request->wardId);
-    //         if ($request->zoneId)
-    //             $safDtl = $safDtl->where('zone_mstr_id', $request->zoneId);
-    //         if ($fromDate && $uptoDate) {
-    //             $safDtl = $safDtl->whereBetween('application_date', [$request->fromDate,$request->uptoDate]);
-    //         }
-    //         $list = $safDtl->paginate($perPage);
 
-    //         return responseMsgs(true, "Tc Applied New Assessment Reports", remove_null($list));
-    //     } catch (Exception $e) {
-    //         return responseMsgs(false, $e->getMessage(), []);
-    //     }
-    // }
-
-    public function tcNewAssessment(Request $request)
+    public function tcAssessment(Request $request)
     {
         $validator = Validator::make($request->all(), [
             "fromDate" => "nullable|date|date_format:Y-m-d",
             "uptoDate" => "nullable|date|date_format:Y-m-d",
             'zoneId' => "nullable|integer",
             'wardId' => "nullable|integer",
+            "applicationType" => "nullable|in:TC,TC Reassesment",
+            "applicationNo" => "nullable|string",
+            "holdingNo" => "nullable|string",
+            "name" => "nullable|string",
+            "mobileNo" => "nullable|string",
             'perPage' => "nullable|integer|min:1",
             'page' => "nullable|integer|min:1"
         ]);
@@ -6460,7 +6431,7 @@ class ReportController extends Controller
             $uptoDate = $request->uptoDate ?? Carbon::now()->format('Y-m-d');
 
             $activeSaf = new PropActiveSaf();
-            $query = $activeSaf->getActiveSafDtls()->where('applied_by', "TC");
+            $query = $activeSaf->getActiveSafDtlsv1();
 
             if ($request->wardId) {
                 $query->where('ward_mstr_id', $request->wardId);
@@ -6473,6 +6444,27 @@ class ReportController extends Controller
             if ($fromDate && $uptoDate) {
                 $query->whereBetween('application_date', [$fromDate, $uptoDate]);
             }
+
+            if ($request->applicationType) {
+                $query->where('applied_by', $request->applicationType);
+            }
+
+            if ($request->applicationNo) {
+                $query->where('saf_no', $request->applicationNo);
+            }
+
+            if ($request->holdingNo) {
+                $query->where('holding_no', $request->holdingNo);
+            }
+
+            if ($request->name) {
+                $query->where('ownername', 'LIKE', '%' . $request->name . '%');
+            }
+
+            if ($request->mobileNo) {
+                $query->where('mobileno', 'LIKE', '%' . $request->mobileNo . '%');
+            }
+
             $list = $query->paginate($perPage, ['*'], 'page', $page);
 
             $data = [
@@ -6481,59 +6473,7 @@ class ReportController extends Controller
                 'total' => $list->total(),
                 'data' => $list->items()
             ];
-            return responseMsgs(true, "Tc Applied New Assessment Reports", remove_null($data));
-        } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), []);
-        }
-    }
 
-    public function tcReAssessment(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            "fromDate" => "nullable|date|date_format:Y-m-d",
-            "uptoDate" => "nullable|date|date_format:Y-m-d",
-            'zoneId' => "nullable|integer",
-            'wardId' => "nullable|integer",
-            'perPage' => "nullable|integer|min:1",
-            'page' => "nullable|integer|min:1"
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Validation error',
-                'errors' => $validator->errors()
-            ], 200);
-        }
-
-        try {
-            $perPage = $request->perPage ?? 10;
-            $page = $request->page ?? 1;
-            $fromDate = $request->fromDate ?? Carbon::now()->format('Y-m-d');
-            $uptoDate = $request->uptoDate ?? Carbon::now()->format('Y-m-d');
-
-            $activeSaf = new PropActiveSaf();
-            $query = $activeSaf->getActiveSafDtls()->where('applied_by', "TC Reassesment");
-
-            if ($request->wardId) {
-                $query->where('ward_mstr_id', $request->wardId);
-            }
-
-            if ($request->zoneId) {
-                $query->where('zone_mstr_id', $request->zoneId);
-            }
-
-            if ($fromDate && $uptoDate) {
-                $query->whereBetween('application_date', [$fromDate, $uptoDate]);
-            }
-            $list = $query->paginate($perPage, ['*'], 'page', $page);
-
-            $data = [
-                'current_page' => $list->currentPage(),
-                'last_page' => $list->lastPage(),
-                'total' => $list->total(),
-                'data' => $list->items()
-            ];
             return responseMsgs(true, "Tc Applied New Assessment Reports", remove_null($data));
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), []);
