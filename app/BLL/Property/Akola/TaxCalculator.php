@@ -39,6 +39,7 @@ class TaxCalculator
     private $_newForm;
     public $_oldUnpayedAmount;
     public $_lastDemand;
+    public $_oldDemand;
     public $_isSingleManArmedForce = false;
     public $_mangalTowerId;
     private $_LESS_PERSENTAGE_APPLY_WARD_IDS;
@@ -117,10 +118,14 @@ class TaxCalculator
                 // throw new Exception("Old Demand Not Cleard");
             }
             $this->_lastDemand = $priProperty->PropLastDemands();
+            $this->_oldDemand = $priProperty->getAllDemands()->get();
             $paydUptoDemand = $priProperty->PropLastPaidDemands()->get();
             $test = $unPaidDemand->toArray();
-            list($fromYear, $lastYear) = explode("-", $this->_lastDemand->fyear ?? getFY());
-            $this->_newForm = $lastYear . "-04-01";
+            // list($fromYear, $lastYear) = explode("-", $this->_lastDemand->fyear ?? getFY());
+            // $this->_newForm = $lastYear . "-04-01";
+            // $this->_propFyearFrom = Carbon::parse($this->_newForm)->format('Y');
+            list($fromYear, $lastYear) = explode("-", $this->_oldDemand->min("fyear") ?? getFY());
+            $this->_newForm = $fromYear . "-04-01";
             $this->_propFyearFrom = Carbon::parse($this->_newForm)->format('Y');
         }
 
@@ -164,7 +169,7 @@ class TaxCalculator
             // $this->_calculationDateFrom =  Carbon::now()->format('Y-m-d');         
         }
         if (isset($this->_REQUEST->assessmentType) && (in_array($this->getAssestmentTypeStr(), ['Reassessment', 'Bifurcation']))) {
-            $this->_calculationDateFrom =  Carbon::now()->format('Y-m-d');
+            // $this->_calculationDateFrom =  Carbon::now()->format('Y-m-d');
         }
         $this->_currentFyear = calculateFYear(Carbon::now()->format('Y-m-d'));
     }
@@ -260,7 +265,7 @@ class TaxCalculator
                     'occupancyTypeVal' => Config::get("PropertyConstaint.OCCUPANCY-TYPE." . $item->occupancyType ?? ""),
                     'dateFrom' => $item->dateFrom,
                     'dateUpto' => $item->dateUpto,
-                    'appliedFrom' => getFY(), #getFY($item->dateFrom),
+                    'appliedFrom' => getFY($item->dateFrom),
                     'appliedUpto' => getFY($item->dateUpto),
                     'rate' => $rate,
                     'floorKey' => $key,
@@ -717,6 +722,8 @@ class TaxCalculator
                 "professionalTax" => roundFigure($taxes->sum('professionalTax')),
                 "openPloatTax" => roundFigure($taxes->sum('openPloatTax')),
                 "tax1" => roundFigure($taxes->sum('tax1')),
+                "adjustAmount" => roundFigure($taxes->sum("adjustAmount")),
+                "dueAmount" => roundFigure($taxes->sum("dueAmount")),
             ];
         });
         $annualTaxes['totalTax'] = roundFigure(
@@ -830,6 +837,15 @@ class TaxCalculator
                             $yearTax["priveTotalTax"]    = roundFigure($priveTotalTax);
                         }
                         break;
+                }                
+                $yearTax["adjustAmount"] = 0;
+                $yearTax["dueAmount"] = $yearTax["totalTax"];
+                if($this->_oldDemand){
+                    $oldDemand = $this->_oldDemand->where("fyear",$fyear);
+                    $paidTax = collect($oldDemand)->sum("total_tax")-collect($oldDemand)->sum("balance");
+                    $yearTax["adjustAmount"] = roundFigure($paidTax);
+                    $yearTax["dueAmount"] = $yearTax["totalTax"] - $yearTax["adjustAmount"] ;
+                    // dd($oldDemand,$fyear,$paidTax);
                 }
                 $yearTax["totalFloar"] = $annualTaxes->count();
                 $fyearWiseTaxes->put($fyear, array_merge($yearTax, ['fyear' => $fyear]));
@@ -873,7 +889,7 @@ class TaxCalculator
         }
 
         // Calculation of Payable Amount
-        $this->_GRID['payableAmt'] = round($this->_GRID['grandTaxes']['totalTax'] - ($this->_GRID['rebateAmt'] ?? 0));
+        $this->_GRID['payableAmt'] = round($this->_GRID['grandTaxes']['dueAmount'] - ($this->_GRID['rebateAmt'] ?? 0));
     }
 
     public function getAssestmentTypeStr()
