@@ -1303,17 +1303,22 @@ class WaterNewConnection implements IWaterNewConnection
         // Check if user_type is not equal to 1
         if ($user->user_type == $refUserType['1']) {
             // Modify $type array for user_type not equal to 1
-            $type = ["STAMP", "ID_PROOF", "PROPERTY TAX", "METER", "PLUMBER LICENSE", "AMC FTTER REPORT", "PIPELINE MAP "];
+            $type = ["AADHAR CARD", "PROPERTY TAX RECEIPT", "METER PURCHASE BILL", "PLUMBER LICENSE", "AMC FTTER REPORT", "PIPELINE MAP"];
+            // $type=["PROPERTY TAX"];
         }
-
         $doc = WaterParamDocumentType::select(
             "doc_for",
-            DB::raw("CASE WHEN doc_for ='OTHER' THEN 0 
+            DB::raw("CASE WHEN status = 0 THEN 0 
             ELSE 1 END AS is_mandatory")
         )
             ->whereIn("doc_for", $type)
-            ->where("status", 1)
-            ->groupBy("doc_for")
+            // ->where("status", 1)
+            ->groupBy(
+                "id",
+                "doc_for",
+                "status"
+                )
+                ->orderBy('id', 'ASC')
             ->get();
         return $doc;
     }
@@ -1323,7 +1328,7 @@ class WaterNewConnection implements IWaterNewConnection
     {
         try {
             $data = WaterParamDocumentType::select("id", "document_name as doc_name")
-                ->where("status", 1)
+                // ->where("status", 1)
                 ->where("doc_for", $doc_for)
                 ->get();
             return $data;

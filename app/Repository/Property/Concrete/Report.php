@@ -41,8 +41,8 @@ class Report implements IReport
     public function __construct()
     {
         $this->_DB_NAME = (new PropProperty())->getConnectionName();
-        $this->_DB = DB::connection( $this->_DB_NAME );
-        $this->_DB_READ = DB::connection( $this->_DB_NAME."::read" );
+        $this->_DB = DB::connection($this->_DB_NAME);
+        $this->_DB_READ = DB::connection($this->_DB_NAME . "::read");
         $this->_common = new CommonFunction();
         $this->_modelWard = new ModelWard();
         $this->_Saf = new SafRepository();
@@ -120,7 +120,7 @@ class Report implements IReport
                 ->JOIN("prop_properties", "prop_properties.id", "prop_transactions.property_id")
                 ->LEFTJOIN(
                     DB::RAW("(
-                        SELECT STRING_AGG(owner_name, ', ') AS owner_name, STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no, prop_owners.property_id 
+                        SELECT STRING_AGG(distinct owner_name, ', ') AS owner_name, STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no, prop_owners.property_id 
                             FROM prop_properties 
                         JOIN prop_transactions on prop_transactions.property_id = prop_properties.id
                         JOIN prop_owners on prop_owners.property_id = prop_properties.id
@@ -181,7 +181,7 @@ class Report implements IReport
                 $list = [
                     "data" => $data,
                     "total" => $totalFCount,
-                    "totalAmount"=> $totalFAmount,
+                    "totalAmount" => $totalFAmount,
 
                 ];
                 $tcName = collect($data)->first()->emp_name ?? "";
@@ -474,7 +474,7 @@ class Report implements IReport
                 $list = [
                     "data" => $data,
                     "total" => $totalFCount,
-                    "totalAmount"=> $totalFAmount,
+                    "totalAmount" => $totalFAmount,
 
                 ];
                 $tcName = collect($data)->first()->emp_name ?? "";
@@ -911,7 +911,8 @@ class Report implements IReport
                     users_role.user_id ,
                     users_role.name as user_name,
                     users_role.wf_role_id as role_id,
-                    users_role.role_name"
+                    users_role.role_name,   
+                    users_role.address"
                 )
             )
                 ->$joins(
@@ -924,14 +925,16 @@ class Report implements IReport
                             from wf_roleusermaps 
                             join wf_roles on wf_roles.id = wf_roleusermaps.wf_role_id
                                 AND wf_roles.is_suspended = false
-                            join users on users.id = wf_roleusermaps.user_id
+                            join users on users.id = wf_roleusermaps.user_id 
                             left join wf_ward_users on wf_ward_users.user_id = wf_roleusermaps.user_id and wf_ward_users.is_suspended = false
                             where wf_roleusermaps.wf_role_id =$roleId
+                            and users.module_id=1
                                 AND wf_roleusermaps.is_suspended = false
                             and users.id <> 76
                             and users.id <> 72
-                            and users.id <> 175
-                            and users.suspended = false
+                            and users.id <> 175 
+                            and users.suspended = false 
+                            --and users.module_id = 1
                             group by wf_roleusermaps.wf_role_id,wf_roleusermaps.user_id,users.user_name,users.name,wf_roles.role_name
                         )role_user_ward
                     ) users_role
@@ -946,7 +949,7 @@ class Report implements IReport
                     }
                 )
                 ->WHERE("prop_active_safs.ulb_id", $ulbId)
-                ->groupBy(["users_role.user_id", "users_role.user_name","users_role.name", "users_role.wf_role_id", "users_role.role_name"]);
+                ->groupBy(["users_role.user_id", "users_role.user_name", "users_role.name", "users_role.wf_role_id", "users_role.role_name"]);
 
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
@@ -1021,7 +1024,7 @@ class Report implements IReport
 
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
-            
+
             $data2 = $data;
             $total = $data2->get();
             $paginator = $data->paginate($perPage);
@@ -2140,7 +2143,7 @@ class Report implements IReport
             $refUser        = authUser($request);
             $refUserId      = $refUser->id;
             $ulbId          = $refUser->ulb_id;
-            $zoneId=$wardId = null;
+            $zoneId = $wardId = null;
             $fiYear = getFY();
             if ($request->fiYear) {
                 $fiYear = $request->fiYear;
@@ -3396,12 +3399,12 @@ class Report implements IReport
             return responseMsgs(false, $e->getMessage(), $request->all(), $apiId, $version, $queryRunTime, $action, $deviceId);
         }
     }
-    
+
     public function dueDemandPropList(Request $request)
-    {      
+    {
         $metaData = collect($request->metaData)->all();
-        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;  
-        try{
+        list($apiId, $version, $queryRunTime, $action, $deviceId) = $metaData;
+        try {
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $limit = $perPage;
@@ -3409,9 +3412,9 @@ class Report implements IReport
             $zoneId = $wardMstrId = NULL;
             $ulbId = authUser($request)->ulb_id;
             $fiYear = getFY();
-            list($fromYear ,$uptoyear) = explode("-",$fiYear) ;
-            $fromDate = $fromYear."-04-01";
-            $uptoDate = $uptoyear."-03-31";
+            list($fromYear, $uptoyear) = explode("-", $fiYear);
+            $fromDate = $fromYear . "-04-01";
+            $uptoDate = $uptoyear . "-03-31";
             if ($request->wardMstrId) {
                 $wardMstrId = $request->wardMstrId;
             }
@@ -3480,7 +3483,7 @@ class Report implements IReport
                         group by prop_owners.property_id
                     )
             ";
-            $select=" select prop_properties.id,zone_masters.zone_name,ulb_ward_masters.ward_name,prop_properties.holding_no,prop_properties.property_no,
+            $select = " select prop_properties.id,zone_masters.zone_name,ulb_ward_masters.ward_name,prop_properties.holding_no,prop_properties.property_no,
                         prop_properties.prop_address ,
                         owners.owner_name, owners.mobile_no, 
                         demand_with_penalty.from_year, demand_with_penalty.upto_year,                        
@@ -3496,22 +3499,22 @@ class Report implements IReport
                         + coalesce(arrea_pending_penalty.priv_total_interest,0)
                         ) as total_demand
             ";
-            $from=" from demand_with_penalty
+            $from = " from demand_with_penalty
                     join prop_properties on prop_properties.id = demand_with_penalty.property_id
                     left join owners on owners.property_id = demand_with_penalty.property_id
                     left join arrea_pending_penalty on arrea_pending_penalty.prop_id = demand_with_penalty.property_id
                     left join zone_masters on zone_masters.id = prop_properties.zone_mstr_id
                     left join ulb_ward_masters on ulb_ward_masters.id = prop_properties.ward_mstr_id
             ";
-            $where=" WHERE prop_properties.status IN(1,3)
+            $where = " WHERE prop_properties.status IN(1,3)
                     " . ($wardMstrId ? " AND ulb_ward_masters.id = $wardMstrId" : "") . "  
                     " . ($zoneId ? " AND zone_masters.id = $zoneId" : "") . "
                     " . ($ulbId ? " AND prop_properties.ulb_id = $ulbId" : "") . " 
             ";
             $orderBy = " ORDER BY prop_properties.ward_mstr_id,prop_properties.id";
-            $offsetLimit=" limit $limit offset $offset ";
-            $dataSql = $with.$select.$from.$where.$orderBy.$offsetLimit;
-            $countSql = $with." select count(*) AS total ".$from.$where;
+            $offsetLimit = " limit $limit offset $offset ";
+            $dataSql = $with . $select . $from . $where . $orderBy . $offsetLimit;
+            $countSql = $with . " select count(*) AS total " . $from . $where;
 
             $data = $this->_DB_READ->SELECT($dataSql);
 
@@ -4145,7 +4148,7 @@ class Report implements IReport
                                            details.card_collection,
                                            details.chque_collection,
                                            details.rtgs_collection";
-            $zoneWiseReport = $this->_DB_READ->select($zoneWiseCollectionQuery);#print_var($query);print_var($zoneWiseCollectionQuery);die;
+            $zoneWiseReport = $this->_DB_READ->select($zoneWiseCollectionQuery); #print_var($query);print_var($zoneWiseCollectionQuery);die;
             $report[0]->zoneWiseReport = collect($zoneWiseReport);
             $report[0]->totalReport = [
                 "total_properties" => collect($zoneWiseReport)->sum("total_properties"),
@@ -4877,10 +4880,10 @@ class Report implements IReport
                     from prop_active_safs AS saf 
                     join prop_transactions on prop_transactions.saf_id = saf.id
                     where prop_transactions.tran_date between '$fromDate' and '$toDate' 
-                        ".($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
-                        ".($wardId ? "AND saf.ward_mstr_id = $wardId" : "") . "
-                        ".($zoneId ? "AND saf.zone_mstr_id = $zoneId" : "") . "
-                        ".($userId ? "AND prop_transactions.user_id = $userId" : "") . "
+                        " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
+                        " . ($wardId ? "AND saf.ward_mstr_id = $wardId" : "") . "
+                        " . ($zoneId ? "AND saf.zone_mstr_id = $zoneId" : "") . "
+                        " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . "
                     group by prop_transactions.id,saf.ward_mstr_id,saf.zone_mstr_id
                 )
                 union(
@@ -4888,10 +4891,10 @@ class Report implements IReport
                     from prop_rejected_safs AS saf 
                     join prop_transactions on prop_transactions.saf_id = saf.id
                     where prop_transactions.tran_date between '$fromDate' and '$toDate' 
-                        ".($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
-                        ".($wardId ? "AND saf.ward_mstr_id = $wardId" : "") . "
-                        ".($zoneId ? "AND saf.zone_mstr_id = $zoneId" : "") . "
-                        ".($userId ? "AND prop_transactions.user_id = $userId" : "") . "
+                        " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
+                        " . ($wardId ? "AND saf.ward_mstr_id = $wardId" : "") . "
+                        " . ($zoneId ? "AND saf.zone_mstr_id = $zoneId" : "") . "
+                        " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . "
                     group by prop_transactions.id,saf.ward_mstr_id,saf.zone_mstr_id
                 )
                 union(
@@ -4899,10 +4902,10 @@ class Report implements IReport
                     from prop_safs AS saf 
                     join prop_transactions on prop_transactions.saf_id = saf.id
                     where prop_transactions.tran_date between '$fromDate' and '$toDate' 
-                        ".($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
-                        ".($wardId ? "AND saf.ward_mstr_id = $wardId" : "") . "
-                        ".($zoneId ? "AND saf.zone_mstr_id = $zoneId" : "") . "
-                        ".($userId ? "AND prop_transactions.user_id = $userId" : "") . "
+                        " . ($paymentMode ? "AND UPPER(prop_transactions.payment_mode) = ANY (UPPER('{" . $paymentMode . "}')::TEXT[])" : "") . "
+                        " . ($wardId ? "AND saf.ward_mstr_id = $wardId" : "") . "
+                        " . ($zoneId ? "AND saf.zone_mstr_id = $zoneId" : "") . "
+                        " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . "
                     group by prop_transactions.id,saf.ward_mstr_id,saf.zone_mstr_id
                 )
             )saf on saf.id = prop_transactions.id
@@ -4937,7 +4940,7 @@ class Report implements IReport
             $report->major_building  = round($report->current_major_building)      +  round($report->arear_major_building);
             $report->open_ploat_tax  = round($report->current_open_ploat_tax)      +  round($report->arear_open_ploat_tax);
             $report->net_advance     = round($report->advance_amount)      -  round($report->adjusted_amount);
-            $report->process_fee     = round($report->arear_process_fee)  + round($report->current_process_fee)   ;
+            $report->process_fee     = round($report->arear_process_fee)  + round($report->current_process_fee);
 
             $data["report"] = collect($report)->map(function ($val, $key) {
                 if ($key == "payment_mode") {
@@ -5509,14 +5512,11 @@ class Report implements IReport
     public function tranDeactivatedList(Request $request)
     {
         try {
-            if($request->tranType=="Water" || $request->selectedModuleOption=="Water")
-            {
+            if ($request->tranType == "Water" || $request->selectedModuleOption == "Water") {
                 return ((new ConcreteReport())->tranDeactivatedList($request));
             }
 
-            if($request->tranType=="Trade" || $request->selectedModuleOption=="Trade")
-            {
-                
+            if ($request->tranType == "Trade" || $request->selectedModuleOption == "Trade") {
             }
             $user = Auth()->user();
             $paymentMode = "";

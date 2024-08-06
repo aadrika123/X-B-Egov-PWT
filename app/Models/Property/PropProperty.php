@@ -104,11 +104,11 @@ class PropProperty extends  PropParamModel #Model
                 'a.apt_code as apartment_code',
                 'z.zone_name',
                 'cat.category AS categoryType',
-                DB::raw("string_agg(prop_owners.owner_name, ', ') as owner_name"),
-                DB::raw("string_agg(prop_owners.owner_name_marathi, ', ') as owner_names_marathi"),
+                DB::raw("string_agg(DISTINCT prop_owners.owner_name, ', ') as owner_name"),
+                DB::raw("string_agg(DISTINCT prop_owners.owner_name_marathi, ', ') as owner_names_marathi"),
                 DB::raw("SUM(prop_demands.total_tax) as total_tax")
             )
-            ->leftJoin('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
+            ->Join('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
             ->leftJoin('ulb_ward_masters as w', 'w.id', '=', 'prop_properties.ward_mstr_id')
             ->leftJoin('ref_prop_ownership_types as o', 'o.id', '=', 'prop_properties.ownership_type_mstr_id')
             ->leftJoin('ref_prop_types', 'ref_prop_types.id', '=', 'prop_properties.prop_type_mstr_id')
@@ -1019,7 +1019,7 @@ class PropProperty extends  PropParamModel #Model
                 'p.area_of_plot',
                 'p.building_name',
                 "p.saf_id",
-
+                "p.khata_no",
                 'z.zone_name',
                 'o.owner_name as eng_owner_name',
                 'o.owner_name_marathi as owner_name',
@@ -1052,10 +1052,18 @@ class PropProperty extends  PropParamModel #Model
     {
         $propDetails = PropProperty::select(
             'ulb_ward_masters.*',
+            'prop_properties.id as propId',
             'prop_properties.saf_id',
             'prop_properties.holding_no',
             'prop_properties.holding_type',
-            'prop_owners.owner_name as applicant_name'
+            'prop_properties.ward_mstr_id',
+            'prop_properties.prop_address',
+            'prop_properties.prop_pin_code',
+            'prop_properties.area_of_plot', 
+            'prop_properties.landmark',
+            'prop_owners.owner_name as applicant_name',
+            'prop_owners.mobile_no',
+            'prop_owners.email',
         )
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
             ->join('prop_owners','prop_owners.property_id','prop_properties.id')

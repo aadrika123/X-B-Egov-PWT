@@ -4939,6 +4939,7 @@ class ActiveSafController extends Controller
                 "p.is_geo_tagged",
                 "ward.ward_name as ward_no",
                 "p.prop_type_mstr_id",
+                "p.holding_no",
                 "p.appartment_name",
                 "o.owner_name as owner_name",
                 "o.mobile_no as mobile_no",
@@ -4980,7 +4981,7 @@ class ActiveSafController extends Controller
                     $data = $data->where("p.ptn", $request->value);
                     break;
                 case "holding":
-                    $data = $data->where("p.holding", $request->value);
+                    $data = $data->where("p.holding_no", $request->value);
                     break;
                 case "name":
                     $data = $data->where("o.owner_name", "ILIKE", "%" . $request->value . "%");

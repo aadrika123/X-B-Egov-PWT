@@ -59,8 +59,8 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('citizen/get-doc-list', 'getDocToUpload');                                          // Citizen  
         Route::post('application/edit', 'editWaterAppliction');                                         // Citizen/Admin
         Route::post('search-holding-saf', 'getSafHoldingDetail');                                       // Admin
-        Route::post('application/search', 'getAprroveApplictaions');                                     // Admin
-        Route::post('application/applied-application-search', 'getAppliedApplictaions');                 // Applied Apllication Admin Side (jsk)
+        Route::post('application/search', 'getAprroveApplictaions');                                    // Admin
+        Route::post('application/applied-application-search', 'getAppliedApplictaions');                // Applied Apllication Admin Side (jsk)
         Route::post('admin/application/get-details-by-id', 'getApplicationDetailById');                 // Admin
         Route::post('admin/application/list-details-by-date', 'listApplicationBydate');                 // Admin
         Route::post('search-consumer', 'searchWaterConsumer');                                          // Admin/Consumer   
@@ -83,6 +83,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('check-test', 'check');
         Route::post('citizen/approve-application', 'getCitizenApproveApplication');
         Route::post('application/jsk-get-by-id', 'getApproveAplications');                                  // Admin
+        Route::post('applications/send-to-officer', 'sendToLevel');
     });
 
     /**
@@ -170,6 +171,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post("consumer/get-consumer-demandV2", "getConsumerDemandsV2");
         Route::post("consumer/get-demand-history", "getConsumerDemandsHistory");
         Route::post("consumer/auto-generate-fixed-demand", "gerateAutoFixedDemand");
+        Route::post('consumer/demand-dues-report', 'consumeDemandDuesReport');
     });
 
 

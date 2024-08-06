@@ -41,11 +41,13 @@ trait WaterTrait
             'water_applications.workflow_id',
             'water_applications.current_role as role_id',
             'water_applications.apply_date',
-            'water_applications.parked'
+            'water_applications.parked',
+            'ulb_ward_masters.ward_name'
         )
             // ->join('ulb_ward_masters as u', 'u.id', '=', 'water_applications.ward_id')
             ->join('water_applicants', 'water_applicants.application_id', '=', 'water_applications.id')
             ->leftjoin('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_applications.connection_through')
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_applications.ward_id')
             ->leftjoin('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_applications.connection_type_id')
             ->where('water_applications.status', 1)
             ->where('water_applications.ulb_id', $ulbId)
@@ -134,14 +136,14 @@ trait WaterTrait
             'wco.id as owner_id',
             'water_consumer_active_requests.application_no',
             'water_consumer_active_requests.apply_date',
-            'water_consumer_active_requests.charge_catagory_id',  
+            'water_consumer_active_requests.charge_catagory_id',
             'wco.applicant_name as owner_name',
             'water_second_consumers.consumer_no',
             'water_consumer_active_requests.workflow_id'
         )
             ->leftjoin('water_consumer_owners AS wco', 'wco.consumer_id', 'water_consumer_active_requests.consumer_id')
-            ->leftjoin('ulb_ward_masters AS uwm', 'uwm.id', 'water_consumer_active_requests.ward_mstr_id')   
-            ->join('water_second_consumers','water_second_consumers.id','water_consumer_active_requests.consumer_id')
+            ->leftjoin('ulb_ward_masters AS uwm', 'uwm.id', 'water_consumer_active_requests.ward_mstr_id')
+            ->join('water_second_consumers', 'water_second_consumers.id', 'water_consumer_active_requests.consumer_id')
             // ->leftjoin('ulb_masters AS um', 'um.id', 'water_consumer_active_requests.ulb_id')
             ->where('water_consumer_active_requests.status', 1)
             // ->where('water_consumer_active_requests.payment_status', 1)
