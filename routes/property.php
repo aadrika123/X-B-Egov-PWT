@@ -580,8 +580,9 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('report/mpl-totdayCollection-new', 'mplReportCollectionnew');
     Route::post('report/mpl-totdayOverallCollection', 'mplReportOverallCollection');
 
-    Route::post('reports/saf/tcNewAssessment', 'tcNewAssessment');
-    Route::post('reports/saf/tcReAssessment', 'tcReAssessment');
+
+    # Date : 06-08-2024 Survey form reports
+    Route::post('reports/saf/tcAssessment', 'tcAssessment');
 
   });
 

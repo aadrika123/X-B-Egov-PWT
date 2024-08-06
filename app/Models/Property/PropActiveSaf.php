@@ -148,8 +148,8 @@ class  PropActiveSaf extends PropParamModel #Model
             'is_photo_doc' => $req->isPhotoDoc,
             'is_id_proof_doc' => $req->isIdProofDoc,
             'application_date' =>  Carbon::now()->format('Y-m-d'),
-            'area_of_plot' => $req->plotArea ??null,
-            'apartment_details_id' => $req->apartmentId ??null
+            'area_of_plot' => $req->plotArea ?? null,
+            'apartment_details_id' => $req->apartmentId ?? null
 
         ];
         $propActiveSafs = PropActiveSaf::create($reqs);                 // SAF No is Created Using Observer
@@ -168,7 +168,7 @@ class  PropActiveSaf extends PropParamModel #Model
         $reqs = ([
             'prop_address' => $req->propAddress ?? $propDtl->prop_address,
             'user_id' => $req->userId ?? null,
-            'workflow_id' => $req->workflowId ?? null ,
+            'workflow_id' => $req->workflowId ?? null,
             'ulb_id' => $req->ulbId ?? $propDtl->ulb_id,
             'current_role' => $req->initiatorRoleId ?? null,
             'initiator_role_id' => $req->initiatorRoleId ?? null,
@@ -453,6 +453,74 @@ class  PropActiveSaf extends PropParamModel #Model
             ->leftJoin('ref_prop_gbpropusagetypes as gbp', 'gbp.id', 'prop_active_safs.gb_prop_usage_types')
             ->leftjoin('ref_prop_categories as cat', 'cat.id', '=', 'prop_active_safs.category_id');
     }
+
+    public function getActiveSafDtlsv1()
+    {
+        return DB::table('prop_active_safs')
+            ->select(
+                'prop_active_safs.*',
+                DB::raw(
+                    "CASE 
+                    WHEN prop_active_safs.workflow_id = 202 THEN 'Direct Mutation'
+                    ELSE assessment_type 
+                END AS assessment_type"
+                ),
+                DB::raw("REPLACE(prop_active_safs.holding_type, '_', ' ') AS holding_type"),
+                'w.ward_name AS old_ward_no',
+                'nw.ward_name AS new_ward_no',
+                'o.ownership_type',
+                'p.property_type',
+                'r.road_type AS road_type_master',
+                'wr.role_name AS current_role_name',
+                't.transfer_mode',
+                'a.apt_code AS apartment_code',
+                'a.apartment_address',
+                'a.no_of_block',
+                'a.apartment_name',
+                'building_type',
+                'prop_usage_type',
+                'zone_masters.zone_name AS zone',
+                'cat.category',
+                'cat.description AS category_description',
+                'bifurcated_from_plot_area',
+                DB::raw("STRING_AGG(onr.mobile_no::VARCHAR, ',') AS mobileNo"),
+                DB::raw("STRING_AGG(onr.owner_name, ',') AS ownerName")
+            )
+            ->leftJoin('prop_active_safs_owners AS onr', 'onr.saf_id', '=', 'prop_active_safs.id')
+            ->leftJoin('ulb_ward_masters AS w', 'w.id', '=', 'prop_active_safs.ward_mstr_id')
+            ->leftJoin('wf_roles AS wr', 'wr.id', '=', 'prop_active_safs.current_role')
+            ->leftJoin('ulb_ward_masters AS nw', 'nw.id', '=', 'prop_active_safs.new_ward_mstr_id')
+            ->leftJoin('ref_prop_ownership_types AS o', 'o.id', '=', 'prop_active_safs.ownership_type_mstr_id')
+            ->leftJoin('ref_prop_types AS p', 'p.id', '=', 'prop_active_safs.prop_type_mstr_id')
+            ->leftJoin('ref_prop_road_types AS r', 'r.id', '=', 'prop_active_safs.road_type_mstr_id')
+            ->leftJoin('ref_prop_transfer_modes AS t', 't.id', '=', 'prop_active_safs.transfer_mode_mstr_id')
+            ->leftJoin('prop_apartment_dtls AS a', 'a.id', '=', 'prop_active_safs.apartment_details_id')
+            ->leftJoin('zone_masters', 'zone_masters.id', '=', 'prop_active_safs.zone_mstr_id')
+            ->leftJoin('ref_prop_gbbuildingusagetypes AS gbu', 'gbu.id', '=', 'prop_active_safs.gb_usage_types')
+            ->leftJoin('ref_prop_gbpropusagetypes AS gbp', 'gbp.id', '=', 'prop_active_safs.gb_prop_usage_types')
+            ->leftJoin('ref_prop_categories AS cat', 'cat.id', '=', 'prop_active_safs.category_id')
+            ->groupBy(
+                'prop_active_safs.id',
+                'w.ward_name',
+                'nw.ward_name',
+                'o.ownership_type',
+                'p.property_type',
+                'r.road_type',
+                'wr.role_name',
+                't.transfer_mode',
+                'a.apt_code',
+                'a.apartment_address',
+                'a.no_of_block',
+                'a.apartment_name',
+                'building_type',
+                'prop_usage_type',
+                'zone_masters.zone_name',
+                'cat.category',
+                'cat.description',
+                'bifurcated_from_plot_area'
+            );
+    }
+
 
     /**
      * |-------------------------- safs list whose Holding are not craeted -----------------------------------------------|
