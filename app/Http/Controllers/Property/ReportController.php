@@ -2181,8 +2181,8 @@ class ReportController extends Controller
         list($currentFyearFrom, $currentFyearEnd) = explode('-', getFY());
         $currentfyStartDate = $currentFyearFrom . "-04-01";
         $currentfyEndDate = $currentFyearEnd . "-03-31";
-        $privfyStartDate = ($currentFyearFrom-1) . "-04-01";
-        $privfyEndDate = ($currentFyearEnd-1) . "-03-31";
+        $privfyStartDate = ($currentFyearFrom - 1) . "-04-01";
+        $privfyEndDate = ($currentFyearEnd - 1) . "-03-31";
 
         $sql = "SELECT 
                         total_assessment.*, 
@@ -2821,13 +2821,13 @@ class ReportController extends Controller
 
             "collection_against_current_demand" => $data->current_collection,
             "collection_againt_arrear_demand" => $data->arrear_collection,
-            
+
             "top_area_property_transaction_ward1_count" => $data->top_transaction_first_ward_count,
             "top_area_property_transaction_ward2_count" => $data->top_transaction_sec_ward_count,
             "top_area_property_transaction_ward3_count" => $data->top_transaction_third_ward_count,
             "top_area_property_transaction_ward4_count" => $data->top_transaction_forth_ward_count,
             "top_area_property_transaction_ward5_count" => $data->top_transaction_fifth_ward_count,
-            
+
 
             "top_area_saf_ward1_name" => $data->top_saf_first_ward_no,
             "top_area_saf_ward2_name" => $data->top_saf_sec_ward_no,
@@ -2908,7 +2908,7 @@ class ReportController extends Controller
             'prop_current_demand'  => $propdata->prop_current_demand,
             'prop_arrear_demand'  => $propdata->prop_arrear_demand,
             'prop_total_demand'  => $propdata->prop_total_demand,
-            
+
             'prop_total_collection'  => $propdata->prop_total_collection,
 
 
@@ -2960,16 +2960,14 @@ class ReportController extends Controller
             'd_market_total_hh'  => $marketdata->d_market_total_hh,
             'd_market_total_amount'  => $marketdata->d_market_total_amount
         ];
-        if($mMplYearlyReport->where('fyear', $currentFy)->count("id"))
-        {
-            $sms ="Update";
+        if ($mMplYearlyReport->where('fyear', $currentFy)->count("id")) {
+            $sms = "Update";
             $test = $mMplYearlyReport->where('fyear', $currentFy)
                 ->update($updateReqs);
-        }
-        else{
-            $sms ="Insert";
+        } else {
+            $sms = "Insert";
             $ulbDtl = UlbMaster::find(2);
-            $updateReqs =array_merge($updateReqs,["fyear" => $currentFy,"ulb_id"=>2,"ulb_name"=>$ulbDtl->ulb_name??null]);
+            $updateReqs = array_merge($updateReqs, ["fyear" => $currentFy, "ulb_id" => 2, "ulb_name" => $ulbDtl->ulb_name ?? null]);
             $test = $mMplYearlyReport->create($updateReqs)->id;
         }
         // $updateReqs->push(["fyear" => "$currentFy"]);
@@ -2991,8 +2989,8 @@ class ReportController extends Controller
         list($currentFyearFrom, $currentFyearEnd) = explode('-', getFY());
         $currentfyStartDate = $currentFyearFrom . "-04-01";
         $currentfyEndDate = $currentFyearEnd . "-03-31";
-        $privfyStartDate = ($currentFyearFrom-1) . "-04-01";
-        $privfyEndDate = ($currentFyearEnd-1) . "-03-31";
+        $privfyStartDate = ($currentFyearFrom - 1) . "-04-01";
+        $privfyEndDate = ($currentFyearEnd - 1) . "-03-31";
         # total trade licences
         $sql_total_trade_license = "
                                     
@@ -3228,8 +3226,8 @@ class ReportController extends Controller
         list($currentFyearFrom, $currentFyearEnd) = explode('-', $currentFy);
         $currentfyStartDate = $currentFyearFrom . "-04-01";
         $currentfyEndDate = $currentFyearEnd . "-03-31";
-        $privfyStartDate = ($currentFyearFrom-1) . "-04-01";
-        $privfyEndDate = ($currentFyearEnd-1) . "-03-31";
+        $privfyStartDate = ($currentFyearFrom - 1) . "-04-01";
+        $privfyEndDate = ($currentFyearEnd - 1) . "-03-31";
         # total trade licences
         $sql_property_under_assesment = "
                                     
@@ -3358,8 +3356,8 @@ class ReportController extends Controller
         list($currentFyearFrom, $currentFyearEnd) = explode('-', $currentFy);
         $currentfyStartDate = $currentFyearFrom . "-04-01";
         $currentfyEndDate = $currentFyearEnd . "-03-31";
-        $privfyStartDate = ($currentFyearFrom-1) . "-04-01";
-        $privfyEndDate = ($currentFyearEnd-1) . "-03-31";
+        $privfyStartDate = ($currentFyearFrom - 1) . "-04-01";
+        $privfyEndDate = ($currentFyearEnd - 1) . "-03-31";
 
         # total trade licences
         $sql_water_application_underprocess = "
@@ -3523,8 +3521,8 @@ class ReportController extends Controller
         list($currentFyearFrom, $currentFyearEnd) = explode('-', $currentFy);
         $currentfyStartDate = $currentFyearFrom . "-04-01";
         $currentfyEndDate = $currentFyearEnd . "-03-31";
-        $privfyStartDate = ($currentFyearFrom-1) . "-04-01";
-        $privfyEndDate = ($currentFyearEnd-1) . "-03-31";
+        $privfyStartDate = ($currentFyearFrom - 1) . "-04-01";
+        $privfyEndDate = ($currentFyearEnd - 1) . "-03-31";
 
         $sql_market_zonal = "
                     select m_circle.id AS id,
@@ -4678,30 +4676,26 @@ class ReportController extends Controller
 
     public function zoneWishDailyColl(Request $request)
     {
-        $ruls =[
-            "fromDate"  => "required|date|date_format:Y-m-d|before_or_equal:".Carbon::now()->format('Y-m-d'),
-            "uptoDate"  => "required|date|date_format:Y-m-d|after_or_equal:".Carbon::parse($request->fromDate)->format('Y-m-d'),
+        $ruls = [
+            "fromDate"  => "required|date|date_format:Y-m-d|before_or_equal:" . Carbon::now()->format('Y-m-d'),
+            "uptoDate"  => "required|date|date_format:Y-m-d|after_or_equal:" . Carbon::parse($request->fromDate)->format('Y-m-d'),
             "zonId"     => "nullable|digits_between:1,9223372036854775807",
         ];
-        $validated = Validator::make($request->all(),$ruls);
-        
-        if($validated->fails())
-        {
+        $validated = Validator::make($request->all(), $ruls);
+
+        if ($validated->fails()) {
             return validationErrorV2($validated);
         }
-        try{
+        try {
             $fromDate = $uptoDate = Carbon::now()->format('Y-m-d');
             $zoneId = null;
-            if($request->zoneId)
-            {
+            if ($request->zoneId) {
                 $zoneId = $request->zoneId;
             }
-            if($request->fromDate)
-            {
+            if ($request->fromDate) {
                 $fromDate = $request->fromDate;
             }
-            if($request->uptoDate)
-            {
+            if ($request->uptoDate) {
                 $uptoDate = $request->uptoDate;
             }
             $fromFyear = getFY($fromDate);
@@ -4821,11 +4815,11 @@ class ReportController extends Controller
                     GROUP BY prop_properties.zone_mstr_id
                 )prev_collection ON prev_collection.zone_mstr_id = zone_masters.id
                 WHERE 1=1 
-                    ".($zoneId?" AND zone_masters.id = $zoneId" : "" )."
+                    " . ($zoneId ? " AND zone_masters.id = $zoneId" : "") . "
                 GROUP BY zone_masters.id ,zone_masters.zone_name 
                 ORDER BY zone_masters.id
             ";
-            
+
 
             $online = $this->_DB_READ->table("prop_transactions")
                 ->select(
@@ -4836,11 +4830,11 @@ class ReportController extends Controller
                         SUM( COALESCE(prop_transactions.amount, 0)) AS amount
                     ")
                 )
-                ->JOIN("prop_properties","prop_properties.id","prop_transactions.property_id")
+                ->JOIN("prop_properties", "prop_properties.id", "prop_transactions.property_id")
                 ->WHERENOTNULL("prop_transactions.property_id")
                 ->WHEREIN("prop_transactions.status", [1, 2])
-                ->WHERE(DB::RAW("UPPER(prop_transactions.payment_mode)"),"=" ,DB::RAW("UPPER('ONLINE')"))
-                ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]); 
+                ->WHERE(DB::RAW("UPPER(prop_transactions.payment_mode)"), "=", DB::RAW("UPPER('ONLINE')"))
+                ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
 
             $doorToDoor = $this->_DB_READ->table("prop_transactions")
                 ->select(
@@ -4851,7 +4845,7 @@ class ReportController extends Controller
                         SUM( COALESCE(prop_transactions.amount, 0)) AS amount
                     ")
                 )
-                ->JOIN("prop_properties","prop_properties.id","prop_transactions.property_id")
+                ->JOIN("prop_properties", "prop_properties.id", "prop_transactions.property_id")
                 ->JOIN(DB::RAW("(                                        
                     SELECT DISTINCT wf_roleusermaps.user_id as role_user_id
                     FROM wf_roles
@@ -4866,11 +4860,11 @@ class ReportController extends Controller
                         AND wf_roles.id not in (8,108)
                     GROUP BY wf_roleusermaps.user_id
                     ORDER BY wf_roleusermaps.user_id
-                ) collecter"),"collecter.role_user_id","prop_transactions.user_id")
+                ) collecter"), "collecter.role_user_id", "prop_transactions.user_id")
                 ->WHERENOTNULL("prop_transactions.property_id")
                 ->WHEREIN("prop_transactions.status", [1, 2])
-                ->WHERE(DB::RAW("UPPER(prop_transactions.payment_mode)"),"<>" ,DB::RAW("UPPER('ONLINE')"))
-                ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);            
+                ->WHERE(DB::RAW("UPPER(prop_transactions.payment_mode)"), "<>", DB::RAW("UPPER('ONLINE')"))
+                ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
 
             $jsk = $this->_DB_READ->table("prop_transactions")
                 ->select(
@@ -4881,7 +4875,7 @@ class ReportController extends Controller
                         SUM( COALESCE(prop_transactions.amount, 0)) AS amount
                     ")
                 )
-                ->JOIN("prop_properties","prop_properties.id","prop_transactions.property_id")
+                ->JOIN("prop_properties", "prop_properties.id", "prop_transactions.property_id")
                 ->JOIN(DB::RAW("(                                        
                     SELECT DISTINCT wf_roleusermaps.user_id as role_user_id
                     FROM wf_roles
@@ -4896,10 +4890,10 @@ class ReportController extends Controller
                         AND wf_roles.id in (8,108)
                     GROUP BY wf_roleusermaps.user_id
                     ORDER BY wf_roleusermaps.user_id
-                ) collecter"),"collecter.role_user_id","prop_transactions.user_id")
+                ) collecter"), "collecter.role_user_id", "prop_transactions.user_id")
                 ->WHERENOTNULL("prop_transactions.property_id")
                 ->WHEREIN("prop_transactions.status", [1, 2])
-                ->WHERE(DB::RAW("UPPER(prop_transactions.payment_mode)"),"<>" ,DB::RAW("UPPER('ONLINE')"))
+                ->WHERE(DB::RAW("UPPER(prop_transactions.payment_mode)"), "<>", DB::RAW("UPPER('ONLINE')"))
                 ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
 
             $totalTrans = $this->_DB_READ->table("prop_transactions")
@@ -4911,26 +4905,26 @@ class ReportController extends Controller
                         SUM( COALESCE(prop_transactions.amount, 0)) AS amount
                     ")
                 )
-                ->JOIN("prop_properties","prop_properties.id","prop_transactions.property_id")
+                ->JOIN("prop_properties", "prop_properties.id", "prop_transactions.property_id")
                 ->WHERENOTNULL("prop_transactions.property_id")
                 ->WHEREIN("prop_transactions.status", [1, 2])
                 ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
 
             $penaltyRebates = $this->_DB_READ->table("prop_penaltyrebates")
-                            ->select(
-                                DB::raw("prop_properties.zone_mstr_id ,
+                ->select(
+                    DB::raw("prop_properties.zone_mstr_id ,
                                     COUNT( DISTINCT(prop_transactions.property_id) ) AS holding_count, 
                                     COUNT( DISTINCT(prop_transactions.user_id) ) AS user_count, 
                                     COUNT(DISTINCT(prop_transactions.id)) AS tran_count, 
                                     SUM( CASE WHEN prop_penaltyrebates.is_rebate = TRUE then COALESCE(prop_penaltyrebates.amount, 0) else 0 end) AS rebate_amount,
                                     SUM( CASE WHEN prop_penaltyrebates.is_rebate = false then COALESCE(prop_penaltyrebates.amount, 0) else 0 end) AS penalty_amount
                                 ")
-                            )
-                            ->join("prop_transactions","prop_transactions.id","prop_penaltyrebates.tran_id")
-                            ->JOIN("prop_properties","prop_properties.id","prop_transactions.property_id")
-                            ->WHERENOTNULL("prop_transactions.property_id")
-                            ->WHEREIN("prop_transactions.status", [1, 2])
-                            ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
+                )
+                ->join("prop_transactions", "prop_transactions.id", "prop_penaltyrebates.tran_id")
+                ->JOIN("prop_properties", "prop_properties.id", "prop_transactions.property_id")
+                ->WHERENOTNULL("prop_transactions.property_id")
+                ->WHEREIN("prop_transactions.status", [1, 2])
+                ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
 
             if ($zoneId) {
                 $online = $online->WHERE("prop_properties.zone_mstr_id", $zoneId);
@@ -4940,7 +4934,7 @@ class ReportController extends Controller
                 $penaltyRebates = $penaltyRebates->WHERE("prop_properties.zone_mstr_id", $zoneId);
             }
 
-            
+
 
             $online = $online->GROUPBY("prop_properties.zone_mstr_id");
             $doorToDoor =  $doorToDoor->GROUPBY("prop_properties.zone_mstr_id");
@@ -4954,13 +4948,13 @@ class ReportController extends Controller
             $totalTrans  = $totalTrans->get();
             $penaltyRebates = $penaltyRebates->get();
 
-            
 
-            $dcbData = collect($this->_DB_READ->select($sql))->map(function($val)use($online,$doorToDoor,$jsk,$totalTrans){
-                $tcTran = collect($doorToDoor)->where("zone_mstr_id",$val->id);
-                $counterTran = collect($jsk)->where("zone_mstr_id",$val->id);
-                $onlineTran = collect($online)->where("zone_mstr_id",$val->id);
-                $totalTran  = collect($totalTrans)->where("zone_mstr_id",$val->id);
+
+            $dcbData = collect($this->_DB_READ->select($sql))->map(function ($val) use ($online, $doorToDoor, $jsk, $totalTrans) {
+                $tcTran = collect($doorToDoor)->where("zone_mstr_id", $val->id);
+                $counterTran = collect($jsk)->where("zone_mstr_id", $val->id);
+                $onlineTran = collect($online)->where("zone_mstr_id", $val->id);
+                $totalTran  = collect($totalTrans)->where("zone_mstr_id", $val->id);
                 $val->total_demand = $val->arrear_demand + $val->current_demand;
                 $val->total_collection = $val->arrear_collection + $val->current_collection;
                 $val->arrear_due = $val->old_due;
@@ -5014,9 +5008,9 @@ class ReportController extends Controller
                 "balance_hh"      =>  "---",
                 "arrear_demand"      =>  "---",
                 "previous_collection"      =>  "---",
-                "current_demand"      => "---" ,
+                "current_demand"      => "---",
                 "arrear_collection"      =>  roundFigure($penaltyRebates->sum("penalty_amount")),
-                "current_collection"      =>  "---",#$penaltyRebates->sum("rebate_amount"),
+                "current_collection"      =>  "---", #$penaltyRebates->sum("rebate_amount"),
                 "old_due"      => "---",
                 "arrear_due"      =>  "---",
                 "current_due"      =>  "---",
@@ -5026,53 +5020,46 @@ class ReportController extends Controller
                 "current_eff"      =>  "---",
                 "outstanding"      =>  "---",
                 "total_demand"      =>  "---",
-                "total_collection"      =>  roundFigure($penaltyRebates->sum("penalty_amount")) ,#+ $penaltyRebates->sum("rebate_amount"),
+                "total_collection"      =>  roundFigure($penaltyRebates->sum("penalty_amount")), #+ $penaltyRebates->sum("rebate_amount"),
                 "tc_tran_count"      =>  "---",
                 "counter_tran_count"      =>  "---",
                 "online_tran_count"      =>  "---",
                 "total_tran_count"      =>  roundFigure($dcbData->sum("tran_count")),
             ];
-            $dcbData->push($granTax,$penalties,$granTax);
+            $dcbData->push($granTax, $penalties, $granTax);
 
             return responseMsgs(true, "Zone Wise daily Collecton Report", $dcbData);
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), []);
         }
     }
 
     public function wardWishDailyColl(Request $request)
     {
-        $ruls =[
-            "fromDate"  => "required|date|date_format:Y-m-d|before_or_equal:".Carbon::now()->format('Y-m-d'),
-            "uptoDate"  => "required|date|date_format:Y-m-d|after_or_equal:".Carbon::parse($request->fromDate)->format('Y-m-d'),
+        $ruls = [
+            "fromDate"  => "required|date|date_format:Y-m-d|before_or_equal:" . Carbon::now()->format('Y-m-d'),
+            "uptoDate"  => "required|date|date_format:Y-m-d|after_or_equal:" . Carbon::parse($request->fromDate)->format('Y-m-d'),
             "zonId"     => "nullable|digits_between:1,9223372036854775807",
             "wardId"    => "nullable|digits_between:1,9223372036854775807",
         ];
-        $validated = Validator::make($request->all(),$ruls);
-        
-        if($validated->fails())
-        {
+        $validated = Validator::make($request->all(), $ruls);
+
+        if ($validated->fails()) {
             return validationErrorV2($validated);
         }
-        try{
+        try {
             $fromDate = $uptoDate = Carbon::now()->format('Y-m-d');
             $zoneId =  $wardId = null;
-            if($request->zoneId)
-            {
+            if ($request->zoneId) {
                 $zoneId = $request->zoneId;
             }
-            if($request->wardId)
-            {
+            if ($request->wardId) {
                 $wardId = $request->wardId;
             }
-            if($request->fromDate)
-            {
+            if ($request->fromDate) {
                 $fromDate = $request->fromDate;
             }
-            if($request->uptoDate)
-            {
+            if ($request->uptoDate) {
                 $uptoDate = $request->uptoDate;
             }
             $fromFyear = getFY($fromDate);
@@ -5148,8 +5135,8 @@ class ReportController extends Controller
                     JOIN prop_properties ON prop_properties.id = prop_demands.property_id
                     WHERE prop_demands.status =1 
                         AND prop_demands.fyear <= '$uptoFyear'
-                        ".($zoneId?" AND prop_properties.zone_mstr_id = $zoneId" : "" )."
-                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId" : "" )."
+                        " . ($zoneId ? " AND prop_properties.zone_mstr_id = $zoneId" : "") . "
+                        " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
                     GROUP BY prop_properties.ward_mstr_id
                 )demands ON demands.ward_mstr_id = ulb_ward_masters.id
                 LEFT JOIN (
@@ -5178,8 +5165,8 @@ class ReportController extends Controller
                     WHERE prop_demands.status =1 
                         AND prop_transactions.tran_date  BETWEEN '$fromDate' AND '$uptoDate'
                         AND prop_demands.fyear <= '$uptoFyear'
-                        ".($zoneId?" AND prop_properties.zone_mstr_id = $zoneId" : "" )."
-                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId" : "" )."
+                        " . ($zoneId ? " AND prop_properties.zone_mstr_id = $zoneId" : "") . "
+                        " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
                     GROUP BY prop_properties.ward_mstr_id
                 )collection ON collection.ward_mstr_id = ulb_ward_masters.id
                 LEFT JOIN ( 
@@ -5193,16 +5180,16 @@ class ReportController extends Controller
                         AND prop_transactions.status in (1,2) AND prop_transactions.property_id is not null
                     WHERE prop_demands.status =1 
                         AND prop_transactions.tran_date < '$fromDate'
-                        ".($zoneId?" AND prop_properties.zone_mstr_id = $zoneId" : "" )."
-                        ".($wardId?" AND prop_properties.ward_mstr_id = $wardId" : "" )."
+                        " . ($zoneId ? " AND prop_properties.zone_mstr_id = $zoneId" : "") . "
+                        " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
                     GROUP BY prop_properties.ward_mstr_id
                 )prev_collection ON prev_collection.ward_mstr_id = ulb_ward_masters.id
                 WHERE 1=1 
-                    ".($zoneId?" AND ulb_ward_masters.zone = $zoneId" : "" )."
-                    ".($wardId?" AND ulb_ward_masters.id = $wardId" : "" )."
+                    " . ($zoneId ? " AND ulb_ward_masters.zone = $zoneId" : "") . "
+                    " . ($wardId ? " AND ulb_ward_masters.id = $wardId" : "") . "
                 GROUP BY ulb_ward_masters.id ,ulb_ward_masters.ward_name 
             ";
-            
+
 
             $online = $this->_DB_READ->table("prop_transactions")
                 ->select(
@@ -5213,11 +5200,11 @@ class ReportController extends Controller
                         SUM( COALESCE(prop_transactions.amount, 0)) AS amount
                     ")
                 )
-                ->JOIN("prop_properties","prop_properties.id","prop_transactions.property_id")
+                ->JOIN("prop_properties", "prop_properties.id", "prop_transactions.property_id")
                 ->WHERENOTNULL("prop_transactions.property_id")
                 ->WHEREIN("prop_transactions.status", [1, 2])
-                ->WHERE(DB::RAW("UPPER(prop_transactions.payment_mode)"),"=" ,DB::RAW("UPPER('ONLINE')"))
-                ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]); 
+                ->WHERE(DB::RAW("UPPER(prop_transactions.payment_mode)"), "=", DB::RAW("UPPER('ONLINE')"))
+                ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
 
             $doorToDoor = $this->_DB_READ->table("prop_transactions")
                 ->select(
@@ -5228,7 +5215,7 @@ class ReportController extends Controller
                         SUM( COALESCE(prop_transactions.amount, 0)) AS amount
                     ")
                 )
-                ->JOIN("prop_properties","prop_properties.id","prop_transactions.property_id")
+                ->JOIN("prop_properties", "prop_properties.id", "prop_transactions.property_id")
                 ->JOIN(DB::RAW("(                                        
                     SELECT DISTINCT wf_roleusermaps.user_id as role_user_id
                     FROM wf_roles
@@ -5243,11 +5230,11 @@ class ReportController extends Controller
                         AND wf_roles.id not in (8,108)
                     GROUP BY wf_roleusermaps.user_id
                     ORDER BY wf_roleusermaps.user_id
-                ) collecter"),"collecter.role_user_id","prop_transactions.user_id")
+                ) collecter"), "collecter.role_user_id", "prop_transactions.user_id")
                 ->WHERENOTNULL("prop_transactions.property_id")
                 ->WHEREIN("prop_transactions.status", [1, 2])
-                ->WHERE(DB::RAW("UPPER(prop_transactions.payment_mode)"),"<>" ,DB::RAW("UPPER('ONLINE')"))
-                ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);            
+                ->WHERE(DB::RAW("UPPER(prop_transactions.payment_mode)"), "<>", DB::RAW("UPPER('ONLINE')"))
+                ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
 
             $jsk = $this->_DB_READ->table("prop_transactions")
                 ->select(
@@ -5258,7 +5245,7 @@ class ReportController extends Controller
                         SUM( COALESCE(prop_transactions.amount, 0)) AS amount
                     ")
                 )
-                ->JOIN("prop_properties","prop_properties.id","prop_transactions.property_id")
+                ->JOIN("prop_properties", "prop_properties.id", "prop_transactions.property_id")
                 ->JOIN(DB::RAW("(                                        
                     SELECT DISTINCT wf_roleusermaps.user_id as role_user_id
                     FROM wf_roles
@@ -5273,10 +5260,10 @@ class ReportController extends Controller
                         AND wf_roles.id in (8,108)
                     GROUP BY wf_roleusermaps.user_id
                     ORDER BY wf_roleusermaps.user_id
-                ) collecter"),"collecter.role_user_id","prop_transactions.user_id")
+                ) collecter"), "collecter.role_user_id", "prop_transactions.user_id")
                 ->WHERENOTNULL("prop_transactions.property_id")
                 ->WHEREIN("prop_transactions.status", [1, 2])
-                ->WHERE(DB::RAW("UPPER(prop_transactions.payment_mode)"),"<>" ,DB::RAW("UPPER('ONLINE')"))
+                ->WHERE(DB::RAW("UPPER(prop_transactions.payment_mode)"), "<>", DB::RAW("UPPER('ONLINE')"))
                 ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
 
             $totalTrans = $this->_DB_READ->table("prop_transactions")
@@ -5288,26 +5275,26 @@ class ReportController extends Controller
                         SUM( COALESCE(prop_transactions.amount, 0)) AS amount
                     ")
                 )
-                ->JOIN("prop_properties","prop_properties.id","prop_transactions.property_id")
+                ->JOIN("prop_properties", "prop_properties.id", "prop_transactions.property_id")
                 ->WHERENOTNULL("prop_transactions.property_id")
                 ->WHEREIN("prop_transactions.status", [1, 2])
                 ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
 
             $penaltyRebates = $this->_DB_READ->table("prop_penaltyrebates")
-                            ->select(
-                                DB::raw("prop_properties.ward_mstr_id ,
+                ->select(
+                    DB::raw("prop_properties.ward_mstr_id ,
                                     COUNT( DISTINCT(prop_transactions.property_id) ) AS holding_count, 
                                     COUNT( DISTINCT(prop_transactions.user_id) ) AS user_count, 
                                     COUNT(DISTINCT(prop_transactions.id)) AS tran_count, 
                                     SUM( CASE WHEN prop_penaltyrebates.is_rebate = TRUE then COALESCE(prop_penaltyrebates.amount, 0) else 0 end) AS rebate_amount,
                                     SUM( CASE WHEN prop_penaltyrebates.is_rebate = false then COALESCE(prop_penaltyrebates.amount, 0) else 0 end) AS penalty_amount
                                 ")
-                            )
-                            ->join("prop_transactions","prop_transactions.id","prop_penaltyrebates.tran_id")
-                            ->JOIN("prop_properties","prop_properties.id","prop_transactions.property_id")
-                            ->WHERENOTNULL("prop_transactions.property_id")
-                            ->WHEREIN("prop_transactions.status", [1, 2])
-                            ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
+                )
+                ->join("prop_transactions", "prop_transactions.id", "prop_penaltyrebates.tran_id")
+                ->JOIN("prop_properties", "prop_properties.id", "prop_transactions.property_id")
+                ->WHERENOTNULL("prop_transactions.property_id")
+                ->WHEREIN("prop_transactions.status", [1, 2])
+                ->WHEREBETWEEN("prop_transactions.tran_date", [$fromDate, $uptoDate]);
 
             if ($zoneId) {
                 $online = $online->WHERE("prop_properties.zone_mstr_id", $zoneId);
@@ -5324,7 +5311,7 @@ class ReportController extends Controller
                 $penaltyRebates = $penaltyRebates->WHERE("prop_properties.ward_mstr_id", $wardId);
             }
 
-            
+
 
             $online = $online->GROUPBY("prop_properties.ward_mstr_id");
             $doorToDoor =  $doorToDoor->GROUPBY("prop_properties.ward_mstr_id");
@@ -5338,13 +5325,13 @@ class ReportController extends Controller
             $totalTrans  = $totalTrans->get();
             $penaltyRebates = $penaltyRebates->get();
 
-            
 
-            $dcbData = collect($this->_DB_READ->select($sql))->map(function($val)use($online,$doorToDoor,$jsk,$totalTrans){
-                $tcTran = collect($doorToDoor)->where("ward_mstr_id",$val->id);
-                $counterTran = collect($jsk)->where("ward_mstr_id",$val->id);
-                $onlineTran = collect($online)->where("ward_mstr_id",$val->id);
-                $totalTran  = collect($totalTrans)->where("ward_mstr_id",$val->id);
+
+            $dcbData = collect($this->_DB_READ->select($sql))->map(function ($val) use ($online, $doorToDoor, $jsk, $totalTrans) {
+                $tcTran = collect($doorToDoor)->where("ward_mstr_id", $val->id);
+                $counterTran = collect($jsk)->where("ward_mstr_id", $val->id);
+                $onlineTran = collect($online)->where("ward_mstr_id", $val->id);
+                $totalTran  = collect($totalTrans)->where("ward_mstr_id", $val->id);
                 $val->total_demand = $val->arrear_demand + $val->current_demand;
                 $val->total_collection = $val->arrear_collection + $val->current_collection;
                 $val->arrear_due = $val->old_due;
@@ -5352,13 +5339,13 @@ class ReportController extends Controller
                 $val->counter_tran_count = $counterTran->sum("tran_count");
                 $val->online_tran_count = $onlineTran->sum("tran_count");
                 $val->total_tran_count = $totalTran->sum("tran_count");
-                preg_match('/\d+/', $val->ward_no, $matches); 
+                preg_match('/\d+/', $val->ward_no, $matches);
                 preg_match('/[a-zA-Z]+/', $val->ward_no, $matchesC);
-                $val->sl = (int) implode("",$matches);
-                $val->slZ = implode("",$matchesC);
+                $val->sl = (int) implode("", $matches);
+                $val->slZ = implode("", $matchesC);
                 return $val;
             });
-            $dcbData = collect($dcbData)->sortBy(["slZ","sl"])->values();
+            $dcbData = collect($dcbData)->sortBy(["slZ", "sl"])->values();
             $granTax = [
                 "id"                    =>  0,
                 "ward_no"             =>  "Grand Tax",
@@ -5403,9 +5390,9 @@ class ReportController extends Controller
                 "balance_hh"      =>  "---",
                 "arrear_demand"      =>  "---",
                 "previous_collection"      =>  "---",
-                "current_demand"      => "---" ,
+                "current_demand"      => "---",
                 "arrear_collection"      =>  roundFigure($penaltyRebates->sum("penalty_amount")),
-                "current_collection"      =>  "---",#$penaltyRebates->sum("rebate_amount"),
+                "current_collection"      =>  "---", #$penaltyRebates->sum("rebate_amount"),
                 "old_due"      => "---",
                 "arrear_due"      => "---",
                 "current_due"      =>  "---",
@@ -5415,18 +5402,16 @@ class ReportController extends Controller
                 "current_eff"      =>  "---",
                 "outstanding"      =>  "---",
                 "total_demand"      =>  "---",
-                "total_collection"      =>  roundFigure($penaltyRebates->sum("penalty_amount")) ,#+ $penaltyRebates->sum("rebate_amount"),
+                "total_collection"      =>  roundFigure($penaltyRebates->sum("penalty_amount")), #+ $penaltyRebates->sum("rebate_amount"),
                 "tc_tran_count"      =>  "---",
                 "counter_tran_count"      =>  "---",
                 "online_tran_count"      =>  "---",
                 "total_tran_count"      =>  roundFigure($dcbData->sum("tran_count")),
             ];
-            $dcbData->push($granTax,$penalties,$granTax);
+            $dcbData->push($granTax, $penalties, $granTax);
 
             return responseMsgs(true, "Zone Wise daily Collecton Report", $dcbData);
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), []);
         }
     }
@@ -5995,25 +5980,24 @@ class ReportController extends Controller
                         " . ($userId ? "AND prop_transactions.user_id = $userId" : "") . "
                     order by prop_transactions.tran_date,prop_transactions.id,prop_demands.fyear ASC
             ";
-            
+
 
             $report = $this->_DB_READ->select($query);
             $test = collect($report);
-            $report = collect($report)->map(function ($val) use($uptoFyear,$test){
-                $val->rebate = $val->row_num==1 ? $val->rebate : 0;
-                $val->rebate = $val->row_num_second==1 ? $val->procces_fee : 0;
-                $penalty = ($val->row_num==2) ? $val->penalty : 0;
-                if($val->row_num ==1)
-                {
-                    $penalty = (($test)->where("id",$val->id)->count("id")==1 ? $val->penalty : 0 );
+            $report = collect($report)->map(function ($val) use ($uptoFyear, $test) {
+                $val->rebate = $val->row_num == 1 ? $val->rebate : 0;
+                $val->rebate = $val->row_num_second == 1 ? $val->procces_fee : 0;
+                $penalty = ($val->row_num == 2) ? $val->penalty : 0;
+                if ($val->row_num == 1) {
+                    $penalty = (($test)->where("id", $val->id)->count("id") == 1 ? $val->penalty : 0);
                 }
-                $val->penalty = $penalty ;
-                $val->advance_amount = $val->row_num==1 ? $val->advance_amount : 0;
-                $val->adjusted_amount = $val->row_num==1 ? $val->adjusted_amount : 0;
+                $val->penalty = $penalty;
+                $val->advance_amount = $val->row_num == 1 ? $val->advance_amount : 0;
+                $val->adjusted_amount = $val->row_num == 1 ? $val->adjusted_amount : 0;
                 return $val;
             });
-            $arrearReports = $report->where("fyear","<",$uptoFyear);
-            $currentReports = $report->where("fyear","=",$uptoFyear);
+            $arrearReports = $report->where("fyear", "<", $uptoFyear);
+            $currentReports = $report->where("fyear", "=", $uptoFyear);
             $arrear = [
                 "id"                    =>  0,
                 "row_num"             =>  "1",
@@ -6027,7 +6011,7 @@ class ReportController extends Controller
                 "book_no"      =>  "---",
                 "receipt_no"      =>  "---",
                 "tran_date"      =>  "---",
-                "fyear"      => "---" ,
+                "fyear"      => "---",
                 "general_tax"      =>  roundFigure($arrearReports->sum("general_tax")),
                 "road_tax"      =>  roundFigure($arrearReports->sum("road_tax")),
                 "firefighting_tax"      => roundFigure($arrearReports->sum("firefighting_tax")),
@@ -6073,7 +6057,7 @@ class ReportController extends Controller
                 "book_no"      =>  "---",
                 "receipt_no"      =>  "---",
                 "tran_date"      =>  "---",
-                "fyear"      => "---" ,
+                "fyear"      => "---",
                 "general_tax"      =>  roundFigure($currentReports->sum("general_tax")),
                 "road_tax"      =>  roundFigure($currentReports->sum("road_tax")),
                 "firefighting_tax"      => roundFigure($currentReports->sum("firefighting_tax")),
@@ -6120,7 +6104,7 @@ class ReportController extends Controller
                 "book_no"      =>  "---",
                 "receipt_no"      =>  "---",
                 "tran_date"      =>  "---",
-                "fyear"      => "---" ,
+                "fyear"      => "---",
                 "general_tax"      =>  roundFigure($report->sum("general_tax")),
                 "road_tax"      =>  roundFigure($report->sum("road_tax")),
                 "firefighting_tax"      => roundFigure($report->sum("firefighting_tax")),
@@ -6154,7 +6138,7 @@ class ReportController extends Controller
                 "mutation_fee_tran_date"      =>  "---",
             ];
 
-            $report->push($arrear,$current,$granTax);
+            $report->push($arrear, $current, $granTax);
             $data["report"] = $report;
             $data["headers"] = [
                 "fromDate" => Carbon::parse($fromDate)->format('d-m-Y'),
@@ -6167,33 +6151,31 @@ class ReportController extends Controller
                 "paymentMode" => $paymentMode ? str::replace(",", "/", $paymentMode) : "All",
                 "printDate" => Carbon::now()->format('d-m-Y H:i:s A'),
                 "printedBy" => $user->name ?? "",
-            ]; 
+            ];
 
-            
+
             return responseMsgs(true, "Admin Dashboard Reports", remove_null($data));
-        } 
-        catch (Exception $e) {
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), []);
         }
     }
 
     public function propEachFyearHoldingDues(Request $request)
     {
-        $ruls =[
+        $ruls = [
             "zoneId"     => "required|digits_between:1,9223372036854775807",
             "wardId"    => "required|digits_between:1,9223372036854775807",
         ];
-        $validated = Validator::make($request->all(),$ruls);
-        
-        if($validated->fails())
-        {
+        $validated = Validator::make($request->all(), $ruls);
+
+        if ($validated->fails()) {
             return validationErrorV2($validated);
         }
-        try{
+        try {
             $user = Auth()->user();
             $currentFyear = getFY();
-            list($fromFyear,$uptoFyear) = explode("-",$currentFyear);
-            $wardId = $zoneId=null;
+            list($fromFyear, $uptoFyear) = explode("-", $currentFyear);
+            $wardId = $zoneId = null;
             if ($request->wardId) {
                 $wardId = $request->wardId;
             }
@@ -6313,8 +6295,8 @@ class ReportController extends Controller
                 from prop_demands
                 join prop_properties on prop_properties.id = prop_demands.property_id
                 where prop_demands.status =1 
-                ".($wardId ? " AND prop_properties.ward_mstr_id = $wardId":"")."
-                ".($zoneId ? " AND prop_properties.zone_mstr_id = $zoneId":"")."
+                " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
+                " . ($zoneId ? " AND prop_properties.zone_mstr_id = $zoneId" : "") . "
                 order by prop_demands.property_id,prop_demands.fyear
             ),
             demand_with_penalty as (
@@ -6409,17 +6391,158 @@ class ReportController extends Controller
             left join ulb_ward_masters on ulb_ward_masters.id = prop_properties.ward_mstr_id            
             ORDER BY prop_properties.id,zone_masters.id,ulb_ward_masters.id            
             ";
-        $data = DB::select($sql);
-        return responseMsgs(true,"",$data);
+            $data = DB::select($sql);
+            return responseMsgs(true, "", $data);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), []);
+        }
+    }
 
-        }catch (Exception $e) {
+    // public function tcNewAssessment(Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         "fromDate" => "nullable|date|date_format:Y-m-d",
+    //         "uptoDate" => "nullable|date|date_format:Y-m-d",
+    //         'zoneId' => "nullable|integer",
+    //         'wardId' => "nullable|integer"
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Validation error',
+    //             'errors' => $validator->errors()
+    //         ], 200);
+    //     }
+    //     try {
+    //         $perPage = $request->perPage ?? 5;
+    //         $fromDate = $uptoDate = Carbon::now()->format('Y-m-d');
+    //         $activeSaf = new PropActiveSaf();
+    //         $safDtl = $activeSaf->getActiveSafDtls()->where('applied_by', "TC")->get();
+    //         if ($request->wardId)
+    //             $safDtl = $safDtl->where('ward_mstr_id', $request->wardId);
+    //         if ($request->zoneId)
+    //             $safDtl = $safDtl->where('zone_mstr_id', $request->zoneId);
+    //         if ($fromDate && $uptoDate) {
+    //             $safDtl = $safDtl->whereBetween('application_date', [$request->fromDate,$request->uptoDate]);
+    //         }
+    //         $list = $safDtl->paginate($perPage);
+
+    //         return responseMsgs(true, "Tc Applied New Assessment Reports", remove_null($list));
+    //     } catch (Exception $e) {
+    //         return responseMsgs(false, $e->getMessage(), []);
+    //     }
+    // }
+
+    public function tcNewAssessment(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            "fromDate" => "nullable|date|date_format:Y-m-d",
+            "uptoDate" => "nullable|date|date_format:Y-m-d",
+            'zoneId' => "nullable|integer",
+            'wardId' => "nullable|integer",
+            'perPage' => "nullable|integer|min:1",
+            'page' => "nullable|integer|min:1"
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 200);
+        }
+
+        try {
+            $perPage = $request->perPage ?? 10;
+            $page = $request->page ?? 1;
+            $fromDate = $request->fromDate ?? Carbon::now()->format('Y-m-d');
+            $uptoDate = $request->uptoDate ?? Carbon::now()->format('Y-m-d');
+
+            $activeSaf = new PropActiveSaf();
+            $query = $activeSaf->getActiveSafDtls()->where('applied_by', "TC");
+
+            if ($request->wardId) {
+                $query->where('ward_mstr_id', $request->wardId);
+            }
+
+            if ($request->zoneId) {
+                $query->where('zone_mstr_id', $request->zoneId);
+            }
+
+            if ($fromDate && $uptoDate) {
+                $query->whereBetween('application_date', [$fromDate, $uptoDate]);
+            }
+            $list = $query->paginate($perPage, ['*'], 'page', $page);
+
+            $data = [
+                'current_page' => $list->currentPage(),
+                'last_page' => $list->lastPage(),
+                'total' => $list->total(),
+                'data' => $list->items()
+            ];
+            return responseMsgs(true, "Tc Applied New Assessment Reports", remove_null($data));
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), []);
+        }
+    }
+
+    public function tcReAssessment(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            "fromDate" => "nullable|date|date_format:Y-m-d",
+            "uptoDate" => "nullable|date|date_format:Y-m-d",
+            'zoneId' => "nullable|integer",
+            'wardId' => "nullable|integer",
+            'perPage' => "nullable|integer|min:1",
+            'page' => "nullable|integer|min:1"
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 200);
+        }
+
+        try {
+            $perPage = $request->perPage ?? 10;
+            $page = $request->page ?? 1;
+            $fromDate = $request->fromDate ?? Carbon::now()->format('Y-m-d');
+            $uptoDate = $request->uptoDate ?? Carbon::now()->format('Y-m-d');
+
+            $activeSaf = new PropActiveSaf();
+            $query = $activeSaf->getActiveSafDtls()->where('applied_by', "TC Reassesment");
+
+            if ($request->wardId) {
+                $query->where('ward_mstr_id', $request->wardId);
+            }
+
+            if ($request->zoneId) {
+                $query->where('zone_mstr_id', $request->zoneId);
+            }
+
+            if ($fromDate && $uptoDate) {
+                $query->whereBetween('application_date', [$fromDate, $uptoDate]);
+            }
+            $list = $query->paginate($perPage, ['*'], 'page', $page);
+
+            $data = [
+                'current_page' => $list->currentPage(),
+                'last_page' => $list->lastPage(),
+                'total' => $list->total(),
+                'data' => $list->items()
+            ];
+            return responseMsgs(true, "Tc Applied New Assessment Reports", remove_null($data));
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), []);
         }
     }
 
 
-    /*
 
+    /*
      #====================================================
      
      public function safAppliedtypeDetails(Request $request)
