@@ -346,14 +346,11 @@ class WaterConsumerWfController extends Controller
             case $wfLevels['JE']:
                 // JE Condition in case of site adjustment
                 if ($application->charge_catagory_id == 10) {
-                    if ($application->is_field_verify == false) {
+                    if ($application->is_field_verified == false) {
                         throw new Exception("Field Not Verified!");
                     }
                     if ($application->doc_verify_status == false) {
                         throw new Exception("Document Not Fully Verified");
-                    }
-                    if (is_null($application->je_status)) {
-                        throw new Exception("JE Status Not Set");
                     }
                 }
                 $siteDetails = $mWaterSiteInspection->getSiteDetails($application->id)
