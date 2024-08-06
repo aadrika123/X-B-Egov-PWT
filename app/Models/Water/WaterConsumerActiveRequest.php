@@ -260,6 +260,7 @@ class WaterConsumerActiveRequest extends Model
             'water_consumer_complains.ward_no',
             'water_consumer_complains.address as complainAddress',
             'water_consumer_complains.consumer_no as consumerNoofCompain',
+            'water_consumer_active_requests.je_status',
         )
             ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_consumer_active_requests.current_role')
             ->leftjoin('ulb_masters', 'ulb_masters.id', '=', 'water_consumer_active_requests.ulb_id')

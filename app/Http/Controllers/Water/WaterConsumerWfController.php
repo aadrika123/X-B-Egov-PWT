@@ -826,6 +826,7 @@ class WaterConsumerWfController extends Controller
                 ['displayString' => 'Address', 'key' => 'Address',                 'value' => $collectionApplications->complainAddress],
                 ['displayString' => 'Mobile No', 'key' => 'mobileNo',               'value' => $collectionApplications->mobile_no],
                 ['displayString' => 'Consumer No', 'key' => 'consumerNo',            'value' => $collectionApplications->consumerNoofCompain],
+                ['displayString' => 'Je Status', 'key' => 'JeStatus',            'value' => $collectionApplications->je_status],
             ]);
         }
 
