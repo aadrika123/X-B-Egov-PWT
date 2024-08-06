@@ -721,18 +721,23 @@ class WaterConsumerWfController extends Controller
         # CardArray
         $cardDetails = $this->getCardDetails($applicationDetails, $ownerDetail);
         $chargeCatgory =  $applicationDetails->pluck('charge_category');
+        $chargeCatgoryId = $applicationDetails->pluck('charge_catagory_id')->first();
         $cardData = [
             'headerTitle' => $chargeCatgory,
             'data' => $cardDetails
         ];
         $fullDetailsData['fullDetailsData']['cardArray'] = new Collection($cardData);
         # TableArray
-        $ownerList = $this->getOwnerDetails($ownerDetail);
-        $ownerView = [
-            'headerTitle' => 'Owner Details',
-            'tableHead' => ["#", "Owner Name", "Guardian Name", "Mobile No", "Email", "City", "District"],
-            'tableData' => $ownerList
-        ];
+        $ownerView = [];
+        if ($chargeCatgoryId != 10) {
+            $ownerList = $this->getOwnerDetails($ownerDetail);
+            $ownerView = [
+                'headerTitle' => 'Owner Details',
+                'tableHead' => ["#", "Owner Name", "Guardian Name", "Mobile No", "Email", "City", "District"],
+                'tableData' => $ownerList
+            ];
+        }
+
         $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerView]);
 
         # Level comment
@@ -774,28 +779,41 @@ class WaterConsumerWfController extends Controller
         $collectionApplications = collect($applicationDetails)->first();
 
         // Basic details common to all applications
-        $basicDetails = [
-            ['displayString' => 'Ward No',            'key' => 'WardNo',            'value' => $collectionApplications->ward_name],
-            ['displayString' => 'ApplyDate',          'key' => 'applyDate',         'value' => $collectionApplications->apply_date],
-            ['displayString' => 'TapSize',            'key' => 'taPSize',           'value' => $collectionApplications->tab_size],
-            ['displayString' => 'PropertyType',       'key' => 'propertyType',      'value' => $collectionApplications->property_type],
-            ['displayString' => 'Address',            'key' => 'Address',           'value' => $collectionApplications->address],
-            ['displayString' => 'Category',           'key' => 'category',          'value' => $collectionApplications->category],
-            ['displayString' => 'Zone',               'key' => 'Zone',              'value' => $collectionApplications->zone_name],
-        ];
+        if ($collectionApplications->charge_catagory_id != 10) {
+            $basicDetails = [
+                ['displayString' => 'Ward No',            'key' => 'WardNo',            'value' => $collectionApplications->ward_name],
+                ['displayString' => 'ApplyDate',          'key' => 'applyDate',         'value' => $collectionApplications->apply_date],
+                ['displayString' => 'TapSize',            'key' => 'taPSize',           'value' => $collectionApplications->tab_size],
+                ['displayString' => 'PropertyType',       'key' => 'propertyType',      'value' => $collectionApplications->property_type],
+                ['displayString' => 'Address',            'key' => 'Address',           'value' => $collectionApplications->address],
+                ['displayString' => 'Category',           'key' => 'category',          'value' => $collectionApplications->category],
+                ['displayString' => 'Zone',               'key' => 'Zone',              'value' => $collectionApplications->zone_name],
+            ];
 
-        // If charge category ID is 6, add the new field
-        if ($collectionApplications->charge_catagory_id == 6) {
-            $basicDetails[] = ['displayString' => 'New Name', 'key' => 'NewName', 'value' => $collectionApplications->new_name];
-        } elseif ($collectionApplications->charge_catagory_id == 7) {
-            $basicDetails[] = ['displayString' => 'New meter No', 'key' => 'NewMeterNo', 'value' => $collectionApplications->newMeterNo];
-            $basicDetails[] = ['displayString' => 'Old Meter No ', 'key' => 'OldMeterNo', 'value' => $collectionApplications->meter_no];
-        } elseif ($collectionApplications->charge_catagory_id == 8) {
-            $basicDetails[] = ['displayString' => 'New Property Type', 'key' => 'NewPropertyType', 'value' => $collectionApplications->newPropertyType];
-            $basicDetails[] = ['displayString' => 'New Category', 'key' => 'NewCategory', 'value' => $collectionApplications->newCategory];
-        } elseif ($collectionApplications->charge_catagory_id == 9) {
-            $basicDetails[] = ['displayString' => 'New Tab Size', 'key' => 'NewTabSize', 'value' => $collectionApplications->newTabSize];
+            // If charge category ID is 6, add the new field
+            if ($collectionApplications->charge_catagory_id == 6) {
+                $basicDetails[] = ['displayString' => 'New Name', 'key' => 'NewName', 'value' => $collectionApplications->new_name];
+            } elseif ($collectionApplications->charge_catagory_id == 7) {
+                $basicDetails[] = ['displayString' => 'New meter No', 'key' => 'NewMeterNo', 'value' => $collectionApplications->newMeterNo];
+                $basicDetails[] = ['displayString' => 'Old Meter No ', 'key' => 'OldMeterNo', 'value' => $collectionApplications->meter_no];
+            } elseif ($collectionApplications->charge_catagory_id == 8) {
+                $basicDetails[] = ['displayString' => 'New Property Type', 'key' => 'NewPropertyType', 'value' => $collectionApplications->newPropertyType];
+                $basicDetails[] = ['displayString' => 'New Category', 'key' => 'NewCategory', 'value' => $collectionApplications->newCategory];
+            } elseif ($collectionApplications->charge_catagory_id == 9) {
+                $basicDetails[] = ['displayString' => 'New Tab Size', 'key' => 'NewTabSize', 'value' => $collectionApplications->newTabSize];
+            }
+        } else {
+            $basicDetails = [
+                ['displayString' => 'Ward No',            'key' => 'WardNo',            'value' => $collectionApplications->ward_no],
+                ['displayString' => 'ApplyDate',          'key' => 'applyDate',         'value' => $collectionApplications->apply_date],
+                ['displayString' => 'City',               'key' => 'City',              'value' => $collectionApplications->city],
+                ['displayString' => 'Address',            'key' => 'Address',           'value' => $collectionApplications->complainAddress],
+                ['displayString' => 'MobileNo',           'key' => 'mobileNo',          'value' => $collectionApplications->mobile_no],
+                ['displayString' => 'Zone',               'key' => 'Zone',              'value' => $collectionApplications->zone_name],
+                ['displayString' => 'ConsumerNo',         'key' => 'consumerNo',        'value' => $collectionApplications->consumerNoofCompain],
+            ];
         }
+
         return new Collection($basicDetails);
     }
 
@@ -1137,9 +1155,9 @@ class WaterConsumerWfController extends Controller
         $type = [];
         if ($application->charge_catagory_id == 10) {
             $type = ["INSPECTION_REPORT"];
-        }elseif($application->charge_catagory_id == 11){
+        } elseif ($application->charge_catagory_id == 11) {
             $type = ["PRESSURE REPORT"];
-        }elseif($application->charge_catagory_id == 12){
+        } elseif ($application->charge_catagory_id == 12) {
             $type = ["QUALITY_REPORT"];
         }
         return $mRefReqDocs->getCollectiveDocByCode($moduleId, $type);

@@ -257,7 +257,7 @@ class SafApprovalBll
         $oldOwners = PropOwner::where("property_id", $propProperties->id)->get();
         $oldDemand = PropDemand::where("property_id", $propProperties->id)->get();
         
-        $currentYearDemand = collect($oldDemand)->where("fyear",getFY());
+        $currentYearDemand = collect($oldDemand)->where("status",1);
         $currentYearDemandId = ($currentYearDemand->implode("id",","));
         $currentYearDemandId = $currentYearDemandId ? (int)$currentYearDemandId  : 0;
         
@@ -499,6 +499,8 @@ class SafApprovalBll
                 "due_open_ploat_tax" => $val["openPloatTax"] ?? 0,
             ];
             if ($oldDemand = $demand->where("fyear", $arr["fyear"])->where("property_id", $arr["property_id"])->where("status", 1)->first()) {
+                $arr["adjustAmount"]=$val["adjustAmount"];
+                $arr["dueAmount"]=$val["dueAmount"];
                 $oldDemand = $this->updateOldDemandsV1($oldDemand, $arr);
                 $oldDemand->update();                
                 continue;
@@ -522,6 +524,7 @@ class SafApprovalBll
                 "ulb_id" => (auth()->user() ? auth()->user()->ulb_id : null),
                 "remarks" => "Old Demand payment",
             ];
+            $newAdvance->where("prop_id", $advArr["prop_id"])->where("remarks",$advArr["remarks"])->update(["status"=>0]);
             $advanceId = $newAdvance->store($advArr);
             $history = new PropAssessmentHistory();
             $history->where("id",$this->_assessmentHistoryId)->update(["advance_id"=>$advanceId,"total_paid_demand_amount"=>$oldPaidTax,"new_demand_log"=>$new_demand_log]);
@@ -645,6 +648,139 @@ class SafApprovalBll
             $oldDemand->is_full_paid = true;
         }
         return $oldDemand;
+    }
+
+    public function updateOldDemandsV2($oldDemand,$newDemand){
+        $adjustDemand = $this->demandAdjust($newDemand);
+        $newDemand = array_merge($newDemand,$adjustDemand);
+
+        $oldDemand->maintanance_amt =  $newDemand["maintanance_amt"];
+        $oldDemand->aging_amt       = $newDemand["aging_amt"];
+        $oldDemand->general_tax     = $newDemand["general_tax"];
+        $oldDemand->road_tax        = $newDemand["road_tax"];
+        $oldDemand->firefighting_tax = $newDemand["firefighting_tax"];
+        $oldDemand->education_tax   = $newDemand["education_tax"];
+        $oldDemand->water_tax       = $newDemand["water_tax"];
+        $oldDemand->cleanliness_tax = $newDemand["cleanliness_tax"];
+        $oldDemand->sewarage_tax    = $newDemand["sewarage_tax"];
+        $oldDemand->tree_tax        = $newDemand["tree_tax"];
+        $oldDemand->professional_tax = $newDemand["professional_tax"];
+        $oldDemand->total_tax       = $newDemand["total_tax"];
+        $oldDemand->balance         = $newDemand["total_tax"];
+        $oldDemand->tax1            = $newDemand["tax1"];
+        $oldDemand->tax2            = $newDemand["tax2"];
+        $oldDemand->tax3            = $newDemand["tax3"];
+        $oldDemand->sp_education_tax = $newDemand["sp_education_tax"];
+        $oldDemand->water_benefit   = $newDemand["water_benefit"];
+        $oldDemand->water_bill      = $newDemand["water_bill"];
+        $oldDemand->sp_water_cess   = $newDemand["sp_water_cess"];
+        $oldDemand->drain_cess      = $newDemand["drain_cess"];
+        $oldDemand->light_cess      = $newDemand["light_cess"];
+        $oldDemand->major_building  = $newDemand["major_building"];
+        $oldDemand->due_maintanance_amt  = $newDemand["due_maintanance_amt"];
+        $oldDemand->due_aging_amt  = $newDemand["due_aging_amt"];
+        $oldDemand->due_general_tax  = $newDemand["due_general_tax"];
+        $oldDemand->due_road_tax  = $newDemand["due_road_tax"];
+        $oldDemand->due_firefighting_tax  = $newDemand["due_firefighting_tax"];
+        $oldDemand->due_education_tax  = $newDemand["due_education_tax"];
+        $oldDemand->due_water_tax  = $newDemand["due_water_tax"];
+        $oldDemand->due_cleanliness_tax  = $newDemand["due_cleanliness_tax"];
+        $oldDemand->due_sewarage_tax  = $newDemand["due_sewarage_tax"];
+        $oldDemand->due_tree_tax  = $newDemand["due_tree_tax"];
+        $oldDemand->due_professional_tax  = $newDemand["due_professional_tax"];
+        $oldDemand->due_total_tax  =$newDemand["due_total_tax"];
+        $oldDemand->due_balance  = $newDemand["due_balance"];
+        $oldDemand->due_tax1  = $newDemand["due_tax1"];
+        $oldDemand->due_tax2  = $newDemand["due_tax2"];
+        $oldDemand->due_tax3  = $newDemand["due_tax3"];
+        $oldDemand->due_sp_education_tax  = $newDemand["due_sp_education_tax"];
+        $oldDemand->due_water_benefit  = $newDemand["due_water_benefit"];
+        $oldDemand->due_water_bill  = $newDemand["due_water_bill"];
+        $oldDemand->due_sp_water_cess  = $newDemand["due_sp_water_cess"];
+        $oldDemand->due_drain_cess  = $newDemand["due_drain_cess"];
+        $oldDemand->due_light_cess  = $newDemand["due_light_cess"];
+        $oldDemand->due_major_building  = $newDemand["due_major_building"];
+        $oldDemand->open_ploat_tax  = $newDemand["open_ploat_tax"];
+        $oldDemand->due_open_ploat_tax  = $newDemand["due_open_ploat_tax"];
+        $oldDemand->paid_total_tax  = 0;
+        if ($oldDemand->due_total_tax > 0 && $oldDemand->paid_status == 1) {
+            $oldDemand->is_full_paid = false;
+        }
+        if ($oldDemand->due_total_tax > 0 && $oldDemand->paid_status == 0) {
+            $oldDemand->is_full_paid = true;
+        }
+        return $oldDemand;
+    }
+
+    public function demandAdjust($arr)
+    {
+        $currentTax = collect([$arr]);
+
+        $totaTax = $currentTax->sum("total_tax");
+        $defmandDueAmount = $currentTax->sum("dueAmount");
+        $defmandDueAmount = $defmandDueAmount >0?$defmandDueAmount :0;
+
+        $generalTaxPerc = ($currentTax->sum('general_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $roadTaxPerc = ($currentTax->sum('road_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $firefightingTaxPerc = ($currentTax->sum('firefighting_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $educationTaxPerc = ($currentTax->sum('education_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $waterTaxPerc = ($currentTax->sum('water_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $cleanlinessTaxPerc = ($currentTax->sum('cleanliness_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $sewarageTaxPerc = ($currentTax->sum('sewarage_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $treeTaxPerc = ($currentTax->sum('tree_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $professionalTaxPerc = ($currentTax->sum('professional_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $tax1Perc = ($currentTax->sum('tax1') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $tax2Perc = ($currentTax->sum('tax2') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $tax3Perc = ($currentTax->sum('tax3') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $stateEducationTaxPerc = ($currentTax->sum('sp_education_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $waterBenefitPerc = ($currentTax->sum('water_benefit') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $waterBillPerc = ($currentTax->sum('water_bill') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $spWaterCessPerc = ($currentTax->sum('sp_water_cess') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $drainCessPerc = ($currentTax->sum('drain_cess') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $lightCessPerc = ($currentTax->sum('light_cess') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $majorBuildingPerc = ($currentTax->sum('major_building') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $openPloatTaxPerc = ($currentTax->sum('open_ploat_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+
+        $totalPerc = $generalTaxPerc + $roadTaxPerc + $firefightingTaxPerc + $educationTaxPerc +
+            $waterTaxPerc + $cleanlinessTaxPerc + $sewarageTaxPerc + $treeTaxPerc
+            + $professionalTaxPerc + $tax1Perc + $tax2Perc + $tax3Perc
+            + $stateEducationTaxPerc + $waterBenefitPerc + $waterBillPerc +
+            $spWaterCessPerc + $drainCessPerc + $lightCessPerc + $majorBuildingPerc
+            + $openPloatTaxPerc;
+
+
+
+        /**
+         * | 100 % = Payable Amount
+         * | 1 % = Payable Amount/100  (Hence We Have devided the taxes by hundred)
+         */
+
+        $dues = [
+            'due_general_tax' => roundFigure(($defmandDueAmount * $generalTaxPerc) / 100),
+            'due_road_tax' => roundFigure(($defmandDueAmount * $roadTaxPerc) / 100),
+            'due_firefighting_tax' => roundFigure(($defmandDueAmount * $firefightingTaxPerc) / 100),
+            'due_education_tax' => roundFigure(($defmandDueAmount * $educationTaxPerc) / 100),
+            'due_water_tax' => roundFigure(($defmandDueAmount * $waterTaxPerc) / 100),
+            'due_cleanliness_tax' => roundFigure(($defmandDueAmount * $cleanlinessTaxPerc) / 100),
+            'due_sewarage_tax' => roundFigure(($defmandDueAmount * $sewarageTaxPerc) / 100),
+            'due_tree_tax' => roundFigure(($defmandDueAmount * $treeTaxPerc) / 100),
+            'due_professional_tax' => roundFigure(($defmandDueAmount * $professionalTaxPerc) / 100),
+            'due_tax1' => roundFigure(($defmandDueAmount * $tax1Perc) / 100),
+            'due_tax2' => roundFigure(($defmandDueAmount * $tax2Perc) / 100),
+            'due_tax3' => roundFigure(($defmandDueAmount * $tax3Perc) / 100),
+            'due_sp_education_tax' => roundFigure(($defmandDueAmount * $stateEducationTaxPerc) / 100),
+            'due_water_benefit' => roundFigure(($defmandDueAmount * $waterBenefitPerc) / 100),
+            'due_water_bill' => roundFigure(($defmandDueAmount * $waterBillPerc) / 100),
+            'due_sp_water_cess' => roundFigure(($defmandDueAmount * $spWaterCessPerc) / 100),
+            'due_drain_cess' => roundFigure(($defmandDueAmount * $drainCessPerc) / 100),
+            'due_light_cess' => roundFigure(($defmandDueAmount * $lightCessPerc) / 100),
+            'due_major_building' => roundFigure(($defmandDueAmount * $majorBuildingPerc) / 100),
+            'due_open_ploat_tax' => roundFigure(($defmandDueAmount * $openPloatTaxPerc) / 100),
+            'due_total_tax' => roundFigure(($defmandDueAmount * $totalPerc) / 100),
+            'due_balance' => roundFigure(($defmandDueAmount * $totalPerc) / 100),
+            'balance' => roundFigure(($defmandDueAmount * $totalPerc) / 100),
+        ];
+        return $dues;
     }
 
     public function transerMutationDemands()

@@ -125,7 +125,7 @@ class WaterConsumerActiveRequest extends Model
             "ulb_ward_masters.ward_name",
             "water_consumer_charge_categories.charge_category"
         )
-            
+
             ->leftjoin('water_consumer_charges', 'water_consumer_charges.related_id', 'water_consumer_active_requests.id')
             ->join('water_consumer_charge_categories', 'water_consumer_charge_categories.id', 'water_consumer_active_requests.charge_catagory_id')
             ->join('water_second_consumers', 'water_second_consumers.id', 'water_consumer_active_requests.consumer_id')
@@ -252,6 +252,14 @@ class WaterConsumerActiveRequest extends Model
             'water_consumer_active_requests.property_type as newPropertyType',
             'water_consumer_active_requests.category as newCategory',
             'water_consumer_active_requests.tab_size as newTabSize',
+            'water_consumer_complains.respodent_name',
+            'water_consumer_complains.city',
+            'water_consumer_complains.district',
+            'water_consumer_complains.state',
+            'water_consumer_complains.mobile_no',
+            'water_consumer_complains.ward_no',
+            'water_consumer_complains.address as complainAddress',
+            'water_consumer_complains.consumer_no as consumerNoofCompain',
         )
             ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_consumer_active_requests.current_role')
             ->leftjoin('ulb_masters', 'ulb_masters.id', '=', 'water_consumer_active_requests.ulb_id')
@@ -261,6 +269,10 @@ class WaterConsumerActiveRequest extends Model
             ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_second_consumers.property_type_id')
             ->join('water_consumer_charge_categories', 'water_consumer_charge_categories.id', 'water_consumer_active_requests.charge_catagory_id')
             ->leftjoin('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
+            ->leftJoin('water_consumer_complains', function ($join) {
+                $join->on('water_consumer_complains.application_id', '=', 'water_consumer_active_requests.id')
+                    ->where('water_consumer_complains.status', 1);
+            })
             ->where('water_consumer_active_requests.id', $request->applicationId)
             ->where('water_consumer_active_requests.status', true);
     }
@@ -381,7 +393,7 @@ class WaterConsumerActiveRequest extends Model
     /**
      * | Update the parked status false 
      */
-    
+
     public function updateParkedstatus($status, $applicationId)
     {
         $mWaterApplication = WaterConsumerActiveRequest::find($applicationId);
