@@ -1052,6 +1052,7 @@ class PropProperty extends  PropParamModel #Model
     {
         $propDetails = PropProperty::select(
             'ulb_ward_masters.*',
+            'prop_properties.id as propId',
             'prop_properties.saf_id',
             'prop_properties.holding_no',
             'prop_properties.holding_type',
