@@ -777,45 +777,54 @@ class WaterConsumerWfController extends Controller
     public function getBasicDetails($applicationDetails)
     {
         $collectionApplications = collect($applicationDetails)->first();
+        $basicDetails = [];
 
-        // Basic details common to all applications
+        // Common basic details
+        $commonDetails = [
+            ['displayString' => 'Ward No', 'key' => 'WardNo', 'value' => $collectionApplications->ward_name],
+            ['displayString' => 'Apply Date', 'key' => 'applyDate', 'value' => $collectionApplications->apply_date],
+            ['displayString' => 'Zone', 'key' => 'Zone', 'value' => $collectionApplications->zone_name],
+        ];
+
+        // Additional details based on charge category ID
         if ($collectionApplications->charge_catagory_id != 10) {
-            $basicDetails = [
-                ['displayString' => 'Ward No',            'key' => 'WardNo',            'value' => $collectionApplications->ward_name],
-                ['displayString' => 'ApplyDate',          'key' => 'applyDate',         'value' => $collectionApplications->apply_date],
-                ['displayString' => 'TapSize',            'key' => 'taPSize',           'value' => $collectionApplications->tab_size],
-                ['displayString' => 'PropertyType',       'key' => 'propertyType',      'value' => $collectionApplications->property_type],
-                ['displayString' => 'Address',            'key' => 'Address',           'value' => $collectionApplications->address],
-                ['displayString' => 'Category',           'key' => 'category',          'value' => $collectionApplications->category],
-                ['displayString' => 'Zone',               'key' => 'Zone',              'value' => $collectionApplications->zone_name],
-            ];
+            $basicDetails = array_merge($commonDetails, [
+                ['displayString' => 'Tap Size', 'key' => 'tapSize', 'value' => $collectionApplications->tab_size],
+                ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $collectionApplications->property_type],
+                ['displayString' => 'Address', 'key' => 'Address', 'value' => $collectionApplications->address],
+                ['displayString' => 'Category', 'key' => 'category', 'value' => $collectionApplications->category],
+            ]);
 
-            // If charge category ID is 6, add the new field
-            if ($collectionApplications->charge_catagory_id == 6) {
-                $basicDetails[] = ['displayString' => 'New Name', 'key' => 'NewName', 'value' => $collectionApplications->new_name];
-            } elseif ($collectionApplications->charge_catagory_id == 7) {
-                $basicDetails[] = ['displayString' => 'New meter No', 'key' => 'NewMeterNo', 'value' => $collectionApplications->newMeterNo];
-                $basicDetails[] = ['displayString' => 'Old Meter No ', 'key' => 'OldMeterNo', 'value' => $collectionApplications->meter_no];
-            } elseif ($collectionApplications->charge_catagory_id == 8) {
-                $basicDetails[] = ['displayString' => 'New Property Type', 'key' => 'NewPropertyType', 'value' => $collectionApplications->newPropertyType];
-                $basicDetails[] = ['displayString' => 'New Category', 'key' => 'NewCategory', 'value' => $collectionApplications->newCategory];
-            } elseif ($collectionApplications->charge_catagory_id == 9) {
-                $basicDetails[] = ['displayString' => 'New Tab Size', 'key' => 'NewTabSize', 'value' => $collectionApplications->newTabSize];
+            // Add specific fields based on the charge category ID
+            switch ($collectionApplications->charge_catagory_id) {
+                case 6:
+                    $basicDetails[] = ['displayString' => 'New Name', 'key' => 'NewName', 'value' => $collectionApplications->new_name];
+                    break;
+                case 7:
+                    $basicDetails[] = ['displayString' => 'New Meter No', 'key' => 'NewMeterNo', 'value' => $collectionApplications->newMeterNo];
+                    $basicDetails[] = ['displayString' => 'Old Meter No', 'key' => 'OldMeterNo', 'value' => $collectionApplications->meter_no];
+                    break;
+                case 8:
+                    $basicDetails[] = ['displayString' => 'New Property Type', 'key' => 'NewPropertyType', 'value' => $collectionApplications->newPropertyType];
+                    $basicDetails[] = ['displayString' => 'New Category', 'key' => 'NewCategory', 'value' => $collectionApplications->newCategory];
+                    break;
+                case 9:
+                    $basicDetails[] = ['displayString' => 'New Tap Size', 'key' => 'NewTapSize', 'value' => $collectionApplications->newTabSize];
+                    break;
             }
         } else {
-            $basicDetails = [
-                ['displayString' => 'Ward No',            'key' => 'WardNo',            'value' => $collectionApplications->ward_no],
-                ['displayString' => 'ApplyDate',          'key' => 'applyDate',         'value' => $collectionApplications->apply_date],
-                ['displayString' => 'City',               'key' => 'City',              'value' => $collectionApplications->city],
-                ['displayString' => 'Address',            'key' => 'Address',           'value' => $collectionApplications->complainAddress],
-                ['displayString' => 'MobileNo',           'key' => 'mobileNo',          'value' => $collectionApplications->mobile_no],
-                ['displayString' => 'Zone',               'key' => 'Zone',              'value' => $collectionApplications->zone_name],
-                ['displayString' => 'ConsumerNo',         'key' => 'consumerNo',        'value' => $collectionApplications->consumerNoofCompain],
-            ];
+            $basicDetails = array_merge($commonDetails, [
+                ['displayString' => 'City', 'key' => 'City',                    'value' => $collectionApplications->city],
+                ['displayString' => 'ComplainerName', 'key' => 'ComplainerName', 'value' => $collectionApplications->respodent_name],
+                ['displayString' => 'Address', 'key' => 'Address',                 'value' => $collectionApplications->complainAddress],
+                ['displayString' => 'Mobile No', 'key' => 'mobileNo',               'value' => $collectionApplications->mobile_no],
+                ['displayString' => 'Consumer No', 'key' => 'consumerNo',            'value' => $collectionApplications->consumerNoofCompain],
+            ]);
         }
 
-        return new Collection($basicDetails);
+        return collect($basicDetails);
     }
+
 
     /**
      * return data fro card details 
