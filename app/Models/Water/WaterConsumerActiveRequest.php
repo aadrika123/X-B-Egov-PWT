@@ -419,7 +419,8 @@ class WaterConsumerActiveRequest extends Model
             ->where('verify_status', 0)
             ->where('status', 1)
             ->update([
-                'je_status' => $request->checkcompalin
+                'je_status' => $request->checkcompalin,
+                'is_field_verified' => true
             ]);
     }
     //ok 
