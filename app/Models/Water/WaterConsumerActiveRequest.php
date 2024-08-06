@@ -408,5 +408,19 @@ class WaterConsumerActiveRequest extends Model
         }
         $mWaterApplication->save();
     }
+    /**
+     * | Je Update Status For Unauthorized tap Connection Complain
+     * | @param applicationId
+     */
+    public function updateJeStatus($request)
+    {
+        WaterConsumerActiveRequest::where('id', $request->applicationId)
+            ->where('charge_catagory_id', 10)
+            ->where('verify_status', 0)
+            ->where('status', 1)
+            ->update([
+                'je_status' => $request->checkcompalin
+            ]);
+    }
     //ok 
 }

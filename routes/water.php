@@ -196,6 +196,8 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('consumer/reqs/reupload-document', 'reuploadDocument');                                                // 21 ( Reupload Document for Pending Documents)
         Route::post('workflow/get-doc-list-je', 'getDocListForJe');                                             // Workflow
         Route::post('workflow/upload-doc-je', 'uploadWaterDocJe');                                             // Workflow
+        Route::post('workflow/unauthorized-tap-status-update', 'unauthorizedTapUpdateStatus');                                             // Workflow  JE
+
     });
 
     /**

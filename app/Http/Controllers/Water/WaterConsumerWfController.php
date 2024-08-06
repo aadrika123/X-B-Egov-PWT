@@ -343,10 +343,10 @@ class WaterConsumerWfController extends Controller
                 if ($application->doc_verify_status == false)
                     throw new Exception("Document Not Fully Verified");
                 break;
-                // case $wfLevels['JE']:                                                                       // JE Coditon in case of site adjustment
-                //     if ($application->is_field_verified == false) {
-                //         throw new Exception("Document Not Fully Uploaded or site inspection not done!");
-                //     }
+                case $wfLevels['JE']:                                                                       // JE Coditon in case of site adjustment
+                    if ($application->is_field_verified == false) {
+                        throw new Exception("Document Not Fully Uploaded or site inspection not done!");
+                    }
                 $siteDetails = $mWaterSiteInspection->getSiteDetails($application->id)
                     ->where('order_officer', $refRole['JE'])
                     ->first();
@@ -1580,6 +1580,38 @@ class WaterConsumerWfController extends Controller
             $data['doc_upload_status'] = $refApplication['doc_upload_status'];
             $data['connectionCharges'] = $connectionCharges;
             return responseMsg(true, "Document Uploaded!", $data);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+    /**
+     * | unauthorized tap connnection status
+     */
+    public function unauthorizedTapUpdateStatus(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'applicationId' => 'required|numeric',
+                'checkcompalin' => 'required'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        try {
+            $user = authUser($request);
+            $userName = $user->name;
+            if ($userName != 'JE') {
+                throw new Exception('You Are Not Authorized Person');
+            }
+            $applicationId = $request->applicationId;
+            $mWaterConsumerActiveRequest  = new WaterConsumerActiveRequest();
+            $waterRequestdtl  = $mWaterConsumerActiveRequest->getActiveReqById($applicationId)->first();
+            if (!$waterRequestdtl) {
+                throw new Exception('Application Details Not Found');
+            }
+            $mWaterConsumerActiveRequest->updateJeStatus($request);
+            return responseMsg(true, "Status Updated!", $request);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }
