@@ -23,7 +23,7 @@ class WaterConsumerComplain extends Model
         $waterConsumerComplain->address                                  = $request->address;
         $waterConsumerComplain->zone_id                                  = $request->zoneId;
         $waterConsumerComplain->ward_no                                  = $request->wardNo;
-        $waterConsumerComplain->comsumer_no                              = $request->consumerNo;
+        $waterConsumerComplain->consumer_no                              = $request->consumerNo;
         $waterConsumerComplain->save();
         return $waterConsumerComplain;
     }
