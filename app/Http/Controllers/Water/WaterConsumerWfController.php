@@ -353,12 +353,12 @@ class WaterConsumerWfController extends Controller
                         throw new Exception("Document Not Fully Verified");
                     }
                 }
-                $siteDetails = $mWaterSiteInspection->getSiteDetails($application->id)
-                    ->where('order_officer', $refRole['JE'])
-                    ->first();
-                if (!$siteDetails) {
-                    throw new Exception("Site Not Verified!");
-                }
+                // $siteDetails = $mWaterSiteInspection->getSiteDetails($application->id)
+                //     ->where('order_officer', $refRole['JE'])
+                //     ->first();
+                // if (!$siteDetails) {
+                //     throw new Exception("Site Not Verified!");
+                // }
                 break;
         }
     }
