@@ -721,18 +721,23 @@ class WaterConsumerWfController extends Controller
         # CardArray
         $cardDetails = $this->getCardDetails($applicationDetails, $ownerDetail);
         $chargeCatgory =  $applicationDetails->pluck('charge_category');
+        $chargeCatgoryId = $applicationDetails->pluck('charge_catagory_id')->first();
         $cardData = [
             'headerTitle' => $chargeCatgory,
             'data' => $cardDetails
         ];
         $fullDetailsData['fullDetailsData']['cardArray'] = new Collection($cardData);
         # TableArray
-        $ownerList = $this->getOwnerDetails($ownerDetail);
-        $ownerView = [
-            'headerTitle' => 'Owner Details',
-            'tableHead' => ["#", "Owner Name", "Guardian Name", "Mobile No", "Email", "City", "District"],
-            'tableData' => $ownerList
-        ];
+        $ownerView = [];
+        if ($chargeCatgoryId != 10) {
+            $ownerList = $this->getOwnerDetails($ownerDetail);
+            $ownerView = [
+                'headerTitle' => 'Owner Details',
+                'tableHead' => ["#", "Owner Name", "Guardian Name", "Mobile No", "Email", "City", "District"],
+                'tableData' => $ownerList
+            ];
+        }
+
         $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerView]);
 
         # Level comment
