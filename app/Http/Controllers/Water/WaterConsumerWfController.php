@@ -706,7 +706,8 @@ class WaterConsumerWfController extends Controller
         });
         $aplictionList = [
             'application_no' => collect($applicationDetails)->first()->application_no,
-            'apply_date' => collect($applicationDetails)->first()->apply_date
+            'apply_date' => collect($applicationDetails)->first()->apply_date,
+            'charge_catagory_id' => $applicationDetails->pluck('charge_catagory_id')->first()
         ];
 
 
