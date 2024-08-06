@@ -1327,14 +1327,14 @@ class WaterConsumerWfController extends Controller
             }
 
             #check full doc upload
-            $refCheckDocument = $this->checkFullDocUpload($req);
+            // $refCheckDocument = $this->checkFullDocUpload($req);
 
             # Update the Doc Upload Satus in Application Table
-            if ($refCheckDocument->contains(false)) {
-                $mWaterApplication->deactivateUploadStatus($applicationId);
-            } else {
-                $this->updateWaterStatus($req, $getWaterDetails);
-            }
+            // if ($refCheckDocument->contains(false)) {
+            //     $mWaterApplication->deactivateUploadStatus($applicationId);
+            // } else {
+            //     $this->updateWaterStatus($req, $getWaterDetails);
+            // }
 
             # if the application is parked and btc s
             if ($getWaterDetails->parked == true) {
@@ -1499,7 +1499,7 @@ class WaterConsumerWfController extends Controller
             $moduleId               = Config::get('module-constants.WATER_MODULE_ID');
 
             $connectionId = $request->applicationId;
-            $refApplication = $mWaterApplication->getApplicationDtls($connectionId)->first();
+            $refApplication = $mWaterApplication->getApplicationDtls($connectionId);
             if ($refApplication == null) {
                 $refApplication = $mWaterApprovalApplications->getApplicationById($connectionId)->first();
             }
