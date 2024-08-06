@@ -6462,7 +6462,7 @@ class ReportController extends Controller
             }
 
             if ($request->mobileNo) {
-                $query->where('mobileno', 'LIKE', '%' . $request->mobileNo . '%');
+                $query->where('mobile_no', 'LIKE', '%' . $request->mobileNo . '%');
             }
 
             $list = $query->paginate($perPage, ['*'], 'page', $page);
