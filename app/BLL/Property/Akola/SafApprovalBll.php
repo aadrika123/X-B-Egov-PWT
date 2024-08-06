@@ -257,7 +257,7 @@ class SafApprovalBll
         $oldOwners = PropOwner::where("property_id", $propProperties->id)->get();
         $oldDemand = PropDemand::where("property_id", $propProperties->id)->get();
         
-        $currentYearDemand = collect($oldDemand)->where("fyear",getFY());
+        $currentYearDemand = collect($oldDemand)->where("status",1);
         $currentYearDemandId = ($currentYearDemand->implode("id",","));
         $currentYearDemandId = $currentYearDemandId ? (int)$currentYearDemandId  : 0;
         
@@ -524,6 +524,7 @@ class SafApprovalBll
                 "ulb_id" => (auth()->user() ? auth()->user()->ulb_id : null),
                 "remarks" => "Old Demand payment",
             ];
+            $newAdvance->where("prop_id", $advArr["prop_id"])->where("remarks",$advArr["remarks"])->update(["status"=>0]);
             $advanceId = $newAdvance->store($advArr);
             $history = new PropAssessmentHistory();
             $history->where("id",$this->_assessmentHistoryId)->update(["advance_id"=>$advanceId,"total_paid_demand_amount"=>$oldPaidTax,"new_demand_log"=>$new_demand_log]);
