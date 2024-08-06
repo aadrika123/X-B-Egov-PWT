@@ -1061,6 +1061,7 @@ class PropProperty extends  PropParamModel #Model
             'prop_properties.prop_pin_code',
             'prop_properties.area_of_plot', 
             'prop_properties.landmark',
+            'prop_properties.village_mauja_name',
             'prop_owners.owner_name as applicant_name',
             'prop_owners.mobile_no',
             'prop_owners.email',
