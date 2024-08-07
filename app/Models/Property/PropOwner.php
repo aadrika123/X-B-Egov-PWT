@@ -25,6 +25,7 @@ class PropOwner extends PropParamModel #Model
             'prop_owners.aadhar_no',
             'prop_owners.gender',
             'prop_owners.dob',
+            'prop_owners.is_armed_force',
             'prop_owners.owner_name_marathi',
             'prop_owners.guardian_name_marathi',
             'corr_address',
