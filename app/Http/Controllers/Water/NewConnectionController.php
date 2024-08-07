@@ -636,9 +636,9 @@ class NewConnectionController extends Controller
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
             $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
-                ->whereIn('water_approval_application_details.ward_id', $wardId)
-                ->where('is_field_verified', true)
-                ->orderByDesc('water_approval_application_details.id')
+                ->whereIn('water_applications.ward_id', $wardId)
+                ->where('is_field_verified', true)  
+                ->orderByDesc('water_applications.id')
                 ->get();
 
             return responseMsgs(true, "field Verified Inbox", remove_null($waterList), 010125, 1.0, "", "POST", "");

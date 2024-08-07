@@ -668,14 +668,15 @@ class NewConnectionRepository implements iNewConnection
         if (!$holdingDetails) {
             throw new Exception('Holding not found!');
         }
-       $applicationDetail  = collect($applicationDetails) ;
+        $applicationDetail  = collect($applicationDetails);
 
         $applicationDetails = $applicationDetails->map(function ($applicationDetail) use ($holdingDetails) {
             if (isset($holdingDetails)) {
-                $applicationDetail->setAttribute('area_of_plot',$holdingDetails->area_of_plot);
+                $applicationDetail->setAttribute('area_of_plot', $holdingDetails->area_of_plot);
             } else {
-                $applicationDetail->setAttribute('area_of_plot',null);  // Set to null or a default value if not found
+                $applicationDetail->setAttribute('area_of_plot', null);  // Set to null or a default value if not found
             }
+            $applicationDetail->setAttribute('village_mauja_name', $holdingDetails->village_mauja_name); // Replace 'your_value_here' with the desired value
             return $applicationDetail;
         });
 
@@ -780,7 +781,7 @@ class NewConnectionRepository implements iNewConnection
             ['displayString' => 'Apply Date',         'key' => 'ApplyDate',           'value' => $collectionApplications->apply_date],
             ['displayString' => 'Ward Number',        'key' => 'WardNumber',          'value' => $collectionApplications->ward_name],
             ['displayString' => 'Zone',               'key' => 'zone',                'value' => $collectionApplications->zone_name],
-            ['displayString' => 'Holding',             'key' => 'HoldingNumber',                'value' => $collectionApplications->property_no]
+            ['displayString' => 'Holding',             'key' => 'HoldingNumber',      'value' => $collectionApplications->property_no],
         ]);
     }
 
@@ -802,13 +803,14 @@ class NewConnectionRepository implements iNewConnection
         if (!is_null($collectionApplications->saf_no)) {
             array_push($propertyDetails, ['displayString' => 'Saf No',        'key' => 'AppliedBy',   'value' => $collectionApplications->saf_no]);
         }
-        if (is_null($collectionApplications->saf_no) && is_null($collectionApplications->holding_no)) {
-            array_push($propertyDetails, ['displayString' => 'Applied By',    'key' => 'AppliedBy',   'value' => 'Id Proof']);
-        }
-        array_push($propertyDetails, ['displayString' => 'Area in Sqft',  'key' => 'AreaInSqft',  'value' => $collectionApplications->area_sqft]);
+        // if (is_null($collectionApplications->saf_no) && is_null($collectionApplications->holding_no)) {
+        //     array_push($propertyDetails, ['displayString' => 'Applied By',    'key' => 'AppliedBy',   'value' => 'Id Proof']);
+        // }
+        array_push($propertyDetails, ['displayString' => 'Area in Sqft',  'key' => 'AreaInSqft',  'value' => $collectionApplications->area_of_plot]);
         array_push($propertyDetails, ['displayString' => 'Address',       'key' => 'Address',     'value' => $collectionApplications->address]);
         array_push($propertyDetails, ['displayString' => 'Landmark',      'key' => 'Landmark',    'value' => $collectionApplications->landmark]);
         array_push($propertyDetails, ['displayString' => 'Pin',           'key' => 'Pin',         'value' => $collectionApplications->pin]);
+        array_push($propertyDetails, ['displayString' => 'VillageMaujaName',  'key' => 'VillageMaujaName',         'value' => $collectionApplications->village_mauja_name]);
 
         return $propertyDetails;
     }
