@@ -583,6 +583,8 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
 
     # Date : 06-08-2024 Survey form reports
     Route::post('reports/saf/tcAssessment', 'tcAssessment');
+    # Date : 08-08-2024 bulk demand reports
+    Route::post('reports/bulk-demand', 'bulkDemand');
 
   });
 
