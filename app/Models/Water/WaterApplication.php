@@ -746,6 +746,8 @@ class WaterApplication extends Model
         $saveNewApplication->ward_no                = $req->wardNo;
         $saveNewApplication->meter_no               = $req->meterNo;
         $saveNewApplication->initial_reading        = $req->intialreading;
+        $saveNewApplication->road_type_id           = $req->roadType;
+        $saveNewApplication->per_meter              = $req->permeter;
 
 
         $saveNewApplication->save();
