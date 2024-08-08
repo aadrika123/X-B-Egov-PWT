@@ -4609,7 +4609,7 @@ class ReportController extends Controller
                 "uptoDate"    => "required|date|date_format:Y-m-d|after_or_equal:" . $request->fromDate,
                 "wardId"      => "nullable|digits_between:1,9223372036854775807",
                 "zoneId"      => "nullable|digits_between:1,9223372036854775807",
-                "assessmentType"      => "nullable",
+                "assessmentType"      => "nullable|in:Mutation,Bifurcation,New Assessment,Reassessment",
                 // "type"        => "nullable|in:Mutation,Bifurcation",
             ]
         );
