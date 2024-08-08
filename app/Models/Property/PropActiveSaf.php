@@ -499,6 +499,7 @@ class  PropActiveSaf extends PropParamModel #Model
             ->leftJoin('ref_prop_gbbuildingusagetypes AS gbu', 'gbu.id', '=', 'prop_active_safs.gb_usage_types')
             ->leftJoin('ref_prop_gbpropusagetypes AS gbp', 'gbp.id', '=', 'prop_active_safs.gb_prop_usage_types')
             ->leftJoin('ref_prop_categories AS cat', 'cat.id', '=', 'prop_active_safs.category_id')
+            ->whereBetween('prop_active_safs.applied_by',['TC','TC Reassessment'])
             ->groupBy(
                 'prop_active_safs.id',
                 'w.ward_name',
