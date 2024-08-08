@@ -832,6 +832,7 @@ class WaterSecondConsumer extends Model
             'water_approval_application_details.ward_no',
             'water_approval_application_details.pin',
             'water_approval_application_details.doc_upload_status',
+            'water_approval_application_details.property_no',
             'water_property_type_mstrs.property_type',
             'water_param_pipeline_types.pipeline_type',
             'zone_masters.zone_name',
@@ -844,10 +845,12 @@ class WaterSecondConsumer extends Model
             "water_consumer_owners.guardian_name",
             "water_consumer_meters.connection_type",
             "water_consumer_meters.meter_no",
-            "water_second_consumers.consumer_no"
+            "water_second_consumers.consumer_no",
+            "ulb_ward_masters.ward_name"
         )
             // ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_approval_application_details.current_role')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_second_consumers.ulb_id')
+            ->join('ulb_ward_masters','ulb_ward_masters.id','water_second_consumers.ward_mstr_id')
             ->leftjoin('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_second_consumers.connection_type_id')
             ->leftjoin('water_approval_application_details', 'water_approval_application_details.id', 'water_second_consumers.apply_connection_id')
             ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_second_consumers.property_type_id')
