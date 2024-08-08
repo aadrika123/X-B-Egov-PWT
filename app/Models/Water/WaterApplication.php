@@ -173,7 +173,7 @@ class WaterApplication extends Model
             ->join('water_param_pipeline_types', 'water_param_pipeline_types.id', 'water_applications.pipeline_type_id')
             ->join('zone_masters', 'zone_masters.id', 'water_applications.zone_mstr_id')
             ->join('water_connection_charges', 'water_connection_charges.application_id', 'water_applications.id')
-            ->join('water_road_cutter_charges', 'water_road_cutter_charges.id', 'water_applications.road_type_id')
+            ->leftjoin('water_road_cutter_charges', 'water_road_cutter_charges.id', 'water_applications.road_type_id')
             ->where('water_applications.id', $request->applicationId)
             ->where('water_applications.status', true);
     }
