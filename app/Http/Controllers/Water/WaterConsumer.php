@@ -495,7 +495,7 @@ class WaterConsumer extends Controller
         | Recheck the process for meter and non meter 
         | validation for the respective meter conversion and verify the new consumer.
      */
-    public function checkParamForMeterEntry($request)
+    public function     checkParamForMeterEntry($request)
     {
         $refConsumerId  = $request->consumerId;
         $todayDate      = Carbon::now();
