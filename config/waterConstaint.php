@@ -81,8 +81,9 @@ return [
     "New_Connection" => "connection",
     "WATER_MASTER_DATA" => [
         "PIPELINE_SIZE_TYPE" => [
-            "CI",
-            "DI"
+            "MM.H.DP",
+            "PVC",
+            "CI Pipeline"
         ],
         "PIPE_DIAMETER" => [
             "15",
@@ -95,20 +96,22 @@ return [
             "PVC 80"
         ],
         "ROAD_TYPE" => [
-            "AMC",
-            "PWD"
+            "Damber Road",
+            "Concrete Road",
+            "khadikaran Road",
+            "Muddy Raod"
         ],
         "FERULE_SIZE" => [
-          "15",
-          "20",
-          "25",
-          "50",
-          "65",
-          "75",
-          "80",
-          "100",
-          "150",
-          "200"
+            "15",
+            "20",
+            "25",
+            "50",
+            "65",
+            "75",
+            "80",
+            "100",
+            "150",
+            "200"
 
         ],
         "DEACTIVATION_CRITERIA" => [
@@ -223,7 +226,7 @@ return [
         ],
 
     ],
-    
+
     "DOC_URL" => env("DOC_URL"),
 
 

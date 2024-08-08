@@ -370,8 +370,10 @@ class WaterApplication extends Model
         $request->request->add($metaReqs);
         $waterTrack->saveTrack($request);
 
+       
         # final delete
         $approvedWater->delete();
+
         return $consumerId;
     }
 
