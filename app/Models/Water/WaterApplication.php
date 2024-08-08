@@ -347,13 +347,13 @@ class WaterApplication extends Model
             ->first();
         if (isset($siteDetails)) {
             $refData = [
-                'connection_type_id'    => $siteDetails['connection_type_id'],
+                // 'connection_type_id'    => $siteDetails['connection_type_id'],
                 'connection_through'    => $siteDetails['connection_through'],
-                'pipeline_type_id'      => $siteDetails['pipeline_type_id'],
+                // 'pipeline_type_id'      => $siteDetails['pipeline_type_id'],
                 'property_type_id'      => $siteDetails['property_type_id'],
                 'category'              => $siteDetails['category'],
-                'area_sqft'             => $siteDetails['area_sqft'],
-                'area_asmt'             => sqFtToSqMt($siteDetails['area_sqft'])
+                // 'area_sqft'             => $siteDetails['area_sqft'],
+                // 'area_asmt'             => sqFtToSqMt($siteDetails['area_sqft'])
             ];
             $approvedWaterRep = collect($approvedWater)->merge($refData);
         }
@@ -370,11 +370,19 @@ class WaterApplication extends Model
         $request->request->add($metaReqs);
         $waterTrack->saveTrack($request);
 
-       
+        $data = [
+            'connectionType'         => 1,
+            'consumerId'             => $consumerId,
+            "connectionDate"       => Carbon::now()->format('Y-m-d'),
+            'meterNo'                => $approvedWater->meter_no,
+            'newMeterInitialReading' => $approvedWater->initial_reading,
+        ];
+
+
         # final delete
         $approvedWater->delete();
 
-        return $consumerId;
+        return $data;
     }
 
     /**

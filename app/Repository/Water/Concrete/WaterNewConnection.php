@@ -201,7 +201,7 @@ class WaterNewConnection implements IWaterNewConnection
             throw new Exception("Water Applications not found!");
 
         $returnValue = collect($connection)->map(function ($value)
-        use ($mWaterPenaltyInstallment, $refChargeCatagoryValue, $refChargeCatagory, $mWaterTran, $mWaterParamConnFee, $mWaterConnectionCharge, $mWaterSiteInspection, $mWaterSiteInspectionsScheduling, $roleDetails) {
+        use ($mWaterPenaltyInstallment, $refChargeCatagoryValue, $refChargeCatagory, $mWaterParamConnFee, $mWaterConnectionCharge, $mWaterSiteInspection, $mWaterSiteInspectionsScheduling, $roleDetails) {
 
             # checking Penalty payment
             if ($value['payment_status'] == 1 && $value['connection_type_id'] == $refChargeCatagoryValue['REGULAIZATION']) {
@@ -226,7 +226,7 @@ class WaterNewConnection implements IWaterNewConnection
                     $value['connection_type_name'] = $refChargeCatagory['NEW_CONNECTION'];
                     break;
             }
-
+            
             // $value['transDetails'] = $mWaterTran->getTransNo($value['id'], null)->first();
             
             // $value['calcullation'] = $mWaterParamConnFee->getCallParameter($value['property_type_id'], $value['area_sqft'])->first();
@@ -235,6 +235,7 @@ class WaterNewConnection implements IWaterNewConnection
                 ->where('paid_status', 0)
                 ->first();
             # Formating connection type id 
+            
             $chargeId =  null;
             if (!is_null($refConnectionCharge)) {
                 switch ($refConnectionCharge['charge_category']) {
@@ -250,11 +251,12 @@ class WaterNewConnection implements IWaterNewConnection
                 }
                 $refConnectionCharge['connectionTypeId'] = $chargeId;
             }
+           
             $refConnectionCharge['type'] = $value['type'];
             $refConnectionCharge['applicationId'] = $value['id'];
             $refConnectionCharge['applicationNo'] = $value['application_no'];
             $value['connectionCharges'] = $refConnectionCharge;
-
+         
             # Site Details 
             $siteDetails = $mWaterSiteInspection->getInspectionById($value['id'])
                 ->where('order_officer', $roleDetails['JE'])
@@ -263,9 +265,10 @@ class WaterNewConnection implements IWaterNewConnection
             if (!is_null($checkEmpty)) {
                 $value['siteInspectionCall'] = $mWaterParamConnFee->getCallParameter(
                     $siteDetails['site_inspection_property_type_id'],
-                    $siteDetails['site_inspection_area_sqft']
+                    // $siteDetails['site_inspection_area_sqft']
                 )->first();
             }
+          
             if ($value['current_role'] == $roleDetails['JE']) {
                 $inspectionTime = $mWaterSiteInspectionsScheduling->getInspectionData($value['id'])->first();
                 $value['scheduledTime'] = $inspectionTime->inspection_time ?? null;

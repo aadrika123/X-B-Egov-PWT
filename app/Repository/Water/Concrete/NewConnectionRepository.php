@@ -2,6 +2,9 @@
 
 namespace App\Repository\Water\Concrete;
 
+use App\BLL\Water\WaterMonthelyCall;
+use App\Http\Requests\Water\reqMeterEntry;
+use App\MicroServices\DocUpload;
 use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\CustomDetail;
 use App\Models\Property\PropActiveSaf;
@@ -15,7 +18,12 @@ use App\Models\Water\WaterApprovalApplicant;
 use App\Models\Water\WaterApprovalApplicationDetail;
 use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterConsumer;
+use App\Models\Water\WaterConsumerDemand;
+use App\Models\Water\WaterConsumerInitialMeter;
+use App\Models\Water\WaterConsumerMeter;
 use App\Models\Water\WaterConsumerOwner;
+use App\Models\Water\WaterConsumerTax;
+use App\Models\Water\WaterMeterReadingDoc;
 use App\Models\Water\WaterParamConnFee;
 use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterSecondConsumer;
@@ -39,6 +47,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rules\Exists;
 use Nette\Utils\Random;
 
@@ -517,8 +526,17 @@ class NewConnectionRepository implements iNewConnection
             $consumerNo     = str_replace('/', '-', $consumerNo);
 
             $this->saveWaterConnInProperty($refWaterDetails,);
-            $consumerId = $mWaterApplication->finalApproval($request, $refJe, $consumerNo);
-            $mWaterApplicant->finalApplicantApproval($request, $consumerId);
+            $data = $mWaterApplication->finalApproval($request, $refJe, $consumerNo);
+            // Creating a new instance of reqMeterEntry with necessary data
+            $updateRequest = new reqMeterEntry([
+                "consumerId"    => $data['consumerId'],
+                "connectionType" => $data['connectionType'], // Ensure this key exists in $request
+                "connectionDate" => $data['connectionDate'], // Ensure this key exists in $request
+                "newMeterInitialReading" => $data['newMeterInitialReading'], // Ensure this key exists in $request
+                "meterNo" => $data['meterNo'], // Ensure this key exists in $request
+            ]);
+            $this->saveUpdateMeterDetails($updateRequest);
+            $mWaterApplicant->finalApplicantApproval($request, $data['consumerId']);
             $msg = "Application Successfully Approved !!";
         }
         # Rejection of water application
@@ -530,6 +548,325 @@ class NewConnectionRepository implements iNewConnection
         return responseMsgs(true, $msg, $consumerNo ?? "Empty", '', 01, '.ms', 'Post', $request->deviceId);
     }
 
+    /**
+     * | Save the Meter details 
+     * | @param request
+        | Serial No : 04
+        | Working  
+        | Check the parameter for the autherised person
+        | Chack the Demand for the fixed rate 
+        | Re discuss
+     */
+    public function saveUpdateMeterDetails(reqMeterEntry $request)
+    {
+        try {
+            $mWaterConsumerMeter    = new WaterConsumerMeter();
+            // $mWaterConsumerInitial  = new WaterConsumerInitialMeter();
+            $meterRefImageName      = config::get('waterConstaint.WATER_METER_CODE');
+            $param                  = $this->checkParamForMeterEntry($request);
+
+            $this->begin();
+            $metaRequest = new Request([
+                "consumerId"    => $request->consumerId,
+                "finalRading"   => $request->oldMeterFinalReading,
+                "demandUpto"    => $request->connectionDate,
+                "document"      => $request->document,
+            ]);
+            if ($param['meterStatus'] != false) {
+                $this->saveGenerateConsumerDemand($metaRequest);
+            }
+            if($request->document != null)(
+                $documentPath = $this->saveDocument($request, $meterRefImageName)
+            );
+            $documentPath = null;
+            $mWaterConsumerMeter->saveMeterDetails($request, $documentPath, $fixedRate = null);
+            // $userDetails =[
+            //     'emp_id' =>$mWaterConsumerMeter->emp_details_id
+            // ];
+            // $mWaterConsumerInitial->saveConsumerReading($request,$metaRequest,$userDetails);             # when initial meter data save  
+            $this->commit();
+            return responseMsgs(true, "Meter Detail Entry Success !", "", "", "01", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            $this->rollback();
+            return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", "");
+        }
+    }
+
+    /**
+     * | Chech the parameter before Meter entry
+     * | Validate the Admin For entring the meter details
+     * | @param request
+        | Serial No : 04.01
+        | Working
+        | Look for the meter status true condition while returning data
+        | Recheck the process for meter and non meter 
+        | validation for the respective meter conversion and verify the new consumer.
+     */
+    public function     checkParamForMeterEntry($request)
+    {
+        $refConsumerId  = $request->consumerId;
+        $todayDate      = Carbon::now();
+
+        $mWaterWaterSecondConsumer    = new waterSecondConsumer();
+        $mWaterConsumerMeter    = new WaterConsumerMeter();
+        $mWaterConsumerDemand   = new WaterConsumerDemand();
+        $refMeterConnType       = Config::get('waterConstaint.WATER_MASTER_DATA.METER_CONNECTION_TYPE');
+
+        $refConsumerDetails     = $mWaterWaterSecondConsumer->getConsumerDetailById($refConsumerId);
+        if (!$refConsumerDetails) {
+            throw new Exception("Consumer Details Not Found!");
+        }
+        $consumerMeterDetails   = $mWaterConsumerMeter->getMeterDetailsByConsumerId($refConsumerId)->first();
+        $consumerDemand         = $mWaterConsumerDemand->getFirstConsumerDemand($refConsumerId)->first();
+
+        # Check the meter/fixed case 
+        $this->checkForMeterFixedCase($request, $consumerMeterDetails, $refMeterConnType);
+
+        switch ($request) {
+            case (strtotime($request->connectionDate) > strtotime($todayDate)):
+                throw new Exception("Connection Date can not be greater than Current Date!");
+                break;
+            case ($request->connectionType != $refMeterConnType['Meter/Fixed']):
+                if (!is_null($consumerMeterDetails)) {
+                    if ($consumerMeterDetails->final_meter_reading >= $request->oldMeterFinalReading) {
+                        throw new Exception("Reading Should be Greater Than last Reading!");
+                    }
+                }
+                break;
+            case ($request->connectionType != $refMeterConnType['Meter']):
+                if (!is_null($consumerMeterDetails)) {
+                    if ($consumerMeterDetails->connection_type == $request->connectionType) {
+                        throw new Exception("You can not update same connection type as before!");
+                    }
+                }
+                break;
+        }
+
+        # If Previous meter details exist
+        if ($consumerMeterDetails) {
+            # If fixed meter connection is changing to meter connection as per rule every connection should be in meter
+            if ($request->connectionType != $refMeterConnType['Fixed'] && $consumerMeterDetails->connection_type == $refMeterConnType['Fixed']) {
+                if ($consumerDemand) {
+                    throw new Exception("Please pay the old demand Amount! as per rule to change fixed connection to meter!");
+                }
+                throw new Exception("Please apply for regularization as per rule 16 your connection should be in meter!");
+            }
+            # If there is previous meter detail exist
+            $reqConnectionDate = $request->connectionDate;
+            if (strtotime($consumerMeterDetails->connection_date) > strtotime($reqConnectionDate)) {
+                throw new Exception("Connection date should be greater than previous connection date!");
+            }
+            # Check the Conversion of the Connection
+            $this->checkConnectionTypeUpdate($request, $consumerMeterDetails, $refMeterConnType);
+        }
+
+        # If the consumer demand exist
+        if (isset($consumerDemand)) {
+            $reqConnectionDate = $request->connectionDate;
+            $reqConnectionDate = Carbon::parse($reqConnectionDate)->format('m');
+            $consumerDmandDate = Carbon::parse($consumerDemand->demand_upto)->format('m');
+            switch ($consumerDemand) {
+                case ($consumerDmandDate >= $reqConnectionDate):
+                    throw new Exception("Cannot update connection Date, Demand already generated upto that month!");
+                    break;
+            }
+        }
+        # If the meter detail do not exist 
+        if (is_null($consumerMeterDetails)) {
+            if (!in_array($request->connectionType, [$refMeterConnType['Meter'], $refMeterConnType['Gallon']])) {
+                throw new Exception("New meter connection should be in meter and gallon!");
+            }
+            $returnData['meterStatus'] = false;
+        }
+        return $returnData;
+    }
+
+    /**
+     * | Check for the Meter/Fixed 
+     * | @param request
+     * | @param consumerMeterDetails
+        | Serial No : 04.01.01
+        | Not Working
+     */
+    public function checkForMeterFixedCase($request, $consumerMeterDetails, $refMeterConnType)
+    {
+        if ($request->connectionType == $refMeterConnType['Meter/Fixed']) {
+            $refConnectionType = 1;
+            if ($consumerMeterDetails->connection_type == $refConnectionType && $consumerMeterDetails->meter_status == 0) {
+                throw new Exception("You can not update same connection type as before!");
+            }
+            if ($request->meterNo != $consumerMeterDetails->meter_no) {
+                throw new Exception("You Can Meter/Fixed The Connection On Previous Meter");
+            }
+        }
+    }
+    /**
+     * | Save the consumer demand 
+     * | Also generate demand 
+     * | @param request
+     * | @var mWaterConsumerInitialMeter
+     * | @var mWaterConsumerMeter
+     * | @var refMeterConnectionType
+     * | @var consumerDetails
+     * | @var calculatedDemand
+     * | @var demandDetails
+     * | @var meterId
+     * | @return 
+        | Serial No : 03
+        | Not Tested
+        | Work on the valuidation and the saving of the meter details document
+     */
+    public function saveGenerateConsumerDemand(Request $request)
+    {
+        $mNowDate = carbon::now()->format('Y-m-d');
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'consumerId'       => "required|digits_between:1,9223372036854775807",
+                "demandUpto"       => "nullable|date|date_format:Y-m-d|before_or_equal:$mNowDate",
+                'finalRading'      => "nullable|numeric",
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        // return $request->all();
+
+        try {
+            $mWaterConsumerInitialMeter = new WaterConsumerInitialMeter();
+            $mWaterConsumerMeter        = new WaterConsumerMeter();
+            $mWaterMeterReadingDoc      = new WaterMeterReadingDoc();
+            $mWaterSecondConsumer       = new WaterSecondConsumer();
+            $refMeterConnectionType     = Config::get('waterConstaint.METER_CONN_TYPE');
+            $meterRefImageName          = config::get('waterConstaint.WATER_METER_CODE');
+            $demandIds = array();
+
+            # Check and calculate Demand                  
+            $consumerDetails = $mWaterSecondConsumer->getConsumerDetails($request->consumerId)->first();
+            if (!$consumerDetails) {
+                throw new Exception("Consumer detail not found!");
+            }
+            // $this->checkDemandGeneration($request, $consumerDetails);                                       // unfinished function
+
+            # Calling BLL for call
+            $returnData = new WaterMonthelyCall($request->consumerId, $request->demandUpto, $request->finalRading); #WaterSecondConsumer::get();
+            if (!$request->isNotstrickChek) {
+                $returnData->checkDemandGenerationCondition();
+            }
+            $calculatedDemand = $returnData->parentFunction($request);
+            if ($calculatedDemand['status'] == false) {
+                throw new Exception($calculatedDemand['errors']);
+            }
+            # Save demand details 
+            $this->begin();
+            $userDetails = $this->checkUserType($request);
+            if (isset($calculatedDemand)) {
+                $demandDetails = collect($calculatedDemand['consumer_tax']['0']);
+                switch ($demandDetails['charge_type']) {
+                        # For Meter Connection
+                    case ($refMeterConnectionType['1']):
+                        $validated = Validator::make(
+                            $request->all(),
+                            [
+                                'document' => "required|mimes:pdf,jpeg,png,jpg",
+                            ]
+                        );
+                        if ($validated->fails())
+                            return validationError($validated);
+                        $meterDetails = $mWaterConsumerMeter->saveMeterReading($request);
+                        $mWaterConsumerInitialMeter->saveConsumerReading($request, $meterDetails, $userDetails);
+                        $demandIds = $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType, $userDetails);
+                        # save the chages doc
+                        $documentPath = $this->saveDocument($request, $meterRefImageName);
+                        collect($demandIds)->map(function ($value)
+                        use ($mWaterMeterReadingDoc, $meterDetails, $documentPath) {
+                            $mWaterMeterReadingDoc->saveDemandDocs($meterDetails, $documentPath, $value);
+                        });
+                        break;
+
+                        # For Fixed connection
+                    case ($refMeterConnectionType['3']):
+                        $this->savingDemand($calculatedDemand, $request, $consumerDetails, $demandDetails['charge_type'], $refMeterConnectionType, $userDetails);
+                        break;
+                }
+                // $sms = AkolaProperty(["owner_name" => $request['arshad'], "saf_no" => $request['tranNo']], "New Assessment");
+                // if (($sms["status"] !== false)) {
+                //     $respons = SMSAKGOVT(6206998554, $sms["sms"], $sms["temp_id"]);
+                // }
+                $this->commit();
+                $respons = $documentPath ?? [];
+                $respons["consumerId"]  =   $request->consumerId;
+                return responseMsgs(true, "Demand Generated! for" . " " . $request->consumerId, $respons, "", "02", ".ms", "POST", "");
+            }
+        } catch (Exception $e) {
+            $this->rollback();
+            return responseMsgs(false, $e->getMessage(), [], "", "01", "ms", "POST", "");
+        }
+    }
+    /**
+     * | Check the user type and return its id
+        | Serial No :
+        | Working
+     */
+    public function checkUserType($req)
+    {
+        $user = authUser($req);
+        $confUserType = Config::get("waterConstaint.REF_USER_TYPE");
+        $userType = $user->user_type;
+
+        if ($userType == $confUserType['1']) {
+            return [
+                "citizen_id"    => $user->id,
+                "user_type"     => $userType
+            ];
+        } else {
+            return [
+                "emp_id"    => $user->id,
+                "user_type" => $userType
+            ];
+        }
+    }
+    /**
+     * | Check the meter connection type in the case of meter updation 
+     * | If the meter details exist check the connection type 
+        | Serial No :
+        | Under Con
+     */
+    public function checkConnectionTypeUpdate($request, $consumerMeterDetails, $refMeterConnType)
+    {
+        $currentConnectionType      = $consumerMeterDetails->connection_type;
+        $requestedConnectionType    = $request->connectionType;
+
+        switch ($currentConnectionType) {
+                # For Fixed Connection
+            case ($refMeterConnType['Fixed']):
+                if ($requestedConnectionType != $refMeterConnType['Meter'] || $requestedConnectionType != $refMeterConnType['Gallon']) {
+                    throw new Exception("Invalid connection type update for Fixed!");
+                }
+                break;
+                # For Fixed Meter Connection
+            case ($refMeterConnType['Meter']):
+                if ($requestedConnectionType != $refMeterConnType['Meter'] || $requestedConnectionType != $refMeterConnType['Gallon'] || $requestedConnectionType != $refMeterConnType['Meter/Fixed']) {
+                    throw new Exception("Invalid connection type update for Fixed!");
+                }
+                break;
+                # For Fixed Gallon Connection
+            case ($refMeterConnType['Gallon']):
+                if ($requestedConnectionType != $refMeterConnType['Meter']) {
+                    throw new Exception("Invalid connection type update for Fixed!");
+                }
+                break;
+                # For Fixed Meter/Fixed Connection
+            case ($refMeterConnType['Meter/Fixed']):
+                if ($requestedConnectionType != $refMeterConnType['Meter']) {
+                    throw new Exception("Invalid connection type update for Fixed!");
+                }
+                break;
+                # Default
+            default:
+                throw new Exception("Invalid Meter Connection!");
+                break;
+        }
+    }
 
     /**
      * | Check the Conditions for the approval of the application
@@ -590,7 +927,92 @@ class NewConnectionRepository implements iNewConnection
         //     throw new Exception("full payment for the application is not done!");
         // }
     }
+    /**
+     * | Save the Details for the Connection Type Meter 
+     * | In Case Of Connection Type is meter OR Gallon 
+     * | @param Request  
+     * | @var mWaterConsumerDemand
+     * | @var mWaterConsumerTax
+     * | @var generatedDemand
+     * | @var taxId
+     * | @var meterDetails
+     * | @var refDemands
+        | Serial No : 03.01
+        | Not Tested
+     */
+    public function savingDemand($calculatedDemand, $request, $consumerDetails, $demandType, $refMeterConnectionType, $userDetails)
+    {
+        $mWaterConsumerTax      = new WaterConsumerTax();
+        $mWaterConsumerDemand   = new WaterConsumerDemand();
+        $generatedDemand        = $calculatedDemand['consumer_tax'];
 
+        $returnDemandIds = collect($generatedDemand)->map(function ($firstValue)
+        use ($mWaterConsumerDemand, $consumerDetails, $request, $mWaterConsumerTax, $demandType, $refMeterConnectionType, $userDetails) {
+            $taxId = $mWaterConsumerTax->saveConsumerTax($firstValue, $consumerDetails, $userDetails);
+            // $refDemandIds = array();
+            # User for meter details entry
+            $meterDetails = [
+                "charge_type"       => $firstValue['charge_type'],
+                "amount"            => $firstValue['charge_type'],
+                "effective_from"    => $firstValue['effective_from'],
+                "initial_reading"   => $firstValue['initial_reading'],
+                "final_reading"     => $firstValue['final_reading'],
+                "rate_id"           => $firstValue['rate_id'],
+            ];
+            switch ($demandType) {
+                case ($refMeterConnectionType['1']):
+                    $refDemands = $firstValue['consumer_demand'];
+                    $check = collect($refDemands)->first();
+                    if (is_array($check)) {
+                        $refDemandIds = collect($refDemands)->map(function ($secondValue)
+                        use ($mWaterConsumerDemand, $consumerDetails, $request, $taxId, $userDetails) {
+                            $refDemandId = $mWaterConsumerDemand->saveConsumerDemand($secondValue, $consumerDetails, $request, $taxId, $userDetails);
+                            return $refDemandId;
+                        });
+                        break;
+                    }
+                    $refDemandIds = $mWaterConsumerDemand->saveConsumerDemand($refDemands, $consumerDetails, $request, $taxId, $userDetails);
+                    break;
+                case ($refMeterConnectionType['3']):
+                    $refDemands = $firstValue['consumer_demand'];
+                    $check = collect($refDemands)->first();
+                    if (is_array($check)) {
+                        $refDemandIds = collect($refDemands)->map(function ($secondValue)
+                        use ($mWaterConsumerDemand, $consumerDetails, $request, $taxId, $userDetails) {
+                            $refDemandId = $mWaterConsumerDemand->saveConsumerDemand($secondValue,  $consumerDetails, $request, $taxId, $userDetails);
+                            return $refDemandId;
+                        });
+                        break;
+                    }
+                    $refDemandIds = $mWaterConsumerDemand->saveConsumerDemand($refDemands, $consumerDetails, $request, $taxId, $userDetails);
+                    break;
+            }
+            return $refDemandIds;
+        });
+        return $returnDemandIds->first();
+    }
+
+    /**
+     * | Save the Document for the Meter Entry 
+     * | Return the Document Path
+     * | @param request
+        | Serial No : 04.02 / 06.02
+        | Working
+        | Common function
+     */
+    public function saveDocument($request, $refImageName, $folder = null)
+    {
+        $document       = $request->document;
+        $docUpload      = new DocUpload;
+        $relativePath   = trim(Config::get('waterConstaint.WATER_RELATIVE_PATH') . "/" . $folder, "/");
+
+        $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+        $doc = [
+            "document"      => $imageName,
+            "relaivePath"   => $relativePath
+        ];
+        return $doc;
+    }
 
     /**
      * | save the water details in property or saf data
