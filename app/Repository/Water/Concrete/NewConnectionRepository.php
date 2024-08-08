@@ -782,6 +782,8 @@ class NewConnectionRepository implements iNewConnection
             ['displayString' => 'Ward Number',        'key' => 'WardNumber',          'value' => $collectionApplications->ward_name],
             ['displayString' => 'Zone',               'key' => 'zone',                'value' => $collectionApplications->zone_name],
             ['displayString' => 'Holding',             'key' => 'HoldingNumber',      'value' => $collectionApplications->property_no],
+            ['displayString' => 'Meter Number',        'key' => 'MeterNumber',      'value' => $collectionApplications->meter_no],
+            ['displayString' => 'Initial Reading',     'key' => 'InitialReading',      'value' => $collectionApplications->initial_reading],
         ]);
     }
 

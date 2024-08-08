@@ -150,6 +150,8 @@ class WaterApplication extends Model
             'water_applications.workflow_id',
             'water_applications.last_role_id',
             'water_applications.doc_upload_status',
+            'water_applications.meter_no',
+            'water_applications.initial_reading',
             'water_property_type_mstrs.property_type',
             'water_param_pipeline_types.pipeline_type',
             'zone_masters.zone_name',
@@ -713,7 +715,7 @@ class WaterApplication extends Model
         $saveNewApplication->pin                    = $req->pincode;
         $saveNewApplication->connection_through     = $req->connection_through;
         $saveNewApplication->workflow_id            = $ulbWorkflowId->id;
-        // $saveNewApplication->connection_fee_id      = $waterFeeId;
+        // $saveNewApplication->connection_fee_id   = $waterFeeId;
         $saveNewApplication->initiator              = collect($initiatorRoleId)->first()->role_id;
         $saveNewApplication->current_role           = collect($initiatorRoleId)->first()->role_id;
         $saveNewApplication->finisher               = collect($finisherRoleId)->first()->role_id;
@@ -732,6 +734,8 @@ class WaterApplication extends Model
         $saveNewApplication->building_type          = $req->buildingType;
         $saveNewApplication->trade_license          = $req->tradelicenseNo;
         $saveNewApplication->ward_no                = $req->wardNo;
+        $saveNewApplication->meter_no               = $req->meterNo;
+        $saveNewApplication->initial_reading        = $req->intialreading;
 
 
         $saveNewApplication->save();
