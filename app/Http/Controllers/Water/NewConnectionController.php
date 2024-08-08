@@ -2696,8 +2696,8 @@ class NewConnectionController extends Controller
                     ->first();
                 $returnData['final_verify']         = true;
                 $returnData['property_type_name']   = $flipPropertyTypeMapping[$returnData->property_type_id];
-                $returnData['connection_type_name'] = $flipConnectionTypeMapping[$returnData->connection_type_id];
-                $returnData['pipeline_type_name']   = $flipPipelineTypeMapping[$returnData->pipeline_type_id];
+                // $returnData['connection_type_name'] = $flipConnectionTypeMapping[$returnData->connection_type_id];
+                // $returnData['pipeline_type_name']   = $flipPipelineTypeMapping[$returnData->pipeline_type_id];
                 return responseMsgs(true, "JE Inspection details!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
             }
             return responseMsgs(true, "Data not Found!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
