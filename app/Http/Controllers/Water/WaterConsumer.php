@@ -3158,7 +3158,10 @@ class WaterConsumer extends Controller
     public function gerateAutoFixedDemand(Request $request)
     {
         $excelData[] = [
-            "consumer_id", "consumer No", "status", "error",
+            "consumer_id",
+            "consumer No",
+            "status",
+            "error",
         ];
         try {
             $newRequest = new Request([
@@ -3264,7 +3267,7 @@ class WaterConsumer extends Controller
         $validated = Validator::make(
             $request->all(),
             [
-                "fromDate" => "nullable|date|before_or_equal:$now|date_format:Y-m-d",
+                // "fromDate" => "nullable|date|before_or_equal:$now|date_format:Y-m-d",
                 "uptoDate" => "nullable|date|before_or_equal:$now|date_format:Y-m-d",
                 "userId" => "nullable|digits_between:1,9223372036854775807",
                 "wardId" => "nullable|digits_between:1,9223372036854775807",
@@ -3302,7 +3305,8 @@ class WaterConsumer extends Controller
             }
             // Original query for detailed information
             $data = waterConsumerDemand::select(
-                "water_consumer_demands.id",
+                "water_second_consumers.id",
+                "water_consumer_demands.id as demandId",
                 "water_consumer_demands.consumer_id",
                 "water_second_consumers.consumer_no",
                 "water_second_consumers.folio_no as property_no",
@@ -3313,20 +3317,23 @@ class WaterConsumer extends Controller
                 "owners.mobile_no",
                 "water_second_consumers.category",
                 "water_property_type_mstrs.property_type",
-                "water_consumer_demands.amount"
+                "water_consumer_demands.amount",
+                "water_consumer_demands.demand_from",
+                "water_consumer_demands.demand_upto",
+                "water_consumer_demands.is_full_paid"
                 // "users.name AS user_name",
             )
                 // ->leftJoin("users", "users.id", "water_consumer_demands.emp_details_id")
                 ->join('water_second_consumers', 'water_second_consumers.id', 'water_consumer_demands.consumer_id')
                 ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
                 ->leftjoin('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
-                ->join('water_property_type_mstrs','water_property_type_mstrs.id','water_second_consumers.property_type_id')
+                ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_second_consumers.property_type_id')
                 ->Join('water_consumer_owners as owners', 'owners.id', 'water_consumer_demands.consumer_id')
-                ->where('water_consumer_demands.is_full_paid',false)
-                ->where('water_consumer_demands.amount',"<>",0);
-            if ($fromDate && $uptoDate) {
-                $data->where('demand_from', '>=', $fromDate)
-                    ->where('demand_upto', '<=', $uptoDate);
+                ->where('water_consumer_demands.is_full_paid', false)
+                ->where('water_consumer_demands.amount', "<>", 0);
+            if ($uptoDate) {
+                // $data->where('demand_from', '>=', $fromDate)
+                $data->where('demand_upto', '<=', $uptoDate);
             }
             if ($userId) {
                 $data->where('water_consumer_demands.emp_details_id', $userId);
