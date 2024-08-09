@@ -490,6 +490,7 @@ return [
     "CASH_VERIFICATION_PARAM_ID"  => 33,
     "WAIVER_PARAM_ID"  => 40,
     "JAHIRNAMA_ID"  => 51,
+    "NOTICE_ID" =>58,
 
 
     /**
