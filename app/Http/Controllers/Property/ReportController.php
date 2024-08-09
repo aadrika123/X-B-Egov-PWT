@@ -6626,7 +6626,7 @@ class ReportController extends Controller
         LEFT JOIN arrea_pending_penalty ON arrea_pending_penalty.prop_id = demand_with_penalty.property_id
         LEFT JOIN zone_masters ON zone_masters.id = prop_properties.zone_mstr_id
         LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
-        WHERE 1=1
+        WHERE 1=1 and prop_properties.generated = 'false'
         ";
 
             // Apply filters if provided
@@ -6750,7 +6750,7 @@ class ReportController extends Controller
         LEFT JOIN arrea_pending_penalty ON arrea_pending_penalty.prop_id = demand_with_penalty.property_id
         LEFT JOIN zone_masters ON zone_masters.id = prop_properties.zone_mstr_id
         LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
-        WHERE 1=1
+        WHERE 1=1 and prop_properties.generated = 'false'
         ";
 
             // Apply filters for total count query
