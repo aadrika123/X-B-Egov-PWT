@@ -152,6 +152,7 @@ class WaterApplication extends Model
             'water_applications.doc_upload_status',
             'water_applications.meter_no',
             'water_applications.initial_reading',
+            'water_applications.email',
             'water_property_type_mstrs.property_type',
             'water_param_pipeline_types.pipeline_type',
             'zone_masters.zone_name',
@@ -751,6 +752,7 @@ class WaterApplication extends Model
         $saveNewApplication->initial_reading        = $req->intialreading;
         $saveNewApplication->road_type_id           = $req->roadType;
         $saveNewApplication->per_meter              = $req->permeter;
+        $saveNewApplication->email                  = $req->email;
 
 
         $saveNewApplication->save();
