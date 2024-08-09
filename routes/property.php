@@ -589,6 +589,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('reports/bulk-demand', 'bulkDemand');
     Route::post('reports/generate-notice', 'generateNotice');
     Route::post('reports/bulk-demand-generated-list', 'bulkDemandList');
+    Route::post('reports/bulk-demand-generated-list-download-count', 'bulkDemandListDownloadCount');
 
   });
 
