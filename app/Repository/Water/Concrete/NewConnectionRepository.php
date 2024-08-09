@@ -575,7 +575,7 @@ class NewConnectionRepository implements iNewConnection
             if ($param['meterStatus'] != false) {
                 $this->saveGenerateConsumerDemand($metaRequest);
             }
-            if($request->document != null)(
+            if ($request->document != null) (
                 $documentPath = $this->saveDocument($request, $meterRefImageName)
             );
             $documentPath = null;
@@ -1086,17 +1086,19 @@ class NewConnectionRepository implements iNewConnection
         }
         $holding = $applicationDetails->pluck('property_no')->toArray();
 
+        # get property basic detail by holding number 
         $holdingDetails = $mPropPerty->getPropert($holding);
         if (!$holdingDetails) {
             throw new Exception('Holding not found!');
         }
         $applicationDetail  = collect($applicationDetails);
 
+        # set attribute of property in water details 
         $applicationDetails = $applicationDetails->map(function ($applicationDetail) use ($holdingDetails) {
             if (isset($holdingDetails)) {
                 $applicationDetail->setAttribute('area_of_plot', $holdingDetails->area_of_plot);
             } else {
-                $applicationDetail->setAttribute('area_of_plot', null);  // Set to null or a default value if not found
+                $applicationDetail->setAttribute('area_of_plot', null);                                  // Set to null or a default value if not found
             }
             $applicationDetail->setAttribute('village_mauja_name', $holdingDetails->village_mauja_name); // Replace 'your_value_here' with the desired value
             return $applicationDetail;
@@ -1139,12 +1141,23 @@ class NewConnectionRepository implements iNewConnection
             'data' => $cardDetails
         ];
         $fullDetailsData['fullDetailsData']['cardArray'] = new Collection($cardData);
+        # set attribute of owner name in marathi
 
+        $ownerDetail = $ownerDetail->map(function ($ownerDetail) use ($holdingDetails) {
+            if (isset($holdingDetails)) {
+                $ownerDetail->setAttribute('owner_name_marathi', $holdingDetails->owner_name_marathi);
+            } else {
+                $ownerDetail->setAttribute('owner_name_marathi', null);  // Set to null or a default value if not found
+            }
+            return $ownerDetail;
+        });
         # TableArray
         $ownerList = $this->getOwnerDetails($ownerDetail);
+
+
         $ownerView = [
             'headerTitle' => 'Owner Details',
-            'tableHead' => ["#", "Owner Name", "Guardian Name", "Mobile No", "Email", "City", "District"],
+            'tableHead' => ["#", "Owner Name", "Owner NAME Marathi", "Mobile No", "Email", "City", "District"],
             'tableData' => $ownerList
         ];
         $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerView]);
@@ -1206,6 +1219,7 @@ class NewConnectionRepository implements iNewConnection
             ['displayString' => 'Holding',             'key' => 'HoldingNumber',      'value' => $collectionApplications->property_no],
             ['displayString' => 'Meter Number',        'key' => 'MeterNumber',      'value' => $collectionApplications->meter_no],
             ['displayString' => 'Initial Reading',     'key' => 'InitialReading',      'value' => $collectionApplications->initial_reading],
+            ['displayString' => 'MobileNumber',           'key' => 'MobileNumber',      'value' => $collectionApplications->mobile_no],
         ]);
     }
 
@@ -1270,7 +1284,7 @@ class NewConnectionRepository implements iNewConnection
             return [
                 $key + 1,
                 $value['owner_name'],
-                $value['guardian_name'],
+                $value['owner_name_marathi'],
                 $value['mobile_no'],
                 $value['email'],
                 $value['city'],

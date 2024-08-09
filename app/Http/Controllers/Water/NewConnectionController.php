@@ -637,7 +637,7 @@ class NewConnectionController extends Controller
 
             $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
                 ->whereIn('water_applications.ward_id', $wardId)
-                ->where('is_field_verified', true)  
+                ->where('is_field_verified', true)
                 ->orderByDesc('water_applications.id')
                 ->get();
 
@@ -1257,9 +1257,13 @@ class NewConnectionController extends Controller
         try {
             $mWfActiveDocument = new WfActiveDocument();
             $mWaterApplication = new WaterApplication();
+            $mWaterApprovalApplications = new WaterApprovalApplicationDetail();
             $moduleId = Config::get('module-constants.WATER_MODULE_ID');
 
             $waterDetails = $mWaterApplication->getApplicationById($req->applicationId)->first();
+            if ($waterDetails == null) {
+                $waterDetails = $mWaterApprovalApplications->getApproveApplication($req->applicationId);
+            }
             if (!$waterDetails)
                 throw new Exception("Application Not Found for this application Id");
 
@@ -3136,13 +3140,83 @@ class NewConnectionController extends Controller
     {
         try {
             $articlesSet = array_flip([
-                "a", "an", "the", "and", "but", "or", "for", "nor", "so",
-                "yet", "in", "on", "at", "by", "with", "about", "before", "after",
-                "during", "under", "over", "between", "through", "above", "below", "I", "you", "he",
-                "she", "it", "we", "they", "me", "him", "her", "us", "them", "am", "is", "are", "was",
-                "were", "be", "being", "been", "do", "does", "did", "have", "has", "had", "shall",
-                "will", "should", "would", "may", "might", "must", "can", "could", "this", "that",
-                "these", "those", "my", "your", "his", "her", "its", "our", "their", "oh", "wow", "ouch", "hey", "hello", "hi"
+                "a",
+                "an",
+                "the",
+                "and",
+                "but",
+                "or",
+                "for",
+                "nor",
+                "so",
+                "yet",
+                "in",
+                "on",
+                "at",
+                "by",
+                "with",
+                "about",
+                "before",
+                "after",
+                "during",
+                "under",
+                "over",
+                "between",
+                "through",
+                "above",
+                "below",
+                "I",
+                "you",
+                "he",
+                "she",
+                "it",
+                "we",
+                "they",
+                "me",
+                "him",
+                "her",
+                "us",
+                "them",
+                "am",
+                "is",
+                "are",
+                "was",
+                "were",
+                "be",
+                "being",
+                "been",
+                "do",
+                "does",
+                "did",
+                "have",
+                "has",
+                "had",
+                "shall",
+                "will",
+                "should",
+                "would",
+                "may",
+                "might",
+                "must",
+                "can",
+                "could",
+                "this",
+                "that",
+                "these",
+                "those",
+                "my",
+                "your",
+                "his",
+                "her",
+                "its",
+                "our",
+                "their",
+                "oh",
+                "wow",
+                "ouch",
+                "hey",
+                "hello",
+                "hi"
             ]);
 
             $inputText = $request->input('var');
