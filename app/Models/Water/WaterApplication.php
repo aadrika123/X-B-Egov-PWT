@@ -144,7 +144,7 @@ class WaterApplication extends Model
             'water_applications.address',
             'water_applications.category',
             'water_applications.application_no',
-            'water_applications.ward_no',
+            // 'water_applications.ward_no',
             'water_applications.pin',
             'water_applications.current_role',
             'water_applications.workflow_id',
@@ -162,9 +162,10 @@ class WaterApplication extends Model
             'water_connection_type_mstrs.connection_type',
             'water_connection_charges.amount',
             "water_connection_charges.charge_category",
-            "ulb_ward_masters.ward_name",
+            "ulb_ward_masters.ward_name as ward_no",
             "water_road_cutter_charges.road_type",
             "water_applications.per_meter",
+            "water_applications.trade_license"
         )
             ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_applications.current_role')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_applications.ulb_id')
@@ -424,9 +425,8 @@ class WaterApplication extends Model
      * | Send the details of the apllication in the audit table
         | Not Finished
      */
-    public function editWaterApplication($applicationId)
-    {
-    }
+    public function editWaterApplication($applicationId) 
+    {}
 
     /**
      * |------------------- Deactivate the Water Application In the Process of Aplication Editing -------------------|
