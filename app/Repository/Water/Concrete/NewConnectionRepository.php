@@ -1220,6 +1220,8 @@ class NewConnectionRepository implements iNewConnection
             ['displayString' => 'Meter Number',        'key' => 'MeterNumber',      'value' => $collectionApplications->meter_no],
             ['displayString' => 'Initial Reading',     'key' => 'InitialReading',      'value' => $collectionApplications->initial_reading],
             ['displayString' => 'MobileNumber',           'key' => 'MobileNumber',      'value' => $collectionApplications->mobile_no],
+            ['displayString' => 'Email',               'key' => 'Email',                'value' => $collectionApplications->email],
+            ['displayString' => 'TradeLicense',               'key' => 'TradeLicense',                'value' => $collectionApplications->trade_license],
         ]);
     }
 

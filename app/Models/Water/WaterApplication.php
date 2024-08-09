@@ -144,7 +144,7 @@ class WaterApplication extends Model
             'water_applications.address',
             'water_applications.category',
             'water_applications.application_no',
-            'water_applications.ward_no',
+            // 'water_applications.ward_no',
             'water_applications.pin',
             'water_applications.current_role',
             'water_applications.workflow_id',
@@ -152,6 +152,7 @@ class WaterApplication extends Model
             'water_applications.doc_upload_status',
             'water_applications.meter_no',
             'water_applications.initial_reading',
+            'water_applications.email',
             'water_property_type_mstrs.property_type',
             'water_param_pipeline_types.pipeline_type',
             'zone_masters.zone_name',
@@ -161,9 +162,10 @@ class WaterApplication extends Model
             'water_connection_type_mstrs.connection_type',
             'water_connection_charges.amount',
             "water_connection_charges.charge_category",
-            "ulb_ward_masters.ward_name",
+            "ulb_ward_masters.ward_name as ward_no",
             "water_road_cutter_charges.road_type",
             "water_applications.per_meter",
+            "water_applications.trade_license as license_no"
         )
             ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_applications.current_role')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_applications.ulb_id')
@@ -423,9 +425,8 @@ class WaterApplication extends Model
      * | Send the details of the apllication in the audit table
         | Not Finished
      */
-    public function editWaterApplication($applicationId)
-    {
-    }
+    public function editWaterApplication($applicationId) 
+    {}
 
     /**
      * |------------------- Deactivate the Water Application In the Process of Aplication Editing -------------------|
@@ -473,7 +474,7 @@ class WaterApplication extends Model
         return  WaterApplication::select(
             'water_applications.*',
             'water_applications.connection_through as connection_through_id',
-            // 'ulb_ward_masters.ward_name',
+            'ulb_ward_masters.ward_name',
             'ulb_masters.ulb_name',
             // 'water_connection_type_mstrs.connection_type',
             // 'water_property_type_mstrs.property_type',
@@ -481,7 +482,7 @@ class WaterApplication extends Model
             // 'water_owner_type_mstrs.owner_type AS owner_char_type',
             // 'water_param_pipeline_types.pipeline_type'
         )
-            // ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_applications.ward_id')
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_applications.ward_id')
             // ->join('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_applications.connection_through')
             ->leftjoin('ulb_masters', 'ulb_masters.id', '=', 'water_applications.ulb_id')
             // ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_applications.connection_type_id')
@@ -751,6 +752,7 @@ class WaterApplication extends Model
         $saveNewApplication->initial_reading        = $req->intialreading;
         $saveNewApplication->road_type_id           = $req->roadType;
         $saveNewApplication->per_meter              = $req->permeter;
+        $saveNewApplication->email                  = $req->email;
 
 
         $saveNewApplication->save();
