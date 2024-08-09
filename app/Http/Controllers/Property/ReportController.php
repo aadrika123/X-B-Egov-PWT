@@ -6784,23 +6784,17 @@ class ReportController extends Controller
             // Calculate pagination details
             $lastPage = (int) ceil($totalCount / $perPage);
 
-            return response()->json([
-                'status' => true,
-                'message' => 'Demand Reports',
-                'data' => [
-                    'current_page' => $page,
-                    'last_page' => $lastPage,
-                    'total' => $totalCount,
-                    'per_page' => $perPage,
-                    'data' => remove_null($dataResults)
-                ]
-            ], 200);
+            $data = [
+                'current_page' => $page,
+                'last_page' => $lastPage,
+                'total' => $totalCount,
+                'per_page' => $perPage,
+                'data' => remove_null($dataResults)
+            ];
+
+            return responseMsgs(true, "Demand Reports", remove_null($data));
         } catch (Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => $e->getMessage(),
-                'data' => []
-            ], 200);
+            return responseMsgs(false, $e->getMessage(), []);
         }
     }
 
@@ -7109,25 +7103,19 @@ class ReportController extends Controller
 
             // Calculate pagination details
             $lastPage = (int) ceil($totalCount / $perPage);
-
-            return response()->json([
-                'status' => true,
-                'message' => 'Demand Reports',
-                'data' => [
-                    'current_page' => $page,
+            $data = [
+                'current_page' => $page,
                     'last_page' => $lastPage,
                     'total' => $totalCount,
                     'per_page' => $perPage,
                     'data' => remove_null($dataResults)
-                ]
-            ], 200);
+            ];
+
+            return responseMsgs(true, "Demand Reports", remove_null($data));
         } catch (Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => $e->getMessage(),
-                'data' => []
-            ], 200);
+            return responseMsgs(false, $e->getMessage(), []);
         }
+           
     }
 
     public function generateNotice(Request $request)
@@ -7172,19 +7160,12 @@ class ReportController extends Controller
                 $noticeNos[$property->id] = $noticeNo;
             }
 
-            return response()->json([
-                'status' => true,
-                'message' => 'Notice numbers generated successfully',
-                'data' => $noticeNos
-            ], 200);
+            return responseMsgs(true, 'Notice numbers generated successfully', $noticeNos);
         } catch (Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => $e->getMessage(),
-                'data' => []
-            ], 200); // Use 500 for server errors
+            return responseMsgs(false, $e->getMessage(), []);
         }
     }
+
 
     public function bulkDemandListDownloadCount(Request $request)
     {
@@ -7192,7 +7173,9 @@ class ReportController extends Controller
             'propId' => 'required|array',
             'propId.*' => 'integer',
             'downloaded' => 'required|boolean',
-            'count' => 'required|integer|in:1,2,3'
+            'count' => 'required|integer|in:1,2,3',
+            'perPage' => 'nullable|integer|min:1',
+            'page' => 'nullable|integer|min:1'
         ]);
 
         if ($validator->fails()) {
@@ -7206,23 +7189,177 @@ class ReportController extends Controller
         try {
             $downloaded = $request->downloaded;
             $count = $request->count;
+            $page = $request->page ?? 1;
+            $perPage = $request->perPage ?? 10; // Ensure to use the correct key `perPage`
+
+            // Update properties
             PropProperty::whereIn('id', $request->propId)
                 ->update([
                     'downloaded' => $downloaded,
                     'count' => $count
                 ]);
 
-            return response()->json([
-                'status' => true,
-                'message' => 'Properties updated successfully'
-            ], 200);
+            // Fetch demand data for the given property IDs with pagination
+            $demandData = $this->getDemandData($request->propId, $page, $perPage);
+            $data = [
+                'current_page' => $demandData['current_page'],
+                'last_page' => $demandData['last_page'],
+                'total' => $demandData['total'],
+                'per_page' => $demandData['per_page'],
+                'data' => $demandData['data']
+            ];
+
+            return responseMsgs(true, 'Properties Updated List', $data);
         } catch (Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => $e->getMessage()
-            ], 200);
+            return responseMsgs(false, $e->getMessage(), []);
         }
     }
+
+
+    public function getDemandData(array $propertyIds, int $page, int $perPage)
+    {
+        $sql = "
+        WITH demands AS (
+            SELECT
+                prop_demands.property_id,
+                prop_demands.total_tax,
+                prop_demands.balance,
+                prop_demands.fyear,
+                prop_demands.due_total_tax,
+                prop_demands.is_old,
+                prop_demands.created_at,
+                SPLIT_PART(prop_demands.fyear, '-', 2) AS upto_year,
+                CASE
+                    WHEN prop_demands.paid_status = 1 THEN prop_demands.due_total_tax
+                    ELSE prop_demands.total_tax
+                END AS actual_demand,
+                CASE
+                    WHEN prop_demands.is_full_paid = false THEN prop_demands.due_total_tax
+                    ELSE prop_demands.total_tax
+                END / 12 AS monthly_tax,
+                CASE
+                    WHEN prop_properties.prop_type_mstr_id = 4
+                        AND prop_demands.is_old != true
+                        AND prop_demands.created_at IS NOT NULL
+                        AND prop_demands.created_at::date BETWEEN '2024-04-01' AND '2025-03-31'
+                    THEN 0
+                    WHEN prop_demands.fyear < '2024-2025'
+                        AND prop_demands.is_old != true
+                    THEN (
+                        (DATE_PART('YEAR', current_date) - DATE_PART('YEAR', CONCAT(SPLIT_PART(prop_demands.fyear, '-', 2), '-04-01')::DATE)) * 12
+                        + (DATE_PART('Month', current_date::DATE) - DATE_PART('Month', CONCAT(SPLIT_PART(prop_demands.fyear, '-', 2), '-04-01')::DATE))
+                    ) + 1
+                    WHEN prop_demands.fyear < '2024-2025'
+                        AND prop_demands.is_old = true
+                    THEN (
+                        (DATE_PART('YEAR', current_date) - DATE_PART('YEAR', CONCAT(SPLIT_PART(prop_demands.fyear, '-', 2), '-09-01')::DATE)) * 12
+                        + (DATE_PART('Month', current_date::DATE) - DATE_PART('Month', CONCAT(SPLIT_PART(prop_demands.fyear, '-', 2), '-09-01')::DATE))
+                    )
+                    ELSE 0
+                END AS month_diff,
+                prop_properties.prop_type_mstr_id
+            FROM prop_demands
+            JOIN prop_properties ON prop_properties.id = prop_demands.property_id
+            WHERE prop_demands.status = 1
+        ),
+        demand_with_penalty AS (
+            SELECT
+                property_id,
+                SUM(CASE WHEN fyear < '2024-2025' THEN actual_demand ELSE 0 END) AS arrear_demand,
+                SUM(CASE WHEN fyear = '2024-2025' THEN actual_demand ELSE 0 END) AS current_demand,
+                SUM(actual_demand) AS actual_demand,
+                MIN(fyear) AS from_year,
+                MAX(fyear) AS upto_year,
+                SUM((actual_demand * month_diff * 0.02)) AS two_per_penalty
+            FROM demands
+            WHERE actual_demand > 0
+            GROUP BY property_id
+        ),
+        arrea_pending_penalty AS (
+            SELECT
+                prop_pending_arrears.prop_id,
+                SUM(prop_pending_arrears.due_total_interest) AS priv_total_interest
+            FROM prop_pending_arrears
+            JOIN demand_with_penalty ON demand_with_penalty.property_id = prop_pending_arrears.prop_id
+            WHERE prop_pending_arrears.paid_status = 0 AND prop_pending_arrears.status = 1
+            GROUP BY prop_pending_arrears.prop_id
+        ),
+        owners AS (
+            SELECT
+                prop_owners.property_id,
+                STRING_AGG(
+                    CASE
+                        WHEN TRIM(prop_owners.owner_name_marathi) = '' THEN prop_owners.owner_name
+                        ELSE prop_owners.owner_name_marathi
+                    END, ', '
+                ) AS owner_name,
+                STRING_AGG(prop_owners.mobile_no, ', ') AS mobile_no
+            FROM prop_owners
+            JOIN demand_with_penalty ON demand_with_penalty.property_id = prop_owners.property_id
+            WHERE prop_owners.status = 1
+            GROUP BY prop_owners.property_id
+        )
+        SELECT
+            prop_properties.id,
+            prop_properties.generated,
+            prop_properties.notice_no,
+            prop_properties.downloaded,
+            prop_properties.count,
+            zone_masters.zone_name,
+            ulb_ward_masters.ward_name,
+            prop_properties.holding_no,
+            prop_properties.property_no,
+            prop_properties.prop_address,
+            owners.owner_name,
+            owners.mobile_no,
+            demand_with_penalty.from_year,
+            demand_with_penalty.upto_year,
+            demand_with_penalty.arrear_demand,
+            demand_with_penalty.current_demand,
+            demand_with_penalty.actual_demand,
+            demand_with_penalty.two_per_penalty,
+            arrea_pending_penalty.priv_total_interest,
+            (
+                COALESCE(demand_with_penalty.actual_demand, 0)
+                + COALESCE(demand_with_penalty.two_per_penalty, 0)
+                + COALESCE(arrea_pending_penalty.priv_total_interest, 0)
+            ) AS total_demand
+        FROM prop_properties
+        LEFT JOIN demand_with_penalty ON prop_properties.id = demand_with_penalty.property_id
+        LEFT JOIN owners ON owners.property_id = demand_with_penalty.property_id
+        LEFT JOIN arrea_pending_penalty ON arrea_pending_penalty.prop_id = demand_with_penalty.property_id
+        LEFT JOIN zone_masters ON zone_masters.id = prop_properties.zone_mstr_id
+        LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
+        WHERE prop_properties.id IN (" . implode(',', $propertyIds) . ")
+        AND prop_properties.generated = 'true'
+        ORDER BY prop_properties.id
+        LIMIT :limit OFFSET :offset
+    ";
+
+        $offset = ($page - 1) * $perPage;
+        $query = DB::select(DB::raw($sql), [
+            'limit' => $perPage,
+            'offset' => $offset
+        ]);
+
+        // Get the total count for pagination
+        $totalQuery = "
+        SELECT COUNT(*) AS total
+        FROM prop_properties
+        WHERE id IN (" . implode(',', $propertyIds) . ")
+        AND generated = 'true'
+    ";
+        $total = DB::select(DB::raw($totalQuery))[0]->total;
+
+        return [
+            'data' => $query,
+            'current_page' => $page,
+            'last_page' => ceil($total / $perPage),
+            'total' => $total,
+            'per_page' => $perPage // Use the correct key `per_page`
+        ];
+    }
+
 
 
 
