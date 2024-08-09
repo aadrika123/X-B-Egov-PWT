@@ -561,7 +561,7 @@ class NewConnectionRepository implements iNewConnection
     {
         try {
             $mWaterConsumerMeter    = new WaterConsumerMeter();
-            // $mWaterConsumerInitial  = new WaterConsumerInitialMeter();
+            $mWaterConsumerInitial  = new WaterConsumerInitialMeter();
             $meterRefImageName      = config::get('waterConstaint.WATER_METER_CODE');
             $param                  = $this->checkParamForMeterEntry($request);
 
@@ -580,10 +580,10 @@ class NewConnectionRepository implements iNewConnection
             );
             $documentPath = null;
             $mWaterConsumerMeter->saveMeterDetails($request, $documentPath, $fixedRate = null);
-            // $userDetails =[
-            //     'emp_id' =>$mWaterConsumerMeter->emp_details_id
-            // ];
-            // $mWaterConsumerInitial->saveConsumerReading($request,$metaRequest,$userDetails);             # when initial meter data save  
+            $userDetails =[
+                'emp_id' =>$mWaterConsumerMeter->emp_details_id
+            ];
+            $mWaterConsumerInitial->saveConsumerReading($request,$metaRequest,$userDetails);             # when initial meter data save  
             $this->commit();
             return responseMsgs(true, "Meter Detail Entry Success !", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
