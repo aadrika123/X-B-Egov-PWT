@@ -6914,9 +6914,11 @@ class ReportController extends Controller
             LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
             WHERE 1=1
         )
+            
         SELECT
             prop_properties.id,
             prop_properties.generated,
+            prop_properties.notice_comment,
             prop_properties.notice_no,
             prop_properties.downloaded,
             prop_properties.count,
@@ -7361,6 +7363,35 @@ class ReportController extends Controller
     }
 
 
+    public function bulkNoticeComment(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'propId' => 'required|integer',
+            'comment'=>'required',
+            'perPage' => 'nullable|integer|min:1',
+            'page' => 'nullable|integer|min:1'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 200);
+        }
+
+        try {
+            $Prop  = $request->propId;
+            $comment = $request->comment;
+            PropProperty::where('id', $Prop)
+                ->update([
+                    'notice_comment' => $comment
+                ]);
+            return responseMsgs(true, 'Comment Saved Successfully', "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), []);
+        }
+    }
 
 
 
