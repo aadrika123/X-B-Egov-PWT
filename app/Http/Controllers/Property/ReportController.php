@@ -6626,7 +6626,7 @@ class ReportController extends Controller
         LEFT JOIN arrea_pending_penalty ON arrea_pending_penalty.prop_id = demand_with_penalty.property_id
         LEFT JOIN zone_masters ON zone_masters.id = prop_properties.zone_mstr_id
         LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
-        WHERE 1=1
+        WHERE 1=1 and prop_properties.generated = 'false'
         ";
 
             // Apply filters if provided
@@ -6750,7 +6750,7 @@ class ReportController extends Controller
         LEFT JOIN arrea_pending_penalty ON arrea_pending_penalty.prop_id = demand_with_penalty.property_id
         LEFT JOIN zone_masters ON zone_masters.id = prop_properties.zone_mstr_id
         LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
-        WHERE 1=1
+        WHERE 1=1 and prop_properties.generated = 'false'
         ";
 
             // Apply filters for total count query
@@ -6871,6 +6871,7 @@ class ReportController extends Controller
             FROM prop_demands
             JOIN prop_properties ON prop_properties.id = prop_demands.property_id
             WHERE prop_demands.status = 1
+             
         ),
         demand_with_penalty AS (
             SELECT
@@ -6922,7 +6923,9 @@ class ReportController extends Controller
         SELECT
             prop_properties.id,
             prop_properties.generated,
-             prop_properties.notice_no,
+            prop_properties.notice_no,
+            prop_properties.downloaded,
+            prop_properties.count,
             zone_masters.zone_name,
             ulb_ward_masters.ward_name,
             prop_properties.holding_no,
@@ -6949,7 +6952,7 @@ class ReportController extends Controller
         LEFT JOIN arrea_pending_penalty ON arrea_pending_penalty.prop_id = demand_with_penalty.property_id
         LEFT JOIN zone_masters ON zone_masters.id = prop_properties.zone_mstr_id
         LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
-        WHERE 1=1
+        WHERE 1=1 and prop_properties.generated = 'true'
         ";
 
             // Apply filters if provided
@@ -7073,7 +7076,7 @@ class ReportController extends Controller
         LEFT JOIN arrea_pending_penalty ON arrea_pending_penalty.prop_id = demand_with_penalty.property_id
         LEFT JOIN zone_masters ON zone_masters.id = prop_properties.zone_mstr_id
         LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
-        WHERE 1=1
+        WHERE 1=1 and prop_properties.generated = 'true'
         ";
 
             // Apply filters for total count query
@@ -7159,7 +7162,7 @@ class ReportController extends Controller
 
             // Generate notice numbers for each property
             foreach ($properties as $property) {
-                $idGeneration = new PrefixIdGenerator($refparamId??58, 2); // Use ward_id for generation
+                $idGeneration = new PrefixIdGenerator($refparamId ?? 58, 2); // Use ward_id for generation
                 $noticeNo = $idGeneration->generatev1($property);
 
                 // Update the property with the generated notice number
@@ -7179,9 +7182,51 @@ class ReportController extends Controller
                 'status' => false,
                 'message' => $e->getMessage(),
                 'data' => []
-            ], 500); // Use 500 for server errors
+            ], 200); // Use 500 for server errors
         }
     }
+
+    public function bulkDemandListDownloadCount(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'propId' => 'required|array',
+            'propId.*' => 'integer',
+            'downloaded' => 'required|boolean',
+            'count' => 'required|integer|in:1,2,3'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 200);
+        }
+
+        try {
+            $downloaded = $request->downloaded;
+            $count = $request->count;
+            PropProperty::whereIn('id', $request->propId)
+                ->update([
+                    'downloaded' => $downloaded,
+                    'count' => $count
+                ]);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Properties updated successfully'
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage()
+            ], 200);
+        }
+    }
+
+
+
+
 
 
 
