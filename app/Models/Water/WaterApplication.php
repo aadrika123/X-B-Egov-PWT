@@ -162,6 +162,8 @@ class WaterApplication extends Model
             'water_connection_charges.amount',
             "water_connection_charges.charge_category",
             "ulb_ward_masters.ward_name",
+            "water_road_cutter_charges.road_type",
+            "water_applications.per_meter",
         )
             ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_applications.current_role')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_applications.ulb_id')
@@ -171,6 +173,7 @@ class WaterApplication extends Model
             ->join('water_param_pipeline_types', 'water_param_pipeline_types.id', 'water_applications.pipeline_type_id')
             ->join('zone_masters', 'zone_masters.id', 'water_applications.zone_mstr_id')
             ->join('water_connection_charges', 'water_connection_charges.application_id', 'water_applications.id')
+            ->leftjoin('water_road_cutter_charges', 'water_road_cutter_charges.id', 'water_applications.road_type_id')
             ->where('water_applications.id', $request->applicationId)
             ->where('water_applications.status', true);
     }
@@ -347,13 +350,13 @@ class WaterApplication extends Model
             ->first();
         if (isset($siteDetails)) {
             $refData = [
-                'connection_type_id'    => $siteDetails['connection_type_id'],
+                // 'connection_type_id'    => $siteDetails['connection_type_id'],
                 'connection_through'    => $siteDetails['connection_through'],
-                'pipeline_type_id'      => $siteDetails['pipeline_type_id'],
+                // 'pipeline_type_id'      => $siteDetails['pipeline_type_id'],
                 'property_type_id'      => $siteDetails['property_type_id'],
                 'category'              => $siteDetails['category'],
-                'area_sqft'             => $siteDetails['area_sqft'],
-                'area_asmt'             => sqFtToSqMt($siteDetails['area_sqft'])
+                // 'area_sqft'             => $siteDetails['area_sqft'],
+                // 'area_asmt'             => sqFtToSqMt($siteDetails['area_sqft'])
             ];
             $approvedWaterRep = collect($approvedWater)->merge($refData);
         }
@@ -370,11 +373,19 @@ class WaterApplication extends Model
         $request->request->add($metaReqs);
         $waterTrack->saveTrack($request);
 
-       
+        $data = [
+            'connectionType'         => 1,
+            'consumerId'             => $consumerId,
+            "connectionDate"       => Carbon::now()->format('Y-m-d'),
+            'meterNo'                => $approvedWater->meter_no,
+            'newMeterInitialReading' => $approvedWater->initial_reading,
+        ];
+
+
         # final delete
         $approvedWater->delete();
 
-        return $consumerId;
+        return $data;
     }
 
     /**
@@ -738,6 +749,8 @@ class WaterApplication extends Model
         $saveNewApplication->ward_no                = $req->wardNo;
         $saveNewApplication->meter_no               = $req->meterNo;
         $saveNewApplication->initial_reading        = $req->intialreading;
+        $saveNewApplication->road_type_id           = $req->roadType;
+        $saveNewApplication->per_meter              = $req->permeter;
 
 
         $saveNewApplication->save();
