@@ -473,7 +473,7 @@ class WaterApplication extends Model
         return  WaterApplication::select(
             'water_applications.*',
             'water_applications.connection_through as connection_through_id',
-            // 'ulb_ward_masters.ward_name',
+            'ulb_ward_masters.ward_name',
             'ulb_masters.ulb_name',
             // 'water_connection_type_mstrs.connection_type',
             // 'water_property_type_mstrs.property_type',
@@ -481,7 +481,7 @@ class WaterApplication extends Model
             // 'water_owner_type_mstrs.owner_type AS owner_char_type',
             // 'water_param_pipeline_types.pipeline_type'
         )
-            // ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_applications.ward_id')
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_applications.ward_id')
             // ->join('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_applications.connection_through')
             ->leftjoin('ulb_masters', 'ulb_masters.id', '=', 'water_applications.ulb_id')
             // ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_applications.connection_type_id')
