@@ -165,7 +165,7 @@ class WaterApplication extends Model
             "ulb_ward_masters.ward_name as ward_no",
             "water_road_cutter_charges.road_type",
             "water_applications.per_meter",
-            "water_applications.trade_license"
+            "water_applications.trade_license as license_no"
         )
             ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_applications.current_role')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_applications.ulb_id')
