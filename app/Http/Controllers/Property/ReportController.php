@@ -6914,6 +6914,7 @@ class ReportController extends Controller
             LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
             WHERE 1=1
         )
+            
         SELECT
             prop_properties.id,
             prop_properties.generated,
