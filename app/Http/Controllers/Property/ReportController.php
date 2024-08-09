@@ -9,6 +9,7 @@ use App\Http\Requests\Property\Reports\LevelUserPending;
 use App\Http\Requests\Property\Reports\SafPropIndividualDemandAndCollection;
 use App\Http\Requests\Property\Reports\UserWiseLevelPending;
 use App\Http\Requests\Property\Reports\UserWiseWardWireLevelPending;
+use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\MplYearlyReport;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropDemand;
@@ -6481,7 +6482,7 @@ class ReportController extends Controller
     }
 
 
-    
+
     public function bulkDemand(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -6799,12 +6800,388 @@ class ReportController extends Controller
                 'status' => false,
                 'message' => $e->getMessage(),
                 'data' => []
-            ], 500);
+            ], 200);
         }
     }
 
+    public function bulkDemandList(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            "zoneId" => "nullable|integer",
+            "wardId" => "nullable|integer",
+            "amount" => "nullable|in:20001 to 50000,50001 to 100000,100001 to 150000,1500001 to above",
+            'perPage' => "nullable|integer|min:1",
+            'page' => "nullable|integer|min:1"
+        ]);
 
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 200);
+        }
 
+        try {
+            $perPage = $request->perPage ?? 10;
+            $page = $request->page ?? 1;
+            $offset = ($page - 1) * $perPage;
+
+            // Base query for data
+            $sql = "
+        WITH demands AS (
+            SELECT
+                prop_demands.property_id,
+                prop_demands.total_tax,
+                prop_demands.balance,
+                prop_demands.fyear,
+                prop_demands.due_total_tax,
+                prop_demands.is_old,
+                prop_demands.created_at,
+                SPLIT_PART(prop_demands.fyear, '-', 2) AS upto_year,
+                CASE
+                    WHEN prop_demands.paid_status = 1 THEN prop_demands.due_total_tax
+                    ELSE prop_demands.total_tax
+                END AS actual_demand,
+                CASE
+                    WHEN prop_demands.is_full_paid = false THEN prop_demands.due_total_tax
+                    ELSE prop_demands.total_tax
+                END / 12 AS monthly_tax,
+                CASE
+                    WHEN prop_properties.prop_type_mstr_id = 4
+                        AND prop_demands.is_old != true
+                        AND prop_demands.created_at IS NOT NULL
+                        AND prop_demands.created_at::date BETWEEN '2024-04-01' AND '2025-03-31'
+                    THEN 0
+                    WHEN prop_demands.fyear < '2024-2025'
+                        AND prop_demands.is_old != true
+                    THEN (
+                        (DATE_PART('YEAR', current_date) - DATE_PART('YEAR', CONCAT(SPLIT_PART(prop_demands.fyear, '-', 2), '-04-01')::DATE)) * 12
+                        + (DATE_PART('Month', current_date::DATE) - DATE_PART('Month', CONCAT(SPLIT_PART(prop_demands.fyear, '-', 2), '-04-01')::DATE))
+                    ) + 1
+                    WHEN prop_demands.fyear < '2024-2025'
+                        AND prop_demands.is_old = true
+                    THEN (
+                        (DATE_PART('YEAR', current_date) - DATE_PART('YEAR', CONCAT(SPLIT_PART(prop_demands.fyear, '-', 2), '-09-01')::DATE)) * 12
+                        + (DATE_PART('Month', current_date::DATE) - DATE_PART('Month', CONCAT(SPLIT_PART(prop_demands.fyear, '-', 2), '-09-01')::DATE))
+                    )
+                    ELSE 0
+                END AS month_diff,
+                prop_properties.prop_type_mstr_id
+            FROM prop_demands
+            JOIN prop_properties ON prop_properties.id = prop_demands.property_id
+            WHERE prop_demands.status = 1
+        ),
+        demand_with_penalty AS (
+            SELECT
+                property_id,
+                SUM(CASE WHEN fyear < '2024-2025' THEN actual_demand ELSE 0 END) AS arrear_demand,
+                SUM(CASE WHEN fyear = '2024-2025' THEN actual_demand ELSE 0 END) AS current_demand,
+                SUM(actual_demand) AS actual_demand,
+                MIN(fyear) AS from_year,
+                MAX(fyear) AS upto_year,
+                SUM((actual_demand * month_diff * 0.02)) AS two_per_penalty
+            FROM demands
+            WHERE actual_demand > 0
+            GROUP BY property_id
+        ),
+        arrea_pending_penalty AS (
+            SELECT
+                prop_pending_arrears.prop_id,
+                SUM(prop_pending_arrears.due_total_interest) AS priv_total_interest
+            FROM prop_pending_arrears
+            JOIN demand_with_penalty ON demand_with_penalty.property_id = prop_pending_arrears.prop_id
+            WHERE prop_pending_arrears.paid_status = 0 AND prop_pending_arrears.status = 1
+            GROUP BY prop_pending_arrears.prop_id
+        ),
+        owners AS (
+            SELECT
+                prop_owners.property_id,
+                STRING_AGG(
+                    CASE
+                        WHEN TRIM(prop_owners.owner_name_marathi) = '' THEN prop_owners.owner_name
+                        ELSE prop_owners.owner_name_marathi
+                    END, ', '
+                ) AS owner_name,
+                STRING_AGG(prop_owners.mobile_no, ', ') AS mobile_no
+            FROM prop_owners
+            JOIN demand_with_penalty ON demand_with_penalty.property_id = prop_owners.property_id
+            WHERE prop_owners.status = 1
+            GROUP BY prop_owners.property_id
+        ),
+        total_count AS (
+            SELECT COUNT(*) AS total
+            FROM demand_with_penalty
+            JOIN prop_properties ON prop_properties.id = demand_with_penalty.property_id
+            LEFT JOIN owners ON owners.property_id = demand_with_penalty.property_id
+            LEFT JOIN arrea_pending_penalty ON arrea_pending_penalty.prop_id = demand_with_penalty.property_id
+            LEFT JOIN zone_masters ON zone_masters.id = prop_properties.zone_mstr_id
+            LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
+            WHERE 1=1
+        )
+        SELECT
+            prop_properties.id,
+            prop_properties.generated,
+             prop_properties.notice_no,
+            zone_masters.zone_name,
+            ulb_ward_masters.ward_name,
+            prop_properties.holding_no,
+            prop_properties.property_no,
+            prop_properties.prop_address,
+            owners.owner_name,
+            owners.mobile_no,
+            demand_with_penalty.from_year,
+            demand_with_penalty.upto_year,
+            demand_with_penalty.arrear_demand,
+            demand_with_penalty.current_demand,
+            demand_with_penalty.actual_demand,
+            demand_with_penalty.two_per_penalty,
+            arrea_pending_penalty.priv_total_interest,
+            (
+                COALESCE(demand_with_penalty.actual_demand, 0)
+                + COALESCE(demand_with_penalty.two_per_penalty, 0)
+                + COALESCE(arrea_pending_penalty.priv_total_interest, 0)
+            ) AS total_demand
+        FROM total_count
+        JOIN demand_with_penalty ON total_count.total IS NOT NULL
+        JOIN prop_properties ON prop_properties.id = demand_with_penalty.property_id
+        LEFT JOIN owners ON owners.property_id = demand_with_penalty.property_id
+        LEFT JOIN arrea_pending_penalty ON arrea_pending_penalty.prop_id = demand_with_penalty.property_id
+        LEFT JOIN zone_masters ON zone_masters.id = prop_properties.zone_mstr_id
+        LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
+        WHERE 1=1
+        ";
+
+            // Apply filters if provided
+            $parameters = [];
+
+            if ($request->has('zoneId')) {
+                $sql .= " AND prop_properties.zone_mstr_id = ?";
+                $parameters[] = $request->zoneId;
+            }
+
+            if ($request->has('wardId')) {
+                $sql .= " AND prop_properties.ward_mstr_id = ?";
+                $parameters[] = $request->wardId;
+            }
+
+            if ($request->has('amount')) {
+                // Parse the amount range
+                $amountRange = $request->amount;
+                list($minAmount, $maxAmount) = explode(' to ', str_replace('above', '9999999999', $amountRange));
+                $sql .= " AND (COALESCE(demand_with_penalty.actual_demand, 0)
+                  + COALESCE(demand_with_penalty.two_per_penalty, 0)
+                  + COALESCE(arrea_pending_penalty.priv_total_interest, 0)) BETWEEN ? AND ?";
+                $parameters[] = $minAmount;
+                $parameters[] = $maxAmount;
+            }
+
+            // Finalize the query for pagination
+            $sql .= " LIMIT ? OFFSET ?";
+            $parameters[] = $perPage;
+            $parameters[] = $offset;
+
+            // Execute the query for paginated data
+            $dataResults = DB::select(DB::raw($sql), $parameters);
+
+            // Execute the query to get the total count
+            $totalCountSql = "
+        WITH demands AS (
+            SELECT
+                prop_demands.property_id,
+                prop_demands.total_tax,
+                prop_demands.balance,
+                prop_demands.fyear,
+                prop_demands.due_total_tax,
+                prop_demands.is_old,
+                prop_demands.created_at,
+                SPLIT_PART(prop_demands.fyear, '-', 2) AS upto_year,
+                CASE
+                    WHEN prop_demands.paid_status = 1 THEN prop_demands.due_total_tax
+                    ELSE prop_demands.total_tax
+                END AS actual_demand,
+                CASE
+                    WHEN prop_demands.is_full_paid = false THEN prop_demands.due_total_tax
+                    ELSE prop_demands.total_tax
+                END / 12 AS monthly_tax,
+                CASE
+                    WHEN prop_properties.prop_type_mstr_id = 4
+                        AND prop_demands.is_old != true
+                        AND prop_demands.created_at IS NOT NULL
+                        AND prop_demands.created_at::date BETWEEN '2024-04-01' AND '2025-03-31'
+                    THEN 0
+                    WHEN prop_demands.fyear < '2024-2025'
+                        AND prop_demands.is_old != true
+                    THEN (
+                        (DATE_PART('YEAR', current_date) - DATE_PART('YEAR', CONCAT(SPLIT_PART(prop_demands.fyear, '-', 2), '-04-01')::DATE)) * 12
+                        + (DATE_PART('Month', current_date::DATE) - DATE_PART('Month', CONCAT(SPLIT_PART(prop_demands.fyear, '-', 2), '-04-01')::DATE))
+                    ) + 1
+                    WHEN prop_demands.fyear < '2024-2025'
+                        AND prop_demands.is_old = true
+                    THEN (
+                        (DATE_PART('YEAR', current_date) - DATE_PART('YEAR', CONCAT(SPLIT_PART(prop_demands.fyear, '-', 2), '-09-01')::DATE)) * 12
+                        + (DATE_PART('Month', current_date::DATE) - DATE_PART('Month', CONCAT(SPLIT_PART(prop_demands.fyear, '-', 2), '-09-01')::DATE))
+                    )
+                    ELSE 0
+                END AS month_diff,
+                prop_properties.prop_type_mstr_id
+            FROM prop_demands
+            JOIN prop_properties ON prop_properties.id = prop_demands.property_id
+            WHERE prop_demands.status = 1
+        ),
+        demand_with_penalty AS (
+            SELECT
+                property_id,
+                SUM(CASE WHEN fyear < '2024-2025' THEN actual_demand ELSE 0 END) AS arrear_demand,
+                SUM(CASE WHEN fyear = '2024-2025' THEN actual_demand ELSE 0 END) AS current_demand,
+                SUM(actual_demand) AS actual_demand,
+                MIN(fyear) AS from_year,
+                MAX(fyear) AS upto_year,
+                SUM((actual_demand * month_diff * 0.02)) AS two_per_penalty
+            FROM demands
+            WHERE actual_demand > 0
+            GROUP BY property_id
+        ),
+        arrea_pending_penalty AS (
+            SELECT
+                prop_pending_arrears.prop_id,
+                SUM(prop_pending_arrears.due_total_interest) AS priv_total_interest
+            FROM prop_pending_arrears
+            JOIN demand_with_penalty ON demand_with_penalty.property_id = prop_pending_arrears.prop_id
+            WHERE prop_pending_arrears.paid_status = 0 AND prop_pending_arrears.status = 1
+            GROUP BY prop_pending_arrears.prop_id
+        ),
+        owners AS (
+            SELECT
+                prop_owners.property_id,
+                STRING_AGG(
+                    CASE
+                        WHEN TRIM(prop_owners.owner_name_marathi) = '' THEN prop_owners.owner_name
+                        ELSE prop_owners.owner_name_marathi
+                    END, ', '
+                ) AS owner_name,
+                STRING_AGG(prop_owners.mobile_no, ', ') AS mobile_no
+            FROM prop_owners
+            JOIN demand_with_penalty ON demand_with_penalty.property_id = prop_owners.property_id
+            WHERE prop_owners.status = 1
+            GROUP BY prop_owners.property_id
+        )
+        SELECT COUNT(*) AS total
+        FROM demand_with_penalty
+        JOIN prop_properties ON prop_properties.id = demand_with_penalty.property_id
+        LEFT JOIN owners ON owners.property_id = demand_with_penalty.property_id
+        LEFT JOIN arrea_pending_penalty ON arrea_pending_penalty.prop_id = demand_with_penalty.property_id
+        LEFT JOIN zone_masters ON zone_masters.id = prop_properties.zone_mstr_id
+        LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id = prop_properties.ward_mstr_id
+        WHERE 1=1
+        ";
+
+            // Apply filters for total count query
+            $totalParameters = [];
+
+            if ($request->has('zoneId')) {
+                $totalCountSql .= " AND prop_properties.zone_mstr_id = ?";
+                $totalParameters[] = $request->zoneId;
+            }
+
+            if ($request->has('wardId')) {
+                $totalCountSql .= " AND prop_properties.ward_mstr_id = ?";
+                $totalParameters[] = $request->wardId;
+            }
+
+            if ($request->has('amount')) {
+                // Parse the amount range
+                $amountRange = $request->amount;
+                list($minAmount, $maxAmount) = explode(' to ', str_replace('above', '9999999999', $amountRange));
+                $totalCountSql .= " AND (COALESCE(demand_with_penalty.actual_demand, 0)
+                  + COALESCE(demand_with_penalty.two_per_penalty, 0)
+                  + COALESCE(arrea_pending_penalty.priv_total_interest, 0)) BETWEEN ? AND ?";
+                $totalParameters[] = $minAmount;
+                $totalParameters[] = $maxAmount;
+            }
+
+            // Execute the total count query
+            $totalCountResult = DB::select(DB::raw($totalCountSql), $totalParameters);
+            $totalCount = $totalCountResult[0]->total ?? 0;
+
+            // Calculate pagination details
+            $lastPage = (int) ceil($totalCount / $perPage);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Demand Reports',
+                'data' => [
+                    'current_page' => $page,
+                    'last_page' => $lastPage,
+                    'total' => $totalCount,
+                    'per_page' => $perPage,
+                    'data' => remove_null($dataResults)
+                ]
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+                'data' => []
+            ], 200);
+        }
+    }
+
+    public function generateNotice(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'propId' => 'required|array',
+            'propId.*' => 'integer',
+            'generated' => 'required|boolean'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 200);
+        }
+
+        $noticeNos = []; // Initialize an array to store generated notice numbers
+
+        try {
+            $refparamId = Config::get('propertyConstaint.NOTICE_ID');
+            $generated = $request->generated;
+
+            // Update the generated status for properties
+            PropProperty::whereIn('id', $request->propId)
+                ->update(['generated' => $generated]);
+
+            // Fetch properties for notice number generation
+            $properties = PropProperty::whereIn('id', $request->propId)
+                ->get();
+
+            // Generate notice numbers for each property
+            foreach ($properties as $property) {
+                $idGeneration = new PrefixIdGenerator($refparamId??58, 2); // Use ward_id for generation
+                $noticeNo = $idGeneration->generatev1($property);
+
+                // Update the property with the generated notice number
+                $property->update(['notice_no' => $noticeNo]);
+
+                // Store the generated notice number
+                $noticeNos[$property->id] = $noticeNo;
+            }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Notice numbers generated successfully',
+                'data' => $noticeNos
+            ], 200);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+                'data' => []
+            ], 500); // Use 500 for server errors
+        }
+    }
 
 
 
