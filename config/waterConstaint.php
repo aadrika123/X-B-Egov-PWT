@@ -228,6 +228,7 @@ return [
     ],
 
     "DOC_URL" => env("DOC_URL"),
+    "NOTICE_ID" =>59
 
 
 ];

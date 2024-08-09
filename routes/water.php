@@ -171,7 +171,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post("consumer/get-consumer-demandV2", "getConsumerDemandsV2");
         Route::post("consumer/get-demand-history", "getConsumerDemandsHistory");
         Route::post("consumer/auto-generate-fixed-demand", "gerateAutoFixedDemand");
-        Route::post('consumer/demand-dues-report', 'consumeDemandDuesReport');
+       
     });
 
 
@@ -235,6 +235,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('report/tc-visit', 'tcvisitRecordsv2');
         Route::post('reports/tran-deactived-list', 'tranDeactivatedList');
         Route::post('reports/device-type/collection', 'deviceTypeCollection');
+        Route::post('consumer/demand-dues-report', 'consumeDemandDuesReport');
     });
 
     /**
