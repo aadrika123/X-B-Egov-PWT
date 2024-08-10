@@ -4752,7 +4752,7 @@ class WaterReportController extends Controller
             ];
 
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-            return responseMsgs(true, "Notice generated successfully", $list);
+            return responseMsgs(true, "Generated Notice Lists", $list);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "");
         }
