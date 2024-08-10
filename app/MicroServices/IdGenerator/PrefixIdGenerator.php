@@ -95,13 +95,13 @@ class PrefixIdGenerator implements iIdGenerator
     //     return $prefixString . '/' .$wardNo.$id ;
     // }
 
-    public function generatev1($prop): string
+    public function generatev1($water): string
     {
         $paramId = $this->paramId;
         $mIdGenerationParams = new IdGenerationParam();
         $params = $mIdGenerationParams->getParams($paramId);
         $prefixString = $params->string_val;
-        $wardDtls = $this->_mUlbWardMstr->getWardById($prop->ward_mstr_id);
+        $wardDtls = $this->_mUlbWardMstr->getWardById($water->ward_mstr_id??00);
 
         // Params Generation
         $wardNo = str_pad($wardDtls->ward_name, 3, "0", STR_PAD_LEFT);

@@ -4431,7 +4431,7 @@ class WaterReportController extends Controller
                 DB::raw('SUM(water_consumer_demands.amount) as total_amount'),
                 DB::raw('MIN(water_consumer_demands.demand_from) as earliest_demand_from'),
                 DB::raw('MAX(water_consumer_demands.demand_upto) as latest_demand_upto'),
-                "water_second_consumers.notice",
+                "water_second_consumers.notice"
             )
                 ->join('water_second_consumers', 'water_second_consumers.id', 'water_consumer_demands.consumer_id')
                 ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
@@ -4440,6 +4440,7 @@ class WaterReportController extends Controller
                 ->join('water_consumer_owners as owners', 'owners.id', 'water_consumer_demands.consumer_id')
                 ->where('water_consumer_demands.is_full_paid', false)
                 ->where('water_consumer_demands.demand_upto', '<=', $uptoDate)
+                ->where('water_second_consumers.generated', false)
                 ->groupBy(
                     'water_second_consumers.id',
                     'water_second_consumers.consumer_no',
@@ -4482,18 +4483,75 @@ class WaterReportController extends Controller
     }
 
 
-
-
-
     /**
      * |generate notice on unpaid demand 
      */
+    // public function generateNotice(Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'consumerId' => 'required|array',
+    //         'consumerId.*' => 'integer',
+    //         'generated' => 'required|boolean',
+    //         'notice' => 'required|integer|in:1,2,3'
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Validation error',
+    //             'errors' => $validator->errors()
+    //         ], 200);
+    //     }
+
+    //     $noticeNos = [];
+
+    //     try {
+    //         $refConParamId = Config::get('waterConstaint.PARAM_IDS');
+    //         $generated = $request->generated;
+    //         $noticeType =  $request->notice;
+
+    //         // Update generated status for the consumers
+    //         WaterSecondConsumer::whereIn('id', $request->consumerId)
+    //             ->update([
+    //                 'generated' => $generated
+    //             ]);
+
+    //         $mWaterConsumer = WaterSecondConsumer::whereIn('id', $request->consumerId)
+    //             ->get();
+
+    //         foreach ($mWaterConsumer as $water) {
+    //             $idGeneration = new PrefixIdGenerator($refConParamId['AMCN'], 2);
+    //             $noticeNo = $idGeneration->generate();
+    //             switch ($noticeType) {
+    //                 case 1:
+    //                     $water->update([
+    //                         'notice_no_1' => $noticeNo, 'notice' => $noticeType
+    //                     ]);
+    //                     break;
+    //                 case 2:
+    //                     $water->update(['notice_no_2' => $noticeNo, 'notice_2' => $noticeType]);
+    //                     break;
+    //                 case 3:
+    //                     $water->update(['notice_no_3' => $noticeNo, 'notice_3' => $noticeType]);
+    //                     break;
+    //             }
+
+    //             $noticeNos[$water->id] = $noticeNo;
+    //         }
+
+    //         return responseMsgs(true, "", $noticeNos);
+    //     } catch (Exception $e) {
+    //         return responseMsgs(false, $e->getMessage(), "");
+    //     }
+    // }
+
     public function generateNotice(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'consumerId' => 'required|array',
             'consumerId.*' => 'integer',
-            'generated' => 'required|boolean'
+            'generated' => 'required|boolean',
+            'notice' => 'required|integer|in:1,2,3'
         ]);
 
         if ($validator->fails()) {
@@ -4504,27 +4562,198 @@ class WaterReportController extends Controller
             ], 200);
         }
 
-        $noticeNos = []; // Initialize an array to store generated notice numbers
+        $noticeNos = [];
+        $consumerIds = $request->consumerId;
+        $noticeType = $request->notice;
+
+        // Initialize arrays to track existing notices
+        $existingNotices = [
+            1 => [],
+            2 => [],
+            3 => []
+        ];
 
         try {
-            $refparamId = Config::get('waterConstaint.NOTICE_ID');
+            $refConParamId = Config::get('waterConstaint.PARAM_IDS');
             $generated = $request->generated;
-            WaterSecondConsumer::whereIn('id', $request->consumerId)
-                ->update(['generated' => $generated]);
-            $mWaterConsumer = WaterSecondConsumer::whereIn('id', $request->consumerId)
-                ->get();
-            foreach ($mWaterConsumer as $water) {
-                $idGeneration = new PrefixIdGenerator($refparamId ?? 58, 2); // Use ward_id for generation
-                $noticeNo = $idGeneration->generatev1($water);
-                $water->update(['notice_no' => $noticeNo]);
 
-                // Store the generated notice number
-                $noticeNos[$water->id] = $noticeNo;
+            // Fetch consumers based on IDs
+            $consumers = WaterSecondConsumer::whereIn('id', $consumerIds)->get();
+
+            // Check for existing notices
+            foreach ($consumers as $consumer) {
+                switch ($noticeType) {
+                    case 1:
+                        if (!empty($consumer->notice_no_1)) {
+                            $existingNotices[1][] = $consumer->id;
+                        }
+                        break;
+                    case 2:
+                        if (!empty($consumer->notice_no_2)) {
+                            $existingNotices[2][] = $consumer->id;
+                        }
+                        break;
+                    case 3:
+                        if (!empty($consumer->notice_no_3)) {
+                            $existingNotices[3][] = $consumer->id;
+                        }
+                        break;
+                }
             }
 
-            return response()->json(['status' => true, 'message' => 'Notice numbers generated successfully', 'data' => $noticeNos], 200);
+            $errorMessages = [];
+            foreach ($existingNotices as $type => $ids) {
+                if (!empty($ids)) {
+                    $errorMessages[] = "Notice $type has already been generated for the following consumer IDs: " . implode(', ', $ids);
+                }
+            }
+
+            if (!empty($errorMessages)) {
+                return responseMsgs(false, implode('; ', $errorMessages), "");
+            }
+
+            // Update generated status for consumers
+            WaterSecondConsumer::whereIn('id', $consumerIds)
+                ->update(['generated' => $generated]);
+
+            // Generate notice numbers and update records
+            foreach ($consumerIds as $consumerId) {
+                $consumer = WaterSecondConsumer::find($consumerId);
+                if ($consumer) {
+                    $idGeneration = new PrefixIdGenerator($refConParamId['AMCN'], 2);
+                    $noticeNo = $idGeneration->generate();
+
+                    switch ($noticeType) {
+                        case 1:
+                            $consumer->update(['notice_no_1' => $noticeNo, 'notice' => $noticeType]);
+                            break;
+                        case 2:
+                            $consumer->update(['notice_no_2' => $noticeNo, 'notice_2' => $noticeType]);
+                            break;
+                        case 3:
+                            $consumer->update(['notice_no_3' => $noticeNo, 'notice_3' => $noticeType]);
+                            break;
+                    }
+
+                    $noticeNos[$consumerId] = $noticeNo;
+                }
+            }
+
+            return responseMsgs(true, "Notices generated successfully", $noticeNos);
         } catch (Exception $e) {
-            return response()->json(['status' => false, 'message' => $e->getMessage(), 'data' => []], 200); // Use 500 for server errors
+            return responseMsgs(false, $e->getMessage(), "");
+        }
+    }
+
+
+
+
+
+    public function generateNoticeList(Request $request)
+    {
+        $now = Carbon::now()->format("Y-m-d");
+
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "uptoDate" => "nullable|date|before_or_equal:$now|date_format:Y-m-d",
+                "userId" => "nullable|digits_between:1,9223372036854775807",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "zoneId" => "nullable|digits_between:1,9223372036854775807",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
+                "notice" => "required|integer|in:1,2,3"
+            ]
+        );
+
+        if ($validated->fails()) {
+            return validationErrorV2($validated);
+        }
+
+        try {
+            $uptoDate = $request->uptoDate ?? $now;
+            $userId = $request->userId;
+            $wardId = $request->wardId;
+            $zoneId = $request->zoneId;
+            $notice = $request->notice;
+
+            $data = waterConsumerDemand::select(
+                "water_second_consumers.id as consumer_id",
+                "water_second_consumers.consumer_no",
+                "water_second_consumers.folio_no as property_no",
+                "zone_masters.zone_name",
+                "ulb_ward_masters.ward_name",
+                "owners.applicant_name",
+                "owners.guardian_name",
+                "owners.mobile_no",
+                "water_second_consumers.category",
+                "water_property_type_mstrs.property_type",
+                DB::raw('SUM(water_consumer_demands.amount) as total_amount'),
+                DB::raw('MIN(water_consumer_demands.demand_from) as earliest_demand_from'),
+                DB::raw('MAX(water_consumer_demands.demand_upto) as latest_demand_upto'),
+                //"water_second_consumers.notice",
+                "water_second_consumers.notice_no_1",
+                "water_second_consumers.notice_no_2",
+                "water_second_consumers.notice_no_3",
+            )
+                ->join('water_second_consumers', 'water_second_consumers.id', 'water_consumer_demands.consumer_id')
+                ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
+                ->leftJoin('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
+                ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_second_consumers.property_type_id')
+                ->join('water_consumer_owners as owners', 'owners.id', 'water_consumer_demands.consumer_id')
+                ->where('water_consumer_demands.is_full_paid', false)
+                ->where('water_consumer_demands.demand_upto', '<=', $uptoDate)
+                ->where('water_second_consumers.generated', true)
+                ->groupBy(
+                    'water_second_consumers.id',
+                    'water_second_consumers.consumer_no',
+                    'water_second_consumers.folio_no',
+                    'zone_masters.zone_name',
+                    'ulb_ward_masters.ward_name',
+                    'owners.applicant_name',
+                    'owners.guardian_name',
+                    'owners.mobile_no',
+                    'water_second_consumers.category',
+                    'water_property_type_mstrs.property_type'
+                )
+                ->havingRaw('SUM(water_consumer_demands.amount) > 0');
+
+            if ($userId) {
+                $data->where('water_consumer_demands.emp_details_id', $userId);
+            }
+            if ($wardId) {
+                $data->where('water_second_consumers.ward_mstr_id', $wardId);
+            }
+            if ($zoneId) {
+                $data->where('water_second_consumers.zone_mstr_id', $zoneId);
+            }
+            if ($notice) {
+                switch ($notice) {
+                    case 1:
+                        $data->where('water_second_consumers.notice', $notice);
+                        break;
+                    case 2:
+                        $data->where('water_second_consumers.notice_2', $notice);
+                        break;
+                    case 3:
+                        $data->where('water_second_consumers.notice_3', $notice);
+                        break;
+                }
+            }
+
+            $perPage = $request->perPage ?? 10;
+            $paginator = $data->paginate($perPage);
+
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true, "Generated Notice Lists", $list);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "");
         }
     }
 }
