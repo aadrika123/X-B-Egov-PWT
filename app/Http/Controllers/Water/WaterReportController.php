@@ -4538,17 +4538,9 @@ class WaterReportController extends Controller
                 $noticeNos[$water->id] = $noticeNo;
             }
 
-            return response()->json([
-                'status' => true,
-                'message' => 'Notice numbers generated successfully',
-                'data' => $noticeNos
-            ], 200);
+            return responseMsgs(true, "", $noticeNos);
         } catch (Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => $e->getMessage(),
-                'data' => []
-            ], 500); // Use 500 for server errors
+            return responseMsgs(false, $e->getMessage(), "");
         }
     }
 
