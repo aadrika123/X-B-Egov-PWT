@@ -240,6 +240,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         #10-08-2024
         Route::post('reports/demand-dues-report', 'consumeDemandDuesReport');
         Route::post('reports/generate-notice', 'generateNotice');
+        Route::post('reports/generated-notice-list', 'generateNoticeList');
     });
 
     /**
