@@ -4750,7 +4750,6 @@ class WaterReportController extends Controller
                 "data" => $paginator->items(),
                 "total" => $paginator->total(),
             ];
-
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "Generated Notice Lists", $list);
         } catch (Exception $e) {
