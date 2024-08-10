@@ -4482,9 +4482,6 @@ class WaterReportController extends Controller
     }
 
 
-
-
-
     /**
      * |generate notice on unpaid demand 
      */
@@ -4493,7 +4490,8 @@ class WaterReportController extends Controller
         $validator = Validator::make($request->all(), [
             'consumerId' => 'required|array',
             'consumerId.*' => 'integer',
-            'generated' => 'required|boolean'
+            'generated' => 'required|boolean',
+            'notice' => 'required|integer|in:1,2,3'
         ]);
 
         if ($validator->fails()) {
@@ -4504,27 +4502,52 @@ class WaterReportController extends Controller
             ], 200);
         }
 
-        $noticeNos = []; // Initialize an array to store generated notice numbers
+        $noticeNos = [];
 
         try {
-            $refparamId = Config::get('waterConstaint.NOTICE_ID');
+            $refConParamId = Config::get('waterConstaint.PARAM_IDS');
             $generated = $request->generated;
+            $noticeType = $request->notice;
+
+            // Update generated status for the consumers
             WaterSecondConsumer::whereIn('id', $request->consumerId)
-                ->update(['generated' => $generated]);
+                ->update([
+                    'generated' => $generated,
+                    'notice' => $noticeType
+                ]);
+
             $mWaterConsumer = WaterSecondConsumer::whereIn('id', $request->consumerId)
                 ->get();
-            foreach ($mWaterConsumer as $water) {
-                $idGeneration = new PrefixIdGenerator($refparamId ?? 58, 2); // Use ward_id for generation
-                $noticeNo = $idGeneration->generatev1($water);
-                $water->update(['notice_no' => $noticeNo]);
 
-                // Store the generated notice number
+            foreach ($mWaterConsumer as $water) {
+                $idGeneration = new PrefixIdGenerator($refConParamId['AMCN'], 2);
+                $noticeNo = $idGeneration->generate();
+                switch ($noticeType) {
+                    case 1:
+                        $water->update(['notice_no_1' => $noticeNo]);
+                        break;
+                    case 2:
+                        $water->update(['notice_no_2' => $noticeNo]);
+                        break;
+                    case 3:
+                        $water->update(['notice_no_3' => $noticeNo]);
+                        break;
+                }
+
                 $noticeNos[$water->id] = $noticeNo;
             }
 
-            return response()->json(['status' => true, 'message' => 'Notice numbers generated successfully', 'data' => $noticeNos], 200);
+            return response()->json([
+                'status' => true,
+                'message' => 'Notice numbers generated successfully',
+                'data' => $noticeNos
+            ], 200);
         } catch (Exception $e) {
-            return response()->json(['status' => false, 'message' => $e->getMessage(), 'data' => []], 200); // Use 500 for server errors
+            return response()->json([
+                'status' => false,
+                'message' => $e->getMessage(),
+                'data' => []
+            ], 500); // Use 500 for server errors
         }
     }
 }

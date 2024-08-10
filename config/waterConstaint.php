@@ -31,6 +31,7 @@ return [
         "WFC"   => 42,
         "WPS"   => 43,
         "DISC"  => 57,
+        "AMCN"  => 60
     ],
     "ACCOUNT_DESCRIPTION" => "Water",
     "DEPARTMENT_SECTION" => "Revenue Section",
@@ -228,7 +229,7 @@ return [
     ],
 
     "DOC_URL" => env("DOC_URL"),
-    "NOTICE_ID" =>59
+    "NOTICE_ID" => 59
 
 
 ];
