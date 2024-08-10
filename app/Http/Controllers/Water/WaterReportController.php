@@ -4440,7 +4440,7 @@ class WaterReportController extends Controller
                 ->join('water_consumer_owners as owners', 'owners.id', 'water_consumer_demands.consumer_id')
                 ->where('water_consumer_demands.is_full_paid', false)
                 ->where('water_consumer_demands.demand_upto', '<=', $uptoDate)
-                ->where('water_second_consumers.generated',false)
+                ->where('water_second_consumers.generated', false)
                 ->groupBy(
                     'water_second_consumers.id',
                     'water_second_consumers.consumer_no',
@@ -4513,8 +4513,7 @@ class WaterReportController extends Controller
             // Update generated status for the consumers
             WaterSecondConsumer::whereIn('id', $request->consumerId)
                 ->update([
-                    'generated' =>($generated),
-                    'notice' => $noticeType
+                    'generated' => $generated
                 ]);
 
             $mWaterConsumer = WaterSecondConsumer::whereIn('id', $request->consumerId)
@@ -4525,13 +4524,15 @@ class WaterReportController extends Controller
                 $noticeNo = $idGeneration->generate();
                 switch ($noticeType) {
                     case 1:
-                        $water->update(['notice_no_1' => $noticeNo]);
+                        $water->update([
+                            'notice_no_1' => $noticeNo, 'notice' => $noticeType
+                        ]);
                         break;
                     case 2:
-                        $water->update(['notice_no_2' => $noticeNo]);
+                        $water->update(['notice_no_2' => $noticeNo, 'notice_2' => $noticeType]);
                         break;
                     case 3:
-                        $water->update(['notice_no_3' => $noticeNo]);
+                        $water->update(['notice_no_3' => $noticeNo, 'notice_3' => $noticeType]);
                         break;
                 }
 
@@ -4558,6 +4559,7 @@ class WaterReportController extends Controller
                 "zoneId" => "nullable|digits_between:1,9223372036854775807",
                 "page" => "nullable|digits_between:1,9223372036854775807",
                 "perPage" => "nullable|digits_between:1,9223372036854775807",
+                "notice"=>"required|integer|in:1,2,3"
             ]
         );
 
@@ -4570,6 +4572,7 @@ class WaterReportController extends Controller
             $userId = $request->userId;
             $wardId = $request->wardId;
             $zoneId = $request->zoneId;
+            $notice = $request->notice;
 
             $data = waterConsumerDemand::select(
                 "water_second_consumers.id as consumer_id",
@@ -4585,7 +4588,7 @@ class WaterReportController extends Controller
                 DB::raw('SUM(water_consumer_demands.amount) as total_amount'),
                 DB::raw('MIN(water_consumer_demands.demand_from) as earliest_demand_from'),
                 DB::raw('MAX(water_consumer_demands.demand_upto) as latest_demand_upto'),
-                "water_second_consumers.notice",
+                //"water_second_consumers.notice",
                 "water_second_consumers.notice_no_1",
                 "water_second_consumers.notice_no_2",
                 "water_second_consumers.notice_no_3",
@@ -4597,7 +4600,7 @@ class WaterReportController extends Controller
                 ->join('water_consumer_owners as owners', 'owners.id', 'water_consumer_demands.consumer_id')
                 ->where('water_consumer_demands.is_full_paid', false)
                 ->where('water_consumer_demands.demand_upto', '<=', $uptoDate)
-                ->where('water_second_consumers.generated',true)
+                ->where('water_second_consumers.generated', true)
                 ->groupBy(
                     'water_second_consumers.id',
                     'water_second_consumers.consumer_no',
@@ -4620,6 +4623,19 @@ class WaterReportController extends Controller
             }
             if ($zoneId) {
                 $data->where('water_second_consumers.zone_mstr_id', $zoneId);
+            }
+            if ($notice) {
+                switch ($notice) {
+                    case 1:
+                        $data->where('water_second_consumers.notice',$notice);
+                        break;
+                    case 2:
+                        $data->where('water_second_consumers.notice_2', $notice);
+                        break;
+                    case 3:
+                        $data->where('water_second_consumers.notice_3',$notice);
+                        break;
+                }
             }
 
             $perPage = $request->perPage ?? 10;
