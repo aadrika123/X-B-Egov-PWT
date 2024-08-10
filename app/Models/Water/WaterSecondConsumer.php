@@ -852,7 +852,7 @@ class WaterSecondConsumer extends Model
             "water_consumer_meters.connection_type",
             "water_consumer_meters.meter_no",
             "water_second_consumers.consumer_no",
-            "ulb_ward_masters.ward_name"
+            "ulb_ward_masters.ward_name as ward_no"
         )
             // ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_approval_application_details.current_role')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_second_consumers.ulb_id')
