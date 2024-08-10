@@ -844,19 +844,25 @@ class WaterSecondConsumer extends Model
             "water_consumer_owners.applicant_name as owner_name",
             "water_consumer_owners.guardian_name",
             "water_consumer_meters.connection_type",
-            "water_consumer_meters.meter_no",
+            "water_approval_application_details.meter_no",
             "water_second_consumers.consumer_no",
-            "ulb_ward_masters.ward_name as ward_no"
+            "ulb_ward_masters.ward_name as ward_no",
+            "water_approval_application_details.initial_reading",
+            "water_approval_application_details.per_meter",
+            "water_road_cutter_charges.road_type",
+            "water_approval_application_details.email",
+            "water_approval_application_details.trade_license"
         )
             // ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_approval_application_details.current_role')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_second_consumers.ulb_id')
-            ->join('ulb_ward_masters','ulb_ward_masters.id','water_second_consumers.ward_mstr_id')
+            ->join('ulb_ward_masters', 'ulb_ward_masters.id', 'water_second_consumers.ward_mstr_id')
             ->leftjoin('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_second_consumers.connection_type_id')
             ->leftjoin('water_approval_application_details', 'water_approval_application_details.id', 'water_second_consumers.apply_connection_id')
             ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_second_consumers.property_type_id')
             ->leftjoin('water_param_pipeline_types', 'water_param_pipeline_types.id', 'water_second_consumers.pipeline_type_id')
             ->leftjoin('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
             ->leftjoin('water_connection_charges', 'water_connection_charges.application_id', 'water_approval_application_details.id')
+            ->leftjoin('water_road_cutter_charges', 'water_road_cutter_charges.id', 'water_approval_application_details.road_type_id')
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_second_consumers.id')
             ->leftjoin('water_consumer_meters', 'water_consumer_meters.consumer_id', 'water_second_consumers.id')
             ->where('water_second_consumers.id', $request->applicationId);

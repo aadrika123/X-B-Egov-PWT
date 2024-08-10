@@ -53,6 +53,7 @@ class WaterSiteInspection extends Model
         $saveSiteVerify->time_water_supply      =   $req->timeWaterSupply;
         $saveSiteVerify->road_width             =   $req->roadWidth;
         $saveSiteVerify->amc_limit              =   $req->amcLimit;
+        $saveSiteVerify->dimension              =   $req->dimension;
         // $saveSiteVerify->payment_status         =   $paymentstatus;
         $saveSiteVerify->latitude               =   $req->latitude ?? null;
         $saveSiteVerify->longitude              =   $req->longitude ?? null;
