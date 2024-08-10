@@ -238,7 +238,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
 
         //written by prity pandey
         #10-08-2024
-        Route::post('consumer/demand-dues-report', 'consumeDemandDuesReport');
+        Route::post('reports/demand-dues-report', 'consumeDemandDuesReport');
         Route::post('reports/generate-notice', 'generateNotice');
     });
 
