@@ -12,6 +12,15 @@ class WaterSecondConsumer extends Model
 {
     use HasFactory;
     protected $connection = 'pgsql_water';
+    protected $fillable = [
+        'notice_no_1',
+        'notice_no_2',
+        'notice_no_3',
+        'notice',
+        'notice_2',
+        'notice_3',
+        'generated'
+    ];
 
     /**
      * | Get consumer by consumer Id

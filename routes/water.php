@@ -235,7 +235,12 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('report/tc-visit', 'tcvisitRecordsv2');
         Route::post('reports/tran-deactived-list', 'tranDeactivatedList');
         Route::post('reports/device-type/collection', 'deviceTypeCollection');
-        Route::post('consumer/demand-dues-report', 'consumeDemandDuesReport');
+
+        //written by prity pandey
+        #10-08-2024
+        Route::post('reports/demand-dues-report', 'consumeDemandDuesReport');
+        Route::post('reports/generate-notice', 'generateNotice');
+        Route::post('reports/generated-notice-list', 'generateNoticeList');
     });
 
     /**
