@@ -16,7 +16,8 @@ class WaterSecondConsumer extends Model
         'notice_no_1',
         'notice_no_2',
         'notice_no_3',
-        'notice'
+        'notice',
+        'generated'
     ];
 
     /**

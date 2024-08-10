@@ -4508,12 +4508,12 @@ class WaterReportController extends Controller
         try {
             $refConParamId = Config::get('waterConstaint.PARAM_IDS');
             $generated = $request->generated;
-            $noticeType = $request->notice;
+            $noticeType =  $request->notice;
 
             // Update generated status for the consumers
             WaterSecondConsumer::whereIn('id', $request->consumerId)
                 ->update([
-                    'generated' => $generated,
+                    'generated' =>($generated),
                     'notice' => $noticeType
                 ]);
 
