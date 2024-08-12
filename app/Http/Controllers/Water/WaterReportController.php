@@ -5034,7 +5034,7 @@ class WaterReportController extends Controller
                 return $value->wf_role_id;
             });
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
-            $data = WaterTempDisconnection::select(
+            $outDtl = WaterTempDisconnection::select(
                 "water_temp_disconnections.id as disconnection_application_id",
                 "water_temp_disconnections.consumer_id",
                 "water_second_consumers.consumer_no",
@@ -5042,6 +5042,8 @@ class WaterReportController extends Controller
                 "water_temp_disconnections.workflow_id",
                 "water_temp_disconnections.notice_no_3",
                 "water_temp_disconnections.notice_3_generated_at",
+                "water_second_consumers.holding_no",
+                "water_second_consumers.address",
                 "zone_masters.zone_name",
                 "ulb_ward_masters.ward_name",
                 "owners.applicant_name",
@@ -5061,8 +5063,9 @@ class WaterReportController extends Controller
                 ->join('water_consumer_owners as owners', 'owners.id', '=', 'water_consumer_demands.consumer_id')
                 ->where('water_consumer_demands.is_full_paid', false)
                 ->where('water_second_consumers.generated', true)
+                ->where('water_second_consumers.status', true)
                 ->where('water_second_consumers.je_application', true)
-                ->whereIn('water_temp_disconnections.current_role', $roleId)
+                ->whereNotIn('water_temp_disconnections.current_role', $roleId)
                 ->whereIn('water_temp_disconnections.workflow_id', $workflowIds)
                 ->where('water_temp_disconnections.status', 1)
                 ->groupBy(
@@ -5079,12 +5082,15 @@ class WaterReportController extends Controller
                     'owners.mobile_no',
                     'water_second_consumers.category',
                     'water_property_type_mstrs.property_type',
-                    'water_second_consumers.consumer_no'
+                    'water_second_consumers.consumer_no',
+                    "water_second_consumers.holding_no",
+                    "water_second_consumers.address"
                 )
                 ->havingRaw('SUM(water_consumer_demands.amount) > 0')
-                ->paginate($pages); 
+                ->get(); 
+ 
 
-            return responseMsgs(true, "Je outbox Details", remove_null($data), "", "01", responseTime(), "POST", $req->deviceId);
+            return responseMsgs(true, "Je outbox Details", remove_null($outDtl), "", "01", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), "POST", $req->deviceId);
         }
