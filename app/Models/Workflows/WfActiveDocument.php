@@ -518,4 +518,22 @@ class WfActiveDocument extends Model
             ->where('status', 1)
             ->get();
     }
+    /**
+     * | Get Workflow Active Documents By Active Id
+     */
+    public function getDocByRefIdsV4($activeId, $workflowId, $moduleId)
+    {
+        $docUrl = Config::get('module-constants.DOC_URL');
+        return WfActiveDocument::select(
+            // DB::raw("concat('$docUrl/',relative_path,'/',document) as doc_path"),
+            DB::raw("concat(relative_path,'/',document) as doc_path"),
+            '*'
+        )
+            ->where('active_id', $activeId)
+            ->where('workflow_id', $workflowId)
+            ->where('module_id', $moduleId)
+            ->where('status', 1)
+            ->orderByDesc('id')
+            ->get();
+    }
 }

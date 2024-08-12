@@ -309,7 +309,7 @@ class WaterConsumerActiveRequest extends Model
         return  WaterConsumerActiveRequest::where('id', $metaReqs->applicationId)
             ->where('status', true)
             ->update([
-                "verify_status" => $metaReqs->status,
+                "verify_status" => 2,
                 "emp_details_id" => $userId,
             ]);
     }

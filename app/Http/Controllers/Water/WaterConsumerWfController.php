@@ -982,7 +982,7 @@ class WaterConsumerWfController extends Controller
                 # For Rejection Doc Upload Status and Verify Status will disabled 
                 $status = 2;
                 // $waterApplicationDtl->doc_upload_status = 0;
-                $waterApplicationDtl->doc_status = 0;
+                $waterApplicationDtl->doc_verify_status = false;
                 $waterApplicationDtl->save();
             }
             $reqs = [
@@ -1200,7 +1200,7 @@ class WaterConsumerWfController extends Controller
         $applicationId      = $refWaterApplication->id;
         $workflowId         = $refWaterApplication->workflow_id;
         $moduleId           = Config::get('module-constants.WATER_MODULE_ID');
-        $uploadedDocs       = $mWfActiveDocument->getDocByRefIds($applicationId, $workflowId, $moduleId);
+        $uploadedDocs       = $mWfActiveDocument->getDocByRefIdsV4($applicationId, $workflowId, $moduleId);
 
         $explodeDocs = collect(explode('#', $documentList->requirements));
         $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $ownerId, $documentList) {
