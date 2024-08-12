@@ -139,11 +139,13 @@ trait WaterTrait
             'water_consumer_active_requests.charge_catagory_id',
             'wco.applicant_name as owner_name',
             'water_second_consumers.consumer_no',
-            'water_consumer_active_requests.workflow_id'
+            'water_consumer_active_requests.workflow_id',
+            'uwm.ward_name as ward_no'
         )
             ->leftjoin('water_consumer_owners AS wco', 'wco.consumer_id', 'water_consumer_active_requests.consumer_id')
             ->leftjoin('ulb_ward_masters AS uwm', 'uwm.id', 'water_consumer_active_requests.ward_mstr_id')
             ->join('water_second_consumers', 'water_second_consumers.id', 'water_consumer_active_requests.consumer_id')
+            // ->join('ulb_ward_masters', 'ulb_ward_maters.id', 'water_second_consumers.ward_mstr_id')
             // ->leftjoin('ulb_masters AS um', 'um.id', 'water_consumer_active_requests.ulb_id')
             ->where('water_consumer_active_requests.status', 1)
             // ->where('water_consumer_active_requests.payment_status', 1)
