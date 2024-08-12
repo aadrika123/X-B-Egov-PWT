@@ -4818,6 +4818,7 @@ class WaterReportController extends Controller
                 ->where('water_consumer_demands.demand_upto', '<=', $uptoDate)
                 ->where('water_second_consumers.generated', true)
                 ->where('water_second_consumers.notice_3', 3)
+                ->where('water_second_consumers.je_application', false)
                 ->groupBy(
                     'water_second_consumers.id',
                     'water_second_consumers.consumer_no',
