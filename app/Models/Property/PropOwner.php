@@ -108,6 +108,7 @@ class PropOwner extends PropParamModel #Model
                 'prop_owners.owner_name as ownerName',
                 'prop_owners.mobile_no as mobileNo',
                 'prop_owners.guardian_name as guardianName',
+                'prop_owners.owner_name_marathi',
                 'prop_owners.email',
                 'prop_owners.gender',
                 'prop_owners.is_armed_force',
@@ -117,6 +118,7 @@ class PropOwner extends PropParamModel #Model
                 'prop_properties.prop_address',
                 'prop_properties.holding_no',
                 'prop_properties.holding_type',
+                
             )
             ->join('prop_properties', 'prop_properties.id', 'prop_owners.property_id')
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
