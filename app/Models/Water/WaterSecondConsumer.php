@@ -836,7 +836,7 @@ class WaterSecondConsumer extends Model
             'water_second_consumers.application_apply_date as apply_date',
             'water_approval_application_details.landmark',
             'water_approval_application_details.address',
-            'water_approval_application_details.category',
+            'water_second_consumers.category',
             'water_approval_application_details.application_no',
             'water_approval_application_details.ward_no',
             'water_approval_application_details.pin',
