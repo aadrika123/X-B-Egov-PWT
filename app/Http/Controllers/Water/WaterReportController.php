@@ -4623,13 +4623,13 @@ class WaterReportController extends Controller
 
                     switch ($noticeType) {
                         case 1:
-                            $consumer->update(['notice_no_1' => $noticeNo, 'notice' => $noticeType,'notice_1_generated_at'=>$now]);
+                            $consumer->update(['notice_no_1' => $noticeNo, 'notice' => $noticeType, 'notice_1_generated_at' => $now]);
                             break;
                         case 2:
-                            $consumer->update(['notice_no_2' => $noticeNo, 'notice_2' => $noticeType,'notice_2_generated_at'=>$now]);
+                            $consumer->update(['notice_no_2' => $noticeNo, 'notice_2' => $noticeType, 'notice_2_generated_at' => $now]);
                             break;
                         case 3:
-                            $consumer->update(['notice_no_3' => $noticeNo, 'notice_3' => $noticeType,'notice_3_generated_at'=>$now]);
+                            $consumer->update(['notice_no_3' => $noticeNo, 'notice_3' => $noticeType, 'notice_3_generated_at' => $now]);
                             break;
                     }
 
@@ -4728,13 +4728,19 @@ class WaterReportController extends Controller
             if ($notice) {
                 switch ($notice) {
                     case 1:
-                        $data->where('water_second_consumers.notice', $notice);
+                        $data->whereNotNull('water_second_consumers.notice_no_1')
+                            ->whereNull('water_second_consumers.notice_no_2')
+                            ->whereNull('water_second_consumers.notice_no_3');
                         break;
                     case 2:
-                        $data->where('water_second_consumers.notice_2', $notice);
+                        $data->whereNotNull('water_second_consumers.notice_no_2')
+                            ->whereNotNull('water_second_consumers.notice_no_1')
+                            ->whereNull('water_second_consumers.notice_no_3');
                         break;
                     case 3:
-                        $data->where('water_second_consumers.notice_3', $notice);
+                        $data->whereNotNull('water_second_consumers.notice_no_3')
+                            ->whereNotNull('water_second_consumers.notice_no_2')
+                            ->whereNotNull('water_second_consumers.notice_no_1');
                         break;
                 }
             }
@@ -4810,7 +4816,7 @@ class WaterReportController extends Controller
                 ->where('water_consumer_demands.is_full_paid', false)
                 ->where('water_consumer_demands.demand_upto', '<=', $uptoDate)
                 ->where('water_second_consumers.generated', true)
-                ->where('water_second_consumers.notice_3',3)
+                ->where('water_second_consumers.notice_3', 3)
                 ->groupBy(
                     'water_second_consumers.id',
                     'water_second_consumers.consumer_no',
