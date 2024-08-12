@@ -536,7 +536,7 @@ class WaterSecondConsumer extends Model
         $mWaterConsumer->pipeline_type_id            = $consumerDetails['pipeline_type_id'];
         $mWaterConsumer->property_type_id            = $consumerDetails['property_type_id'];
         $mWaterConsumer->prop_dtl_id                 = $consumerDetails['prop_id'];
-        $mWaterConsumer->holding_no                  = $consumerDetails['holding_no'];
+        $mWaterConsumer->holding_no                  = $consumerDetails['property_no'];
         $mWaterConsumer->saf_dtl_id                  = $consumerDetails['saf_id'];
         $mWaterConsumer->saf_no                      = $consumerDetails['saf_no'];
         $mWaterConsumer->category                    = $consumerDetails['category'];
