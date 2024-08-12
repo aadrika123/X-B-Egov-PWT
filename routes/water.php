@@ -171,7 +171,6 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post("consumer/get-consumer-demandV2", "getConsumerDemandsV2");
         Route::post("consumer/get-demand-history", "getConsumerDemandsHistory");
         Route::post("consumer/auto-generate-fixed-demand", "gerateAutoFixedDemand");
-       
     });
 
 
@@ -244,6 +243,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('reports/generated-3rd-notice-list', 'generateNoticeListFinal');
         Route::post('reports/send-to-JE', 'sendToJe');
         Route::post('JeInbox', 'jeInbox');
+        Route::post('JeOutbox', 'jeOutbox');
     });
 
     /**
