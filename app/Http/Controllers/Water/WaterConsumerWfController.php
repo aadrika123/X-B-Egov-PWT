@@ -650,6 +650,8 @@ class WaterConsumerWfController extends Controller
      */
     public function finalRejectionOfAppication($request)
     {
+        $userId = authUser($request)->id;
+        $mWaterConsumerActive  =  new WaterConsumerActiveRequest();
         $rejectedWater = WaterConsumerActiveRequest::query()
             ->where('id', $request->applicationId)
             ->first();
@@ -659,14 +661,14 @@ class WaterConsumerWfController extends Controller
         $waterTrack = new WorkflowTrack();
         $metaReqs['moduleId'] =  Config::get("module-constants.WATER_MODULE_ID");
         $metaReqs['workflowId'] = $rejectedWater->workflow_id;
-        $metaReqs['refTableDotId'] = 'water_applications.id';
+        $metaReqs['refTableDotId'] = 'water_consumer_active_requests.id';
         $metaReqs['refTableIdValue'] = $rejectedWater->id;
         $metaReqs['user_id'] = authUser($request)->id;
         $request->request->add($metaReqs);
         $waterTrack->saveTrack($request);
 
         #update Verify Status
-        $rejectedWater->updateVerifystatus($request->applicationId, $request->status);
+        $mWaterConsumerActive->updateVerifyComplainRequest($request,$userId);
     }
     /**
      * get all applications details by id from workflow
