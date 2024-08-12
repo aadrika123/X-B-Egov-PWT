@@ -982,7 +982,7 @@ class WaterConsumerWfController extends Controller
                 # For Rejection Doc Upload Status and Verify Status will disabled 
                 $status = 2;
                 // $waterApplicationDtl->doc_upload_status = 0;
-                $waterApplicationDtl->doc_status = 0;
+                $waterApplicationDtl->doc_verify_status = false;
                 $waterApplicationDtl->save();
             }
             $reqs = [
