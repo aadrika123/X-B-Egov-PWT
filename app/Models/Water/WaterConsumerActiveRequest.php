@@ -123,13 +123,15 @@ class WaterConsumerActiveRequest extends Model
             "water_consumer_active_requests.apply_date",
             "water_consumer_active_requests.payment_status",
             "ulb_ward_masters.ward_name",
-            "water_consumer_charge_categories.charge_category"
+            "water_consumer_charge_categories.charge_category",
+            "wf_roles.role_name as current_role_name"
         )
 
             ->leftjoin('water_consumer_charges', 'water_consumer_charges.related_id', 'water_consumer_active_requests.id')
             ->join('water_consumer_charge_categories', 'water_consumer_charge_categories.id', 'water_consumer_active_requests.charge_catagory_id')
             ->join('water_second_consumers', 'water_second_consumers.id', 'water_consumer_active_requests.consumer_id')
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_second_consumers.ward_mstr_id')
+            ->join('wf_roles', 'wf_roles.id', 'water_consumer_active_requests.current_role')
             ->where('water_consumer_active_requests.citizen_id', $userId)
             ->where('water_consumer_active_requests.status', 1)
             ->orderByDesc('water_consumer_active_requests.id');
