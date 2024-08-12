@@ -20,6 +20,7 @@ use  App\Http\Requests\Water\colllectionReport;
 use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\WaterTempDisconnection;
 use App\Models\Workflows\WfWorkflow;
+use App\Models\Workflows\WfWorkflowrolemap;
 use App\Repository\Water\Concrete\Report;
 use App\Repository\Water\Interfaces\IConsumer;
 use App\Traits\Workflow\Workflow;
@@ -4923,6 +4924,85 @@ class WaterReportController extends Controller
             return responseMsgs(true, "Notice List Send Successfully To JE ", "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "");
+        }
+    }
+
+    public function jeInbox(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'perPage' => 'nullable|integer',
+            ]
+        );
+        if ($validated->fails()) {
+            return validationError($validated);
+        }
+
+        try {
+            $user = authUser($req);
+            $pages = $req->perPage ?? 10;
+            $userId = $user->id;
+            $ulbId = $user->ulb_id ?? 2;
+
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+
+            $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
+            $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+
+            $data = WaterTempDisconnection::select(
+                "water_temp_disconnections.id as disconnection_application_id",
+                "water_temp_disconnections.consumer_id",
+                "water_second_consumers.consumer_no",
+                "water_temp_disconnections.current_role",
+                "water_temp_disconnections.workflow_id",
+                "water_temp_disconnections.notice_no_3",
+                "water_temp_disconnections.notice_3_generated_at",
+                "zone_masters.zone_name",
+                "ulb_ward_masters.ward_name",
+                "owners.applicant_name",
+                "owners.guardian_name",
+                "owners.mobile_no",
+                "water_second_consumers.category",
+                "water_property_type_mstrs.property_type",
+                DB::raw('SUM(water_consumer_demands.amount) as total_amount'),
+                DB::raw('MIN(water_consumer_demands.demand_from) as earliest_demand_from'),
+                DB::raw('MAX(water_consumer_demands.demand_upto) as latest_demand_upto')
+            )
+                ->join('water_second_consumers', 'water_second_consumers.id', '=', 'water_temp_disconnections.consumer_id')
+                ->join('water_consumer_demands', 'water_second_consumers.id', '=', 'water_consumer_demands.consumer_id')
+                ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
+                ->leftJoin('zone_masters', 'zone_masters.id', '=', 'water_second_consumers.zone_mstr_id')
+                ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', '=', 'water_second_consumers.property_type_id')
+                ->join('water_consumer_owners as owners', 'owners.id', '=', 'water_consumer_demands.consumer_id')
+                ->where('water_consumer_demands.is_full_paid', false)
+                ->where('water_second_consumers.generated', true)
+                ->where('water_second_consumers.je_application', true)
+                ->whereIn('water_temp_disconnections.current_role', $roleId)
+                ->whereIn('water_temp_disconnections.workflow_id', $workflowIds)
+                ->groupBy(
+                    'water_temp_disconnections.id',
+                    'water_temp_disconnections.consumer_id',
+                    'water_temp_disconnections.current_role',
+                    'water_temp_disconnections.workflow_id',
+                    'water_temp_disconnections.notice_no_3',
+                    'water_temp_disconnections.notice_3_generated_at',
+                    'zone_masters.zone_name',
+                    'ulb_ward_masters.ward_name',
+                    'owners.applicant_name',
+                    'owners.guardian_name',
+                    'owners.mobile_no',
+                    'water_second_consumers.category',
+                    'water_property_type_mstrs.property_type',
+                    'water_second_consumers.consumer_no'
+                )
+                ->havingRaw('SUM(water_consumer_demands.amount) > 0')
+                ->paginate($pages); // Add pagination if needed
+
+            return responseMsgs(true, "Notice Generated Details", remove_null($data), "", "01", responseTime(), "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), "POST", $req->deviceId);
         }
     }
 }
