@@ -580,10 +580,10 @@ class NewConnectionRepository implements iNewConnection
             );
             $documentPath = null;
             $mWaterConsumerMeter->saveMeterDetails($request, $documentPath, $fixedRate = null);
-            $userDetails =[
-                'emp_id' =>$mWaterConsumerMeter->emp_details_id
+            $userDetails = [
+                'emp_id' => $mWaterConsumerMeter->emp_details_id
             ];
-            $mWaterConsumerInitial->saveConsumerReading($request,$metaRequest,$userDetails);             # when initial meter data save  
+            $mWaterConsumerInitial->saveConsumerReading($request, $metaRequest, $userDetails);             # when initial meter data save  
             $this->commit();
             return responseMsgs(true, "Meter Detail Entry Success !", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
@@ -1214,7 +1214,7 @@ class NewConnectionRepository implements iNewConnection
             ['displayString' => 'Category',           'key' => 'Category',            'value' => $collectionApplications->category],
             ['displayString' => 'Apply From',         'key' => 'ApplyFrom',           'value' => $collectionApplications->user_type],
             ['displayString' => 'Apply Date',         'key' => 'ApplyDate',           'value' => $collectionApplications->apply_date],
-            ['displayString' => 'Ward Number',        'key' => 'WardNumber',          'value' => $collectionApplications->ward_name],
+            ['displayString' => 'Ward Number',        'key' => 'WardNumber',          'value' => $collectionApplications->ward_no],
             ['displayString' => 'Zone',               'key' => 'zone',                'value' => $collectionApplications->zone_name],
             ['displayString' => 'Holding',             'key' => 'HoldingNumber',      'value' => $collectionApplications->property_no],
             ['displayString' => 'Meter Number',        'key' => 'MeterNumber',      'value' => $collectionApplications->meter_no],
@@ -1222,6 +1222,9 @@ class NewConnectionRepository implements iNewConnection
             ['displayString' => 'MobileNumber',           'key' => 'MobileNumber',      'value' => $collectionApplications->mobile_no],
             ['displayString' => 'Email',               'key' => 'Email',                'value' => $collectionApplications->email],
             ['displayString' => 'TradeLicense',               'key' => 'TradeLicense',                'value' => $collectionApplications->trade_license],
+            ['displayString' => 'Tab Size',               'key' => 'TabSize',                'value' => $collectionApplications->tab_size],
+            ['displayString' => 'Road Width',               'key' => 'RoadWidth',                'value' => $collectionApplications->per_meter],
+            ['displayString' => 'Road Type',               'key' => 'RoadType',                'value' => $collectionApplications->road_type],
         ]);
     }
 

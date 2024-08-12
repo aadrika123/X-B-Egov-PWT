@@ -155,20 +155,26 @@ class WaterApprovalApplicationDetail extends Model
             "water_consumer_owners.applicant_name as owner_name",
             "water_consumer_owners.guardian_name",
             "water_consumer_meters.connection_type",
-            "water_consumer_meters.meter_no"
+            "water_consumer_meters.meter_no",
+            "ulb_ward_masters.ward_name as ward_no",
+            "water_road_cutter_charges.road_type",
+            "water_approval_application_details.per_meter",
+            "water_approval_application_details.trade_license as license_no",
+            "water_approval_application_details.initial_reading"
         )
             ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_approval_application_details.current_role')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_approval_application_details.ulb_id')
             ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_approval_application_details.connection_type_id')
             ->rightjoin('water_second_consumers', 'water_second_consumers.apply_connection_id', 'water_approval_application_details.id')
             ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_approval_application_details.property_type_id')
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_approval_application_details.ward_id')
             ->join('water_param_pipeline_types', 'water_param_pipeline_types.id', 'water_approval_application_details.pipeline_type_id')
             ->join('zone_masters', 'zone_masters.id', 'water_approval_application_details.zone_mstr_id')
             ->join('water_connection_charges', 'water_connection_charges.application_id', 'water_approval_application_details.id')
-            ->join('water_consumer_owners','water_consumer_owners.application_id','water_approval_application_details.id')
-            ->leftjoin('water_consumer_meters','water_consumer_meters.consumer_id','water_second_consumers.id')
+            ->join('water_consumer_owners', 'water_consumer_owners.application_id', 'water_approval_application_details.id')
+            ->leftjoin('water_consumer_meters', 'water_consumer_meters.consumer_id', 'water_second_consumers.id')
             ->where('water_second_consumers.id', $request->applicationId)
-            ->whereIn('water_second_consumers.status', [1, 2,4])
+            ->whereIn('water_second_consumers.status', [1, 2, 4])
             ->where('water_approval_application_details.status', true);
     }
 
