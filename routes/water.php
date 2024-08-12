@@ -237,12 +237,13 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('reports/device-type/collection', 'deviceTypeCollection');
 
         //written by prity pandey
-        #10-08-2024
+        #Created On:10-08-2024
         Route::post('reports/demand-dues-report', 'consumeDemandDuesReport');
         Route::post('reports/generate-notice', 'generateNotice');
         Route::post('reports/generated-notice-list', 'generateNoticeList');
         Route::post('reports/generated-3rd-notice-list', 'generateNoticeListFinal');
         Route::post('reports/send-to-JE', 'sendToJe');
+        Route::post('JeInbox', 'jeInbox');
     });
 
     /**
