@@ -22,6 +22,7 @@ use App\Models\Water\WaterParamDocumentType;
 use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterRazorPayRequest;
 use App\Models\Water\WaterRazorPayResponse;
+use App\Models\Water\WaterRejectionApplicationDetail;
 use App\Models\Water\WaterSiteInspection;
 use App\Models\Water\WaterSiteInspectionsScheduling;
 use App\Models\Water\WaterTran;
@@ -192,7 +193,7 @@ class WaterNewConnection implements IWaterNewConnection
             ->leftjoin('wf_roles', 'wf_roles.id', "=", "water_applications.current_role")
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_applications.ward_id')
             ->where("water_applications.user_id", $refUserId)
-            ->where("water_applications.status",true)                            
+            ->where("water_applications.status", true)
             ->orderbydesc('water_applications.id')
             ->get();
 
@@ -226,16 +227,16 @@ class WaterNewConnection implements IWaterNewConnection
                     $value['connection_type_name'] = $refChargeCatagory['NEW_CONNECTION'];
                     break;
             }
-            
+
             // $value['transDetails'] = $mWaterTran->getTransNo($value['id'], null)->first();
-            
+
             // $value['calcullation'] = $mWaterParamConnFee->getCallParameter($value['property_type_id'], $value['area_sqft'])->first();
-        
+
             $refConnectionCharge = $mWaterConnectionCharge->getWaterchargesById($value['id'])
                 ->where('paid_status', 0)
                 ->first();
             # Formating connection type id 
-            
+
             $chargeId =  null;
             if (!is_null($refConnectionCharge)) {
                 switch ($refConnectionCharge['charge_category']) {
@@ -251,12 +252,12 @@ class WaterNewConnection implements IWaterNewConnection
                 }
                 $refConnectionCharge['connectionTypeId'] = $chargeId;
             }
-           
+
             $refConnectionCharge['type'] = $value['type'];
             $refConnectionCharge['applicationId'] = $value['id'];
             $refConnectionCharge['applicationNo'] = $value['application_no'];
             $value['connectionCharges'] = $refConnectionCharge;
-         
+
             # Site Details 
             $siteDetails = $mWaterSiteInspection->getInspectionById($value['id'])
                 ->where('order_officer', $roleDetails['JE'])
@@ -268,7 +269,172 @@ class WaterNewConnection implements IWaterNewConnection
                     // $siteDetails['site_inspection_area_sqft']
                 )->first();
             }
-          
+
+            if ($value['current_role'] == $roleDetails['JE']) {
+                $inspectionTime = $mWaterSiteInspectionsScheduling->getInspectionData($value['id'])->first();
+                $value['scheduledTime'] = $inspectionTime->inspection_time ?? null;
+                $value['scheduledDate'] = $inspectionTime->inspection_date ?? null;
+            }
+
+            return $value;
+        });
+        return $returnValue;
+    }
+
+    /**
+     * | Search the Citizen Rejected Water Application
+       query cost (2.30)
+       Site Inspection Condition Hamper
+     * ---------------------------------------------------------------------
+     * | @var refUser            = authUser()
+     * | @var refUserId          = refUser->id      | loging user Id
+     * | @var refUlbId           = refUser->ulb_id  | loging user ulb Id
+     * | @var connection         = query data  [Model use (waterRejectionApplication , WaterConnectionCharge)]
+     * 
+     */
+    public function rejectedApplication(Request $request)
+    {
+        $refUser                = authUser($request);
+        $refUserId              = $refUser->id;
+        $roleDetails            = Config::get('waterConstaint.ROLE-LABEL');
+
+        $mWaterTran             = new WaterTran();
+        $mWaterParamConnFee     = new WaterParamConnFee();
+        $mWaterConnectionCharge = new WaterConnectionCharge();
+        $mWaterSiteInspection   = new WaterSiteInspection();
+
+        $mWaterPenaltyInstallment           = new WaterPenaltyInstallment();
+        $mWaterSiteInspectionsScheduling    = new WaterSiteInspectionsScheduling();
+        $refChargeCatagory                  = Config::get("waterConstaint.CHARGE_CATAGORY");
+        $refChargeCatagoryValue             = Config::get("waterConstaint.CONNECTION_TYPE");
+
+
+        $connection = WaterRejectionApplicationDetail::select(
+            "water_rejection_application_details.id",
+            "water_rejection_application_details.application_no",
+            "water_rejection_application_details.property_type_id",
+            "water_rejection_application_details.address",
+            "water_rejection_application_details.area_sqft",
+            "water_rejection_application_details.payment_status",
+            "water_rejection_application_details.doc_status",
+            "water_rejection_application_details.ward_id",
+            "water_rejection_application_details.workflow_id",
+            "water_rejection_application_details.doc_upload_status",
+            "water_rejection_application_details.apply_from",
+            "water_rejection_application_details.is_field_verified",
+            "water_rejection_application_details.current_role",
+            "water_rejection_application_details.parked",
+            "water_rejection_application_details.category",
+            "water_rejection_application_details.connection_type_id",
+            "ulb_ward_masters.ward_name",
+            "charges.amount",
+            "wf_roles.role_name as current_role_name",
+            DB::raw("'connection' AS type,
+                                        water_rejection_application_details.apply_date::date AS apply_date")
+        )
+            ->join(
+                DB::raw("( 
+                                        SELECT DISTINCT(water_rejection_application_details.id) AS application_id , SUM(COALESCE(amount,0)) AS amount
+                                        FROM water_rejection_application_details 
+                                        LEFT JOIN water_connection_charges 
+                                            ON water_rejection_application_details.id = water_connection_charges.application_id 
+                                            AND ( 
+                                                water_connection_charges.paid_status ISNULL  
+                                                OR water_connection_charges.paid_status= 0 
+                                            )  
+                                            AND( 
+                                                    water_connection_charges.status = TRUE
+                                                    OR water_connection_charges.status ISNULL  
+                                                )
+                                        WHERE water_rejection_application_details.user_id = $refUserId
+                                        GROUP BY water_rejection_application_details.id
+                                        ) AS charges
+                                    "),
+                function ($join) {
+                    $join->on("charges.application_id", "water_rejection_application_details.id");
+                }
+            )
+            // ->whereNotIn("status",[0,6,7])
+            ->leftjoin('wf_roles', 'wf_roles.id', "=", "water_rejection_application_details.current_role")
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_rejection_application_details.ward_id')
+            ->where("water_rejection_application_details.user_id", $refUserId)
+            ->where("water_rejection_application_details.status", true)
+            ->orderbydesc('water_rejection_application_details.id')
+            ->get();
+
+        $checkData = collect($connection)->first();
+        if (is_null($checkData))
+            throw new Exception("Water Applications not found!");
+
+        $returnValue = collect($connection)->map(function ($value)
+        use ($mWaterPenaltyInstallment, $refChargeCatagoryValue, $refChargeCatagory, $mWaterParamConnFee, $mWaterConnectionCharge, $mWaterSiteInspection, $mWaterSiteInspectionsScheduling, $roleDetails) {
+
+            # checking Penalty payment
+            if ($value['payment_status'] == 1 && $value['connection_type_id'] == $refChargeCatagoryValue['REGULAIZATION']) {
+                $penaltyDetails = $mWaterPenaltyInstallment->getPenaltyByApplicationId($value['id'])
+                    ->where('paid_status', 0)
+                    ->get();
+                $checkPenalty = collect($penaltyDetails)->first();
+                if (is_null($checkPenalty)) {
+                    $value['actualPaymentStatus'] = 1;
+                } else {
+                    $value['actualPaymentStatus'] = 0;
+                }
+            }
+
+            # show connection charges
+            switch ($value['connection_type_id']) {
+                case ($refChargeCatagoryValue['REGULAIZATION']):
+                    $value['connection_type_name'] = $refChargeCatagory['REGULAIZATION'];
+                    break;
+
+                case ($refChargeCatagoryValue['NEW_CONNECTION']):
+                    $value['connection_type_name'] = $refChargeCatagory['NEW_CONNECTION'];
+                    break;
+            }
+
+            // $value['transDetails'] = $mWaterTran->getTransNo($value['id'], null)->first();
+
+            // $value['calcullation'] = $mWaterParamConnFee->getCallParameter($value['property_type_id'], $value['area_sqft'])->first();
+
+            $refConnectionCharge = $mWaterConnectionCharge->getWaterchargesById($value['id'])
+                ->where('paid_status', 0)
+                ->first();
+            # Formating connection type id 
+
+            $chargeId =  null;
+            if (!is_null($refConnectionCharge)) {
+                switch ($refConnectionCharge['charge_category']) {
+                    case ($refChargeCatagory['SITE_INSPECTON']):
+                        $chargeId = $refChargeCatagoryValue['SITE_INSPECTON'];
+                        break;
+                    case ($refChargeCatagory['NEW_CONNECTION']):
+                        $chargeId = $refChargeCatagoryValue['NEW_CONNECTION'];
+                        break;
+                    case ($refChargeCatagory['REGULAIZATION']):
+                        $chargeId = $refChargeCatagoryValue['REGULAIZATION'];
+                        break;
+                }
+                $refConnectionCharge['connectionTypeId'] = $chargeId;
+            }
+
+            $refConnectionCharge['type'] = $value['type'];
+            $refConnectionCharge['applicationId'] = $value['id'];
+            $refConnectionCharge['applicationNo'] = $value['application_no'];
+            $value['connectionCharges'] = $refConnectionCharge;
+
+            # Site Details 
+            $siteDetails = $mWaterSiteInspection->getInspectionById($value['id'])
+                ->where('order_officer', $roleDetails['JE'])
+                ->first();
+            $checkEmpty = collect($siteDetails)->first();
+            if (!is_null($checkEmpty)) {
+                $value['siteInspectionCall'] = $mWaterParamConnFee->getCallParameter(
+                    $siteDetails['site_inspection_property_type_id'],
+                    // $siteDetails['site_inspection_area_sqft']
+                )->first();
+            }
+
             if ($value['current_role'] == $roleDetails['JE']) {
                 $inspectionTime = $mWaterSiteInspectionsScheduling->getInspectionData($value['id'])->first();
                 $value['scheduledTime'] = $inspectionTime->inspection_time ?? null;
@@ -1306,7 +1472,7 @@ class WaterNewConnection implements IWaterNewConnection
         // Check if user_type is not equal to 1
         if ($user->user_type == $refUserType['1']) {
             // Modify $type array for user_type not equal to 1
-            $type = ["AADHAR CARD", "STAMP","PROPERTY TAX RECEIPT", "METER PURCHASE BILL", "PLUMBER LICENSE", "AMC FITTER REPORT", "PIPELINE MAP"];
+            $type = ["AADHAR CARD", "STAMP", "PROPERTY TAX RECEIPT", "METER PURCHASE BILL", "PLUMBER LICENSE", "AMC FITTER REPORT", "PIPELINE MAP"];
             // $type=["PROPERTY TAX"];
         }
         $doc = WaterParamDocumentType::select(
@@ -1320,8 +1486,8 @@ class WaterNewConnection implements IWaterNewConnection
                 "id",
                 "doc_for",
                 "status"
-                )
-                ->orderBy('id', 'ASC')
+            )
+            ->orderBy('id', 'ASC')
             ->get();
         return $doc;
     }

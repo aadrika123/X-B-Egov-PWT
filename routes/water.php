@@ -55,7 +55,8 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         # Admin / Citizen view
         Route::post('application/delete', 'deleteWaterApplication');                                    // Citizen     
         Route::post('application/get-by-id', 'getApplicationDetails');                                  // Citizen
-        Route::post('approve-application/get-by-id', 'getApproveApplicationsDetails');                                  // Admin
+        Route::post('application/rejected-get-by-id', 'getRejectedApplicationDetails');                 // Citizen
+        Route::post('approve-application/get-by-id', 'getApproveApplicationsDetails');                  // Admin
         Route::post('citizen/get-doc-list', 'getDocToUpload');                                          // Citizen  
         Route::post('application/edit', 'editWaterAppliction');                                         // Citizen/Admin
         Route::post('search-holding-saf', 'getSafHoldingDetail');                                       // Admin
@@ -249,8 +250,8 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
     /**
      * | Created On:09-12-2022 
      * | Created by:Sandeep Bara
-     * | Modified by: Sam kerketta
-     * | Modified on: 11-01-2023
+     * | Modified by: Arshad Hussain
+     * | Modified on: 12-08-2024
      * | ------------------- Water Connection / mobile ------------------------ |
      */
     Route::controller(WaterApplication::class)->group(function () {
@@ -259,9 +260,12 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('getTranNo', 'readTransectionAndApl');                                              //12
         Route::post('update-applications', 'updateWaterApplication');       // Here 
 
+
         # Dashbording Api
         Route::post('admin/application/dashboard-data', 'getJskAppliedApplication');                    //13
         Route::post('admin/workflow/dashboard-data', 'workflowDashordDetails');                         //14
+        #citizen DashBoard Application
+        Route::post('applications/reject-list', 'rejectedApplication');                                 //15
     });
 });
 Route::controller(WaterApplication::class)->group(function () {

@@ -44,6 +44,8 @@ use App\Models\Water\WaterOwnerTypeMstr;
 use App\Models\Water\WaterParamConnFee;
 use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterPropertyTypeMstr;
+use App\Models\Water\WaterRejectionApplicant;
+use App\Models\Water\WaterRejectionApplicationDetail;
 use App\Models\Water\WaterRoadCutterCharge;
 use App\Models\Water\WaterSiteInspection;
 use App\Models\Water\WaterSiteInspectionsScheduling;
@@ -1014,7 +1016,85 @@ class NewConnectionController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+    /**
+     * | Citizen view : Get Application Details of viewind
+        | Serial No : 
+     */
+    public function getRejectedApplicationDetails(Request $request)
+    {
 
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'applicationId' => 'required|integer',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $user = authUser($request);
+            $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
+            $mWaterConnectionCharge  = new WaterConnectionCharge();
+            $mWaterApplication = new WaterApplication();
+            $mWaterRejectionApplications   = new WaterRejectionApplicationDetail();
+            $mWaterRejectionApplicants = new WaterRejectionApplicant();
+            $mWaterApplicant = new WaterApplicant();
+            $mWaterTran = new WaterTran();
+            $roleDetails = Config::get('waterConstaint.ROLE-LABEL');
+
+            # Rejected Application Details
+            $applicationDetails['applicationDetails'] = $mWaterRejectionApplications->fullWaterDetails($request)->first();
+
+            if (!$applicationDetails) {
+                throw new Exception('Application Details Not Found');
+            }
+
+            # Document Details
+            $metaReqs = [
+                'userId'    => $user->id,
+                'ulbId'     => $user->ulb_id ?? $applicationDetails['applicationDetails']['ulb_id'],
+            ];
+            $request->request->add($metaReqs);
+            $document = $this->getapploRejecDocToUpload($request);                                                    // get the doc details
+            $documentDetails['documentDetails'] = collect($document)['original']['data'];
+
+            # owner details
+            $ownerDetails['ownerDetails'] = $mWaterRejectionApplicants->getOwnerList($request->applicationId)->get();
+
+            # Payment Details 
+            $refAppDetails = collect($applicationDetails)->first();
+            $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)->get();
+            $waterTransDetail['waterTransDetail'] = $waterTransaction;
+
+            # calculation details
+            $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['id'])
+                ->where('paid_status', 0)
+                ->first();
+            if ($charges) {
+                $calculation['calculation'] = [
+                    'connectionFee'     => $charges['conn_fee'],
+                    'penalty'           => $charges['penalty'],
+                    'totalAmount'       => $charges['amount'],
+                    'chargeCatagory'    => $charges['charge_category'],
+                    'paidStatus'        => $charges['paid_status']
+                ];
+                $waterTransDetail = array_merge($waterTransDetail, $calculation);
+            }
+
+            # Site inspection schedule time/date Details 
+            if ($applicationDetails['applicationDetails']['current_role'] == $roleDetails['JE']) {
+                $inspectionTime = $mWaterSiteInspectionsScheduling->getInspectionData($applicationDetails['applicationDetails']['id'])->first();
+                $applicationDetails['applicationDetails']['scheduledTime'] = $inspectionTime->inspection_time ?? null;
+                $applicationDetails['applicationDetails']['scheduledDate'] = $inspectionTime->inspection_date ?? null;
+            }
+
+            $returnData = array_merge($applicationDetails, $ownerDetails, $waterTransDetail, $documentDetails); //$documentDetails,
+            return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
 
     /**
      * | Upload Application Documents 
@@ -1318,6 +1398,98 @@ class NewConnectionController extends Controller
             if ($refApplication == null) {
                 $refApplication = $mWaterApprovalApplications->getApplicationById($connectionId)->first();
             }
+            if (!$refApplication) {
+                throw new Exception("Application Not Found!");
+            }
+            $connectionCharges = $mWaterConnectionCharge->getWaterchargesById($connectionId)
+                ->where('charge_category', '!=', "Site Inspection")                         # Static
+                ->first();
+            $connectionCharges['type'] = Config::get('waterConstaint.New_Connection');
+            $connectionCharges['applicationNo'] = $refApplication->application_no;
+            $connectionCharges['applicationId'] = $refApplication->id;
+
+            $requiedDocType = $refWaterNewConnection->getDocumentTypeList($refApplication, $user);  # get All Related Document Type List
+            $refOwneres = $refWaterNewConnection->getOwnereDtlByLId($refApplication->id);    # get Owneres List
+            $ownerList = collect($refOwneres)->map(function ($value) {
+                $return['applicant_name'] = $value['applicant_name'];
+                $return['ownerID'] = $value['id'];
+                return $return;
+            });
+            foreach ($requiedDocType as $val) {
+                $doc = (array) null;
+                $doc["ownerName"] = $ownerList;
+                $doc['docName'] = $val->doc_for;
+                $refDocName  = str_replace('_', ' ', $val->doc_for);
+                $doc["refDocName"] = ucwords(strtolower($refDocName));
+                $doc['isMadatory'] = $val->is_mandatory;
+                $ref['docValue'] = $refWaterNewConnection->getDocumentList($val->doc_for);  # get All Related Document List
+                $doc['docVal'] = $docFor = collect($ref['docValue'])->map(function ($value) {
+                    $refDoc = $value['doc_name'];
+                    $refText = str_replace('_', ' ', $refDoc);
+                    $value['dispayName'] = ucwords(strtolower($refText));
+                    return $value;
+                });
+                $docFor = collect($ref['docValue'])->map(function ($value) {
+                    return $value['doc_name'];
+                });
+
+                $doc['uploadDoc'] = [];
+                $uploadDoc = $refWfActiveDocument->getDocByRefIdsDocCodeV2($refApplication->id, $refApplication->workflow_id, $moduleId, $docFor); # Check Document is Uploaded Of That Type
+                if (isset($uploadDoc->first()->doc_path)) {
+                    $path = $refWaterNewConnection->readDocumentPath($uploadDoc->first()->doc_path);
+                    $doc["uploadDoc"]["doc_path"] = !empty(trim($uploadDoc->first()->doc_path)) ? $path : null;
+                    $doc["uploadDoc"]["doc_code"] = $uploadDoc->first()->doc_code;
+                    $doc["uploadDoc"]["verify_status"] = $uploadDoc->first()->verify_status;
+                }
+                array_push($requiedDocs, $doc);
+            }
+            usort($requiedDocs, function ($a, $b) {
+                return $b['isMadatory'] <=> $a['isMadatory'];
+            });
+
+            $data["documentsList"]  = $requiedDocs;
+            // $data["ownersDocList"]  = $ownerDoc;
+            $data['doc_upload_status'] = $refApplication['doc_upload_status'];
+            $data['current_role']      = $refApplication['current_role'];
+            $data['connectionCharges'] = $connectionCharges;
+            return responseMsg(true, "Document Uploaded!", $data);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+
+
+    /**
+     * | Get the document to be upoaded with list of dock uploaded 
+        | Serial No :  
+        | Working / Citizen Upload
+     */
+    public function getapploRejecDocToUpload(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'applicationId' => 'required|numeric'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        try {
+            $user                   = authUser($request);
+            $refApplication         = (array)null;
+            $refOwneres             = (array)null;
+            $requiedDocs            = (array)null;
+            $testOwnersDoc          = (array)null;
+            $data                   = (array)null;
+            $refWaterNewConnection  = new WaterNewConnection();
+            $refWfActiveDocument    = new WfActiveDocument();
+            $mWaterConnectionCharge = new WaterConnectionCharge();
+            $mWaterRejectedApplication   = new WaterRejectionApplicationDetail();   // Application 
+            $mWaterApprovalApplications = new WaterApprovalApplicationDetail();
+            $moduleId               = Config::get('module-constants.WATER_MODULE_ID');
+
+            $connectionId = $request->applicationId;
+            $refApplication = $mWaterRejectedApplication->getApplicationById($connectionId)->first();
             if (!$refApplication) {
                 throw new Exception("Application Not Found!");
             }

@@ -38,6 +38,15 @@ class WaterApplication extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+    public function rejectedApplication(Request $request)
+    {
+        try {
+            $returnValue = $this->Repository->rejectedApplication($request);
+            return responseMsg(true, "", remove_null($returnValue));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
     public function handeRazorPay(Request $request)
     {
         return $this->Repository->handeRazorPay($request);
