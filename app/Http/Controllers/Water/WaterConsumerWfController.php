@@ -343,16 +343,22 @@ class WaterConsumerWfController extends Controller
                 if ($application->doc_verify_status == false)
                     throw new Exception("Document Not Fully Verified");
                 break;
-                // case $wfLevels['JE']:                                                                       // JE Coditon in case of site adjustment
-                //     if ($application->is_field_verified == false) {
-                //         throw new Exception("Document Not Fully Uploaded or site inspection not done!");
-                //     }
-                $siteDetails = $mWaterSiteInspection->getSiteDetails($application->id)
-                    ->where('order_officer', $refRole['JE'])
-                    ->first();
-                if (!$siteDetails) {
-                    throw new Exception("Site Not Verified!");
+            case $wfLevels['JE']:
+                // JE Condition in case of site adjustment
+                if ($application->charge_catagory_id == 10) {
+                    if ($application->is_field_verified == false) {
+                        throw new Exception("Field Not Verified!");
+                    }
+                    if ($application->doc_verify_status == false) {
+                        throw new Exception("Document Not Fully Verified");
+                    }
                 }
+                // $siteDetails = $mWaterSiteInspection->getSiteDetails($application->id)
+                //     ->where('order_officer', $refRole['JE'])
+                //     ->first();
+                // if (!$siteDetails) {
+                //     throw new Exception("Site Not Verified!");
+                // }
                 break;
         }
     }
@@ -706,7 +712,8 @@ class WaterConsumerWfController extends Controller
         });
         $aplictionList = [
             'application_no' => collect($applicationDetails)->first()->application_no,
-            'apply_date' => collect($applicationDetails)->first()->apply_date
+            'apply_date' => collect($applicationDetails)->first()->apply_date,
+            'charge_catagory_id' => $applicationDetails->pluck('charge_catagory_id')->first()
         ];
 
 
@@ -721,18 +728,23 @@ class WaterConsumerWfController extends Controller
         # CardArray
         $cardDetails = $this->getCardDetails($applicationDetails, $ownerDetail);
         $chargeCatgory =  $applicationDetails->pluck('charge_category');
+        $chargeCatgoryId = $applicationDetails->pluck('charge_catagory_id')->first();
         $cardData = [
             'headerTitle' => $chargeCatgory,
             'data' => $cardDetails
         ];
         $fullDetailsData['fullDetailsData']['cardArray'] = new Collection($cardData);
         # TableArray
-        $ownerList = $this->getOwnerDetails($ownerDetail);
-        $ownerView = [
-            'headerTitle' => 'Owner Details',
-            'tableHead' => ["#", "Owner Name", "Guardian Name", "Mobile No", "Email", "City", "District"],
-            'tableData' => $ownerList
-        ];
+        $ownerView = [];
+        if ($chargeCatgoryId != 10) {
+            $ownerList = $this->getOwnerDetails($ownerDetail);
+            $ownerView = [
+                'headerTitle' => 'Owner Details',
+                'tableHead' => ["#", "Owner Name", "Guardian Name", "Mobile No", "Email", "City", "District"],
+                'tableData' => $ownerList
+            ];
+        }
+
         $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerView]);
 
         # Level comment
@@ -772,32 +784,55 @@ class WaterConsumerWfController extends Controller
     public function getBasicDetails($applicationDetails)
     {
         $collectionApplications = collect($applicationDetails)->first();
+        $basicDetails = [];
 
-        // Basic details common to all applications
-        $basicDetails = [
-            ['displayString' => 'Ward No',            'key' => 'WardNo',            'value' => $collectionApplications->ward_name],
-            ['displayString' => 'ApplyDate',          'key' => 'applyDate',         'value' => $collectionApplications->apply_date],
-            ['displayString' => 'TapSize',            'key' => 'taPSize',           'value' => $collectionApplications->tab_size],
-            ['displayString' => 'PropertyType',       'key' => 'propertyType',      'value' => $collectionApplications->property_type],
-            ['displayString' => 'Address',            'key' => 'Address',           'value' => $collectionApplications->address],
-            ['displayString' => 'Category',           'key' => 'category',          'value' => $collectionApplications->category],
-            ['displayString' => 'Zone',               'key' => 'Zone',              'value' => $collectionApplications->zone_name],
+        // Common basic details
+        $commonDetails = [
+            ['displayString' => 'Ward No', 'key' => 'WardNo', 'value' => $collectionApplications->ward_name],
+            ['displayString' => 'Apply Date', 'key' => 'applyDate', 'value' => $collectionApplications->apply_date],
+            ['displayString' => 'Zone', 'key' => 'Zone', 'value' => $collectionApplications->zone_name],
         ];
 
-        // If charge category ID is 6, add the new field
-        if ($collectionApplications->charge_catagory_id == 6) {
-            $basicDetails[] = ['displayString' => 'New Name', 'key' => 'NewName', 'value' => $collectionApplications->new_name];
-        } elseif ($collectionApplications->charge_catagory_id == 7) {
-            $basicDetails[] = ['displayString' => 'New meter No', 'key' => 'NewMeterNo', 'value' => $collectionApplications->newMeterNo];
-            $basicDetails[] = ['displayString' => 'Old Meter No ', 'key' => 'OldMeterNo', 'value' => $collectionApplications->meter_no];
-        } elseif ($collectionApplications->charge_catagory_id == 8) {
-            $basicDetails[] = ['displayString' => 'New Property Type', 'key' => 'NewPropertyType', 'value' => $collectionApplications->newPropertyType];
-            $basicDetails[] = ['displayString' => 'New Category', 'key' => 'NewCategory', 'value' => $collectionApplications->newCategory];
-        } elseif ($collectionApplications->charge_catagory_id == 9) {
-            $basicDetails[] = ['displayString' => 'New Tab Size', 'key' => 'NewTabSize', 'value' => $collectionApplications->newTabSize];
+        // Additional details based on charge category ID
+        if ($collectionApplications->charge_catagory_id != 10) {
+            $basicDetails = array_merge($commonDetails, [
+                ['displayString' => 'Tap Size', 'key' => 'tapSize', 'value' => $collectionApplications->tab_size],
+                ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $collectionApplications->property_type],
+                ['displayString' => 'Address', 'key' => 'Address', 'value' => $collectionApplications->address],
+                ['displayString' => 'Category', 'key' => 'category', 'value' => $collectionApplications->category],
+            ]);
+
+            // Add specific fields based on the charge category ID
+            switch ($collectionApplications->charge_catagory_id) {
+                case 6:
+                    $basicDetails[] = ['displayString' => 'New Name', 'key' => 'NewName', 'value' => $collectionApplications->new_name];
+                    break;
+                case 7:
+                    $basicDetails[] = ['displayString' => 'New Meter No', 'key' => 'NewMeterNo', 'value' => $collectionApplications->newMeterNo];
+                    $basicDetails[] = ['displayString' => 'Old Meter No', 'key' => 'OldMeterNo', 'value' => $collectionApplications->meter_no];
+                    break;
+                case 8:
+                    $basicDetails[] = ['displayString' => 'New Property Type', 'key' => 'NewPropertyType', 'value' => $collectionApplications->newPropertyType];
+                    $basicDetails[] = ['displayString' => 'New Category', 'key' => 'NewCategory', 'value' => $collectionApplications->newCategory];
+                    break;
+                case 9:
+                    $basicDetails[] = ['displayString' => 'New Tap Size', 'key' => 'NewTapSize', 'value' => $collectionApplications->newTabSize];
+                    break;
+            }
+        } else {
+            $basicDetails = array_merge($commonDetails, [
+                ['displayString' => 'City', 'key' => 'City',                    'value' => $collectionApplications->city],
+                ['displayString' => 'ComplainerName', 'key' => 'ComplainerName', 'value' => $collectionApplications->respodent_name],
+                ['displayString' => 'Address', 'key' => 'Address',                 'value' => $collectionApplications->complainAddress],
+                ['displayString' => 'Mobile No', 'key' => 'mobileNo',               'value' => $collectionApplications->mobile_no],
+                ['displayString' => 'Consumer No', 'key' => 'consumerNo',            'value' => $collectionApplications->consumerNoofCompain],
+                ['displayString' => 'Je Status', 'key' => 'JeStatus',            'value' => $collectionApplications->je_status],
+            ]);
         }
-        return new Collection($basicDetails);
+
+        return collect($basicDetails);
     }
+
 
     /**
      * return data fro card details 
@@ -1137,9 +1172,9 @@ class WaterConsumerWfController extends Controller
         $type = [];
         if ($application->charge_catagory_id == 10) {
             $type = ["INSPECTION_REPORT"];
-        }elseif($application->charge_catagory_id == 11){
+        } elseif ($application->charge_catagory_id == 11) {
             $type = ["PRESSURE REPORT"];
-        }elseif($application->charge_catagory_id == 12){
+        } elseif ($application->charge_catagory_id == 12) {
             $type = ["QUALITY_REPORT"];
         }
         return $mRefReqDocs->getCollectiveDocByCode($moduleId, $type);
@@ -1292,14 +1327,14 @@ class WaterConsumerWfController extends Controller
             }
 
             #check full doc upload
-            $refCheckDocument = $this->checkFullDocUpload($req);
+            // $refCheckDocument = $this->checkFullDocUpload($req);
 
             # Update the Doc Upload Satus in Application Table
-            if ($refCheckDocument->contains(false)) {
-                $mWaterApplication->deactivateUploadStatus($applicationId);
-            } else {
-                $this->updateWaterStatus($req, $getWaterDetails);
-            }
+            // if ($refCheckDocument->contains(false)) {
+            //     $mWaterApplication->deactivateUploadStatus($applicationId);
+            // } else {
+            //     $this->updateWaterStatus($req, $getWaterDetails);
+            // }
 
             # if the application is parked and btc s
             if ($getWaterDetails->parked == true) {
@@ -1464,7 +1499,7 @@ class WaterConsumerWfController extends Controller
             $moduleId               = Config::get('module-constants.WATER_MODULE_ID');
 
             $connectionId = $request->applicationId;
-            $refApplication = $mWaterApplication->getApplicationDtls($connectionId)->first();
+            $refApplication = $mWaterApplication->getApplicationDtls($connectionId);
             if ($refApplication == null) {
                 $refApplication = $mWaterApprovalApplications->getApplicationById($connectionId)->first();
             }
@@ -1552,6 +1587,38 @@ class WaterConsumerWfController extends Controller
             $data['doc_upload_status'] = $refApplication['doc_upload_status'];
             $data['connectionCharges'] = $connectionCharges;
             return responseMsg(true, "Document Uploaded!", $data);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+    /**
+     * | unauthorized tap connnection status
+     */
+    public function unauthorizedTapUpdateStatus(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'applicationId' => 'required|numeric',
+                'checkcompalin' => 'required'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        try {
+            $user = authUser($request);
+            $userName = $user->name;
+            if ($userName != 'JE') {
+                throw new Exception('You Are Not Authorized Person');
+            }
+            $applicationId = $request->applicationId;
+            $mWaterConsumerActiveRequest  = new WaterConsumerActiveRequest();
+            $waterRequestdtl  = $mWaterConsumerActiveRequest->getActiveReqById($applicationId)->first();
+            if (!$waterRequestdtl) {
+                throw new Exception('Application Details Not Found');
+            }
+            $mWaterConsumerActiveRequest->updateJeStatus($request);
+            return responseMsg(true, "Status Updated!", $request);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
         }

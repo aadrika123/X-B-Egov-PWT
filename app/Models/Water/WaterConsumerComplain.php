@@ -16,13 +16,14 @@ class WaterConsumerComplain extends Model
         $waterConsumerComplain->consumer_id                              = $request->consumerId;
         $waterConsumerComplain->application_id                           = $deactivatedDetails['id'];
         $waterConsumerComplain->respodent_name                           = $request->name;
-        $waterConsumerComplain->mobile_no                                 = $request->mobileNo;
+        $waterConsumerComplain->mobile_no                                = $request->mobileNo;
         $waterConsumerComplain->city                                     = $request->city ?? "Akola";
         $waterConsumerComplain->district                                 = $request->district ?? "Akola";
         $waterConsumerComplain->state                                    = $request->state ?? "MAHARASTRA";
         $waterConsumerComplain->address                                  = $request->address;
         $waterConsumerComplain->zone_id                                  = $request->zoneId;
         $waterConsumerComplain->ward_no                                  = $request->wardNo;
+        $waterConsumerComplain->consumer_no                              = $request->consumerNo;
         $waterConsumerComplain->save();
         return $waterConsumerComplain;
     }

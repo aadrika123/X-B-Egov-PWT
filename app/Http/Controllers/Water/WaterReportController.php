@@ -17,6 +17,7 @@ use App\Models\Water\WaterConsumerDemand;
 use Illuminate\Support\Facades\Validator;
 use App\Models\Water\WaterSecondConsumer;
 use  App\Http\Requests\Water\colllectionReport;
+use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Repository\Water\Concrete\Report;
 use App\Repository\Water\Interfaces\IConsumer;
 use Illuminate\Support\Facades\App;
@@ -3164,15 +3165,13 @@ class WaterReportController extends Controller
                     LIMIT $limit OFFSET $offset ";
             $countSql = $with . " SELECT COUNT(*) " . $from;
             $data = DB::connection('pgsql_water')->select(DB::raw($dataSql));
-            $WaterConsumerController = App::makeWith(WaterWaterConsumer::class,["IConsumer",IConsumer::class]);
+            $WaterConsumerController = App::makeWith(WaterWaterConsumer::class, ["IConsumer", IConsumer::class]);
             $responseCollection = collect();
-            foreach($data as $val)
-            {
-                
-                $request->merge(["consumerId"=>$val->consumer_id]);
+            foreach ($data as $val) {
+
+                $request->merge(["consumerId" => $val->consumer_id]);
                 $response = $WaterConsumerController->getConsumerDemandsV2($request);
-                if(!$response->original["status"])
-                {
+                if (!$response->original["status"]) {
                     continue;
                 }
                 $response = $response->original["data"];
@@ -3195,19 +3194,17 @@ class WaterReportController extends Controller
 
     public function waterBulkdemandV4(colllectionReport $request)
     {
-        try{
+        try {
             $perPage = $request->perPage ? $request->perPage : 50;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $limit = $perPage;
             $offset =  $request->page && $request->page > 0 ? (($request->page - 1) * $perPage) : 0;
-            $where ="";
-            if($request->wardId)
-            {
-                $where.=" AND ward_mstr_id = ".$request->wardId ;
+            $where = "";
+            if ($request->wardId) {
+                $where .= " AND ward_mstr_id = " . $request->wardId;
             }
-            if($request->zoneId)
-            {
-                $where.=" AND zone_mstr_id = ".$request->zoneId ;
+            if ($request->zoneId) {
+                $where .= " AND zone_mstr_id = " . $request->zoneId;
             }
             $sql = "
                 SELECT DISTINCT prop_demands.property_id 
@@ -3227,15 +3224,13 @@ class WaterReportController extends Controller
             ";
             $count = (collect(DB::select($sqlCont))->first())->count;
             $data = DB::select($sql);
-            $lastPage = ceil($count/$perPage);
+            $lastPage = ceil($count / $perPage);
             $responseData = collect();
-            foreach($data as $key=>$val)
-            {
+            foreach ($data as $key => $val) {
                 $propertyId = $val->property_id;
-                $newReq = new Request(["propId"=>$propertyId]);
+                $newReq = new Request(["propId" => $propertyId]);
                 $response = $this->getHoldingDues($newReq);
-                if(!$response->original["status"])
-                {
+                if (!$response->original["status"]) {
                     continue;
                 }
                 $responseData->push($response->original["data"]);
@@ -3246,10 +3241,8 @@ class WaterReportController extends Controller
                 "data" => $responseData,
                 "total" => $count,
             ];
-            return responseMsgs(true, "data fetched", $list , "011602", "1.0", "", "POST", $request->deviceId ?? "");
-        }
-        catch(Exception $e)
-        {
+            return responseMsgs(true, "data fetched", $list, "011602", "1.0", "", "POST", $request->deviceId ?? "");
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), ['basicDetails' => $basicDtls ?? []], "011602", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }
@@ -3638,10 +3631,10 @@ class WaterReportController extends Controller
 
             $refDetailsV2 = [
                 "array" => $data,
-                "sum_current_coll" => roundFigure($refData->pluck('current_collections')->sum()??0),
-                "sum_arrear_coll" => roundFigure($refData->pluck('arrear_collections')->sum()??0),
-                "sum_total_coll" => roundFigure($refData->pluck('total_collections')->sum()??0),
-                "totalAmount"   =>  roundFigure($refData->pluck('amount')->sum()??0),
+                "sum_current_coll" => roundFigure($refData->pluck('current_collections')->sum() ?? 0),
+                "sum_arrear_coll" => roundFigure($refData->pluck('arrear_collections')->sum() ?? 0),
+                "sum_total_coll" => roundFigure($refData->pluck('total_collections')->sum() ?? 0),
+                "totalAmount"   =>  roundFigure($refData->pluck('amount')->sum() ?? 0),
                 "totalColletion" => $refData->pluck('tran_id')->count(),
                 "currentDate"  => $currentDate
             ];
@@ -4262,41 +4255,505 @@ class WaterReportController extends Controller
 
     public function deviceTypeCollection(Request $request)
     {
-        try{
+        try {
             $fromDate = $uptoDate = Carbon::now()->format('Y-m-d');
             $deviceType = 'android';
             $paymentMode = null;
-            if($request->fromDate)
-            {
+            if ($request->fromDate) {
                 $fromDate = $request->fromDate;
             }
-            if($request->uptoDate)
-            {
+            if ($request->uptoDate) {
                 $uptoDate = $request->uptoDate;
             }
-            if($request->deviceType)
-            {
+            if ($request->deviceType) {
                 $deviceType = $request->deviceType;
             }
-            if($request->paymentMode)
-            {
+            if ($request->paymentMode) {
                 $paymentMode = $request->paymentMode;
             }
-            
+
             $data = WaterTran::select(DB::raw("COALESCE(sum(amount),0) as total_amount,count(id)total_tran"))
-                    ->whereBetween("tran_date",[$fromDate,$uptoDate])
-                    ->whereIn("status",[1,2])
-                    ->whereNotNull("device_type")
-                    ->where("device_type",$deviceType);
-            if($paymentMode)
-            {
-                $data->where(DB::raw("upper(payment_mode)",strtoupper($paymentMode)));
+                ->whereBetween("tran_date", [$fromDate, $uptoDate])
+                ->whereIn("status", [1, 2])
+                ->whereNotNull("device_type")
+                ->where("device_type", $deviceType);
+            if ($paymentMode) {
+                $data->where(DB::raw("upper(payment_mode)", strtoupper($paymentMode)));
             }
             $data = $data->first();
             return responseMsgs(true, "data fetched", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+        }
+    }
+    /**
+     * |consumer Demand Due Report
+     * | Arshad 
+     */
+    // public function consumeDemandDuesReport(Request $request)
+    // {
+    //     $now = Carbon::now()->format("Y-m-d");
+    //     $validated = Validator::make(
+    //         $request->all(),
+    //         [
+    //             // "fromDate" => "nullable|date|before_or_equal:$now|date_format:Y-m-d",
+    //             "uptoDate" => "nullable|date|before_or_equal:$now|date_format:Y-m-d",
+    //             "userId" => "nullable|digits_between:1,9223372036854775807",
+    //             "wardId" => "nullable|digits_between:1,9223372036854775807",
+    //             "zoneId" => "nullable|digits_between:1,9223372036854775807",
+    //             "page" => "nullable|digits_between:1,9223372036854775807",
+    //             "perPage" => "nullable|digits_between:1,9223372036854775807",
+    //         ]
+    //     );
+    //     if ($validated->fails()) {
+    //         return validationErrorV2($validated);
+    //     }
+
+    //     try {
+    //         $fromDate = $uptoDate = $now;
+    //         $userId = $wardId = $zoneId = null;
+    //         // $key = $request->key;
+
+    //         // if ($key) {
+    //         //     $fromDate = $uptoDate = null;
+    //         // }
+    //         if ($request->fromDate) {
+    //             $fromDate = $request->fromDate;
+    //         }
+    //         if ($request->uptoDate) {
+    //             $uptoDate = $request->uptoDate;
+    //         }
+    //         if ($request->wardId) {
+    //             $wardId = $request->wardId;
+    //         }
+    //         if ($request->zoneId) {
+    //             $zoneId = $request->zoneId;
+    //         }
+    //         if ($request->userId) {
+    //             $userId = $request->userId;
+    //         }
+    //         // Original query for detailed information
+    //         $data = waterConsumerDemand::select(
+    //             "water_second_consumers.id",
+    //             "water_consumer_demands.id as demandId",
+    //             "water_consumer_demands.consumer_id",
+    //             "water_second_consumers.consumer_no",
+    //             "water_second_consumers.folio_no as property_no",
+    //             "zone_masters.zone_name",
+    //             "ulb_ward_masters.ward_name",
+    //             "owners.applicant_name",
+    //             "owners.guardian_name",
+    //             "owners.mobile_no",
+    //             "water_second_consumers.category",
+    //             "water_property_type_mstrs.property_type",
+    //             "water_consumer_demands.amount",
+    //             "water_consumer_demands.demand_from",
+    //             "water_consumer_demands.demand_upto",
+    //             "water_consumer_demands.is_full_paid"
+    //             // "users.name AS user_name",
+    //         )
+    //             // ->leftJoin("users", "users.id", "water_consumer_demands.emp_details_id")
+    //             ->join('water_second_consumers', 'water_second_consumers.id', 'water_consumer_demands.consumer_id')
+    //             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
+    //             ->leftjoin('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
+    //             ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_second_consumers.property_type_id')
+    //             ->Join('water_consumer_owners as owners', 'owners.id', 'water_consumer_demands.consumer_id')
+    //             ->where('water_consumer_demands.is_full_paid', false)
+    //             ->where('water_consumer_demands.amount', "<>", 0);
+    //         if ($uptoDate) {
+    //             // $data->where('demand_from', '>=', $fromDate)
+    //             $data->where('demand_upto', '<=', $uptoDate);
+    //         }
+    //         if ($userId) {
+    //             $data->where('water_consumer_demands.emp_details_id', $userId);
+    //         }
+    //         if ($wardId) {
+    //             $data->where('water_second_consumers.ward_mstr_id', $wardId);
+    //         }
+    //         if ($zoneId) {
+    //             $data->where('water_second_consumers.zone_mstr_id', $zoneId);
+    //         }
+
+    //         $perPage = $request->perPage ? $request->perPage : 10;
+    //         $paginator = $data->paginate($perPage);
+    //         $list = [
+    //             "current_page" => $paginator->currentPage(),
+    //             "last_page" => $paginator->lastPage(),
+    //             "data" => $paginator->items(),
+    //             "total" => $paginator->total(),
+    //             // "unpaid_consumers_count" => $unpaidConsumersCount
+    //         ];
+
+    //         $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+    //         return responseMsgs(true, "", $list);
+    //     } catch (Exception $e) {
+    //         return responseMsgs(false, $e->getMessage(), "");
+    //     }
+    // }
+
+    public function consumeDemandDuesReport(Request $request)
+    {
+        $now = Carbon::now()->format("Y-m-d");
+
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "uptoDate" => "nullable|date|before_or_equal:$now|date_format:Y-m-d",
+                "userId" => "nullable|digits_between:1,9223372036854775807",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "zoneId" => "nullable|digits_between:1,9223372036854775807",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+
+        if ($validated->fails()) {
+            return validationErrorV2($validated);
+        }
+
+        try {
+            $uptoDate = $request->uptoDate ?? $now;
+            $userId = $request->userId;
+            $wardId = $request->wardId;
+            $zoneId = $request->zoneId;
+
+            $data = waterConsumerDemand::select(
+                "water_second_consumers.id as consumer_id",
+                "water_second_consumers.consumer_no",
+                "water_second_consumers.folio_no as property_no",
+                "zone_masters.zone_name",
+                "ulb_ward_masters.ward_name",
+                "owners.applicant_name",
+                "owners.guardian_name",
+                "owners.mobile_no",
+                "water_second_consumers.category",
+                "water_property_type_mstrs.property_type",
+                DB::raw('SUM(water_consumer_demands.amount) as total_amount'),
+                DB::raw('MIN(water_consumer_demands.demand_from) as earliest_demand_from'),
+                DB::raw('MAX(water_consumer_demands.demand_upto) as latest_demand_upto'),
+                "water_second_consumers.notice"
+            )
+                ->join('water_second_consumers', 'water_second_consumers.id', 'water_consumer_demands.consumer_id')
+                ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
+                ->leftJoin('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
+                ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_second_consumers.property_type_id')
+                ->join('water_consumer_owners as owners', 'owners.id', 'water_consumer_demands.consumer_id')
+                ->where('water_consumer_demands.is_full_paid', false)
+                ->where('water_consumer_demands.demand_upto', '<=', $uptoDate)
+                ->where('water_second_consumers.generated', false)
+                ->groupBy(
+                    'water_second_consumers.id',
+                    'water_second_consumers.consumer_no',
+                    'water_second_consumers.folio_no',
+                    'zone_masters.zone_name',
+                    'ulb_ward_masters.ward_name',
+                    'owners.applicant_name',
+                    'owners.guardian_name',
+                    'owners.mobile_no',
+                    'water_second_consumers.category',
+                    'water_property_type_mstrs.property_type'
+                )
+                ->havingRaw('SUM(water_consumer_demands.amount) > 0');
+
+            if ($userId) {
+                $data->where('water_consumer_demands.emp_details_id', $userId);
+            }
+            if ($wardId) {
+                $data->where('water_second_consumers.ward_mstr_id', $wardId);
+            }
+            if ($zoneId) {
+                $data->where('water_second_consumers.zone_mstr_id', $zoneId);
+            }
+
+            $perPage = $request->perPage ?? 10;
+            $paginator = $data->paginate($perPage);
+
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ];
+
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true, "", $list);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "");
+        }
+    }
+
+
+    /**
+     * |generate notice on unpaid demand 
+     */
+    // public function generateNotice(Request $request)
+    // {
+    //     $validator = Validator::make($request->all(), [
+    //         'consumerId' => 'required|array',
+    //         'consumerId.*' => 'integer',
+    //         'generated' => 'required|boolean',
+    //         'notice' => 'required|integer|in:1,2,3'
+    //     ]);
+
+    //     if ($validator->fails()) {
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'Validation error',
+    //             'errors' => $validator->errors()
+    //         ], 200);
+    //     }
+
+    //     $noticeNos = [];
+
+    //     try {
+    //         $refConParamId = Config::get('waterConstaint.PARAM_IDS');
+    //         $generated = $request->generated;
+    //         $noticeType =  $request->notice;
+
+    //         // Update generated status for the consumers
+    //         WaterSecondConsumer::whereIn('id', $request->consumerId)
+    //             ->update([
+    //                 'generated' => $generated
+    //             ]);
+
+    //         $mWaterConsumer = WaterSecondConsumer::whereIn('id', $request->consumerId)
+    //             ->get();
+
+    //         foreach ($mWaterConsumer as $water) {
+    //             $idGeneration = new PrefixIdGenerator($refConParamId['AMCN'], 2);
+    //             $noticeNo = $idGeneration->generate();
+    //             switch ($noticeType) {
+    //                 case 1:
+    //                     $water->update([
+    //                         'notice_no_1' => $noticeNo, 'notice' => $noticeType
+    //                     ]);
+    //                     break;
+    //                 case 2:
+    //                     $water->update(['notice_no_2' => $noticeNo, 'notice_2' => $noticeType]);
+    //                     break;
+    //                 case 3:
+    //                     $water->update(['notice_no_3' => $noticeNo, 'notice_3' => $noticeType]);
+    //                     break;
+    //             }
+
+    //             $noticeNos[$water->id] = $noticeNo;
+    //         }
+
+    //         return responseMsgs(true, "", $noticeNos);
+    //     } catch (Exception $e) {
+    //         return responseMsgs(false, $e->getMessage(), "");
+    //     }
+    // }
+
+    public function generateNotice(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'consumerId' => 'required|array',
+            'consumerId.*' => 'integer',
+            'generated' => 'required|boolean',
+            'notice' => 'required|integer|in:1,2,3'
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 200);
+        }
+
+        $noticeNos = [];
+        $consumerIds = $request->consumerId;
+        $noticeType = $request->notice;
+
+        // Initialize arrays to track existing notices
+        $existingNotices = [
+            1 => [],
+            2 => [],
+            3 => []
+        ];
+
+        try {
+            $refConParamId = Config::get('waterConstaint.PARAM_IDS');
+            $generated = $request->generated;
+
+            // Fetch consumers based on IDs
+            $consumers = WaterSecondConsumer::whereIn('id', $consumerIds)->get();
+
+            // Check for existing notices
+            foreach ($consumers as $consumer) {
+                switch ($noticeType) {
+                    case 1:
+                        if (!empty($consumer->notice_no_1)) {
+                            $existingNotices[1][] = $consumer->id;
+                        }
+                        break;
+                    case 2:
+                        if (!empty($consumer->notice_no_2)) {
+                            $existingNotices[2][] = $consumer->id;
+                        }
+                        break;
+                    case 3:
+                        if (!empty($consumer->notice_no_3)) {
+                            $existingNotices[3][] = $consumer->id;
+                        }
+                        break;
+                }
+            }
+
+            $errorMessages = [];
+            foreach ($existingNotices as $type => $ids) {
+                if (!empty($ids)) {
+                    $errorMessages[] = "Notice $type has already been generated for the following consumer IDs: " . implode(', ', $ids);
+                }
+            }
+
+            if (!empty($errorMessages)) {
+                return responseMsgs(false, implode('; ', $errorMessages), "");
+            }
+
+            // Update generated status for consumers
+            WaterSecondConsumer::whereIn('id', $consumerIds)
+                ->update(['generated' => $generated]);
+
+            // Generate notice numbers and update records
+            foreach ($consumerIds as $consumerId) {
+                $consumer = WaterSecondConsumer::find($consumerId);
+                if ($consumer) {
+                    $idGeneration = new PrefixIdGenerator($refConParamId['AMCN'], 2);
+                    $noticeNo = $idGeneration->generate();
+
+                    switch ($noticeType) {
+                        case 1:
+                            $consumer->update(['notice_no_1' => $noticeNo, 'notice' => $noticeType]);
+                            break;
+                        case 2:
+                            $consumer->update(['notice_no_2' => $noticeNo, 'notice_2' => $noticeType]);
+                            break;
+                        case 3:
+                            $consumer->update(['notice_no_3' => $noticeNo, 'notice_3' => $noticeType]);
+                            break;
+                    }
+
+                    $noticeNos[$consumerId] = $noticeNo;
+                }
+            }
+
+            return responseMsgs(true, "Notices generated successfully", $noticeNos);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "");
+        }
+    }
+
+
+
+
+
+    public function generateNoticeList(Request $request)
+    {
+        $now = Carbon::now()->format("Y-m-d");
+
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "uptoDate" => "nullable|date|before_or_equal:$now|date_format:Y-m-d",
+                "userId" => "nullable|digits_between:1,9223372036854775807",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "zoneId" => "nullable|digits_between:1,9223372036854775807",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
+                "notice" => "required|integer|in:1,2,3"
+            ]
+        );
+
+        if ($validated->fails()) {
+            return validationErrorV2($validated);
+        }
+
+        try {
+            $uptoDate = $request->uptoDate ?? $now;
+            $userId = $request->userId;
+            $wardId = $request->wardId;
+            $zoneId = $request->zoneId;
+            $notice = $request->notice;
+
+            $data = waterConsumerDemand::select(
+                "water_second_consumers.id as consumer_id",
+                "water_second_consumers.consumer_no",
+                "water_second_consumers.folio_no as property_no",
+                "zone_masters.zone_name",
+                "ulb_ward_masters.ward_name",
+                "owners.applicant_name",
+                "owners.guardian_name",
+                "owners.mobile_no",
+                "water_second_consumers.category",
+                "water_property_type_mstrs.property_type",
+                DB::raw('SUM(water_consumer_demands.amount) as total_amount'),
+                DB::raw('MIN(water_consumer_demands.demand_from) as earliest_demand_from'),
+                DB::raw('MAX(water_consumer_demands.demand_upto) as latest_demand_upto'),
+                //"water_second_consumers.notice",
+                "water_second_consumers.notice_no_1",
+                "water_second_consumers.notice_no_2",
+                "water_second_consumers.notice_no_3",
+            )
+                ->join('water_second_consumers', 'water_second_consumers.id', 'water_consumer_demands.consumer_id')
+                ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
+                ->leftJoin('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
+                ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_second_consumers.property_type_id')
+                ->join('water_consumer_owners as owners', 'owners.id', 'water_consumer_demands.consumer_id')
+                ->where('water_consumer_demands.is_full_paid', false)
+                ->where('water_consumer_demands.demand_upto', '<=', $uptoDate)
+                ->where('water_second_consumers.generated', true)
+                ->groupBy(
+                    'water_second_consumers.id',
+                    'water_second_consumers.consumer_no',
+                    'water_second_consumers.folio_no',
+                    'zone_masters.zone_name',
+                    'ulb_ward_masters.ward_name',
+                    'owners.applicant_name',
+                    'owners.guardian_name',
+                    'owners.mobile_no',
+                    'water_second_consumers.category',
+                    'water_property_type_mstrs.property_type'
+                )
+                ->havingRaw('SUM(water_consumer_demands.amount) > 0');
+
+            if ($userId) {
+                $data->where('water_consumer_demands.emp_details_id', $userId);
+            }
+            if ($wardId) {
+                $data->where('water_second_consumers.ward_mstr_id', $wardId);
+            }
+            if ($zoneId) {
+                $data->where('water_second_consumers.zone_mstr_id', $zoneId);
+            }
+            if ($notice) {
+                switch ($notice) {
+                    case 1:
+                        $data->where('water_second_consumers.notice', $notice);
+                        break;
+                    case 2:
+                        $data->where('water_second_consumers.notice_2', $notice);
+                        break;
+                    case 3:
+                        $data->where('water_second_consumers.notice_3', $notice);
+                        break;
+                }
+            }
+
+            $perPage = $request->perPage ?? 10;
+            $paginator = $data->paginate($perPage);
+
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true, "Generated Notice Lists", $list);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "");
         }
     }
 }

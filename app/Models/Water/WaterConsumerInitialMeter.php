@@ -29,7 +29,7 @@ class WaterConsumerInitialMeter extends Model
     {
         $mWaterConsumerInitialMeter = new WaterConsumerInitialMeter();
         $mWaterConsumerInitialMeter->consumer_id        = $request->consumerId;
-        $mWaterConsumerInitialMeter->initial_reading    = $request->finalRading;
+        $mWaterConsumerInitialMeter->initial_reading    = $request->finalRading ?? $request->newMeterInitialReading;
         $mWaterConsumerInitialMeter->emp_details_id     = $userDetails['emp_id'] ?? null;
         $mWaterConsumerInitialMeter->citizen_id         = $userDetails['citizen_id'] ?? null;
         $mWaterConsumerInitialMeter->consumer_meter_id  = $meterDetails['meterId'];
@@ -67,7 +67,7 @@ class WaterConsumerInitialMeter extends Model
     {
         return WaterConsumerInitialMeter::select('*')
             ->where('consumer_id', $consumerId)
-            ->where('status',1)
+            ->where('status', 1)
             ->orderByDesc('id')
             ->limit(2)
             ->get();

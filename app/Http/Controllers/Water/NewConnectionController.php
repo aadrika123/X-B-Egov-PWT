@@ -636,9 +636,9 @@ class NewConnectionController extends Controller
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
             $waterList = $this->getWaterApplicatioList($workflowIds, $ulbId)
-                ->whereIn('water_approval_application_details.ward_id', $wardId)
+                ->whereIn('water_applications.ward_id', $wardId)
                 ->where('is_field_verified', true)
-                ->orderByDesc('water_approval_application_details.id')
+                ->orderByDesc('water_applications.id')
                 ->get();
 
             return responseMsgs(true, "field Verified Inbox", remove_null($waterList), 010125, 1.0, "", "POST", "");
@@ -678,7 +678,7 @@ class NewConnectionController extends Controller
             $this->begin();
             # if application is not applied by citizen 
             if ($mWaterApplication->apply_from != $refApplyFrom['1']) {
-                $mWaterApplication->current_role = $mWaterApplication->initiator_role_id;
+                $mWaterApplication->current_role = $mWaterApplication->last_role_id;
                 $mWaterApplication->parked = true;                          //  Pending Status true
                 $mWaterApplication->doc_upload_status = false;              //  Docupload Status false
             }
@@ -1257,9 +1257,13 @@ class NewConnectionController extends Controller
         try {
             $mWfActiveDocument = new WfActiveDocument();
             $mWaterApplication = new WaterApplication();
+            $mWaterApprovalApplications = new WaterApprovalApplicationDetail();
             $moduleId = Config::get('module-constants.WATER_MODULE_ID');
 
             $waterDetails = $mWaterApplication->getApplicationById($req->applicationId)->first();
+            if ($waterDetails == null) {
+                $waterDetails = $mWaterApprovalApplications->getApproveApplication($req->applicationId);
+            }
             if (!$waterDetails)
                 throw new Exception("Application Not Found for this application Id");
 
@@ -2696,8 +2700,8 @@ class NewConnectionController extends Controller
                     ->first();
                 $returnData['final_verify']         = true;
                 $returnData['property_type_name']   = $flipPropertyTypeMapping[$returnData->property_type_id];
-                $returnData['connection_type_name'] = $flipConnectionTypeMapping[$returnData->connection_type_id];
-                $returnData['pipeline_type_name']   = $flipPipelineTypeMapping[$returnData->pipeline_type_id];
+                // $returnData['connection_type_name'] = $flipConnectionTypeMapping[$returnData->connection_type_id];
+                // $returnData['pipeline_type_name']   = $flipPipelineTypeMapping[$returnData->pipeline_type_id];
                 return responseMsgs(true, "JE Inspection details!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
             }
             return responseMsgs(true, "Data not Found!", remove_null($returnData), "", "01", ".ms", "POST", $request->deviceId);
@@ -3136,13 +3140,83 @@ class NewConnectionController extends Controller
     {
         try {
             $articlesSet = array_flip([
-                "a", "an", "the", "and", "but", "or", "for", "nor", "so",
-                "yet", "in", "on", "at", "by", "with", "about", "before", "after",
-                "during", "under", "over", "between", "through", "above", "below", "I", "you", "he",
-                "she", "it", "we", "they", "me", "him", "her", "us", "them", "am", "is", "are", "was",
-                "were", "be", "being", "been", "do", "does", "did", "have", "has", "had", "shall",
-                "will", "should", "would", "may", "might", "must", "can", "could", "this", "that",
-                "these", "those", "my", "your", "his", "her", "its", "our", "their", "oh", "wow", "ouch", "hey", "hello", "hi"
+                "a",
+                "an",
+                "the",
+                "and",
+                "but",
+                "or",
+                "for",
+                "nor",
+                "so",
+                "yet",
+                "in",
+                "on",
+                "at",
+                "by",
+                "with",
+                "about",
+                "before",
+                "after",
+                "during",
+                "under",
+                "over",
+                "between",
+                "through",
+                "above",
+                "below",
+                "I",
+                "you",
+                "he",
+                "she",
+                "it",
+                "we",
+                "they",
+                "me",
+                "him",
+                "her",
+                "us",
+                "them",
+                "am",
+                "is",
+                "are",
+                "was",
+                "were",
+                "be",
+                "being",
+                "been",
+                "do",
+                "does",
+                "did",
+                "have",
+                "has",
+                "had",
+                "shall",
+                "will",
+                "should",
+                "would",
+                "may",
+                "might",
+                "must",
+                "can",
+                "could",
+                "this",
+                "that",
+                "these",
+                "those",
+                "my",
+                "your",
+                "his",
+                "her",
+                "its",
+                "our",
+                "their",
+                "oh",
+                "wow",
+                "ouch",
+                "hey",
+                "hello",
+                "hi"
             ]);
 
             $inputText = $request->input('var');

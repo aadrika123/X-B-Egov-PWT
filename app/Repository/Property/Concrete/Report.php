@@ -928,13 +928,11 @@ class Report implements IReport
                             join users on users.id = wf_roleusermaps.user_id 
                             left join wf_ward_users on wf_ward_users.user_id = wf_roleusermaps.user_id and wf_ward_users.is_suspended = false
                             where wf_roleusermaps.wf_role_id =$roleId
-                            and users.module_id=1
                                 AND wf_roleusermaps.is_suspended = false
                             and users.id <> 76
                             and users.id <> 72
                             and users.id <> 175 
                             and users.suspended = false 
-                            --and users.module_id = 1
                             group by wf_roleusermaps.wf_role_id,wf_roleusermaps.user_id,users.user_name,users.name,wf_roles.role_name
                         )role_user_ward
                     ) users_role

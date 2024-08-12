@@ -26,19 +26,19 @@ class siteAdjustment extends FormRequest
      */
     public function rules()
     {
-        $rules['areaSqft']          = 'required|';
+        $rules['areaSqft']          = 'nullable|';
         $rules['propertyTypeId']    = 'required|int:1,2,3,4,5,6,7,8';
-        $rules['connectionTypeId']  = 'required|int|in:1,2';
+        $rules['connectionTypeId']  = 'nullable|int|in:1,2';
         $rules['latitude']          = 'required|';
         $rules['longitude']         = 'required|';
-        $rules['pipelineTypeId']    = 'required|int|in:1,2';
-        $rules['pipelineSize']      = 'required|int';
-        $rules['pipelineSizeType']  = 'required|in:CI,DI';
-        $rules['diameter']          = 'required|int|in:15,20,25';
-        $rules['pipeQuality']       = 'required|in:GI,HDPE,PVC 80';
+        $rules['pipelineTypeId']    = 'nullable|int|in:1,2';
+        $rules['pipelineSize']      = 'nullable|int';
+        $rules['pipelineSizeType']  = 'required|';
+        $rules['diameter']          = 'nullable|int|in:15,20,25';
+        $rules['pipeQuality']       = 'nullable|in:GI,HDPE,PVC 80';
         // $rules['feruleSize']        = 'required|int|in:6,10,12,16';
         $rules['feruleSize']        = 'required|';
-        $rules['roadType']          = 'required|in:AMC,PWD';
+        $rules['roadType']          = 'required|';
         // $rules['category']          = 'required|in:APL,BPL';
         $rules['category']          = 'required|';
         $rules['tsMap']             = 'required|int|in:0,1';

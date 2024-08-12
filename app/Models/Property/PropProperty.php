@@ -1059,14 +1059,16 @@ class PropProperty extends  PropParamModel #Model
             'prop_properties.ward_mstr_id',
             'prop_properties.prop_address',
             'prop_properties.prop_pin_code',
-            'prop_properties.area_of_plot', 
+            'prop_properties.area_of_plot',
             'prop_properties.landmark',
+            'prop_properties.village_mauja_name',
             'prop_owners.owner_name as applicant_name',
             'prop_owners.mobile_no',
             'prop_owners.email',
+            'prop_owners.owner_name_marathi',
         )
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'prop_properties.ward_mstr_id')
-            ->join('prop_owners','prop_owners.property_id','prop_properties.id')
+            ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
             ->where('holding_no', $holdingNo)
             ->where('prop_properties.status', 1)
             ->first();

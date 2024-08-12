@@ -14,7 +14,7 @@ class WaterParamConnFee extends Model
     /**
      * | get Calcullation charges 
      */
-    public function getCallParameter($propertyId, $refAreaInSqFt)
+    public function getCallParameter($propertyId,)
     {
         if ($propertyId == 1 ||  $propertyId == 7) {
             return WaterParamConnFee::select(
@@ -25,9 +25,9 @@ class WaterParamConnFee extends Model
                 'effective_date',
                 'calculation_type'
             )
-                ->where('property_type_id', $propertyId)
-                ->where('area_from_sqft', '<=', $refAreaInSqFt)
-                ->where('area_upto_sqft', '>=', $refAreaInSqFt);
+                ->where('property_type_id', $propertyId);
+            // ->where('area_from_sqft', '<=', $refAreaInSqFt)
+            // ->where('area_upto_sqft', '>=', $refAreaInSqFt);
         }
         return WaterParamConnFee::select(
             'property_type_id',

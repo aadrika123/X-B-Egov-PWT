@@ -45,6 +45,15 @@ class WaterSiteInspection extends Model
         $saveSiteVerify->ts_map                 =   $req->tsMap;
         $saveSiteVerify->order_officer          =   $refRoleDetails;
         $saveSiteVerify->pipe_type              =   $req->pipeQuality;
+        $saveSiteVerify->pressure_supply        =   $req->pressurewaterSupply;
+        $saveSiteVerify->meter_no               =   $req->meterNo;
+        $saveSiteVerify->initial_reading        =   $req->intialreading;
+        $saveSiteVerify->connection_place       =   $req->connectionPlace;
+        $saveSiteVerify->public_tap             =   $req->noofPublicTap;
+        $saveSiteVerify->time_water_supply      =   $req->timeWaterSupply;
+        $saveSiteVerify->road_width             =   $req->roadWidth;
+        $saveSiteVerify->amc_limit              =   $req->amcLimit;
+        $saveSiteVerify->dimension              =   $req->dimension;
         // $saveSiteVerify->payment_status         =   $paymentstatus;
         $saveSiteVerify->latitude               =   $req->latitude ?? null;
         $saveSiteVerify->longitude              =   $req->longitude ?? null;
@@ -104,7 +113,7 @@ class WaterSiteInspection extends Model
         )
             ->where('apply_connection_id', $applicationId)
             ->where('status', 1)
-            ->orderByDesc('water_site_inspections.id'); 
+            ->orderByDesc('water_site_inspections.id');
     }
 
 

@@ -171,7 +171,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post("consumer/get-consumer-demandV2", "getConsumerDemandsV2");
         Route::post("consumer/get-demand-history", "getConsumerDemandsHistory");
         Route::post("consumer/auto-generate-fixed-demand", "gerateAutoFixedDemand");
-        Route::post('consumer/demand-dues-report', 'consumeDemandDuesReport');
+       
     });
 
 
@@ -196,6 +196,8 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('consumer/reqs/reupload-document', 'reuploadDocument');                                                // 21 ( Reupload Document for Pending Documents)
         Route::post('workflow/get-doc-list-je', 'getDocListForJe');                                             // Workflow
         Route::post('workflow/upload-doc-je', 'uploadWaterDocJe');                                             // Workflow
+        Route::post('workflow/unauthorized-tap-status-update', 'unauthorizedTapUpdateStatus');                                             // Workflow  JE
+
     });
 
     /**
@@ -233,6 +235,12 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('report/tc-visit', 'tcvisitRecordsv2');
         Route::post('reports/tran-deactived-list', 'tranDeactivatedList');
         Route::post('reports/device-type/collection', 'deviceTypeCollection');
+
+        //written by prity pandey
+        #10-08-2024
+        Route::post('reports/demand-dues-report', 'consumeDemandDuesReport');
+        Route::post('reports/generate-notice', 'generateNotice');
+        Route::post('reports/generated-notice-list', 'generateNoticeList');
     });
 
     /**
