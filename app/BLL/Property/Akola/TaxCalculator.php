@@ -121,11 +121,13 @@ class TaxCalculator
             $this->_oldDemand = $priProperty->getAllDemands()->get();
             $paydUptoDemand = $priProperty->PropLastPaidDemands()->get();
             $test = $unPaidDemand->toArray();
-            // list($fromYear, $lastYear) = explode("-", $this->_lastDemand->fyear ?? getFY());
-            // $this->_newForm = $lastYear . "-04-01";
+            list($fromYear, $lastYear) = explode("-", $this->_lastDemand->fyear ?? getFY());
+            $this->_newForm = $lastYear . "-04-01";
             // $this->_propFyearFrom = Carbon::parse($this->_newForm)->format('Y');
             list($fromYear, $lastYear) = explode("-", $this->_oldDemand->min("fyear") ?? getFY());
-            $this->_newForm = $fromYear . "-04-01";
+            if(isset($this->_REQUEST->assessmentType) && ($this->getAssestmentTypeStr() == 'Reassessment')){
+                $this->_newForm = $fromYear . "-04-01";                
+            }
             $this->_propFyearFrom = Carbon::parse($this->_newForm)->format('Y');
         }
 
