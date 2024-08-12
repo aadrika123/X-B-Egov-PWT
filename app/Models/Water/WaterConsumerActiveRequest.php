@@ -261,6 +261,12 @@ class WaterConsumerActiveRequest extends Model
             'water_consumer_complains.address as complainAddress',
             'water_consumer_complains.consumer_no as consumerNoofCompain',
             'water_consumer_active_requests.je_status',
+            "water_road_cutter_charges.road_type",
+            "water_approval_application_details.per_meter",
+            "water_approval_application_details.trade_license as license_no",
+            "water_approval_application_details.mobile_no as basicmobile",
+            "water_approval_application_details.initial_reading",
+            "water_approval_application_details.landmark"
         )
             ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_consumer_active_requests.current_role')
             ->leftjoin('ulb_masters', 'ulb_masters.id', '=', 'water_consumer_active_requests.ulb_id')
@@ -273,6 +279,14 @@ class WaterConsumerActiveRequest extends Model
             ->leftJoin('water_consumer_complains', function ($join) {
                 $join->on('water_consumer_complains.application_id', '=', 'water_consumer_active_requests.id')
                     ->where('water_consumer_complains.status', 1);
+            })
+            ->leftJoin('water_approval_application_details', function ($join) {
+                $join->on('water_approval_application_details.id', '=', 'water_second_consumers.apply_connection_id')
+                    ->where('water_approval_application_details.status', 1);
+            })
+            ->leftJoin('water_road_cutter_charges', function ($join) {
+                $join->on('water_road_cutter_charges.id', '=', 'water_approval_application_details.road_type_id')
+                    ->where('water_road_cutter_charges.status', 1);
             })
             ->where('water_consumer_active_requests.id', $request->applicationId)
             ->where('water_consumer_active_requests.status', true);

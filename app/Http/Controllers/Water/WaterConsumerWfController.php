@@ -793,6 +793,11 @@ class WaterConsumerWfController extends Controller
             ['displayString' => 'Ward No', 'key' => 'WardNo', 'value' => $collectionApplications->ward_name],
             ['displayString' => 'Apply Date', 'key' => 'applyDate', 'value' => $collectionApplications->apply_date],
             ['displayString' => 'Zone', 'key' => 'Zone', 'value' => $collectionApplications->zone_name],
+            ['displayString' => 'Road Width', 'key' => 'RoadWidth', 'value' => $collectionApplications->per_meter],
+            ['displayString' => 'Mobile Number', 'key' => 'MobileNumber', 'value' => $collectionApplications->basicmobile],
+            ['displayString' => 'Road Type', 'key' => 'RoadType', 'value' => $collectionApplications->road_type],
+            ['displayString' => 'Initial Reading', 'key' => 'InitialReading', 'value' => $collectionApplications->initial_reading],
+            ['displayString' => 'Land Mark', 'key' => 'LandMark', 'value' => $collectionApplications->land_mark],
         ];
 
         // Additional details based on charge category ID
