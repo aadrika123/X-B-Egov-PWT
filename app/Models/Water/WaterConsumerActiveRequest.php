@@ -304,7 +304,7 @@ class WaterConsumerActiveRequest extends Model
     /**
      * | Deactivate the doc Upload Status 
      */
-    public function updateVerifyComplainRequest($metaReqs,$userId)
+    public function updateVerifyComplainRequest($metaReqs, $userId)
     {
         return  WaterConsumerActiveRequest::where('id', $metaReqs->applicationId)
             ->where('status', true)
