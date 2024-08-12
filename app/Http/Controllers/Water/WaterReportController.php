@@ -4563,7 +4563,7 @@ class WaterReportController extends Controller
         $noticeNos = [];
         $consumerIds = $request->consumerId;
         $noticeType = $request->notice;
-
+        $now = Carbon::now();
         // Initialize arrays to track existing notices
         $existingNotices = [
             1 => [],
@@ -4623,13 +4623,13 @@ class WaterReportController extends Controller
 
                     switch ($noticeType) {
                         case 1:
-                            $consumer->update(['notice_no_1' => $noticeNo, 'notice' => $noticeType]);
+                            $consumer->update(['notice_no_1' => $noticeNo, 'notice' => $noticeType,'notice_1_generated_at'=>$now]);
                             break;
                         case 2:
-                            $consumer->update(['notice_no_2' => $noticeNo, 'notice_2' => $noticeType]);
+                            $consumer->update(['notice_no_2' => $noticeNo, 'notice_2' => $noticeType,'notice_2_generated_at'=>$now]);
                             break;
                         case 3:
-                            $consumer->update(['notice_no_3' => $noticeNo, 'notice_3' => $noticeType]);
+                            $consumer->update(['notice_no_3' => $noticeNo, 'notice_3' => $noticeType,'notice_3_generated_at'=>$now]);
                             break;
                     }
 
@@ -4800,6 +4800,7 @@ class WaterReportController extends Controller
                 DB::raw('MAX(water_consumer_demands.demand_upto) as latest_demand_upto'),
                 "water_second_consumers.notice_3",
                 "water_second_consumers.notice_no_3",
+                "water_second_consumers.notice_3_generated_at",
             )
                 ->join('water_second_consumers', 'water_second_consumers.id', 'water_consumer_demands.consumer_id')
                 ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
