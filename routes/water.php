@@ -242,6 +242,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('reports/generate-notice', 'generateNotice');
         Route::post('reports/generated-notice-list', 'generateNoticeList');
         Route::post('reports/generated-3rd-notice-list', 'generateNoticeListFinal');
+        Route::post('reports/send-to-JE', 'sendToJe');
     });
 
     /**

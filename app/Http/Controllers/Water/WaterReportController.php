@@ -18,8 +18,11 @@ use Illuminate\Support\Facades\Validator;
 use App\Models\Water\WaterSecondConsumer;
 use  App\Http\Requests\Water\colllectionReport;
 use App\MicroServices\IdGenerator\PrefixIdGenerator;
+use App\Models\WaterTempDisconnection;
+use App\Models\Workflows\WfWorkflow;
 use App\Repository\Water\Concrete\Report;
 use App\Repository\Water\Interfaces\IConsumer;
+use App\Traits\Workflow\Workflow;
 use Illuminate\Support\Facades\App;
 
 /**
@@ -34,6 +37,8 @@ use Illuminate\Support\Facades\App;
 class WaterReportController extends Controller
 {
     use WaterTrait;
+    use Workflow;
+
     private $Repository;
     private $ReportRepository;
     private $_docUrl;
@@ -4643,10 +4648,6 @@ class WaterReportController extends Controller
         }
     }
 
-
-
-
-
     public function generateNoticeList(Request $request)
     {
         $now = Carbon::now()->format("Y-m-d");
@@ -4852,6 +4853,73 @@ class WaterReportController extends Controller
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "Generated Final Notice Lists", $list);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "");
+        }
+    }
+
+
+    public function sendToJe(Request $request)
+    {
+        $now = Carbon::now()->format("Y-m-d");
+
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'consumerId' => 'required|array',
+                'consumerId.*' => 'integer',
+                'jeApplication' => 'required|boolean'
+            ]
+        );
+
+        if ($validated->fails()) {
+            return validationErrorV2($validated);
+        }
+
+        try {
+            $ulbWorkflowObj = new WfWorkflow();
+            //$jeSendList = new WaterTempDisconnection();
+            $ulbId = 2;
+            $consumerIds = $request->consumerId;
+            $jeApplication = $request->jeApplication;
+
+            // Update records in WaterSecondConsumer
+            WaterSecondConsumer::whereIn('id', $consumerIds)
+                ->update(['je_application' => $jeApplication, 'je_application_date' => $now]);
+
+            // Get water details for the given consumer IDs
+            $waterDtls = WaterSecondConsumer::whereIn('id', $consumerIds)
+                ->get();
+
+            $workflowID = Config::get('workflow-constants.WATER_TEMP_DEACTIVATION');
+            $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($workflowID, $ulbId);
+            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);
+            $refFinisherRoleId = $this->getFinisherId($ulbWorkflowId->id);
+            $finisherRoleId = DB::select($refFinisherRoleId);
+            $initiatorRoleId = DB::select($refInitiatorRoleId);
+
+
+            foreach ($waterDtls as $waterDtl) {
+                $jeSendList = new WaterTempDisconnection();
+                $jeSendList->consumer_id = $waterDtl->id;
+                $jeSendList->current_role = collect($initiatorRoleId)->first()->role_id;
+                $jeSendList->initiator = collect($initiatorRoleId)->first()->role_id;
+                $jeSendList->finisher = collect($finisherRoleId)->first()->role_id;
+                $jeSendList->last_role_id = collect($finisherRoleId)->first()->role_id;
+                $jeSendList->workflow_id = $ulbWorkflowId->id;
+                $jeSendList->notice = $waterDtl->notice;
+                $jeSendList->notice_no_1 = $waterDtl->notice_no_1;
+                $jeSendList->notice_no_2 = $waterDtl->notice_no_2;
+                $jeSendList->notice_no_3 = $waterDtl->notice_no_3;
+                $jeSendList->notice_2 = $waterDtl->notice_2;
+                $jeSendList->notice_3 = $waterDtl->notice_3;
+                $jeSendList->notice_1_generated_at = $waterDtl->notice_1_generated_at;
+                $jeSendList->notice_2_generated_at = $waterDtl->notice_2_generated_at;
+                $jeSendList->notice_3_generated_at = $waterDtl->notice_3_generated_at;
+                $jeSendList->save();
+            }
+
+            return responseMsgs(true, "Notice List Send Successfully To JE ", "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "");
         }
