@@ -4563,7 +4563,7 @@ class WaterReportController extends Controller
         $noticeNos = [];
         $consumerIds = $request->consumerId;
         $noticeType = $request->notice;
-
+        $now = Carbon::now();
         // Initialize arrays to track existing notices
         $existingNotices = [
             1 => [],
@@ -4623,13 +4623,13 @@ class WaterReportController extends Controller
 
                     switch ($noticeType) {
                         case 1:
-                            $consumer->update(['notice_no_1' => $noticeNo, 'notice' => $noticeType]);
+                            $consumer->update(['notice_no_1' => $noticeNo, 'notice' => $noticeType,'notice_1_generated_at'=>$now]);
                             break;
                         case 2:
-                            $consumer->update(['notice_no_2' => $noticeNo, 'notice_2' => $noticeType]);
+                            $consumer->update(['notice_no_2' => $noticeNo, 'notice_2' => $noticeType,'notice_2_generated_at'=>$now]);
                             break;
                         case 3:
-                            $consumer->update(['notice_no_3' => $noticeNo, 'notice_3' => $noticeType]);
+                            $consumer->update(['notice_no_3' => $noticeNo, 'notice_3' => $noticeType,'notice_3_generated_at'=>$now]);
                             break;
                     }
 
