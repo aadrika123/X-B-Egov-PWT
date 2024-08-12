@@ -3570,6 +3570,8 @@ class ActiveSafController extends Controller
             $mProperties = new PropProperty();
             $mPropFloors = new PropFloor();
             $mPropOwners = new PropOwner();
+            $mPropSafs = new PropSaf();
+            $safAllDtl = "";
             $propertyDtl = [];
             if ($req->holdingNo) {
                 $properties = $mProperties->getPropDtls()
@@ -3581,6 +3583,10 @@ class ActiveSafController extends Controller
                 $properties = $mProperties->getPropDtls()
                     ->where('prop_properties.id', $req->propertyId)
                     ->first();
+            }
+
+            if ($req->propertyId) {
+                $safAllDtl = $mPropSafs->safDtl($req->propertyId);
             }
             if (!$properties) {
                 throw new Exception("Property Not Found");
@@ -3595,6 +3601,7 @@ class ActiveSafController extends Controller
             $propertyDtl = collect($properties);
             $propertyDtl['floors'] = $floors;
             $propertyDtl['owners'] = $owners;
+            $propertyDtl['Safs'] = $safAllDtl??[];
 
             return responseMsgs(true, "Property Details", remove_null($propertyDtl), "010112", "1.0", "", "POST", $req->deviceId);
         } catch (Exception $e) {

@@ -370,4 +370,18 @@ class PropSaf extends PropParamModel #Model
         }
         return $data;
     }
+
+    public function safDtl($propId)
+    {
+        $prop = (string)$propId;
+        $data =  PropSaf::select(
+                'prop_safs.id','prop_safs.saf_no' ,'prop_safs.assessment_type',
+                'prop_safs_owners.owner_name',
+                'prop_safs_owners.guardian_name',
+            )
+            ->leftJoin('prop_safs_owners', 'prop_safs_owners.saf_id', '=', 'prop_safs.id')
+            ->where('prop_safs.previous_holding_id',$prop)
+            ->get();
+            return $data;
+    }
 }
