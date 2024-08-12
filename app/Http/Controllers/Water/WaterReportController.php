@@ -4798,7 +4798,7 @@ class WaterReportController extends Controller
                 DB::raw('SUM(water_consumer_demands.amount) as total_amount'),
                 DB::raw('MIN(water_consumer_demands.demand_from) as earliest_demand_from'),
                 DB::raw('MAX(water_consumer_demands.demand_upto) as latest_demand_upto'),
-                "water_second_consumers.notice",
+                "water_second_consumers.notice_3",
                 "water_second_consumers.notice_no_3",
             )
                 ->join('water_second_consumers', 'water_second_consumers.id', 'water_consumer_demands.consumer_id')
