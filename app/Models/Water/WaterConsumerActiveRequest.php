@@ -301,6 +301,18 @@ class WaterConsumerActiveRequest extends Model
                 "emp_details_id" => $metaReqs['user_id']
             ]);
     }
+    /**
+     * | Deactivate the doc Upload Status 
+     */
+    public function updateVerifyComplainRequest($metaReqs,$userId)
+    {
+        return  WaterConsumerActiveRequest::where('id', $metaReqs->applicationId)
+            ->where('status', true)
+            ->update([
+                "verify_status" => $metaReqs->status,
+                "emp_details_id" => $userId,
+            ]);
+    }
 
     /**
      * | Get the Application according to user details 
