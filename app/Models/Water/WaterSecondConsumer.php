@@ -827,7 +827,7 @@ class WaterSecondConsumer extends Model
         return  self::select(
             'water_second_consumers.id',
             'water_approval_application_details.id as applicationId',
-            'water_second_consumers.mobile_no',
+            'water_consumer_owners.mobile_no',
             'water_second_consumers.tab_size',
             'water_second_consumers.property_no',
             'water_approval_application_details.status',
