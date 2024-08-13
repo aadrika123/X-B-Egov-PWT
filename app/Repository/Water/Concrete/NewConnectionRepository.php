@@ -1225,7 +1225,7 @@ class NewConnectionRepository implements iNewConnection
             ['displayString' => 'Tab Size',               'key' => 'TabSize',                'value' => $collectionApplications->tab_size],
             ['displayString' => 'Road Width',               'key' => 'RoadWidth',                'value' => $collectionApplications->per_meter],
             ['displayString' => 'Road Type',               'key' => 'RoadType',                'value' => $collectionApplications->road_type],
-            ['displayString' => 'Applied by',               'key' => 'Applied by',                'value' => $collectionApplications->user_type],
+            ['displayString' => 'Applied',               'key' => 'Applied by',                'value' => $collectionApplications->user_type],
         ]);
     }
 
@@ -1323,7 +1323,8 @@ class NewConnectionRepository implements iNewConnection
             ['displayString' => 'Connection Type',      'key' => 'ConnectionType',    'value' => $collectionApplications->connection_type],
             ['displayString' => 'Connection Through',   'key' => 'ConnectionThrough', 'value' => $collectionApplications->connection_through ?? "HOLDING"],
             ['displayString' => 'Apply-Date',           'key' => 'ApplyDate',         'value' => $collectionApplications->apply_date],
-            ['displayString' => 'Total Area (sqt)',     'key' => 'TotalArea',         'value' => $collectionApplications->area_of_plot]
+            ['displayString' => 'Total Area (sqt)',     'key' => 'TotalArea',         'value' => $collectionApplications->area_of_plot],
+            ['displayString' => 'Applied by',     'key' => 'Applied by',         'value' => $collectionApplications->user_type]
         ]);
     }
 
