@@ -1221,11 +1221,11 @@ class NewConnectionRepository implements iNewConnection
             ['displayString' => 'Initial Reading',     'key' => 'InitialReading',      'value' => $collectionApplications->initial_reading],
             ['displayString' => 'MobileNumber',           'key' => 'MobileNumber',      'value' => $collectionApplications->mobile_no],
             ['displayString' => 'Email',               'key' => 'Email',                'value' => $collectionApplications->email],
-            ['displayString' => 'TradeLicense',               'key' => 'TradeLicense',                'value' => $collectionApplications->trade_license],
+            ['displayString' => 'TradeLicense',               'key' => 'TradeLicense',                'value' => $collectionApplications->license_no],
             ['displayString' => 'Tab Size',               'key' => 'TabSize',                'value' => $collectionApplications->tab_size],
             ['displayString' => 'Road Width',               'key' => 'RoadWidth',                'value' => $collectionApplications->per_meter],
             ['displayString' => 'Road Type',               'key' => 'RoadType',                'value' => $collectionApplications->road_type],
-            ['displayString' => 'Applied',               'key' => 'Applied by',                'value' => $collectionApplications->user_type],
+            // ['displayString' => 'Applied',               'key' => 'Applied by',                'value' => $collectionApplications->user_type],
         ]);
     }
 
