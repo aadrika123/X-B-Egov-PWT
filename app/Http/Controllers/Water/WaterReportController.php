@@ -4569,7 +4569,7 @@ class WaterReportController extends Controller
         $noticeNos = [];
         $consumerIds = $request->consumerId;
         $noticeType = $request->notice;
-        $now = Carbon::now();
+        $now = Carbon::now()->format("Y-m-d");
         // Initialize arrays to track existing notices
         $existingNotices = [
             1 => [],
