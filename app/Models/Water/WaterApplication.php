@@ -160,8 +160,8 @@ class WaterApplication extends Model
             'water_connection_type_mstrs.connection_type',
             'wf_roles.role_name AS current_role_name',
             'water_connection_type_mstrs.connection_type',
-            'water_connection_charges.amount',
-            "water_connection_charges.charge_category",
+                'water_connection_charges.amount',
+                "water_connection_charges.charge_category",
             "ulb_ward_masters.ward_name as ward_no",
             "water_road_cutter_charges.road_type",
             "water_applications.per_meter",
@@ -174,7 +174,7 @@ class WaterApplication extends Model
             ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_applications.property_type_id')
             ->join('water_param_pipeline_types', 'water_param_pipeline_types.id', 'water_applications.pipeline_type_id')
             ->join('zone_masters', 'zone_masters.id', 'water_applications.zone_mstr_id')
-            ->join('water_connection_charges', 'water_connection_charges.application_id', 'water_applications.id')
+            ->leftjoin('water_connection_charges', 'water_connection_charges.application_id', 'water_applications.id')
             ->leftjoin('water_road_cutter_charges', 'water_road_cutter_charges.id', 'water_applications.road_type_id')
             ->where('water_applications.id', $request->applicationId)
             ->where('water_applications.status', true);

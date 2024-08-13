@@ -75,7 +75,9 @@ use App\MicroServices\IdGenerator\PrefixIdGenerator;
 use App\Models\Payment\IciciPaymentReq;
 use App\Models\Payment\IciciPaymentResponse;
 use App\Models\Water\WaterApprovalApplicant;
+use App\Models\Water\WaterConnectionTypeCharge;
 use App\Models\Water\WaterIciciResponse;
+use App\Models\Water\WaterRoadCutterCharge;
 use App\Repository\Common\CommonFunction;
 use App\Repository\Water\Interfaces\IConsumer;
 use Illuminate\Support\Facades\App;
@@ -461,12 +463,21 @@ class WaterPaymentController extends Controller
             $mWaterConnectionCharge = new WaterConnectionCharge();
             $mWaterApplicants       = new WaterApplicant();
             $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
+            $mWaterChrges           = new WaterConnectionTypeCharge();
+            $mWaterRoadTypeChages   = new WaterRoadCutterCharge();
 
-            $connectionCatagory = Config::get('waterConstaint.CHARGE_CATAGORY');    
+            $connectionCatagory = Config::get('waterConstaint.CHARGE_CATAGORY');
             $waterDetails = WaterApplication::findOrFail($request->applicationId);
 
             # Check Related Condition
             $refRoleDetails = $this->CheckInspectionCondition($request, $waterDetails);
+
+            $Charges = $mWaterChrges->getChargesByIds($request->feruleSize);
+            if ($request->roadWidth != null) {
+                $GetRoadTypeCharges = $mWaterRoadTypeChages->getRoadCharges($request->roadType);
+                $calculatedAmount = $request->permeter *   $GetRoadTypeCharges->per_meter_amount + $Charges->amount;
+            }
+
 
             # Get the Applied Connection Charge
             $applicationCharge = $mWaterConnectionCharge->getWaterchargesById($request->applicationId)
@@ -474,17 +485,17 @@ class WaterPaymentController extends Controller
                 ->firstOrFail();
 
             $this->begin();
-            // #if applicants details changes then store the
-            // if (collect($changes)->isEmpty()) {
-            //     $mWaterApplicants->saveWaterApplicant($changes, $applicationId);
-            // }
-            // if (collect($changes)->isNotEmpty()) {
-            //     $mWaterApplicants->saveWaterApplicant($changes, $applicationId);
-            // }
+            $meta = [
+                'applicationId'     => $applicationId->id,
+                "amount"            => $calculatedAmount ?? $Charges->amount,
+                "chargeCategory"    => $Charges->charge_category,
+            ];
+
+            $mWaterConnectionCharge->saveWaterCharges($meta);
             # Store the site inspection details
             $mWaterSiteInspection->storeInspectionDetails($request,  $waterDetails, $refRoleDetails);
             $mWaterSiteInspectionsScheduling->saveInspectionStatus($request);
-            $waterDetails->is_field_verified =true;
+            $waterDetails->is_field_verified = true;
 
             $waterDetails->save();
             $this->commit();
