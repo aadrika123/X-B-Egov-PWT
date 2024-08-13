@@ -12,4 +12,5 @@ interface IWaterNewConnection
     public function documentUpload(Request $request);
     public function getUploadDocuments(Request $request);
     public function calWaterConCharge(Request $request);
+    public function rejectedApplication(Request $request);
 }
