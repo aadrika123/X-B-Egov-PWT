@@ -1157,7 +1157,7 @@ class NewConnectionRepository implements iNewConnection
 
         $ownerView = [
             'headerTitle' => 'Owner Details',
-            'tableHead' => ["#", "Owner Name", "Owner NAME Marathi", "Mobile No", "Email", "City", "District"],
+            'tableHead' => ["#", "Owner Name", "Owner NAME Marathi", "Mobile No", "Email",],
             'tableData' => $ownerList
         ];
         $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerView]);
@@ -1293,8 +1293,6 @@ class NewConnectionRepository implements iNewConnection
                 $value['owner_name_marathi'],
                 $value['mobile_no'],
                 $value['email'],
-                $value['city'],
-                $value['district']
             ];
         });
     }
