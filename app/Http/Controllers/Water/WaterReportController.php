@@ -5110,13 +5110,13 @@ class WaterReportController extends Controller
         ]);
 
         try {
-            return $this->getApplicationsDetails($request);
+            return $this->getApplicationsDetailsv1($request);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
 
-    public function getApplicationsDetails($request)
+    public function getApplicationsDetailsv1($request)
     {
 
         $forwardBackward        = new WorkflowMap();
@@ -5222,14 +5222,16 @@ class WaterReportController extends Controller
             ['displayString' => 'Ward No', 'key' => 'WardNo', 'value' => $collectionApplications->ward_name],
             ['displayString' => 'Zone', 'key' => 'Zone', 'value' => $collectionApplications->zone_name],
             ['displayString' => 'Property No', 'key' => 'PropertyNo', 'value' => $collectionApplications->property_no],
+            ['displayString' => 'Connection Type', 'key' => 'ConnectionType', 'value' => $collectionApplications->connection_type],
             ['displayString' => 'Property Type', 'key' => 'PropertyType', 'value' => $collectionApplications->property_type],
             ['displayString' => 'Category', 'key' => 'Category', 'value' => $collectionApplications->category],
             ['displayString' => 'Address', 'key' => 'Address', 'value' => $collectionApplications->address],
-            // ['displayString' => 'Road Width', 'key' => 'RoadWidth', 'value' => $collectionApplications->per_meter], category
-            // ['displayString' => 'Mobile Number', 'key' => 'MobileNumber', 'value' => $collectionApplications->basicmobile],
-            // ['displayString' => 'Road Type', 'key' => 'RoadType', 'value' => $collectionApplications->road_type],
-            // ['displayString' => 'Initial Reading', 'key' => 'InitialReading', 'value' => $collectionApplications->initial_reading],
-            // ['displayString' => 'Land Mark', 'key' => 'LandMark', 'value' => $collectionApplications->land_mark],
+            ['displayString' => 'Road Width', 'key' => 'RoadWidth', 'value' => $collectionApplications->per_meter], 
+            ['displayString' => 'Mobile Number', 'key' => 'MobileNumber', 'value' => $collectionApplications->basicmobile],
+            ['displayString' => 'Road Type', 'key' => 'RoadType', 'value' => $collectionApplications->road_type],
+            ['displayString' => 'Initial Reading', 'key' => 'InitialReading', 'value' => $collectionApplications->initial_reading],
+            ['displayString' => 'Land Mark', 'key' => 'LandMark', 'value' => $collectionApplications->land_mark],
+            ['displayString' => 'Tap Size', 'key' => 'tapSize', 'value' => $collectionApplications->tab_size]
         ];
         $basicDetails = array_merge($commonDetails);
         return collect($basicDetails);
@@ -5247,16 +5249,12 @@ class WaterReportController extends Controller
         $ownerDetail = $ownerName->implode(',');
         $collectionApplications = collect($applicationDetails)->first();
         return new Collection([
-            // ['displayString' => 'Ward No.',             'key' => 'WardNo.',           'value' => $collectionApplications->ward_name],
             ['displayString' => 'Notice1', 'key' => 'noticeNumber1', 'value' => $collectionApplications->notice_no_1],
             ['displayString' => 'Notice2', 'key' => 'noticeNumber2', 'value' => $collectionApplications->notice_no_2],
             ['displayString' => 'Notice3', 'key' => 'noticeNumber3', 'value' => $collectionApplications->notice_no_3],
             ['displayString' => 'Notice Date1', 'key' => 'noticeDate1', 'value' => $collectionApplications->notice_1_generated_at],
             ['displayString' => 'Notice Date2', 'key' => 'noticeDate2', 'value' => $collectionApplications->notice_2_generated_at],
             ['displayString' => 'Notice Date3', 'key' => 'noticeDate3', 'value' => $collectionApplications->notice_3_generated_at],
-            // ['displayString' => 'Zone', 'key' => 'Zone', 'value' => $collectionApplications->zone_name],
-           // ['displayString' => 'Application No.',      'key' => 'ApplicationNo.',    'value' => $collectionApplications->application_no],
-            // ['displayString' => 'Request Type',         'key' => 'RequestType',       'value' => $collectionApplications->charge_category],
             ['displayString' => 'Consumer No ',         'key' => 'Consumer',           'value' => $collectionApplications->consumer_no],
         ]);
     }
