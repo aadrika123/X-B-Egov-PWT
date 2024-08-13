@@ -610,10 +610,10 @@ class WaterApplication extends Model
      * | Save The payment Status 
      * | @param ApplicationId
      */
-    public function updateOnlyPaymentstatus($applicationId)
+    public function updateOnlyFieldtatus($applicationId)
     {
         $activeSaf = WaterApplication::find($applicationId);
-        $activeSaf->payment_status = 1;
+        $activeSaf->is_field_verified = false;
         $activeSaf->save();
     }
 

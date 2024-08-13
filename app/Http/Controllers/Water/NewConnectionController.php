@@ -2572,8 +2572,8 @@ class NewConnectionController extends Controller
             $mWaterSiteInspectionsScheduling->cancelInspectionDateTime($refApplicationId);
             $mWaterConnectionCharge->deactivateSiteCharges($refApplicationId, $refSiteInspection);
             $mWaterPenaltyInstallment->deactivateSitePenalty($refApplicationId, $refSiteInspection);
-            # Check if the payment status is done or not 
-            // $mWaterApplication->updateOnlyPaymentstatus($refApplicationId);                                 // make the payment status of the application true
+            # deactivate Feild verified
+            $mWaterApplication->updateOnlyFieldtatus($refApplicationId);                                 // make the payment status of the application true
             if (!is_null($refSiteInspection)) {
                 $mWaterSiteInspection->deactivateSiteDetails($refSiteInspection->site_inspection_id);
             }
