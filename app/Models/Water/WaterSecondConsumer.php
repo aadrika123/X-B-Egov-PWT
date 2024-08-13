@@ -448,7 +448,11 @@ class WaterSecondConsumer extends Model
     public function fullWaterDetailsv3($request)
     {
         return WaterSecondConsumer::select(
+            'water_second_consumers.notice_no_1',
+            'water_second_consumers.notice_no_2',
             'water_second_consumers.notice_no_3',
+            'water_second_consumers.notice_1_generated_at',
+            'water_second_consumers.notice_2_generated_at',
             'water_second_consumers.notice_3_generated_at',
             'water_second_consumers.consumer_no',
             'water_second_consumers.address',
