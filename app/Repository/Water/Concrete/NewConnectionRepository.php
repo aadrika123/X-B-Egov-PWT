@@ -1225,6 +1225,7 @@ class NewConnectionRepository implements iNewConnection
             ['displayString' => 'Tab Size',               'key' => 'TabSize',                'value' => $collectionApplications->tab_size],
             ['displayString' => 'Road Width',               'key' => 'RoadWidth',                'value' => $collectionApplications->per_meter],
             ['displayString' => 'Road Type',               'key' => 'RoadType',                'value' => $collectionApplications->road_type],
+            ['displayString' => 'Applied by',               'key' => 'Applied by',                'value' => $collectionApplications->user_type],
         ]);
     }
 

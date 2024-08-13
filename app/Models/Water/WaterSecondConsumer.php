@@ -633,19 +633,19 @@ class WaterSecondConsumer extends Model
      * | @param consumerDetails
      * | @return
      */
-    public function saveWaterConsumer($consumerDetails, $consumerNo)
+    public function saveWaterConsumer($consumerDetails, $consumerNo,$siteDetails)
     {
         $mWaterConsumer = new WaterSecondConsumer();
         $mWaterConsumer->apply_connection_id         = $consumerDetails['id'];
         $mWaterConsumer->connection_type_id          = $consumerDetails['connection_type_id'];
         $mWaterConsumer->connection_through_id       = $consumerDetails['connection_through'];
         $mWaterConsumer->pipeline_type_id            = $consumerDetails['pipeline_type_id'];
-        $mWaterConsumer->property_type_id            = $consumerDetails['property_type_id'];
+        $mWaterConsumer->property_type_id            = $siteDetails['property_type_id'];
         $mWaterConsumer->prop_dtl_id                 = $consumerDetails['prop_id'];
         $mWaterConsumer->holding_no                  = $consumerDetails['property_no'];
         $mWaterConsumer->saf_dtl_id                  = $consumerDetails['saf_id'];
         $mWaterConsumer->saf_no                      = $consumerDetails['saf_no'];
-        $mWaterConsumer->category                    = $consumerDetails['category'];
+        $mWaterConsumer->category                    = $siteDetails['category'];
         $mWaterConsumer->ward_mstr_id                = $consumerDetails['ward_id'];
         $mWaterConsumer->zone_mstr_id                = $consumerDetails['zone_mstr_id'];
         $mWaterConsumer->consumer_no                 = $consumerNo;
@@ -664,7 +664,7 @@ class WaterSecondConsumer extends Model
         $mWaterConsumer->user_type                   = $consumerDetails['user_type'];
         $mWaterConsumer->area_sqmt                   = $consumerDetails['area_sqft'];
         $mWaterConsumer->rent_amount                 = $consumerDetails['rent_amount'] ?? null;
-        $mWaterConsumer->tab_size                    = $consumerDetails['tab_size'];
+        $mWaterConsumer->tab_size                    = $siteDetails['ferrule_type'];
         $mWaterConsumer->approve_date                = Carbon::now();
         $mWaterConsumer->connection_date             = Carbon::now();
         $mWaterConsumer->status                      = 4;
