@@ -4958,7 +4958,7 @@ class WaterReportController extends Controller
 
             $inboxDtl = WaterTempDisconnection::select(
                 "water_temp_disconnections.id as disconnection_application_id",
-                "water_temp_disconnections.consumer_id",
+                "water_temp_disconnections.consumer_id as id",
                 "water_second_consumers.consumer_no",
                 "water_temp_disconnections.current_role",
                 "water_temp_disconnections.workflow_id",
@@ -5041,7 +5041,7 @@ class WaterReportController extends Controller
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
             $outDtl = WaterTempDisconnection::select(
                 "water_temp_disconnections.id as disconnection_application_id",
-                "water_temp_disconnections.consumer_id",
+                "water_temp_disconnections.consumer_id as id",
                 "water_second_consumers.consumer_no",
                 "water_temp_disconnections.current_role",
                 "water_temp_disconnections.workflow_id",
