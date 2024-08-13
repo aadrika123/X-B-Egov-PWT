@@ -5105,7 +5105,7 @@ class WaterReportController extends Controller
     {
 
         $request->validate([
-            'id' => "required"
+            'applicationId' => "required"
 
         ]);
 
@@ -5132,7 +5132,7 @@ class WaterReportController extends Controller
             return responseMsg(false, "Application Data Not found!", $request->applicationId);
         }
         //$consumerId = $applicationDetails->pluck('consumer_id');
-        $consumerId = $request->id;
+        $consumerId = $request->applicationId;
         # Ward Name
         $refApplication = collect($applicationDetails)->first();
         // $wardDetails = $mUlbNewWardmap->getWard($refApplication->ward_mstr_id);
