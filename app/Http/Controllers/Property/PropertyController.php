@@ -1363,6 +1363,10 @@ class PropertyController extends Controller
         $mNakkalViewList = new NakkalViewList();
 
         try {
+            $user = Auth()->user();
+            $user_id = $user->id;
+            $user_name = $user->user_name;
+
             $propDetails = $mPropProperty->getPropBasicDtls($req->propId);
             $propFloors = $mPropFloors->getPropFloors($req->propId);
             $propOwner = $mPropOwner->getfirstOwner($req->propId);
@@ -1425,13 +1429,16 @@ class PropertyController extends Controller
                 'property_from' => $minFloorFromDate,
                 'geo_tag_image' =>  $geotaggedImg,
                 'demands'     => $propDemand,
-                'userDetails' => $req->auth,
+               // 'userDetails' => $req->auth,
+                'userDetails' => Auth()->user(),
             ];
 
             $mReqs = [
                 'property_id' => $req->propId,
-                'user_id'     => $req->auth['id'],
-                'user_name'   => $req->auth['name'],
+                // 'user_id'     => $req->auth['id'],
+                // 'user_name'   => $req->auth['name']??null,
+                'user_id'     => authUser($req)->id,
+                'user_name'   => $user_name??null,
             ];
             $mNakkalViewList->store($mReqs);
 

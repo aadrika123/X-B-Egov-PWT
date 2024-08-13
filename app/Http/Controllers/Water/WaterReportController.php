@@ -10,6 +10,7 @@ use App\Traits\Water\WaterTrait;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Water\WaterConsumer as WaterWaterConsumer;
+use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use App\Models\UlbWardMaster;
 use App\Models\Water\WaterConsumer;
 use Illuminate\Support\Facades\Config;
@@ -18,13 +19,17 @@ use Illuminate\Support\Facades\Validator;
 use App\Models\Water\WaterSecondConsumer;
 use  App\Http\Requests\Water\colllectionReport;
 use App\MicroServices\IdGenerator\PrefixIdGenerator;
+use App\Models\CustomDetail;
+use App\Models\Water\WaterConsumerOwner;
 use App\Models\WaterTempDisconnection;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\Workflows\WfWorkflowrolemap;
+use App\Models\WorkflowTrack;
 use App\Repository\Water\Concrete\Report;
 use App\Repository\Water\Interfaces\IConsumer;
 use App\Traits\Workflow\Workflow;
 use Illuminate\Support\Facades\App;
+use Illuminate\Database\Eloquent\Collection;
 
 /**
  * | ----------------------------------------------------------------------------------
@@ -5004,7 +5009,7 @@ class WaterReportController extends Controller
                     "water_second_consumers.address"
                 )
                 ->havingRaw('SUM(water_consumer_demands.amount) > 0')
-                ->get(); 
+                ->get();
 
             return responseMsgs(true, "Notice Generated Details", remove_null($inboxDtl), "", "01", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -5087,12 +5092,213 @@ class WaterReportController extends Controller
                     "water_second_consumers.address"
                 )
                 ->havingRaw('SUM(water_consumer_demands.amount) > 0')
-                ->get(); 
- 
+                ->get();
+
 
             return responseMsgs(true, "Je outbox Details", remove_null($outDtl), "", "01", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), "POST", $req->deviceId);
         }
+    }
+
+    public function viewDetail(Request $request)
+    {
+
+        $request->validate([
+            'consumerId' => "required"
+
+        ]);
+
+        try {
+            return $this->getApplicationsDetails($request);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    public function getApplicationsDetails($request)
+    {
+
+        $forwardBackward        = new WorkflowMap();
+        $mWorkflowTracks        = new WorkflowTrack();
+        $mCustomDetails         = new CustomDetail();
+        $mUlbNewWardmap         = new UlbWardMaster();
+        $mwaterConsumerActive   = new WaterSecondConsumer();
+        $mwaterOwner            = new WaterConsumerOwner();
+        # applicatin details
+        $applicationDetails = $mwaterConsumerActive->fullWaterDetailsV3($request)->get();
+
+        if (collect($applicationDetails)->first() == null) {
+            return responseMsg(false, "Application Data Not found!", $request->applicationId);
+        }
+        //$consumerId = $applicationDetails->pluck('consumer_id');
+        $consumerId = $request->consumerId;
+        # Ward Name
+        $refApplication = collect($applicationDetails)->first();
+        // $wardDetails = $mUlbNewWardmap->getWard($refApplication->ward_mstr_id);
+        # owner Details
+        $ownerDetails = $mwaterOwner->getConsumerOwner($consumerId)->get();
+        $ownerDetail = collect($ownerDetails)->map(function ($value, $key) {
+            return $value;
+        });
+        $aplictionList = [
+            'application_no' => collect($applicationDetails)->first()->application_no,
+            'apply_date' => collect($applicationDetails)->first()->apply_date,
+            'charge_catagory_id' => $applicationDetails->pluck('charge_catagory_id')->first()
+        ];
+
+
+        # DataArray
+        $basicDetails = $this->getBasicDetails($applicationDetails);
+
+        $firstView = [
+            'headerTitle' => 'Basic Details',
+            'data' => $basicDetails
+        ];
+        $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$firstView]);
+        # CardArray
+        $cardDetails = $this->getCardDetails($applicationDetails, $ownerDetail);
+        $chargeCatgory =  $applicationDetails->pluck('charge_category');
+        $chargeCatgoryId = $applicationDetails->pluck('charge_catagory_id')->first();
+        $cardData = [
+            'headerTitle' => $chargeCatgory,
+            'data' => $cardDetails
+        ];
+        $fullDetailsData['fullDetailsData']['cardArray'] = new Collection($cardData);
+        # TableArray
+        $ownerView = [];
+        if ($chargeCatgoryId != 10) {
+            $ownerList = $this->getOwnerDetails($ownerDetail);
+            $ownerView = [
+                'headerTitle' => 'Owner Details',
+                'tableHead' => ["#", "Owner Name", "Guardian Name", "Mobile No", "Email", "City", "District"],
+                'tableData' => $ownerList
+            ];
+        }
+
+        $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerView]);
+
+        # Level comment
+        $mtableId = $applicationDetails->first()->id;
+        $mRefTable = "water_consumer_active_requests.id";
+        $levelComment['levelComment'] = $mWorkflowTracks->getTracksByRefId($mRefTable, $mtableId);
+
+        #citizen comment
+        $refCitizenId = $applicationDetails->first()->citizen_id;
+        $citizenComment['citizenComment'] = $mWorkflowTracks->getCitizenTracks($mRefTable, $mtableId, $refCitizenId);
+
+        # Role Details
+        $data = json_decode(json_encode($applicationDetails->first()), true);
+        $metaReqs = [
+            'customFor' => 'Water Disconnection',
+            'wfRoleId' => $data['current_role'],
+            'workflowId' => $data['workflow_id'],
+            'lastRoleId' => $data['last_role_id']
+        ];
+        $request->request->add($metaReqs);
+        $forwardBackward = $forwardBackward->getRoleDetails($request);
+        $roleDetails['roleDetails'] = collect($forwardBackward)['original']['data'];
+
+        # Timeline Data
+        $timelineData['timelineData'] = collect($request);
+
+        # Departmental Post
+        $custom = $mCustomDetails->getCustomDetails($request);
+        $departmentPost['departmentalPost'] = collect($custom)['original']['data'];
+        # Payments Details
+        $returnValues = array_merge($aplictionList, $fullDetailsData, $levelComment, $citizenComment, $roleDetails, $timelineData, $departmentPost);
+        return responseMsgs(true, "listed Data!", remove_null($returnValues), "", "02", ".ms", "POST", "");
+    }
+    /**
+     * Function for returning basic details data
+     */
+    public function getBasicDetails($applicationDetails)
+    {
+        $collectionApplications = collect($applicationDetails)->first();
+        $basicDetails = [];
+
+        // Common basic details
+        $commonDetails = [
+            ['displayString' => 'Ward No', 'key' => 'WardNo', 'value' => $collectionApplications->ward_name],
+            ['displayString' => 'Apply Date', 'key' => 'applyDate', 'value' => $collectionApplications->apply_date],
+            ['displayString' => 'Zone', 'key' => 'Zone', 'value' => $collectionApplications->zone_name],
+            ['displayString' => 'Road Width', 'key' => 'RoadWidth', 'value' => $collectionApplications->per_meter],
+            ['displayString' => 'Mobile Number', 'key' => 'MobileNumber', 'value' => $collectionApplications->basicmobile],
+            ['displayString' => 'Road Type', 'key' => 'RoadType', 'value' => $collectionApplications->road_type],
+            ['displayString' => 'Initial Reading', 'key' => 'InitialReading', 'value' => $collectionApplications->initial_reading],
+            ['displayString' => 'Land Mark', 'key' => 'LandMark', 'value' => $collectionApplications->land_mark],
+        ];
+
+        // Additional details based on charge category ID
+        if ($collectionApplications->charge_catagory_id != 10) {
+            $basicDetails = array_merge($commonDetails, [
+                ['displayString' => 'Tap Size', 'key' => 'tapSize', 'value' => $collectionApplications->tab_size],
+                ['displayString' => 'Property Type', 'key' => 'propertyType', 'value' => $collectionApplications->property_type],
+                ['displayString' => 'Address', 'key' => 'Address', 'value' => $collectionApplications->address],
+                ['displayString' => 'Category', 'key' => 'category', 'value' => $collectionApplications->category],
+            ]);
+
+            // Add specific fields based on the charge category ID
+            switch ($collectionApplications->charge_catagory_id) {
+                case 6:
+                    $basicDetails[] = ['displayString' => 'New Name', 'key' => 'NewName', 'value' => $collectionApplications->new_name];
+                    break;
+                case 7:
+                    $basicDetails[] = ['displayString' => 'New Meter No', 'key' => 'NewMeterNo', 'value' => $collectionApplications->newMeterNo];
+                    $basicDetails[] = ['displayString' => 'Old Meter No', 'key' => 'OldMeterNo', 'value' => $collectionApplications->meter_no];
+                    break;
+                case 8:
+                    $basicDetails[] = ['displayString' => 'New Property Type', 'key' => 'NewPropertyType', 'value' => $collectionApplications->newPropertyType];
+                    $basicDetails[] = ['displayString' => 'New Category', 'key' => 'NewCategory', 'value' => $collectionApplications->newCategory];
+                    break;
+                case 9:
+                    $basicDetails[] = ['displayString' => 'New Tap Size', 'key' => 'NewTapSize', 'value' => $collectionApplications->newTabSize];
+                    break;
+            }
+        } else {
+            $basicDetails = array_merge($commonDetails, [
+                ['displayString' => 'City', 'key' => 'City',                    'value' => $collectionApplications->city],
+                ['displayString' => 'ComplainerName', 'key' => 'ComplainerName', 'value' => $collectionApplications->respodent_name],
+                ['displayString' => 'Address', 'key' => 'Address',                 'value' => $collectionApplications->complainAddress],
+                ['displayString' => 'Mobile No', 'key' => 'mobileNo',               'value' => $collectionApplications->mobile_no],
+                ['displayString' => 'Consumer No', 'key' => 'consumerNo',            'value' => $collectionApplications->consumerNoofCompain],
+                ['displayString' => 'Je Status', 'key' => 'JeStatus',            'value' => $collectionApplications->je_status],
+            ]);
+        }
+
+        return collect($basicDetails);
+    }
+
+
+    /**
+     * return data fro card details 
+     */
+    public function getCardDetails($applicationDetails, $ownerDetail)
+    {
+        $ownerName = collect($ownerDetail)->map(function ($value) {
+            return $value['owner_name'];
+        });
+        $ownerDetail = $ownerName->implode(',');
+        $collectionApplications = collect($applicationDetails)->first();
+        return new Collection([
+            ['displayString' => 'Ward No.',             'key' => 'WardNo.',           'value' => $collectionApplications->ward_name],
+            ['displayString' => 'Application No.',      'key' => 'ApplicationNo.',    'value' => $collectionApplications->application_no],
+            ['displayString' => 'Request Type',         'key' => 'RequestType',       'value' => $collectionApplications->charge_category],
+            ['displayString' => 'Consumer No ',         'key' => 'Consumer',           'value' => $collectionApplications->consumer_no],
+        ]);
+    }
+    public function getOwnerDetails($ownerDetails)
+    {
+        return collect($ownerDetails)->map(function ($value, $key) {
+            return [
+                $key + 1,
+                $value['applicant_name'],
+                $value['guardian_name'],
+                $value['mobile_no'],
+                $value['email'],
+                $value['city'],
+                $value['district']
+            ];
+        });
     }
 }

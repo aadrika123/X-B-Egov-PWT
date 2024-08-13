@@ -443,6 +443,76 @@ class WaterSecondConsumer extends Model
             ->orderBy('water_consumer_initial_meters.id', 'DESC')
             ->first();
     }
+    public function fullWaterDetailsv3($request)
+    {
+        return WaterSecondConsumer::select(
+            'water_second_consumers.notice_no_3',
+            'water_second_consumers.notice_3_generated_at',
+            'water_second_consumers.consumer_no',
+            'water_temp_disconnections.current_role',
+            'water_consumer_meters.meter_no',
+            'water_consumer_meters.connection_type',
+            'water_consumer_meters.initial_reading',
+            'water_consumer_meters.final_meter_reading',
+            'water_consumer_initial_meters.initial_reading as finalReading',
+            'ulb_masters.ulb_name',
+            'water_second_consumers.property_no',
+            'water_property_type_mstrs.property_type',
+            'zone_masters.zone_name',
+            'water_consumer_demands.demand_from',
+            'water_consumer_demands.demand_upto',
+            'water_consumer_demands.balance_amount',
+            DB::raw("string_agg(water_consumer_owners.applicant_name,',') as applicant_name"),
+            DB::raw("string_agg(water_consumer_owners.mobile_no::VARCHAR,',') as mobile_no"),
+            DB::raw("string_agg(water_consumer_owners.guardian_name,',') as guardian_name"),
+            DB::raw("string_agg(water_consumer_owners.email,',') as email"),
+            "ulb_masters.association_with",
+            "ulb_masters.current_website",
+            "ulb_masters.logo",
+            DB::raw('ulb_ward_masters.ward_name as ward_number'),
+            DB::raw("
+                CASE
+                    WHEN water_consumer_demands.paid_status = 1 THEN 'Paid'
+                    WHEN water_consumer_demands.paid_status = 0 THEN 'Unpaid'
+                    ELSE 'unknown'
+                END AS payment_status
+            ")
+        )
+            ->join('water_temp_disconnections', 'water_temp_disconnections.consumer_id', '=', 'water_second_consumers.id')
+            ->leftjoin('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
+            ->leftjoin('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_second_consumers.property_type_id')
+            ->leftjoin('water_consumer_initial_meters', 'water_consumer_initial_meters.consumer_id', 'water_second_consumers.id')
+            ->leftjoin("water_consumer_owners", 'water_consumer_owners.consumer_id', 'water_second_consumers.id')
+            ->leftjoin('ulb_masters', 'ulb_masters.id', 'water_second_consumers.ulb_id')
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_second_consumers.ward_mstr_id')
+            ->leftjoin('water_consumer_meters', 'water_consumer_meters.consumer_id', 'water_second_consumers.id')
+            ->leftjoin('water_second_connection_charges', 'water_second_connection_charges.consumer_id', 'water_second_consumers.id')
+            ->leftjoin('water_consumer_demands', 'water_consumer_demands.consumer_id', '=', 'water_second_consumers.id')
+            ->where('water_second_consumers.id', $request->consumerId)
+            ->where('water_second_consumers.status', 1)
+            ->orderBy('water_consumer_initial_meters.id', 'DESC')
+            ->groupBy(
+                'water_second_consumers.id',
+                'water_second_consumers.consumer_no',
+                'water_consumer_meters.meter_no',
+                'water_consumer_meters.connection_type',
+                'water_consumer_meters.initial_reading',
+                'water_consumer_meters.final_meter_reading',
+                'ulb_masters.ulb_name',
+                'ulb_masters.association_with',
+                "ulb_masters.logo",
+                "ulb_masters.current_website",
+                'ulb_ward_masters.ward_name',
+                'water_consumer_initial_meters.initial_reading',
+                'water_property_type_mstrs.property_type',
+                'zone_masters.zone_name',
+                'water_consumer_initial_meters.id',
+                'water_consumer_demands.paid_status',
+                'water_consumer_demands.demand_from',
+                'water_consumer_demands.demand_upto',
+                'water_consumer_demands.balance_amount'
+            );
+    }
     /**
      * | Get consumer 
      */

@@ -245,6 +245,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('reports/send-to-JE', 'sendToJe');
         Route::post('JeInbox', 'jeInbox');
         Route::post('JeOutbox', 'jeOutbox');
+        Route::post('JeViewApplicationDetail', 'viewDetail');
     });
 
     /**
