@@ -73,6 +73,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('admin/application/site-inspection-details', 'getSiteInspectionDetails');           // Workflow/Admin
         Route::post('admin/application/cancel-inspection-scheduling', 'cancelSiteInspection');          // Workflow/Admin
         Route::post('admin/application/je-site-details', 'getJeSiteDetails');                           // Workflow/Admin
+        Route::post('admin/application/je-site-details', 'getJeSiteDetails');                           // Workflow/Admin
         Route::post('admin/application/online-technical-inspection', 'onlineSiteInspection');           // Workflow
         Route::post('admin/application/technical-inspection-details', 'getTechnicalInsDetails');        // Workflow
         // Route::post('search-holding-saf', 'searchHoldingsaf');
@@ -246,6 +247,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('JeInbox', 'jeInbox');
         Route::post('JeOutbox', 'jeOutbox');
         Route::post('JeViewApplicationDetail', 'viewDetail');
+        Route::post('JeGetDocList', 'DocToUpload');
     });
 
     /**

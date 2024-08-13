@@ -9,4 +9,11 @@ class WaterTempDisconnection extends Model
 {
     use HasFactory;
     protected $connection = 'pgsql_water';
+
+    public function getActiveReqById($id)
+    {
+        return WaterTempDisconnection::where('consumer_id', $id)
+            ->where('status', 1);
+    }
+
 }
