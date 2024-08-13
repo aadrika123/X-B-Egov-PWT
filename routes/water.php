@@ -248,6 +248,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('JeOutbox', 'jeOutbox');
         Route::post('JeViewApplicationDetail', 'viewDetail');
         Route::post('JeGetDocList', 'DocToUpload');
+        Route::post('JeUploadDocument', 'DocUpload');
     });
 
     /**

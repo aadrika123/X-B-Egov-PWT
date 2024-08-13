@@ -16,4 +16,10 @@ class WaterTempDisconnection extends Model
             ->where('status', 1);
     }
 
+    public function fullDetails($req)
+    {
+        return WaterTempDisconnection::where('consumer_id', $req->applicationId)
+            ->where('status', 1);
+    }
+
 }

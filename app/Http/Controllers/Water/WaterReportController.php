@@ -32,6 +32,7 @@ use App\Repository\Water\Interfaces\IConsumer;
 use App\Traits\Workflow\Workflow;
 use Illuminate\Support\Facades\App;
 use Illuminate\Database\Eloquent\Collection;
+use App\MicroServices\DocUpload;
 
 /**
  * | ----------------------------------------------------------------------------------
@@ -5377,4 +5378,100 @@ class WaterReportController extends Controller
         });
         return $filteredDocs;
     }
+
+    public function DocUpload(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                "applicationId" => "required|numeric",
+                "document"      => "required|mimes:pdf,jpeg,png,jpg|max:2048",
+                "docCode"       => "required",
+                "docCategory"   => "required",                                  // Recheck in case of undefined
+                "ownerId"       => "nullable|numeric"
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $user               = authUser($req);
+            $metaReqs           = array();
+            $applicationId      = $req->applicationId;
+            $document           = $req->document;
+            $docUpload          = new DocUpload;
+            $mWfActiveDocument  = new WfActiveDocument();
+            $mWaterApplication  = new WaterTempDisconnection();
+            $relativePath       = Config::get('waterConstaint.WATER_RELATIVE_PATH');
+            $refmoduleId        = Config::get('module-constants.WATER_MODULE_ID');
+
+            $getWaterDetails    = $mWaterApplication->fullDetails($req)->firstOrFail();
+            $refImageName       = $req->docRefName;
+            $refImageName       = $getWaterDetails->id . '-' . str_replace(' ', '_', $refImageName);
+            $imageName          = $docUpload->upload($refImageName, $document, $relativePath);
+
+            $metaReqs = [
+                'moduleId'      => $refmoduleId,
+                'activeId'      => $getWaterDetails->consumer_id,
+                'workflowId'    => $getWaterDetails->workflow_id,
+                'ulbId'         => $getWaterDetails->ulb_id ?? 2,
+                'relativePath'  => $relativePath,
+                'document'      => $imageName,
+                'docCode'       => $req->docCode,
+                'ownerDtlId'    => $req->ownerId,
+                'docCategory'   => $req->docCategory,
+                'auth'          => $req->auth
+            ];
+
+            // # Check the diff in user and citizen
+            // if ($user->user_type == "Citizen") {                                                // Static
+            //     $isCitizen = true;
+            //     $this->checkParamForDocUpload($isCitizen, $getWaterDetails, $user);
+            // } else {
+            //     $isCitizen = false;
+            //     $this->checkParamForDocUpload($isCitizen, $getWaterDetails, $user);
+            // }
+
+            DB::beginTransaction();
+            $ifDocExist = $mWfActiveDocument->isDocCategoryExists($getWaterDetails->id, $getWaterDetails->workflow_id, $refmoduleId, $req->docCategory, $req->ownerId)->first();   // Checking if the document is already existing or not
+            $metaReqs = new Request($metaReqs);
+            if (collect($ifDocExist)->isEmpty()) {
+                $mWfActiveDocument->postDocuments($metaReqs);
+            }
+            if (collect($ifDocExist)->isNotEmpty()) {
+                $mWfActiveDocument->editDocuments($ifDocExist, $metaReqs);
+            }
+
+            #check full doc upload
+            // $refCheckDocument = $this->checkFullDocUpload($req);
+
+            # Update the Doc Upload Satus in Application Table
+            // if ($refCheckDocument->contains(false)) {
+            //     $mWaterApplication->deactivateUploadStatus($applicationId);
+            // } else {
+            //     $this->updateWaterStatus($req, $getWaterDetails);
+            // }
+
+            # if the application is parked and btc s
+            // if ($getWaterDetails->parked == true) {
+            //     $mWfActiveDocument->deactivateRejectedDoc($metaReqs);
+            //     $refReq = new Request([
+            //         'applicationId' => $applicationId
+            //     ]);
+            //     $documentList = $this->getDocListForJe($refReq);
+            //     $DocList = collect($documentList)['original']['data'];
+            //     $refVerifyStatus = $DocList->where('doc_category', '!=', $req->docCategory)->pluck('verify_status');
+            //     if (!in_array(2, $refVerifyStatus->toArray())) {                                    // Static "2"
+            //         $status = false;
+            //         $mWaterApplication->updateParkedstatus($status, $applicationId);
+            //     }
+            // }
+            DB::commit();
+            return responseMsgs(true, "Document Uploadation Successful", "", "", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            DB::rollback();
+            return responseMsgs(false, $e->getMessage(), "", "", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
 }
