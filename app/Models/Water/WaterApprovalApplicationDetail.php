@@ -194,7 +194,7 @@ class WaterApprovalApplicationDetail extends Model
             'water_approval_application_details.address',
             'water_approval_application_details.holding_no',
             'water_approval_application_details.saf_no',
-            "water_approval_application_details.category",
+            "water_second_consumers.category",
             'water_approval_application_details.mobile_no',
             'water_second_consumers.consumer_no',
             'ulb_ward_masters.ward_name',
@@ -226,7 +226,7 @@ class WaterApprovalApplicationDetail extends Model
                 'ulb_masters.ulb_name',
                 'ulb_masters.logo',
                 'ulb_masters.association_with',
-                "water_approval_application_details.category"
+                "water_second_consumers.category"
             );
     }
 
