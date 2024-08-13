@@ -3026,7 +3026,7 @@ class NewConnectionController extends Controller
             $mWaterNewConnection    = new WaterNewConnection();
             $mWaterApplication      = new WaterApplication();
             $mWaterApplicant        = new WaterApplicant();
-            $mWaterCharges          = new WaterConnectionCharge();
+            // $mWaterCharges          = new WaterConnectionCharge();
             $mWorkflowTrack         = new WorkflowTrack();
             $mWaterChrges           = new WaterConnectionTypeCharge();
             $mPropProperty          = new PropProperty();
@@ -3097,11 +3097,11 @@ class NewConnectionController extends Controller
 
             # collect the application charges 
 
-            $Charges = $mWaterChrges->getChargesByIds($tabSize);
-            if ($req->roadType != null) {
-                $GetRoadTypeCharges = $mWaterRoadTypeChages->getRoadCharges($req->roadType);
-                $calculatedAmount = $req->permeter *   $GetRoadTypeCharges->per_meter_amount + $Charges->amount;
-            }
+            // $Charges = $mWaterChrges->getChargesByIds($tabSize);
+            // if ($req->roadType != null) {
+            //     $GetRoadTypeCharges = $mWaterRoadTypeChages->getRoadCharges($req->roadType);
+            //     $calculatedAmount = $req->permeter *   $GetRoadTypeCharges->per_meter_amount + $Charges->amount;
+            // }
 
 
             $this->begin();
@@ -3114,8 +3114,8 @@ class NewConnectionController extends Controller
 
             $meta = [
                 'applicationId'     => $applicationId->id,
-                "amount"            => $calculatedAmount ?? $Charges->amount,
-                "chargeCategory"    => $Charges->charge_category,
+                // "amount"            => $calculatedAmount ?? $Charges->amount,
+                // "chargeCategory"    => $Charges->charge_category,
             ];
 
             # water applicant
@@ -3123,7 +3123,7 @@ class NewConnectionController extends Controller
                 $mWaterApplicant->saveWaterApplicant($meta, $owners);
             }
 
-            $mWaterApplicant = $mWaterCharges->saveWaterCharges($meta);
+            // $mWaterApplicant = $mWaterCharges->saveWaterCharges($meta);
             # save for  work flow track
             $metaReqs = new Request(
                 [
