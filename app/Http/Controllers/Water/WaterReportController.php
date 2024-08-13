@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\Validator;
 use App\Models\Water\WaterSecondConsumer;
 use  App\Http\Requests\Water\colllectionReport;
 use App\MicroServices\IdGenerator\PrefixIdGenerator;
+use App\Models\Advertisements\RefRequiredDocument;
+use App\Models\Workflows\WfActiveDocument;
 use App\Models\CustomDetail;
 use App\Models\Water\WaterConsumerOwner;
 use App\Models\WaterTempDisconnection;
@@ -30,6 +32,7 @@ use App\Repository\Water\Interfaces\IConsumer;
 use App\Traits\Workflow\Workflow;
 use Illuminate\Support\Facades\App;
 use Illuminate\Database\Eloquent\Collection;
+use App\MicroServices\DocUpload;
 
 /**
  * | ----------------------------------------------------------------------------------
@@ -5110,13 +5113,13 @@ class WaterReportController extends Controller
         ]);
 
         try {
-            return $this->getApplicationsDetails($request);
+            return $this->getApplicationsDetailsv1($request);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
 
-    public function getApplicationsDetails($request)
+    public function getApplicationsDetailsv1($request)
     {
 
         $forwardBackward        = new WorkflowMap();
@@ -5168,13 +5171,13 @@ class WaterReportController extends Controller
         # TableArray
         $ownerView = [];
         //if ($chargeCatgoryId != 10) {
-            $ownerList = $this->getOwnerDetails($ownerDetail);
-            $ownerView = [
-                'headerTitle' => 'Owner Details',
-                'tableHead' => ["#", "Owner Name", "Guardian Name", "Mobile No", "Email", "City", "District"],
-                'tableData' => $ownerList
-            ];
-       // }
+        $ownerList = $this->getOwnerDetails($ownerDetail);
+        $ownerView = [
+            'headerTitle' => 'Owner Details',
+            'tableHead' => ["#", "Owner Name", "Guardian Name", "Mobile No", "Email", "City", "District"],
+            'tableData' => $ownerList
+        ];
+        // }
 
         $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerView]);
 
@@ -5222,20 +5225,22 @@ class WaterReportController extends Controller
             ['displayString' => 'Ward No', 'key' => 'WardNo', 'value' => $collectionApplications->ward_name],
             ['displayString' => 'Zone', 'key' => 'Zone', 'value' => $collectionApplications->zone_name],
             ['displayString' => 'Property No', 'key' => 'PropertyNo', 'value' => $collectionApplications->property_no],
+            ['displayString' => 'Connection Type', 'key' => 'ConnectionType', 'value' => $collectionApplications->connection_type],
             ['displayString' => 'Property Type', 'key' => 'PropertyType', 'value' => $collectionApplications->property_type],
             ['displayString' => 'Category', 'key' => 'Category', 'value' => $collectionApplications->category],
             ['displayString' => 'Address', 'key' => 'Address', 'value' => $collectionApplications->address],
-            // ['displayString' => 'Road Width', 'key' => 'RoadWidth', 'value' => $collectionApplications->per_meter], category
-            // ['displayString' => 'Mobile Number', 'key' => 'MobileNumber', 'value' => $collectionApplications->basicmobile],
-            // ['displayString' => 'Road Type', 'key' => 'RoadType', 'value' => $collectionApplications->road_type],
-            // ['displayString' => 'Initial Reading', 'key' => 'InitialReading', 'value' => $collectionApplications->initial_reading],
-            // ['displayString' => 'Land Mark', 'key' => 'LandMark', 'value' => $collectionApplications->land_mark],
+            ['displayString' => 'Road Width', 'key' => 'RoadWidth', 'value' => $collectionApplications->per_meter],
+            ['displayString' => 'Mobile Number', 'key' => 'MobileNumber', 'value' => $collectionApplications->basicmobile],
+            ['displayString' => 'Road Type', 'key' => 'RoadType', 'value' => $collectionApplications->road_type],
+            ['displayString' => 'Initial Reading', 'key' => 'InitialReading', 'value' => $collectionApplications->initial_reading],
+            ['displayString' => 'Land Mark', 'key' => 'LandMark', 'value' => $collectionApplications->land_mark],
+            ['displayString' => 'Tap Size', 'key' => 'tapSize', 'value' => $collectionApplications->tab_size]
         ];
         $basicDetails = array_merge($commonDetails);
         return collect($basicDetails);
     }
 
-    
+
     /**
      * return data fro card details 
      */
@@ -5247,16 +5252,12 @@ class WaterReportController extends Controller
         $ownerDetail = $ownerName->implode(',');
         $collectionApplications = collect($applicationDetails)->first();
         return new Collection([
-            // ['displayString' => 'Ward No.',             'key' => 'WardNo.',           'value' => $collectionApplications->ward_name],
             ['displayString' => 'Notice1', 'key' => 'noticeNumber1', 'value' => $collectionApplications->notice_no_1],
             ['displayString' => 'Notice2', 'key' => 'noticeNumber2', 'value' => $collectionApplications->notice_no_2],
             ['displayString' => 'Notice3', 'key' => 'noticeNumber3', 'value' => $collectionApplications->notice_no_3],
             ['displayString' => 'Notice Date1', 'key' => 'noticeDate1', 'value' => $collectionApplications->notice_1_generated_at],
             ['displayString' => 'Notice Date2', 'key' => 'noticeDate2', 'value' => $collectionApplications->notice_2_generated_at],
             ['displayString' => 'Notice Date3', 'key' => 'noticeDate3', 'value' => $collectionApplications->notice_3_generated_at],
-            // ['displayString' => 'Zone', 'key' => 'Zone', 'value' => $collectionApplications->zone_name],
-           // ['displayString' => 'Application No.',      'key' => 'ApplicationNo.',    'value' => $collectionApplications->application_no],
-            // ['displayString' => 'Request Type',         'key' => 'RequestType',       'value' => $collectionApplications->charge_category],
             ['displayString' => 'Consumer No ',         'key' => 'Consumer',           'value' => $collectionApplications->consumer_no],
         ]);
     }
@@ -5274,4 +5275,203 @@ class WaterReportController extends Controller
             ];
         });
     }
+
+    public function DocToUpload(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'applicationId' => 'required|numeric'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $mWaterApplication  = new WaterTempDisconnection();
+            $refWaterApplication = $mWaterApplication->getActiveReqById($req->applicationId)->first();
+            if (!$refWaterApplication) {
+                throw new Exception("Application Not Found for this id");
+            }
+            $documentList = $this->getWaterDocLists($refWaterApplication, $req);
+            $waterTypeDocs['listDocs'] = collect($documentList)->map(function ($value, $key) use ($refWaterApplication) {
+                return $this->filterDocument($value, $refWaterApplication)->first();
+            });
+
+            $totalDocLists = collect($waterTypeDocs); //->merge($waterOwnerDocs);
+            $totalDocLists['docUploadStatus'] = $refWaterApplication->doc_upload_status;
+            $totalDocLists['docVerifyStatus'] = $refWaterApplication->doc_status;
+            return responseMsgs(true, "", remove_null($totalDocLists), "010203", "", "", 'POST', "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
+        }
+    }
+
+    public function getWaterDocLists($application, $req)
+    {
+        $mRefReqDocs    = new RefRequiredDocument();
+        $moduleId       = Config::get('module-constants.WATER_MODULE_ID')??2;
+        $type = ["SITE REPORT"];
+        //$type = "SITE REPORT";
+        return $mRefReqDocs->getCollectiveDocByCode($moduleId, $type);
+    }
+
+    public function filterDocument($documentList, $refWaterApplication, $ownerId = null)
+    {
+        $mWfActiveDocument  = new WfActiveDocument();
+        $applicationId      = $refWaterApplication->id;
+        $workflowId         = $refWaterApplication->workflow_id;
+        $moduleId           = Config::get('module-constants.WATER_MODULE_ID');
+        $uploadedDocs       = $mWfActiveDocument->getDocByRefIdsV4($applicationId, $workflowId, $moduleId);
+
+        $explodeDocs = collect(explode('#', $documentList->requirements));
+        $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $ownerId, $documentList) {
+
+            # var defining
+            $document   = explode(',', $explodeDoc);
+            $key        = array_shift($document);
+            $label      = array_shift($document);
+            $documents  = collect();
+
+            collect($document)->map(function ($item) use ($uploadedDocs, $documents, $ownerId, $documentList) {
+                $uploadedDoc = $uploadedDocs->where('doc_code', $item)
+                    ->where('owner_dtl_id', $ownerId)
+                    ->first();
+                if ($uploadedDoc) {
+                    $path = $this->readDocumentPath($uploadedDoc->doc_path);
+                    $fullDocPath = !empty(trim($uploadedDoc->doc_path)) ? $path : null;
+                    $response = [
+                        "uploadedDocId" => $uploadedDoc->id ?? "",
+                        "documentCode"  => $item,
+                        "ownerId"       => $uploadedDoc->owner_dtl_id ?? "",
+                        "docPath"       => $fullDocPath ?? "",
+                        "verifyStatus"  => $uploadedDoc->verify_status ?? "",
+                        "remarks"       => $uploadedDoc->remarks ?? "",
+                    ];
+                    $documents->push($response);
+                }
+            });
+            $reqDoc['docType']      = $key;
+            $reqDoc['uploadedDoc']  = $documents->last();
+            $reqDoc['docName']      = substr($label, 1, -1);
+            // $reqDoc['refDocName'] = substr($label, 1, -1);
+
+            $reqDoc['masters'] = collect($document)->map(function ($doc) use ($uploadedDocs) {
+                $uploadedDoc = $uploadedDocs->where('doc_code', $doc)->first();
+                $strLower = strtolower($doc);
+                $strReplace = str_replace('_', ' ', $strLower);
+                if (isset($uploadedDoc)) {
+                    $path =  $this->readDocumentPath($uploadedDoc->doc_path);
+                    $fullDocPath = !empty(trim($uploadedDoc->doc_path)) ? $path : null;
+                }
+                $arr = [
+                    "documentCode"  => $doc,
+                    "docVal"        => ucwords($strReplace),
+                    "uploadedDoc"   => $fullDocPath ?? "",
+                    "uploadedDocId" => $uploadedDoc->id ?? "",
+                    "verifyStatus'" => $uploadedDoc->verify_status ?? "",
+                    "remarks"       => $uploadedDoc->remarks ?? "",
+                ];
+                return $arr;
+            });
+            return $reqDoc;
+        });
+        return $filteredDocs;
+    }
+
+    public function DocUpload(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                "applicationId" => "required|numeric",
+                "document"      => "required|mimes:pdf,jpeg,png,jpg|max:2048",
+                "docCode"       => "required",
+                "docCategory"   => "required",                                  // Recheck in case of undefined
+                "ownerId"       => "nullable|numeric"
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $user               = authUser($req);
+            $metaReqs           = array();
+            $applicationId      = $req->applicationId;
+            $document           = $req->document;
+            $docUpload          = new DocUpload;
+            $mWfActiveDocument  = new WfActiveDocument();
+            $mWaterApplication  = new WaterTempDisconnection();
+            $relativePath       = Config::get('waterConstaint.WATER_RELATIVE_PATH');
+            $refmoduleId        = Config::get('module-constants.WATER_MODULE_ID');
+
+            $getWaterDetails    = $mWaterApplication->fullDetails($req)->firstOrFail();
+            $refImageName       = $req->docRefName;
+            $refImageName       = $getWaterDetails->id . '-' . str_replace(' ', '_', $refImageName);
+            $imageName          = $docUpload->upload($refImageName, $document, $relativePath);
+
+            $metaReqs = [
+                'moduleId'      => $refmoduleId,
+                'activeId'      => $getWaterDetails->consumer_id,
+                'workflowId'    => $getWaterDetails->workflow_id,
+                'ulbId'         => $getWaterDetails->ulb_id ?? 2,
+                'relativePath'  => $relativePath,
+                'document'      => $imageName,
+                'docCode'       => $req->docCode,
+                'ownerDtlId'    => $req->ownerId,
+                'docCategory'   => $req->docCategory,
+                'auth'          => $req->auth
+            ];
+
+            // # Check the diff in user and citizen
+            // if ($user->user_type == "Citizen") {                                                // Static
+            //     $isCitizen = true;
+            //     $this->checkParamForDocUpload($isCitizen, $getWaterDetails, $user);
+            // } else {
+            //     $isCitizen = false;
+            //     $this->checkParamForDocUpload($isCitizen, $getWaterDetails, $user);
+            // }
+
+            DB::beginTransaction();
+            $ifDocExist = $mWfActiveDocument->isDocCategoryExists($getWaterDetails->id, $getWaterDetails->workflow_id, $refmoduleId, $req->docCategory, $req->ownerId)->first();   // Checking if the document is already existing or not
+            $metaReqs = new Request($metaReqs);
+            if (collect($ifDocExist)->isEmpty()) {
+                $mWfActiveDocument->postDocuments($metaReqs);
+            }
+            if (collect($ifDocExist)->isNotEmpty()) {
+                $mWfActiveDocument->editDocuments($ifDocExist, $metaReqs);
+            }
+
+            #check full doc upload
+            // $refCheckDocument = $this->checkFullDocUpload($req);
+
+            # Update the Doc Upload Satus in Application Table
+            // if ($refCheckDocument->contains(false)) {
+            //     $mWaterApplication->deactivateUploadStatus($applicationId);
+            // } else {
+            //     $this->updateWaterStatus($req, $getWaterDetails);
+            // }
+
+            # if the application is parked and btc s
+            // if ($getWaterDetails->parked == true) {
+            //     $mWfActiveDocument->deactivateRejectedDoc($metaReqs);
+            //     $refReq = new Request([
+            //         'applicationId' => $applicationId
+            //     ]);
+            //     $documentList = $this->getDocListForJe($refReq);
+            //     $DocList = collect($documentList)['original']['data'];
+            //     $refVerifyStatus = $DocList->where('doc_category', '!=', $req->docCategory)->pluck('verify_status');
+            //     if (!in_array(2, $refVerifyStatus->toArray())) {                                    // Static "2"
+            //         $status = false;
+            //         $mWaterApplication->updateParkedstatus($status, $applicationId);
+            //     }
+            // }
+            DB::commit();
+            return responseMsgs(true, "Document Uploadation Successful", "", "", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            DB::rollback();
+            return responseMsgs(false, $e->getMessage(), "", "", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
 }

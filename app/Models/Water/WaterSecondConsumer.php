@@ -463,8 +463,9 @@ class WaterSecondConsumer extends Model
             'water_temp_disconnections.last_role_id',
             'water_consumer_meters.meter_no',
             'water_consumer_meters.connection_type',
-            'water_consumer_meters.initial_reading',
-            'water_consumer_meters.final_meter_reading',
+            'water_connection_type_mstrs.connection_type',
+            // 'water_consumer_meters.initial_reading',
+            // 'water_consumer_meters.final_meter_reading',
             'water_consumer_initial_meters.initial_reading as finalReading',
             'ulb_masters.ulb_name',
             'water_second_consumers.property_no',
@@ -474,6 +475,7 @@ class WaterSecondConsumer extends Model
             'water_consumer_demands.demand_upto',
             'water_consumer_demands.balance_amount',
             "water_approval_application_details.per_meter",
+            "water_road_cutter_charges.road_type",
             "water_approval_application_details.trade_license as license_no",
             "water_approval_application_details.mobile_no as basicmobile",
             "water_approval_application_details.initial_reading",
@@ -498,6 +500,11 @@ class WaterSecondConsumer extends Model
                 $join->on('water_approval_application_details.id', '=', 'water_second_consumers.apply_connection_id')
                     ->where('water_approval_application_details.status', 1);
             })
+            ->leftJoin('water_road_cutter_charges', function ($join) {
+                $join->on('water_road_cutter_charges.id', '=', 'water_approval_application_details.road_type_id')
+                    ->where('water_road_cutter_charges.status', 1);
+            })
+            ->leftjoin('water_connection_type_mstrs','water_connection_type_mstrs.id','=','water_second_consumers.connection_type_id')
             ->join('water_temp_disconnections', 'water_temp_disconnections.consumer_id', '=', 'water_second_consumers.id')
             ->leftJoin('zone_masters', 'zone_masters.id', '=', 'water_second_consumers.zone_mstr_id')
             ->leftJoin('water_property_type_mstrs', 'water_property_type_mstrs.id', '=', 'water_second_consumers.property_type_id')
@@ -526,6 +533,7 @@ class WaterSecondConsumer extends Model
                 'water_consumer_meters.final_meter_reading',
                 'water_consumer_initial_meters.initial_reading',
                 'ulb_masters.ulb_name',
+                'water_connection_type_mstrs.connection_type',
                 'water_second_consumers.property_no',
                 'water_property_type_mstrs.property_type',
                 'zone_masters.zone_name',
@@ -543,6 +551,8 @@ class WaterSecondConsumer extends Model
                 "water_approval_application_details.mobile_no",
                 "water_approval_application_details.initial_reading",
                 "water_approval_application_details.landmark",
+                "water_approval_application_details.tab_size",
+                'water_road_cutter_charges.road_type'
             );
     }
 
