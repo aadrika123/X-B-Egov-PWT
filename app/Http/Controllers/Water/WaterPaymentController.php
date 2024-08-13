@@ -474,19 +474,40 @@ class WaterPaymentController extends Controller
 
             $Charges = $mWaterChrges->getChargesByIds($request->feruleSize);
             if ($request->roadWidth != null) {
-                $GetRoadTypeCharges = $mWaterRoadTypeChages->getRoadCharges($request->roadType);
-                $calculatedAmount = $request->permeter *   $GetRoadTypeCharges->per_meter_amount + $Charges->amount;
+                // Use a switch statement to determine the roadType value
+                switch ($request->roadType) {
+                    case 'Damber Road':
+                        $roadType = 1;
+                        break;
+                    case 'Concrete Road':
+                        $roadType = 2;
+                        break;
+                    case 'Khadikaran Road':
+                        $roadType = 3;
+                        break;
+                    case 'Muddy Road':
+                        $roadType = 4;
+                        break;
+                    default:
+                        $roadType = $request->roadType; // Use the original value if it doesn't match any known type
+                        break;
+                }
+            
+            if ($request->roadWidth != null) {
+                if($request->roadType == 'Damber Road')
+                $GetRoadTypeCharges = $mWaterRoadTypeChages->getRoadCharges($roadType);
+                $calculatedAmount = $request->roadWidth *   $GetRoadTypeCharges->per_meter_amount + $Charges->amount;
             }
 
 
             # Get the Applied Connection Charge
-            $applicationCharge = $mWaterConnectionCharge->getWaterchargesById($request->applicationId)
-                ->where('charge_category', '!=', $connectionCatagory['SITE_INSPECTON'])
-                ->firstOrFail();
+            // $applicationCharge = $mWaterConnectionCharge->getWaterchargesById($request->applicationId)
+            //     ->where('charge_category', '!=', $connectionCatagory['SITE_INSPECTON'])
+            //     ->firstOrFail();
 
             $this->begin();
             $meta = [
-                'applicationId'     => $applicationId->id,
+                'applicationId'     => $request->applicationId,
                 "amount"            => $calculatedAmount ?? $Charges->amount,
                 "chargeCategory"    => $Charges->charge_category,
             ];
@@ -500,7 +521,8 @@ class WaterPaymentController extends Controller
             $waterDetails->save();
             $this->commit();
             return responseMsgs(true, "Site Inspection Done!", $request->applicationId, "", "01", "ms", "POST", "");
-        } catch (Exception $e) {
+        }
+     } catch (Exception $e) {
             $this->rollback();
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
         }
