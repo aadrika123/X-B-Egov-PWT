@@ -502,7 +502,7 @@ class WaterSecondConsumer extends Model
             ->leftJoin('water_consumer_meters', 'water_consumer_meters.consumer_id', '=', 'water_second_consumers.id')
             ->leftJoin('water_second_connection_charges', 'water_second_connection_charges.consumer_id', '=', 'water_second_consumers.id')
             ->leftJoin('water_consumer_demands', 'water_consumer_demands.consumer_id', '=', 'water_second_consumers.id')
-            ->where('water_second_consumers.id', $request->consumerId)
+            ->where('water_second_consumers.id', $request->id)
             ->where('water_second_consumers.status', 1)
             ->orderBy('water_consumer_initial_meters.id', 'DESC')
             ->groupBy(
