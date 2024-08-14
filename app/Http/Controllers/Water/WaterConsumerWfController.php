@@ -137,7 +137,7 @@ class WaterConsumerWfController extends Controller
             } else {
                 $workflowIds = ['193'];
             }
-            
+
 
 
             $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
@@ -673,7 +673,7 @@ class WaterConsumerWfController extends Controller
         $waterTrack->saveTrack($request);
 
         #update Verify Status
-        $mWaterConsumerActive->updateVerifyComplainRequest($request,$userId);
+        $mWaterConsumerActive->updateVerifyComplainRequest($request, $userId);
     }
     /**
      * get all applications details by id from workflow
@@ -1691,7 +1691,7 @@ class WaterConsumerWfController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
-     /**
+    /**
      * | check the application for back to citizen case
      * | check for the
         | Check who can use BTC operatio 
@@ -1760,7 +1760,7 @@ class WaterConsumerWfController extends Controller
         try {
             $mWfWardUser = new WfWardUser();
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
-            $userId = authUser($req)->id;   
+            $userId = authUser($req)->id;
             $ulbId = authUser($req)->ulb_id;
             $mDeviceId = $req->deviceId ?? "";
 
@@ -1777,7 +1777,70 @@ class WaterConsumerWfController extends Controller
             $filterWaterList = collect($waterList)->unique('id')->values();
             return responseMsgs(true, "BTC Inbox List", remove_null($filterWaterList), "", 1.0, "560ms", "POST", $mDeviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", 010123, 1.0, "271ms", "POST", );
+            return responseMsgs(false, $e->getMessage(), "", 010123, 1.0, "271ms", "POST",);
+        }
+    }
+    /**
+     * | Application's Post Escalated
+        | Serial No :
+     */
+    public function postEscalate(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "escalateStatus" => "required|int",
+                "applicationId" => "required|int",
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $userId = authUser($request)->id;
+            $applicationId = $request->applicationId;
+            $applicationsData = WaterConsumerActiveRequest::find($applicationId);
+            if (!$applicationsData) {
+                throw new Exception("Application details not found!");
+            }
+            $applicationsData->is_escalate = $request->escalateStatus;
+            $applicationsData->escalate_by = $userId;
+            $applicationsData->save();
+            return responseMsgs(true, $request->escalateStatus == 1 ? 'Water is Escalated' : "Water is removed from Escalated", '', "", "1.0", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+    /**
+     * | Water Special Inbox
+     * | excalated applications
+        | Serial No :
+     */
+    public function waterSpecialInbox(Request $request)
+    {
+        try {
+            $mWfWardUser            = new WfWardUser();
+            $mWfWorkflowRoleMaps    = new WfWorkflowrolemap();
+            $userId = authUser($request)->id;
+            $ulbId  = authUser($request)->ulb_id;
+
+            $occupiedWard = $mWfWardUser->getWardsByUserId($userId);                        // Get All Occupied Ward By user id using trait
+            $wardId = $occupiedWard->map(function ($item, $key) {                           // Filter All ward_id in an array using laravel collections
+                return $item->ward_id;
+            });
+
+            $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+
+            $waterData = $this->getWaterRequestList($workflowIds, $ulbId)                              // Repository function to get SAF Details
+                ->where('water_consumer_active_requests.is_escalate', 1)
+                // ->whereIn('water_consumer_active_requests.ward_id', $wardId)
+                ->orderByDesc('water_consumer_active_requests.id')
+                ->get();
+            $filterWaterList = collect($waterData)->unique('id')->values();
+            return responseMsgs(true, "Data Fetched", remove_null($filterWaterList), "010107", "1.0", "251ms", "POST", "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "0.1", ".ms", "POST", $request->deviceId);
         }
     }
 }

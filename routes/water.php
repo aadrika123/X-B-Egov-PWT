@@ -170,7 +170,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('consumer/get-connection-list', 'getConnectionList');
         Route::post('consumer/demands-correction', 'updateConsumerDemands');
         Route::post("consumer/demands-correct", "AutoCorrectDemand");
-        
+
         Route::post("consumer/get-demand-history", "getConsumerDemandsHistory");
         Route::post("consumer/auto-generate-fixed-demand", "gerateAutoFixedDemand");
     });
@@ -200,6 +200,8 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('workflow/unauthorized-tap-status-update', 'unauthorizedTapUpdateStatus');                                             // Workflow  JE
         Route::post('consumer/req/back-to-citizen', 'backToCitizen');                                                // Workflow
         Route::post('consumer/req/btc-inbox', 'btcInbox');                                                           // Workflow
+        Route::post('consumer/req/special-inbox', 'waterSpecialInbox');                                              // Workflow
+        Route::post('consumer/req/escalate', 'postEscalate');                                                        // Workflow           
 
     });
 
