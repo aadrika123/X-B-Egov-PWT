@@ -2018,7 +2018,7 @@ class NewConnectionController extends Controller
                     break;
                 case ("applicantName"):
                     $paramenter = strtoupper($paramenter);
-                    $waterReturnDetails = $mWaterConsumer->getDetailByOwnerDetails($refstring, $paramenter)->paginate($pages);
+                    $waterReturnDetails = $mWaterConsumer->getConsumerByItsDetailsV3($request, $refstring, $paramenter, $wardId, $zoneId, $zone)->paginate($pages);
                     if (!$waterReturnDetails)
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;

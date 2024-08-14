@@ -241,6 +241,78 @@ class WaterSecondConsumer extends Model
                 return $query->where('water_second_consumers.zone', $zone);
             });
     }
+    /**
+     * |consumer search by consumer name
+     */
+    public function getConsumerByItsDetailsV3($req, $key, $refNo, $wardId, $zoneId, $zone)
+    {
+        return WaterSecondConsumer::select([
+            DB::raw("
+                water_consumer_demands.id AS demand_id,
+                    water_consumer_demands.consumer_id,
+                    water_consumer_demands.due_balance_amount,
+                CASE
+                    WHEN water_consumer_demands.due_balance_amount <=0  THEN true
+                    else false
+                    END AS paid_status,
+                CASE
+                    WHEN water_consumer_demands.due_balance_amount >0  THEN 'Unpaid'
+                    else 'Paid'
+                    END AS payment_status,
+                water_consumer_demands.consumer_id,
+                ROUND(water_consumer_demands.due_balance_amount, 2) as balance_amount,
+                water_second_consumers.id AS id,
+                water_second_consumers.consumer_no,
+                water_second_consumers.folio_no as property_no,
+                water_second_consumers.address,
+                water_second_consumers.folio_no,
+                zone_masters.zone_name,
+                ulb_ward_masters.ward_name,
+                wco.applicant_name as owner_name,
+                wco.mobile_no as mobile_no               
+                "),
+
+        ])
+            ->leftJoin(
+                DB::raw("(
+                            SELECT consumer_id,
+                                string_agg(wcd.id::text,', ') as id,
+                                sum(balance_amount) as balance_amount ,
+                                sum(amount) amount,	
+                                sum(due_balance_amount) as due_balance_amount
+                            FROM water_consumer_demands AS wcd
+                            WHERE status = true and  balance_amount >0 
+                            group by consumer_id
+                            ORDER BY consumer_id
+                        ) AS water_consumer_demands
+                "),
+                function ($join) {
+                    $join->on("water_consumer_demands.consumer_id", "=", "water_second_consumers.id");
+                }
+            )
+            ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
+            ->join(DB::raw("(
+                    select string_agg(wco.applicant_name, ',') as applicant_name,
+                        string_agg(wco.mobile_no, ',') as mobile_no,
+                        string_agg(wco.email, ',') as email,
+                        consumer_id
+                    from water_consumer_owners wco
+                    where status = true
+                    group by consumer_id
+                ) as wco"), 'water_second_consumers.id', '=', 'wco.consumer_id')
+            ->leftjoin('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
+            ->where('water_second_consumers.status', 1)
+            ->where('wco.' . $key, 'LIKE', '%' . $refNo . '%')
+            ->when($wardId, function ($query) use ($wardId) {
+                return $query->where('water_second_consumers.ward_mstr_id', $wardId);
+            })
+            ->when($zoneId, function ($query) use ($zoneId) {
+                return $query->where('water_second_consumers.zone_mstr_id', $zoneId);
+            })
+            ->when($zone, function ($query) use ($zone) {
+                return $query->where('water_second_consumers.zone', $zone);
+            });
+    }
 
     /**
      * | get the water consumer detaials by Owner details
