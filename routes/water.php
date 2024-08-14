@@ -98,7 +98,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
 
         Route::post('master/get-listed-details', 'getWaterMasterData');                                 // Admin/ Citizen
         Route::post('consumer/get-payment-history', 'getConsumerPaymentHistory');                       // Consumer               // use in consumer part
-        Route::post('admin/application/generate-payment-receipt', 'generateOfflinePaymentReceipt');     // Citizen / Admin
+       
         Route::post('consumer/calculate-month-demand', 'callDemandByMonth');                            // Admin/Consumer
         Route::post('application/payment/get-payment-history', 'getApplicationPaymentHistory');         // Admin/Consumer
         Route::post('consumer/offline-demand-payment', 'offlineDemandPayment');                         // Consumer
@@ -298,6 +298,7 @@ Route::controller(WaterPaymentController::class)->group(function () {
     Route::post('citizen/demand/generate-payment-receipt', 'generateDemandPaymentReceipt');
     Route::post('citizen/get-payment-history', 'getConsumerPaymentHistory');
     Route::post('consumer/demand/generate-payment-receipt', 'generateDemandPaymentReceipt');        // Admin/ Citizen          // use in consumer part
+    Route::post('admin/application/generate-payment-receipt', 'generateOfflinePaymentReceipt');     // Citizen / Admin
     // Route::post('')
 });
 
