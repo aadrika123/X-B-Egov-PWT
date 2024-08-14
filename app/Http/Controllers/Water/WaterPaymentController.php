@@ -494,7 +494,6 @@ class WaterPaymentController extends Controller
                 }
 
                 if ($request->roadWidth != null) {
-                    if ($request->roadType == 'Damber Road')
                         $GetRoadTypeCharges = $mWaterRoadTypeChages->getRoadCharges($roadType);
                     $calculatedAmount = $request->roadWidth *   $GetRoadTypeCharges->per_meter_amount + $Charges->amount;
                 }
