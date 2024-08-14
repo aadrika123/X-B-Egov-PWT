@@ -1832,7 +1832,7 @@ class WaterConsumerWfController extends Controller
             $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
-            $waterData = $this->getWaterRequestList($workflowIds, $ulbId)                              // Repository function to get SAF Details
+            $waterData = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)                              // Repository function to get SAF Details
                 ->where('water_consumer_active_requests.is_escalate', 1)
                 // ->whereIn('water_consumer_active_requests.ward_id', $wardId)
                 ->orderByDesc('water_consumer_active_requests.id')
