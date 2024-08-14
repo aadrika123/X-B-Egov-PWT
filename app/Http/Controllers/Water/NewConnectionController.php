@@ -307,9 +307,9 @@ class NewConnectionController extends Controller
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
             $waterData = $this->getWaterApplicatioList($workflowIds, $ulbId)                              // Repository function to get SAF Details
-                ->where('water_approval_application_details.is_escalate', 1)
-                ->whereIn('water_approval_application_details.ward_id', $wardId)
-                ->orderByDesc('water_approval_application_details.id')
+                ->where('water_applications.is_escalate', 1)
+                ->whereIn('water_applications.ward_id', $wardId)
+                ->orderByDesc('water_applications.id')
                 ->get();
             $filterWaterList = collect($waterData)->unique('id')->values();
             return responseMsgs(true, "Data Fetched", remove_null($filterWaterList), "010107", "1.0", "251ms", "POST", "");
