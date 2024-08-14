@@ -47,8 +47,10 @@ class WaterRejectionApplicationDetail extends Model
             "ulb_ward_masters.ward_name as ward_no",
             "water_road_cutter_charges.road_type",
             "water_rejection_application_details.per_meter",
-            "water_rejection_application_details.trade_license as license_no"
+            "water_rejection_application_details.trade_license as license_no",
+            "workflow_tracks.message as reason"
         )
+
             ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_rejection_application_details.current_role')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_rejection_application_details.ulb_id')
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_rejection_application_details.ward_id')
@@ -58,6 +60,14 @@ class WaterRejectionApplicationDetail extends Model
             ->join('zone_masters', 'zone_masters.id', 'water_rejection_application_details.zone_mstr_id')
             ->join('water_connection_charges', 'water_connection_charges.application_id', 'water_rejection_application_details.id')
             ->leftjoin('water_road_cutter_charges', 'water_road_cutter_charges.id', 'water_rejection_application_details.road_type_id')
+            ->leftJoin('workflow_tracks', function ($join) use ($request) {
+                $join->on('workflow_tracks.ref_table_id_value', 'water_rejection_application_details.id')
+                    ->where('workflow_tracks.verification_status', 0)
+                    ->where('workflow_tracks.module_id', 2)
+                    ->where('workflow_tracks.status', true)
+                    ->where('workflow_tracks.message', '<>', null)
+                    ->where('workflow_tracks.ref_table_id_value', $request->applicationId);;
+            })
             ->where('water_rejection_application_details.id', $request->applicationId)
             ->where('water_rejection_application_details.status', true);
     }
