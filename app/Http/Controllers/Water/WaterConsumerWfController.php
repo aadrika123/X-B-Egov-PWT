@@ -1119,9 +1119,9 @@ class WaterConsumerWfController extends Controller
         $appDetails = WaterConsumerActiveRequest::find($applicationId);
         $totalUploadedDocs = $mWfActiveDocument->totalUploadedDocs($applicationId, $appDetails->workflow_id, $moduleId);
         if ($totalRequireDocs == $totalUploadedDocs) {
-            $appDetails->doc_upload_status = '1';
+            $appDetails->doc_upload_status = true;
             $appDetails->doc_verify_status = '0';
-            $appDetails->parked = NULL;
+            $appDetails->parked = false;
             $appDetails->save();
         } else {
             $appDetails->doc_upload_status = '0';

@@ -149,7 +149,7 @@ trait WaterTrait
             // ->leftjoin('ulb_masters AS um', 'um.id', 'water_consumer_active_requests.ulb_id')
             ->where('water_consumer_active_requests.status', 1)
             // ->where('water_consumer_active_requests.payment_status', 1)
-            // ->where('water_consumer_active_requests.ulb_id', $ulbId)
+            ->where('water_consumer_active_requests.ulb_id', $ulbId)
             ->whereIn('water_consumer_active_requests.workflow_id', $workflowIds);
     }
 
