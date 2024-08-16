@@ -782,6 +782,7 @@ class Report implements IReport
                 //         })
                 // )
                 ->GET();
+                
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $data, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
