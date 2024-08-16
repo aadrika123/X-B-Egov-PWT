@@ -5532,4 +5532,37 @@ class WaterReportController extends Controller
                 break;
         }
     }
+
+    public function getDiscUploadDocuments(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'applicationId' => 'required|numeric'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $mWfActiveDocument    = new WfActiveDocument();
+            $mWaterActiveRequestApplication = new WaterTempDisconnection();
+            $moduleId = Config::get('module-constants.WATER_MODULE_ID');
+
+            $waterDetails = $mWaterActiveRequestApplication->getActiveReqById($req->applicationId)->first();
+            if (!$waterDetails)
+                throw new Exception("Application Not Found for this application Id");
+
+            $workflowId = $waterDetails->workflow_id;
+            $documents = $mWfActiveDocument->getWaterDocsByAppNo($req->applicationId, $workflowId, $moduleId);
+            $returnData = collect($documents)->map(function ($value) {                          // Static
+                $path =  $this->readDocumentPath($value->ref_doc_path);
+                $value->doc_path = !empty(trim($value->ref_doc_path)) ? $path : null;
+                return $value;
+            });
+            return responseMsgs(true, "Uploaded Documents", remove_null($returnData), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
 }
