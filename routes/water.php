@@ -98,7 +98,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
 
         Route::post('master/get-listed-details', 'getWaterMasterData');                                 // Admin/ Citizen
         Route::post('consumer/get-payment-history', 'getConsumerPaymentHistory');                       // Consumer               // use in consumer part
-       
+
         Route::post('consumer/calculate-month-demand', 'callDemandByMonth');                            // Admin/Consumer
         Route::post('application/payment/get-payment-history', 'getApplicationPaymentHistory');         // Admin/Consumer
         Route::post('consumer/offline-demand-payment', 'offlineDemandPayment');                         // Consumer
@@ -202,6 +202,8 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('consumer/req/btc-inbox', 'btcInbox');                                                           // Workflow
         Route::post('consumer/req/special-inbox', 'waterSpecialInbox');                                              // Workflow
         Route::post('consumer/req/escalate', 'postEscalate');                                                        // Workflow           
+        Route::post("consumer/reconnect-consumer", "reconnectConsumer");                      // Reconnect Consumer Citizen Side 
+
 
     });
 

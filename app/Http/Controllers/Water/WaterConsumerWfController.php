@@ -33,6 +33,7 @@ use App\Models\Water\WaterConsumerMeter;
 use App\Http\Controllers\Water\WaterConsumer;
 use App\MicroServices\DocUpload;
 use App\Models\Water\WaterConnectionCharge;
+use App\Models\Water\WaterReconnectConsumer;
 use App\Models\Water\WaterTran;
 use App\Models\Workflows\WfWardUser;
 use App\Repository\Water\Concrete\WaterNewConnection;
@@ -1841,6 +1842,44 @@ class WaterConsumerWfController extends Controller
             return responseMsgs(true, "Data Fetched", remove_null($filterWaterList), "010107", "1.0", "251ms", "POST", "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "0.1", ".ms", "POST", $request->deviceId);
+        }
+    }
+
+    /**
+     * | Reconnect Consumer Request
+     * | Created By Arshad
+     * 
+     */
+    public function reconnectConsumer(Request $request)
+    {
+
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'consumerId'        => 'required|integer',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        try {
+            $user = authUser($request);
+            $user = $user->id;
+            $userType = $user->user_type;
+            $mWaterSecondConsumer = new WaterSecondConsumer();
+            $mWaterReconnectConsumer = new WaterReconnectConsumer();
+            $waterConsumerDetails = $mWaterSecondConsumer->consumerDetails($request->consumerId)->first();
+            if (!$waterConsumerDetails) {
+                throw new Exception('Consumer Not Found');
+            }
+            #check Consumer 
+            $WaterReconnectConsumer = $mWaterReconnectConsumer->getConsumerDetails($request->consumerId);
+            if ($WaterReconnectConsumer) {
+                throw new Exception('Already Reconnect Applied');
+            }
+            $this->begin();
+        } catch (Exception $e) {
+            $this->rollback();
+            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
         }
     }
 }

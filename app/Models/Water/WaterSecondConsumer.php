@@ -1066,4 +1066,5 @@ class WaterSecondConsumer extends Model
         // ->whereIn('water_second_consumers.status', [1, 2,4]);
         // ->where('water_approval_application_details.status', true);
     }
+   
 }

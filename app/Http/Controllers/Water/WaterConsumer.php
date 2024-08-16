@@ -45,6 +45,7 @@ use App\Models\Water\WaterConsumerTax;
 use App\Models\Water\WaterDisconnection;
 use App\Models\Water\WaterMeterReadingDoc;
 use App\Models\Water\WaterPenaltyInstallment;
+use App\Models\Water\WaterReconnectConsumer;
 use App\Models\Water\WaterSecondConsumer;
 use App\Models\Water\WaterSiteInspection;
 use App\Models\Water\WaterTran;
