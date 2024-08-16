@@ -782,7 +782,7 @@ class Report implements IReport
                 //         })
                 // )
                 ->GET();
-                
+
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $data, $apiId, $version, $queryRunTime, $action, $deviceId);
         } catch (Exception $e) {
@@ -912,8 +912,7 @@ class Report implements IReport
                     users_role.user_id ,
                     users_role.name as user_name,
                     users_role.wf_role_id as role_id,
-                    users_role.role_name,   
-                    users_role.address"
+                    users_role.role_name"
                 )
             )
                 ->$joins(
