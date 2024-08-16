@@ -277,6 +277,10 @@ class WaterConsumer extends Controller
             if (!$consumerDetails) {
                 throw new Exception("Consumer detail not found!");
             }
+            if($consumerDetails->deactivate_status===0)
+            {
+                throw new Exception("Your connection has dectivated,Please activate your connection to generate demand");
+            }
             // $this->checkDemandGeneration($request, $consumerDetails);                                       // unfinished function
 
             # Calling BLL for call
