@@ -98,7 +98,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
 
         Route::post('master/get-listed-details', 'getWaterMasterData');                                 // Admin/ Citizen
         Route::post('consumer/get-payment-history', 'getConsumerPaymentHistory');                       // Consumer               // use in consumer part
-        Route::post('admin/application/generate-payment-receipt', 'generateOfflinePaymentReceipt');     // Citizen / Admin
+       
         Route::post('consumer/calculate-month-demand', 'callDemandByMonth');                            // Admin/Consumer
         Route::post('application/payment/get-payment-history', 'getApplicationPaymentHistory');         // Admin/Consumer
         Route::post('consumer/offline-demand-payment', 'offlineDemandPayment');                         // Consumer
@@ -170,7 +170,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('consumer/get-connection-list', 'getConnectionList');
         Route::post('consumer/demands-correction', 'updateConsumerDemands');
         Route::post("consumer/demands-correct", "AutoCorrectDemand");
-        Route::post("consumer/get-consumer-demandV2", "getConsumerDemandsV2");
+
         Route::post("consumer/get-demand-history", "getConsumerDemandsHistory");
         Route::post("consumer/auto-generate-fixed-demand", "gerateAutoFixedDemand");
     });
@@ -198,6 +198,10 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('workflow/get-doc-list-je', 'getDocListForJe');                                             // Workflow
         Route::post('workflow/upload-doc-je', 'uploadWaterDocJe');                                             // Workflow
         Route::post('workflow/unauthorized-tap-status-update', 'unauthorizedTapUpdateStatus');                                             // Workflow  JE
+        Route::post('consumer/req/back-to-citizen', 'backToCitizen');                                                // Workflow
+        Route::post('consumer/req/btc-inbox', 'btcInbox');                                                           // Workflow
+        Route::post('consumer/req/special-inbox', 'waterSpecialInbox');                                              // Workflow
+        Route::post('consumer/req/escalate', 'postEscalate');                                                        // Workflow           
 
     });
 
@@ -280,6 +284,7 @@ Route::controller(WaterApplication::class)->group(function () {
 Route::controller(WaterConsumer::class)->group(function () {
     Route::post('consumerChargeCal', 'calConsumerDemand');                                              //18        
     Route::post('sendSms', 'sendSms');
+    Route::post("consumer/get-consumer-demandV2", "getConsumerDemandsV2");
 });
 Route::controller(NewConnectionController::class)->group(function () {
     Route::post('citizen/consumer-search', 'searchWaterConsumer');                                      // citizen consumer search
@@ -294,6 +299,7 @@ Route::controller(WaterPaymentController::class)->group(function () {
     Route::post('citizen/demand/generate-payment-receipt', 'generateDemandPaymentReceipt');
     Route::post('citizen/get-payment-history', 'getConsumerPaymentHistory');
     Route::post('consumer/demand/generate-payment-receipt', 'generateDemandPaymentReceipt');        // Admin/ Citizen          // use in consumer part
+    Route::post('admin/application/generate-payment-receipt', 'generateOfflinePaymentReceipt');     // Citizen / Admin
     // Route::post('')
 });
 

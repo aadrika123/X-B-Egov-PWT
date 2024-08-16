@@ -307,9 +307,9 @@ class NewConnectionController extends Controller
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
 
             $waterData = $this->getWaterApplicatioList($workflowIds, $ulbId)                              // Repository function to get SAF Details
-                ->where('water_approval_application_details.is_escalate', 1)
-                ->whereIn('water_approval_application_details.ward_id', $wardId)
-                ->orderByDesc('water_approval_application_details.id')
+                ->where('water_applications.is_escalate', 1)
+                ->whereIn('water_applications.ward_id', $wardId)
+                ->orderByDesc('water_applications.id')
                 ->get();
             $filterWaterList = collect($waterData)->unique('id')->values();
             return responseMsgs(true, "Data Fetched", remove_null($filterWaterList), "010107", "1.0", "251ms", "POST", "");
@@ -2018,7 +2018,7 @@ class NewConnectionController extends Controller
                     break;
                 case ("applicantName"):
                     $paramenter = strtoupper($paramenter);
-                    $waterReturnDetails = $mWaterConsumer->getDetailByOwnerDetails($refstring, $paramenter)->paginate($pages);
+                    $waterReturnDetails = $mWaterConsumer->getConsumerByItsDetailsV3($request, $refstring, $paramenter, $wardId, $zoneId, $zone)->paginate($pages);
                     if (!$waterReturnDetails)
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
@@ -2572,8 +2572,8 @@ class NewConnectionController extends Controller
             $mWaterSiteInspectionsScheduling->cancelInspectionDateTime($refApplicationId);
             $mWaterConnectionCharge->deactivateSiteCharges($refApplicationId, $refSiteInspection);
             $mWaterPenaltyInstallment->deactivateSitePenalty($refApplicationId, $refSiteInspection);
-            # Check if the payment status is done or not 
-            // $mWaterApplication->updateOnlyPaymentstatus($refApplicationId);                                 // make the payment status of the application true
+            # deactivate Feild verified
+            $mWaterApplication->updateOnlyFieldtatus($refApplicationId);                                 // make the payment status of the application true
             if (!is_null($refSiteInspection)) {
                 $mWaterSiteInspection->deactivateSiteDetails($refSiteInspection->site_inspection_id);
             }

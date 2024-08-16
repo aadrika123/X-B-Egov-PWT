@@ -34,8 +34,10 @@ use App\Http\Controllers\Water\WaterConsumer;
 use App\MicroServices\DocUpload;
 use App\Models\Water\WaterConnectionCharge;
 use App\Models\Water\WaterTran;
+use App\Models\Workflows\WfWardUser;
 use App\Repository\Water\Concrete\WaterNewConnection;
 use App\Repository\Water\Interfaces\IConsumer;
+use App\Repository\Common\CommonFunction;
 
 /**
  * | ----------------------------------------------------------------------------------
@@ -57,6 +59,7 @@ class WaterConsumerWfController extends Controller
     protected $_DB_NAME;
     protected $_DB;
     protected $waterConsumer;
+    protected $_COMMONFUNCTION;
 
     public function __construct(WaterConsumer $waterConsumer)
     {
@@ -65,6 +68,7 @@ class WaterConsumerWfController extends Controller
         $this->_DB_NAME = "pgsql_water";
         $this->_DB = DB::connection($this->_DB_NAME);
         $this->waterConsumer = $waterConsumer;
+        $this->_COMMONFUNCTION = new CommonFunction();
     }
 
     /**
@@ -133,7 +137,7 @@ class WaterConsumerWfController extends Controller
             } else {
                 $workflowIds = ['193'];
             }
-            
+
 
 
             $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
@@ -669,7 +673,7 @@ class WaterConsumerWfController extends Controller
         $waterTrack->saveTrack($request);
 
         #update Verify Status
-        $mWaterConsumerActive->updateVerifyComplainRequest($request,$userId);
+        $mWaterConsumerActive->updateVerifyComplainRequest($request, $userId);
     }
     /**
      * get all applications details by id from workflow
@@ -1115,9 +1119,9 @@ class WaterConsumerWfController extends Controller
         $appDetails = WaterConsumerActiveRequest::find($applicationId);
         $totalUploadedDocs = $mWfActiveDocument->totalUploadedDocs($applicationId, $appDetails->workflow_id, $moduleId);
         if ($totalRequireDocs == $totalUploadedDocs) {
-            $appDetails->doc_upload_status = '1';
+            $appDetails->doc_upload_status = true;
             $appDetails->doc_verify_status = '0';
-            $appDetails->parked = NULL;
+            $appDetails->parked = false;
             $appDetails->save();
         } else {
             $appDetails->doc_upload_status = '0';
@@ -1629,6 +1633,214 @@ class WaterConsumerWfController extends Controller
             return responseMsg(true, "Status Updated!", $request);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+
+    /**
+     * | Back to Citizen 
+     * | @param req
+        | Check if the current role of the application will be changed for iniciater role 
+     */
+    public function backToCitizen(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'applicationId' => 'required|integer',
+                'comment'       => 'required|string'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $user               = authUser($req);
+            $WorkflowTrack      = new WorkflowTrack();
+            $refWorkflowId      = Config::get("workflow-constants.WATER_MASTER_ID");
+            $refApplyFrom       = config::get("waterConstaint.APP_APPLY_FROM");
+            $mWaterApplication  = WaterConsumerActiveRequest::findOrFail($req->applicationId);
+
+            $role = $this->_COMMONFUNCTION->getUserRoll($user->id, $mWaterApplication->ulb_id, $refWorkflowId);
+            $this->btcParamcheck($role, $mWaterApplication);
+
+            $this->begin();
+            # if application is not applied by citizen 
+            if ($mWaterApplication->apply_from != $refApplyFrom['1']) {
+                $mWaterApplication->current_role = $mWaterApplication->last_role_id;
+                $mWaterApplication->parked = true;                          //  Pending Status true
+                $mWaterApplication->doc_upload_status = false;              //  Docupload Status false
+            }
+            # if citizen applied 
+            else {
+                $mWaterApplication->parked = true;                          //  Pending Status true
+                $mWaterApplication->doc_upload_status = false;              //  Docupload Status false
+            }
+            $mWaterApplication->save();
+            $metaReqs['moduleId']           = Config::get('module-constants.WATER_MODULE_ID');
+            $metaReqs['workflowId']         = $mWaterApplication->workflow_id;
+            $metaReqs['refTableDotId']      = 'water_approval_application_details.id';
+            $metaReqs['refTableIdValue']    = $req->applicationId;
+            $metaReqs['senderRoleId']       = $role->role_id;
+            $req->request->add($metaReqs);
+            $WorkflowTrack->saveTrack($req);
+
+            $this->commit();
+            return responseMsgs(true, "Successfully Done", "", "", "1.0", "350ms", "POST", $req->deviceId);
+        } catch (Exception $e) {
+            $this->rollback();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+    /**
+     * | check the application for back to citizen case
+     * | check for the
+        | Check who can use BTC operatio 
+     */
+    public function btcParamcheck($role, $mWaterApplication)
+    {
+        $refReq = new Request([
+            "applicationId" => $mWaterApplication->id
+        ]);
+        $rawDoc = $this->getUploadDocuments($refReq);
+        if ($role->is_btc != true) {
+            throw new Exception("You dont have permission to BTC!");
+        }
+        if ($mWaterApplication->current_role != $role->role_id) {
+            throw new Exception("the application is not under your possession!");
+        }
+        $activeDocs = collect($rawDoc)['original']['data'];
+        $canBtc = $activeDocs->contains(function ($item) {
+            return $item['verify_status'] == 2;
+        });
+        if (!$canBtc) {
+            throw new Exception("Document not rejected! cannot perform BTC!");
+        }
+    }
+    /**
+     * |Get the upoaded docunment
+        | Serial No : 
+        | Working
+     */
+    public function getUploadDocuments(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'applicationId' => 'required|numeric'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $mWfActiveDocument = new WfActiveDocument();
+            $mWaterApplication = new WaterConsumerActiveRequest();
+            $mWaterApprovalApplications = new WaterApprovalApplicationDetail();
+            $moduleId = Config::get('module-constants.WATER_MODULE_ID');
+
+            $waterDetails = $mWaterApplication->getActiveReqById($req->applicationId)->first();
+            if (!$waterDetails)
+                throw new Exception("Application Not Found for this application Id");
+
+            $workflowId = $waterDetails->workflow_id;
+            $documents = $mWfActiveDocument->getWaterDocsByAppNo($req->applicationId, $workflowId, $moduleId);
+            $returnData = collect($documents)->map(function ($value) {                          // Static
+                $path =  $this->readDocumentPath($value->ref_doc_path);
+                $value->doc_path = !empty(trim($value->ref_doc_path)) ? $path : null;
+                return $value;
+            });
+            return responseMsgs(true, "Uploaded Documents", remove_null($returnData), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    public function btcInbox(Request $req)
+    {
+        try {
+            $mWfWardUser = new WfWardUser();
+            $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
+            $userId = authUser($req)->id;
+            $ulbId = authUser($req)->ulb_id;
+            $mDeviceId = $req->deviceId ?? "";
+
+            $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+
+            $waterList = $this->getWaterRequestList($workflowIds, $ulbId)
+                ->whereIn('water_consumer_active_requests.current_role', $roleId)
+                // ->whereIn('water_approval_application_details.ward_id', $occupiedWards)
+                ->where('water_consumer_active_requests.is_escalate', false)
+                ->where('water_consumer_active_requests.parked', true)
+                ->orderByDesc('water_consumer_active_requests.id')
+                ->get();
+            $filterWaterList = collect($waterList)->unique('id')->values();
+            return responseMsgs(true, "BTC Inbox List", remove_null($filterWaterList), "", 1.0, "560ms", "POST", $mDeviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", 010123, 1.0, "271ms", "POST",);
+        }
+    }
+    /**
+     * | Application's Post Escalated
+        | Serial No :
+     */
+    public function postEscalate(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "escalateStatus" => "required|int",
+                "applicationId" => "required|int",
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $userId = authUser($request)->id;
+            $applicationId = $request->applicationId;
+            $applicationsData = WaterConsumerActiveRequest::find($applicationId);
+            if (!$applicationsData) {
+                throw new Exception("Application details not found!");
+            }
+            $applicationsData->is_escalate = $request->escalateStatus;
+            $applicationsData->escalate_by = $userId;
+            $applicationsData->save();
+            return responseMsgs(true, $request->escalateStatus == 1 ? 'Water is Escalated' : "Water is removed from Escalated", '', "", "1.0", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+    /**
+     * | Water Special Inbox
+     * | excalated applications
+        | Serial No :
+     */
+    public function waterSpecialInbox(Request $request)
+    {
+        try {
+            $mWfWardUser            = new WfWardUser();
+            $mWfWorkflowRoleMaps    = new WfWorkflowrolemap();
+            $userId = authUser($request)->id;
+            $ulbId  = authUser($request)->ulb_id;
+
+            $occupiedWard = $mWfWardUser->getWardsByUserId($userId);                        // Get All Occupied Ward By user id using trait
+            $wardId = $occupiedWard->map(function ($item, $key) {                           // Filter All ward_id in an array using laravel collections
+                return $item->ward_id;
+            });
+
+            $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+
+            $waterData = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)                              // Repository function to get SAF Details
+                ->where('water_consumer_active_requests.is_escalate', 1)
+                // ->whereIn('water_consumer_active_requests.ward_id', $wardId)
+                ->orderByDesc('water_consumer_active_requests.id')
+                ->get();
+            $filterWaterList = collect($waterData)->unique('id')->values();
+            return responseMsgs(true, "Data Fetched", remove_null($filterWaterList), "010107", "1.0", "251ms", "POST", "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "0.1", ".ms", "POST", $request->deviceId);
         }
     }
 }

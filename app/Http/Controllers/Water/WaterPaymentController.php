@@ -492,37 +492,36 @@ class WaterPaymentController extends Controller
                         $roadType = $request->roadType; // Use the original value if it doesn't match any known type
                         break;
                 }
-            
-            if ($request->roadWidth != null) {
-                if($request->roadType == 'Damber Road')
-                $GetRoadTypeCharges = $mWaterRoadTypeChages->getRoadCharges($roadType);
-                $calculatedAmount = $request->roadWidth *   $GetRoadTypeCharges->per_meter_amount + $Charges->amount;
+
+                if ($request->roadWidth != null) {
+                        $GetRoadTypeCharges = $mWaterRoadTypeChages->getRoadCharges($roadType);
+                    $calculatedAmount = $request->roadWidth *   $GetRoadTypeCharges->per_meter_amount + $Charges->amount;
+                }
+
+
+                # Get the Applied Connection Charge
+                // $applicationCharge = $mWaterConnectionCharge->getWaterchargesById($request->applicationId)
+                //     ->where('charge_category', '!=', $connectionCatagory['SITE_INSPECTON'])
+                //     ->firstOrFail();
+
+                $this->begin();
+                $meta = [
+                    'applicationId'     => $request->applicationId,
+                    "amount"            => $calculatedAmount ?? $Charges->amount,
+                    "chargeCategory"    => $Charges->charge_category,
+                ];
+
+                $mWaterConnectionCharge->saveWaterCharges($meta);
+                # Store the site inspection details
+                $mWaterSiteInspection->storeInspectionDetails($request,  $waterDetails, $refRoleDetails);
+                $mWaterSiteInspectionsScheduling->saveInspectionStatus($request);
+                $waterDetails->is_field_verified = true;
+
+                $waterDetails->save();
+                $this->commit();
+                return responseMsgs(true, "Site Inspection Done!", $request->applicationId, "", "01", "ms", "POST", "");
             }
-
-
-            # Get the Applied Connection Charge
-            // $applicationCharge = $mWaterConnectionCharge->getWaterchargesById($request->applicationId)
-            //     ->where('charge_category', '!=', $connectionCatagory['SITE_INSPECTON'])
-            //     ->firstOrFail();
-
-            $this->begin();
-            $meta = [
-                'applicationId'     => $request->applicationId,
-                "amount"            => $calculatedAmount ?? $Charges->amount,
-                "chargeCategory"    => $Charges->charge_category,
-            ];
-
-            $mWaterConnectionCharge->saveWaterCharges($meta);
-            # Store the site inspection details
-            $mWaterSiteInspection->storeInspectionDetails($request,  $waterDetails, $refRoleDetails);
-            $mWaterSiteInspectionsScheduling->saveInspectionStatus($request);
-            $waterDetails->is_field_verified = true;
-
-            $waterDetails->save();
-            $this->commit();
-            return responseMsgs(true, "Site Inspection Done!", $request->applicationId, "", "01", "ms", "POST", "");
-        }
-     } catch (Exception $e) {
+        } catch (Exception $e) {
             $this->rollback();
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", "ms", "POST", "");
         }

@@ -1157,7 +1157,7 @@ class NewConnectionRepository implements iNewConnection
 
         $ownerView = [
             'headerTitle' => 'Owner Details',
-            'tableHead' => ["#", "Owner Name", "Owner NAME Marathi", "Mobile No", "Email", "City", "District"],
+            'tableHead' => ["#", "Owner Name", "Owner NAME Marathi", "Mobile No", "Email",],
             'tableData' => $ownerList
         ];
         $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerView]);
@@ -1221,10 +1221,11 @@ class NewConnectionRepository implements iNewConnection
             ['displayString' => 'Initial Reading',     'key' => 'InitialReading',      'value' => $collectionApplications->initial_reading],
             ['displayString' => 'MobileNumber',           'key' => 'MobileNumber',      'value' => $collectionApplications->mobile_no],
             ['displayString' => 'Email',               'key' => 'Email',                'value' => $collectionApplications->email],
-            ['displayString' => 'TradeLicense',               'key' => 'TradeLicense',                'value' => $collectionApplications->trade_license],
+            ['displayString' => 'TradeLicense',               'key' => 'TradeLicense',                'value' => $collectionApplications->license_no],
             ['displayString' => 'Tab Size',               'key' => 'TabSize',                'value' => $collectionApplications->tab_size],
             ['displayString' => 'Road Width',               'key' => 'RoadWidth',                'value' => $collectionApplications->per_meter],
             ['displayString' => 'Road Type',               'key' => 'RoadType',                'value' => $collectionApplications->road_type],
+            // ['displayString' => 'Applied',               'key' => 'Applied by',                'value' => $collectionApplications->user_type],
         ]);
     }
 
@@ -1292,8 +1293,6 @@ class NewConnectionRepository implements iNewConnection
                 $value['owner_name_marathi'],
                 $value['mobile_no'],
                 $value['email'],
-                $value['city'],
-                $value['district']
             ];
         });
     }
@@ -1322,7 +1321,8 @@ class NewConnectionRepository implements iNewConnection
             ['displayString' => 'Connection Type',      'key' => 'ConnectionType',    'value' => $collectionApplications->connection_type],
             ['displayString' => 'Connection Through',   'key' => 'ConnectionThrough', 'value' => $collectionApplications->connection_through ?? "HOLDING"],
             ['displayString' => 'Apply-Date',           'key' => 'ApplyDate',         'value' => $collectionApplications->apply_date],
-            ['displayString' => 'Total Area (sqt)',     'key' => 'TotalArea',         'value' => $collectionApplications->area_of_plot]
+            ['displayString' => 'Total Area (sqt)',     'key' => 'TotalArea',         'value' => $collectionApplications->area_of_plot],
+            ['displayString' => 'Applied by',     'key' => 'Applied by',         'value' => $collectionApplications->user_type]
         ]);
     }
 

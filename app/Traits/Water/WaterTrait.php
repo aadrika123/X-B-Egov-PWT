@@ -149,7 +149,7 @@ trait WaterTrait
             // ->leftjoin('ulb_masters AS um', 'um.id', 'water_consumer_active_requests.ulb_id')
             ->where('water_consumer_active_requests.status', 1)
             // ->where('water_consumer_active_requests.payment_status', 1)
-            // ->where('water_consumer_active_requests.ulb_id', $ulbId)
+            ->where('water_consumer_active_requests.ulb_id', $ulbId)
             ->whereIn('water_consumer_active_requests.workflow_id', $workflowIds);
     }
 
@@ -183,5 +183,40 @@ trait WaterTrait
             ->join('water_consumer_charges AS wcc', 'wcc.related_id', 'water_consumer_active_requests.id')
             ->where('water_consumer_active_requests.id', $applicationId)
             ->where('water_consumer_active_requests.status', 1);
+    }
+
+    /**
+     * |----------------------------- Get Water Application List For the Workflow ---------------------------|
+     * | Rating : 
+     * | Opertation : serch the application for the respective ulb/workflow
+        | Serial No : 01
+        | Working
+     */
+    public function getWaterRequestList($workflowIds, $ulbId)
+    {
+        return WaterConsumerActiveRequest::select(
+            'water_consumer_active_requests.id',
+            'water_consumer_active_requests.application_no',
+            'water_consumer_owners.id as owner_id',
+            'water_consumer_owners.applicant_name as owner_name',
+            // 'water_applications.ward_id',
+            // 'water_connection_through_mstrs.connection_through',
+            // 'water_connection_type_mstrs.connection_type',
+            // 'u.ward_name as ward_no',
+            'water_consumer_active_requests.workflow_id',
+            'water_consumer_active_requests.current_role as role_id',
+            'water_consumer_active_requests.apply_date',
+            'water_consumer_active_requests.parked',
+            // 'ulb_ward_masters.ward_name'
+        )
+            // ->join('ulb_ward_masters as u', 'u.id', '=', 'water_applications.ward_id')
+            ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_consumer_active_requests.consumer_id')
+            // ->leftjoin('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_consumer_active_requests.connection_through')
+            // ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_consumer_active_requests.ward_id')
+            // ->leftjoin('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_consumer_active_requests.connection_type_id')
+            ->where('water_consumer_active_requests.status', 1)
+            ->where('water_consumer_active_requests.ulb_id', $ulbId)
+            ->whereIn('water_consumer_active_requests.workflow_id', $workflowIds)
+            ->orderByDesc('water_consumer_active_requests.id');
     }
 }
