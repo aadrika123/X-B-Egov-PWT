@@ -9,6 +9,12 @@ class WaterTempDisconnection extends Model
 {
     use HasFactory;
     protected $connection = 'pgsql_water';
+    protected $fillable = [
+        'consumer_id',
+        'demand_from',
+        'demand_upto',
+        'amount_notice_1'
+    ];
 
     public function getActiveReqById($id)
     {
@@ -21,5 +27,4 @@ class WaterTempDisconnection extends Model
         return WaterTempDisconnection::where('consumer_id', $req->applicationId)
             ->where('status', 1);
     }
-
 }

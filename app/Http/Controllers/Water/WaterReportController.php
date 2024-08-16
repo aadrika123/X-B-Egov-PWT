@@ -4565,7 +4565,13 @@ class WaterReportController extends Controller
             'consumerId' => 'required|array',
             'consumerId.*' => 'integer',
             'generated' => 'required|boolean',
-            'notice' => 'required|integer|in:1,2,3'
+            'notice' => 'required|integer|in:1,2,3',
+            'demandFrom' => 'required|array',
+            'demandFrom.*' => 'date',
+            'demandUpto' => 'required|array',
+            'demandUpto.*' => 'date',
+            'amount' => 'required|array',
+            'amount.*' => 'numeric',
         ]);
 
         if ($validator->fails()) {
@@ -4630,8 +4636,7 @@ class WaterReportController extends Controller
             WaterSecondConsumer::whereIn('id', $consumerIds)
                 ->update(['generated' => $generated]);
 
-            // Generate notice numbers and update records
-            foreach ($consumerIds as $consumerId) {
+            foreach ($consumerIds as $index => $consumerId) {
                 $consumer = WaterSecondConsumer::find($consumerId);
                 if ($consumer) {
                     $idGeneration = new PrefixIdGenerator($refConParamId['AMCN'], 2);
@@ -4639,20 +4644,38 @@ class WaterReportController extends Controller
 
                     switch ($noticeType) {
                         case 1:
-                            $consumer->update(['notice_no_1' => $noticeNo, 'notice' => $noticeType, 'notice_1_generated_at' => $now]);
+                            $consumer->update([
+                                'notice_no_1' => $noticeNo,
+                                'notice' => $noticeType,
+                                'notice_1_generated_at' => $now,
+                            ]);
+
+                            WaterTempDisconnection::create([
+                                'consumer_id' => $consumerId,
+                                'demand_from' => $request->demandFrom[$index],
+                                'demand_upto' => $request->demandUpto[$index],
+                                'amount_notice_1' => $request->amount[$index]
+                            ]);
                             break;
                         case 2:
-                            $consumer->update(['notice_no_2' => $noticeNo, 'notice_2' => $noticeType, 'notice_2_generated_at' => $now]);
+                            $consumer->update([
+                                'notice_no_2' => $noticeNo,
+                                'notice_2' => $noticeType,
+                                'notice_2_generated_at' => $now
+                            ]);
                             break;
                         case 3:
-                            $consumer->update(['notice_no_3' => $noticeNo, 'notice_3' => $noticeType, 'notice_3_generated_at' => $now]);
+                            $consumer->update([
+                                'notice_no_3' => $noticeNo,
+                                'notice_3' => $noticeType,
+                                'notice_3_generated_at' => $now
+                            ]);
                             break;
                     }
 
                     $noticeNos[$consumerId] = $noticeNo;
                 }
             }
-
             return responseMsgs(true, "Notices generated successfully", $noticeNos);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "");
