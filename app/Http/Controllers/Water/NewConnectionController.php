@@ -3453,6 +3453,7 @@ class NewConnectionController extends Controller
                 "wf_roles.role_name as current_role_name",
                 "water_second_consumers.payment_status as NewConnectionStatus",
                 "water_second_consumers.status",
+                "water_temp_disconnections.status as deactivated_status",
                 DB::raw("'connection' AS type,
                                         water_approval_application_details.apply_date::date AS apply_date")
             )
@@ -3478,6 +3479,7 @@ class NewConnectionController extends Controller
                 ->leftjoin('wf_roles', 'wf_roles.id', "=", "water_approval_application_details.current_role")
                 ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_approval_application_details.ward_id')
                 ->join('water_second_consumers', 'water_second_consumers.apply_connection_id', 'water_approval_application_details.id')
+                ->leftjoin('water_temp_disconnections', 'water_temp_disconnections.consumer_id', 'water_second_consumers.id')
                 ->where("water_approval_application_details.user_id", $refUserId)
                 ->where("water_approval_application_details.status", true)
                 ->orderbydesc('water_approval_application_details.id')

@@ -255,6 +255,9 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('JeViewApplicationDetail', 'viewDetail');
         Route::post('JeGetDocList', 'DocToUpload');
         Route::post('JeUploadDocument', 'DocUpload');
+        Route::post('farwardApplication', 'consumerPostNextLevel'); 
+        Route::post('uploadedDocumentList', 'getDiscUploadDocuments');
+        Route::post('finalApproval', 'consumerApprovalRejection');
     });
 
     /**

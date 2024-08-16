@@ -576,7 +576,7 @@ class WaterSecondConsumer extends Model
                 $join->on('water_road_cutter_charges.id', '=', 'water_approval_application_details.road_type_id')
                     ->where('water_road_cutter_charges.status', 1);
             })
-            ->leftjoin('water_connection_type_mstrs','water_connection_type_mstrs.id','=','water_second_consumers.connection_type_id')
+            ->leftjoin('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_second_consumers.connection_type_id')
             ->join('water_temp_disconnections', 'water_temp_disconnections.consumer_id', '=', 'water_second_consumers.id')
             ->leftJoin('zone_masters', 'zone_masters.id', '=', 'water_second_consumers.zone_mstr_id')
             ->leftJoin('water_property_type_mstrs', 'water_property_type_mstrs.id', '=', 'water_second_consumers.property_type_id')
@@ -634,10 +634,11 @@ class WaterSecondConsumer extends Model
     public function getConsumerDetails($applicationId)
     {
         return WaterSecondConsumer::select(
-            'water_second_consumers.*'
+            'water_second_consumers.*','water_temp_disconnections.status as deactivate_status'
         )
-            ->where('id', $applicationId)
-            ->whereIn('status', [1, 4]);
+            ->leftjoin('water_temp_disconnections', 'water_temp_disconnections.consumer_id', '=', 'water_second_consumers.id')
+            ->where('water_second_consumers.id', $applicationId)
+            ->whereIn('water_second_consumers.status', [1, 4]);
     }
     /**
      * | Dectivate the water Consumer 
@@ -715,7 +716,7 @@ class WaterSecondConsumer extends Model
      * | @param consumerDetails
      * | @return
      */
-    public function saveWaterConsumer($consumerDetails, $consumerNo,$siteDetails)
+    public function saveWaterConsumer($consumerDetails, $consumerNo, $siteDetails)
     {
         $mWaterConsumer = new WaterSecondConsumer();
         $mWaterConsumer->apply_connection_id         = $consumerDetails['id'];

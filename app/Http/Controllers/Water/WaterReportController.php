@@ -33,6 +33,7 @@ use App\Traits\Workflow\Workflow;
 use Illuminate\Support\Facades\App;
 use Illuminate\Database\Eloquent\Collection;
 use App\MicroServices\DocUpload;
+use App\Models\Workflows\WfRoleusermap;
 
 /**
  * | ----------------------------------------------------------------------------------
@@ -4453,6 +4454,7 @@ class WaterReportController extends Controller
                 ->where('water_consumer_demands.is_full_paid', false)
                 ->where('water_consumer_demands.demand_upto', '<=', $uptoDate)
                 ->where('water_second_consumers.generated', false)
+                ->where('water_second_consumers.status', 1)
                 ->groupBy(
                     'water_second_consumers.id',
                     'water_second_consumers.consumer_no',
@@ -5310,7 +5312,7 @@ class WaterReportController extends Controller
     public function getWaterDocLists($application, $req)
     {
         $mRefReqDocs    = new RefRequiredDocument();
-        $moduleId       = Config::get('module-constants.WATER_MODULE_ID')??2;
+        $moduleId       = Config::get('module-constants.WATER_MODULE_ID') ?? 2;
         $type = ["SITE REPORT"];
         //$type = "SITE REPORT";
         return $mRefReqDocs->getCollectiveDocByCode($moduleId, $type);
@@ -5319,7 +5321,7 @@ class WaterReportController extends Controller
     public function filterDocument($documentList, $refWaterApplication, $ownerId = null)
     {
         $mWfActiveDocument  = new WfActiveDocument();
-        $applicationId      = $refWaterApplication->id;
+        $applicationId      = $refWaterApplication->consumer_id;
         $workflowId         = $refWaterApplication->workflow_id;
         $moduleId           = Config::get('module-constants.WATER_MODULE_ID');
         $uploadedDocs       = $mWfActiveDocument->getDocByRefIdsV4($applicationId, $workflowId, $moduleId);
@@ -5379,6 +5381,11 @@ class WaterReportController extends Controller
         return $filteredDocs;
     }
 
+    public function readDocumentPath($path)
+    {
+        $path = (config('app.url') . "/" . $path);
+        return $path;
+    }
     public function DocUpload(Request $req)
     {
         $validated = Validator::make(
@@ -5423,15 +5430,6 @@ class WaterReportController extends Controller
                 'auth'          => $req->auth
             ];
 
-            // # Check the diff in user and citizen
-            // if ($user->user_type == "Citizen") {                                                // Static
-            //     $isCitizen = true;
-            //     $this->checkParamForDocUpload($isCitizen, $getWaterDetails, $user);
-            // } else {
-            //     $isCitizen = false;
-            //     $this->checkParamForDocUpload($isCitizen, $getWaterDetails, $user);
-            // }
-
             DB::beginTransaction();
             $ifDocExist = $mWfActiveDocument->isDocCategoryExists($getWaterDetails->id, $getWaterDetails->workflow_id, $refmoduleId, $req->docCategory, $req->ownerId)->first();   // Checking if the document is already existing or not
             $metaReqs = new Request($metaReqs);
@@ -5441,31 +5439,8 @@ class WaterReportController extends Controller
             if (collect($ifDocExist)->isNotEmpty()) {
                 $mWfActiveDocument->editDocuments($ifDocExist, $metaReqs);
             }
-
-            #check full doc upload
-            // $refCheckDocument = $this->checkFullDocUpload($req);
-
-            # Update the Doc Upload Satus in Application Table
-            // if ($refCheckDocument->contains(false)) {
-            //     $mWaterApplication->deactivateUploadStatus($applicationId);
-            // } else {
-            //     $this->updateWaterStatus($req, $getWaterDetails);
-            // }
-
-            # if the application is parked and btc s
-            // if ($getWaterDetails->parked == true) {
-            //     $mWfActiveDocument->deactivateRejectedDoc($metaReqs);
-            //     $refReq = new Request([
-            //         'applicationId' => $applicationId
-            //     ]);
-            //     $documentList = $this->getDocListForJe($refReq);
-            //     $DocList = collect($documentList)['original']['data'];
-            //     $refVerifyStatus = $DocList->where('doc_category', '!=', $req->docCategory)->pluck('verify_status');
-            //     if (!in_array(2, $refVerifyStatus->toArray())) {                                    // Static "2"
-            //         $status = false;
-            //         $mWaterApplication->updateParkedstatus($status, $applicationId);
-            //     }
-            // }
+            WaterTempDisconnection::where('consumer_id', $req->applicationId)
+                ->update(['doc_upload_status' => true]);
             DB::commit();
             return responseMsgs(true, "Document Uploadation Successful", "", "", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
@@ -5474,4 +5449,156 @@ class WaterReportController extends Controller
         }
     }
 
+    public function consumerPostNextLevel(Request $request)
+    {
+        $wfLevels = Config::get('waterConstaint.ROLE-LABEL');
+        $request->validate([
+            'applicationId'     => 'required',
+            'senderRoleId'      => 'required',
+            'receiverRoleId'    => 'required',
+            'action'            => 'required|In:forward',
+            'comment'           => 'required',
+
+        ]);
+        try {
+            return $this->postNextLevelRequest($request);
+        } catch (Exception $error) {
+            DB::rollBack();
+            return responseMsg(false, $error->getMessage(), "");
+        }
+    }
+    public function postNextLevelRequest($req)
+    {
+
+        $mWfWorkflows        = new WfWorkflow();
+        $mWfRoleMaps         = new WfWorkflowrolemap();
+
+        $current             = Carbon::now();
+        $wfLevels            = Config::get('waterConstaint.ROLE-LABEL');
+        //$waterConsumerActive = WaterTempDisconnection::find('consumer_id', $req->applicationId);
+        $waterConsumerActive = WaterTempDisconnection::where('consumer_id', $req->applicationId)->firstOrFail();
+
+        # Derivative Assignments
+        $senderRoleId   = $waterConsumerActive->current_role;
+        $ulbWorkflowId  = $waterConsumerActive->workflow_id;
+        $ulbWorkflowMaps = $mWfWorkflows->getWfDetails($ulbWorkflowId);
+        $roleMapsReqs   = new Request([
+            'workflowId' => $ulbWorkflowMaps->id,
+            'roleId' => $senderRoleId
+        ]);
+        $forwardBackwardIds = $mWfRoleMaps->getWfBackForwardIds($roleMapsReqs);
+
+        DB::beginTransaction();
+        if ($req->action == 'forward') {
+            $this->checkPostCondition($req->senderRoleId, $wfLevels, $waterConsumerActive);
+            $waterConsumerActive->current_role = $forwardBackwardIds->forward_role_id;
+            //$waterConsumerActive->last_role_id =  $forwardBackwardIds->forward_role_id;
+        }
+        $waterConsumerActive->save();
+        $metaReqs['moduleId']           =  2;
+        $metaReqs['workflowId']         = $waterConsumerActive->workflow_id;
+        $metaReqs['refTableDotId']      = 'water_temp_disconnections.consumer_id';
+        $metaReqs['refTableIdValue']    = $req->applicationId;
+        $metaReqs['user_id']            = authUser($req)->id;
+        $req->request->add($metaReqs);
+        $waterTrack         = new WorkflowTrack();
+        $waterTrack->saveTrack($req);
+
+        # check in all the cases the data if entered in the track table 
+        // Updation of Received Date
+        $preWorkflowReq = [
+            'workflowId'        => $waterConsumerActive->workflow_id,
+            'refTableDotId'     => "water_temp_disconnections.consumer_id",
+            'refTableIdValue'   => $req->applicationId,
+            'receiverRoleId'    => $senderRoleId
+        ];
+
+        $previousWorkflowTrack = $waterTrack->getWfTrackByRefId($preWorkflowReq);
+        if ($previousWorkflowTrack) {
+            $previousWorkflowTrack->update([
+                'forward_date' => $current,
+                'forward_time' => $current
+            ]);
+        }
+        DB::commit();
+        return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", "", '01', '.ms', 'Post', '');
+    }
+
+    public function checkPostCondition($senderRoleId, $wfLevels, $application)
+    {
+        switch ($senderRoleId) {
+            case $wfLevels['JE']:
+                if (!$application->doc_upload_status) {
+                    throw new Exception("Please upload Document");
+                }
+                break;
+        }
+    }
+
+    public function getDiscUploadDocuments(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'applicationId' => 'required|numeric'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $mWfActiveDocument    = new WfActiveDocument();
+            $mWaterActiveRequestApplication = new WaterTempDisconnection();
+            $moduleId = Config::get('module-constants.WATER_MODULE_ID');
+
+            $waterDetails = $mWaterActiveRequestApplication->getActiveReqById($req->applicationId)->first();
+            if (!$waterDetails)
+                throw new Exception("Application Not Found for this application Id");
+
+            $workflowId = $waterDetails->workflow_id;
+            $documents = $mWfActiveDocument->getWaterDocsByAppNo($req->applicationId, $workflowId, $moduleId);
+            $returnData = collect($documents)->map(function ($value) {                          // Static
+                $path =  $this->readDocumentPath($value->ref_doc_path);
+                $value->doc_path = !empty(trim($value->ref_doc_path)) ? $path : null;
+                return $value;
+            });
+            return responseMsgs(true, "Uploaded Documents", remove_null($returnData), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    public function consumerApprovalRejection(Request $request)
+    {
+        $request->validate([
+            "applicationId" => "required",
+            "status"        => "required",
+            "comment"       => "required"
+        ]);
+        try {
+            $mWfRoleUsermap = new WfRoleusermap();
+            $waterDetails = WaterTempDisconnection::where('consumer_id', $request->applicationId)->firstOrFail();
+
+            # check the login user is AE or not
+            $userId = authUser($request)->id;
+            $workflowId = $waterDetails->workflow_id;
+            $getRoleReq = new Request([
+                'userId' => $userId,
+                'workflowId' => $workflowId
+            ]);
+            $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
+            $roleId = $readRoleDtls->wf_role_id;
+            if ($roleId != $waterDetails->finisher) {
+                throw new Exception("You are not the Finisher!");
+            }
+            DB::beginTransaction();
+            WaterTempDisconnection::where('consumer_id', $request->applicationId)
+                ->update(['status' => 0]);
+            DB::commit();
+            return responseMsg(true, "Request approved successfully", "");;
+        } catch (Exception $e) {
+            DB::rollback();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
 }
