@@ -5319,7 +5319,7 @@ class WaterReportController extends Controller
     public function filterDocument($documentList, $refWaterApplication, $ownerId = null)
     {
         $mWfActiveDocument  = new WfActiveDocument();
-        $applicationId      = $refWaterApplication->id;
+        $applicationId      = $refWaterApplication->consumer_id;
         $workflowId         = $refWaterApplication->workflow_id;
         $moduleId           = Config::get('module-constants.WATER_MODULE_ID');
         $uploadedDocs       = $mWfActiveDocument->getDocByRefIdsV4($applicationId, $workflowId, $moduleId);
@@ -5379,6 +5379,11 @@ class WaterReportController extends Controller
         return $filteredDocs;
     }
 
+    public function readDocumentPath($path)
+    {
+        $path = (config('app.url') . "/" . $path);
+        return $path;
+    }
     public function DocUpload(Request $req)
     {
         $validated = Validator::make(
@@ -5507,12 +5512,12 @@ class WaterReportController extends Controller
         ];
 
         $previousWorkflowTrack = $waterTrack->getWfTrackByRefId($preWorkflowReq);
-        if ($previousWorkflowTrack){
-        $previousWorkflowTrack->update([
-            'forward_date' => $current,
-            'forward_time' => $current
-        ]);
-    }
+        if ($previousWorkflowTrack) {
+            $previousWorkflowTrack->update([
+                'forward_date' => $current,
+                'forward_time' => $current
+            ]);
+        }
         DB::commit();
         return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", "", '01', '.ms', 'Post', '');
     }
