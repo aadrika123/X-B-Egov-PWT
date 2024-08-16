@@ -33,6 +33,7 @@ use App\Traits\Workflow\Workflow;
 use Illuminate\Support\Facades\App;
 use Illuminate\Database\Eloquent\Collection;
 use App\MicroServices\DocUpload;
+use App\Models\Workflows\WfRoleusermap;
 
 /**
  * | ----------------------------------------------------------------------------------
@@ -5563,6 +5564,40 @@ class WaterReportController extends Controller
             return responseMsgs(true, "Uploaded Documents", remove_null($returnData), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+
+    public function consumerApprovalRejection(Request $request)
+    {
+        $request->validate([
+            "applicationId" => "required",
+            "status"        => "required",
+            "comment"       => "required"
+        ]);
+        try {
+            $mWfRoleUsermap = new WfRoleusermap();
+            $waterDetails = WaterTempDisconnection::where('consumer_id', $request->applicationId)->firstOrFail();
+
+            # check the login user is AE or not
+            $userId = authUser($request)->id;
+            $workflowId = $waterDetails->workflow_id;
+            $getRoleReq = new Request([
+                'userId' => $userId,
+                'workflowId' => $workflowId
+            ]);
+            $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
+            $roleId = $readRoleDtls->wf_role_id;
+            if ($roleId != $waterDetails->finisher) {
+                throw new Exception("You are not the Finisher!");
+            }
+            DB::beginTransaction();
+            WaterTempDisconnection::where('consumer_id', $request->applicationId)
+                ->update(['status' => 0]);
+            DB::commit();
+            return responseMsg(true, "Request approved successfully", "");;
+        } catch (Exception $e) {
+            DB::rollback();
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 }
