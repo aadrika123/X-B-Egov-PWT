@@ -114,10 +114,54 @@ class PropSaf extends PropParamModel #Model
     /**
      * | Search safs
      */
+    // public function searchSafs()
+    // {
+    //     return PropSaf::select(
+    //         'prop_safs.id',"prop_safs.proccess_fee_paid",
+    //         DB::raw("'approved' as status"),
+    //         'prop_safs.saf_no',
+    //         'prop_safs.assessment_type',
+    //         DB::raw(
+    //             "case when prop_safs.payment_status = 0 then 'Payment Not Done'
+    //                   when prop_safs.payment_status = 2 then 'Cheque Payment Verification Pending'
+    //                   else role_name end
+    //                   as current_role
+    //             "
+    //         ),
+    //         // 'role_name as currentRole',
+    //         DB::raw(
+    //             "case when prop_safs.parked = true then CONCAT('BTC BY ',role_name)
+    //                 else CONCAT('At ',role_name) end
+    //             as currentRole
+    //             "
+    //         ),
+    //         'u.ward_name as old_ward_no',
+    //         'uu.ward_name as new_ward_no',
+    //         'prop_address',
+    //         // DB::raw(
+    //         //     "case when prop_safs.user_id is not null then 'TC/TL/JSK' when 
+    //         //     prop_safs.citizen_id is not null then 'Citizen' end as appliedBy"
+    //         // ),
+    //         "users.name as appliedBy",
+    //         DB::raw("string_agg(so.mobile_no::VARCHAR,',') as mobile_no"),
+    //         DB::raw("string_agg(so.owner_name,',') as owner_name"),
+    //     )
+    //         ->leftjoin('users', 'users.id', 'prop_safs.user_id')
+    //         ->leftjoin('wf_roles', 'wf_roles.id', 'prop_safs.current_role')
+    //         ->join('ulb_ward_masters as u', 'u.id', 'prop_safs.ward_mstr_id')
+    //         ->leftjoin('ulb_ward_masters as uu', 'uu.id', 'prop_safs.new_ward_mstr_id')
+    //         ->join('prop_safs_owners as so', function($join){
+    //             $join->on('so.saf_id', 'prop_safs.id')
+    //             ->where("so.status",1);
+    //         })
+    //         ->groupBy('users.name');
+    // }
+    # modified by prity pandey
     public function searchSafs()
     {
         return PropSaf::select(
-            'prop_safs.id',"prop_safs.proccess_fee_paid",
+            'prop_safs.id',
+            "prop_safs.proccess_fee_paid",
             DB::raw("'approved' as status"),
             'prop_safs.saf_no',
             'prop_safs.assessment_type',
@@ -142,7 +186,11 @@ class PropSaf extends PropParamModel #Model
             //     "case when prop_safs.user_id is not null then 'TC/TL/JSK' when 
             //     prop_safs.citizen_id is not null then 'Citizen' end as appliedBy"
             // ),
-            "users.name as appliedBy",
+            //"users.name as appliedBy",
+            DB::raw(
+                "case when prop_safs.citizen_id is not null then 'Citizen'
+                      else users.name end as appliedBy"
+            ),
             DB::raw("string_agg(so.mobile_no::VARCHAR,',') as mobile_no"),
             DB::raw("string_agg(so.owner_name,',') as owner_name"),
         )
@@ -150,9 +198,9 @@ class PropSaf extends PropParamModel #Model
             ->leftjoin('wf_roles', 'wf_roles.id', 'prop_safs.current_role')
             ->join('ulb_ward_masters as u', 'u.id', 'prop_safs.ward_mstr_id')
             ->leftjoin('ulb_ward_masters as uu', 'uu.id', 'prop_safs.new_ward_mstr_id')
-            ->join('prop_safs_owners as so', function($join){
+            ->join('prop_safs_owners as so', function ($join) {
                 $join->on('so.saf_id', 'prop_safs.id')
-                ->where("so.status",1);
+                    ->where("so.status", 1);
             })
             ->groupBy('users.name');
     }
@@ -163,7 +211,8 @@ class PropSaf extends PropParamModel #Model
     public function searchGbSafs()
     {
         return PropSaf::select(
-            'prop_safs.id',"prop_safs.proccess_fee_paid",
+            'prop_safs.id',
+            "prop_safs.proccess_fee_paid",
             DB::raw("'approved' as status"),
             'prop_safs.saf_no',
             'prop_safs.assessment_type',
@@ -375,13 +424,15 @@ class PropSaf extends PropParamModel #Model
     {
         $prop = (string)$propId;
         $data =  PropSaf::select(
-                'prop_safs.id','prop_safs.saf_no' ,'prop_safs.assessment_type',
-                'prop_safs_owners.owner_name',
-                'prop_safs_owners.guardian_name',
-            )
+            'prop_safs.id',
+            'prop_safs.saf_no',
+            'prop_safs.assessment_type',
+            'prop_safs_owners.owner_name',
+            'prop_safs_owners.guardian_name',
+        )
             ->leftJoin('prop_safs_owners', 'prop_safs_owners.saf_id', '=', 'prop_safs.id')
-            ->where('prop_safs.previous_holding_id',$prop)
+            ->where('prop_safs.previous_holding_id', $prop)
             ->get();
-            return $data;
+        return $data;
     }
 }
