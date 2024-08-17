@@ -634,7 +634,8 @@ class WaterSecondConsumer extends Model
     public function getConsumerDetails($applicationId)
     {
         return WaterSecondConsumer::select(
-            'water_second_consumers.*','water_temp_disconnections.status as deactivate_status'
+            'water_second_consumers.*',
+            'water_temp_disconnections.status as deactivate_status'
         )
             ->leftjoin('water_temp_disconnections', 'water_temp_disconnections.consumer_id', '=', 'water_second_consumers.id')
             ->where('water_second_consumers.id', $applicationId)
@@ -987,11 +988,22 @@ class WaterSecondConsumer extends Model
             'water_second_consumers.saf_no',
             'water_second_consumers.ulb_id',
             'ulb_ward_masters.ward_name',
+            "water_temp_disconnections.status as deactivated_status",
+            "water_second_consumers.notice_no_1",
+            "water_second_consumers.notice_no_2",
+            "water_second_consumers.notice_no_3",
+            "water_second_consumers.notice",
+            "water_second_consumers.notice_2",
+            "water_second_consumers.notice_3",
+            "water_second_consumers.notice_1_generated_at",
+            "water_second_consumers.notice_2_generated_at",
+            "water_second_consumers.notice_3_generated_at",
             DB::raw("string_agg(water_consumer_owners.applicant_name,',') as applicant_name"),
             DB::raw("string_agg(water_consumer_owners.mobile_no::VARCHAR,',') as mobile_no"),
             DB::raw("string_agg(water_consumer_owners.guardian_name,',') as guardian_name"),
         )
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_second_consumers.id')
+            ->leftjoin('water_temp_disconnections', 'water_temp_disconnections.consumer_id', '=', 'water_second_consumers.id')
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
             ->whereIn("water_second_consumers.id", $consumerIds)
             ->where('water_second_consumers.status', 1)
@@ -1004,7 +1016,17 @@ class WaterSecondConsumer extends Model
                 'water_consumer_owners.consumer_id',
                 'water_second_consumers.consumer_no',
                 'water_second_consumers.ward_mstr_id',
-                'ulb_ward_masters.ward_name'
+                'ulb_ward_masters.ward_name',
+                'water_temp_disconnections.status',
+                'water_second_consumers.notice_no_1',
+                'water_second_consumers.notice_no_2',
+                'water_second_consumers.notice_no_3',
+                'water_second_consumers.notice',
+                'water_second_consumers.notice_2',
+                'water_second_consumers.notice_3',
+                'water_second_consumers.notice_1_generated_at',
+                'water_second_consumers.notice_2_generated_at',
+                'water_second_consumers.notice_3_generated_at',
             );
     }
     /**
@@ -1072,5 +1094,4 @@ class WaterSecondConsumer extends Model
         // ->whereIn('water_second_consumers.status', [1, 2,4]);
         // ->where('water_approval_application_details.status', true);
     }
-   
 }

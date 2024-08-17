@@ -4799,7 +4799,7 @@ class WaterReportController extends Controller
                                 ['consumer_id' => $consumerId],
                                 [
                                     'amount_notice_2' => $totalAmount,
-                                    'demand_upto_1' => $demandupto 
+                                    'demand_upto_1' => $demandupto
                                 ]
                             );
                             break;
@@ -4820,7 +4820,7 @@ class WaterReportController extends Controller
                                 ['consumer_id' => $consumerId],
                                 [
                                     'amount_notice_3' => $totalAmountNotice3,
-                                    'demand_upto_2' => $demandupto 
+                                    'demand_upto_2' => $demandupto
                                 ]
                             );
                             break;
@@ -5088,25 +5088,26 @@ class WaterReportController extends Controller
             $finisherRoleId = DB::select($refFinisherRoleId);
             $initiatorRoleId = DB::select($refInitiatorRoleId);
 
-
             foreach ($waterDtls as $waterDtl) {
-                $jeSendList = new WaterTempDisconnection();
-                $jeSendList->consumer_id = $waterDtl->id;
-                $jeSendList->current_role = collect($initiatorRoleId)->first()->role_id;
-                $jeSendList->initiator = collect($initiatorRoleId)->first()->role_id;
-                $jeSendList->finisher = collect($finisherRoleId)->first()->role_id;
-                $jeSendList->last_role_id = collect($finisherRoleId)->first()->role_id;
-                $jeSendList->workflow_id = $ulbWorkflowId->id;
-                $jeSendList->notice = $waterDtl->notice;
-                $jeSendList->notice_no_1 = $waterDtl->notice_no_1;
-                $jeSendList->notice_no_2 = $waterDtl->notice_no_2;
-                $jeSendList->notice_no_3 = $waterDtl->notice_no_3;
-                $jeSendList->notice_2 = $waterDtl->notice_2;
-                $jeSendList->notice_3 = $waterDtl->notice_3;
-                $jeSendList->notice_1_generated_at = $waterDtl->notice_1_generated_at;
-                $jeSendList->notice_2_generated_at = $waterDtl->notice_2_generated_at;
-                $jeSendList->notice_3_generated_at = $waterDtl->notice_3_generated_at;
-                $jeSendList->save();
+                WaterTempDisconnection::updateOrCreate(
+                    ['consumer_id' => $waterDtl->id],
+                    [
+                        'current_role' => collect($initiatorRoleId)->first()->role_id,
+                        'initiator' => collect($initiatorRoleId)->first()->role_id,
+                        'finisher' => collect($finisherRoleId)->first()->role_id,
+                        'last_role_id' => collect($finisherRoleId)->first()->role_id,
+                        'workflow_id' => $ulbWorkflowId->id,
+                        'notice' => $waterDtl->notice,
+                        'notice_no_1' => $waterDtl->notice_no_1,
+                        'notice_no_2' => $waterDtl->notice_no_2,
+                        'notice_no_3' => $waterDtl->notice_no_3,
+                        'notice_2' => $waterDtl->notice_2,
+                        'notice_3' => $waterDtl->notice_3,
+                        'notice_1_generated_at' => $waterDtl->notice_1_generated_at,
+                        'notice_2_generated_at' => $waterDtl->notice_2_generated_at,
+                        'notice_3_generated_at' => $waterDtl->notice_3_generated_at,
+                    ]
+                );
             }
 
             return responseMsgs(true, "Notice List Send Successfully To JE ", "");
@@ -5591,6 +5592,10 @@ class WaterReportController extends Controller
             $refmoduleId        = Config::get('module-constants.WATER_MODULE_ID');
 
             $getWaterDetails    = $mWaterApplication->fullDetails($req)->firstOrFail();
+            if ($getWaterDetails->doc_upload_status === true) {
+                throw new Exception("Document has uploaded");
+            }
+
             $refImageName       = $req->docRefName;
             $refImageName       = $getWaterDetails->id . '-' . str_replace(' ', '_', $refImageName);
             $imageName          = $docUpload->upload($refImageName, $document, $relativePath);
@@ -5777,6 +5782,108 @@ class WaterReportController extends Controller
         } catch (Exception $e) {
             DB::rollback();
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    public function consumerNotice(Request $request)
+    {
+
+
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'consumerId' => 'required|numeric'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $uptoDate = $request->uptoDate ?? $now;
+            $userId = $request->userId;
+            $wardId = $request->wardId;
+            $zoneId = $request->zoneId;
+            $notice = $request->notice;
+
+            $data = waterConsumerDemand::select(
+                "water_second_consumers.id as consumer_id",
+                "water_second_consumers.consumer_no",
+                "water_second_consumers.folio_no as property_no",
+                "zone_masters.zone_name",
+                "ulb_ward_masters.ward_name",
+                "owners.applicant_name",
+                "owners.guardian_name",
+                "owners.mobile_no",
+                "water_second_consumers.category",
+                "water_property_type_mstrs.property_type",
+                "water_second_consumers.notice_no_1",
+                "water_second_consumers.notice_no_2",
+                "water_second_consumers.notice_no_3",
+            )
+                ->join('water_second_consumers', 'water_second_consumers.id', 'water_consumer_demands.consumer_id')
+                ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
+                ->leftJoin('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
+                ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_second_consumers.property_type_id')
+                ->join('water_consumer_owners as owners', 'owners.id', 'water_consumer_demands.consumer_id')
+                ->where('water_consumer_demands.is_full_paid', false)
+                ->where('water_consumer_demands.demand_upto', '<=', $uptoDate)
+                ->where('water_second_consumers.generated', true)
+                ->groupBy(
+                    'water_second_consumers.id',
+                    'water_second_consumers.consumer_no',
+                    'water_second_consumers.folio_no',
+                    'zone_masters.zone_name',
+                    'ulb_ward_masters.ward_name',
+                    'owners.applicant_name',
+                    'owners.guardian_name',
+                    'owners.mobile_no',
+                    'water_second_consumers.category',
+                    'water_property_type_mstrs.property_type'
+                )
+                ->havingRaw('SUM(water_consumer_demands.amount) > 0');
+
+            if ($userId) {
+                $data->where('water_consumer_demands.emp_details_id', $userId);
+            }
+            if ($wardId) {
+                $data->where('water_second_consumers.ward_mstr_id', $wardId);
+            }
+            if ($zoneId) {
+                $data->where('water_second_consumers.zone_mstr_id', $zoneId);
+            }
+            if ($notice) {
+                switch ($notice) {
+                    case 1:
+                        $data->whereNotNull('water_second_consumers.notice_no_1')
+                            ->whereNull('water_second_consumers.notice_no_2')
+                            ->whereNull('water_second_consumers.notice_no_3');
+                        break;
+                    case 2:
+                        $data->whereNotNull('water_second_consumers.notice_no_2')
+                            ->whereNotNull('water_second_consumers.notice_no_1')
+                            ->whereNull('water_second_consumers.notice_no_3');
+                        break;
+                    case 3:
+                        $data->whereNotNull('water_second_consumers.notice_no_3')
+                            ->whereNotNull('water_second_consumers.notice_no_2')
+                            ->whereNotNull('water_second_consumers.notice_no_1');
+                        break;
+                }
+            }
+
+            $perPage = $request->perPage ?? 10;
+            $paginator = $data->paginate($perPage);
+
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true, "Generated Notice Lists", $list);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "");
         }
     }
 }
