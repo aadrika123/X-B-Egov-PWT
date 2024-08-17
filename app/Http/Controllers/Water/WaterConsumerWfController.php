@@ -2013,7 +2013,8 @@ class WaterConsumerWfController extends Controller
 
             $inboxDetails = $this->getConsumerReconnectQuerry($workflowIds, $ulbId)
                 ->whereIn('water_reconnect_consumers.current_role', $roleId)
-                // ->where('water_reconnect_consumers.verify_status', 0)
+                ->where('water_reconnect_consumers.verify_status', 0)
+                ->where('water_reconnect_consumers.payment_status', 1)
                 // ->where('water_reconnect_consumers.is_escalate', false)
                 // ->where('water_reconnect_consumers.parked', false)
                 ->orderByDesc('water_reconnect_consumers.id')
@@ -2053,10 +2054,10 @@ class WaterConsumerWfController extends Controller
             });
             $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
             $outboxDetails = $this->getConsumerReconnectQuerry($workflowIds, $ulbId)
-                ->whereNotIn('water_consumer_active_requests.current_role', $roleId)
+                ->whereNotIn('water_reconnect_consumers.current_role', $roleId)
                 // ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
                 // ->where('water_consumer_active_requests.verify_status', 1)
-                ->orderByDesc('water_consumer_active_requests.id')
+                ->orderByDesc('water_reconnect_consumers.id')
                 ->get();
             return responseMsgs(true, "Successfully listed consumer req inbox details!",  remove_null($outboxDetails), "", "01", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {

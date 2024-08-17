@@ -197,6 +197,7 @@ return [
     ],
     "PAYMENT_FOR_CONSUMER" => [
         "1" => "NEW_CONNECTION",
+        "2" => "WATER RECONNENCTION"
     ],
 
     'WATER_CONSUMER_MASTSER_DATA' => [

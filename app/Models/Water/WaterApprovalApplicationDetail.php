@@ -160,7 +160,9 @@ class WaterApprovalApplicationDetail extends Model
             // "water_road_cutter_charges.road_type",
             "water_approval_application_details.per_meter",
             "water_approval_application_details.trade_license as license_no",
-            "water_approval_application_details.initial_reading"
+            "water_approval_application_details.initial_reading",
+            "water_consumer_charges.amount as reconnectCharges",
+            "water_consumer_charges.charge_category as reconnechargeCategory"
         )
             ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_approval_application_details.current_role')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_approval_application_details.ulb_id')
@@ -171,6 +173,11 @@ class WaterApprovalApplicationDetail extends Model
             ->join('water_param_pipeline_types', 'water_param_pipeline_types.id', 'water_approval_application_details.pipeline_type_id')
             ->join('zone_masters', 'zone_masters.id', 'water_approval_application_details.zone_mstr_id')
             ->join('water_connection_charges', 'water_connection_charges.application_id', 'water_approval_application_details.id')
+            ->leftJoin('water_consumer_charges', function ($join) {
+                $join->on('water_consumer_charges.consumer_id', '=', 'water_second_consumers.id')
+                    ->where('water_consumer_charges.status', 1)
+                    ->where('water_consumer_charges.charge_category', 'WATER RECONNECTION');
+            })
             ->join('water_consumer_owners', 'water_consumer_owners.application_id', 'water_approval_application_details.id')
             ->leftjoin('water_consumer_meters', 'water_consumer_meters.consumer_id', 'water_second_consumers.id')
             // ->leftjoin('water_road_cutter_charges')
