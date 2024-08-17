@@ -5,6 +5,7 @@ namespace App\Traits\Water;
 use App\Models\Water\WaterApplication;
 use App\Models\Water\WaterConsumerActiveRequest;
 use App\Models\Water\WaterPenaltyInstallment;
+use App\Models\Water\WaterReconnectConsumer;
 use App\Models\Water\WaterTranFineRebate;
 use Exception;
 use Illuminate\Http\Request;
@@ -218,5 +219,32 @@ trait WaterTrait
             ->where('water_consumer_active_requests.ulb_id', $ulbId)
             ->whereIn('water_consumer_active_requests.workflow_id', $workflowIds)
             ->orderByDesc('water_consumer_active_requests.id');
+    }
+
+    /**
+     * | common function for workflow
+     * | Get consumer active application details 
+        | Serial No : 04
+        | Working
+     */
+    public function getConsumerReconnectQuerry($workflowIds, $ulbId)
+    {
+        return WaterReconnectConsumer::select(
+            'water_reconnect_consumers.id',
+            'wco.id as owner_id',
+            'water_reconnect_consumers.application_no',
+            'water_reconnect_consumers.apply_date',
+            'water_reconnect_consumers.charge_category_id',
+            'wco.applicant_name as owner_name',
+            'water_second_consumers.consumer_no',
+            'water_reconnect_consumers.workflow_id',
+            'uwm.ward_name'
+        )
+            ->leftjoin('water_consumer_owners AS wco', 'wco.consumer_id', 'water_reconnect_consumers.consumer_id')
+            ->join('water_second_consumers', 'water_second_consumers.id', 'water_reconnect_consumers.consumer_id')
+            ->leftjoin('ulb_ward_masters AS uwm', 'uwm.id', 'water_second_consumers.ward_mstr_id')
+            ->where('water_reconnect_consumers.status', 1)
+            // ->where('water_reconnect_consumers.ulb_id', $ulbId)
+            ->whereIn('water_reconnect_consumers.workflow_id', $workflowIds);
     }
 }

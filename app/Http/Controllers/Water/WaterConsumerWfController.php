@@ -33,6 +33,8 @@ use App\Models\Water\WaterConsumerMeter;
 use App\Http\Controllers\Water\WaterConsumer;
 use App\MicroServices\DocUpload;
 use App\Models\Water\WaterConnectionCharge;
+use App\Models\Water\WaterConsumerCharge;
+use App\Models\Water\WaterConsumerChargeCategory;
 use App\Models\Water\WaterReconnectConsumer;
 use App\Models\Water\WaterTran;
 use App\Models\Workflows\WfWardUser;
@@ -232,20 +234,27 @@ class WaterConsumerWfController extends Controller
     public function getRequestedApplication(Request $request)
     {
         try {
-            $user                           = authUser($request);
-            $mWaterConsumerActiveRequest    = new WaterConsumerActiveRequest();
-            $refUserType                    = Config::get('waterConstaint.REF_USER_TYPE');
-
-            # User type changes 
+            $user                        = authUser($request);
+            $mWaterConsumerActiveRequest = new WaterConsumerActiveRequest();
+            $mWaterReconnectConsumer     = new WaterReconnectConsumer();
+    
+            // Retrieve disconnection and reconnection application details
             $detailsDisconnections = $mWaterConsumerActiveRequest->getApplicationByUser($user->id)->get();
-            if (!collect($detailsDisconnections)->first()) {
-                throw new Exception("Data not found!");
+            $detailsReconnection   = $mWaterReconnectConsumer->getApplicationByUser($user->id)->get();
+    
+            // Merge the two collections
+            $mergeDetails = $detailsDisconnections->merge($detailsReconnection);
+    
+            if ($mergeDetails->isEmpty()) {
+                throw new Exception("Data not found!", 404);
             }
-            return responseMsgs(true, "list of disconnection ", remove_null($detailsDisconnections), "", "1.0", "350ms", "POST", $request->deviceId);
+    
+            return responseMsgs(true, "List of disconnection and reconnection applications", remove_null($mergeDetails->toArray()), "", "1.0", "350ms", "POST", $request->deviceId);
         } catch (Exception $e) {
-            return responseMsgs(false, $e->getMessage(), "", $e->getCode(), "1.0", "", 'POST', "");
+            return responseMsgs(false, $e->getMessage(), "", $e->getCode() ?: 500, "1.0", "", 'POST', "");
         }
     }
+    
     /**
      * postnext level water Disconnection
      * 
@@ -1844,6 +1853,9 @@ class WaterConsumerWfController extends Controller
             return responseMsgs(false, $e->getMessage(), [], "", "0.1", ".ms", "POST", $request->deviceId);
         }
     }
+    #======================================== Water Reconnection Process ==========================================#
+    #======================================== Water Reconnection Process ==========================================#
+    #======================================== Water Reconnection Process ==========================================#
 
     /**
      * | Reconnect Consumer Request
@@ -1852,7 +1864,6 @@ class WaterConsumerWfController extends Controller
      */
     public function reconnectConsumer(Request $request)
     {
-
         $validated = Validator::make(
             $request->all(),
             [
@@ -1863,23 +1874,193 @@ class WaterConsumerWfController extends Controller
             return validationError($validated);
         try {
             $user = authUser($request);
-            $user = $user->id;
-            $userType = $user->user_type;
-            $mWaterSecondConsumer = new WaterSecondConsumer();
-            $mWaterReconnectConsumer = new WaterReconnectConsumer();
+            // $user = $user->id;
+            // $userType = $user->user_type;
+            $ulbWorkflowObj                 = new WfWorkflow();
+            $mWaterSecondConsumer           = new WaterSecondConsumer();
+            $mWaterReconnectConsumer        = new WaterReconnectConsumer();
+            $mWaterConsumerCharge           = new WaterConsumerCharge();
+            $mWaterConsumerChargeCategory   = new WaterConsumerChargeCategory();
+            $mWorkflowTrack                 = new WorkflowTrack();
+
+            $refWorkflow                    = Config::get('workflow-constants.WATER_RECONNECTION');
+            $refUserType                    = Config::get('waterConstaint.REF_USER_TYPE');
+            $refApplyFrom                   = Config::get('waterConstaint.APP_APPLY_FROM');
+            $refConParamId                  = Config::get('waterConstaint.PARAM_IDS');
+            $refConsumerCharges             = Config::get('waterConstaint.CONSUMER_CHARGE_CATAGORY');
+            $confModuleId                   = Config::get('module-constants.WATER_MODULE_ID');
             $waterConsumerDetails = $mWaterSecondConsumer->consumerDetails($request->consumerId)->first();
             if (!$waterConsumerDetails) {
                 throw new Exception('Consumer Not Found');
             }
             #check Consumer 
-            $WaterReconnectConsumer = $mWaterReconnectConsumer->getConsumerDetails($request->consumerId);
+            $WaterReconnectConsumer = $mWaterReconnectConsumer->getConsumerDetails($request->consumerId)->first();
             if ($WaterReconnectConsumer) {
                 throw new Exception('Already Reconnect Applied');
             }
+            $ulbId      = $request->ulbId ?? $waterConsumerDetails->ulb_id;
+            $ulbWorkflowId = $ulbWorkflowObj->getulbWorkflowId($refWorkflow, $ulbId);
+            if (!$ulbWorkflowId) {
+                throw new Exception("Respective Ulb is not maped to Water Workflow!");
+            }
+            $refInitiatorRoleId = $this->getInitiatorId($ulbWorkflowId->id);
+            $refFinisherRoleId  = $this->getFinisherId($ulbWorkflowId->id);
+            $finisherRoleId     = DB::select($refFinisherRoleId);
+            $initiatorRoleId    = DB::select($refInitiatorRoleId);
+            if (!$finisherRoleId || !$initiatorRoleId) {
+                throw new Exception("Initiator Role or finisher Role not found for respective Workflow!");
+            }
+
+            # If the user is not citizen
+            if ($user->user_type != $refUserType['1']) {
+                $request->request->add(['workflowId' => $refWorkflow]);
+                $roleDetails = $this->getRole($request);
+                if (!$roleDetails) {
+                    throw new Exception("Role not found!");
+                }
+                $roleId = $roleDetails['wf_role_id'];
+                $refRequest = [
+                    "applyFrom" => $user->user_type,
+                    "empId"     => $user->id
+                ];
+            } else {
+                $refRequest = [
+                    "applyFrom" => $refApplyFrom['1'],
+                    "citizenId" => $user->id
+                ];
+            }
+            #coonection charges 
+
+            # Get chrages for deactivation
+            $chargeDetails = $mWaterConsumerChargeCategory->getChargesByid($refConsumerCharges['WATER RECONNECTION']);
+            $refChargeList = collect($refConsumerCharges)->flip();
+
+            $refRequest["initiatorRoleId"]   = collect($initiatorRoleId)->first()->role_id;
+            $refRequest["finisherRoleId"]    = collect($finisherRoleId)->first()->role_id;
+            $refRequest['roleId']            = $roleId ?? null;
+            $refRequest['userType']          = $user->user_type;
+            $refRequest["ulbWorkflowId"]     = $ulbWorkflowId->id;
+            $refRequest["chargeCategoryId"]  = $chargeDetails->id;
             $this->begin();
+
+            $idGeneration       = new PrefixIdGenerator($refConParamId['WRC'], $ulbId);
+            $applicationNo      = $idGeneration->generate();
+            $applicationNo      = str_replace('/', '-', $applicationNo);
+            $deactivatedDetails = $mWaterReconnectConsumer->saveRequestDetails($request, $waterConsumerDetails, $refRequest, $applicationNo);
+
+            $metaRequest = [
+                'chargeAmount'      => $chargeDetails->amount,
+                'amount'            => $chargeDetails->amount,
+                'ruleSet'           => null,
+                'chargeCategoryId'  => $refConsumerCharges['WATER RECONNECTION'],
+                'relatedId'         => $deactivatedDetails['id'],
+                'status'            => 2                                                    // Static
+            ];
+            $mWaterConsumerCharge->saveConsumerCharges($metaRequest, $request->consumerId, $refChargeList['13']);
+
+            # Save data in track
+            $metaReqs = new Request(
+                [
+                    'citizenId'         => $refRequest['citizenId'] ?? null,
+                    'moduleId'          => $confModuleId,
+                    'workflowId'        => $ulbWorkflowId->id,
+                    'refTableDotId'     => 'water_consumer_active_requests.id',             // Static                          // Static                              // Static
+                    'refTableIdValue'   => $deactivatedDetails['id'],
+                    'user_id'           => $refRequest['empId'] ?? null,
+                    'ulb_id'            => $ulbId,
+                    'senderRoleId'      => $refRequest['empId'] ?? null,
+                    'receiverRoleId'    => collect($initiatorRoleId)->first()->role_id,
+                ]
+            );
+            $mWorkflowTrack->saveTrack($metaReqs);
+            $returnData = [
+                'applicationNo'         => $applicationNo,
+                "Id"                    => $metaRequest['relatedId'],
+                'applicationDetails'    => $metaRequest,
+            ];
+            $this->commit();
+            return responseMsgs(true, "Data Save", remove_null($returnData), "010107", "1.0", "251ms", "POST", "");
         } catch (Exception $e) {
             $this->rollback();
             return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
+        }
+    }
+
+    #Inbox For Water Reconnection 
+
+    public function reconnectInbox(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'perPage' => 'nullable|integer',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $user                   = authUser($req);
+            $pages                  = $req->perPage ?? 10;
+            $userId                 = $user->id;
+            $ulbId                  = $user->ulb_id;
+
+            $mWfWorkflowRoleMaps    = new WfWorkflowrolemap();
+
+            $occupiedWards  = $this->getWardByUserId($userId)->pluck('ward_id');
+            $roleId         = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds    = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+
+            $inboxDetails = $this->getConsumerReconnectQuerry($workflowIds, $ulbId)
+                ->whereIn('water_reconnect_consumers.current_role', $roleId)
+                // ->where('water_reconnect_consumers.verify_status', 0)
+                // ->where('water_reconnect_consumers.is_escalate', false)
+                // ->where('water_reconnect_consumers.parked', false)
+                ->orderByDesc('water_reconnect_consumers.id')
+                ->get();
+            return responseMsgs(true, "Successfully listed consumer req inbox details!",  remove_null($inboxDetails), "", "01", responseTime(), "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), "POST", $req->deviceId);
+        }
+    }
+
+    /**
+     * | Consumer Outbox 
+     * | Get Consumer Active outbox details 
+        | Serial No :
+        | Working 
+     */
+    public function reconnectOutbox(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'perPage' => 'nullable|integer',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        try {
+            $user                   = authUser($req);
+            $pages                  = $req->perPage ?? 10;
+            $userId                 = $user->id;
+            $ulbId                  = $user->ulb_id;
+            $mWfWorkflowRoleMaps    = new WfWorkflowrolemap();
+
+            $workflowRoles = $this->getRoleIdByUserId($userId);
+            $roleId = $workflowRoles->map(function ($value) {                         // Get user Workflow Roles
+                return $value->wf_role_id;
+            });
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+            $outboxDetails = $this->getConsumerReconnectQuerry($workflowIds, $ulbId)
+                ->whereNotIn('water_consumer_active_requests.current_role', $roleId)
+                // ->whereIn('water_consumer_active_requests.ward_mstr_id', $occupiedWards)
+                // ->where('water_consumer_active_requests.verify_status', 1)
+                ->orderByDesc('water_consumer_active_requests.id')
+                ->get();
+            return responseMsgs(true, "Successfully listed consumer req inbox details!",  remove_null($outboxDetails), "", "01", responseTime(), "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), "POST", $req->deviceId);
         }
     }
 }

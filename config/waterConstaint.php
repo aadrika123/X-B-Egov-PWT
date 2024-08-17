@@ -31,7 +31,8 @@ return [
         "WFC"   => 42,
         "WPS"   => 43,
         "DISC"  => 57,
-        "AMCN"  => 60
+        "AMCN"  => 60,
+        "WRC"   => 61,
     ],
     "ACCOUNT_DESCRIPTION" => "Water",
     "DEPARTMENT_SECTION" => "Revenue Section",
@@ -181,7 +182,8 @@ return [
         "WATER_DISCONNECTION"       => 2,
         "NAME_TRANSFER"             => 3,
         "FERRULE_CLEANING_CHECKING" => 4,
-        "PIPE_SHIFTING_ALTERATION"  => 5
+        "PIPE_SHIFTING_ALTERATION"  => 5,
+        "WATER RECONNECTION"        => 13,
     ],
 
     "PARAM_PIPELINE" => [

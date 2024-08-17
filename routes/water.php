@@ -203,6 +203,9 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('consumer/req/special-inbox', 'waterSpecialInbox');                                              // Workflow
         Route::post('consumer/req/escalate', 'postEscalate');                                                        // Workflow           
         Route::post("consumer/reconnect-consumer", "reconnectConsumer");                      // Reconnect Consumer Citizen Side 
+        # Route for Water Reconnect Process
+        Route::post("consumer/reconnect-inbox", "reconnectInbox");                      // Reconnect Consumer Citizen Side 
+        Route::post("consumer/reconnect-outbox", "reconnectOutbox");                      // Reconnect Consumer Citizen Side 
 
 
     });
@@ -255,7 +258,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('JeViewApplicationDetail', 'viewDetail');
         Route::post('JeGetDocList', 'DocToUpload');
         Route::post('JeUploadDocument', 'DocUpload');
-        Route::post('farwardApplication', 'consumerPostNextLevel'); 
+        Route::post('farwardApplication', 'consumerPostNextLevel');
         Route::post('uploadedDocumentList', 'getDiscUploadDocuments');
         Route::post('finalApproval', 'consumerApprovalRejection');
     });

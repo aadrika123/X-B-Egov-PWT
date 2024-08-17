@@ -770,7 +770,7 @@ class WaterSecondConsumer extends Model
     public function consumerDetails($consumerId)
     {
         return WaterSecondConsumer::select(
-            'water_second_consumers.id as waterConsumerId',
+            'water_second_consumers.*',
             'water_consumer_owners.id as waterConsumerOwner',
         )
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_second_consumers.id')
