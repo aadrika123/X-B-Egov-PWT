@@ -5090,7 +5090,7 @@ class WaterReportController extends Controller
 
             foreach ($waterDtls as $waterDtl) {
                 WaterTempDisconnection::updateOrCreate(
-                    ['consumer_id' => $waterDtl->id], // Find by consumer_id
+                    ['consumer_id' => $waterDtl->id],
                     [
                         'current_role' => collect($initiatorRoleId)->first()->role_id,
                         'initiator' => collect($initiatorRoleId)->first()->role_id,

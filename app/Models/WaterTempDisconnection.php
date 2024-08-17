@@ -17,7 +17,22 @@ class WaterTempDisconnection extends Model
         'amount_notice_2',
         'amount_notice_3',
         'demand_upto_1',
-        'demand_upto_2'
+        'demand_upto_2',
+
+        'current_role',
+        'initiator',
+        'finisher',
+        'last_role_id',
+        'workflow_id',
+        'notice',
+        'notice_no_1',
+        'notice_no_2',
+        'notice_no_3',
+        'notice_2',
+        'notice_3',
+        'notice_1_generated_at',
+        'notice_2_generated_at',
+        'notice_3_generated_at',
     ];
 
     public function getActiveReqById($id)
