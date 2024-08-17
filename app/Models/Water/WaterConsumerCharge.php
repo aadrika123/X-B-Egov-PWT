@@ -71,4 +71,22 @@ class WaterConsumerCharge extends Model
         $mWaterConsumerCharge->save();
         return $mWaterConsumerCharge;
     }
+
+    /**
+     * |----------------------------------- Get Water Charges By ApplicationId ------------------------------|
+     * | @param request
+     */
+    public function getWaterchargesById($consumerId)
+    {
+        return WaterConsumerCharge::select(
+            'id',
+            'amount',
+            'charge_category',
+            'penalty',
+            'rule_set',
+            'paid_status'
+        )
+            ->where('consumer_id', $consumerId)
+            ->where('status', 1);
+    }
 }

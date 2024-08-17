@@ -5,6 +5,7 @@ namespace App\Models\Water;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 
 class WaterReconnectConsumer extends Model
 {
@@ -70,5 +71,43 @@ class WaterReconnectConsumer extends Model
             ->where('water_reconnect_consumers.status', 1)
             ->where('water_second_consumers.status', 1)
             ->orderByDesc('water_reconnect_consumers.id');
+    }
+
+    public function getDetailsByApplicationNo($req, $applicationNo)
+    {
+        return WaterReconnectConsumer::select(
+            'water_second_consumers.id',
+            'water_reconnect_consumers.id as applicationId',
+            'water_reconnect_consumers.application_no',
+            'water_approval_application_details.ward_id',
+            'water_approval_application_details.address',
+            'water_approval_application_details.saf_no',
+            'water_approval_application_details.payment_status',
+            'water_approval_application_details.property_no as holding_no',
+            'ulb_ward_masters.ward_name',
+            DB::raw("string_agg(water_consumer_owners.applicant_name,',') as applicantName"),
+            DB::raw("string_agg(water_consumer_owners.mobile_no::VARCHAR,',') as mobileNo"),
+            DB::raw("string_agg(water_consumer_owners.guardian_name,',') as guardianName")
+        )
+            ->join('water_second_consumers', 'water_second_consumers.id', 'water_reconnect_consumers.consumer_id')
+            ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_reconnect_consumers.consumer_id')
+            ->join('water_approval_application_details', 'water_approval_application_details.id', '=', 'water_second_consumers.apply_connection_id')
+            ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_approval_application_details.ward_id')
+            ->where('water_approval_application_details.status', true)
+            ->where('water_reconnect_consumers.application_no', 'LIKE', '%' . $applicationNo . '%')
+            ->where('water_second_consumers.ulb_id', authUser($req)->ulb_id)
+            ->whereIn('water_second_consumers.status', [1, 4])
+            ->orderby('water_reconnect_consumers.id', 'DESC')
+            ->groupBy(
+                'water_second_consumers.id',
+                'water_reconnect_consumers.id',
+                'water_reconnect_consumers.application_no',
+                'water_approval_application_details.ward_id',
+                'water_approval_application_details.address',
+                'water_approval_application_details.saf_no',
+                'water_approval_application_details.payment_status',
+                'water_approval_application_details.property_no',
+                'ulb_ward_masters.ward_name'
+            );
     }
 }
