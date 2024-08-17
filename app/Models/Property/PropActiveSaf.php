@@ -499,7 +499,7 @@ class  PropActiveSaf extends PropParamModel #Model
             ->leftJoin('ref_prop_gbbuildingusagetypes AS gbu', 'gbu.id', '=', 'prop_active_safs.gb_usage_types')
             ->leftJoin('ref_prop_gbpropusagetypes AS gbp', 'gbp.id', '=', 'prop_active_safs.gb_prop_usage_types')
             ->leftJoin('ref_prop_categories AS cat', 'cat.id', '=', 'prop_active_safs.category_id')
-            ->whereBetween('prop_active_safs.applied_by',['TC','TC Reassessment'])
+            ->whereBetween('prop_active_safs.applied_by', ['TC', 'TC Reassessment'])
             ->groupBy(
                 'prop_active_safs.id',
                 'w.ward_name',
@@ -1132,7 +1132,11 @@ class  PropActiveSaf extends PropParamModel #Model
             //     "case when prop_active_safs.user_id is not null then 'TC/TL/JSK' when 
             //     prop_active_safs.citizen_id is not null then 'Citizen' end as appliedBy"
             // ),
-            "users.name as appliedBy",
+            //"users.name as appliedBy",
+            DB::raw(
+                "case when prop_active_safs.citizen_id is not null then 'Citizen'
+                      else users.name end as appliedBy"
+            ),
             DB::raw("string_agg(so.mobile_no::VARCHAR,',') as mobile_no"),
             DB::raw("string_agg(so.owner_name,',') as owner_name"),
         )
