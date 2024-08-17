@@ -110,4 +110,26 @@ class WaterReconnectConsumer extends Model
                 'ulb_ward_masters.ward_name'
             );
     }
+    /**
+     * | Update the payment Status ini case of pending
+     * | in case of application is under verification 
+     * | @param applicationId
+     */
+    public function updatePendingStatus($applicationId)
+    {
+        $activeSaf = WaterReconnectConsumer::find($applicationId);
+        $activeSaf->payment_status = 2;
+        $activeSaf->save();
+    }
+
+    /**
+     * | Save The payment Status 
+     * | @param ApplicationId
+     */
+    public function updateOnlyPaymentstatus($applicationId)
+    {
+        $activeSaf = WaterReconnectConsumer::where('consumer_id', $applicationId)->first();
+        $activeSaf->payment_status = 1;
+        $activeSaf->save();
+    }
 }

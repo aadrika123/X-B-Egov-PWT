@@ -114,6 +114,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
 
         # FOR AKOLA 
         Route::post('consumer/offline-request-payment', 'offlineConPayment');
+        Route::post('consumer/reconnect-offline-request-payment', 'offlineReconPayment');
         Route::post('consumer/part-payment', 'partPayment');                                             //status working
         Route::post('consumer/online-payment', 'getReferalUrl');
         Route::post('consumer/demand-payment', 'partPaymentV2');                                                                     // use in consumer part
@@ -182,10 +183,10 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
      * |------------ Water Consumer Workflow -------------|
      */
     Route::controller(WaterConsumerWfController::class)->group(function () {
-        Route::post('consumer/req/inbox', 'consumerInbox');                                               // Workflow
-        Route::post('consumer/req/outbox', 'consumerOutbox');                                            // Workflow
-        Route::post('consumer/req/get-details-by', 'getWorkflow');                                       // Workflow
-        Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');                            // Here
+        Route::post('consumer/req/inbox', 'consumerInbox');                                                // Workflow
+        Route::post('consumer/req/outbox', 'consumerOutbox');                                              // Workflow
+        Route::post('consumer/req/get-details-by', 'getWorkflow');                                         // Workflow
+        Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');                             // Here
         Route::post('consumer/req/list-req-docs', 'listDocToUpload');                                    // Here
         Route::post('consumer/req/doc-verify-reject', 'consumerDocVerifyReject');                       // Here
         Route::post('consumer/req/get-upload-documents', 'getDiscUploadDocuments');                    // Here

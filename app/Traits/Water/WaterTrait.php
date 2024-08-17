@@ -232,6 +232,7 @@ trait WaterTrait
         return WaterReconnectConsumer::select(
             'water_reconnect_consumers.id',
             'wco.id as owner_id',
+            'water_second_consumers.id as consumerId',
             'water_reconnect_consumers.application_no',
             'water_reconnect_consumers.apply_date',
             'water_reconnect_consumers.charge_category_id',
