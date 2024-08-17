@@ -4799,7 +4799,7 @@ class WaterReportController extends Controller
                                 ['consumer_id' => $consumerId],
                                 [
                                     'amount_notice_2' => $totalAmount,
-                                    'demand_upto_1' => $demandupto 
+                                    'demand_upto_1' => $demandupto
                                 ]
                             );
                             break;
@@ -4820,7 +4820,7 @@ class WaterReportController extends Controller
                                 ['consumer_id' => $consumerId],
                                 [
                                     'amount_notice_3' => $totalAmountNotice3,
-                                    'demand_upto_2' => $demandupto 
+                                    'demand_upto_2' => $demandupto
                                 ]
                             );
                             break;
@@ -5088,25 +5088,26 @@ class WaterReportController extends Controller
             $finisherRoleId = DB::select($refFinisherRoleId);
             $initiatorRoleId = DB::select($refInitiatorRoleId);
 
-
             foreach ($waterDtls as $waterDtl) {
-                $jeSendList = new WaterTempDisconnection();
-                $jeSendList->consumer_id = $waterDtl->id;
-                $jeSendList->current_role = collect($initiatorRoleId)->first()->role_id;
-                $jeSendList->initiator = collect($initiatorRoleId)->first()->role_id;
-                $jeSendList->finisher = collect($finisherRoleId)->first()->role_id;
-                $jeSendList->last_role_id = collect($finisherRoleId)->first()->role_id;
-                $jeSendList->workflow_id = $ulbWorkflowId->id;
-                $jeSendList->notice = $waterDtl->notice;
-                $jeSendList->notice_no_1 = $waterDtl->notice_no_1;
-                $jeSendList->notice_no_2 = $waterDtl->notice_no_2;
-                $jeSendList->notice_no_3 = $waterDtl->notice_no_3;
-                $jeSendList->notice_2 = $waterDtl->notice_2;
-                $jeSendList->notice_3 = $waterDtl->notice_3;
-                $jeSendList->notice_1_generated_at = $waterDtl->notice_1_generated_at;
-                $jeSendList->notice_2_generated_at = $waterDtl->notice_2_generated_at;
-                $jeSendList->notice_3_generated_at = $waterDtl->notice_3_generated_at;
-                $jeSendList->save();
+                WaterTempDisconnection::updateOrCreate(
+                    ['consumer_id' => $waterDtl->id], // Find by consumer_id
+                    [
+                        'current_role' => collect($initiatorRoleId)->first()->role_id,
+                        'initiator' => collect($initiatorRoleId)->first()->role_id,
+                        'finisher' => collect($finisherRoleId)->first()->role_id,
+                        'last_role_id' => collect($finisherRoleId)->first()->role_id,
+                        'workflow_id' => $ulbWorkflowId->id,
+                        'notice' => $waterDtl->notice,
+                        'notice_no_1' => $waterDtl->notice_no_1,
+                        'notice_no_2' => $waterDtl->notice_no_2,
+                        'notice_no_3' => $waterDtl->notice_no_3,
+                        'notice_2' => $waterDtl->notice_2,
+                        'notice_3' => $waterDtl->notice_3,
+                        'notice_1_generated_at' => $waterDtl->notice_1_generated_at,
+                        'notice_2_generated_at' => $waterDtl->notice_2_generated_at,
+                        'notice_3_generated_at' => $waterDtl->notice_3_generated_at,
+                    ]
+                );
             }
 
             return responseMsgs(true, "Notice List Send Successfully To JE ", "");
