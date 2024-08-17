@@ -1016,7 +1016,17 @@ class WaterSecondConsumer extends Model
                 'water_consumer_owners.consumer_id',
                 'water_second_consumers.consumer_no',
                 'water_second_consumers.ward_mstr_id',
-                'ulb_ward_masters.ward_name'
+                'ulb_ward_masters.ward_name',
+                'water_temp_disconnections.status',
+                'water_temp_disconnections.notice_no_1',
+                'water_temp_disconnections.notice_no_2',
+                'water_temp_disconnections.notice_no_3',
+                'water_temp_disconnections.notice',
+                'water_temp_disconnections.notice_2',
+                'water_temp_disconnections.notice_3',
+                'water_temp_disconnections.notice_1_generated_at',
+                'water_temp_disconnections.notice_2_generated_at',
+                'water_temp_disconnections.notice_3_generated_at',
             );
     }
     /**
