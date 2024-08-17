@@ -5592,6 +5592,11 @@ class WaterReportController extends Controller
             $refmoduleId        = Config::get('module-constants.WATER_MODULE_ID');
 
             $getWaterDetails    = $mWaterApplication->fullDetails($req)->firstOrFail();
+            if ($getWaterDetails->doc_upload_status===true)
+            {
+                throw new Exception("Document has uploaded");
+            }
+            
             $refImageName       = $req->docRefName;
             $refImageName       = $getWaterDetails->id . '-' . str_replace(' ', '_', $refImageName);
             $imageName          = $docUpload->upload($refImageName, $document, $relativePath);
