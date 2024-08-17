@@ -5592,11 +5592,10 @@ class WaterReportController extends Controller
             $refmoduleId        = Config::get('module-constants.WATER_MODULE_ID');
 
             $getWaterDetails    = $mWaterApplication->fullDetails($req)->firstOrFail();
-            if ($getWaterDetails->doc_upload_status===true)
-            {
+            if ($getWaterDetails->doc_upload_status === true) {
                 throw new Exception("Document has uploaded");
             }
-            
+
             $refImageName       = $req->docRefName;
             $refImageName       = $getWaterDetails->id . '-' . str_replace(' ', '_', $refImageName);
             $imageName          = $docUpload->upload($refImageName, $document, $relativePath);
@@ -5788,24 +5787,16 @@ class WaterReportController extends Controller
 
     public function consumerNotice(Request $request)
     {
-        $now = Carbon::now()->format("Y-m-d");
+
 
         $validated = Validator::make(
             $request->all(),
             [
-                "uptoDate" => "nullable|date|before_or_equal:$now|date_format:Y-m-d",
-                "userId" => "nullable|digits_between:1,9223372036854775807",
-                "wardId" => "nullable|digits_between:1,9223372036854775807",
-                "zoneId" => "nullable|digits_between:1,9223372036854775807",
-                "page" => "nullable|digits_between:1,9223372036854775807",
-                "perPage" => "nullable|digits_between:1,9223372036854775807",
-                "notice" => "required|integer|in:1,2,3"
+                'consumerId' => 'required|numeric'
             ]
         );
-
-        if ($validated->fails()) {
-            return validationErrorV2($validated);
-        }
+        if ($validated->fails())
+            return validationError($validated);
 
         try {
             $uptoDate = $request->uptoDate ?? $now;
