@@ -278,8 +278,7 @@ class WaterConsumer extends Controller
             if (!$consumerDetails) {
                 throw new Exception("Consumer detail not found!");
             }
-            if($consumerDetails->deactivate_status===0)
-            {
+            if ($consumerDetails->deactivate_status === 0) {
                 throw new Exception("Your connection has dectivated,Please activate your connection to generate demand");
             }
             // $this->checkDemandGeneration($request, $consumerDetails);                                       // unfinished function
@@ -754,7 +753,10 @@ class WaterConsumer extends Controller
             $confModuleId                   = Config::get('module-constants.WATER_MODULE_ID');
 
             # Check the condition for deactivation
-            $refDetails = $this->PreConsumerDeactivationCheck($request, $user);
+            if ($request->requestType != 10) {
+                $refDetails = $this->PreConsumerDeactivationCheck($request, $user);
+            }
+
             $ulbId      = $request->ulbId ?? $refDetails['consumerDetails']['ulb_id'];
 
             # Get initiater and finisher
@@ -3261,6 +3263,4 @@ class WaterConsumer extends Controller
             dd($e->getMessage());
         }
     }
-
-    
 }
