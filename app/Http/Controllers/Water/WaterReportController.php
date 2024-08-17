@@ -5791,7 +5791,7 @@ class WaterReportController extends Controller
             $request->all(),
             [
                 'consumerId' => 'required|integer',
-                'perPage' => 'nullable|integer|min:1'
+
             ]
         );
         if ($validated->fails()) {
@@ -5800,7 +5800,6 @@ class WaterReportController extends Controller
 
         try {
             $consumerId = $request->consumerId;
-            $perPage = $request->perPage ?? 10;
             $query = WaterSecondConsumer::select(
                 'water_second_consumers.id',
                 'water_second_consumers.consumer_no',
@@ -5835,15 +5834,14 @@ class WaterReportController extends Controller
                 ->where('water_second_consumers.status', 1)
                 ->groupby('water_second_consumers.id', "ulb_ward_masters.ward_name", "water_temp_disconnections.status", "water_temp_disconnections.demand_upto", "water_temp_disconnections.amount_notice_1", "water_temp_disconnections.amount_notice_2", "water_temp_disconnections.amount_notice_3");
 
-            // Paginate for each notice type
-            $notice1Data = $query->clone()->whereNotNull('water_second_consumers.notice_no_1')->paginate($perPage);
-            $notice2Data = $query->clone()->whereNotNull('water_second_consumers.notice_no_2')->paginate($perPage);
-            $notice3Data = $query->clone()->whereNotNull('water_second_consumers.notice_no_3')->paginate($perPage);
+            $notice1Data = $query->clone()->whereNotNull('water_second_consumers.notice_no_1')->first();
+            $notice2Data = $query->clone()->whereNotNull('water_second_consumers.notice_no_2')->first();
+            $notice3Data = $query->clone()->whereNotNull('water_second_consumers.notice_no_3')->first();
 
             $response = [
-                'notice1' => $notice1Data->items(),
-                'notice2' =>   $notice2Data->items(),
-                'notice3' => $notice3Data->items()
+                'notice1' => $notice1Data,
+                'notice2' =>   $notice2Data,
+                'notice3' => $notice3Data
             ];
 
             return responseMsgs(true, "Generated Notice Lists", $response);
