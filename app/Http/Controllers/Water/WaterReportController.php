@@ -5787,101 +5787,64 @@ class WaterReportController extends Controller
 
     public function consumerNotice(Request $request)
     {
-
-
         $validated = Validator::make(
             $request->all(),
             [
-                'consumerId' => 'required|numeric'
+                'consumerId' => 'required|integer',
+
             ]
         );
-        if ($validated->fails())
+        if ($validated->fails()) {
             return validationError($validated);
+        }
 
         try {
-            $uptoDate = $request->uptoDate ?? $now;
-            $userId = $request->userId;
-            $wardId = $request->wardId;
-            $zoneId = $request->zoneId;
-            $notice = $request->notice;
-
-            $data = waterConsumerDemand::select(
-                "water_second_consumers.id as consumer_id",
-                "water_second_consumers.consumer_no",
-                "water_second_consumers.folio_no as property_no",
-                "zone_masters.zone_name",
-                "ulb_ward_masters.ward_name",
-                "owners.applicant_name",
-                "owners.guardian_name",
-                "owners.mobile_no",
-                "water_second_consumers.category",
-                "water_property_type_mstrs.property_type",
+            $consumerId = $request->consumerId;
+            $query = WaterSecondConsumer::select(
+                'water_second_consumers.id',
+                'water_second_consumers.consumer_no',
+                'water_second_consumers.ward_mstr_id',
+                'water_second_consumers.address',
+                'water_second_consumers.holding_no',
+                'water_second_consumers.saf_no',
+                'water_second_consumers.ulb_id',
+                'ulb_ward_masters.ward_name',
+                "water_temp_disconnections.status as deactivated_status",
+                "water_temp_disconnections.demand_upto",
+                "water_temp_disconnections.amount_notice_1",
+                "water_temp_disconnections.amount_notice_2",
+                "water_temp_disconnections.amount_notice_3",
                 "water_second_consumers.notice_no_1",
                 "water_second_consumers.notice_no_2",
                 "water_second_consumers.notice_no_3",
+                "water_second_consumers.notice",
+                "water_second_consumers.notice_2",
+                "water_second_consumers.notice_3",
+                "water_second_consumers.notice_1_generated_at",
+                "water_second_consumers.notice_2_generated_at",
+                "water_second_consumers.notice_3_generated_at",
+                DB::raw("string_agg(water_consumer_owners.applicant_name,',') as applicant_name"),
+                DB::raw("string_agg(water_consumer_owners.mobile_no::VARCHAR,',') as mobile_no"),
+                DB::raw("string_agg(water_consumer_owners.guardian_name,',') as guardian_name")
             )
-                ->join('water_second_consumers', 'water_second_consumers.id', 'water_consumer_demands.consumer_id')
+                ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_second_consumers.id')
+                ->leftjoin('water_temp_disconnections', 'water_temp_disconnections.consumer_id', '=', 'water_second_consumers.id')
                 ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
-                ->leftJoin('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
-                ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_second_consumers.property_type_id')
-                ->join('water_consumer_owners as owners', 'owners.id', 'water_consumer_demands.consumer_id')
-                ->where('water_consumer_demands.is_full_paid', false)
-                ->where('water_consumer_demands.demand_upto', '<=', $uptoDate)
-                ->where('water_second_consumers.generated', true)
-                ->groupBy(
-                    'water_second_consumers.id',
-                    'water_second_consumers.consumer_no',
-                    'water_second_consumers.folio_no',
-                    'zone_masters.zone_name',
-                    'ulb_ward_masters.ward_name',
-                    'owners.applicant_name',
-                    'owners.guardian_name',
-                    'owners.mobile_no',
-                    'water_second_consumers.category',
-                    'water_property_type_mstrs.property_type'
-                )
-                ->havingRaw('SUM(water_consumer_demands.amount) > 0');
+                ->where('water_second_consumers.id', $consumerId)
+                ->where('water_second_consumers.status', 1)
+                ->groupby('water_second_consumers.id', "ulb_ward_masters.ward_name", "water_temp_disconnections.status", "water_temp_disconnections.demand_upto", "water_temp_disconnections.amount_notice_1", "water_temp_disconnections.amount_notice_2", "water_temp_disconnections.amount_notice_3");
 
-            if ($userId) {
-                $data->where('water_consumer_demands.emp_details_id', $userId);
-            }
-            if ($wardId) {
-                $data->where('water_second_consumers.ward_mstr_id', $wardId);
-            }
-            if ($zoneId) {
-                $data->where('water_second_consumers.zone_mstr_id', $zoneId);
-            }
-            if ($notice) {
-                switch ($notice) {
-                    case 1:
-                        $data->whereNotNull('water_second_consumers.notice_no_1')
-                            ->whereNull('water_second_consumers.notice_no_2')
-                            ->whereNull('water_second_consumers.notice_no_3');
-                        break;
-                    case 2:
-                        $data->whereNotNull('water_second_consumers.notice_no_2')
-                            ->whereNotNull('water_second_consumers.notice_no_1')
-                            ->whereNull('water_second_consumers.notice_no_3');
-                        break;
-                    case 3:
-                        $data->whereNotNull('water_second_consumers.notice_no_3')
-                            ->whereNotNull('water_second_consumers.notice_no_2')
-                            ->whereNotNull('water_second_consumers.notice_no_1');
-                        break;
-                }
-            }
+            $notice1Data = $query->clone()->whereNotNull('water_second_consumers.notice_no_1')->first();
+            $notice2Data = $query->clone()->whereNotNull('water_second_consumers.notice_no_2')->first();
+            $notice3Data = $query->clone()->whereNotNull('water_second_consumers.notice_no_3')->first();
 
-            $perPage = $request->perPage ?? 10;
-            $paginator = $data->paginate($perPage);
-
-            $list = [
-                "current_page" => $paginator->currentPage(),
-                "last_page" => $paginator->lastPage(),
-                "data" => $paginator->items(),
-                "total" => $paginator->total(),
+            $response = [
+                'notice1' => $notice1Data,
+                'notice2' =>   $notice2Data,
+                'notice3' => $notice3Data
             ];
-            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
-            return responseMsgs(true, "Generated Notice Lists", $list);
+
+            return responseMsgs(true, "Generated Notice Lists", $response);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "");
         }
