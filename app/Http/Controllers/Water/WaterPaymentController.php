@@ -2850,7 +2850,7 @@ class WaterPaymentController extends Controller
                 "status"            => 1,
                 // "connection_date"   => $today
             ];
-            $mWaterReconnectConsumer->updateOnlyPaymentstatus($activeConRequest->apply_connection_id, $refReq);
+            $mWaterReconnectConsumer->updateOnlyPaymentstatus($activeConRequest->id, $refReq);
         }
         // # saving Details in application table if payment is in JSK
         // if ($activeConRequest->user_type == $userType['1'] && $activeConRequest->doc_upload_status == true) {
