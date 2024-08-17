@@ -59,6 +59,7 @@ class WaterReconnectConsumer extends Model
             "ulb_ward_masters.ward_name",
             "water_consumer_charge_categories.charge_category",
             "wf_roles.role_name as current_role_name",
+            'water_reconnect_consumers.verify_status',
         )
             ->leftjoin('water_consumer_charges', 'water_consumer_charges.related_id', 'water_reconnect_consumers.id')
             ->join('water_consumer_charge_categories', 'water_consumer_charge_categories.id', 'water_reconnect_consumers.charge_category_id')
