@@ -753,11 +753,10 @@ class WaterConsumer extends Controller
             $confModuleId                   = Config::get('module-constants.WATER_MODULE_ID');
 
             # Check the condition for deactivation
-            if ($request->requestType != 10) {
                 $refDetails = $this->PreConsumerDeactivationCheck($request, $user);
-            }
+            
 
-            $ulbId      = $request->ulbId ?? $refDetails['consumerDetails']['ulb_id'];
+            $ulbId      = $request->ulbId ?? $refDetails['consumerDetails']['ulb_id'] ?? 2;
 
             # Get initiater and finisher
             if ($request->requestType == 10 || $request->requestType == 11) {                // static for water Complain workflow
@@ -919,7 +918,7 @@ class WaterConsumer extends Controller
         $refUserType                    = Config::get('waterConstaint.REF_USER_TYPE');
 
         $refConsumerDetails = $mWaterSecondConsumer->getConsumerDetails($consumerId)->first();
-        if ($refConsumerDetails->status == 4) {
+        if ($refConsumerDetails->status == 4 && $request->requestType != 10) {
             throw new Exception('Please paid Your Connection Fee First');
         }
         if ($request->requestType == 2) {
