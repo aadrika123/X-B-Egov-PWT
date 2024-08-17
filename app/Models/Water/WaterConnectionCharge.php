@@ -67,6 +67,25 @@ class WaterConnectionCharge extends Model
             ->where('application_id', $applicationId)
             ->where('status', 1);
     }
+    /**
+     * |----------------------------------- Get Water Charges By ApplicationId ------------------------------|
+     * | @param request
+     */
+    public function getWaterchargesByIdv1($applicationId)
+    {
+        return WaterConnectionCharge::select(
+            'id',
+            'amount',
+            'charge_category',
+            'penalty',
+            'conn_fee',
+            'rule_set',
+            'paid_status'
+        )
+            ->where('application_id', $applicationId)
+            ->where('charge_category','WATER RECONNECTION')
+            ->where('status', 1);
+    }
 
     /**
      * |-------------- Delete the Water Application Connection Charges -------------|

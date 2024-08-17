@@ -35,6 +35,7 @@ use App\Models\Water\WaterConnectionTypeCharge;
 use App\Models\Water\WaterConnectionTypeMstr;
 use App\Models\Water\WaterConsumer;
 use App\Models\Water\WaterConsumerActiveRequest;
+use App\Models\Water\WaterConsumerCharge;
 use App\Models\Water\WaterConsumerDemand;
 use App\Models\Water\WaterConsumerInitialMeter;
 use App\Models\Water\WaterConsumerMeter;
@@ -44,6 +45,7 @@ use App\Models\Water\WaterOwnerTypeMstr;
 use App\Models\Water\WaterParamConnFee;
 use App\Models\Water\WaterPenaltyInstallment;
 use App\Models\Water\WaterPropertyTypeMstr;
+use App\Models\Water\WaterReconnectConsumer;
 use App\Models\Water\WaterRejectionApplicant;
 use App\Models\Water\WaterRejectionApplicationDetail;
 use App\Models\Water\WaterRoadCutterCharge;
@@ -2059,7 +2061,7 @@ class NewConnectionController extends Controller
         $validated = Validator::make(
             $request->all(),
             [
-                'filterBy'  => 'required|in:newConnection,regularization,name,mobileNo,safNo,holdingNo',
+                'filterBy'  => 'required|in:newConnection,regularization,name,mobileNo,safNo,holdingNo,reConnection',
                 'parameter' => $request->filterBy == 'mobileNo' ? 'required|numeric|digits:10' : "required",
                 'pages'     => 'nullable|integer',
             ]
@@ -2073,6 +2075,7 @@ class NewConnectionController extends Controller
             $pages              = $request->pages ?? 10;
             $mWaterApplication    = new WaterApplication();
             $mWaterApplcationDetails = new WaterApprovalApplicationDetail();
+            $mWaterReconnectCosumers = new WaterReconnectConsumer();
             $connectionTypes    = Config::get('waterConstaint.CONNECTION_TYPE');
 
             switch ($key) {
@@ -2116,6 +2119,13 @@ class NewConnectionController extends Controller
                     $returnData = $mWaterApplication->getDetailsByParameters($request)
                         ->where("water_approval_application_details.holding_no", 'LIKE', '%' . $parameter . '%')
                         ->paginate($pages);
+                    $checkVal = collect($returnData)->last();
+                    if (!$checkVal || $checkVal == 0)
+                        throw new Exception("Data according to " . $key . " not Found!");
+                    break;
+                    #here search for reconnection application in jsk side for pay reconnection payment
+                case ("reConnection"):                                                                         // Static
+                    $returnData = $mWaterReconnectCosumers->getDetailsByApplicationNo($request, $parameter)->paginate($pages);
                     $checkVal = collect($returnData)->last();
                     if (!$checkVal || $checkVal == 0)
                         throw new Exception("Data according to " . $key . " not Found!");
@@ -3628,11 +3638,15 @@ class NewConnectionController extends Controller
             $mWaterTran                      = new WaterTran();
             $mWaterConsumerOwners            = new WaterConsumerOwner();
             $mWaterSecondConsumer            = new WaterSecondConsumer();
+            $mWaterReconnectCosumers         = new WaterReconnectConsumer();
+            $mWaterConsumerCharge            = new WaterConsumerCharge();
             $roleDetails                     = Config::get('waterConstaint.ROLE-LABEL');
 
             # Application Details
             $applicationDetails['applicationDetails'] = $mWaterSecondConsumer->fullWaterDetailsV1($request)->first();
             $applicationId = $applicationDetails['applicationDetails']->applicationId;
+            #Id for Reconect if Consumer Apply Reconnect
+            $reconnectId   = $applicationDetails['applicationDetails']->reconnectId;
             # Document Details
             $metaReqs = [
                 'userId'    => $user->id,
@@ -3652,10 +3666,10 @@ class NewConnectionController extends Controller
             $waterTransaction = $mWaterTran->getTransNov2($request->approveId, $refAppDetails->connection_type)->get();
             $waterTransDetail['waterTransDetail'] = $waterTransaction;
 
-            # calculation details
-            $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['applicationId'])
-                // ->where('paid_status', 1)
-                ->first();
+            $charges = $mWaterConnectionCharge->getWaterchargesById($refAppDetails['applicationId'])->first();
+            #if consumer Deacticvated and want to reconnect 
+            $reconnectionCharges = $mWaterConsumerCharge->getWaterchargesById($metaReqs['approveId'])->first();
+
             if ($charges) {
                 $calculation['calculation'] = [
                     'connectionFee'     => $charges['conn_fee'],
@@ -3664,9 +3678,23 @@ class NewConnectionController extends Controller
                     'chargeCatagory'    => $charges['charge_category'],
                     'paidStatus'        => $charges['paid_status']
                 ];
-                $waterTransDetail = array_merge($waterTransDetail, $calculation);
             }
 
+            if ($reconnectionCharges) {
+                $reconnectionCharge['reconnectionCalculation'] = [
+                    'connectionFee'     => $reconnectionCharges['conn_fee'],
+                    'penalty'           => $reconnectionCharges['penalty'],
+                    'totalAmount'       => $reconnectionCharges['amount'],
+                    'chargeCatagory'    => $reconnectionCharges['charge_category'],
+                    'paidStatus'        => $reconnectionCharges['paid_status']
+                ];
+            }
+
+            $waterTransDetail = array_merge(
+                $waterTransDetail,
+                isset($calculation) ? $calculation : [],
+                isset($reconnectionCharge) ? $reconnectionCharge : []
+            );
             # Site inspection schedule time/date Details 
             if ($applicationDetails['applicationDetails']['current_role'] == $roleDetails['JE']) {
                 $inspectionTime = $mWaterSiteInspectionsScheduling->getInspectionData($applicationDetails['applicationDetails']['id'])->first();

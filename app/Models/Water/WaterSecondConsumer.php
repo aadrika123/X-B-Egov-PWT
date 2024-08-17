@@ -1038,6 +1038,7 @@ class WaterSecondConsumer extends Model
         return  self::select(
             'water_second_consumers.id',
             'water_approval_application_details.id as applicationId',
+            'water_reconnect_consumers.id as  reconnectId',
             'water_consumer_owners.mobile_no',
             'water_second_consumers.tab_size',
             'water_second_consumers.property_no',
@@ -1085,6 +1086,10 @@ class WaterSecondConsumer extends Model
             ->leftjoin('water_road_cutter_charges', 'water_road_cutter_charges.id', 'water_approval_application_details.road_type_id')
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_second_consumers.id')
             ->leftjoin('water_consumer_meters', 'water_consumer_meters.consumer_id', 'water_second_consumers.id')
+            ->leftJoin('water_reconnect_consumers', function ($join) {
+                $join->on('water_reconnect_consumers.consumer_id', '=', 'water_second_consumers.id')
+                    ->where('water_reconnect_consumers.status', 1);
+            })
             ->where('water_second_consumers.id', $request->applicationId);
         // ->whereIn('water_second_consumers.status', [1, 2,4]);
         // ->where('water_approval_application_details.status', true);
