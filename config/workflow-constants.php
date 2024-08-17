@@ -42,6 +42,7 @@ return [
     "DEALING_ASSISTENT_WF_ID"           => "6",
     "WATER_JE_ROLE_ID"                  => "40",
     "WATER_TEMP_DEACTIVATION"               => "42",
+    "WATER_RECONNECTION"                 => "43",
 
     // User Types
     "USER_TYPES" => [

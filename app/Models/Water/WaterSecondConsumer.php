@@ -770,7 +770,7 @@ class WaterSecondConsumer extends Model
     public function consumerDetails($consumerId)
     {
         return WaterSecondConsumer::select(
-            'water_second_consumers.id as waterConsumerId',
+            'water_second_consumers.*',
             'water_consumer_owners.id as waterConsumerOwner',
         )
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_second_consumers.id')
@@ -1067,4 +1067,5 @@ class WaterSecondConsumer extends Model
         // ->whereIn('water_second_consumers.status', [1, 2,4]);
         // ->where('water_approval_application_details.status', true);
     }
+   
 }
