@@ -183,32 +183,37 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
      * |------------ Water Consumer Workflow -------------|
      */
     Route::controller(WaterConsumerWfController::class)->group(function () {
-        Route::post('consumer/req/inbox', 'consumerInbox');                                                // Workflow
+        Route::post('consumer/req/inbox', 'consumerInbox');                                                 // Workflow
         Route::post('consumer/req/outbox', 'consumerOutbox');                                              // Workflow
         Route::post('consumer/req/get-details-by', 'getWorkflow');                                         // Workflow
-        Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');                             // Here
-        Route::post('consumer/req/list-req-docs', 'listDocToUpload');                                    // Here
-        Route::post('consumer/req/doc-verify-reject', 'consumerDocVerifyReject');                       // Here
-        Route::post('consumer/req/get-upload-documents', 'getDiscUploadDocuments');                    // Here
-        // Route::post('consumer/req/get-upload-documents', 'getConsumerDocs');                      // Here
-        Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');                // Here
+        Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');                               // Here
+        Route::post('consumer/req/list-req-docs', 'listDocToUpload');                                       // Here
+        Route::post('consumer/req/doc-verify-reject', 'consumerDocVerifyReject');                           // Here
+        Route::post('consumer/req/get-upload-documents', 'getDiscUploadDocuments');                         // Here
+        // Route::post('consumer/req/get-upload-documents', 'getConsumerDocs');                              // Here
+        Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');                         // Here
         Route::post('get-details-applications', 'getConApplicationDetails');
-        Route::post('get-details-disconnections', 'getRequestedApplication');                       // Citizen / Changes the route name
+        Route::post('get-details-disconnections', 'getRequestedApplication');                                // Citizen / Changes the route name
         Route::post('consumer/req/get-disconnected-details', 'getDetailsDisconnections');
-        Route::post('consumer/reqs/reupload-document', 'reuploadDocument');                                                // 21 ( Reupload Document for Pending Documents)
+        Route::post('consumer/reqs/reupload-document', 'reuploadDocument');                                   // 21 ( Reupload Document for Pending Documents)
         Route::post('workflow/get-doc-list-je', 'getDocListForJe');                                             // Workflow
         Route::post('workflow/upload-doc-je', 'uploadWaterDocJe');                                             // Workflow
         Route::post('workflow/unauthorized-tap-status-update', 'unauthorizedTapUpdateStatus');                                             // Workflow  JE
         Route::post('consumer/req/back-to-citizen', 'backToCitizen');                                                // Workflow
         Route::post('consumer/req/btc-inbox', 'btcInbox');                                                           // Workflow
         Route::post('consumer/req/special-inbox', 'waterSpecialInbox');                                              // Workflow
-        Route::post('consumer/req/escalate', 'postEscalate');                                                        // Workflow           
-        Route::post("consumer/reconnect-consumer", "reconnectConsumer");                      // Reconnect Consumer Citizen Side 
+        Route::post('consumer/req/escalate', 'postEscalate');                                                        // Workflow             
         # Route for Water Reconnect Process
-        Route::post("consumer/reconnect-inbox", "reconnectInbox");                      // Reconnect Consumer Citizen Side 
-        Route::post("consumer/reconnect-outbox", "reconnectOutbox");                      // Reconnect Consumer Citizen Side 
-
-
+        Route::post("consumer/reconnect-consumer", "reconnectConsumer");                                          // Reconnect Consumer Citizen Side 
+        Route::post("consumer/reconnect-inbox", "reconnectInbox");                                                 // Reconnect Consumer Citizen Side 
+        Route::post("consumer/reconnect-outbox", "reconnectOutbox");                                                 // Reconnect Consumer Citizen Side 
+        Route::post('consumer/req/reconnect-get-details-by', 'getRecWorkflow');                                         // Workflow
+        Route::post('workflow/reconnect/get-doc-list-je', 'getDocListForJeReconnect');
+        Route::post('workflow/reconnect/upload-doc-list-je', 'uploadWaterDocJeReconnect');
+        Route::post('workflow/reconnect/post-next-level', 'consumerPostNextLevelReconnect');
+        Route::post('workflow/reconnect/get-upload-docs', 'getDiscUploadDocumentReconnect');
+        Route::post('workflow/reconnect/doc-verify-reject', 'reconnectDocVerifyReject');
+        Route::post('workflow/reconnect/approval-rejection', 'consumerApprovalRejectionReconnect');
     });
 
     /**
