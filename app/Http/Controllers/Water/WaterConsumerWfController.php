@@ -1135,12 +1135,12 @@ class WaterConsumerWfController extends Controller
         $totalUploadedDocs = $mWfActiveDocument->totalUploadedDocs($applicationId, $appDetails->workflow_id, $moduleId);
         if ($totalRequireDocs == $totalUploadedDocs) {
             $appDetails->doc_upload_status = true;
-            $appDetails->doc_verify_status = '0';
+            $appDetails->doc_verify_status = false;
             $appDetails->parked = false;
             $appDetails->save();
         } else {
-            $appDetails->doc_upload_status = '0';
-            $appDetails->doc_verify_status = '0';
+            $appDetails->doc_upload_status = false;
+            $appDetails->doc_verify_status = false;
             $appDetails->save();
         }
     }
@@ -2676,7 +2676,7 @@ class WaterConsumerWfController extends Controller
                 throw new Exception("You are not the Finisher!");
             }
             $this->begin();
-            $this->approvalRejectionWaterReconnect($request, $roleId,$userId);
+            $this->approvalRejectionWaterReconnect($request, $roleId, $userId);
             $this->commit();
             return responseMsg(true, "Request approved/rejected successfully", "");;
         } catch (Exception $e) {
@@ -2687,7 +2687,7 @@ class WaterConsumerWfController extends Controller
     /**
      * | Function for Final Approval Or Rejection 
      */
-    public function approvalRejectionWaterReconnect($request, $roleId,$userId)
+    public function approvalRejectionWaterReconnect($request, $roleId, $userId)
     {
 
         $mWaterConsumerActive  =  new WaterReconnectConsumer();
@@ -2698,7 +2698,7 @@ class WaterConsumerWfController extends Controller
 
         # Approval of water application 
         if ($request->status == 1) {
-            $this->finalApprovalReconnect($request, $refJe,$userId);
+            $this->finalApprovalReconnect($request, $refJe, $userId);
             $msg = "Application Successfully Approved !!";
         }
         # Rejection of water application
@@ -2734,7 +2734,7 @@ class WaterConsumerWfController extends Controller
      * | @param request
      * | @param consumerNo
      */
-    public function finalApprovalReconnect($request, $refJe,$userId)
+    public function finalApprovalReconnect($request, $refJe, $userId)
     {
         # object creation
         $mWaterApprovalApplicationDetail  = new WaterApprovalApplicationDetail();
