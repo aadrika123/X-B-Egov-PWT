@@ -1130,19 +1130,36 @@ class WaterConsumerWfController extends Controller
         $mWfActiveDocument = new WfActiveDocument();
         $mRefRequirement = new RefRequiredDocument();
         $moduleId = $this->_waterModuleId;
-        $totalRequireDocs = $mRefRequirement->totalNoOfDocs($moduleId, $docCode);
+        // $totalRequireDocs = $mRefRequirement->totalNoOfDocs($moduleId, $docCode);
         $appDetails = WaterConsumerActiveRequest::find($applicationId);
         $totalUploadedDocs = $mWfActiveDocument->totalUploadedDocs($applicationId, $appDetails->workflow_id, $moduleId);
-        if ($totalRequireDocs == $totalUploadedDocs) {
+        $collectDocument  = collect($totalUploadedDocs);
+        // Check if any document has verify_status = 2
+        $hasUnverifiedDocument = $collectDocument->contains(function ($document) {
+            return $document->verify_status == 2;
+        });
+
+        if ($hasUnverifiedDocument) {
+            $appDetails->doc_upload_status = false;
+            $appDetails->doc_verify_status = false;
+            $appDetails->save();
+        } else {
             $appDetails->doc_upload_status = true;
             $appDetails->doc_verify_status = false;
             $appDetails->parked = false;
             $appDetails->save();
-        } else {
-            $appDetails->doc_upload_status = false;
-            $appDetails->doc_verify_status = false;
-            $appDetails->save();
         }
+        // if($totalUploadedDocs)
+        // if ($totalRequireDocs == $totalUploadedDocs) {
+        //     $appDetails->doc_upload_status = true;
+        //     $appDetails->doc_verify_status = false;
+        //     $appDetails->parked = false; 
+        //     $appDetails->save();
+        // } else {
+        //     $appDetails->doc_upload_status = false;
+        //     $appDetails->doc_verify_status = false;
+        //     $appDetails->save();
+        // }
     }
     /**
      * | get doc to upload on JE Side

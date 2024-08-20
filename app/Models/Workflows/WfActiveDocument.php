@@ -481,7 +481,8 @@ class WfActiveDocument extends Model
             ->where('module_id', $moduleId)
             // ->where('current_status', '1')
             ->where('status', 1)
-            ->count();
+            ->get();
+            // ->count();
     }
 
     /**
