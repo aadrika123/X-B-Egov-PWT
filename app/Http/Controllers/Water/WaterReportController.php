@@ -4433,6 +4433,7 @@ class WaterReportController extends Controller
             $data = waterConsumerDemand::select(
                 "water_second_consumers.id as consumer_id",
                 "water_second_consumers.consumer_no",
+                "water_second_consumers.address",
                 "water_second_consumers.folio_no as property_no",
                 "zone_masters.zone_name",
                 "ulb_ward_masters.ward_name",
