@@ -244,8 +244,8 @@ class WaterSecondConsumer extends Model
     public function getConsumerByItsDetailsV4($req, $key, $refNo, $wardId, $zoneId, $zone)
     {
         return WaterSecondConsumer::select([
-            'water_second_consumers.id as consumer_id', // Always return this as consumer_id
             'water_consumer_demands.id AS demand_id',
+            'water_second_consumers.id as consumer_id', // Always return this as consumer_id
             'water_consumer_demands.due_balance_amount',
             DB::raw("CASE
                     WHEN water_consumer_demands.due_balance_amount <= 0 THEN true
