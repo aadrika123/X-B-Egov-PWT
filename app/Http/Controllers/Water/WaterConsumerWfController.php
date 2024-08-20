@@ -1109,6 +1109,7 @@ class WaterConsumerWfController extends Controller
             $docId                   = $req->id;
             $this->begin();
             $appId = $mWaterConsumerActiveRequest->reuploadDocument($req, $Image, $docId);
+            #check uploaded documents
             $this->checkFullUpload($appId, $req);
             $this->commit();
 
