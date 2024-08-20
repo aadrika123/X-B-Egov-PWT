@@ -2031,7 +2031,7 @@ class NewConnectionController extends Controller
                         throw new Exception("Data according to " . $key . " not Found!");
                     break;
                 case ('applicationNo'):
-                    $waterReturnDetails = $mWaterConsumer->getDetailByApplicationNo($paramenter)->paginate($pages);
+                    $waterReturnDetails = $mWaterConsumer->getConsumerByItsDetailsV4($request, $refstring, $paramenter, $wardId, $zoneId, $zone)->paginate($pages);
                     $checkVal = collect($waterReturnDetails)->last();
                     if (!$checkVal || $checkVal == 0)
                         throw new Exception("Data according to " . $key . " not Found!");
