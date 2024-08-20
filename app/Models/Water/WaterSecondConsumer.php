@@ -1094,4 +1094,22 @@ class WaterSecondConsumer extends Model
         // ->whereIn('water_second_consumers.status', [1, 2,4]);
         // ->where('water_approval_application_details.status', true);
     }
+
+    #update
+    public function waterConsumerActivate($consumerId)
+    {
+        $consumer = WaterSecondConsumer::where('id', $consumerId)->first();
+        $consumer->status = 1;
+        $consumer->save();
+    }
+
+    #check consumer 
+    public function checkConsumer($consumerId)
+    {
+        return WaterSecondConsumer::select(
+            'water_second_consumers.*',
+        )
+            ->where('id', $consumerId)
+            ->first();
+    }
 }

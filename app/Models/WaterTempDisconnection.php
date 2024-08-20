@@ -46,4 +46,15 @@ class WaterTempDisconnection extends Model
         return WaterTempDisconnection::where('consumer_id', $req->applicationId)
             ->where('status', 1);
     }
+    /**
+     * | Update the application Doc Verify status
+     * | @param applicationId
+     */
+    public function updateDeactiveStatus($consumerId)
+    {
+        WaterTempDisconnection::where('consumer_id', $consumerId)
+            ->update([
+                'status' => true
+            ]);
+    }
 }
