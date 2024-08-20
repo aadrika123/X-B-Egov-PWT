@@ -716,8 +716,33 @@ class WaterConsumerWfController extends Controller
         $mUlbNewWardmap         = new UlbWardMaster();
         $mwaterConsumerActive   = new WaterConsumerActiveRequest();
         $mwaterOwner            = new WaterConsumerOwner();
+        $mWaterConsumerMeter    = new WaterConsumerMeter();
+        $refConnectionName      = Config::get('waterConstaint.METER_CONN_TYPE');
         # applicatin details
         $applicationDetails = $mwaterConsumerActive->fullWaterDetails($request)->get();
+        $refConsumerId = $applicationDetails->pluck('consumer_id');
+        # consumer details 
+        $refMeterData = $mWaterConsumerMeter->getMeterDetailsByConsumerIdV2($refConsumerId)->first();
+        if ($refMeterData) {
+            $refMeterData->ref_initial_reading = (float)($refMeterData->ref_initial_reading);
+            switch ($refMeterData['connection_type']) {
+                case (1):
+                    $connectionName = $refConnectionName['1'];                                      // Meter 
+                    break;
+                case (3):
+                    $connectionName = $refConnectionName['3'];                                      // Fixed - Non Meter
+                    break;
+            }
+        }
+        # set attribute of property in water details 
+        $applicationDetails = $applicationDetails->map(function ($applicationDetail) use ($refMeterData) {
+            if (isset($refMeterData)) {
+                $applicationDetail->setAttribute('final_meter_reading', $refMeterData->final_meter_reading);
+            } else {
+                $applicationDetail->setAttribute('area_of_plot', null);                                  // Set to null or a default value if not found
+            }
+            return $applicationDetail;
+        });
 
         if (collect($applicationDetails)->first() == null) {
             return responseMsg(false, "Application Data Not found!", $request->applicationId);
@@ -815,7 +840,7 @@ class WaterConsumerWfController extends Controller
             ['displayString' => 'Road Width', 'key' => 'RoadWidth', 'value' => $collectionApplications->per_meter],
             ['displayString' => 'Mobile Number', 'key' => 'MobileNumber', 'value' => $collectionApplications->basicmobile],
             ['displayString' => 'Road Type', 'key' => 'RoadType', 'value' => $collectionApplications->road_type],
-            ['displayString' => 'Initial Reading', 'key' => 'InitialReading', 'value' => $collectionApplications->initial_reading],
+            ['displayString' => 'Last Meter Reading', 'key' => 'LastMeterReading', 'value' => $collectionApplications->final_meter_reading],
             ['displayString' => 'Land Mark', 'key' => 'LandMark', 'value' => $collectionApplications->land_mark],
         ];
 

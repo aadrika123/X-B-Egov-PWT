@@ -270,6 +270,9 @@ class WaterConsumerActiveRequest extends Model
             "water_approval_application_details.mobile_no as basicmobile",
             "water_approval_application_details.initial_reading",
             "water_approval_application_details.landmark"
+            // 'water_consumer_meters.initial_reading',
+            // 'water_consumer_meters.final_meter_reading',
+            // 'water_consumer_initial_meters.initial_reading as finalReading',
         )
             ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_consumer_active_requests.current_role')
             ->leftjoin('ulb_masters', 'ulb_masters.id', '=', 'water_consumer_active_requests.ulb_id')
@@ -290,6 +293,14 @@ class WaterConsumerActiveRequest extends Model
             ->leftJoin('water_road_cutter_charges', function ($join) {
                 $join->on('water_road_cutter_charges.id', '=', 'water_approval_application_details.road_type_id')
                     ->where('water_road_cutter_charges.status', 1);
+            })
+            ->leftJoin('water_consumer_initial_meters', function ($join) {
+                $join->on('water_consumer_initial_meters.consumer_id', '=', 'water_second_consumers.id')
+                    ->where('water_consumer_initial_meters.status', 1);
+            })
+            ->leftJoin('water_consumer_meters', function ($join) {
+                $join->on('water_consumer_meters.consumer_id', '=', 'water_second_consumers.id')
+                    ->where('water_consumer_meters.status', 1);
             })
             ->where('water_consumer_active_requests.id', $request->applicationId)
             ->where('water_consumer_active_requests.status', true);

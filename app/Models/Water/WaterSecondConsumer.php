@@ -402,7 +402,7 @@ class WaterSecondConsumer extends Model
             'water_consumer_initial_meters.initial_reading as finalReading',
             'ulb_masters.ulb_name',
             'water_second_consumers.property_no',
-            'water_property_type_mstrs.property_type',
+            'water_property_type_mstrs.property_type',  
             'zone_masters.zone_name',
             'water_consumer_demands.demand_from',
             'water_consumer_demands.demand_upto',
