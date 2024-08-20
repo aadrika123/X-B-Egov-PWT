@@ -194,7 +194,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');                         // Here
         Route::post('get-details-applications', 'getConApplicationDetails');
         Route::post('get-details-disconnections', 'getRequestedApplication');                                // Citizen / Changes the route name
-        Route::post('consumer/req/get-disconnected-details', 'getDetailsDisconnections');
+        Route::post('consumer/req/get-disconnected-details', 'getDetailsDisconnections');     
         Route::post('consumer/reqs/reupload-document', 'reuploadDocument');                                   // 21 ( Reupload Document for Pending Documents)
         Route::post('workflow/get-doc-list-je', 'getDocListForJe');                                             // Workflow
         Route::post('workflow/upload-doc-je', 'uploadWaterDocJe');                                             // Workflow
@@ -202,7 +202,8 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('consumer/req/back-to-citizen', 'backToCitizen');                                                // Workflow
         Route::post('consumer/req/btc-inbox', 'btcInbox');                                                           // Workflow
         Route::post('consumer/req/special-inbox', 'waterSpecialInbox');                                              // Workflow
-        Route::post('consumer/req/escalate', 'postEscalate');                                                        // Workflow             
+        Route::post('consumer/req/escalate', 'postEscalate');                                                        // Workflow           
+        
         # Route for Water Reconnect Process
         Route::post("consumer/reconnect-consumer", "reconnectConsumer");                                          // Reconnect Consumer Citizen Side 
         Route::post("consumer/reconnect-inbox", "reconnectInbox");                                                 // Reconnect Consumer Citizen Side 
