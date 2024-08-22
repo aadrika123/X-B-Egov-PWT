@@ -1628,14 +1628,17 @@ class WaterPaymentController extends Controller
             $mWaterApplication          = new WaterApplication();
             $mWaterConnectionCharge     = new WaterConnectionCharge();
             $mWaterPenaltyInstallment   = new WaterPenaltyInstallment();
-            $mWaterSeoncdConsumer       = new WaterSecondConsumer();
             $mWaterApproveApplications   = new WaterApprovalApplicationDetail();
+            $mWaterSecondConsumer       = new WaterSecondConsumer();
 
             $transactions = array();
             // $applicationId = $request->id;
 
             # Application Details
             $applicationDetails['applicationDetails'] = $mWaterApproveApplications->fullWaterDetails($request)->first();
+            if ($applicationDetails['applicationDetails'] == null) {
+                $applicationDetails['applicationDetails'] = $mWaterSecondConsumer->fullWaterDetailsv5($request)->first();
+            }
             if (!$applicationDetails)
                 throw new Exception("Water Application Not Found!");
 
