@@ -2143,13 +2143,13 @@ class WaterConsumerWfController extends Controller
         $holding = $applicationDetails->pluck('holding_no')->toArray();
 
         # get property basic detail by holding number
-        if ($holding != null) {
-            $holdingDetails = $mPropPerty->getPropert($holding);
-            if (!$holdingDetails) {
+        # get property basic detail by holding number
+        if (!empty($holding) && $holding[0] !== null) {
+            $holdingDetails = $mPropPerty->getProperty($holding);
+            if (!$holdingDetails) {                         
                 throw new Exception('Holding not found!');
             }
         }
-
         # Ward Name
         $refApplication = collect($applicationDetails)->first();
         // $wardDetails = $mUlbNewWardmap->getWard($refApplication->ward_mstr_id);
@@ -2159,7 +2159,7 @@ class WaterConsumerWfController extends Controller
             return $value;
         });
         # set attribute of owner name in marathi
-
+        $holdingDetails  = null;
         $ownerDetail = $ownerDetail->map(function ($ownerDetail) use ($holdingDetails) {
             if (isset($holdingDetails)) {
                 $ownerDetail->setAttribute('owner_name_marathi', $holdingDetails->owner_name_marathi);
