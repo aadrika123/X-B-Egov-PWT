@@ -1906,13 +1906,13 @@ class NewConnectionController extends Controller
         $moduleId       = Config::get('module-constants.WATER_MODULE_ID');
         $refUserType    = Config::get('waterConstaint.REF_USER_TYPE');
 
-        $type = ["FORM_SCAN_COPY", "STAMP", "ID_PROOF", "PROPERTY TAX"];
+        $type = ["ADHAR_CARD", "STAMP", "Property Tax Receipt",'METER PURCHASE BILL'];
 
-        // Check if user_type is not equal to 1
-        if ($user->user_type == $refUserType['1']) {
-            // Modify $type array for user_type not equal to 1
-            $type = ["STAMP", "ID_PROOF"];
-        }
+        // // Check if user_type is not equal to 1
+        // if ($user->user_type == $refUserType['1']) {
+        //     // Modify $type array for user_type not equal to 1
+        //     $type = ["STAMP", "ID_PROOF"];
+        // }
 
         return $mRefReqDocs->getCollectiveDocByCode($moduleId, $type);
     }
