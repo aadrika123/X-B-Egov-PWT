@@ -2146,7 +2146,7 @@ class WaterConsumerWfController extends Controller
         # get property basic detail by holding number
         if (!empty($holding) && $holding[0] !== null) {
             $holdingDetails = $mPropPerty->getProperty($holding);
-            if (!$holdingDetails) {                         
+            if (!$holdingDetails) {
                 throw new Exception('Holding not found!');
             }
         }
@@ -2521,13 +2521,14 @@ class WaterConsumerWfController extends Controller
                     throw new Exception("Document Not Fully Verified");
                 break;
             case $wfLevels['JE']:                                                                       // JE Coditon in case of site adjustment
-                if ($application->doc_upload_status == false) {
+                if ($application->doc_upload_status == false)
                     throw new Exception("Please Upload Document ");
-                }
+                break;
+
             case $wfLevels['AE']:                                                                       // JE Coditon in case of site adjustment
-                if ($application->doc_status == false) {
+                if ($application->doc_status == false)
                     throw new Exception("Please Verified  Document ");
-                }
+                break;
                 // $siteDetails = $mWaterSiteInspection->getSiteDetails($application->id)
                 //     ->where('order_officer', $refRole['JE'])
                 //     ->first();
