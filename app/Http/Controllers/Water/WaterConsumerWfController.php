@@ -1936,14 +1936,14 @@ class WaterConsumerWfController extends Controller
             $refConsumerCharges             = Config::get('waterConstaint.CONSUMER_CHARGE_CATAGORY');
             $confModuleId                   = Config::get('module-constants.WATER_MODULE_ID');
 
-        //   return  $pendingDemand  = $this->checkAllPayment($request->consumerId);
-        //     if($pendingDemand[0] == false){
-        //         throw new Exception('Please Paid Your Demand First!');
-        //     }
+            $pendingDemand  = $this->checkAllPayment($request->consumerId);
+            if($pendingDemand == false){
+                throw new Exception('Please Paid Your Demand First!');
+            }
 
-        //     if (isset($firstPendingDemand)) {
-        //         throw new Exception("There are unpaid pending demand!");
-        //     }
+            if (isset($firstPendingDemand)) {
+                throw new Exception("There are unpaid pending demand!");
+            }
 
             $waterConsumerDetails = $mWaterSecondConsumer->consumerDetails($request->consumerId)->first();
             if (!$waterConsumerDetails) {
@@ -2055,9 +2055,8 @@ class WaterConsumerWfController extends Controller
             return $value['is_full_paid'];
         })->values();
         $uniqueArray = array_unique($paymentStatus->toArray());
-        return (count($uniqueArray) === 1 && $uniqueArray[0] === 1);
-        return $uniqueArray;
-        
+
+        return (count($uniqueArray) == 1 && $uniqueArray[0] == 1);
     }
 
     #Inbox For Water Reconnection 
