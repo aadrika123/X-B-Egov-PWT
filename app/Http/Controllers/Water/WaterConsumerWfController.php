@@ -2493,7 +2493,7 @@ class WaterConsumerWfController extends Controller
         // Updation of Received Date
         $preWorkflowReq = [
             'workflowId'        => $waterReconnectConsumer->workflow_id,
-            'refTableDotId'     => "water_consumer_active_requests.id",
+            'refTableDotId'     => "water_reconnect_consumers.id",
             'refTableIdValue'   => $req->applicationId,
             'receiverRoleId'    => $senderRoleId
         ];
