@@ -1249,6 +1249,7 @@ class WaterSecondConsumer extends Model
             'water_second_consumers.id',
             'water_second_consumers.mobile_no',
             'water_second_consumers.tab_size',
+            'water_second_consumers.consumer_no',
             'water_second_consumers.property_no',
             'water_second_consumers.status',
             'water_reconnect_consumers.payment_status',
@@ -1271,7 +1272,10 @@ class WaterSecondConsumer extends Model
             "water_consumer_meters.meter_no",
             "ulb_ward_masters.ward_name as ward_no",
             "water_consumer_charges.amount as reconnectCharges",
-            "water_consumer_charges.charge_category as reconnechargeCategory"
+            "water_consumer_charges.charge_category as reconnechargeCategory",
+            DB::raw("string_agg(water_consumer_owners.applicant_name,',') as applicantName"),
+            DB::raw("string_agg(water_consumer_owners.mobile_no::VARCHAR,',') as mobileNo"),
+            DB::raw("string_agg(water_consumer_owners.guardian_name,',') as guardianName"),
         )
             // ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_approval_application_details.current_role')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_second_consumers.ulb_id')
@@ -1290,6 +1294,33 @@ class WaterSecondConsumer extends Model
             ->leftjoin('water_consumer_meters', 'water_consumer_meters.consumer_id', 'water_second_consumers.id')
             // ->leftjoin('water_road_cutter_charges')
             ->where('water_second_consumers.id', $id)
-            ->whereIn('water_second_consumers.status', [1, 2, 4]);
+            ->whereIn('water_second_consumers.status', [1, 2, 4])
+            ->groupBy(
+                'water_second_consumers.id',
+                'water_second_consumers.mobile_no',
+                'water_second_consumers.tab_size',
+                'water_second_consumers.consumer_no',
+                'water_second_consumers.property_no',
+                'water_second_consumers.status',
+                'water_reconnect_consumers.payment_status',
+                'water_reconnect_consumers.user_type',
+                'water_reconnect_consumers.apply_date',
+                'water_second_consumers.landmark',
+                'water_second_consumers.address',
+                'water_second_consumers.category',
+                'water_reconnect_consumers.application_no',
+                'water_property_type_mstrs.property_type',
+                'water_param_pipeline_types.pipeline_type',
+                'zone_masters.zone_name',
+                'ulb_masters.ulb_name',
+                'water_connection_type_mstrs.connection_type',
+                'water_consumer_owners.applicant_name',
+                'water_consumer_owners.guardian_name',
+                'water_consumer_meters.connection_type',
+                'water_consumer_meters.meter_no',
+                'ulb_ward_masters.ward_name',
+                'water_consumer_charges.amount',
+                'water_consumer_charges.charge_category'
+            );
     }
 }
