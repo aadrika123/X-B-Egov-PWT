@@ -215,6 +215,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('workflow/reconnect/get-upload-docs', 'getDiscUploadDocumentReconnect');
         Route::post('workflow/reconnect/doc-verify-reject', 'reconnectDocVerifyReject');
         Route::post('workflow/reconnect/approval-rejection', 'consumerApprovalRejectionReconnect');
+        Route::post('workflow/reconnect/get-consumer-details', 'getApplicationDetailById');
     });
 
     /**

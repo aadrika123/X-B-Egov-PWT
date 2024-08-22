@@ -1937,7 +1937,7 @@ class WaterConsumerWfController extends Controller
             $confModuleId                   = Config::get('module-constants.WATER_MODULE_ID');
 
             $pendingDemand  = $this->checkAllPayment($request->consumerId);
-            if($pendingDemand == false){
+            if ($pendingDemand == false) {
                 throw new Exception('Please Paid Your Demand First!');
             }
 
@@ -2904,5 +2904,49 @@ class WaterConsumerWfController extends Controller
                 $value['district']
             ];
         });
+    }
+
+
+    /**
+     * | Admin view : Get Application Details of viewind
+     * | @param 
+     * | @var 
+     * | @return 
+        | Serial No : 
+        | Used Only for new Connection or New Regulization
+     */
+    public function getApplicationDetailById(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'applicationId' => 'required|integer',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        try {
+            $applicationId              = $request->applicationId;
+            $mWaterConsumer             = new WaterSecondConsumer();
+            $mWaterTran                 = new WaterTran();
+            $refChargeCatagory          = Config::get("waterConstaint.CHARGE_CATAGORY");
+            $refChargeCatagoryValue     = Config::get("waterConstaint.CONNECTION_TYPE");
+
+            # Application Details
+              $applicationDetails['applicationDetails'] = $mWaterConsumer->fullWaterDetailsv5($request)->first();
+
+            # Payment Details 
+            $refAppDetails = collect($applicationDetails)->first();
+            if (is_null($refAppDetails))
+                throw new Exception("Application Not Found!");
+
+            $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)
+                ->get();
+            $waterTransDetail['waterTransDetail'] = $waterTransaction;
+            $returnData = $applicationDetails;    // array_merge($applicationDetails, $waterTransDetail);
+            return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 }
