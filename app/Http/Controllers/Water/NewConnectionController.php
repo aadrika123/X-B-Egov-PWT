@@ -2336,11 +2336,17 @@ class NewConnectionController extends Controller
             $mWaterApproveApplication   = new WaterApprovalApplicationDetail();
             $mWaterPenaltyInstallment   = new WaterPenaltyInstallment();
             $mWaterTran                 = new WaterTran();
+            $mWaterSecondConsumer       = new WaterSecondConsumer();
             $refChargeCatagory          = Config::get("waterConstaint.CHARGE_CATAGORY");
             $refChargeCatagoryValue     = Config::get("waterConstaint.CONNECTION_TYPE");
 
-            # Application Details
+            // Application Details
             $applicationDetails['applicationDetails'] = $mWaterApproveApplication->fullWaterDetails($request)->first();
+            if ($applicationDetails['applicationDetails'] == null) {
+                $applicationDetails['applicationDetails'] = $mWaterSecondConsumer->fullWaterDetailsv5($request)->first();
+            }
+
+
 
             # Payment Details 
             $refAppDetails = collect($applicationDetails)->first();

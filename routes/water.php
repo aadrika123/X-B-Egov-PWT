@@ -299,11 +299,11 @@ Route::controller(WaterApplication::class)->group(function () {
 });
 Route::controller(WaterConsumer::class)->group(function () {
     Route::post('consumerChargeCal', 'calConsumerDemand');                                              //18        
-    Route::post('sendSms', 'sendSms');
+    Route::post('sendSms', 'sendSms');                  
     Route::post("consumer/get-consumer-demandV2", "getConsumerDemandsV2");
 });
 Route::controller(NewConnectionController::class)->group(function () {
-    Route::post('citizen/consumer-search', 'searchWaterConsumer');                                      // citizen consumer search
+    Route::post('citizen/consumer-search', 'searchWaterConsumer');                                                                              // citizen consumer search
 
 });
 Route::controller(WaterConsumer::class)->group(function () {

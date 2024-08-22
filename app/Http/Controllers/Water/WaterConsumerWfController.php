@@ -2933,17 +2933,17 @@ class WaterConsumerWfController extends Controller
             $refChargeCatagoryValue     = Config::get("waterConstaint.CONNECTION_TYPE");
 
             # Application Details
-              $applicationDetails['applicationDetails'] = $mWaterConsumer->fullWaterDetailsv5($request)->first();
+            $applicationDetails['applicationDetails'] = $mWaterConsumer->fullWaterDetailsv5($request)->first();
 
             # Payment Details 
             $refAppDetails = collect($applicationDetails)->first();
             if (is_null($refAppDetails))
                 throw new Exception("Application Not Found!");
 
-            $waterTransaction = $mWaterTran->getTransNo($refAppDetails->id, $refAppDetails->connection_type)
+            $waterTransaction = $mWaterTran->ConsumerTransaction($refAppDetails->id, $refAppDetails->connection_type)
                 ->get();
             $waterTransDetail['waterTransDetail'] = $waterTransaction;
-            $returnData = $applicationDetails;    // array_merge($applicationDetails, $waterTransDetail);
+            $returnData = array_merge($applicationDetails, $waterTransDetail);
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
