@@ -2592,7 +2592,7 @@ class WaterPaymentController extends Controller
             $mWaterSiteInspection           = new WaterSiteInspection();
 
             $offlinePaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
-            $activeConRequest = $mWaterConsumer->getApplicationById($applicationId)
+            $activeConRequest = $mWaterConsumer->getApplicationByIdv1($applicationId)
                 // ->where('water_approval_application_details.payment_status', 0)
                 ->first();
             if (!$activeConRequest) {

@@ -944,6 +944,14 @@ class WaterSecondConsumer extends Model
             ->join('water_approval_application_details', 'water_approval_application_details.id', 'water_second_consumers.apply_connection_id')
             ->whereIn('water_second_consumers.status', [1, 4]);
     }
+    public function getApplicationByIdv1($applicationId)
+    {
+        return  WaterSecondConsumer::select(
+            'water_second_consumers.*'
+        )
+            ->where('water_second_consumers.id', $applicationId)
+            ->whereIn('water_second_consumers.status', [1, 4]);
+    }
 
     public function updateConsumer($consumerId)
     {
