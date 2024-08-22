@@ -1178,7 +1178,7 @@ class WaterSecondConsumer extends Model
             ->first();
     }
 
-     /**
+    /**
      * |get details of applications which is partiallly make consumer
      * | before it payments
      */
@@ -1186,21 +1186,17 @@ class WaterSecondConsumer extends Model
     {
         return  WaterSecondConsumer::select(
             'water_second_consumers.id',
-            // 'water_approval_application_details.id as applicationId',
-            // 'water_approval_application_details.mobile_no',
-            // 'water_approval_application_details.tab_size',
-            // 'water_approval_application_details.property_no',
-            // 'water_approval_application_details.status',
-            // 'water_approval_application_details.payment_status',
-            // 'water_approval_application_details.user_type',
-            // 'water_approval_application_details.apply_date',
-            // 'water_approval_application_details.landmark',
-            // 'water_approval_application_details.address',
-            // 'water_approval_application_details.category',
-            // 'water_approval_application_details.application_no',
-            // 'water_approval_application_details.ward_no',
-            // 'water_approval_application_details.pin',
-            // 'water_approval_application_details.doc_upload_status',
+            'water_second_consumers.mobile_no',
+            'water_second_consumers.tab_size',
+            'water_second_consumers.property_no',
+            'water_second_consumers.status',
+            'water_reconnect_consumers.payment_status',
+            'water_reconnect_consumers.user_type',
+            'water_reconnect_consumers.apply_date',
+            'water_second_consumers.landmark',
+            'water_second_consumers.address',
+            'water_second_consumers.category',
+            'water_reconnect_consumers.application_no',
             'water_property_type_mstrs.property_type',
             'water_param_pipeline_types.pipeline_type',
             'zone_masters.zone_name',
@@ -1208,19 +1204,13 @@ class WaterSecondConsumer extends Model
             'water_connection_type_mstrs.connection_type',
             // 'wf_roles.role_name AS current_role_name',
             'water_connection_type_mstrs.connection_type',
-            'water_consumer_charges.amount',
-            "water_consumer_charges.charge_category",
             "water_consumer_owners.applicant_name as owner_name",
             "water_consumer_owners.guardian_name",
             "water_consumer_meters.connection_type",
             "water_consumer_meters.meter_no",
             "ulb_ward_masters.ward_name as ward_no",
-            // "water_road_cutter_charges.road_type",
-            // "water_approval_application_details.per_meter",
-            // "water_approval_application_details.trade_license as license_no",
-            // "water_approval_application_details.initial_reading",
-            // "water_consumer_charges.amount as reconnectCharges",
-            // "water_consumer_charges.charge_category as reconnechargeCategory"
+            "water_consumer_charges.amount as reconnectCharges",
+            "water_consumer_charges.charge_category as reconnechargeCategory"
         )
             // ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_approval_application_details.current_role')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_second_consumers.ulb_id')
@@ -1229,7 +1219,7 @@ class WaterSecondConsumer extends Model
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_second_consumers.ward_mstr_id')
             ->leftjoin('water_param_pipeline_types', 'water_param_pipeline_types.id', 'water_second_consumers.pipeline_type_id')
             ->join('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
-            ->leftjoin('water_reconnect_consumers', 'water_reconnect_consumers.consumer_id', '=', 'water_second_consumers.id')
+            ->join('water_reconnect_consumers', 'water_reconnect_consumers.consumer_id', '=', 'water_second_consumers.id')
             ->leftJoin('water_consumer_charges', function ($join) {
                 $join->on('water_consumer_charges.consumer_id', '=', 'water_reconnect_consumers.consumer_id')
                     ->where('water_consumer_charges.status', 1)
