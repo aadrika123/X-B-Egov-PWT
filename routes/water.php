@@ -183,9 +183,9 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
      * |------------ Water Consumer Workflow -------------|
      */
     Route::controller(WaterConsumerWfController::class)->group(function () {
-        Route::post('consumer/req/inbox', 'consumerInbox');                                                 // Workflow
-        Route::post('consumer/req/outbox', 'consumerOutbox');                                              // Workflow
-        Route::post('consumer/req/get-details-by', 'getWorkflow');                                         // Workflow
+        Route::post('consumer/req/inbox', 'consumerInbox');                                                  // Workflow
+        Route::post('consumer/req/outbox', 'consumerOutbox');                                               // Workflow
+        Route::post('consumer/req/get-details-by', 'getWorkflow');                                          // Workflow
         Route::post('consumer/req/post-next-level', 'consumerPostNextLevel');                               // Here
         Route::post('consumer/req/list-req-docs', 'listDocToUpload');                                       // Here
         Route::post('consumer/req/doc-verify-reject', 'consumerDocVerifyReject');                           // Here

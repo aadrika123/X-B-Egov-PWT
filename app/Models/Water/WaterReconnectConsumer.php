@@ -152,7 +152,7 @@ class WaterReconnectConsumer extends Model
             'water_second_consumers.consumer_no',
             'water_reconnect_consumers.application_no',
             // 'water_reconnect_consumers.ward_no',
-            'water_second_consumers.pin',
+            // 'water_second_consumers.pin',
             'water_reconnect_consumers.current_role',
             'water_reconnect_consumers.workflow_id',
             'water_reconnect_consumers.last_role_id',
@@ -166,7 +166,7 @@ class WaterReconnectConsumer extends Model
             'ulb_masters.ulb_name',
             'water_connection_type_mstrs.connection_type',
             'wf_roles.role_name AS current_role_name',
-            'water_connection_type_mstrs.connection_type',
+            // 'water_connection_type_mstrs.connection_type',
             'water_consumer_charges.amount',
             "water_consumer_charges.charge_category",
             "ulb_ward_masters.ward_name as ward_no",
@@ -178,14 +178,14 @@ class WaterReconnectConsumer extends Model
         )
             ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_reconnect_consumers.current_role')
             ->join('water_second_consumers', 'water_second_consumers.id', 'water_reconnect_consumers.consumer_id')
-            ->join('water_approval_application_details', 'water_approval_application_details.id', 'water_second_consumers.apply_connection_id')
+            ->leftjoin('water_approval_application_details', 'water_approval_application_details.id', 'water_second_consumers.apply_connection_id')
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_second_consumers.ulb_id')
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_second_consumers.ward_mstr_id')
-            ->join('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_second_consumers.connection_type_id')
+            ->leftjoin('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_second_consumers.connection_type_id')
             ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', 'water_second_consumers.property_type_id')
             ->join('water_param_pipeline_types', 'water_param_pipeline_types.id', 'water_second_consumers.pipeline_type_id')
             ->join('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
-            ->leftjoin('water_consumer_charges', 'water_consumer_charges.consumer_id', 'water_reconnect_consumers.consumer_id')
+            ->join('water_consumer_charges', 'water_consumer_charges.consumer_id', 'water_reconnect_consumers.consumer_id')
             ->leftjoin('water_road_cutter_charges', 'water_road_cutter_charges.id', 'water_approval_application_details.road_type_id')
             ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', 'water_reconnect_consumers.consumer_id')
             ->where('water_reconnect_consumers.id', $request->applicationId)
@@ -243,5 +243,18 @@ class WaterReconnectConsumer extends Model
         $application->verify_status = 2;
         $application->emp_detail_id = $userId;
         $application->save();
+    }
+
+    /**
+     * | Get consumer by consumer Id
+     */
+    public function getConsumerDetailsById($consumerId)
+    {
+        return WaterReconnectConsumer::select(
+            'water_reconnect_consumers.*',
+        )
+            ->where('verify_status', 1)
+            ->where('demand_generate', false)
+            ->where('consumer_id', $consumerId);
     }
 }

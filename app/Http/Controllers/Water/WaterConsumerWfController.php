@@ -2142,11 +2142,14 @@ class WaterConsumerWfController extends Controller
         $consumerId = $applicationDetails->pluck('consumer_id');
         $holding = $applicationDetails->pluck('holding_no')->toArray();
 
-        # get property basic detail by holding number 
-        $holdingDetails = $mPropPerty->getPropert($holding);
-        if (!$holdingDetails) {
-            throw new Exception('Holding not found!');
+        # get property basic detail by holding number
+        if ($holding != null) {
+            $holdingDetails = $mPropPerty->getPropert($holding);
+            if (!$holdingDetails) {
+                throw new Exception('Holding not found!');
+            }
         }
+
         # Ward Name
         $refApplication = collect($applicationDetails)->first();
         // $wardDetails = $mUlbNewWardmap->getWard($refApplication->ward_mstr_id);
