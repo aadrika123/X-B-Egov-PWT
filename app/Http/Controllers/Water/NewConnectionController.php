@@ -1836,7 +1836,7 @@ class NewConnectionController extends Controller
         $applicationId      = $refWaterApplication->id;
         $workflowId         = $refWaterApplication->workflow_id;
         $moduleId           = Config::get('module-constants.WATER_MODULE_ID');
-        $uploadedDocs       = $mWfActiveDocument->getDocByRefIds($applicationId, $workflowId, $moduleId);
+        $uploadedDocs       = $mWfActiveDocument->getDocByRefIdsV4($applicationId, $workflowId, $moduleId);
 
         $explodeDocs = collect(explode('#', $documentList->requirements));
         $filteredDocs = $explodeDocs->map(function ($explodeDoc) use ($uploadedDocs, $ownerId, $documentList) {
