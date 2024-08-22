@@ -205,7 +205,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('consumer/req/escalate', 'postEscalate');                                                        // Workflow           
         
         # Route for Water Reconnect Process
-        Route::post("consumer/reconnect-consumer", "reconnectConsumer");                                          // Reconnect Consumer Citizen Side 
+        Route::post("consumer/reconnect-consumer", "reconnectConsumerFun");                                          // Reconnect Consumer Citizen Side 
         Route::post("consumer/reconnect-inbox", "reconnectInbox");                                                 // Reconnect Consumer Citizen Side 
         Route::post("consumer/reconnect-outbox", "reconnectOutbox");                                                 // Reconnect Consumer Citizen Side 
         Route::post('consumer/req/reconnect-get-details-by', 'getRecWorkflow');                                         // Workflow

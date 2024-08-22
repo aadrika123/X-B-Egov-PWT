@@ -1907,7 +1907,7 @@ class WaterConsumerWfController extends Controller
      * | Created By Arshad
      * 
      */
-    public function reconnectConsumer(Request $request)
+    public function reconnectConsumerFun(Request $request)
     {
         $validated = Validator::make(
             $request->all(),
@@ -1927,6 +1927,7 @@ class WaterConsumerWfController extends Controller
             $mWaterConsumerCharge           = new WaterConsumerCharge();
             $mWaterConsumerChargeCategory   = new WaterConsumerChargeCategory();
             $mWorkflowTrack                 = new WorkflowTrack();
+            $mWaterConsumerDemand           = new WaterConsumerDemand();
 
             $refWorkflow                    = Config::get('workflow-constants.WATER_RECONNECTION');
             $refUserType                    = Config::get('waterConstaint.REF_USER_TYPE');
@@ -1934,6 +1935,17 @@ class WaterConsumerWfController extends Controller
             $refConParamId                  = Config::get('waterConstaint.PARAM_IDS');
             $refConsumerCharges             = Config::get('waterConstaint.CONSUMER_CHARGE_CATAGORY');
             $confModuleId                   = Config::get('module-constants.WATER_MODULE_ID');
+
+            $pendingDemand  = $this->checkAllPayment($request->consumerId);
+
+            if($pendingDemand == false){
+                throw new Exception('Please Paid Your Demand First!');
+            }
+
+            if (isset($firstPendingDemand)) {
+                throw new Exception("There are unpaid pending demand!");
+            }
+
             $waterConsumerDetails = $mWaterSecondConsumer->consumerDetails($request->consumerId)->first();
             if (!$waterConsumerDetails) {
                 throw new Exception('Consumer Not Found');
@@ -2029,6 +2041,23 @@ class WaterConsumerWfController extends Controller
             $this->rollback();
             return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
         }
+    }
+    #check if consumer have any demand to be paid
+    public function checkAllPayment($consumerId)
+    {
+        $mWaterConsumerDemand = new WaterConsumerDemand();
+
+        $demands = $mWaterConsumerDemand->getDeamandByID($consumerId)->get();
+        // If no demands are found, assume no pending payments
+        if ($demands->isEmpty()) {
+            return true;
+        }
+        $paymentStatus = collect($demands)->map(function ($value) {
+            return $value['is_full_paid'];
+        })->values();
+        $uniqueArray = array_unique($paymentStatus->toArray());
+
+        return (count($uniqueArray) === 1 && $uniqueArray[0] === 1);
     }
 
     #Inbox For Water Reconnection 
