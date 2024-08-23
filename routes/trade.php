@@ -91,6 +91,7 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         Route::post('application/counter-surrenderable-list', 'CSurrenderList');             #id = c10
 
         Route::post('application/old-app-edit', 'editOldApp');
+        Route::post("license/counter", "updateLicenseCounter");
     });
 
     Route::controller(TradeNoticeController::class)->group(function () {
@@ -144,6 +145,7 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
 
         Route::post('application/init-payment', "initPayment");
         Route::post('application/easebuzz-handel-response', "easebuzzHandelResponse");
+        Route::post('application/license-init-payment', "initPaymentReceipt");
     });
 
     #-----------report----------------------------------

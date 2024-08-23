@@ -30,7 +30,7 @@ return [
     ],
     "USER-TYPE-SHORT-NAME" =>
     [
-        ""                 =>"ONLINE",
+        ""                 => "ONLINE",
         "SUPER ADMIN"       =>  "SUPER ADMIN",
         "ADMIN"             =>  "ADMIN",
         "PROJECT MANAGER"   =>  "PM",
@@ -69,19 +69,19 @@ return [
         "SRLP"              =>  "SRLP",
         "TAX SUPERITENDENT"  =>  "TS", #EO
         "TS"                =>  "TS",
-        "DEPUTY MUNICIPAL COMMISSIONER"=>"DMC",
+        "DEPUTY MUNICIPAL COMMISSIONER" => "DMC",
         "DMC"               => "DMC",
         "FIELD ENGINEER"    => "FE", #TC
         "FE"                => "FE" #TC
 
     ],
-    
-    "CANE-NO-HAVE-WARD"=>["ONLINE", "JSK","BO" ,"PM","SUPER ADMIN", "ADMIN","TL"],
-    "CANE-APPLY-APPLICATION"=>["ONLINE", "JSK","BO", "SRLP","UTC", "FE","TC", "SUPER ADMIN", "TL"],
-    "CANE-CUTE-PAYMENT"=>["JSK", "SRLP","UTC","FE", "TC", "SUPER ADMIN","ADMIN", "TL"],
-    "CANE-CUTE-PAYMENT-ONLINE_R"=>["SUPER ADMIN","ADMIN"],
-    "CANE-REJECT-APPLICATION"=>["SUPER ADMIN","ADMIN"],
-    "VERIFICATION-STATUS"=>
+
+    "CANE-NO-HAVE-WARD" => ["ONLINE", "JSK", "BO", "PM", "SUPER ADMIN", "ADMIN", "TL"],
+    "CANE-APPLY-APPLICATION" => ["ONLINE", "JSK", "BO", "SRLP", "UTC", "FE", "TC", "SUPER ADMIN", "TL"],
+    "CANE-CUTE-PAYMENT" => ["JSK", "SRLP", "UTC", "FE", "TC", "SUPER ADMIN", "ADMIN", "TL"],
+    "CANE-CUTE-PAYMENT-ONLINE_R" => ["SUPER ADMIN", "ADMIN"],
+    "CANE-REJECT-APPLICATION" => ["SUPER ADMIN", "ADMIN"],
+    "VERIFICATION-STATUS" =>
     [
         "PENDING"   => 0,
         "VERIFY"    => 1,
@@ -90,4 +90,12 @@ return [
         "BACKWARD"  => 4,
         "APROVE"    => 5,
     ],
+
+    "PRINT_LICENSE" => [
+        "MAX_PRINT" => 3,
+        "PRINT_AMT" => 50,
+        "PAYMENT_TYPE" => "LICENSE PRINT",
+    ],
+
+
 ];

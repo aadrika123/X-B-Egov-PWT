@@ -1572,4 +1572,18 @@ class TradeApplication extends Controller
         return $parentId;
     }
 
+    public function updateLicenseCounter(Request $request){
+        $id = $request->id;
+        $request->setMethod('POST');
+        $request->request->add(["id" => $id]);
+        $rules = [
+            "id" => "required|digits_between:1,9223372036854775807",
+        ];
+        $validator = Validator::make($request->all(), $rules,);
+        if ($validator->fails()) {
+            return responseMsg(false, $validator->errors(), "");
+        }
+        return $this->_REPOSITORY->updateLicenseCounter($request->id);
+    }
+
 }

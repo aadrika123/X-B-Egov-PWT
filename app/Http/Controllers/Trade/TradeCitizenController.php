@@ -1690,6 +1690,103 @@ class TradeCitizenController extends Controller
         return $this->_REPOSITORY_TRADE->getPaybleAmount($request);
     }
 
+    // public function easebuzzHandelResponse(Request $request)
+    // {
+    //     try {
+    //         $refUser        = Auth()->user();
+    //         $requestData = $this->_TradeEasebuzzPayRequest->where("order_id", $request->txnid)->where("status", 2)->first();
+    //         if (!$requestData) {
+    //             throw new Exception("Request Data Not Found");
+    //         }
+    //         $refLecenceData = $this->_REPOSITORY_TRADE->getAllLicenceById($requestData->temp_id);
+    //         $requestPayload = json_decode($requestData->request_json, true);
+    //         $request->merge($requestPayload);
+    //         $request->merge([
+    //             "paymentMode" => "ONLINE",
+    //             "licenceId" => $requestData->temp_id,
+    //             "totalCharge" => $requestData->payable_amount,
+    //             "ulbId" => $refLecenceData->ulb_id,
+    //             "paymentGatewayType" => $request->payment_source,
+    //         ]);
+    //         $respnse = $this->_REPOSITORY_TRADE->paymentCounter($request);
+    //         $tranId = $respnse->original["data"]["transactionId"];
+    //         $request->merge(["tranId"=>$tranId]);
+    //         // dd(TradeTransaction::find($tranId),$request->all());
+    //         $this->_TradeEasebuzzPayResponse->request_id = $requestData->id;
+    //         $this->_TradeEasebuzzPayResponse->temp_id = $requestData->temp_id;
+    //         $this->_TradeEasebuzzPayResponse->module_id = $request->moduleId;
+    //         $this->_TradeEasebuzzPayResponse->order_id = $request->txnid;
+    //         $this->_TradeEasebuzzPayResponse->payable_amount = $requestData->payable_amount;
+    //         $this->_TradeEasebuzzPayResponse->payment_id = $request->easepayid;
+    //         $this->_TradeEasebuzzPayResponse->tran_id = $request->tranId;
+    //         $this->_TradeEasebuzzPayResponse->error_message = $request->error_message;
+    //         $this->_TradeEasebuzzPayResponse->user_id = $request->userId;
+    //         $this->_TradeEasebuzzPayResponse->response_data = json_encode($request->all(), JSON_UNESCAPED_UNICODE);
+    //         $this->_TradeEasebuzzPayResponse->save();
+    //         $requestData->status = 1;
+    //         $requestData->update();
+
+    //         return $respnse;
+    //     } catch (Exception $e) {
+    //         return responseMsg(false, $e->getMessage(), "");
+    //     }
+    // }
+
+    public function initPaymentReceipt(Request $request){
+        try {
+            $applicationType = $this->_TRADE_CONSTAINT["PRINT_LICENSE"]["PAYMENT_TYPE"];
+            $chargeData["total_charge"] =  $this->_TRADE_CONSTAINT["PRINT_LICENSE"]["PRINT_AMT"];
+            $user = Auth()->user();
+            $rules = [
+                "applicationId" => "required|exists:" . $this->_DB_NAME . "." . $this->_TradeLicence->getTable() . ",id",
+            ];
+            $validator = Validator::make($request->all(), $rules);
+            if ($validator->fails()) {
+                return validationErrorV2($validator);
+            }
+
+            $application = $this->_TradeLicence->find($request->applicationId);
+            $owners = $application->owneres()->get();
+            $licensePrintPaymentCount = TradeTransaction::where("temp_id",$application->id)->whereIN("status",[1,2])->count("id");
+            if ($licensePrintPaymentCount >= $this->_TRADE_CONSTAINT["PRINT_LICENSE"]["MAX_PRINT"]) {
+                throw new Exception("License Print Payment Conter Cross");
+            }
+            $data = [
+                "userId" => $user && $user->getTable() == "users" ? $user->id : null,
+                "applicationId"=>$application->id,
+                "applicationNo" => $application->application_no,
+                "moduleId" => $this->_MODULE_ID,
+                "email" => ($owners->whereNotNull("email_id")->first())->email_id ?? "test@gmail.com",
+                "phone" => ($owners->whereNotNull("mobile_no")->first())->mobile_no ?? "0123456789",
+                "amount" => $chargeData["total_charge"],
+                "firstname" => "No Name",
+                "frontSuccessUrl" => $request->frontSuccessUrl,
+                "frontFailUrl" => $request->frontFailUrl,
+            ];
+            $easebuzzObj = new PayWithEasebuzzLib();
+            $result =  $easebuzzObj->initPayment($data);
+            if (!$result["status"]) {
+                throw new Exception("Payment Not Initiate Due To Internal Server Error");
+            }
+            $data["url"] = $result["data"];
+            $data = collect($data)->merge($chargeData)->merge($result);
+            $request->merge($data->toArray());
+            $this->_TradeEasebuzzPayRequest->temp_id = $application->id;
+            $this->_TradeEasebuzzPayRequest->tran_type = $applicationType;
+            $this->_TradeEasebuzzPayRequest->order_id = $data["txnid"] ?? "";
+            $this->_TradeEasebuzzPayRequest->demand_amt = $data["total_charge"] ?? "0";
+            $this->_TradeEasebuzzPayRequest->payable_amount = $chargeData["total_charge"] ?? "0";
+            $this->_TradeEasebuzzPayRequest->penalty_amount = 0;
+            $this->_TradeEasebuzzPayRequest->rebate_amount = 0;
+            $this->_TradeEasebuzzPayRequest->request_json = json_encode($request->all(), JSON_UNESCAPED_UNICODE);
+            $this->_TradeEasebuzzPayRequest->save();
+            return responseMsg(true, "Payment Initiat", remove_null($data));
+        } 
+        catch (Exception $e){
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
     public function easebuzzHandelResponse(Request $request)
     {
         try {
@@ -1708,7 +1805,12 @@ class TradeCitizenController extends Controller
                 "ulbId" => $refLecenceData->ulb_id,
                 "paymentGatewayType" => $request->payment_source,
             ]);
-            $respnse = $this->_REPOSITORY_TRADE->paymentCounter($request);
+            if($requestData->tran_type==$this->_TRADE_CONSTAINT["PRINT_LICENSE"]["PAYMENT_TYPE"]){
+                $respnse = $this->_REPOSITORY_TRADE->licensePrintPayment($request);
+            }
+            else{
+                $respnse = $this->_REPOSITORY_TRADE->paymentCounter($request);
+            }
             $tranId = $respnse->original["data"]["transactionId"];
             $request->merge(["tranId"=>$tranId]);
             // dd(TradeTransaction::find($tranId),$request->all());

@@ -3498,290 +3498,290 @@ class Trade implements ITrade
     }
 
     # Serial No : 20
-    public function licenceCertificate($id) # unauthorised  function
-    {
-        try {
-            $docUrl = Config::get('module-constants.DOC_URL');
-            $data = (array)null;
-            $data['licenceCertificate'] = config('app.url') . "/api/trade/license-certificate/" . $id;
-            $select = [
-                "license.*",
-                "license.application_no",
-                "license.provisional_license_no",
-                "license.license_no",
-                "license.firm_name",
-                "license.holding_no",
-                "license.address",
-                "license.licence_for_years",
-                "license.nature_of_bussiness",
-                "license.firm_description",
-                "license.brief_firm_desc",
-                "license.premises_owner_name",
-                "license.pending_status",
-                "license.payment_status",
-                "owner.owner_name",
-                "owner.guardian_name",
-                "owner.mobile",
-                "owner.licensee_id",
-                "owner_additionl.additionl_owner_name",
-                "owner_additionl.additionl_guardian_name",
-                "owner_additionl.additionl_mobile",
-                DB::raw("ulb_ward_masters.ward_name AS ward_no, 
-                        ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type,
-                        ulb_masters.logo as ulb_logo,
-                        ulb_masters.short_name as ulb_short_name,
-                        ulb_masters.hindi_name as ulb_hindi_name,
-                        ulb_masters.current_website as ulb_current_website,
-                        ulb_masters.parent_website as ulb_parent_website,
-                        ulb_masters.toll_free_no as ulb_toll_free_no,
-                        ulb_masters.mobile_no AS ulb_mobile_no,
-                        ulb_masters.association_with as association_with,
-                        zone_masters.zone_name,
-                        TO_CHAR(CAST(license.application_date AS DATE), 'DD-MM-YYYY') as application_date,
-                        TO_CHAR(CAST(license.establishment_date AS DATE), 'DD-MM-YYYY') as establishment_date,
-                        TO_CHAR(CAST(license.license_date AS DATE), 'DD-MM-YYYY') as license_date,
-                        TO_CHAR(CAST(license.valid_from AS DATE), 'DD-MM-YYYY') as valid_from,
-                        TO_CHAR(CAST(license.valid_upto AS DATE), 'DD-MM-YYYY') as valid_upto
-                        ")
-            ];
-            $application = $this->_DB->table("trade_licences AS license")
-                ->select($select)
-                ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
-                ->join("zone_masters", "zone_masters.id", "license.zone_id")
-                ->leftjoin("ulb_ward_masters", function ($join) {
-                    $join->on("ulb_ward_masters.id", "=", "license.ward_id");
-                })
-                ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
-                                            STRING_AGG(guardian_name,',') as guardian_name,
-                                            STRING_AGG(mobile_no::text,',') as mobile,
-                                            temp_id, id as licensee_id
-                                        FROM trade_owners 
-                                        WHERE temp_id = $id
-                                            AND is_active =TRUE
-                                        GROUP BY temp_id,id
-                                        ORDER BY id ASC
-                                        limit 1
-                                        ) owner"), function ($join) {
-                    $join->on("owner.temp_id", "=", "license.id");
-                })
-                ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as additionl_owner_name,
-                                            STRING_AGG(guardian_name,',') as additionl_guardian_name,
-                                            STRING_AGG(mobile_no::text,',') as additionl_mobile,
-                                            temp_id
-                                        FROM trade_owners 
-                                        WHERE temp_id = $id
-                                            AND is_active =TRUE
-                                            AND id NOT IN(
-                                                SELECT id
-                                                FROM trade_owners 
-                                                WHERE temp_id = $id
-                                                    AND is_active =TRUE
-                                                ORDER BY id ASC
-                                                limit 1
-                                            )
-                                        GROUP BY temp_id
-                                        ) owner_additionl"), function ($join) {
-                    $join->on("owner_additionl.temp_id", "=", "license.id");
-                })
-                ->where('license.id', $id)
-                ->first();
-            if (!$application) {
-                $application = $this->_DB->table("trade_renewals AS license")
-                    ->select($select)
-                    ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
-                    ->join("zone_masters", "zone_masters.id", "license.zone_id")
-                    ->leftjoin("ulb_ward_masters", function ($join) {
-                        $join->on("ulb_ward_masters.id", "=", "license.ward_id");
-                    })
-                    ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
-                                            STRING_AGG(guardian_name,',') as guardian_name,
-                                            STRING_AGG(mobile_no::text,',') as mobile,
-                                            temp_id , id as licensee_id
-                                        FROM trade_owners 
-                                        WHERE temp_id = $id
-                                            AND is_active =TRUE
-                                        GROUP BY temp_id,id
-                                        ORDER BY id ASC
-                                        limit 1
-                                        ) owner"), function ($join) {
-                        $join->on("owner.temp_id", "=", "license.id");
-                    })
-                    ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as additionl_owner_name,
-                                            STRING_AGG(guardian_name,',') as additionl_guardian_name,
-                                            STRING_AGG(mobile_no::text,',') as additionl_mobile,
-                                            temp_id
-                                        FROM trade_owners 
-                                        WHERE temp_id = $id
-                                            AND is_active =TRUE
-                                            AND id NOT IN(
-                                                SELECT id
-                                                FROM trade_owners 
-                                                WHERE temp_id = $id
-                                                    AND is_active =TRUE
-                                                ORDER BY id ASC
-                                                limit 1
-                                            )
-                                        GROUP BY temp_id
-                                        ) owner_additionl"), function ($join) {
-                        $join->on("owner_additionl.temp_id", "=", "license.id");
-                    })
-                    ->where('license.id', $id)
-                    ->first();
-                if (!$application) {
-                    throw new Exception("Application Not Found");
-                }
-            }
-            if (!$application) {
-                throw new Exception("Data Not Faound");
-            }
-            if ($application->payment_status == 2) {
-                throw new Exception("Payment Not Clear From Accontend");
-            }
-            if ($application->payment_status != 1) {
-                throw new Exception("Payment Not Done");
-            }
-            $oldLicense = TradeRenewal::find($application->trade_id);
-            if ($application->pending_status != 5) {
-                throw new Exception("Application Not Approved");
-            }
-            $item_name = "";
-            $cods = "";
-            if ($application->nature_of_bussiness) {
-                $items = AkolaTradeParamItemType::itemsById($application->nature_of_bussiness);
-                foreach ($items as $val) {
-                    $item_name .= $val->trade_item . ",";
-                    $cods .= $val->trade_code . ",";
-                }
-                $item_name = trim($item_name, ',');
-                $cods = trim($cods, ',');
-            }
-            $application->firm_name_marathi = trim($application->firm_name_marathi) ? $application->firm_name_marathi : $application->firm_name;
-            $application->items = $item_name;
-            $application->items_code = $cods;
-            if (!$application->licence_for_years || !$application->valid_from || !$application->valid_upto) {
-                $this->temCalValidity($application);
-            }
-            $application->old_license_no = $oldLicense->license_no ?? "";
-            $application->old_license_date = $oldLicense ? Carbon::parse($oldLicense->license_date)->format("d-m-Y") : "";
-            $application->ulb_logo = $application->ulb_logo ? ($this->_DOC_URL . "/" . $application->ulb_logo) : "";
+    // public function licenceCertificate($id) # unauthorised  function
+    // {
+    //     try {
+    //         $docUrl = Config::get('module-constants.DOC_URL');
+    //         $data = (array)null;
+    //         $data['licenceCertificate'] = config('app.url') . "/api/trade/license-certificate/" . $id;
+    //         $select = [
+    //             "license.*",
+    //             "license.application_no",
+    //             "license.provisional_license_no",
+    //             "license.license_no",
+    //             "license.firm_name",
+    //             "license.holding_no",
+    //             "license.address",
+    //             "license.licence_for_years",
+    //             "license.nature_of_bussiness",
+    //             "license.firm_description",
+    //             "license.brief_firm_desc",
+    //             "license.premises_owner_name",
+    //             "license.pending_status",
+    //             "license.payment_status",
+    //             "owner.owner_name",
+    //             "owner.guardian_name",
+    //             "owner.mobile",
+    //             "owner.licensee_id",
+    //             "owner_additionl.additionl_owner_name",
+    //             "owner_additionl.additionl_guardian_name",
+    //             "owner_additionl.additionl_mobile",
+    //             DB::raw("ulb_ward_masters.ward_name AS ward_no, 
+    //                     ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type,
+    //                     ulb_masters.logo as ulb_logo,
+    //                     ulb_masters.short_name as ulb_short_name,
+    //                     ulb_masters.hindi_name as ulb_hindi_name,
+    //                     ulb_masters.current_website as ulb_current_website,
+    //                     ulb_masters.parent_website as ulb_parent_website,
+    //                     ulb_masters.toll_free_no as ulb_toll_free_no,
+    //                     ulb_masters.mobile_no AS ulb_mobile_no,
+    //                     ulb_masters.association_with as association_with,
+    //                     zone_masters.zone_name,
+    //                     TO_CHAR(CAST(license.application_date AS DATE), 'DD-MM-YYYY') as application_date,
+    //                     TO_CHAR(CAST(license.establishment_date AS DATE), 'DD-MM-YYYY') as establishment_date,
+    //                     TO_CHAR(CAST(license.license_date AS DATE), 'DD-MM-YYYY') as license_date,
+    //                     TO_CHAR(CAST(license.valid_from AS DATE), 'DD-MM-YYYY') as valid_from,
+    //                     TO_CHAR(CAST(license.valid_upto AS DATE), 'DD-MM-YYYY') as valid_upto
+    //                     ")
+    //         ];
+    //         $application = $this->_DB->table("trade_licences AS license")
+    //             ->select($select)
+    //             ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
+    //             ->join("zone_masters", "zone_masters.id", "license.zone_id")
+    //             ->leftjoin("ulb_ward_masters", function ($join) {
+    //                 $join->on("ulb_ward_masters.id", "=", "license.ward_id");
+    //             })
+    //             ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
+    //                                         STRING_AGG(guardian_name,',') as guardian_name,
+    //                                         STRING_AGG(mobile_no::text,',') as mobile,
+    //                                         temp_id, id as licensee_id
+    //                                     FROM trade_owners 
+    //                                     WHERE temp_id = $id
+    //                                         AND is_active =TRUE
+    //                                     GROUP BY temp_id,id
+    //                                     ORDER BY id ASC
+    //                                     limit 1
+    //                                     ) owner"), function ($join) {
+    //                 $join->on("owner.temp_id", "=", "license.id");
+    //             })
+    //             ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as additionl_owner_name,
+    //                                         STRING_AGG(guardian_name,',') as additionl_guardian_name,
+    //                                         STRING_AGG(mobile_no::text,',') as additionl_mobile,
+    //                                         temp_id
+    //                                     FROM trade_owners 
+    //                                     WHERE temp_id = $id
+    //                                         AND is_active =TRUE
+    //                                         AND id NOT IN(
+    //                                             SELECT id
+    //                                             FROM trade_owners 
+    //                                             WHERE temp_id = $id
+    //                                                 AND is_active =TRUE
+    //                                             ORDER BY id ASC
+    //                                             limit 1
+    //                                         )
+    //                                     GROUP BY temp_id
+    //                                     ) owner_additionl"), function ($join) {
+    //                 $join->on("owner_additionl.temp_id", "=", "license.id");
+    //             })
+    //             ->where('license.id', $id)
+    //             ->first();
+    //         if (!$application) {
+    //             $application = $this->_DB->table("trade_renewals AS license")
+    //                 ->select($select)
+    //                 ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
+    //                 ->join("zone_masters", "zone_masters.id", "license.zone_id")
+    //                 ->leftjoin("ulb_ward_masters", function ($join) {
+    //                     $join->on("ulb_ward_masters.id", "=", "license.ward_id");
+    //                 })
+    //                 ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
+    //                                         STRING_AGG(guardian_name,',') as guardian_name,
+    //                                         STRING_AGG(mobile_no::text,',') as mobile,
+    //                                         temp_id , id as licensee_id
+    //                                     FROM trade_owners 
+    //                                     WHERE temp_id = $id
+    //                                         AND is_active =TRUE
+    //                                     GROUP BY temp_id,id
+    //                                     ORDER BY id ASC
+    //                                     limit 1
+    //                                     ) owner"), function ($join) {
+    //                     $join->on("owner.temp_id", "=", "license.id");
+    //                 })
+    //                 ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as additionl_owner_name,
+    //                                         STRING_AGG(guardian_name,',') as additionl_guardian_name,
+    //                                         STRING_AGG(mobile_no::text,',') as additionl_mobile,
+    //                                         temp_id
+    //                                     FROM trade_owners 
+    //                                     WHERE temp_id = $id
+    //                                         AND is_active =TRUE
+    //                                         AND id NOT IN(
+    //                                             SELECT id
+    //                                             FROM trade_owners 
+    //                                             WHERE temp_id = $id
+    //                                                 AND is_active =TRUE
+    //                                             ORDER BY id ASC
+    //                                             limit 1
+    //                                         )
+    //                                     GROUP BY temp_id
+    //                                     ) owner_additionl"), function ($join) {
+    //                     $join->on("owner_additionl.temp_id", "=", "license.id");
+    //                 })
+    //                 ->where('license.id', $id)
+    //                 ->first();
+    //             if (!$application) {
+    //                 throw new Exception("Application Not Found");
+    //             }
+    //         }
+    //         if (!$application) {
+    //             throw new Exception("Data Not Faound");
+    //         }
+    //         if ($application->payment_status == 2) {
+    //             throw new Exception("Payment Not Clear From Accontend");
+    //         }
+    //         if ($application->payment_status != 1) {
+    //             throw new Exception("Payment Not Done");
+    //         }
+    //         $oldLicense = TradeRenewal::find($application->trade_id);
+    //         if ($application->pending_status != 5) {
+    //             throw new Exception("Application Not Approved");
+    //         }
+    //         $item_name = "";
+    //         $cods = "";
+    //         if ($application->nature_of_bussiness) {
+    //             $items = AkolaTradeParamItemType::itemsById($application->nature_of_bussiness);
+    //             foreach ($items as $val) {
+    //                 $item_name .= $val->trade_item . ",";
+    //                 $cods .= $val->trade_code . ",";
+    //             }
+    //             $item_name = trim($item_name, ',');
+    //             $cods = trim($cods, ',');
+    //         }
+    //         $application->firm_name_marathi = trim($application->firm_name_marathi) ? $application->firm_name_marathi : $application->firm_name;
+    //         $application->items = $item_name;
+    //         $application->items_code = $cods;
+    //         if (!$application->licence_for_years || !$application->valid_from || !$application->valid_upto) {
+    //             $this->temCalValidity($application);
+    //         }
+    //         $application->old_license_no = $oldLicense->license_no ?? "";
+    //         $application->old_license_date = $oldLicense ? Carbon::parse($oldLicense->license_date)->format("d-m-Y") : "";
+    //         $application->ulb_logo = $application->ulb_logo ? ($this->_DOC_URL . "/" . $application->ulb_logo) : "";
 
-            $transaction = TradeTransaction::select(
-                "tran_no",
-                "tran_type",
-                "payment_mode",
-                "paid_amount",
-                "penalty",
-                "rate_id",
-                "trade_transactions.id",
-                "trade_cheque_dtls.cheque_no",
-                "trade_cheque_dtls.bank_name",
-                "trade_cheque_dtls.branch_name",
-                DB::raw("TO_CHAR(cast(tran_date as date), 'DD-MM-YYYY') AS tran_date,
-                            TO_CHAR(cast(cheque_date as date), 'DD-MM-YYYY') AS cheque_date
-                            ")
-            )
-                ->leftjoin("trade_cheque_dtls", "trade_cheque_dtls.tran_id", "trade_transactions.id")
-                // ->where("trade_transactions.id", $transectionId)
-                ->where("trade_transactions.temp_id", $application->id)
-                ->whereIn("trade_transactions.status", [1, 2])
-                ->orderBy("trade_transactions.id", "DESC")
-                ->first();
+    //         $transaction = TradeTransaction::select(
+    //             "tran_no",
+    //             "tran_type",
+    //             "payment_mode",
+    //             "paid_amount",
+    //             "penalty",
+    //             "rate_id",
+    //             "trade_transactions.id",
+    //             "trade_cheque_dtls.cheque_no",
+    //             "trade_cheque_dtls.bank_name",
+    //             "trade_cheque_dtls.branch_name",
+    //             DB::raw("TO_CHAR(cast(tran_date as date), 'DD-MM-YYYY') AS tran_date,
+    //                         TO_CHAR(cast(cheque_date as date), 'DD-MM-YYYY') AS cheque_date
+    //                         ")
+    //         )
+    //             ->leftjoin("trade_cheque_dtls", "trade_cheque_dtls.tran_id", "trade_transactions.id")
+    //             // ->where("trade_transactions.id", $transectionId)
+    //             ->where("trade_transactions.temp_id", $application->id)
+    //             ->whereIn("trade_transactions.status", [1, 2])
+    //             ->orderBy("trade_transactions.id", "DESC")
+    //             ->first();
 
-            if (!$application->licence_for_years || !$application->valid_from || !$application->valid_upto) {
-                $this->temCalValidity($application);
-            }
-            $rate_ids = explode(",", ($transaction->rate_id ?? "0"));
-            $rates = $this->_MODEL_AkolaTradeParamLicenceRate->whereIn("id", $rate_ids)->sum("rate");
-            $penalty = TradeFineRebete::select("type", "amount")
-                ->where('tran_id', $transaction->id ?? 0)
-                ->where("status", 1)
-                ->orderBy("id")
-                ->get();
-            $pen = 0;
-            $delay_fee = 0;
-            $denial_fee = 0;
-            foreach ($penalty as $val) {
-                if (strtoupper($val->type) == strtoupper("Delay Apply License")) {
-                    $delay_fee = $val->amount;
-                } elseif (strtoupper($val->type) == strtoupper("Denial Apply")) {
-                    $denial_fee = $val->amount;
-                }
-                $pen += $val->amount;
-            }
-            if (!$transaction) {
-                $transaction = new TradeTransaction;
-                $transaction->paid_amount = 0;
-                $transaction->id = 0;
-            }
-            // $transaction->rate = number_format(($transaction->paid_amount - $pen), 2);
-            $transaction->rate = number_format(($rates), 2);
-            $transaction->delay_fee = number_format($delay_fee, 2);
-            $transaction->denial_fee = number_format($denial_fee, 2);
-            $transaction->paid_amount_in_words = getIndianCurrency($transaction->paid_amount);
-            $application->parent_ids = trim($application->parent_ids . "," . $application->id, ",");
-            $parentIds =   explode(",", $application->parent_ids ? $application->parent_ids : $application->id);
-            $application->licenceHistory = TradeRenewal::whereIn("id", $parentIds)->orderBy("valid_upto", "ASC")->get()->map(function ($history) {
-                $Oltransaction = TradeTransaction::where("trade_transactions.temp_id", $history->id)
-                    ->whereIn("trade_transactions.status", [1, 2])
-                    ->orderBy("trade_transactions.id", "DESC")
-                    ->first();
-                $penalty = TradeFineRebete::select("type", "amount")
-                    ->where('tran_id', $Oltransaction->id ?? 0)
-                    ->where("status", 1)
-                    ->orderBy("id")
-                    ->get();
-                $pen = 0;
-                $delay_fee = 0;
-                $denial_fee = 0;
-                foreach ($penalty as $val) {
-                    if (strtoupper($val->type) == strtoupper("Delay Apply License")) {
-                        $delay_fee = $val->amount;
-                    } elseif (strtoupper($val->type) == strtoupper("Denial Apply")) {
-                        $denial_fee = $val->amount;
-                    }
-                    $pen += $val->amount;
-                }
+    //         if (!$application->licence_for_years || !$application->valid_from || !$application->valid_upto) {
+    //             $this->temCalValidity($application);
+    //         }
+    //         $rate_ids = explode(",", ($transaction->rate_id ?? "0"));
+    //         $rates = $this->_MODEL_AkolaTradeParamLicenceRate->whereIn("id", $rate_ids)->sum("rate");
+    //         $penalty = TradeFineRebete::select("type", "amount")
+    //             ->where('tran_id', $transaction->id ?? 0)
+    //             ->where("status", 1)
+    //             ->orderBy("id")
+    //             ->get();
+    //         $pen = 0;
+    //         $delay_fee = 0;
+    //         $denial_fee = 0;
+    //         foreach ($penalty as $val) {
+    //             if (strtoupper($val->type) == strtoupper("Delay Apply License")) {
+    //                 $delay_fee = $val->amount;
+    //             } elseif (strtoupper($val->type) == strtoupper("Denial Apply")) {
+    //                 $denial_fee = $val->amount;
+    //             }
+    //             $pen += $val->amount;
+    //         }
+    //         if (!$transaction) {
+    //             $transaction = new TradeTransaction;
+    //             $transaction->paid_amount = 0;
+    //             $transaction->id = 0;
+    //         }
+    //         // $transaction->rate = number_format(($transaction->paid_amount - $pen), 2);
+    //         $transaction->rate = number_format(($rates), 2);
+    //         $transaction->delay_fee = number_format($delay_fee, 2);
+    //         $transaction->denial_fee = number_format($denial_fee, 2);
+    //         $transaction->paid_amount_in_words = getIndianCurrency($transaction->paid_amount);
+    //         $application->parent_ids = trim($application->parent_ids . "," . $application->id, ",");
+    //         $parentIds =   explode(",", $application->parent_ids ? $application->parent_ids : $application->id);
+    //         $application->licenceHistory = TradeRenewal::whereIn("id", $parentIds)->orderBy("valid_upto", "ASC")->get()->map(function ($history) {
+    //             $Oltransaction = TradeTransaction::where("trade_transactions.temp_id", $history->id)
+    //                 ->whereIn("trade_transactions.status", [1, 2])
+    //                 ->orderBy("trade_transactions.id", "DESC")
+    //                 ->first();
+    //             $penalty = TradeFineRebete::select("type", "amount")
+    //                 ->where('tran_id', $Oltransaction->id ?? 0)
+    //                 ->where("status", 1)
+    //                 ->orderBy("id")
+    //                 ->get();
+    //             $pen = 0;
+    //             $delay_fee = 0;
+    //             $denial_fee = 0;
+    //             foreach ($penalty as $val) {
+    //                 if (strtoupper($val->type) == strtoupper("Delay Apply License")) {
+    //                     $delay_fee = $val->amount;
+    //                 } elseif (strtoupper($val->type) == strtoupper("Denial Apply")) {
+    //                     $denial_fee = $val->amount;
+    //                 }
+    //                 $pen += $val->amount;
+    //             }
 
-                $hrate_ids = explode(",", ($Oltransaction->rate_id ?? "0"));
-                $hrates = $this->_MODEL_AkolaTradeParamLicenceRate->whereIn("id", $hrate_ids)->sum("rate");
+    //             $hrate_ids = explode(",", ($Oltransaction->rate_id ?? "0"));
+    //             $hrates = $this->_MODEL_AkolaTradeParamLicenceRate->whereIn("id", $hrate_ids)->sum("rate");
 
-                $history->tran_no = $Oltransaction ? $Oltransaction->tran_no : null;
-                $history->application_type = ($history->applicationType()->first())->application_type ?? null;
-                $history->tran_date = $Oltransaction ? Carbon::parse($Oltransaction->tran_date)->format("d-m-Y") : null;
-                // $history->rate = $Oltransaction ? number_format(($Oltransaction->paid_amount - $pen), 2): 0;
-                $history->rate = number_format(($hrates), 2);
-                $history->paid_amount = $Oltransaction ? number_format(($Oltransaction->paid_amount), 2) : 0;
-                $history->delay_fee = $delay_fee;
-                $history->denial_fee = $denial_fee;
-                $history->valid_from = $history->valid_from ? Carbon::parse($history->valid_from)->format("d-m-Y") : $history->valid_from;
-                $history->valid_upto = $history->valid_upto ? Carbon::parse($history->valid_upto)->format("d-m-Y") : $history->valid_upto;
-                $history->license_date = $history->license_date ? Carbon::parse($history->license_date)->format("d-m-Y") : $history->license_date;
-                $history->application_date = $history->application_date ? Carbon::parse($history->application_date)->format("d-m-Y") : $history->application_date;
-                return $history->only(["tran_date", "tran_no", "paid_amount", "rate", "delay_fee", "denial_fee", "id", "application_type", "application_no", "valid_from", "valid_upto", "license_date", "application_date"]);
-            });
+    //             $history->tran_no = $Oltransaction ? $Oltransaction->tran_no : null;
+    //             $history->application_type = ($history->applicationType()->first())->application_type ?? null;
+    //             $history->tran_date = $Oltransaction ? Carbon::parse($Oltransaction->tran_date)->format("d-m-Y") : null;
+    //             // $history->rate = $Oltransaction ? number_format(($Oltransaction->paid_amount - $pen), 2): 0;
+    //             $history->rate = number_format(($hrates), 2);
+    //             $history->paid_amount = $Oltransaction ? number_format(($Oltransaction->paid_amount), 2) : 0;
+    //             $history->delay_fee = $delay_fee;
+    //             $history->denial_fee = $denial_fee;
+    //             $history->valid_from = $history->valid_from ? Carbon::parse($history->valid_from)->format("d-m-Y") : $history->valid_from;
+    //             $history->valid_upto = $history->valid_upto ? Carbon::parse($history->valid_upto)->format("d-m-Y") : $history->valid_upto;
+    //             $history->license_date = $history->license_date ? Carbon::parse($history->license_date)->format("d-m-Y") : $history->license_date;
+    //             $history->application_date = $history->application_date ? Carbon::parse($history->application_date)->format("d-m-Y") : $history->application_date;
+    //             return $history->only(["tran_date", "tran_no", "paid_amount", "rate", "delay_fee", "denial_fee", "id", "application_type", "application_no", "valid_from", "valid_upto", "license_date", "application_date"]);
+    //         });
 
-            $oldOwnersId = TradeOwner::whereIN("temp_id", $parentIds)
-                ->where("is_active", true)
-                ->orderby("id", "ASC")
-                ->first();
-            $owner_doc = WfActiveDocument::whereIn("active_id", $parentIds)
-                ->where("workflow_id", $application->workflow_id)
-                // ->where("owner_dtl_id",$oldOwnersId->id)
-                ->where("doc_code", "Owner Image")
-                ->where("status", "<>", 0)
-                ->first();
-            $application->owner_image = $owner_doc ? ($docUrl . "/" . $owner_doc->relative_path . "/" . $owner_doc->document) : "";
-            $data = [
-                "application" => $application,
-                "transaction" => $transaction,
-                "penalty"    => $penalty,
-            ];
-            $data = remove_null($data);
-            return  responseMsg(true, "", $data);
-        } catch (Exception $e) {
-            return responseMsg(false, [$e->getMessage(), $e->getFile(), $e->getLine()], $id);
-        }
-    }
+    //         $oldOwnersId = TradeOwner::whereIN("temp_id", $parentIds)
+    //             ->where("is_active", true)
+    //             ->orderby("id", "ASC")
+    //             ->first();
+    //         $owner_doc = WfActiveDocument::whereIn("active_id", $parentIds)
+    //             ->where("workflow_id", $application->workflow_id)
+    //             // ->where("owner_dtl_id",$oldOwnersId->id)
+    //             ->where("doc_code", "Owner Image")
+    //             ->where("status", "<>", 0)
+    //             ->first();
+    //         $application->owner_image = $owner_doc ? ($docUrl . "/" . $owner_doc->relative_path . "/" . $owner_doc->document) : "";
+    //         $data = [
+    //             "application" => $application,
+    //             "transaction" => $transaction,
+    //             "penalty"    => $penalty,
+    //         ];
+    //         $data = remove_null($data);
+    //         return  responseMsg(true, "", $data);
+    //     } catch (Exception $e) {
+    //         return responseMsg(false, [$e->getMessage(), $e->getFile(), $e->getLine()], $id);
+    //     }
+    // }
 
 
     # Serial No : 22
@@ -4809,5 +4809,410 @@ class Trade implements ITrade
         $data["docUploadStatus"] = (empty($is_ownerUploadedDoc->all()) && empty($is_appMandUploadedDoc->all()));
         $data["docVerifyStatus"] =  (empty($is_ownerDocVerify->all()) && empty($is_appUploadedDocVerified->all()));
         return ($data);
+    }
+
+    public function licensePrintPayment(Request $request)
+    {
+        try {
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser ? $refUser->id : $request->userId;
+            $refUlbId       = $refUser ? $refUser->ulb_id : $request->ulbId;
+            $refUlbDtl      = UlbMaster::find($refUlbId);
+            $refUlbName     = explode(' ', $refUlbDtl->ulb_name);
+            $mNowDate       = Carbon::now()->format('Y-m-d');
+            $mTimstamp      = Carbon::now()->format('Y-m-d H:i:s');
+            $mShortUlbName  =  $refUlbDtl->short_name ?? null;
+            $mWardNo        = "";
+            if (!$mShortUlbName) {
+                foreach ($refUlbName as $val) {
+                    $mShortUlbName .= $val[0];
+                }
+            }
+
+            $refLecenceData = TradeLicence::find($request->licenceId);
+            $licenceId = $request->licenceId;
+
+            if (!$refLecenceData) {
+                $refLecenceData = ActiveTradeLicence::find($request->licenceId);
+                if ($refLecenceData->pending_status != 5) {
+                    throw new Exception("Application Not Approved Pleas Wait For Aproval!!!");
+                }
+                throw new Exception("Licence Data Not Found !!!!!");
+            }
+            $licensePrintPaymentCount = TradeTransaction::where("temp_id", $refLecenceData->id)->whereIN("status", [1, 2])->count("id");
+            if ($licensePrintPaymentCount > $this->_TRADE_CONSTAINT["PRINT_LICENSE"]["MAX_PRINT"]) {
+                throw new Exception("License Print Payment Conter Cross");
+            }
+
+
+            $ward_no = UlbWardMaster::select("ward_name")
+                ->where("id", $refLecenceData->ward_id)
+                ->first();
+            $mWardNo = $ward_no['ward_name'] ?? "";
+
+            #-----------End valication-------------------
+
+            #-------------Calculation----------------------------- 
+            if (!$this->_TRADE_CONSTAINT["PRINT_LICENSE"]["PRINT_AMT"] || $this->_TRADE_CONSTAINT["PRINT_LICENSE"]["PRINT_AMT"] != $request->totalCharge) {
+                throw new Exception("Payble Amount Missmatch!!!");
+            }
+
+            $transactionType = $this->_TRADE_CONSTAINT["PRINT_LICENSE"]["PAYMENT_TYPE"];
+            $rate_id = 0;
+            $totalCharge = $request->totalCharge;
+            #-------------End Calculation-----------------------------
+            #-------- Transection section-------------------
+            $this->begin();
+            $Tradetransaction = new TradeTransaction;
+            $Tradetransaction->temp_id          = $licenceId;
+            $Tradetransaction->ward_id          = $refLecenceData->ward_id;
+            $Tradetransaction->tran_type        = $transactionType;
+            $Tradetransaction->tran_date        = $mNowDate;
+            $Tradetransaction->payment_mode     = $request->paymentMode;
+            $Tradetransaction->rate_id          = $rate_id;
+            $Tradetransaction->paid_amount      = $totalCharge;
+            $Tradetransaction->penalty          = 0;
+            if (!in_array($request->paymentMode, ['CASH', "ONLINE"])) {
+                $Tradetransaction->status = 2;
+            }
+            if ($request->paymentMode == "ONLINE") {
+                $Tradetransaction->payment_gateway_type = $request->paymentGatewayType;
+            }
+            $Tradetransaction->emp_dtl_id       = $refUserId;
+            $Tradetransaction->created_at       = $mTimstamp;
+            $Tradetransaction->ip_address       = '';
+            $Tradetransaction->ulb_id           = $refUlbId;
+            $Tradetransaction->save();
+            $transaction_id                     = $Tradetransaction->id;
+            $Tradetransaction->tran_no   = $this->createTransactionNo($transaction_id, $mShortUlbName); //"TRANML" . date('d') . $transaction_id . date('Y') . date('m') . date('s');
+            $Tradetransaction->update();
+
+
+            if (!in_array($request->paymentMode, ['CASH', "ONLINE"])) {
+                $tradeChq = new TradeChequeDtl;
+                $tradeChq->tran_id = $transaction_id;
+                $tradeChq->temp_id = $licenceId;
+                $tradeChq->cheque_no      = $request->chequeNo;
+                $tradeChq->cheque_date    = $request->chequeDate;
+                $tradeChq->bank_name      = $request->bankName;
+                $tradeChq->branch_name    = $request->branchName;
+                $tradeChq->emp_dtl_id     = $refUserId;
+                $tradeChq->created_at     = $mTimstamp;
+                $tradeChq->save();
+            }
+
+            $refLecenceData->save();
+
+            $this->postTempTransection($Tradetransaction, $refLecenceData, $mWardNo);
+            $this->commit();
+            #----------End transaction------------------------
+            #----------Response------------------------------
+            $res['transactionId'] = $transaction_id; #config('app.url') . 
+            $res['paymentReceipt'] = "/api/trade/application/payment-receipt/" . $licenceId . "/" . $transaction_id;
+            return responseMsg(true, "", $res);
+        } catch (Exception $e) {
+            $this->rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    public function licenceCertificate($id) # unauthorised  function
+    {
+        try {
+            $application = $this->getAllLicenceById($id);
+            if ($application->license_print_counter > $this->_TRADE_CONSTAINT["PRINT_LICENSE"]["MAX_PRINT"]) {
+                throw new Exception("Your Limit Is Exide");
+            }
+            $docUrl = Config::get('module-constants.DOC_URL');
+            $data = (array)null;
+            $data['licenceCertificate'] = config('app.url') . "/api/trade/license-certificate/" . $id;
+            $select = [
+                "license.*",
+                "license.application_no",
+                "license.provisional_license_no",
+                "license.license_no",
+                "license.firm_name",
+                "license.holding_no",
+                "license.address",
+                "license.licence_for_years",
+                "license.nature_of_bussiness",
+                "license.firm_description",
+                "license.brief_firm_desc",
+                "license.premises_owner_name",
+                "license.pending_status",
+                "license.payment_status",
+                "owner.owner_name",
+                "owner.guardian_name",
+                "owner.mobile",
+                "owner.licensee_id",
+                "owner_additionl.additionl_owner_name",
+                "owner_additionl.additionl_guardian_name",
+                "owner_additionl.additionl_mobile",
+                DB::raw("ulb_ward_masters.ward_name AS ward_no, 
+                        ulb_masters.id as ulb_id, ulb_masters.ulb_name,ulb_masters.ulb_type,
+                        ulb_masters.logo as ulb_logo,
+                        ulb_masters.short_name as ulb_short_name,
+                        ulb_masters.hindi_name as ulb_hindi_name,
+                        ulb_masters.current_website as ulb_current_website,
+                        ulb_masters.parent_website as ulb_parent_website,
+                        ulb_masters.toll_free_no as ulb_toll_free_no,
+                        ulb_masters.mobile_no AS ulb_mobile_no,
+                        ulb_masters.association_with as association_with,
+                        zone_masters.zone_name,
+                        TO_CHAR(CAST(license.application_date AS DATE), 'DD-MM-YYYY') as application_date,
+                        TO_CHAR(CAST(license.establishment_date AS DATE), 'DD-MM-YYYY') as establishment_date,
+                        TO_CHAR(CAST(license.license_date AS DATE), 'DD-MM-YYYY') as license_date,
+                        TO_CHAR(CAST(license.valid_from AS DATE), 'DD-MM-YYYY') as valid_from,
+                        TO_CHAR(CAST(license.valid_upto AS DATE), 'DD-MM-YYYY') as valid_upto
+                        ")
+            ];
+            $application = $this->_DB->table("trade_licences AS license")
+                ->select($select)
+                ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
+                ->join("zone_masters", "zone_masters.id", "license.zone_id")
+                ->leftjoin("ulb_ward_masters", function ($join) {
+                    $join->on("ulb_ward_masters.id", "=", "license.ward_id");
+                })
+                ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
+                                            STRING_AGG(guardian_name,',') as guardian_name,
+                                            STRING_AGG(mobile_no::text,',') as mobile,
+                                            temp_id, id as licensee_id
+                                        FROM trade_owners 
+                                        WHERE temp_id = $id
+                                            AND is_active =TRUE
+                                        GROUP BY temp_id,id
+                                        ORDER BY id ASC
+                                        limit 1
+                                        ) owner"), function ($join) {
+                    $join->on("owner.temp_id", "=", "license.id");
+                })
+                ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as additionl_owner_name,
+                                            STRING_AGG(guardian_name,',') as additionl_guardian_name,
+                                            STRING_AGG(mobile_no::text,',') as additionl_mobile,
+                                            temp_id
+                                        FROM trade_owners 
+                                        WHERE temp_id = $id
+                                            AND is_active =TRUE
+                                            AND id NOT IN(
+                                                SELECT id
+                                                FROM trade_owners 
+                                                WHERE temp_id = $id
+                                                    AND is_active =TRUE
+                                                ORDER BY id ASC
+                                                limit 1
+                                            )
+                                        GROUP BY temp_id
+                                        ) owner_additionl"), function ($join) {
+                    $join->on("owner_additionl.temp_id", "=", "license.id");
+                })
+                ->where('license.id', $id)
+                ->first();
+            if (!$application) {
+                $application = $this->_DB->table("trade_renewals AS license")
+                    ->select($select)
+                    ->join("ulb_masters", "ulb_masters.id", "license.ulb_id")
+                    ->join("zone_masters", "zone_masters.id", "license.zone_id")
+                    ->leftjoin("ulb_ward_masters", function ($join) {
+                        $join->on("ulb_ward_masters.id", "=", "license.ward_id");
+                    })
+                    ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as owner_name,
+                                            STRING_AGG(guardian_name,',') as guardian_name,
+                                            STRING_AGG(mobile_no::text,',') as mobile,
+                                            temp_id , id as licensee_id
+                                        FROM trade_owners 
+                                        WHERE temp_id = $id
+                                            AND is_active =TRUE
+                                        GROUP BY temp_id,id
+                                        ORDER BY id ASC
+                                        limit 1
+                                        ) owner"), function ($join) {
+                        $join->on("owner.temp_id", "=", "license.id");
+                    })
+                    ->leftjoin(DB::raw("(SELECT STRING_AGG(owner_name,',') as additionl_owner_name,
+                                            STRING_AGG(guardian_name,',') as additionl_guardian_name,
+                                            STRING_AGG(mobile_no::text,',') as additionl_mobile,
+                                            temp_id
+                                        FROM trade_owners 
+                                        WHERE temp_id = $id
+                                            AND is_active =TRUE
+                                            AND id NOT IN(
+                                                SELECT id
+                                                FROM trade_owners 
+                                                WHERE temp_id = $id
+                                                    AND is_active =TRUE
+                                                ORDER BY id ASC
+                                                limit 1
+                                            )
+                                        GROUP BY temp_id
+                                        ) owner_additionl"), function ($join) {
+                        $join->on("owner_additionl.temp_id", "=", "license.id");
+                    })
+                    ->where('license.id', $id)
+                    ->first();
+                if (!$application) {
+                    throw new Exception("Application Not Found");
+                }
+            }
+            if (!$application) {
+                throw new Exception("Data Not Faound");
+            }
+            if ($application->payment_status == 2) {
+                throw new Exception("Payment Not Clear From Accontend");
+            }
+            if ($application->payment_status != 1) {
+                throw new Exception("Payment Not Done");
+            }
+            $oldLicense = TradeRenewal::find($application->trade_id);
+            if ($application->pending_status != 5) {
+                throw new Exception("Application Not Approved");
+            }
+            $item_name = "";
+            $cods = "";
+            if ($application->nature_of_bussiness) {
+                $items = AkolaTradeParamItemType::itemsById($application->nature_of_bussiness);
+                foreach ($items as $val) {
+                    $item_name .= $val->trade_item . ",";
+                    $cods .= $val->trade_code . ",";
+                }
+                $item_name = trim($item_name, ',');
+                $cods = trim($cods, ',');
+            }
+            $application->firm_name_marathi = trim($application->firm_name_marathi) ? $application->firm_name_marathi : $application->firm_name;
+            $application->items = $item_name;
+            $application->items_code = $cods;
+            if (!$application->licence_for_years || !$application->valid_from || !$application->valid_upto) {
+                $this->temCalValidity($application);
+            }
+            $application->old_license_no = $oldLicense->license_no ?? "";
+            $application->old_license_date = $oldLicense ? Carbon::parse($oldLicense->license_date)->format("d-m-Y") : "";
+            $application->ulb_logo = $application->ulb_logo ? ($this->_DOC_URL . "/" . $application->ulb_logo) : "";
+
+            $transaction = TradeTransaction::select(
+                "tran_no",
+                "tran_type",
+                "payment_mode",
+                "paid_amount",
+                "penalty",
+                "rate_id",
+                "trade_transactions.id",
+                "trade_cheque_dtls.cheque_no",
+                "trade_cheque_dtls.bank_name",
+                "trade_cheque_dtls.branch_name",
+                DB::raw("TO_CHAR(cast(tran_date as date), 'DD-MM-YYYY') AS tran_date,
+                            TO_CHAR(cast(cheque_date as date), 'DD-MM-YYYY') AS cheque_date
+                            ")
+            )
+                ->leftjoin("trade_cheque_dtls", "trade_cheque_dtls.tran_id", "trade_transactions.id")
+                // ->where("trade_transactions.id", $transectionId)
+                ->where("trade_transactions.temp_id", $application->id)
+                ->whereIn("trade_transactions.status", [1, 2])
+                ->orderBy("trade_transactions.id", "DESC")
+                ->first();
+
+            if (!$application->licence_for_years || !$application->valid_from || !$application->valid_upto) {
+                $this->temCalValidity($application);
+            }
+            $rate_ids = explode(",", ($transaction->rate_id ?? "0"));
+            $rates = $this->_MODEL_AkolaTradeParamLicenceRate->whereIn("id", $rate_ids)->sum("rate");
+            $penalty = TradeFineRebete::select("type", "amount")
+                ->where('tran_id', $transaction->id ?? 0)
+                ->where("status", 1)
+                ->orderBy("id")
+                ->get();
+            $pen = 0;
+            $delay_fee = 0;
+            $denial_fee = 0;
+            foreach ($penalty as $val) {
+                if (strtoupper($val->type) == strtoupper("Delay Apply License")) {
+                    $delay_fee = $val->amount;
+                } elseif (strtoupper($val->type) == strtoupper("Denial Apply")) {
+                    $denial_fee = $val->amount;
+                }
+                $pen += $val->amount;
+            }
+            if (!$transaction) {
+                $transaction = new TradeTransaction;
+                $transaction->paid_amount = 0;
+                $transaction->id = 0;
+            }
+            // $transaction->rate = number_format(($transaction->paid_amount - $pen), 2);
+            $transaction->rate = number_format(($rates), 2);
+            $transaction->delay_fee = number_format($delay_fee, 2);
+            $transaction->denial_fee = number_format($denial_fee, 2);
+            $transaction->paid_amount_in_words = getIndianCurrency($transaction->paid_amount);
+            $application->parent_ids = trim($application->parent_ids . "," . $application->id, ",");
+            $parentIds =   explode(",", $application->parent_ids ? $application->parent_ids : $application->id);
+            $application->licenceHistory = TradeRenewal::whereIn("id", $parentIds)->orderBy("valid_upto", "ASC")->get()->map(function ($history) {
+                $Oltransaction = TradeTransaction::where("trade_transactions.temp_id", $history->id)
+                    ->whereIn("trade_transactions.status", [1, 2])
+                    ->orderBy("trade_transactions.id", "DESC")
+                    ->first();
+                $penalty = TradeFineRebete::select("type", "amount")
+                    ->where('tran_id', $Oltransaction->id ?? 0)
+                    ->where("status", 1)
+                    ->orderBy("id")
+                    ->get();
+                $pen = 0;
+                $delay_fee = 0;
+                $denial_fee = 0;
+                foreach ($penalty as $val) {
+                    if (strtoupper($val->type) == strtoupper("Delay Apply License")) {
+                        $delay_fee = $val->amount;
+                    } elseif (strtoupper($val->type) == strtoupper("Denial Apply")) {
+                        $denial_fee = $val->amount;
+                    }
+                    $pen += $val->amount;
+                }
+
+                $hrate_ids = explode(",", ($Oltransaction->rate_id ?? "0"));
+                $hrates = $this->_MODEL_AkolaTradeParamLicenceRate->whereIn("id", $hrate_ids)->sum("rate");
+
+                $history->tran_no = $Oltransaction ? $Oltransaction->tran_no : null;
+                $history->application_type = ($history->applicationType()->first())->application_type ?? null;
+                $history->tran_date = $Oltransaction ? Carbon::parse($Oltransaction->tran_date)->format("d-m-Y") : null;
+                // $history->rate = $Oltransaction ? number_format(($Oltransaction->paid_amount - $pen), 2): 0;
+                $history->rate = number_format(($hrates), 2);
+                $history->paid_amount = $Oltransaction ? number_format(($Oltransaction->paid_amount), 2) : 0;
+                $history->delay_fee = $delay_fee;
+                $history->denial_fee = $denial_fee;
+                $history->valid_from = $history->valid_from ? Carbon::parse($history->valid_from)->format("d-m-Y") : $history->valid_from;
+                $history->valid_upto = $history->valid_upto ? Carbon::parse($history->valid_upto)->format("d-m-Y") : $history->valid_upto;
+                $history->license_date = $history->license_date ? Carbon::parse($history->license_date)->format("d-m-Y") : $history->license_date;
+                $history->application_date = $history->application_date ? Carbon::parse($history->application_date)->format("d-m-Y") : $history->application_date;
+                return $history->only(["tran_date", "tran_no", "paid_amount", "rate", "delay_fee", "denial_fee", "id", "application_type", "application_no", "valid_from", "valid_upto", "license_date", "application_date"]);
+            });
+
+            $oldOwnersId = TradeOwner::whereIN("temp_id", $parentIds)
+                ->where("is_active", true)
+                ->orderby("id", "ASC")
+                ->first();
+            $owner_doc = WfActiveDocument::whereIn("active_id", $parentIds)
+                ->where("workflow_id", $application->workflow_id)
+                // ->where("owner_dtl_id",$oldOwnersId->id)
+                ->where("doc_code", "Owner Image")
+                ->where("status", "<>", 0)
+                ->first();
+            $application->owner_image = $owner_doc ? ($docUrl . "/" . $owner_doc->relative_path . "/" . $owner_doc->document) : "";
+            $data = [
+                "application" => $application,
+                "transaction" => $transaction,
+                "penalty"    => $penalty,
+            ];
+            $data = remove_null($data);
+            return  responseMsg(true, "", $data);
+        } catch (Exception $e) {
+            return responseMsg(false, [$e->getMessage(), $e->getFile(), $e->getLine()], $id);
+        }
+    }
+
+    public function updateLicenseCounter($id)
+    {
+        try {
+            $application = $this->getAllLicenceById($id);
+            $application->license_print_counter = $application->license_print_counter + 1;
+            $application->update();
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 }
