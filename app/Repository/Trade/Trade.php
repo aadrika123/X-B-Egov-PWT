@@ -4840,7 +4840,7 @@ class Trade implements ITrade
                 throw new Exception("Licence Data Not Found !!!!!");
             }
             $licensePrintPaymentCount = TradeTransaction::where("temp_id", $refLecenceData->id)->whereIN("status", [1, 2])->count("id");
-            if ($licensePrintPaymentCount > $this->_TRADE_CONSTAINT["PRINT_LICENSE"]["MAX_PRINT"]) {
+            if ($licensePrintPaymentCount >= $this->_TRADE_CONSTAINT["PRINT_LICENSE"]["MAX_PRINT"]) {
                 throw new Exception("License Print Payment Conter Cross");
             }
 
@@ -4920,8 +4920,8 @@ class Trade implements ITrade
     {
         try {
             $application = $this->getAllLicenceById($id);
-            if ($application->license_print_counter > $this->_TRADE_CONSTAINT["PRINT_LICENSE"]["MAX_PRINT"]) {
-                throw new Exception("Your Limit Is Exide");
+            if ($application->license_print_counter >= $this->_TRADE_CONSTAINT["PRINT_LICENSE"]["MAX_PRINT"]) {
+                throw new Exception("Your Limit Is Exceed");
             }
             $docUrl = Config::get('module-constants.DOC_URL');
             $data = (array)null;
