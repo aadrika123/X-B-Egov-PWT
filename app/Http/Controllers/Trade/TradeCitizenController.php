@@ -1634,7 +1634,7 @@ class TradeCitizenController extends Controller
             $chargeData = $chargeData->original["data"];
             $data = [
                 "userId" => $user && $user->getTable() == "users" ? $user->id : null,
-                "applicationId"=>$application->id,
+                "applicationId" => $application->id,
                 "applicationNo" => $application->application_no,
                 "moduleId" => $this->_MODULE_ID,
                 "email" => ($owners->whereNotNull("email_id")->first())->email_id ?? "test@gmail.com",
@@ -1732,7 +1732,8 @@ class TradeCitizenController extends Controller
     //     }
     // }
 
-    public function initPaymentReceipt(Request $request){
+    public function initPaymentReceipt(Request $request)
+    {
         try {
             $applicationType = $this->_TRADE_CONSTAINT["PRINT_LICENSE"]["PAYMENT_TYPE"];
             $chargeData["total_charge"] =  $this->_TRADE_CONSTAINT["PRINT_LICENSE"]["PRINT_AMT"];
@@ -1747,13 +1748,15 @@ class TradeCitizenController extends Controller
 
             $application = $this->_TradeLicence->find($request->applicationId);
             $owners = $application->owneres()->get();
-            $licensePrintPaymentCount = TradeTransaction::where("temp_id",$application->id)->whereIN("status",[1,2])->count("id");
+            $licensePrintPaymentCount = TradeTransaction::where("temp_id", $application->id)->whereIN("status", [1, 2])
+                ->where("tran_type", 'LICENSE PRINT')
+                ->count("id");
             if ($licensePrintPaymentCount >= $this->_TRADE_CONSTAINT["PRINT_LICENSE"]["MAX_PRINT"]) {
-                throw new Exception("License Print Payment Conter Cross");
+                throw new Exception("You have exceeded the limit of printing secondary licenses");
             }
             $data = [
                 "userId" => $user && $user->getTable() == "users" ? $user->id : null,
-                "applicationId"=>$application->id,
+                "applicationId" => $application->id,
                 "applicationNo" => $application->application_no,
                 "moduleId" => $this->_MODULE_ID,
                 "email" => ($owners->whereNotNull("email_id")->first())->email_id ?? "test@gmail.com",
@@ -1781,8 +1784,7 @@ class TradeCitizenController extends Controller
             $this->_TradeEasebuzzPayRequest->request_json = json_encode($request->all(), JSON_UNESCAPED_UNICODE);
             $this->_TradeEasebuzzPayRequest->save();
             return responseMsg(true, "Payment Initiat", remove_null($data));
-        } 
-        catch (Exception $e){
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
     }
@@ -1805,14 +1807,13 @@ class TradeCitizenController extends Controller
                 "ulbId" => $refLecenceData->ulb_id,
                 "paymentGatewayType" => $request->payment_source,
             ]);
-            if($requestData->tran_type==$this->_TRADE_CONSTAINT["PRINT_LICENSE"]["PAYMENT_TYPE"]){
+            if ($requestData->tran_type == $this->_TRADE_CONSTAINT["PRINT_LICENSE"]["PAYMENT_TYPE"]) {
                 $respnse = $this->_REPOSITORY_TRADE->licensePrintPayment($request);
-            }
-            else{
+            } else {
                 $respnse = $this->_REPOSITORY_TRADE->paymentCounter($request);
             }
             $tranId = $respnse->original["data"]["transactionId"];
-            $request->merge(["tranId"=>$tranId]);
+            $request->merge(["tranId" => $tranId]);
             // dd(TradeTransaction::find($tranId),$request->all());
             $this->_TradeEasebuzzPayResponse->request_id = $requestData->id;
             $this->_TradeEasebuzzPayResponse->temp_id = $requestData->temp_id;
