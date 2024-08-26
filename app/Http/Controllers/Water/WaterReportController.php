@@ -4877,7 +4877,7 @@ class WaterReportController extends Controller
                 "owners.mobile_no",
                 "water_second_consumers.category",
                 "water_property_type_mstrs.property_type",
-                DB::raw('SUM(water_consumer_demands.amount) as total_amount'),
+                DB::raw('SUM(water_consumer_demands.due_balance_amount) as total_amount'),
                 DB::raw('MIN(water_consumer_demands.demand_from) as earliest_demand_from'),
                 DB::raw('MAX(water_consumer_demands.demand_upto) as latest_demand_upto'),
                 //"water_second_consumers.notice",
@@ -4905,7 +4905,7 @@ class WaterReportController extends Controller
                     'water_second_consumers.category',
                     'water_property_type_mstrs.property_type'
                 )
-                ->havingRaw('SUM(water_consumer_demands.amount) > 0');
+                ->havingRaw('SUM(water_consumer_demands.due_balance_amount) > 0');
 
             if ($userId) {
                 $data->where('water_consumer_demands.emp_details_id', $userId);
@@ -4992,7 +4992,7 @@ class WaterReportController extends Controller
                 "owners.mobile_no",
                 "water_second_consumers.category",
                 "water_property_type_mstrs.property_type",
-                DB::raw('SUM(water_consumer_demands.amount) as total_amount'),
+                DB::raw('SUM(water_consumer_demands.due_balance_amount) as total_amount'),
                 DB::raw('MIN(water_consumer_demands.demand_from) as earliest_demand_from'),
                 DB::raw('MAX(water_consumer_demands.demand_upto) as latest_demand_upto'),
                 "water_second_consumers.notice_3",
@@ -5021,7 +5021,7 @@ class WaterReportController extends Controller
                     'water_second_consumers.category',
                     'water_property_type_mstrs.property_type'
                 )
-                ->havingRaw('SUM(water_consumer_demands.amount) > 0');
+                ->havingRaw('SUM(water_consumer_demands.due_balance_amount) > 0');
 
             if ($userId) {
                 $data->where('water_consumer_demands.emp_details_id', $userId);
@@ -5158,7 +5158,7 @@ class WaterReportController extends Controller
                 "owners.mobile_no",
                 "water_second_consumers.category",
                 "water_property_type_mstrs.property_type",
-                DB::raw('SUM(water_consumer_demands.amount) as total_amount'),
+                DB::raw('SUM(water_consumer_demands.due_balance_amount) as total_amount'),
                 DB::raw('MIN(water_consumer_demands.demand_from) as earliest_demand_from'),
                 DB::raw('MAX(water_consumer_demands.demand_upto) as latest_demand_upto')
             )
@@ -5193,7 +5193,7 @@ class WaterReportController extends Controller
                     "water_second_consumers.holding_no",
                     "water_second_consumers.address"
                 )
-                ->havingRaw('SUM(water_consumer_demands.amount) > 0')
+                ->havingRaw('SUM(water_consumer_demands.due_balance_amount) > 0')
                 ->get();
 
             return responseMsgs(true, "Notice Generated Details", remove_null($inboxDtl), "", "01", responseTime(), "POST", $req->deviceId);
@@ -5241,7 +5241,7 @@ class WaterReportController extends Controller
                 "owners.mobile_no",
                 "water_second_consumers.category",
                 "water_property_type_mstrs.property_type",
-                DB::raw('SUM(water_consumer_demands.amount) as total_amount'),
+                DB::raw('SUM(water_consumer_demands.due_balance_amount) as total_amount'),
                 DB::raw('MIN(water_consumer_demands.demand_from) as earliest_demand_from'),
                 DB::raw('MAX(water_consumer_demands.demand_upto) as latest_demand_upto')
             )
@@ -5276,7 +5276,7 @@ class WaterReportController extends Controller
                     "water_second_consumers.holding_no",
                     "water_second_consumers.address"
                 )
-                ->havingRaw('SUM(water_consumer_demands.amount) > 0')
+                ->havingRaw('SUM(water_consumer_demands.due_balance_amount) > 0')
                 ->get();
 
 
