@@ -1060,6 +1060,7 @@ class WaterSecondConsumer extends Model
             'water_second_consumers.holding_no',
             'water_second_consumers.saf_no',
             'water_second_consumers.ulb_id',
+            'water_second_consumers.status',
             'ulb_ward_masters.ward_name',
             "water_temp_disconnections.status as deactivated_status",
             "water_second_consumers.notice_no_1",
@@ -1079,7 +1080,7 @@ class WaterSecondConsumer extends Model
             ->leftjoin('water_temp_disconnections', 'water_temp_disconnections.consumer_id', '=', 'water_second_consumers.id')
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
             ->whereIn("water_second_consumers.id", $consumerIds)
-            ->where('water_second_consumers.status', 1)
+            // ->where('water_second_consumers.status', 1)
             ->groupBy(
                 'water_second_consumers.saf_no',
                 'water_second_consumers.holding_no',
