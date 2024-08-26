@@ -5105,7 +5105,7 @@ class Trade implements ITrade
                 ->leftjoin("trade_cheque_dtls", "trade_cheque_dtls.tran_id", "trade_transactions.id")
                 // ->where("trade_transactions.id", $transectionId)
                 ->where("trade_transactions.temp_id", $application->id)
-                ->whereNotIn("tran_type",'LICENSE PRINT')
+                ->whereNotIn("tran_type", ['LICENSE PRINT'])
                 ->whereIn("trade_transactions.status", [1, 2])
                 ->orderBy("trade_transactions.id", "DESC")
                 ->first();
