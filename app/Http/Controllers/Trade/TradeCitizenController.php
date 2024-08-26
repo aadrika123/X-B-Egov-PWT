@@ -1749,7 +1749,7 @@ class TradeCitizenController extends Controller
             $application = $this->_TradeLicence->find($request->applicationId);
             $owners = $application->owneres()->get();
             $licensePrintPaymentCount = TradeTransaction::where("temp_id", $application->id)->whereIN("status", [1, 2])
-                ->where("tran_type", 'LICENSE PRINT')
+                ->where("tran_type", "LICENSE PRINT")
                 ->count("id");
             if ($licensePrintPaymentCount >= $this->_TRADE_CONSTAINT["PRINT_LICENSE"]["MAX_PRINT"]) {
                 throw new Exception("You have exceeded the limit of printing secondary licenses");

@@ -4839,7 +4839,7 @@ class Trade implements ITrade
                 }
                 throw new Exception("Licence Data Not Found !!!!!");
             }
-            $licensePrintPaymentCount = TradeTransaction::where("temp_id", $refLecenceData->id)->whereIN("status", [1, 2])->count("id");
+            $licensePrintPaymentCount = TradeTransaction::where("temp_id", $refLecenceData->id)->whereIN("status", [1, 2])->where("tran_type", "LICENSE PRINT")->count("id");
             if ($licensePrintPaymentCount >= $this->_TRADE_CONSTAINT["PRINT_LICENSE"]["MAX_PRINT"]) {
                 throw new Exception("License Print Payment Conter Cross");
             }
