@@ -491,7 +491,8 @@ class WaterPaymentController extends Controller
                     case 'Khadikaran Road':
                         $roadType = 3;
                         break;
-                    case 'Muddy Road':
+
+                    case 'Muddy Raod':
                         $roadType = 4;
                         break;
                     default:
