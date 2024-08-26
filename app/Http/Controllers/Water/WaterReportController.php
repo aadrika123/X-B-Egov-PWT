@@ -5223,80 +5223,79 @@ class WaterReportController extends Controller
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
 
             $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
-            $roleId = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
-            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+            $roleIds = $this->getRoleIdByUserId($userId)->pluck('wf_role_id')->toArray();
+            $workflowIds = $mWfWorkflowRoleMaps->getWfByRoleId($roleIds)->pluck('workflow_id');
 
-            // Check if roleId contains specific role IDs
-            if ($roleId->contains(12)) {
-                $roleCondition = 12;
-            } elseif ($roleId->contains(14)) {
-                $roleCondition = 14;
-            } elseif ($roleId->contains(10)) {
-                $roleCondition = 10;
-            } 
-
-            // Ensure roleCondition is set before proceeding
-            if ($roleCondition) {
-                $inboxDtl = WaterTempDisconnection::select(
-                    "water_temp_disconnections.id as disconnection_application_id",
-                    "water_temp_disconnections.consumer_id as id",
-                    "water_second_consumers.consumer_no",
-                    "water_temp_disconnections.current_role",
-                    "water_temp_disconnections.workflow_id",
-                    "water_temp_disconnections.notice_no_3",
-                    "water_temp_disconnections.notice_3_generated_at",
+            $inboxDtlQuery = WaterTempDisconnection::select(
+                "water_temp_disconnections.id as disconnection_application_id",
+                "water_temp_disconnections.consumer_id as id",
+                "water_second_consumers.consumer_no",
+                "water_temp_disconnections.current_role",
+                "water_temp_disconnections.workflow_id",
+                "water_temp_disconnections.notice_no_3",
+                "water_temp_disconnections.notice_3_generated_at",
+                "water_second_consumers.holding_no",
+                "water_second_consumers.address",
+                "zone_masters.zone_name",
+                "ulb_ward_masters.ward_name",
+                "owners.applicant_name",
+                "owners.guardian_name",
+                "owners.mobile_no",
+                "water_second_consumers.category",
+                "water_property_type_mstrs.property_type",
+                "water_temp_disconnections.demand_from as earliest_demand_from",
+                "water_temp_disconnections.demand_upto as latest_demand_upto",
+                DB::raw('SUM(water_consumer_demands.due_balance_amount) as total_amount')
+            )
+                ->join('water_second_consumers', 'water_second_consumers.id', '=', 'water_temp_disconnections.consumer_id')
+                ->join('water_consumer_demands', function ($join) {
+                    $join->on('water_second_consumers.id', '=', 'water_consumer_demands.consumer_id')
+                        ->whereColumn('water_consumer_demands.demand_upto', '<=', 'water_temp_disconnections.demand_upto');
+                })
+                ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
+                ->leftJoin('zone_masters', 'zone_masters.id', '=', 'water_second_consumers.zone_mstr_id')
+                ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', '=', 'water_second_consumers.property_type_id')
+                ->join('water_consumer_owners as owners', 'owners.id', '=', 'water_second_consumers.id')
+                ->where('water_second_consumers.generated', true)
+                ->where('water_second_consumers.status', true)
+                ->where('water_second_consumers.je_application', true)
+                ->whereIn('water_temp_disconnections.workflow_id', $workflowIds)
+                ->where('water_temp_disconnections.status', 1)
+                ->groupBy(
+                    'water_temp_disconnections.id',
+                    'water_temp_disconnections.consumer_id',
+                    'water_temp_disconnections.current_role',
+                    'water_temp_disconnections.workflow_id',
+                    'water_temp_disconnections.notice_no_3',
+                    'water_temp_disconnections.notice_3_generated_at',
+                    'zone_masters.zone_name',
+                    'ulb_ward_masters.ward_name',
+                    'owners.applicant_name',
+                    'owners.guardian_name',
+                    'owners.mobile_no',
+                    'water_second_consumers.category',
+                    'water_property_type_mstrs.property_type',
+                    'water_second_consumers.consumer_no',
                     "water_second_consumers.holding_no",
                     "water_second_consumers.address",
-                    "zone_masters.zone_name",
-                    "ulb_ward_masters.ward_name",
-                    "owners.applicant_name",
-                    "owners.guardian_name",
-                    "owners.mobile_no",
-                    "water_second_consumers.category",
-                    "water_property_type_mstrs.property_type",
-                    "water_temp_disconnections.demand_from as earliest_demand_from",
-                    "water_temp_disconnections.demand_upto as latest_demand_upto",
-                    DB::raw('SUM(water_consumer_demands.due_balance_amount) as total_amount')
-                )
-                    ->join('water_second_consumers', 'water_second_consumers.id', '=', 'water_temp_disconnections.consumer_id')
-                    ->join('water_consumer_demands', function ($join) {
-                        $join->on('water_second_consumers.id', '=', 'water_consumer_demands.consumer_id')
-                            ->whereColumn('water_consumer_demands.demand_upto', '<=', 'water_temp_disconnections.demand_upto');
-                    })
-                    ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
-                    ->leftJoin('zone_masters', 'zone_masters.id', '=', 'water_second_consumers.zone_mstr_id')
-                    ->join('water_property_type_mstrs', 'water_property_type_mstrs.id', '=', 'water_second_consumers.property_type_id')
-                    ->join('water_consumer_owners as owners', 'owners.id', '=', 'water_second_consumers.id')
-                    ->where('water_second_consumers.generated', true)
-                    ->where('water_second_consumers.status', true)
-                    ->where('water_second_consumers.je_application', true)
-                    ->whereIn('water_temp_disconnections.current_role', [$roleCondition])
-                    ->whereIn('water_temp_disconnections.workflow_id', $workflowIds)
-                    ->where('water_temp_disconnections.status', 1)
-                    ->groupBy(
-                        'water_temp_disconnections.id',
-                        'water_temp_disconnections.consumer_id',
-                        'water_temp_disconnections.current_role',
-                        'water_temp_disconnections.workflow_id',
-                        'water_temp_disconnections.notice_no_3',
-                        'water_temp_disconnections.notice_3_generated_at',
-                        'zone_masters.zone_name',
-                        'ulb_ward_masters.ward_name',
-                        'owners.applicant_name',
-                        'owners.guardian_name',
-                        'owners.mobile_no',
-                        'water_second_consumers.category',
-                        'water_property_type_mstrs.property_type',
-                        'water_second_consumers.consumer_no',
-                        "water_second_consumers.holding_no",
-                        "water_second_consumers.address",
-                        "water_temp_disconnections.demand_from",
-                        "water_temp_disconnections.demand_upto"
-                    )
+                    "water_temp_disconnections.demand_from",
+                    "water_temp_disconnections.demand_upto"
+                );
+
+            if (in_array(12, $roleIds)) {
+                $inboxDtl = $inboxDtlQuery->whereIn('water_temp_disconnections.current_role', [12])
                     ->havingRaw('SUM(water_consumer_demands.due_balance_amount) > 0')
                     ->get();
+            } elseif (in_array(14, $roleIds)) {
+                $inboxDtl = $inboxDtlQuery->whereIn('water_temp_disconnections.current_role', [14])
+                    ->havingRaw('SUM(water_consumer_demands.due_balance_amount) >= 0')
+                    ->get();
+            } elseif (in_array(10, $roleIds)) {
+                $inboxDtl = $inboxDtlQuery->whereIn('water_temp_disconnections.current_role', [10])
+                    ->havingRaw('SUM(water_consumer_demands.due_balance_amount) >= 0')
+                    ->get();
             } else {
-                return responseMsgs(false, "No applicable role found", [], '', '01', responseTime(), "POST", $req->deviceId);
+                $inboxDtl = collect(); // Return an empty collection if none of the roles match
             }
 
             return responseMsgs(true, "Notice Generated Details", remove_null($inboxDtl), "", "01", responseTime(), "POST", $req->deviceId);
@@ -5304,6 +5303,7 @@ class WaterReportController extends Controller
             return responseMsgs(false, $e->getMessage(), [], '', '01', responseTime(), "POST", $req->deviceId);
         }
     }
+
 
 
 
