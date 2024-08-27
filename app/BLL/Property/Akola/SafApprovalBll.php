@@ -256,20 +256,18 @@ class SafApprovalBll
         $oldFloor = PropFloor::where("property_id", $propProperties->id)->get();
         $oldOwners = PropOwner::where("property_id", $propProperties->id)->get();
         $oldDemand = PropDemand::where("property_id", $propProperties->id)->get();
-        
-        $currentYearDemand = collect($oldDemand)->where("status",1);
-        $currentYearDemandId = ($currentYearDemand->implode("id",","));
-        $currentYearDemandId = $currentYearDemandId ? (int)$currentYearDemandId  : 0;
-        
-        $oldTransection = $propProperties->getAllTransection()->get();
-        $oldTranDtl = new Collection();        
-        $oldTransection->map(function($val)use($oldTranDtl,$currentYearDemandId){
-            $trn = $val->getAllTranDtls()->where("prop_tran_dtls.prop_demand_id",$currentYearDemandId)->first();
-            if($trn)
-            {
-                $oldTranDtl->push($trn) ;
-            }
 
+        $currentYearDemand = collect($oldDemand)->where("status", 1);
+        $currentYearDemandId = ($currentYearDemand->implode("id", ","));
+        $currentYearDemandId = $currentYearDemandId ? (int)$currentYearDemandId  : 0;
+
+        $oldTransection = $propProperties->getAllTransection()->get();
+        $oldTranDtl = new Collection();
+        $oldTransection->map(function ($val) use ($oldTranDtl, $currentYearDemandId) {
+            $trn = $val->getAllTranDtls()->where("prop_tran_dtls.prop_demand_id", $currentYearDemandId)->first();
+            if ($trn) {
+                $oldTranDtl->push($trn);
+            }
         });
         $this->_paidTotalCurrentYearTax = $oldTranDtl->sum("paid_total_tax");
 
@@ -427,14 +425,18 @@ class SafApprovalBll
 
     public function generatTaxAccUlTc()
     {
-        if(in_array($this->_activeSaf->assessment_type, ['Bifurcation']))
-        {
+        if (in_array($this->_activeSaf->assessment_type, ['Bifurcation'])) {
             return;
         }
         $fyDemand = collect($this->_calculateTaxByUlb->_GRID['fyearWiseTaxes'])->sortBy("fyear");
+        if (in_array($this->_activeSaf->assessment_type, ['Reassessment'])) {
+            list($fromFyear, $uptoFyear) = explode("-", getFY());
+            $privTwoYear = ($fromFyear - 1) . "-" . ($uptoFyear - 1);
+            $fyDemand = collect($this->_calculateTaxByUlb->_GRID['fyearWiseTaxes'])->where("fyear", ">=", $privTwoYear)->sortBy("fyear");
+        }
+
 
         $this->generateAdvance($fyDemand);
-
         $user = Auth()->user();
         $ulbId = $this->_activeSaf->ulb_id;
         $demand = new PropDemand();
@@ -499,10 +501,10 @@ class SafApprovalBll
                 "due_open_ploat_tax" => $val["openPloatTax"] ?? 0,
             ];
             if ($oldDemand = $demand->where("fyear", $arr["fyear"])->where("property_id", $arr["property_id"])->where("status", 1)->first()) {
-                $arr["adjustAmount"]=$val["adjustAmount"];
-                $arr["dueAmount"]=$val["dueAmount"];
+                $arr["adjustAmount"] = $val["adjustAmount"];
+                $arr["dueAmount"] = $val["dueAmount"];
                 $oldDemand = $this->updateOldDemandsV1($oldDemand, $arr);
-                $oldDemand->update();                
+                $oldDemand->update();
                 continue;
             }
             $demand->store($arr);
@@ -510,10 +512,9 @@ class SafApprovalBll
     }
 
     public function generateAdvance($newDemand)
-    {        
-        $oldPaidTax=$this->_paidTotalCurrentYearTax;
-        if(round($oldPaidTax)>0 && !in_array($this->_activeSaf->assessment_type, ['New Assessment']))
-        {
+    {
+        $oldPaidTax = $this->_paidTotalCurrentYearTax;
+        if (round($oldPaidTax) > 0 && !in_array($this->_activeSaf->assessment_type, ['New Assessment'])) {
             $new_demand_log = json_encode($newDemand, JSON_UNESCAPED_UNICODE);
             $newAdvance = new PropAdvance();
             $advArr = [
@@ -524,10 +525,10 @@ class SafApprovalBll
                 "ulb_id" => (auth()->user() ? auth()->user()->ulb_id : null),
                 "remarks" => "Old Demand payment",
             ];
-            $newAdvance->where("prop_id", $advArr["prop_id"])->where("remarks",$advArr["remarks"])->update(["status"=>0]);
+            $newAdvance->where("prop_id", $advArr["prop_id"])->where("remarks", $advArr["remarks"])->update(["status" => 0]);
             $advanceId = $newAdvance->store($advArr);
             $history = new PropAssessmentHistory();
-            $history->where("id",$this->_assessmentHistoryId)->update(["advance_id"=>$advanceId,"total_paid_demand_amount"=>$oldPaidTax,"new_demand_log"=>$new_demand_log]);
+            $history->where("id", $this->_assessmentHistoryId)->update(["advance_id" => $advanceId, "total_paid_demand_amount" => $oldPaidTax, "new_demand_log" => $new_demand_log]);
         }
     }
 
@@ -626,7 +627,7 @@ class SafApprovalBll
         $oldDemand->due_sewarage_tax  = $newDemand["due_sewarage_tax"];
         $oldDemand->due_tree_tax  = $newDemand["due_tree_tax"];
         $oldDemand->due_professional_tax  = $newDemand["due_professional_tax"];
-        $oldDemand->due_total_tax  =$newDemand["due_total_tax"];
+        $oldDemand->due_total_tax  = $newDemand["due_total_tax"];
         $oldDemand->due_balance  = $newDemand["due_balance"];
         $oldDemand->due_tax1  = $newDemand["due_tax1"];
         $oldDemand->due_tax2  = $newDemand["due_tax2"];
@@ -650,9 +651,10 @@ class SafApprovalBll
         return $oldDemand;
     }
 
-    public function updateOldDemandsV2($oldDemand,$newDemand){
+    public function updateOldDemandsV2($oldDemand, $newDemand)
+    {
         $adjustDemand = $this->demandAdjust($newDemand);
-        $newDemand = array_merge($newDemand,$adjustDemand);
+        $newDemand = array_merge($newDemand, $adjustDemand);
 
         $oldDemand->maintanance_amt =  $newDemand["maintanance_amt"];
         $oldDemand->aging_amt       = $newDemand["aging_amt"];
@@ -688,7 +690,7 @@ class SafApprovalBll
         $oldDemand->due_sewarage_tax  = $newDemand["due_sewarage_tax"];
         $oldDemand->due_tree_tax  = $newDemand["due_tree_tax"];
         $oldDemand->due_professional_tax  = $newDemand["due_professional_tax"];
-        $oldDemand->due_total_tax  =$newDemand["due_total_tax"];
+        $oldDemand->due_total_tax  = $newDemand["due_total_tax"];
         $oldDemand->due_balance  = $newDemand["due_balance"];
         $oldDemand->due_tax1  = $newDemand["due_tax1"];
         $oldDemand->due_tax2  = $newDemand["due_tax2"];
@@ -718,7 +720,7 @@ class SafApprovalBll
 
         $totaTax = $currentTax->sum("total_tax");
         $defmandDueAmount = $currentTax->sum("dueAmount");
-        $defmandDueAmount = $defmandDueAmount >0?$defmandDueAmount :0;
+        $defmandDueAmount = $defmandDueAmount > 0 ? $defmandDueAmount : 0;
 
         $generalTaxPerc = ($currentTax->sum('general_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
         $roadTaxPerc = ($currentTax->sum('road_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
@@ -923,7 +925,7 @@ class SafApprovalBll
                     }
                 }
                 $isNewFloorExist = collect($this->_floorDetails)->whereNull('prop_floor_details_id');
-                if($isNewFloorExist->isNotEmpty())
+                if ($isNewFloorExist->isNotEmpty())
                     $this->generateBiNewFloorDemand();
 
                 $newPropFloors = $mPropFloors->getFloorsByPropId($propProperties->id);
@@ -1016,7 +1018,7 @@ class SafApprovalBll
                     $oldDemand->update();
                     continue;
                 }
-                
+
                 $this->testDemand($arr);
                 $demand->store($arr);
                 $this->adjustOldDemand($val, $arr);
@@ -1066,9 +1068,27 @@ class SafApprovalBll
     {
         $newDemand = collect($newDemand);
         $newDemand1 = collect($newDemand)->only([
-            "due_maintanance_amt", "due_general_tax", "due_road_tax", "due_firefighting_tax", "due_education_tax", "due_water_tax",
-            "due_cleanliness_tax", "due_sewarage_tax", "due_tree_tax", "due_professional_tax", "due_tax1", "due_tax2", "due_tax3", "due_sp_education_tax",
-            "due_water_benefit", "due_water_bill", "due_sp_water_cess", "due_drain_cess", "due_light_cess", "due_major_building", "due_open_ploat_tax"
+            "due_maintanance_amt",
+            "due_general_tax",
+            "due_road_tax",
+            "due_firefighting_tax",
+            "due_education_tax",
+            "due_water_tax",
+            "due_cleanliness_tax",
+            "due_sewarage_tax",
+            "due_tree_tax",
+            "due_professional_tax",
+            "due_tax1",
+            "due_tax2",
+            "due_tax3",
+            "due_sp_education_tax",
+            "due_water_benefit",
+            "due_water_bill",
+            "due_sp_water_cess",
+            "due_drain_cess",
+            "due_light_cess",
+            "due_major_building",
+            "due_open_ploat_tax"
         ]);
         // $diff=round($newDemand["total_tax"])-round($newDemand1->sum());
         // if(round($newDemand["total_tax"])!=round($newDemand1->sum())&& !is_between(round($diff), -1, 1.1))
@@ -1089,13 +1109,13 @@ class SafApprovalBll
 
         foreach ($floorDtls as $floor) {
 
-            $floor = $this->_verifiedFloors->where('saf_floor_id',$floor->id);
+            $floor = $this->_verifiedFloors->where('saf_floor_id', $floor->id);
             $floor = $floor->first();
 
             $floorReq =  [
                 "floorNo" => $floor['floor_mstr_id'],
                 "constructionType" =>  $floor['construction_type_id'],
-                "occupancyType" =>  $floor['occupancy_type_id']??"",
+                "occupancyType" =>  $floor['occupancy_type_id'] ?? "",
                 "usageType" => $floor['usage_type_id'],
                 "buildupArea" =>  $floor['builtup_area'],
                 "dateFrom" =>  $floor['date_from'],
@@ -1105,21 +1125,21 @@ class SafApprovalBll
         }
 
         $ownerDtls = ($this->_ownerDetails->sortBy('id'));
-        foreach ($ownerDtls as $ownerDtl){
+        foreach ($ownerDtls as $ownerDtl) {
 
             $ownerReq = ["isArmedForce" => $ownerDtl->is_armed_force];
             array_push($ownerReqs, $ownerReq);
         }
 
         $request   = new Request([
-            "propertyType"=> $this->_activeSaf->property_type,
-            "assessmentType"=>$this->_activeSaf->assessment_type ,
-            "dateOfPurchase"=>$this->_activeSaf->land_occupation_date,
-            "previousHoldingId"=>$this->_activeSaf->previous_holding_id,
-            "areaOfPlot"=>$this->_activeSaf->area_of_plot,
-            "category"=>$this->_activeSaf->category_id,
-            "owner"=> $ownerReqs,
-            "floor"=> $floorReqs,
+            "propertyType" => $this->_activeSaf->property_type,
+            "assessmentType" => $this->_activeSaf->assessment_type,
+            "dateOfPurchase" => $this->_activeSaf->land_occupation_date,
+            "previousHoldingId" => $this->_activeSaf->previous_holding_id,
+            "areaOfPlot" => $this->_activeSaf->area_of_plot,
+            "category" => $this->_activeSaf->category_id,
+            "owner" => $ownerReqs,
+            "floor" => $floorReqs,
         ]);
         $taxCalculator = new TaxCalculator($request);
         $taxCalculator->calculateTax();
@@ -1195,16 +1215,13 @@ class SafApprovalBll
             }
             $demand->store($arr);
         }
-
     }
 
     public function deactivateAmalgamateProp()
     {
-        if($this->_activeSaf->assessment_type=="Amalgamation")
-        {
-            $amalgamateProps = $this->_activeSaf->getAmalgamateLogs()->where("is_master",false);
-            foreach($amalgamateProps as $aProp)
-            {
+        if ($this->_activeSaf->assessment_type == "Amalgamation") {
+            $amalgamateProps = $this->_activeSaf->getAmalgamateLogs()->where("is_master", false);
+            foreach ($amalgamateProps as $aProp) {
                 $aProp->status = 4;
                 $aProp->update();
             }
