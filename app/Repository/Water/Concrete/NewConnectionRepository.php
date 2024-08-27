@@ -880,9 +880,9 @@ class NewConnectionRepository implements iNewConnection
     public function preApprovalConditionCheck($request, $roleId)
     {
         $waterDetails = WaterApplication::find($request->applicationId);
-        if ($waterDetails->finisher != $roleId) {
-            throw new Exception("You're Not the finisher ie. EO!");
-        }
+        // if ($waterDetails->finisher != $roleId) {
+        //     throw new Exception("You're Not the finisher ie. EO!");
+        // }
         if ($waterDetails->current_role != $roleId) {
             throw new Exception("Application has not Reached to the finisher ie. EO!");
         }
