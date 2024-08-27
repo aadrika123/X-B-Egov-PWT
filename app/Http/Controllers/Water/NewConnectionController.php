@@ -436,9 +436,9 @@ class NewConnectionController extends Controller
             ]);
             $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
             $roleId = $readRoleDtls->wf_role_id;
-            if ($roleId != $waterDetails->finisher) {
-                throw new Exception("You are not the Finisher!");
-            }
+            // if ($roleId != $waterDetails->finisher) {
+            //     throw new Exception("You are not the Finisher!");
+            // }
             $this->begin();
             $returnData = $this->newConnection->approvalRejectionWater($request, $roleId);
             $this->commit();
