@@ -5932,10 +5932,16 @@ class WaterReportController extends Controller
                 "water_second_consumers.notice_3_generated_at",
                 DB::raw("string_agg(water_consumer_owners.applicant_name,',') as applicant_name"),
                 DB::raw("string_agg(water_consumer_owners.mobile_no::VARCHAR,',') as mobile_no"),
-                DB::raw("string_agg(water_consumer_owners.guardian_name,',') as guardian_name")
+                DB::raw("string_agg(water_consumer_owners.guardian_name,',') as guardian_name"),
+                DB::raw('SUM(water_consumer_demands.due_balance_amount) as due_balance_amount')
+
             )
                 ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_second_consumers.id')
                 ->leftjoin('water_temp_disconnections', 'water_temp_disconnections.consumer_id', '=', 'water_second_consumers.id')
+                ->join('water_consumer_demands', function ($join) {
+                    $join->on('water_second_consumers.id', '=', 'water_consumer_demands.consumer_id')
+                        ->whereColumn('water_consumer_demands.demand_upto', '<=', 'water_temp_disconnections.demand_upto');
+                })
                 ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
                 ->where('water_second_consumers.id', $consumerId)
                 ->where('water_second_consumers.status', 1)

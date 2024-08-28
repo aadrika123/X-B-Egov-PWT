@@ -3691,8 +3691,7 @@ class ActiveSafController extends Controller
                         'rent_agreement_date'  => $floorDetail['rentAgreementDate'],
                         'carpet_area'          => null,
                         'user_id'              => $userId,
-                        'ulb_id'               => $ulbId,
-                        
+                        'ulb_id'               => $ulbId,    
                     ];
 
                     $verificationDtl->store($floorReq);
