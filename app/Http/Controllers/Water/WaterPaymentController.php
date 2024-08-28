@@ -375,7 +375,7 @@ class WaterPaymentController extends Controller
             # Application Deatils
             $applicationDetails = $mWaterApprovalApplicationDetail->getDetailsByApplicationId($transactionDetails->related_id)->first();
             if ($applicationDetails == null) {
-                
+
                 $applicationDetails = $mWaterSecondConsumer->fullWaterDetailsv6($transactionDetails->related_id)->first();
             }
             if (is_null($applicationDetails)) {
@@ -2513,7 +2513,7 @@ class WaterPaymentController extends Controller
             $mWaterConsumer                 = new WaterSecondConsumer();
             $mWaterSiteInspection           = new WaterSiteInspection();
 
-            $offlinePaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
+            $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
             $activeConRequest = $mWaterConsumer->getApplicationById($applicatinId)
                 // ->where('water_approval_application_details.payment_status', 0)
                 ->first();
@@ -2584,9 +2584,9 @@ class WaterPaymentController extends Controller
     {
         try {
             $user               = authUser($request);
-            $todayDate           = Carbon::now();
-            $applicationId        = $request->applicationId;
-            $refPaymentMode      = Config::get('payment-constants.REF_PAY_MODE');
+            $todayDate          = Carbon::now();
+            $applicationId      = $request->applicationId;
+            $refPaymentMode     = Config::get('payment-constants.REF_PAY_MODE');
             $consumerParamId    = Config::get("waterConstaint.PARAM_IDS.WCD");
             $refJe              = Config::get("waterConstaint.ROLE-LABEL.JE");
 

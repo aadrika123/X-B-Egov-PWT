@@ -2394,7 +2394,7 @@ class NewConnectionController extends Controller
             ];
             #application Details according to date
             $refApplications = $mWaterApplication->getapplicationByDate($refTimeDate)
-                ->where('water_approval_application_details.user_id', authUser($request)->id)
+                // ->where('water_applications.user_id', authUser($request)->id)
                 ->get();
             # Final Data to return
             $returnValue = collect($refApplications)->map(function ($value, $key)
