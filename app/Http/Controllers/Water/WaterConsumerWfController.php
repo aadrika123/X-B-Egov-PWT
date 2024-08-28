@@ -2020,7 +2020,7 @@ class WaterConsumerWfController extends Controller
                     'citizenId'         => $refRequest['citizenId'] ?? null,
                     'moduleId'          => $confModuleId,
                     'workflowId'        => $ulbWorkflowId->id,
-                    'refTableDotId'     => 'water_consumer_active_requests.id',             // Static                          // Static                              // Static
+                    'refTableDotId'     => 'water_reconnect_consumers.id',             // Static                          // Static                              // Static
                     'refTableIdValue'   => $deactivatedDetails['id'],
                     'user_id'           => $refRequest['empId'] ?? null,
                     'ulb_id'            => $ulbId,
