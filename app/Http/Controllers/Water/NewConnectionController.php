@@ -181,8 +181,6 @@ class NewConnectionController extends Controller
             $user   = authUser($request);
             $userId = $user->id;
             $ulbId  = $user->ulb_id;
-            $pages  = $request->perPage ?? 10;
-            $perPage = $request->perPage ? $request->perPage : 10;
             $mWfWorkflowRoleMaps = new WfWorkflowrolemap();
 
             // $occupiedWards = $this->getWardByUserId($userId)->pluck('ward_id');
@@ -195,17 +193,10 @@ class NewConnectionController extends Controller
                 // ->whereIn('water_approval_application_details.ward_id', $occupiedWards)
                 ->where('water_applications.is_escalate', false)
                 ->where('water_applications.parked', false)
-                ->orderByDesc('water_applications.id');
-                // ->get();
-                $paginator = $waterList->paginate($perPage);
-                $list = [
-                    "current_page" => $paginator->currentPage(),
-                    "last_page" => $paginator->lastPage(),
-                    "data" => $paginator->items(),
-                    "total" => $paginator->total(),
-                ];
-            // $filterWaterList = collect($waterList)->unique('id')->values();
-            return responseMsgs(true, "Inbox List Details!", remove_null($list), '', '02', '', 'Post', '');
+                ->orderByDesc('water_applications.id')
+                ->get();
+            $filterWaterList = collect($waterList)->unique('id')->values();
+            return responseMsgs(true, "Inbox List Details!", remove_null($filterWaterList), '', '02', '', 'Post', '');
         } catch (Exception $error) {
             return responseMsg(false, $error->getMessage(), "");
         }
