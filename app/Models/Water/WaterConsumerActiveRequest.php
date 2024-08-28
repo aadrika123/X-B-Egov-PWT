@@ -274,6 +274,7 @@ class WaterConsumerActiveRequest extends Model
             // 'water_consumer_meters.final_meter_reading',
             // 'water_consumer_initial_meters.initial_reading as finalReading',
         )
+            ->distinct()
             ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_consumer_active_requests.current_role')
             ->leftjoin('ulb_masters', 'ulb_masters.id', '=', 'water_consumer_active_requests.ulb_id')
             ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_consumer_active_requests.ward_mstr_id')

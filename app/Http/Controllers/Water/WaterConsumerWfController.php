@@ -719,7 +719,7 @@ class WaterConsumerWfController extends Controller
         $mWaterConsumerMeter    = new WaterConsumerMeter();
         $refConnectionName      = Config::get('waterConstaint.METER_CONN_TYPE');
         # applicatin details
-        $applicationDetails = $mwaterConsumerActive->fullWaterDetails($request)->get();
+      $applicationDetails = $mwaterConsumerActive->fullWaterDetails($request)->get();
         $refConsumerId = $applicationDetails->pluck('consumer_id');
         # consumer details 
         $refMeterData = $mWaterConsumerMeter->getMeterDetailsByConsumerIdV2($refConsumerId)->first();
