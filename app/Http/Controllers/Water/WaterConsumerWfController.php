@@ -719,7 +719,7 @@ class WaterConsumerWfController extends Controller
         $mWaterConsumerMeter    = new WaterConsumerMeter();
         $refConnectionName      = Config::get('waterConstaint.METER_CONN_TYPE');
         # applicatin details
-      $applicationDetails = $mwaterConsumerActive->fullWaterDetails($request)->get();
+        $applicationDetails = $mwaterConsumerActive->fullWaterDetails($request)->get();
         $refConsumerId = $applicationDetails->pluck('consumer_id');
         # consumer details 
         $refMeterData = $mWaterConsumerMeter->getMeterDetailsByConsumerIdV2($refConsumerId)->first();
@@ -2949,7 +2949,7 @@ class WaterConsumerWfController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
-     /**
+    /**
      * | Application's Post Escalated
         | Serial No :
      */
@@ -2978,6 +2978,34 @@ class WaterConsumerWfController extends Controller
             return responseMsgs(true, $request->escalateStatus == 1 ? 'Water is Escalated' : "Water is removed from Escalated", '', "", "1.0", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Water Special Inbox For Reconnect 
+     * | excalated applications
+        | Serial No :
+     */
+    public function waterSpecialInboxRec(Request $request)
+    {
+        try {
+            $mWfWardUser            = new WfWardUser();
+            $mWfWorkflowRoleMaps    = new WfWorkflowrolemap();
+            $userId = authUser($request)->id;
+            $ulbId  = authUser($request)->ulb_id;
+
+            $occupiedWards  = $this->getWardByUserId($userId)->pluck('ward_id');
+            $roleId         = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds    = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+
+            $inboxDetails = $this->getConsumerReconnectQuerry($workflowIds, $ulbId)                             // Repository function to get SAF Details
+                ->where('water_reconnect_consumers.is_escalate', 1)
+                ->orderByDesc('water_reconnect_consumers.id')
+                ->get();
+            $filterWaterList = collect($inboxDetails)->unique('id')->values();
+            return responseMsgs(true, "Data Fetched", remove_null($filterWaterList), "010107", "1.0", "251ms", "POST", "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "0.1", ".ms", "POST", $request->deviceId);
         }
     }
 }

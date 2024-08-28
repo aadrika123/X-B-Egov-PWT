@@ -207,6 +207,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         # Route for Water Reconnect Process
         Route::post("consumer/reconnect-consumer", "reconnectConsumerFun");                                          // Reconnect Consumer Citizen Side 
         Route::post("consumer/reconnect-inbox", "reconnectInbox");                                                 // Reconnect Consumer Citizen Side 
+        Route::post("consumer/reconnect-special-box", "waterSpecialInboxRec");                                                 // Reconnect Consumer Citizen Side 
         Route::post("consumer/reconnect-outbox", "reconnectOutbox");                                                 // Reconnect Consumer Citizen Side 
         Route::post('consumer/req/reconnect-get-details-by', 'getRecWorkflow');                                         // Workflow
         Route::post('workflow/reconnect/get-doc-list-je', 'getDocListForJeReconnect');
