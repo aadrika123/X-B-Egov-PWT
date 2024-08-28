@@ -194,7 +194,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('consumer/req/approval-rejection', 'consumerApprovalRejection');                         // Here
         Route::post('get-details-applications', 'getConApplicationDetails');
         Route::post('get-details-disconnections', 'getRequestedApplication');                                // Citizen / Changes the route name
-        Route::post('consumer/req/get-disconnected-details', 'getDetailsDisconnections');     
+        Route::post('consumer/req/get-disconnected-details', 'getDetailsDisconnections');
         Route::post('consumer/reqs/reupload-document', 'reuploadDocument');                                   // 21 ( Reupload Document for Pending Documents)
         Route::post('workflow/get-doc-list-je', 'getDocListForJe');                                             // Workflow
         Route::post('workflow/upload-doc-je', 'uploadWaterDocJe');                                             // Workflow
@@ -203,7 +203,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('consumer/req/btc-inbox', 'btcInbox');                                                           // Workflow
         Route::post('consumer/req/special-inbox', 'waterSpecialInbox');                                              // Workflow
         Route::post('consumer/req/escalate', 'postEscalate');                                                        // Workflow           
-        
+
         # Route for Water Reconnect Process
         Route::post("consumer/reconnect-consumer", "reconnectConsumerFun");                                          // Reconnect Consumer Citizen Side 
         Route::post("consumer/reconnect-inbox", "reconnectInbox");                                                 // Reconnect Consumer Citizen Side 
@@ -216,6 +216,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('workflow/reconnect/doc-verify-reject', 'reconnectDocVerifyReject');
         Route::post('workflow/reconnect/approval-rejection', 'consumerApprovalRejectionReconnect');
         Route::post('workflow/reconnect/get-consumer-details', 'getApplicationDetailById');
+        Route::post('workflow/reconnect/escalate', 'postEscalateForReconnect');
     });
 
     /**
@@ -299,7 +300,7 @@ Route::controller(WaterApplication::class)->group(function () {
 });
 Route::controller(WaterConsumer::class)->group(function () {
     Route::post('consumerChargeCal', 'calConsumerDemand');                                              //18        
-    Route::post('sendSms', 'sendSms');                  
+    Route::post('sendSms', 'sendSms');
     Route::post("consumer/get-consumer-demandV2", "getConsumerDemandsV2");
 });
 Route::controller(NewConnectionController::class)->group(function () {
