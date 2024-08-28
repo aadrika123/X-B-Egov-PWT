@@ -2527,10 +2527,10 @@ class WaterConsumerWfController extends Controller
         ];
 
         $previousWorkflowTrack = $waterTrack->getWfTrackByRefId($preWorkflowReq);
-        // $previousWorkflowTrack->update([
-        //     'forward_date' => $current,
-        //     'forward_time' => $current
-        // ]);
+        $previousWorkflowTrack->update([
+            'forward_date' => $current,
+            'forward_time' => $current
+        ]);
         DB::commit();
         return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", "", '01', '.ms', 'Post', '');
     }
