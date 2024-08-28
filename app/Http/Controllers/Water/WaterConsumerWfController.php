@@ -148,7 +148,7 @@ class WaterConsumerWfController extends Controller
             $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
                 ->whereIn('water_consumer_active_requests.current_role', $roleId)
                 ->where('water_consumer_active_requests.verify_status', 0)
-                ->where('water_consumer_active_requests.is_escalate', false)
+                // ->where('water_consumer_active_requests.is_escalate', false)
                 ->where('water_consumer_active_requests.parked', false)
                 ->orderByDesc('water_consumer_active_requests.id')
                 ->get();
@@ -2020,7 +2020,7 @@ class WaterConsumerWfController extends Controller
                     'citizenId'         => $refRequest['citizenId'] ?? null,
                     'moduleId'          => $confModuleId,
                     'workflowId'        => $ulbWorkflowId->id,
-                    'refTableDotId'     => 'water_consumer_active_requests.id',             // Static                          // Static                              // Static
+                    'refTableDotId'     => 'water_reconnect_consumers.id',             // Static                          // Static                              // Static
                     'refTableIdValue'   => $deactivatedDetails['id'],
                     'user_id'           => $refRequest['empId'] ?? null,
                     'ulb_id'            => $ulbId,
@@ -2527,10 +2527,10 @@ class WaterConsumerWfController extends Controller
         ];
 
         $previousWorkflowTrack = $waterTrack->getWfTrackByRefId($preWorkflowReq);
-        // $previousWorkflowTrack->update([
-        //     'forward_date' => $current,
-        //     'forward_time' => $current
-        // ]);
+        $previousWorkflowTrack->update([
+            'forward_date' => $current,
+            'forward_time' => $current
+        ]);
         DB::commit();
         return responseMsgs(true, "Successfully Forwarded The Application!!", "", "", "", '01', '.ms', 'Post', '');
     }
@@ -2900,8 +2900,8 @@ class WaterConsumerWfController extends Controller
                 $value['owner_name_marathi'],
                 $value['mobile_no'],
                 $value['email'],
-                $value['city'],
-                $value['district']
+                // $value['city'],
+                // $value['district']
             ];
         });
     }
@@ -2947,6 +2947,65 @@ class WaterConsumerWfController extends Controller
             return responseMsgs(true, "Application Data!", remove_null($returnData), "", "", "", "Post", "");
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+    /**
+     * | Application's Post Escalated
+        | Serial No :
+     */
+    public function postEscalateForReconnect(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "escalateStatus" => "required|int",
+                "applicationId" => "required|int",
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $userId = authUser($request)->id;
+            $applicationId = $request->applicationId;
+            $applicationsData = WaterReconnectConsumer::find($applicationId);
+            if (!$applicationsData) {
+                throw new Exception("Application details not found!");
+            }
+            $applicationsData->is_escalate = $request->escalateStatus;
+            $applicationsData->escalate_by = $userId;
+            $applicationsData->save();
+            return responseMsgs(true, $request->escalateStatus == 1 ? 'Water is Escalated' : "Water is removed from Escalated", '', "", "1.0", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+     * | Water Special Inbox For Reconnect 
+     * | excalated applications
+        | Serial No :
+     */
+    public function waterSpecialInboxRec(Request $request)
+    {
+        try {
+            $mWfWardUser            = new WfWardUser();
+            $mWfWorkflowRoleMaps    = new WfWorkflowrolemap();
+            $userId = authUser($request)->id;
+            $ulbId  = authUser($request)->ulb_id;
+
+            $occupiedWards  = $this->getWardByUserId($userId)->pluck('ward_id');
+            $roleId         = $this->getRoleIdByUserId($userId)->pluck('wf_role_id');
+            $workflowIds    = $mWfWorkflowRoleMaps->getWfByRoleId($roleId)->pluck('workflow_id');
+
+            $inboxDetails = $this->getConsumerReconnectQuerry($workflowIds, $ulbId)                             // Repository function to get SAF Details
+                ->where('water_reconnect_consumers.is_escalate', 1)
+                ->orderByDesc('water_reconnect_consumers.id')
+                ->get();
+            $filterWaterList = collect($inboxDetails)->unique('id')->values();
+            return responseMsgs(true, "Data Fetched", remove_null($filterWaterList), "010107", "1.0", "251ms", "POST", "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "0.1", ".ms", "POST", $request->deviceId);
         }
     }
 }

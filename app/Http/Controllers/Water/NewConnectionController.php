@@ -191,7 +191,7 @@ class NewConnectionController extends Controller
                 ->whereIn('water_applications.current_role', $roleId)
                 // ->where('water_applications.doc_upload_status', false)
                 // ->whereIn('water_approval_application_details.ward_id', $occupiedWards)
-                ->where('water_applications.is_escalate', false)
+                // ->where('water_applications.is_escalate', false)
                 ->where('water_applications.parked', false)
                 ->orderByDesc('water_applications.id')
                 ->get();
@@ -2394,7 +2394,7 @@ class NewConnectionController extends Controller
             ];
             #application Details according to date
             $refApplications = $mWaterApplication->getapplicationByDate($refTimeDate)
-                ->where('water_approval_application_details.user_id', authUser($request)->id)
+                // ->where('water_applications.user_id', authUser($request)->id)
                 ->get();
             # Final Data to return
             $returnValue = collect($refApplications)->map(function ($value, $key)
@@ -3479,12 +3479,13 @@ class NewConnectionController extends Controller
                 "water_temp_disconnections.notice_1_generated_at",
                 "water_temp_disconnections.notice_2_generated_at",
                 "water_temp_disconnections.notice_3_generated_at",
+                "charges.charge_category",
                 DB::raw("'connection' AS type,
                                         water_approval_application_details.apply_date::date AS apply_date")
             )
                 ->join(
                     DB::raw("( 
-                                        SELECT DISTINCT(water_approval_application_details.id) AS application_id , SUM(COALESCE(amount,0)) AS amount
+                                        SELECT DISTINCT(water_approval_application_details.id) AS application_id , SUM(COALESCE(amount,0)) AS amount,water_connection_charges.charge_category
                                         FROM water_approval_application_details 
                                         LEFT JOIN water_connection_charges 
                                             ON water_approval_application_details.id = water_connection_charges.application_id 
@@ -3493,7 +3494,7 @@ class NewConnectionController extends Controller
                                                     OR water_connection_charges.status ISNULL  
                                                 )
                                         WHERE water_approval_application_details.user_id = $refUserId
-                                        GROUP BY water_approval_application_details.id
+                                        GROUP BY water_approval_application_details.id,water_connection_charges.charge_category
                                         ) AS charges
                                     "),
                     function ($join) {
@@ -3505,6 +3506,7 @@ class NewConnectionController extends Controller
                 ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_approval_application_details.ward_id')
                 ->join('water_second_consumers', 'water_second_consumers.apply_connection_id', 'water_approval_application_details.id')
                 ->leftjoin('water_temp_disconnections', 'water_temp_disconnections.consumer_id', 'water_second_consumers.id')
+                // ->leftjoin('water_connection_charges','water_connection_charges.application_id','water_approval_application_details.id')
                 ->where("water_approval_application_details.user_id", $refUserId)
                 ->where("water_approval_application_details.status", true)
                 ->orderbydesc('water_approval_application_details.id')
@@ -3570,6 +3572,8 @@ class NewConnectionController extends Controller
                 $refConnectionCharge['type'] = $value['type'];
                 $refConnectionCharge['applicationId'] = $value['id'];
                 $refConnectionCharge['applicationNo'] = $value['application_no'];
+                $refConnectionCharge['charge_category'] = $value['charge_category'];
+                $refConnectionCharge['amount'] = $value['amount'];
                 $value['connectionCharges'] = $refConnectionCharge;
 
                 # Site Details 
