@@ -176,6 +176,7 @@ class WaterReconnectConsumer extends Model
             "water_approval_application_details.user_type",
             'water_second_consumers.holding_no'
         )
+            ->distinct()
             ->leftjoin('wf_roles', 'wf_roles.id', '=', 'water_reconnect_consumers.current_role')
             ->join('water_second_consumers', 'water_second_consumers.id', 'water_reconnect_consumers.consumer_id')
             ->leftjoin('water_approval_application_details', 'water_approval_application_details.id', 'water_second_consumers.apply_connection_id')
