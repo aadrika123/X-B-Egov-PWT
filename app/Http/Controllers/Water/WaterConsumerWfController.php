@@ -148,7 +148,7 @@ class WaterConsumerWfController extends Controller
             $inboxDetails = $this->getConsumerWfBaseQuerry($workflowIds, $ulbId)
                 ->whereIn('water_consumer_active_requests.current_role', $roleId)
                 ->where('water_consumer_active_requests.verify_status', 0)
-                ->where('water_consumer_active_requests.is_escalate', false)
+                // ->where('water_consumer_active_requests.is_escalate', false)
                 ->where('water_consumer_active_requests.parked', false)
                 ->orderByDesc('water_consumer_active_requests.id')
                 ->get();

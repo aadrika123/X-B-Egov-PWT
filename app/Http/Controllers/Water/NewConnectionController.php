@@ -191,7 +191,7 @@ class NewConnectionController extends Controller
                 ->whereIn('water_applications.current_role', $roleId)
                 // ->where('water_applications.doc_upload_status', false)
                 // ->whereIn('water_approval_application_details.ward_id', $occupiedWards)
-                ->where('water_applications.is_escalate', false)
+                // ->where('water_applications.is_escalate', false)
                 ->where('water_applications.parked', false)
                 ->orderByDesc('water_applications.id')
                 ->get();
