@@ -2900,8 +2900,8 @@ class WaterConsumerWfController extends Controller
                 $value['owner_name_marathi'],
                 $value['mobile_no'],
                 $value['email'],
-                $value['city'],
-                $value['district']
+                // $value['city'],
+                // $value['district']
             ];
         });
     }
