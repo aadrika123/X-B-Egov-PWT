@@ -5962,4 +5962,67 @@ class WaterReportController extends Controller
             return responseMsgs(false, $e->getMessage(), "");
         }
     }
+
+    public function bulkNotice1(Request $request)
+    {
+        try {
+            $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
+            if ($request->fromDate) {
+                $fromDate = $request->fromDate;
+            }
+            if ($request->uptoDate) {
+                $uptoDate = $request->uptoDate;
+            }
+
+            $query = WaterSecondConsumer::select(
+                'water_second_consumers.id',
+                'water_second_consumers.consumer_no',
+                'water_second_consumers.ward_mstr_id',
+                'water_second_consumers.address',
+                'water_second_consumers.holding_no',
+                'water_second_consumers.saf_no',
+                'water_second_consumers.ulb_id',
+                'ulb_ward_masters.ward_name',
+                "water_temp_disconnections.status as deactivated_status",
+                "water_temp_disconnections.demand_upto",
+                "water_temp_disconnections.amount_notice_1",
+                "water_second_consumers.notice_no_1",
+                "water_second_consumers.notice_1_generated_at",
+                DB::raw("string_agg(water_consumer_owners.applicant_name,',') as applicant_name"),
+                DB::raw("string_agg(water_consumer_owners.mobile_no::VARCHAR,',') as mobile_no"),
+                DB::raw("string_agg(water_consumer_owners.guardian_name,',') as guardian_name")
+            )
+                ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_second_consumers.id')
+                ->leftjoin('water_temp_disconnections', 'water_temp_disconnections.consumer_id', '=', 'water_second_consumers.id')
+                ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
+                ->where('water_second_consumers.status', 1)
+                ->groupby('water_second_consumers.id', "ulb_ward_masters.ward_name", "water_temp_disconnections.status", "water_temp_disconnections.demand_upto", "water_temp_disconnections.amount_notice_1");
+
+            // Apply filters
+            if ($request->wardId) {
+                $query->where('water_second_consumers.ward_mstr_id', $request->wardId);
+            }
+            if ($fromDate && $uptoDate) {
+                $query->whereBetween('water_second_consumers.notice_1_generated_at', [$fromDate,$uptoDate]);
+            }
+
+            // if ($request->zoneId) {
+            //     $query->where('ulb_ward_masters.zone_id', $request->zoneId); // Assuming zone_id is in ulb_ward_masters
+            // 
+            $perPage = $request->perPage ?: 200; 
+            $paginatedData = $query->paginate($perPage);
+    
+            $response = [
+                'current_page' => $paginatedData->currentPage(),
+                'data' => $paginatedData->items(),
+                'total' => $paginatedData->total(),
+                'per_page' => $paginatedData->perPage(),
+                'last_page' => $paginatedData->lastPage()
+            ];
+    
+            return responseMsgs(true, 'Bulk Notice One', $response, '010801', '01', '', 'Post', '');
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
 }
