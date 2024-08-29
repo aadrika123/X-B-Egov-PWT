@@ -402,9 +402,9 @@ class WaterConsumerWfController extends Controller
             ]);
             $readRoleDtls = $mWfRoleUsermap->getRoleByUserWfId($getRoleReq);
             $roleId = $readRoleDtls->wf_role_id;
-            if ($roleId != $waterDetails->finisher) {
-                throw new Exception("You are not the Finisher!");
-            }
+            // if ($roleId != $waterDetails->finisher) {
+            //     throw new Exception("You are not the Finisher!");
+            // }
             $this->begin();
             $this->approvalRejectionWater($request, $roleId);
             $this->commit();
@@ -476,12 +476,12 @@ class WaterConsumerWfController extends Controller
     public function preApprovalConditionCheck($request, $roleId)
     {
         $waterDetails = WaterConsumerActiveRequest::find($request->applicationId);
-        if ($waterDetails->finisher != $roleId) {
-            throw new Exception("You're Not the finisher ie. AE!");
-        }
-        if ($waterDetails->current_role != $roleId) {
-            throw new Exception("Application has not Reached to the finisher ie. AE!");
-        }
+        // if ($waterDetails->finisher != $roleId) {
+        //     throw new Exception("You're Not the finisher ie. AE!");
+        // }
+        // if ($waterDetails->current_role != $roleId) {
+        //     throw new Exception("Application has not Reached to the finisher ie. AE!");
+        // }
 
         // if ($waterDetails->payment_status != 1) {
         //     throw new Exception("Payment Not Done or not verefied!");
