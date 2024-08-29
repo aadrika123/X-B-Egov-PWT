@@ -306,4 +306,8 @@ class WaterApprovalApplicationDetail extends Model
                 "consumer_id" => $consumerId
             ]);
     }
+
+    /**
+     * |update details inspection by je
+     */
 }
