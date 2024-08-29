@@ -1315,7 +1315,8 @@ class  PropActiveSaf extends PropParamModel #Model
                 'trust_type',
                 'is_trust_verified',
                 'rwh_date_from',
-                'category_id'
+                'category_id',
+                'property_no'
             )->first();
     }
 
