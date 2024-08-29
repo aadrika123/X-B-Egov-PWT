@@ -399,6 +399,7 @@ class SafApprovalBll
         $approvedSaf->id = $this->_activeSaf->id;
         $approvedSaf->saf_approved_date = Carbon::now()->format("Y-m-d");
         $approvedSaf->property_id = $this->_replicatedPropId;
+        $approvedSaf->property_no = $this->_activeSaf->property_no;
         $approvedSaf->save();
         $this->_activeSaf->delete();
 
@@ -914,7 +915,8 @@ class SafApprovalBll
                     $activeSafFloorDtl = $this->_floorDetails->where('id', $floorDetail->saf_floor_id);
                     $activeSafFloorDtl = collect($activeSafFloorDtl)->first();
 
-                    $propFloor =  collect($propFloors)->where('id', $activeSafFloorDtl->prop_floor_details_id);
+                    // $propFloor =  collect($propFloors)->where('id', $activeSafFloorDtl->prop_floor_details_id);
+                    $propFloor =  $activeSafFloorDtl ?collect($propFloors)->where('id', $activeSafFloorDtl->prop_floor_details_id):[];
                     $propFloor =  collect($propFloor)->first();
                     if ($propFloor) {
                         $propFloor->builtup_area = $propFloor->builtup_area - $floorDetail->builtup_area;
