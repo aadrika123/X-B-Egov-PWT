@@ -1072,40 +1072,49 @@ class WaterSecondConsumer extends Model
             "water_second_consumers.notice_1_generated_at",
             "water_second_consumers.notice_2_generated_at",
             "water_second_consumers.notice_3_generated_at",
-            DB::raw("string_agg(water_consumer_owners.applicant_name,',') as applicant_name"),
-            DB::raw("string_agg(water_consumer_owners.mobile_no::VARCHAR,',') as mobile_no"),
-            DB::raw("string_agg(water_consumer_owners.guardian_name,',') as guardian_name"),
-            DB::raw('SUM(water_consumer_demands.due_balance_amount) as due_amount')
-
+            DB::raw("subquery.applicant_name"),
+            DB::raw("subquery.mobile_no"),
+            DB::raw("subquery.guardian_name")
         )
-            ->join('water_consumer_owners', 'water_consumer_owners.consumer_id', '=', 'water_second_consumers.id')
-            ->join('water_consumer_demands', 'water_consumer_demands.consumer_id', 'water_second_consumers.id')
-            ->leftjoin('water_temp_disconnections', 'water_temp_disconnections.consumer_id', '=', 'water_second_consumers.id')
-            ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
-            ->whereIn("water_second_consumers.id", $consumerIds)
-            // ->where('water_second_consumers.status', 1)
-            ->groupBy(
-                'water_second_consumers.saf_no',
-                'water_second_consumers.holding_no',
-                'water_second_consumers.address',
-                'water_second_consumers.id',
-                'water_second_consumers.ulb_id',
-                'water_consumer_owners.consumer_id',
-                'water_second_consumers.consumer_no',
-                'water_second_consumers.ward_mstr_id',
-                'ulb_ward_masters.ward_name',
-                'water_temp_disconnections.status',
-                'water_second_consumers.notice_no_1',
-                'water_second_consumers.notice_no_2',
-                'water_second_consumers.notice_no_3',
-                'water_second_consumers.notice',
-                'water_second_consumers.notice_2',
-                'water_second_consumers.notice_3',
-                'water_second_consumers.notice_1_generated_at',
-                'water_second_consumers.notice_2_generated_at',
-                'water_second_consumers.notice_3_generated_at',
-            );
+        ->join('water_consumer_demands', 'water_consumer_demands.consumer_id', 'water_second_consumers.id')
+        ->leftJoin('water_temp_disconnections', 'water_temp_disconnections.consumer_id', '=', 'water_second_consumers.id')
+        ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
+        ->leftJoin(DB::raw("(SELECT 
+                                water_consumer_owners.consumer_id,
+                                string_agg(DISTINCT water_consumer_owners.applicant_name, ',') as applicant_name,
+                                string_agg(DISTINCT water_consumer_owners.mobile_no::VARCHAR, ',') as mobile_no,
+                                string_agg(DISTINCT water_consumer_owners.guardian_name, ',') as guardian_name
+                            FROM water_consumer_owners
+                            GROUP BY water_consumer_owners.consumer_id
+                        ) AS subquery"), 'subquery.consumer_id', '=', 'water_second_consumers.id')
+        ->whereIn("water_second_consumers.id", $consumerIds)
+        ->groupBy(
+            'water_second_consumers.saf_no',
+            'water_second_consumers.holding_no',
+            'water_second_consumers.address',
+            'water_second_consumers.id',
+            'water_second_consumers.ulb_id',
+            'water_second_consumers.consumer_no',
+            'water_second_consumers.ward_mstr_id',
+            'ulb_ward_masters.ward_name',
+            'water_temp_disconnections.status',
+            'water_second_consumers.notice_no_1',
+            'water_second_consumers.notice_no_2',
+            'water_second_consumers.notice_no_3',
+            'water_second_consumers.notice',
+            'water_second_consumers.notice_2',
+            'water_second_consumers.notice_3',
+            'water_second_consumers.notice_1_generated_at',
+            'water_second_consumers.notice_2_generated_at',
+            'water_second_consumers.notice_3_generated_at',
+            'subquery.applicant_name',
+            'subquery.mobile_no',
+            'subquery.guardian_name'
+        );
     }
+    
+
+    
     /**
      * |get details of applications which is partiallly make consumer
      * | before it payments
