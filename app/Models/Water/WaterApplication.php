@@ -326,6 +326,7 @@ class WaterApplication extends Model
         $mWaterSiteInspection = new WaterSiteInspection();
         $mWaterConsumer = new WaterSecondConsumer();
         $waterTrack = new WorkflowTrack();
+    
 
         # checking if consumer already exist 
         $approvedWater = WaterApplication::query()
@@ -364,6 +365,7 @@ class WaterApplication extends Model
             $approvedWaterRep = collect($approvedWater)->merge($refData);
         }
         $consumerId = $mWaterConsumer->saveWaterConsumer($approvedWaterRep, $consumerNo, $siteDetails);
+        //  $mWaterApprovalApplicationDetail->updateDetails($approvedWaterRep, $consumerNo, $siteDetails);
 
         # dend record in the track table 
         $metaReqs = [

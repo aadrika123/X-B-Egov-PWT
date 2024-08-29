@@ -1676,10 +1676,10 @@ class WaterConsumerWfController extends Controller
             return validationError($validated);
         try {
             $user = authUser($request);
-            $userName = $user->name;
-            if ($userName != 'JE') {
-                throw new Exception('You Are Not Authorized Person');
-            }
+            // $userName = $user->name;
+            // if ($userName != 'JE') {
+            //     throw new Exception('You Are Not Authorized Person');
+            // }
             $applicationId = $request->applicationId;
             $mWaterConsumerActiveRequest  = new WaterConsumerActiveRequest();
             $waterRequestdtl  = $mWaterConsumerActiveRequest->getActiveReqById($applicationId)->first();
