@@ -271,7 +271,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('farwardApplication', 'consumerPostNextLevel');
         Route::post('uploadedDocumentList', 'getDiscUploadDocuments');
         Route::post('finalApproval', 'consumerApprovalRejection');
-        Route::post('noticeDtlConsumer', 'consumerNotice');
+       // Route::post('noticeDtlConsumer', 'consumerNotice');
     });
 
     /**
@@ -323,4 +323,8 @@ Route::controller(WaterPaymentController::class)->group(function () {
 
 Route::controller(WaterNewConnection::class)->group(function () {
     Route::post('test-icici-respons', 'testIciciResposnse');
+});
+
+Route::controller(WaterReportController::class)->group(function () {  
+ Route::post('noticeDtlConsumer', 'consumerNotice');
 });
