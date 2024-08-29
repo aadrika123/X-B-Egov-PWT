@@ -1074,7 +1074,8 @@ class WaterSecondConsumer extends Model
             "water_second_consumers.notice_3_generated_at",
             DB::raw("subquery.applicant_name"),
             DB::raw("subquery.mobile_no"),
-            DB::raw("subquery.guardian_name")
+            DB::raw("subquery.guardian_name"),
+            DB::raw('sum(water_consumer_demands.due_balance_amount)as due_amount')
         )
         ->join('water_consumer_demands', 'water_consumer_demands.consumer_id', 'water_second_consumers.id')
         ->leftJoin('water_temp_disconnections', 'water_temp_disconnections.consumer_id', '=', 'water_second_consumers.id')
