@@ -328,4 +328,6 @@ Route::controller(WaterNewConnection::class)->group(function () {
 Route::controller(WaterReportController::class)->group(function () {  
  Route::post('noticeDtlConsumer', 'consumerNotice');
  Route::post('bulkNoticeOne','bulkNotice1');
+ Route::post('bulkNoticeTwo','bulkNotice2');
+ Route::post('bulkNoticeThree','bulkNotice3');
 });
