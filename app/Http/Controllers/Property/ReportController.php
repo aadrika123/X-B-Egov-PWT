@@ -1462,6 +1462,7 @@ class ReportController extends Controller
                         GROUP BY prop_transactions.user_id
                     ) prop_transactions ON users.id = prop_transactions.user_id
                     WHERE users.user_type = 'TC'
+                    AND users.suspended = 'false'
                     ORDER BY users.id
                 ";
             $data = $this->_DB_READ->select($sql . " limit $limit offset $offset");
