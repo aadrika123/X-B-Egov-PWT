@@ -937,7 +937,6 @@ class ActiveSafController extends Controller
             // Derivative Assignments
             $data = $mPropActiveSaf->getActiveSafDtls()                         // <------- Model function Active SAF Details
                 ->where('prop_active_safs.id', $req->applicationId)
-                ->where('citizen_id',null)
                 ->first();
             // if (!$data)
             // throw new Exception("Application Not Found");
