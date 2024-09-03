@@ -3716,12 +3716,12 @@ class WaterPaymentController extends Controller
             $chargeDetails = $chargeDetails;
             $data = [
                 "userId" => $user && $user->getTable() == "users" ? $user->id : null,
-                "applicationId" => $application->id,
+                "consumerId" => $application->id,
                 "applicationNo" => $application->application_no,
                 "moduleId" => $this->_MODULE_ID ?? 2,
-                "email" => ($owners->whereNotNull("email")->first())->email_id ?? "test@gmail.com",
-                "phone" => ($owners->whereNotNull("mobile_no")->first())->mobile_no ?? "0123456789",
-                "amount" => $chargeDetails->amount,
+                "email" => ($owners->whereNotNull("email")->first())->email_id ?? "",                          //"test@gmail.com"
+                "phone" => ($owners->whereNotNull("mobile_no")->first())->mobile_no ?? "" ,                       //"0123456789"
+                "amount" => round($chargeDetails->amount),
                 "firstname" => "No Name",
                 "frontSuccessUrl" => $request->frontSuccessUrl,
                 "frontFailUrl" => $request->frontFailUrl,
@@ -3759,16 +3759,7 @@ class WaterPaymentController extends Controller
         //     return $test;
         // }
         // $datastring = $param['marchantId'] . "|" . $param['txnId'] . "|" . $param['amount'] . "|" . "|" . $param['applicationId'] . "|" . $param['phone'] . "|" . $param['email'] . "||||||||||" . $param['salt'];
-         $datastring = $param['marchantId'] . "|" . 
-                  $param['txnId'] . "|" . 
-                  $param['amount'] . "|" . 
-                  "|" .  // Empty field
-                  "|" .  // Empty field
-                  $param['applicationId'] . "|" . 
-                  $param['phone'] . "|" . 
-                  $param['email'] . "|" . 
-                  "||||||||||" .  // Multiple empty fields
-                  $param['salt'];
+         $datastring = $param['marchantId'] . "|||" .  "|" .  "||||" . "||||||||||";
         $hashVal = hash('sha512', $datastring);
         $taxId = $this->getOderId($param["moduleId"] ?? 2);
         $param["txnid"] = $taxId;
