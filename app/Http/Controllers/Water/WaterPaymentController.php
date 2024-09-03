@@ -3719,8 +3719,8 @@ class WaterPaymentController extends Controller
                 "consumerId" => $application->id,
                 "applicationNo" => $application->application_no,
                 "moduleId" => $this->_MODULE_ID ?? 2,
-                "email" => ($owners->whereNotNull("email")->first())->email_id ?? "",                          //"test@gmail.com"
-                "mobileNumber" => ($owners->whereNotNull("mobile_no")->first())->mobile_no ?? "",                       //"0123456789"
+                "email" => ($owners->whereNotNull("email")->first())->email_id ?? "test@gmail.com",                          //"test@gmail.com"
+                "mobileNumber" => ($owners->whereNotNull("mobile_no")->first())->mobile_no ?? "0123456789",                       //"0123456789"
                 "amount" => round($chargeDetails->amount),
                 "firstname" => "No Name",
                 "frontSuccessUrl" => $request->frontSuccessUrl,
