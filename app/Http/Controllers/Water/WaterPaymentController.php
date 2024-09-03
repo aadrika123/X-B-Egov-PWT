@@ -3719,8 +3719,8 @@ class WaterPaymentController extends Controller
                 "consumerId" => $application->id,
                 "applicationNo" => $application->application_no,
                 "moduleId" => $this->_MODULE_ID ?? 2,
-                "email" => ($owners->whereNotNull("email")->first())->email_id ?? "",                          //"test@gmail.com"
-                "phone" => ($owners->whereNotNull("mobile_no")->first())->mobile_no ?? "" ,                       //"0123456789"
+                "email" => ($owners->whereNotNull("email")->first())->email_id ?? "test@gmail.com",                          //"test@gmail.com"
+                "mobileNumber" => ($owners->whereNotNull("mobile_no")->first())->mobile_no ?? "0123456789",                       //"0123456789"
                 "amount" => round($chargeDetails->amount),
                 "firstname" => "No Name",
                 "frontSuccessUrl" => $request->frontSuccessUrl,
@@ -3755,45 +3755,16 @@ class WaterPaymentController extends Controller
 
     public function initPaymentReq($param)
     {
-        // if ($test = $this->testParam($param)) {
-        //     return $test;
-        // }
-        // $datastring = $param['marchantId'] . "|" . $param['txnId'] . "|" . $param['amount'] . "|" . "|" . $param['applicationId'] . "|" . $param['phone'] . "|" . $param['email'] . "||||||||||" . $param['salt'];
-         $datastring = $param['marchantId'] . "|||" .  "|" .  "||||" . "||||||||||";
+
+        $datastring = $param['marchantId'] . "|" . $param['txnId'] . "|" . $param['amount'] . "|" . "|" . $param['consumerId'] . "|" . $param['mobileNumber'] . "|" . $param['email'] . "||||||||||" . $param['salt'];
+        //  $datastring = $param['marchantId'] . "|||" .  "|" .  "||||" . "||||||||||";
         $hashVal = hash('sha512', $datastring);
         $taxId = $this->getOderId($param["moduleId"] ?? 2);
         $param["txnid"] = $taxId;
         $param["hash"] =  $hashVal;
-        // $param["surl"] = config('app.url') . "/api/payment/easebuzz/collect-callback-data";
-        // $param["furl"] = config('app.url') . "/api/payment/easebuzz/collect-callback-data";
         $param["merchantCode"] = Config::get('payment-constants.merchant_code');
         $param["salt"]         = Config::get('payment-constants.salt');
         $param["env"]          = Config::get('payment-constants.env');
-        // $param["payment_url"]  = Config::get('paynimo.PAYMENT_URL');
-        // $result =  json_decode(json_encode($this->initiatePaymentAPI($param)), true);
-        // if($result["status"]){
-        //     $this->_WaterEasebuzzPayRequest->module_id = $param["moduleId"]??0;
-        //     $this->_WaterEasebuzzPayRequest->workflow_id = $param["workflowId"]??0;
-        //     $this->_WaterEasebuzzPayRequest->req_ref_no = $param["txnid"];
-        //     $this->_WaterEasebuzzPayRequest->amount = $param["amount"]??0;
-        //     $this->_EasebuzzPaymentReq->application_id = $param["applicationId"]??0;
-        //     $this->_EasebuzzPaymentReq->phone = $param["phone"]??null;
-        //     $this->_EasebuzzPaymentReq->email = $param["email"]??null;
-        //     $this->_EasebuzzPaymentReq->user_id = $param["userId"]??(Auth()->user()->id??null);
-        //     $this->_EasebuzzPaymentReq->ulb_id = $param["ulbId"]??(Auth()->user()->ulb_id??null);
-        //     $this->_EasebuzzPaymentReq->referal_url = $result["data"];
-        //     $this->_EasebuzzPaymentReq->success_back_url = $param["surl"];
-        //     $this->_EasebuzzPaymentReq->fail_back_url = $param["furl"];
-        //     $this->_EasebuzzPaymentReq->fail_back_url = $param["furl"];
-        //     $this->_EasebuzzPaymentReq->front_success_url = $param["frontSuccessUrl"];
-        //     $this->_EasebuzzPaymentReq->front_fail_url = $param["frontFailUrl"];
-        //     $this->_EasebuzzPaymentReq->payload_json = json_encode($param,JSON_UNESCAPED_UNICODE);
-        //     $this->_EasebuzzPaymentReq->save();
-
-        // }
-        // $result["txnid"] = $param["txnid"];
-        // $result["surl"]=$param["surl"];
-        // $result["furl"]=$param["furl"];
         return $param;
     }
 
