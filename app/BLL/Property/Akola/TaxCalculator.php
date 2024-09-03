@@ -130,6 +130,13 @@ class TaxCalculator
                 list($fromYear, $lastYear) = explode("-", getFY($this->_REQUEST->approvedDate));
                 $this->_newForm = ($fromYear - 2) . "-04-01";
             }
+            //changes by prity pandey
+            if ($this->_REQUEST->buildingPlanCompletionDate) {
+                $this->_newForm = $this->_REQUEST->buildingPlanCompletionDate >= $this->_newForm ? explode("-", getFY($this->_REQUEST->buildingPlanCompletionDate))[0] . "-04-01" : $this->_newForm;
+            } elseif ($this->_REQUEST->buildingPlanApprovalDate) {
+                $this->_newForm = $this->_REQUEST->buildingPlanApprovalDate >= $this->_newForm ? explode("-", getFY($this->_REQUEST->buildingPlanApprovalDate))[1] . "-04-01" : $this->_newForm;
+            }
+            //end of changes
             $this->_propFyearFrom = Carbon::parse($this->_newForm)->format('Y');
         }
 
@@ -770,9 +777,22 @@ class TaxCalculator
         // if ($this->_REQUEST->applyDate) {
         //     $privFiveYear = Carbon::parse($this->_REQUEST->applyDate)->addYears(-5)->format('Y-m-d');
         // }
-        if ($this->_REQUEST->approvedDate) {
-            $privFiveYear = Carbon::parse($this->_REQUEST->approvedDate)->addYears(-5)->format('Y-m-d');
+
+        //changes by prity pandey
+
+        // if ($this->_REQUEST->approvedDate) {
+        //     $privFiveYear = Carbon::parse($this->_REQUEST->approvedDate)->addYears(-5)->format('Y-m-d');
+        // }
+
+        // New conditions for buildingPlanCompletionDate and buildingPlanApprovalDate
+        if ($this->_REQUEST->buildingPlanCompletionDate) {
+            $privFiveYear = Carbon::parse($this->_REQUEST->buildingPlanCompletionDate)->addYears(-5)->format('Y-m-d');
+        } elseif ($this->_REQUEST->buildingPlanApprovalDate) {
+            $privFiveYear = Carbon::parse($this->_REQUEST->buildingPlanApprovalDate)->addYear()->subYears(5)->format('Y-m-d');
         }
+
+
+        //end of changes
 
         if ((Config::get("PropertyConstaint.ASSESSMENT-TYPE." . $this->_REQUEST->assessmentType) == 'New Assessment' || $this->_REQUEST->assessmentType == 'New Assessment') && $privFiveYear < $this->_calculationDateFrom) {
             $this->_GRID['demandPendingYrs'] = 6;
