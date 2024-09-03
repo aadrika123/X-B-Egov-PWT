@@ -3759,7 +3759,7 @@ class WaterPaymentController extends Controller
         $param["txnid"] = $taxId;
         // $datastring = $param['marchantId'] . "|" . $param['txnid'] . "|" . $param['amount'] . "|" . "|" . $param['consumerId'] . "||||||||||" . $param['salt'];
 
-        $datastring = "{$param['marchantId']}|{$param['txnId']}|{$param['amount']}||{$param['consumerId']}||||||||||||{$param['salt']}";
+        $datastring = "{$param['marchantId']}|{$param['txnid']}|{$param['amount']}||{$param['consumerId']}||||||||||||{$param['salt']}";
 
 
         //  $datastring = $param['marchantId'] . "|||" .  "|" .  "||||" . "||||||||||";
