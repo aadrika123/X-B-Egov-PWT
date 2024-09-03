@@ -1906,7 +1906,7 @@ class NewConnectionController extends Controller
         $moduleId       = Config::get('module-constants.WATER_MODULE_ID');
         $refUserType    = Config::get('waterConstaint.REF_USER_TYPE');
 
-        $type = ["ADHAR_CARD", "STAMP", "Property Tax Receipt",'METER PURCHASE BILL'];
+        $type = ["ADHAR_CARD", "STAMP", "Property Tax Receipt", 'METER PURCHASE BILL'];
 
         // // Check if user_type is not equal to 1
         // if ($user->user_type == $refUserType['1']) {
@@ -3963,6 +3963,32 @@ class NewConnectionController extends Controller
             DB::rollback();
             DB::connection('pgsql_master')->rollback();
             return responseMsg(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "",);
+        }
+    }
+
+    /**
+     * | Water Inbox
+     * | workflow
+     * | Repositiory Call
+        | Serial No :
+        | Working
+     */
+    public function waterApproveApplication(Request $request)
+    {
+        try {
+            $user   = authUser($request);
+            $userId = $user->id;
+            $ulbId  = $user->ulb_id;
+            $mWaterApproveApplication = new WaterApprovalApplicationDetail();
+            $ulbId  = 2;                                                                              //static
+            $waterList = $mWaterApproveApplication->getWaterApproveList($ulbId)
+                ->where('water_applications.parked', false)
+                ->orderByDesc('water_applications.id')
+                ->get();
+            $filterWaterList = collect($waterList)->unique('id')->values();
+            return responseMsgs(true, "Inbox List Details!", remove_null($filterWaterList), '', '02', '', 'Post', '');
+        } catch (Exception $error) {
+            return responseMsg(false, $error->getMessage(), "");
         }
     }
 }

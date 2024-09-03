@@ -86,6 +86,8 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('citizen/approve-application', 'getCitizenApproveApplication');
         Route::post('application/jsk-get-by-id', 'getApproveAplications');                                  // Admin
         Route::post('applications/send-to-officer', 'sendToLevel');
+        Route::post('approve/application-list', 'waterApproveApplication');                          // Approve Application List
+
     });
 
     /**
@@ -128,6 +130,9 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('application/citizen-application-list', 'getCitizenApplicationList');
         Route::post('consumer/cheque-detail-update', 'chequeUpdetails');
         Route::post('old-payment-entry', 'oldPaymentEntry');
+
+        # Paynimo Online payment Integration 
+        Route::post('paynimo/payment-initiate', 'initiatePayment');
 
         # test api
         Route::post('testv2', 'testv2');
@@ -271,7 +276,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('farwardApplication', 'consumerPostNextLevel');
         Route::post('uploadedDocumentList', 'getDiscUploadDocuments');
         Route::post('finalApproval', 'consumerApprovalRejection');
-       // Route::post('noticeDtlConsumer', 'consumerNotice');
+        // Route::post('noticeDtlConsumer', 'consumerNotice');
     });
 
     /**
@@ -325,7 +330,7 @@ Route::controller(WaterNewConnection::class)->group(function () {
     Route::post('test-icici-respons', 'testIciciResposnse');
 });
 
-Route::controller(WaterReportController::class)->group(function () {  
- Route::post('noticeDtlConsumer', 'consumerNotice');
- Route::post('bulkNoticeOne','bulkNotice1');
+Route::controller(WaterReportController::class)->group(function () {
+    Route::post('noticeDtlConsumer', 'consumerNotice');
+    Route::post('bulkNoticeOne', 'bulkNotice1');
 });
