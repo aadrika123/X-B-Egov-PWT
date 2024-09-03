@@ -88,6 +88,9 @@ trait AkolaSafDoc
             $this->_documentLists = collect($this->_propDocList)->where('code', 'AKOLA_APP_DOCS')->first()->requirements;
         }
 
+        if($this->_refSafs->rent_agreement_date !==null && $this->_refSafs->rent_amount !==null){
+            $this->_documentLists .= collect($this->_propDocList)->where('code', 'RENT_AGREEMENT')->first()->requirements;
+        }
         // switch ($propType) {
         //     case $flip['FLATS / UNIT IN MULTI STORIED BUILDING']:
         //         $this->_documentLists .= collect($this->_propDocList)->where('code', 'AKOLA_BULDING')->first()->requirements;

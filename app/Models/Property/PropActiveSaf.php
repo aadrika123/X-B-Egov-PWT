@@ -655,8 +655,9 @@ class  PropActiveSaf extends PropParamModel #Model
     // Get SAF No
     public function getSafNo($safId)
     {
-        return PropActiveSaf::select('*')
-            ->where('id', $safId)
+        return PropActiveSaf::select('prop_active_safs.*','prop_active_safs_floors.rent_agreement_date','prop_active_safs_floors.rent_amount')
+        ->leftJoin('prop_active_safs_floors','prop_active_safs_floors.saf_id','=','prop_active_safs.id')
+            ->where('prop_active_safs.id', $safId)
             ->first();
     }
 
