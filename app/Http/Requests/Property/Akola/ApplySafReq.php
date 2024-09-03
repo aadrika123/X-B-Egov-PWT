@@ -63,7 +63,7 @@ class ApplySafReq extends FormRequest
                 "floor.*.dateFrom" => "required|date|date_format:Y-m-d|before_or_equal:$todayDate" . ((in_array($this->assessmentType, [3, 4,5])) ? "" : "|after_or_equal:$this->dateOfPurchase"),
                 "floor.*.rentAmount"        =>   
                     [
-                        "required_if:floor.*.occupancyType,2",
+                        "nullable",
                         function ($attribute, $value, $fail)
                         {
                             $key = explode(".",$attribute)[1];
@@ -81,7 +81,7 @@ class ApplySafReq extends FormRequest
                 // "required_if:floor.*.occupancyType,2|numeric_if:floor.*.occupancyType,2|not_in_if:floor.*.occupancyType,2,0",   
                 "floor.*.rentAgreementDate" =>
                 [
-                    "required_if:floor.*.occupancyType,2",
+                    "nullable",
                     function ($attribute, $value, $fail) use($todayDate)
                     {
                         $key = explode(".",$attribute)[1];
