@@ -92,6 +92,7 @@ use App\Models\Property\Logs\PropSmsLog;
 use App\Models\Property\Logs\SafAmalgamatePropLog;
 use App\Models\Property\PropSafJahirnamaDoc;
 use App\Models\Property\RefPropCategory;
+use App\Models\Property\RefPropVacantLand;
 use App\Models\Property\SecondaryDocVerification;
 use App\Models\User;
 use App\Models\Workflows\WfMaster;
@@ -184,6 +185,7 @@ class ActiveSafController extends Controller
             $mZoneMasters = new ZoneMaster();
             $mRefPropCategory = new RefPropCategory();
             $refPropTransferMode = new RefPropTransferMode();
+            $vacantLandType = new RefPropVacantLand();
 
             // Getting Masters from Redis Cache
             $wards = json_decode(Redis::get('wards-ulb'));
@@ -196,6 +198,7 @@ class ActiveSafController extends Controller
             $zone = json_decode(Redis::get('zones'));
             $categories = json_decode(Redis::get('ref_prop_categories'));
             $transferModuleType = json_decode(Redis::get('property-transfer-modes'));
+            $vacLand = json_decode(Redis::get('ref_prop_vacant_lands'));
 
             // Ward Masters
             if (!$wards) {
@@ -280,6 +283,13 @@ class ActiveSafController extends Controller
             }
 
             $data['transfer_mode'] = $transferModuleType;
+            // Property Types
+            if (!$vacLand) {
+                $vacLand = $vacantLandType->propPropertyVacantLandType();
+                $redisConn->set('ref_prop_vacant_lands', json_encode($vacLand));
+            }
+
+            $data['vacant_land_type'] = $vacLand;
 
             return responseMsgs(true, 'Property Masters', $data, "010101", "1.0", responseTime(), "GET", "");
         } catch (Exception $e) {
