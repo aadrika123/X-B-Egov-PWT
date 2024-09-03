@@ -92,6 +92,7 @@ use App\Models\Property\Logs\PropSmsLog;
 use App\Models\Property\Logs\SafAmalgamatePropLog;
 use App\Models\Property\PropSafJahirnamaDoc;
 use App\Models\Property\RefPropCategory;
+use App\Models\Property\RefPropVacantLand;
 use App\Models\Property\SecondaryDocVerification;
 use App\Models\User;
 use App\Models\Workflows\WfMaster;
@@ -184,6 +185,7 @@ class ActiveSafController extends Controller
             $mZoneMasters = new ZoneMaster();
             $mRefPropCategory = new RefPropCategory();
             $refPropTransferMode = new RefPropTransferMode();
+            $vacantLandType = new RefPropVacantLand();
 
             // Getting Masters from Redis Cache
             $wards = json_decode(Redis::get('wards-ulb'));
@@ -196,6 +198,7 @@ class ActiveSafController extends Controller
             $zone = json_decode(Redis::get('zones'));
             $categories = json_decode(Redis::get('ref_prop_categories'));
             $transferModuleType = json_decode(Redis::get('property-transfer-modes'));
+            $vacLand = json_decode(Redis::get('ref_prop_vacant_lands'));
 
             // Ward Masters
             if (!$wards) {
@@ -280,6 +283,13 @@ class ActiveSafController extends Controller
             }
 
             $data['transfer_mode'] = $transferModuleType;
+            // Property Types
+            if (!$vacLand) {
+                $vacLand = $vacantLandType->propPropertyVacantLandType();
+                $redisConn->set('ref_prop_vacant_lands', json_encode($vacLand));
+            }
+
+            $data['vacant_land_type'] = $vacLand;
 
             return responseMsgs(true, 'Property Masters', $data, "010101", "1.0", responseTime(), "GET", "");
         } catch (Exception $e) {
@@ -360,13 +370,13 @@ class ActiveSafController extends Controller
             $oldSaf             = $mPropSaf->find($safId);
             $user               = Auth()->user();
             $userId             = $user->id ?? null;
-            $ulb_id             = $user->ulb_id??$req->ulbId;
+            $ulb_id             = $user->ulb_id ?? $req->ulbId;
             $assessmentType     = $req->assessmentType;
             if ($oldSaf->current_role != $oldSaf->initiator_role_id && !$oldSaf->parked) {
                 throw new Exception("Can not edit this application");
             }
 
-            $ulbWorkflowId = (new ApplySafController())->readAssessUlbWfId($req, $ulb_id); 
+            $ulbWorkflowId = (new ApplySafController())->readAssessUlbWfId($req, $ulb_id);
             $roadWidthType = $applysafController->readRoadWidthType($req->roadType);
             $mutationProccessFee = $applysafController->readProccessFee($req->assessmentType, $req->saleValue, $req->propertyType, $req->transferModeId);
             $metaReqs['holdingType'] = $applysafController->holdingType($req['floor']);
@@ -473,8 +483,10 @@ class ActiveSafController extends Controller
                 ->whereIn('current_role', $roleIds)
                 ->whereIn('ward_mstr_id', $occupiedWards)
                 ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name','jhirnama_no','has_any_objection','generation_date');
-
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name', 'jhirnama_no', 'has_any_objection', 'generation_date');
+            if ($roleIds->contains(11)) {
+                $safDtl->whereNull('citizen_id');
+            }
             $safInbox = app(Pipeline::class)
                 ->send(
                     $safDtl
@@ -530,8 +542,8 @@ class ActiveSafController extends Controller
                 ->where('prop_active_safs.status', 1)
                 ->whereIn('ward_mstr_id', $occupiedWardsId)
                 ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name','jhirnama_no','has_any_objection','generation_date');
-                // ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name');
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name', 'jhirnama_no', 'has_any_objection', 'generation_date');
+            // ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name');
 
             $safInbox = app(Pipeline::class)
                 ->send(
@@ -576,7 +588,7 @@ class ActiveSafController extends Controller
                 ->whereIn('current_role', $roleIds)
                 ->whereIn('ward_mstr_id', $occupiedWardsId)
                 ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name','jhirnama_no','has_any_objection','generation_date')
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name', 'jhirnama_no', 'has_any_objection', 'generation_date')
                 // ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name')
                 ->paginate($perPage);
 
@@ -618,8 +630,8 @@ class ActiveSafController extends Controller
                 ->whereNotIn('current_role', $roleIds)
                 ->whereIn('ward_mstr_id', $wardId)
                 ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name','jhirnama_no','has_any_objection','generation_date');
-                // ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name');
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name', 'jhirnama_no', 'has_any_objection', 'generation_date');
+            // ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name');
 
             $safData = app(Pipeline::class)
                 ->send(
@@ -669,8 +681,8 @@ class ActiveSafController extends Controller
                 ->where('prop_active_safs.ulb_id', $ulbId)
                 ->whereIn('ward_mstr_id', $wardIds)
                 ->orderByDesc('id')
-                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name','jhirnama_no','has_any_objection','generation_date');
-                // ->groupBy('prop_active_safs.id', 'prop_active_safs.saf_no', 'ward.ward_name', 'p.property_type');
+                ->groupBy('prop_active_safs.id', 'p.property_type', 'ward.ward_name', 'jhirnama_no', 'has_any_objection', 'generation_date');
+            // ->groupBy('prop_active_safs.id', 'prop_active_safs.saf_no', 'ward.ward_name', 'p.property_type');
 
             $safData = app(Pipeline::class)
                 ->send(
@@ -806,7 +818,7 @@ class ActiveSafController extends Controller
                 'data' => $electDetails
             ];
 
-            
+
             $jahirnama = $jahirnamaDoc->getJahirnamaBysafIdOrm($data->id)->first();
             $fullDetailsData['application_no'] = $data->saf_no;
             $fullDetailsData['apply_date'] = $data->application_date;
@@ -1004,24 +1016,23 @@ class ActiveSafController extends Controller
                 $val = $this->addjustVerifyFloorDtlVal($val);
                 $getFloorDtls->push($val);
             });
-            $amalgamatePropsList = SafAmalgamatePropLog::where("saf_id",$data['id'])->get();
+            $amalgamatePropsList = SafAmalgamatePropLog::where("saf_id", $data['id'])->get();
             $amalgamateProps = collect();
-            foreach($amalgamatePropsList as $val)
-            {                
-                $aProp = new PropProperty(json_decode($val->property_json,true));
+            foreach ($amalgamatePropsList as $val) {
+                $aProp = new PropProperty(json_decode($val->property_json, true));
                 $aProp = $this->addjustVerifySafDtlVal($aProp);
-                $aFloors = new PropFloor(json_decode($val->floors_json,true));
-                $aFloors = collect($aFloors)->map(function($f){
-                    return$this->addjustVerifyFloorDtlVal(new PropFloor($f));
+                $aFloors = new PropFloor(json_decode($val->floors_json, true));
+                $aFloors = collect($aFloors)->map(function ($f) {
+                    return $this->addjustVerifyFloorDtlVal(new PropFloor($f));
                 });
                 $aProp->floors = $aFloors;
                 if (!$aProp->holding_type)
                     $aProp->holding_type = $this->propHoldingType($aFloors);
-                $aOwneres = new PropOwner(json_decode($val->owners_json,true));
+                $aOwneres = new PropOwner(json_decode($val->owners_json, true));
                 $aProp->owneres = $aOwneres;
                 $amalgamateProps->push($aProp);
             }
-            $data["amalgamateProps"] =$amalgamateProps;
+            $data["amalgamateProps"] = $amalgamateProps;
 
             $data["builtup_area"] = $data['area_of_plot'];
             if ($data['prop_type_mstr_id'] != 4) {
@@ -1043,11 +1054,10 @@ class ActiveSafController extends Controller
             $usertype = $this->_COMMONFUNCTION->getUserAllRoles();
             $testRole = collect($usertype)->whereIn("sort_name", Config::get("TradeConstant.CANE-CUTE-PAYMENT"));
             $testAdminRole = collect($usertype)->whereIn("sort_name", Config::get("TradeConstant.CANE-REJECT-APPLICATION"));
-            if($testAdminRole->isNotEmpty() && !$is_approved)
-            {
+            if ($testAdminRole->isNotEmpty() && !$is_approved) {
                 $adminAllows = true;
             }
-            $data["can_deactivate_saf"] =$adminAllows;
+            $data["can_deactivate_saf"] = $adminAllows;
             $data["can_take_payment"] = ($is_approved && collect($testRole)->isNotEmpty() && ($data["proccess_fee_paid"] ?? 1) == 0) ? true : false;
             $document = $this->getUploadDoc($req);
             $data["documents"] = $document;
@@ -1279,10 +1289,9 @@ class ActiveSafController extends Controller
             $data = json_decode(json_encode($data), true);
 
             $assessmentType = collect(Config::get("PropertyConstaint.ASSESSMENT-TYPE"))->flip();
-            $data["assessment_type_id"] =$assessmentType[$data["assessment_type"]]??null;
+            $data["assessment_type_id"] = $assessmentType[$data["assessment_type"]] ?? null;
             $flipArea = $data["bifurcated_from_plot_area"];
-            if(in_array($data["assessment_type_id"],[4]))
-            {
+            if (in_array($data["assessment_type_id"], [4])) {
                 $data["bifurcated_from_plot_area"] = $data["area_of_plot"];
                 $data["area_of_plot"] = $flipArea;
             }
@@ -1296,11 +1305,10 @@ class ActiveSafController extends Controller
             if (collect($getFloorDtls)->isEmpty())
                 $getFloorDtls = $mPropSafsFloors->getFloorsBySafId($data['id']);
 
-            $getFloorDtls->map(function($val)use($data){
-                $flipArea = roundFigure(is_numeric($val->bifurcated_from_buildup_area) ? $val->bifurcated_from_buildup_area: 0);
-                if(in_array($data["assessment_type_id"],[4])  )
-                {
-                    $val->bifurcated_from_buildup_area = roundFigure(is_numeric($val->builtup_area) ? $val->builtup_area:0 );
+            $getFloorDtls->map(function ($val) use ($data) {
+                $flipArea = roundFigure(is_numeric($val->bifurcated_from_buildup_area) ? $val->bifurcated_from_buildup_area : 0);
+                if (in_array($data["assessment_type_id"], [4])) {
+                    $val->bifurcated_from_buildup_area = roundFigure(is_numeric($val->builtup_area) ? $val->builtup_area : 0);
                     $val->builtup_area = $flipArea;
                 }
                 return $val;
@@ -2204,9 +2212,8 @@ class ActiveSafController extends Controller
             $usertype = $this->_COMMONFUNCTION->getUserAllRoles();
             $adminAllows = false;
             $testAdminRole = collect($usertype)->whereIn("sort_name", Config::get("TradeConstant.CANE-REJECT-APPLICATION"));
-            if($usertype && $testAdminRole->isNotEmpty() && $req->status==0)
-            {
-                $adminAllows =true;
+            if ($usertype && $testAdminRole->isNotEmpty() && $req->status == 0) {
+                $adminAllows = true;
             }
             // Derivative Assignments
             $safDetails = PropActiveSaf::find($req->applicationId);
@@ -2236,7 +2243,7 @@ class ActiveSafController extends Controller
             if (collect($readRoleDtls)->isEmpty() && !$adminAllows)
                 throw new Exception("You Are Not Authorized for this workflow");
 
-            $roleId = $readRoleDtls->wf_role_id??null;
+            $roleId = $readRoleDtls->wf_role_id ?? null;
 
             if ($safDetails->finisher_role_id != $roleId && !$adminAllows)
                 throw new Exception("Forbidden Access");
@@ -2255,7 +2262,7 @@ class ActiveSafController extends Controller
                 $fieldVerifiedSaf = $propSafVerification->getVerifications2($safId);
             }
 
-            if (collect($fieldVerifiedSaf)->isEmpty() && !in_array($safDetails->workflow_id, $this->_SkipFiledWorkWfMstrId) && $req->status!=0)
+            if (collect($fieldVerifiedSaf)->isEmpty() && !in_array($safDetails->workflow_id, $this->_SkipFiledWorkWfMstrId) && $req->status != 0)
                 throw new Exception("Site Verification not Exist");
 
             DB::beginTransaction();
@@ -2896,7 +2903,7 @@ class ActiveSafController extends Controller
                     "maintantance10Perc" => roundFigure($nonResidentFloor->sum("maintantance10Perc") ?? "0"),
                     "valueAfterMaintance" => roundFigure($nonResidentFloor->sum("valueAfterMaintance") ?? "0"),
                     "agingPerc"         => roundFigure($nonResidentFloor->sum("agingPerc") ?? "0"),
-                    "agingAmt"          =>roundFigure( $nonResidentFloor->sum("agingAmt") ?? "0"),
+                    "agingAmt"          => roundFigure($nonResidentFloor->sum("agingAmt") ?? "0"),
                     "taxValue"          => roundFigure($nonResidentFloor->sum("taxValue") ?? "0"),
                     "generalTax"        => roundFigure($nonResidentFloor->sum("generalTax") ?? "0"),
                     "roadTax"           => roundFigure($nonResidentFloor->sum("roadTax") ?? "0"),
@@ -3601,7 +3608,7 @@ class ActiveSafController extends Controller
             $propertyDtl = collect($properties);
             $propertyDtl['floors'] = $floors;
             $propertyDtl['owners'] = $owners;
-            $propertyDtl['Safs'] = $safAllDtl??[];
+            $propertyDtl['Safs'] = $safAllDtl ?? [];
 
             return responseMsgs(true, "Property Details", remove_null($propertyDtl), "010112", "1.0", "", "POST", $req->deviceId);
         } catch (Exception $e) {
@@ -3691,7 +3698,7 @@ class ActiveSafController extends Controller
                         'rent_agreement_date'  => $floorDetail['rentAgreementDate'],
                         'carpet_area'          => null,
                         'user_id'              => $userId,
-                        'ulb_id'               => $ulbId,    
+                        'ulb_id'               => $ulbId,
                     ];
 
                     $verificationDtl->store($floorReq);
@@ -4143,10 +4150,9 @@ class ActiveSafController extends Controller
             });
             $data["geoTagging"] = $geoTagging;
             return responseMsg(true, "GeoTaging Dtls", remove_null($data));
-        }catch (Exception $e) {
+        } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
         }
-
     }
 
     # code by sandeep bara 
@@ -5615,12 +5621,12 @@ class ActiveSafController extends Controller
             $refUlbId = $safDetails->ulb_id;
             $userRole = $mCOMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $workflowId);
             $sameWorkRoles = $mCOMMON_FUNCTION->getReactionActionTakenRole($refUserId, $refUlbId, $workflowId, "doc_verify");
-            $owners = $mActiveSafs->getTable()=="prop_active_safs" ? $mActiveSafsOwners->getOwnersBySafId($safDetails->id) : $mSafsOwners->getOwnersBySafId($safDetails->id) ;            
-            $documents = $documents->map(function ($val) use ($sameWorkRoles, $userRole,$owners) {
+            $owners = $mActiveSafs->getTable() == "prop_active_safs" ? $mActiveSafsOwners->getOwnersBySafId($safDetails->id) : $mSafsOwners->getOwnersBySafId($safDetails->id);
+            $documents = $documents->map(function ($val) use ($sameWorkRoles, $userRole, $owners) {
                 $seconderyData = (new SecondaryDocVerification())->SeconderyWfActiveDocumentById($val->id);
                 $val->verify_status_secondery = $seconderyData ? $seconderyData->verify_status : 0;
                 $val->remarks_secondery = $seconderyData ? $seconderyData->remarks :  "";
-                $val->owner_name = (collect($owners)->where("id",$val->owner_dtl_id)->first())->owner_name?? "";
+                $val->owner_name = (collect($owners)->where("id", $val->owner_dtl_id)->first())->owner_name ?? "";
                 if (count($sameWorkRoles) > 1 && $userRole && $userRole->role_id != ($sameWorkRoles->first())["id"] && $userRole->can_verify_document) {
                     $val->verify_status = $seconderyData ? $val->verify_status_secondery : $val->verify_status;
                     $val->remarks = $seconderyData ? $val->remarks_secondery : $val->remarks;
@@ -5632,26 +5638,23 @@ class ActiveSafController extends Controller
                 return $val;
             });
             #======getjahinama Doc=======#
-            $ActiveSafController = App::makeWith(ActiveSafController::class,["iSafRepository"=>iSafRepository::class]);
+            $ActiveSafController = App::makeWith(ActiveSafController::class, ["iSafRepository" => iSafRepository::class]);
             $jahirnamaDoc = $ActiveSafController->getJahirnamaDoc($req);
-            if($jahirnamaDoc->original["status"])
-            {
+            if ($jahirnamaDoc->original["status"]) {
                 $jahirnamaDoc = collect($jahirnamaDoc->original["data"])->sortByDesc("id");
-                foreach($jahirnamaDoc as $val)
-                {
-                    $documents->push($val );
+                foreach ($jahirnamaDoc as $val) {
+                    $documents->push($val);
                 }
             }
-            $documents = $documents->map(function($val){
-                $uploadeUser = isset($val["uploaded_by_type"]) && $val["uploaded_by_type"] !="Citizen"? User::find($val["uploaded_by"]??0) : ActiveCitizen::find($val["uploaded_by"]??0);
-                $val["uploadedBy"] = ($uploadeUser->name ?? ($uploadeUser->user_name??"")) ." (".($val["uploaded_by_type"]??"").")";
+            $documents = $documents->map(function ($val) {
+                $uploadeUser = isset($val["uploaded_by_type"]) && $val["uploaded_by_type"] != "Citizen" ? User::find($val["uploaded_by"] ?? 0) : ActiveCitizen::find($val["uploaded_by"] ?? 0);
+                $val["uploadedBy"] = ($uploadeUser->name ?? ($uploadeUser->user_name ?? "")) . " (" . ($val["uploaded_by_type"] ?? "") . ")";
                 return $val;
             });
             return remove_null($documents);
             // return responseMsgs(true, ["docVerifyStatus" => $safDetails->doc_verify_status], remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, [$e->getMessage(),$e->getFile(),$e->getLine()], "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
-
 }

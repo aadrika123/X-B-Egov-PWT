@@ -77,7 +77,17 @@ trait AkolaSafDoc
         // dd($userRole);
         $this->_refSafs = $refSafs;
         $this->_documentLists = "";
-        $this->_documentLists = collect($this->_propDocList)->where('code', 'AKOLA_APP_DOCS')->first()->requirements;
+        #commented by prity pandey
+        // $this->_documentLists = collect($this->_propDocList)->where('code', 'AKOLA_APP_DOCS')->first()->requirements;
+        ########end of comment #############
+
+        if($this->_refSafs->citizen_id !==null){
+                $this->_documentLists .= collect($this->_propDocList)->where('code', 'AFFIDAVIT')->first()->requirements;
+            }
+        else {
+            $this->_documentLists = collect($this->_propDocList)->where('code', 'AKOLA_APP_DOCS')->first()->requirements;
+        }
+
         // switch ($propType) {
         //     case $flip['FLATS / UNIT IN MULTI STORIED BUILDING']:
         //         $this->_documentLists .= collect($this->_propDocList)->where('code', 'AKOLA_BULDING')->first()->requirements;

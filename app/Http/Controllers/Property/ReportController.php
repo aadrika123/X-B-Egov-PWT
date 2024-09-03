@@ -1393,37 +1393,92 @@ class ReportController extends Controller
                 $userId = $request->userId;
             }
             $sql = "
-                SELECT prop_transactions.*,
-                    users.id as user_id,
-                    users.name,
-                    users.mobile,
-                    users.photo,
-                    users.photo_relative_path
-                FROM(
-                    SELECT SUM(amount) as total_amount,
-                        count(prop_transactions.id) as total_tran,
-                        count(distinct prop_transactions.property_id) as total_property, 
-                        prop_transactions.user_id                   
-                    FROM prop_transactions 
-                    JOIN prop_properties on prop_properties.id = prop_transactions.property_id                   
-                    WHERE prop_transactions.status IN (1,2)
-                        AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
-                        " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
-                        " . ($zoneId ? " AND prop_properties.zone_mstr_id	 = $zoneId" : "") . "
-                        " . ($userId ? " AND prop_transactions.user_id = $userId" : "") . "
-                        " . ($paymentMode ? " AND upper(prop_transactions.payment_mode) = upper('$paymentMode')" : "") . "
-                    GROUP BY prop_transactions.user_id
-                    ORDER BY prop_transactions.user_id
-                )prop_transactions
-                JOIN users ON users.id = prop_transactions.user_id
-            ";
+            //     SELECT prop_transactions.*,
+            //         users.id as user_id,
+            //         users.name,
+            //         users.mobile,
+            //         users.photo,
+            //         users.photo_relative_path
+            //     FROM(
+            //         SELECT SUM(amount) as total_amount,
+            //             count(prop_transactions.id) as total_tran,
+            //             count(distinct prop_transactions.property_id) as total_property, 
+            //             prop_transactions.user_id                   
+            //         FROM prop_transactions 
+            //         JOIN prop_properties on prop_properties.id = prop_transactions.property_id                   
+            //         WHERE prop_transactions.status IN (1,2)
+            //             AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+            //             " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
+            //             " . ($zoneId ? " AND prop_properties.zone_mstr_id	 = $zoneId" : "") . "
+            //             " . ($userId ? " AND prop_transactions.user_id = $userId" : "") . "
+            //             " . ($paymentMode ? " AND upper(prop_transactions.payment_mode) = upper('$paymentMode')" : "") . "
+            //         GROUP BY prop_transactions.user_id
+            //         ORDER BY prop_transactions.user_id
+            //     )prop_transactions
+            //     JOIN users ON users.id = prop_transactions.user_id
+            // ";
+            // $data = $this->_DB_READ->select($sql . " limit $limit offset $offset");
+            // $count = (collect($this->_DB_READ->SELECT("SELECT COUNT(*)AS total, SUM(total_amount) AS total_amount,sum(total_tran) as total_tran
+            //                               FROM ($sql) total"))->first());
+            // $total = ($count)->total ?? 0;
+            // $sum = ($count)->total_amount ?? 0;
+            // $totalBillCut = ($count)->total_tran ?? 0;
+            // $lastPage = ceil($total / $perPage);
+            // $list = [
+            //     "current_page" => $page,
+            //     "data" => $data,
+            //     "total" => $total,
+            //     "total_sum" => $sum,
+            //     "totalBillCut" => $totalBillCut,
+            //     "per_page" => $perPage,
+            //     "last_page" => $lastPage
+            // ];
+
+            $sql = "
+                    SELECT 
+                        users.id as user_id,
+                        users.name,
+                        users.mobile,
+                        users.photo,
+                        users.photo_relative_path,
+                        COALESCE(prop_transactions.total_amount, 0) as total_amount,
+                        COALESCE(prop_transactions.total_tran, 0) as total_tran,
+                        COALESCE(prop_transactions.total_property, 0) as total_property
+                    FROM users
+                    LEFT JOIN (
+                        SELECT 
+                            SUM(amount) as total_amount,
+                            count(prop_transactions.id) as total_tran,
+                            count(distinct prop_transactions.property_id) as total_property, 
+                            prop_transactions.user_id                   
+                        FROM prop_transactions 
+                        JOIN prop_properties on prop_properties.id = prop_transactions.property_id                   
+                        WHERE prop_transactions.status IN (1,2)
+                            AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                            " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
+                            " . ($zoneId ? " AND prop_properties.zone_mstr_id = $zoneId" : "") . "
+                            " . ($userId ? " AND prop_transactions.user_id = $userId" : "") . "
+                            " . ($paymentMode ? " AND upper(prop_transactions.payment_mode) = upper('$paymentMode')" : "") . "
+                        GROUP BY prop_transactions.user_id
+                    ) prop_transactions ON users.id = prop_transactions.user_id
+                    WHERE users.user_type = 'TC'
+                    AND users.suspended = 'false'
+                    ORDER BY users.id
+                ";
             $data = $this->_DB_READ->select($sql . " limit $limit offset $offset");
-            $count = (collect($this->_DB_READ->SELECT("SELECT COUNT(*)AS total, SUM(total_amount) AS total_amount,sum(total_tran) as total_tran
-                                          FROM ($sql) total"))->first());
-            $total = ($count)->total ?? 0;
-            $sum = ($count)->total_amount ?? 0;
-            $totalBillCut = ($count)->total_tran ?? 0;
+
+            $count = collect($this->_DB_READ->SELECT("
+                        SELECT COUNT(*) AS total, 
+                            SUM(total_amount) AS total_amount,
+                            SUM(total_tran) as total_tran
+                        FROM ($sql) total
+                    "))->first();
+
+            $total = $count->total ?? 0;
+            $sum = $count->total_amount ?? 0;
+            $totalBillCut = $count->total_tran ?? 0;
             $lastPage = ceil($total / $perPage);
+
             $list = [
                 "current_page" => $page,
                 "data" => $data,
@@ -7107,17 +7162,16 @@ class ReportController extends Controller
             $lastPage = (int) ceil($totalCount / $perPage);
             $data = [
                 'current_page' => $page,
-                    'last_page' => $lastPage,
-                    'total' => $totalCount,
-                    'per_page' => $perPage,
-                    'data' => remove_null($dataResults)
+                'last_page' => $lastPage,
+                'total' => $totalCount,
+                'per_page' => $perPage,
+                'data' => remove_null($dataResults)
             ];
 
             return responseMsgs(true, "Demand Reports", remove_null($data));
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), []);
         }
-           
     }
 
     public function generateNotice(Request $request)
@@ -7367,7 +7421,7 @@ class ReportController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'propId' => 'required|integer',
-            'comment'=>'required',
+            'comment' => 'required',
             'perPage' => 'nullable|integer|min:1',
             'page' => 'nullable|integer|min:1'
         ]);
