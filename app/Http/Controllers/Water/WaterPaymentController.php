@@ -3721,7 +3721,7 @@ class WaterPaymentController extends Controller
                 "moduleId" => $this->_MODULE_ID ?? 2,
                 "email" => ($owners->whereNotNull("email")->first())->email_id ?? "test@gmail.com",
                 "phone" => ($owners->whereNotNull("mobile_no")->first())->mobile_no ?? "0123456789",
-                "amount" => $chargeDetails->amount,
+                "amount" => round($chargeDetails->amount),
                 "firstname" => "No Name",
                 "frontSuccessUrl" => $request->frontSuccessUrl,
                 "frontFailUrl" => $request->frontFailUrl,
@@ -3767,7 +3767,7 @@ class WaterPaymentController extends Controller
                   $param['applicationId'] . "|" . 
                   $param['phone'] . "|" . 
                   $param['email'] . "|" . 
-                  "||||||||||" .  // Multiple empty fields
+                  "||||||||||" .  // Multiple empty fields  
                   $param['salt'];
         $hashVal = hash('sha512', $datastring);
         $taxId = $this->getOderId($param["moduleId"] ?? 2);
