@@ -36,6 +36,7 @@ class reqApplySaf extends FormRequest
             $rules['assessmentType'] = "required|int|in:1,2,3,4,5";
 
         $rules['category'] = "required|int";
+        $rules['vacantLandType'] = "nullable";
         if (isset($this->assessmentType) && $this->assessmentType == 3) {
             $rules['transferModeId'] = "required";
             $rules['dateOfPurchase'] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";

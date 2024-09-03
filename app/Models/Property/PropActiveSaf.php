@@ -20,6 +20,7 @@ class  PropActiveSaf extends PropParamModel #Model
     public function store($req)
     {
         $reqs = [
+            'vacant_land_type'=>$req->vacantLandType ?? null,
             'has_previous_holding_no' => $req->hasPreviousHoldingNo,
             'previous_holding_id' => $req->previousHoldingId,
             'previous_ward_mstr_id' => $req->previousWard,
