@@ -308,6 +308,35 @@ class WaterApprovalApplicationDetail extends Model
     }
 
     /**
-     * |update details inspection by je
+     * |----------------------------- Get Water Approve  Application List ---------------------------|
+     * | Rating : 
+     * | Opertation : List Approve Application For EO
+        | Working
      */
+    public function getWaterApproveList($ulbId)
+    {
+        return WaterApprovalApplicationDetail::select(
+            'water_approval_application_details.id',
+            'water_approval_application_details.application_no',
+            'water_approval_application_details.id as owner_id',
+            'water_approval_application_details.applicant_name as owner_name',
+            // 'water_applications.ward_id',
+            'water_connection_through_mstrs.connection_through',
+            'water_connection_type_mstrs.connection_type',
+            // 'u.ward_name as ward_no',
+            'water_approval_application_details.workflow_id',
+            'water_approval_application_details.current_role as role_id',
+            'water_approval_application_details.apply_date',
+            'water_approval_application_details.parked',
+            'ulb_ward_masters.ward_name'
+        )
+            // ->join('ulb_ward_masters as u', 'u.id', '=', 'water_applications.ward_id')
+            ->join('water_applicants', 'water_applicants.application_id', '=', 'water_approval_application_details.id')
+            ->leftjoin('water_connection_through_mstrs', 'water_connection_through_mstrs.id', '=', 'water_approval_application_details.connection_through')
+            ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', 'water_applications.ward_id')
+            ->leftjoin('water_connection_type_mstrs', 'water_connection_type_mstrs.id', '=', 'water_approval_application_details.connection_type_id')
+            ->where('water_approval_application_details.status', 1)
+            ->where('water_approval_application_details.ulb_id', $ulbId)
+            ->orderByDesc('water_applicants.id');
+    }
 }

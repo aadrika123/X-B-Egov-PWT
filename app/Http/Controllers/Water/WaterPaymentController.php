@@ -67,8 +67,10 @@ use Predis\Command\Redis\SELECT;
 use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\PDF;
 use App\BLL\Payment\GetRefUrl;
+use App\BLL\Payment\PayNimo;
 use App\BLL\Water\WaterConsumerPayment;
 use App\BLL\Water\WaterConsumerPaymentReceipt;
+use App\Http\Controllers\Water\WaterApplication as WaterWaterApplication;
 use App\Http\Controllers\Water\WaterConsumer as WaterWaterConsumer;
 use App\Http\Requests\Water\ReqPayment;
 use App\MicroServices\IdGenerator\PrefixIdGenerator;
@@ -77,6 +79,8 @@ use App\Models\Payment\IciciPaymentResponse;
 use App\Models\Water\WaterApprovalApplicant;
 use App\Models\Water\WaterConnectionTypeCharge;
 use App\Models\Water\WaterIciciResponse;
+use App\Models\Water\WaterPaynimoPayRequest;
+use App\Models\Water\WaterPaynimoPayResponse;
 use App\Models\Water\WaterReconnectConsumer;
 use App\Models\Water\WaterRoadCutterCharge;
 use App\Repository\Common\CommonFunction;
@@ -112,6 +116,10 @@ class WaterPaymentController extends Controller
     protected $_ulb_logo_url;
     protected $_callbackUrl;
     protected $_COMONFUNCTION;
+    protected $_WaterApplication;
+
+    protected $_WaterEasebuzzPayRequest;
+    protected $_WaterEasebuzzPayResponse;
 
     public function __construct()
     {
@@ -127,6 +135,11 @@ class WaterPaymentController extends Controller
         $this->_DB                  = DB::connection($this->_DB_NAME);
         $this->_callbackUrl         = Config::get("payment-constants.WATER_FRONT_URL");
         $this->_COMONFUNCTION       = new CommonFunction();
+
+        $this->_WaterEasebuzzPayRequest = new WaterPaynimoPayRequest();
+        $this->_WaterEasebuzzPayResponse = new WaterPaynimoPayResponse();
+
+        $this->_WaterApplication = new WaterApplication();
     }
 
     /**
@@ -3665,5 +3678,225 @@ class WaterPaymentController extends Controller
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
+    }
+
+
+    // /**
+    //  * |Initiate Online Payment
+    //  */
+    public function initiatePayment(Request $request)
+    {
+        try {
+            $user = Auth()->user();
+            $rules = [
+                "applicationId" => "required|exists:" . $this->_DB_NAME . "." . $this->_WaterApplication->getTable() . ",id",
+            ];
+            $validator = Validator::make($request->all(), $rules);
+            if ($validator->fails()) {
+                return validationErrorV2($validator);
+            }
+            $merchantCode          = Config::get('payment-constants.merchant_code');
+            $salt                  = Config::get('payment-constants.salt');
+
+
+            $application = $this->_WaterApplication->find($request->applicationId);
+            if ($application->payment_status != 0) {
+                throw new Exception("Payment Alreay done");
+            }
+
+            // $owners = $application->owneres()->get();
+            // $chargeData = ($this->getCharge($request));
+            $chargeDetails = WaterConnectionCharge::where('application_id', $request->applicationId)
+                ->first();
+            if (!$chargeDetails) {
+                throw new Exception('not found');
+            }
+            $owners = WaterApplicant::where('application_id', $request->applicationId)
+                ->first();
+            $chargeDetails = $chargeDetails;
+            $data = [
+                "userId" => $user && $user->getTable() == "users" ? $user->id : null,
+                "applicationId" => $application->id,
+                "applicationNo" => $application->application_no,
+                "moduleId" => $this->_MODULE_ID ?? 2,
+                "email" => ($owners->whereNotNull("email")->first())->email_id ?? "test@gmail.com",
+                "phone" => ($owners->whereNotNull("mobile_no")->first())->mobile_no ?? "0123456789",
+                "amount" => $chargeDetails->amount,
+                "firstname" => "No Name",
+                "frontSuccessUrl" => $request->frontSuccessUrl,
+                "frontFailUrl" => $request->frontFailUrl,
+                "marchantId"     => $merchantCode,
+                "salt"         => $salt,
+                "txnId"        => ""
+
+            ];
+            // $easebuzzObj = new PayNimo();
+            $result =  $this->initPaymentReq($data);
+            if (!$result) {
+                throw new Exception("Payment Not Initiat Due To Internal Server Error");
+            }
+            $data["url"] = $result;
+            $data = collect($data)->merge($chargeDetails)->merge($result);
+            $request->merge($data->toArray());
+            $this->_WaterEasebuzzPayRequest->related_id = $application->id;
+            // $this->_WaterEasebuzzPayRequest->tran_type = "";
+            $this->_WaterEasebuzzPayRequest->order_id = $data["txnid"] ?? "";
+            $this->_WaterEasebuzzPayRequest->demand_amt = $chargeDetails->amount ?? "0";
+            $this->_WaterEasebuzzPayRequest->payable_amount = $chargeDetails->amount ?? "0";
+            $this->_WaterEasebuzzPayRequest->penalty_amount = 0;
+            $this->_WaterEasebuzzPayRequest->rebate_amount = 0;
+            $this->_WaterEasebuzzPayRequest->request_json = json_encode($request->all(), JSON_UNESCAPED_UNICODE);
+            $this->_WaterEasebuzzPayRequest->save();
+            return responseMsg(true, "Payment Initiat", remove_null($data));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    public function initPaymentReq($param)
+    {
+        // if ($test = $this->testParam($param)) {
+        //     return $test;
+        // }
+        // $datastring = $param['marchantId'] . "|" . $param['txnId'] . "|" . $param['amount'] . "|" . "|" . $param['applicationId'] . "|" . $param['phone'] . "|" . $param['email'] . "||||||||||" . $param['salt'];
+         $datastring = $param['marchantId'] . "|" . 
+                  $param['txnId'] . "|" . 
+                  $param['amount'] . "|" . 
+                  "|" .  // Empty field
+                  "|" .  // Empty field
+                  $param['applicationId'] . "|" . 
+                  $param['phone'] . "|" . 
+                  $param['email'] . "|" . 
+                  "||||||||||" .  // Multiple empty fields
+                  $param['salt'];
+        $hashVal = hash('sha512', $datastring);
+        $taxId = $this->getOderId($param["moduleId"] ?? 2);
+        $param["txnid"] = $taxId;
+        $param["hash"] =  $hashVal;
+        // $param["surl"] = config('app.url') . "/api/payment/easebuzz/collect-callback-data";
+        // $param["furl"] = config('app.url') . "/api/payment/easebuzz/collect-callback-data";
+        $param["merchantCode"] = Config::get('payment-constants.merchant_code');
+        $param["salt"]         = Config::get('payment-constants.salt');
+        $param["env"]          = Config::get('payment-constants.env');
+        // $param["payment_url"]  = Config::get('paynimo.PAYMENT_URL');
+        // $result =  json_decode(json_encode($this->initiatePaymentAPI($param)), true);
+        // if($result["status"]){
+        //     $this->_WaterEasebuzzPayRequest->module_id = $param["moduleId"]??0;
+        //     $this->_WaterEasebuzzPayRequest->workflow_id = $param["workflowId"]??0;
+        //     $this->_WaterEasebuzzPayRequest->req_ref_no = $param["txnid"];
+        //     $this->_WaterEasebuzzPayRequest->amount = $param["amount"]??0;
+        //     $this->_EasebuzzPaymentReq->application_id = $param["applicationId"]??0;
+        //     $this->_EasebuzzPaymentReq->phone = $param["phone"]??null;
+        //     $this->_EasebuzzPaymentReq->email = $param["email"]??null;
+        //     $this->_EasebuzzPaymentReq->user_id = $param["userId"]??(Auth()->user()->id??null);
+        //     $this->_EasebuzzPaymentReq->ulb_id = $param["ulbId"]??(Auth()->user()->ulb_id??null);
+        //     $this->_EasebuzzPaymentReq->referal_url = $result["data"];
+        //     $this->_EasebuzzPaymentReq->success_back_url = $param["surl"];
+        //     $this->_EasebuzzPaymentReq->fail_back_url = $param["furl"];
+        //     $this->_EasebuzzPaymentReq->fail_back_url = $param["furl"];
+        //     $this->_EasebuzzPaymentReq->front_success_url = $param["frontSuccessUrl"];
+        //     $this->_EasebuzzPaymentReq->front_fail_url = $param["frontFailUrl"];
+        //     $this->_EasebuzzPaymentReq->payload_json = json_encode($param,JSON_UNESCAPED_UNICODE);
+        //     $this->_EasebuzzPaymentReq->save();
+
+        // }
+        // $result["txnid"] = $param["txnid"];
+        // $result["surl"]=$param["surl"];
+        // $result["furl"]=$param["furl"];
+        return $param;
+    }
+
+    // /**
+    //  * | Save Razor Pay Request
+    //  */
+    // public function initiatePayment(Request $req)
+    // {
+    //     $validator = Validator::make($req->all(), [
+    //         "applicationId" => "required",
+    //     ]);
+
+    //     if ($validator->fails())
+    //         return validationError($validator);
+
+    //     try {
+
+    //         $apiId = "0701";
+    //         $version = "01";
+    //         // $keyId        = Config::get('constants.RAZORPAY_KEY');
+    //         // $secret       = Config::get('constants.RAZORPAY_SECRET');
+    //         // $paymentUrl   = Config::get('constant.PAYMENT_URL');
+    //         $paymentUrl = "http://localhost:8002";
+    //         $moduleId  = $this->_ModuleId ?? 2;                                     #static Change it
+    //         $mWaterPaynimo = new WaterPaynimoPayRequest();
+    //         // $api          = new Api($keyId, $secret);
+
+    //         $details = WaterApplication::find($req->applicationId);
+    //         if (!$details)
+    //             throw new Exception("Application not found");
+    //         $chargeDetails = WaterConnectionCharge::where('application_id', $details->id)
+    //             ->first();
+    //         if (!$chargeDetails)
+    //             throw new Exception("Application Not Found");
+    //         if ($chargeDetails->payment_status == 1)
+    //             throw new Exception("Payment Already Done");
+    //         if (!$details)
+    //             throw new Exception("Rig Not Found");
+    //         $orderId = $this->getOderId(2);
+
+    //         $myRequest = [
+    //             'amount'          => $chargeDetails->amount,
+    //             'workflowId'      => $details->workflow_id,
+    //             'id'              => $details->id,
+    //             'departmentId'    => $moduleId,
+    //             'tnxId'          =>  $orderId,
+    //             'applicationId'   => $req->applicationId
+    //         ];
+    //         $newRequest = array_merge($req->all(), $myRequest);
+
+    //         // # Api Calling for OrderId
+    //         $refResponse = Http::withHeaders([
+    //             "api-key" => "eff41ef6-d430-4887-aa55-9fcf46c72c99"                             // Static
+    //         ])
+    //             ->withToken($req->bearerToken())
+    //             ->get($paymentUrl . '/api/pay', $newRequest);               // Static  
+    //         // return redirect(['http://localhost:8002/start']);
+
+    //         // $orderData = json_decode($refResponse);
+    //         // if ($orderData->status == false) {
+    //         //     throw new Exception(collect($orderData->message)->first());
+    //         // }
+
+    //         //         if ($req->authRequired == true)
+    //         //             $user = authUser($req);
+
+    //         //         $mReqs = [
+    //         //             "order_id"       => $orderData->data->orderId,
+    //         //             "merchant_id"    => $req->merchantId,
+    //         //             "related_id"     => $req->applicationId,
+    //         //             "user_id"        => $user->id ?? 0,
+    //         //             "workflow_id"    => $chargeDetails->workflow_id ?? 0,
+    //         //             "amount"         => $chargeDetails->amount,
+    //         //             "ulb_id"         => $rigDetails->ulb_id,
+    //         //             "ip_address"     => getClientIpAddress()
+    //         //         ];
+    //         //         $data = $mWaterPaynimo->store($mReqs);
+    //         //         $orderData->data->user_id = $user->id ?? 0;
+
+    //         return responseMsgs(true, "Order id generated", $orderData->data, $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
+    //     } catch (Exception $e) {
+    //         return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "", $apiId, $version, responseTime(), $req->getMethod(), $req->deviceId);
+    //     }
+    // }
+
+    public function getOderId(int $modeuleId = 0)
+    {
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $randomString = '';
+        for ($i = 0; $i < 10; $i++) {
+            $index = rand(0, strlen($characters) - 1);
+            $randomString .= $characters[$index];
+        }
+        $orderId = (("Order_" . $modeuleId . date('dmyhism') . $randomString));
+        return $orderId = explode("=", chunk_split($orderId, 30, "="))[0];
     }
 }
