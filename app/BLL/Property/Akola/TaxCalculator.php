@@ -222,6 +222,13 @@ class TaxCalculator
 
                 $floorBuildupArea = roundFigure(isset($item->biBuildupArea) && $this->getAssestmentTypeStr() == 'Bifurcation' ? $item->biBuildupArea * 0.092903 :  $item->buildupArea  * 0.092903);
                 $alv = ($item->occupancyType == 2 && isset($item->rentAmount)) ? roundFigure($item->rentAmount * 12) : roundFigure($floorBuildupArea * $rate);
+
+                //chnage prity
+                // $alv = ($item->occupancyType == 2 && $item->rentAmount === null)
+                //     ? roundFigure($floorBuildupArea * $rate * 1.5)
+                //     : roundFigure($item->rentAmount * 12);
+
+                //
                 $maintance10Perc = roundFigure(($alv * $this->_maintancePerc) / 100);
                 $valueAfterMaintanance = roundFigure($alv - $maintance10Perc);
                 $aging = roundFigure(($valueAfterMaintanance * $agingPerc) / 100);
@@ -318,6 +325,13 @@ class TaxCalculator
 
                 $floorBuildupArea = roundFigure(isset($item->biBuildupArea) ? $item->biBuildupArea * 0.092903 :  $item->buildupArea  * 0.092903);
                 $alv = ($item->occupancyType == 2 && isset($item->rentAmount)) ? roundFigure($item->rentAmount * 12) : roundFigure($floorBuildupArea * $rate);
+
+                //chnage prity
+                // $alv = ($item->occupancyType == 2 && $item->rentAmount === null)
+                //     ? roundFigure($floorBuildupArea * $rate * 1.5)
+                //     : roundFigure($item->rentAmount * 12);
+
+                //
                 $maintance10Perc = roundFigure(($alv * $this->_maintancePerc) / 100);
                 $valueAfterMaintanance = roundFigure($alv - $maintance10Perc);
                 $aging = roundFigure(($valueAfterMaintanance * $agingPerc) / 100);
