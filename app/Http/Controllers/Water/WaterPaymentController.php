@@ -3755,12 +3755,17 @@ class WaterPaymentController extends Controller
 
     public function initPaymentReq($param)
     {
-
-        $datastring = $param['marchantId'] . "|" . $param['txnId'] . "|" . $param['amount'] . "|" . "|" . $param['consumerId'] . "|" . $param['mobileNumber'] . "|" . $param['email'] . "||||||||||" . $param['salt'];
-        //  $datastring = $param['marchantId'] . "|||" .  "|" .  "||||" . "||||||||||";
-        $hashVal = hash('sha512', $datastring);
         $taxId = $this->getOderId($param["moduleId"] ?? 2);
         $param["txnid"] = $taxId;
+        // $datastring = $param['marchantId'] . "|" . $param['txnid'] . "|" . $param['amount'] . "|" . "|" . $param['consumerId'] . "||||||||||" . $param['salt'];
+
+        $datastring = "{$param['marchantId']}|{$param['txnid']}|{$param['amount']}||{$param['consumerId']}||||||||||||{$param['salt']}";
+
+
+        //  $datastring = $param['marchantId'] . "|||" .  "|" .  "||||" . "||||||||||";
+        $hashVal = hash('sha512', $datastring);
+
+
         $param["hash"] =  $hashVal;
         $param["merchantCode"] = Config::get('payment-constants.merchant_code');
         $param["salt"]         = Config::get('payment-constants.salt');
