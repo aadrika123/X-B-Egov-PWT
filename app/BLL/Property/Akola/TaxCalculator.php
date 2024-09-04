@@ -137,8 +137,21 @@ class TaxCalculator
             //     $this->_newForm = $this->_REQUEST->buildingPlanApprovalDate >= $this->_newForm ? explode("-", getFY($this->_REQUEST->buildingPlanApprovalDate))[1] . "-04-01" : $this->_newForm;
             // }
             //end of changes
+
+            //changes by prity pandey
             $this->_propFyearFrom = Carbon::parse($this->_newForm)->format('Y');
+            if ($this->getAssestmentTypeStr() == 'Bifurcation') {
+                list($fromYear, $lastYear) = explode("-", getFY($this->_REQUEST->approvedDate));
+                $this->_newForm = ($fromYear - 2) . "-04-01";
+                // Calculate area percentage and distribute the arrear amount
+                $totalArea = $this->_REQUEST->areaOfPlot * 0.092903; // Square meter conversion
+                $bifurcatedArea = $this->_REQUEST->bifurcatedPlot * 0.092903; // Bifurcated area
+                $areaPercentage = $bifurcatedArea / $totalArea;
+
+                $this->_oldUnpayedAmount = round($this->_oldUnpayedAmount * $areaPercentage);
+            }
         }
+        //end of change
 
         if (($this->getAssestmentTypeStr() == 'Amalgamation'))
             $this->_propFyearFrom = Carbon::parse($this->_REQUEST->dateOfPurchase)->format('Y');
