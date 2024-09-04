@@ -3721,7 +3721,7 @@ class WaterPaymentController extends Controller
                 "moduleId" => $this->_MODULE_ID ?? 2,
                 "email" => ($owners->whereNotNull("email")->first())->email_id ?? "test@gmail.com",                          //"test@gmail.com"
                 "mobileNumber" => ($owners->whereNotNull("mobile_no")->first())->mobile_no ?? "0123456789",                       //"0123456789"
-                "amount" => round($chargeDetails->amount),
+                "amount" => 1,                                                                                              //round($chargeDetails->amount)
                 "firstname" => "No Name",
                 "frontSuccessUrl" => $request->frontSuccessUrl,
                 "frontFailUrl" => $request->frontFailUrl,
@@ -3771,6 +3771,72 @@ class WaterPaymentController extends Controller
         $param["salt"]         = Config::get('payment-constants.salt');
         $param["env"]          = Config::get('payment-constants.env');
         return $param;
+    }
+
+    /**
+     * |water response message
+     */
+    public function waterPaymentResponse(Request $request)
+    {
+         $response = $request->msg;
+        $res_msg = explode("|",$_POST['msg']);
+      
+        $path = storage_path() . "/json/worldline_AdminData.json";
+        $mer_array = json_decode(file_get_contents($path), true); 
+        date_default_timezone_set('Asia/Calcutta');
+         $strCurDate = date('d-m-Y');
+
+
+        $arr_req = array(
+            "merchant" => ["identifier" => $mer_array['merchantCode'] ],
+            "transaction" => [ "deviceIdentifier" => "S","currency" => $mer_array['currency'],"dateTime" => $strCurDate,
+            "token" => $res_msg[5],"requestType" => "S"]
+        );
+
+        $finalJsonReq = json_encode($arr_req);
+
+        function callAPI($method, $url, $finalJsonReq)
+        {
+           $curl = curl_init();
+           switch ($method)
+           {
+              case "POST":
+                 curl_setopt($curl, CURLOPT_POST, 1);
+                 if ($finalJsonReq)
+                    curl_setopt($curl, CURLOPT_POSTFIELDS, $finalJsonReq);
+                 break;
+              case "PUT":
+                 curl_setopt($curl, CURLOPT_CUSTOMREQUEST, "PUT");
+                 if ($finalJsonReq)
+                    curl_setopt($curl, CURLOPT_POSTFIELDS, $finalJsonReq);                              
+                 break;
+              default:
+                 if ($finalJsonReq)
+                    $url = sprintf("%s?%s", $url, http_build_query($finalJsonReq));
+           }
+           // OPTIONS:
+           curl_setopt($curl, CURLOPT_URL, $url);
+           curl_setopt($curl, CURLOPT_HTTPHEADER, array(
+              'Content-Type: application/json',
+           ));
+           curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+           curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+           curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, FALSE);
+           curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+           // EXECUTE:
+           $result = curl_exec($curl);
+           
+           if(!$result){die("Connection Failure !! Try after some time.");}
+           curl_close($curl);
+           return $result;
+        }
+
+        $method = 'POST';
+        $url = "https://www.paynimo.com/api/paynimoV2.req";
+        $res_result = callAPI($method, $url, $finalJsonReq);
+        $dualVerifyData = json_decode($res_result, true);
+
+        return view('responsepage',compact('response','res_msg','dualVerifyData'));
     }
 
     // /**

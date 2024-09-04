@@ -26,6 +26,7 @@ Route::get('/whatsappTest', [\App\Http\Controllers\Notice\NoticeController::clas
 Route::get('logs', [\Rap2hpoutre\LaravelLogViewer\LogViewerController::class, 'index']);
 
 Route::get('/water-pdf', [\App\Http\Controllers\Water\WaterPaymentController::class, 'whatsAppSend']);
+Route::get('/water-payment/checkout', [\App\Http\Controllers\Water\WaterPaymentController::class, 'waterPaymentResponse']);
 
 // Route::get('property/payment-receipt', function () {
 //     return view('property_payment_reciept');
@@ -34,7 +35,6 @@ Route::get('/water-pdf', [\App\Http\Controllers\Water\WaterPaymentController::cl
 Route::get('property/saf/jahirnama-receipt', function () {
         return view('prop_jahirnama');
     });
-
 // Route::get('property/payment-receipt',WhatsappReceiptController::class)
 Route::controller(WhatsappReceiptController::class)->group(function () {
     Route::get('property/payment-receipt/{tranId}', 'sendPaymentReceipt');
