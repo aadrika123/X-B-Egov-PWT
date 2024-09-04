@@ -144,11 +144,11 @@ class TaxCalculator
                 list($fromYear, $lastYear) = explode("-", getFY($this->_REQUEST->approvedDate));
                 $this->_newForm = ($fromYear - 2) . "-04-01";
                 // Calculate area percentage and distribute the arrear amount
-                $totalArea = $this->_REQUEST->areaOfPlot * 0.092903; // Square meter conversion
-                $bifurcatedArea = $this->_REQUEST->bifurcatedPlot * 0.092903; // Bifurcated area
-                $areaPercentage = $bifurcatedArea / $totalArea;
+                // $totalArea = $this->_REQUEST->areaOfPlot * 0.092903; // Square meter conversion
+                // $bifurcatedArea = $this->_REQUEST->bifurcatedPlot * 0.092903; // Bifurcated area
+                // $areaPercentage = $bifurcatedArea / $totalArea;
 
-                $this->_oldUnpayedAmount = round($this->_oldUnpayedAmount * $areaPercentage);
+                // $this->_oldUnpayedAmount = round($this->_oldUnpayedAmount * $areaPercentage);
             }
         }
         //end of change
