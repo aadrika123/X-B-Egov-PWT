@@ -147,6 +147,7 @@ trait TradeTrait
                 $documentList= $mRefReqDocs->getDocsByDocCode($moduleId, "SHOP_ACT")->requirements;
                 $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "NOC_A")->requirements;
                 $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "FIRE_CLEARANCE")->requirements;
+                $documentList= $mRefReqDocs->getDocsByDocCode($moduleId, "COMMERCIAL_BUILDING_PERMISSION")->requirements;
                 if($tradeItems){
                     $documentList .= $mRefReqDocs->getDocsByDocCode($moduleId, "FOOD&BRUG_LICENSE")->requirements;
                 }
