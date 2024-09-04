@@ -427,10 +427,10 @@ class SafApprovalBll
     public function generatTaxAccUlTc()
     {
         if (in_array($this->_activeSaf->assessment_type, ['Bifurcation'])) {
-            //return;
-            list($fromFyear, $uptoFyear) = explode("-", getFY());
-            $privThreeYear = ($fromFyear - 2) . "-" . ($uptoFyear - 1);
-            $fyDemand = collect($this->_calculateTaxByUlb->_GRID['fyearWiseTaxes'])->where("fyear", ">=", $privThreeYear)->sortBy("fyear");
+            return;
+            // list($fromFyear, $uptoFyear) = explode("-", getFY());
+            // $privThreeYear = ($fromFyear - 2) . "-" . ($uptoFyear - 1);
+            // $fyDemand = collect($this->_calculateTaxByUlb->_GRID['fyearWiseTaxes'])->where("fyear", ">=", $privThreeYear)->sortBy("fyear");
         }
         $fyDemand = collect($this->_calculateTaxByUlb->_GRID['fyearWiseTaxes'])->sortBy("fyear");
         if (in_array($this->_activeSaf->assessment_type, ['Reassessment'])) {
