@@ -3778,6 +3778,10 @@ class WaterPaymentController extends Controller
      */
     public function waterPaymentResponse(Request $request)
     {
+
+        $mWaterEasebuzzPayRequest = new WaterPaynimoPayRequest();
+        $id                       = 1;
+        $update                   = $mWaterEasebuzzPayRequest->updateTrans($id);
          $response = $request->msg;
         $res_msg = explode("|",$_POST['msg']);
       
