@@ -3779,68 +3779,68 @@ class WaterPaymentController extends Controller
     public function waterPaymentResponse(Request $request)
     {
 
-        $mWaterEasebuzzPayRequest = new WaterPaynimoPayRequest();
-        $id                       = 1;
-        $update                   = $mWaterEasebuzzPayRequest->updateTrans($id);
-         $response = $request->msg;
-        $res_msg = explode("|",$_POST['msg']);
+        // $mWaterEasebuzzPayRequest = new WaterPaynimoPayRequest();
+        // $id                       = 1;
+        // $update                   = $mWaterEasebuzzPayRequest->updateTrans($id);
+        //  $response = $request->msg;
+        // $res_msg = explode("|",$_POST['msg']);
       
-        $path = storage_path() . "/json/worldline_AdminData.json";
-        $mer_array = json_decode(file_get_contents($path), true); 
-        date_default_timezone_set('Asia/Calcutta');
-         $strCurDate = date('d-m-Y');
+        // $path = storage_path() . "/json/worldline_AdminData.json";
+        // $mer_array = json_decode(file_get_contents($path), true); 
+        // date_default_timezone_set('Asia/Calcutta');
+        //  $strCurDate = date('d-m-Y');
 
 
-        $arr_req = array(
-            "merchant" => ["identifier" => $mer_array['merchantCode'] ],
-            "transaction" => [ "deviceIdentifier" => "S","currency" => $mer_array['currency'],"dateTime" => $strCurDate,
-            "token" => $res_msg[5],"requestType" => "S"]
-        );
+        // $arr_req = array(
+        //     "merchant" => ["identifier" => $mer_array['merchantCode'] ],
+        //     "transaction" => [ "deviceIdentifier" => "S","currency" => $mer_array['currency'],"dateTime" => $strCurDate,
+        //     "token" => $res_msg[5],"requestType" => "S"]
+        // );
 
-        $finalJsonReq = json_encode($arr_req);
+        // $finalJsonReq = json_encode($arr_req);
 
-        function callAPI($method, $url, $finalJsonReq)
-        {
-           $curl = curl_init();
-           switch ($method)
-           {
-              case "POST":
-                 curl_setopt($curl, CURLOPT_POST, 1);
-                 if ($finalJsonReq)
-                    curl_setopt($curl, CURLOPT_POSTFIELDS, $finalJsonReq);
-                 break;
-              case "PUT":
-                 curl_setopt($curl, CURLOPT_CUSTOMREQUEST, "PUT");
-                 if ($finalJsonReq)
-                    curl_setopt($curl, CURLOPT_POSTFIELDS, $finalJsonReq);                              
-                 break;
-              default:
-                 if ($finalJsonReq)
-                    $url = sprintf("%s?%s", $url, http_build_query($finalJsonReq));
-           }
-           // OPTIONS:
-           curl_setopt($curl, CURLOPT_URL, $url);
-           curl_setopt($curl, CURLOPT_HTTPHEADER, array(
-              'Content-Type: application/json',
-           ));
-           curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
-           curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-           curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, FALSE);
-           curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
-           // EXECUTE:
-           $result = curl_exec($curl);
+        // function callAPI($method, $url, $finalJsonReq)
+        // {
+        //    $curl = curl_init();
+        //    switch ($method)
+        //    {
+        //       case "POST":
+        //          curl_setopt($curl, CURLOPT_POST, 1);
+        //          if ($finalJsonReq)
+        //             curl_setopt($curl, CURLOPT_POSTFIELDS, $finalJsonReq);
+        //          break;
+        //       case "PUT":
+        //          curl_setopt($curl, CURLOPT_CUSTOMREQUEST, "PUT");
+        //          if ($finalJsonReq)
+        //             curl_setopt($curl, CURLOPT_POSTFIELDS, $finalJsonReq);                              
+        //          break;
+        //       default:
+        //          if ($finalJsonReq)
+        //             $url = sprintf("%s?%s", $url, http_build_query($finalJsonReq));
+        //    }
+        //    // OPTIONS:
+        //    curl_setopt($curl, CURLOPT_URL, $url);
+        //    curl_setopt($curl, CURLOPT_HTTPHEADER, array(
+        //       'Content-Type: application/json',
+        //    ));
+        //    curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+        //    curl_setopt($curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+        //    curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, FALSE);
+        //    curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
+        //    // EXECUTE:
+        //    $result = curl_exec($curl);
            
-           if(!$result){die("Connection Failure !! Try after some time.");}
-           curl_close($curl);
-           return $result;
-        }
+        //    if(!$result){die("Connection Failure !! Try after some time.");}
+        //    curl_close($curl);
+        //    return $result;
+        // }
 
-        $method = 'POST';
-        $url = "https://www.paynimo.com/api/paynimoV2.req";
-        $res_result = callAPI($method, $url, $finalJsonReq);
-        $dualVerifyData = json_decode($res_result, true);
+        // $method = 'POST';
+        // $url = "https://www.paynimo.com/api/paynimoV2.req";
+        // $res_result = callAPI($method, $url, $finalJsonReq);
+        // $dualVerifyData = json_decode($res_result, true);
 
-        return view('responsepage',compact('response','res_msg','dualVerifyData'));
+        return view('responsepage');
     }
 
     // /**
