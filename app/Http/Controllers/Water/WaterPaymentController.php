@@ -131,7 +131,7 @@ class WaterPaymentController extends Controller
         $this->_consumerTowards     = Config::get('waterConstaint.TOWARDS_DEMAND');
         $this->_accDescription      = Config::get('waterConstaint.ACCOUNT_DESCRIPTION');
         $this->_departmentSection   = Config::get('waterConstaint.DEPARTMENT_SECTION');
-        $this->_paymentModes        = Config::get('payment-constants.PAYMENT_OFFLINE_MODE');
+        $this->_paymentModes        = Config::get('payment-constants.PAYMENT_OFFLINE_MODES');
         $this->_ulb_logo_url        = Config::get('payment-constants.ULB_LOGO_URL');
         $this->_DB_NAME             = "pgsql_water";
         $this->_DB                  = DB::connection($this->_DB_NAME);
@@ -2819,7 +2819,7 @@ class WaterPaymentController extends Controller
             $refReq = [
                 "payment_status" => 2,
             ];
-            // $mWaterApplication->updatePendingStatus($activeConRequest->id, $refReq);
+            $mWaterApplication->updatePendingStatus($activeConRequest->id, $refReq);
         } else {
             $charges->paid_status = 1;                                      // Update Demand Paid Status // Static
             $refReq = [
@@ -3794,7 +3794,7 @@ class WaterPaymentController extends Controller
             $mWaterConsumerCharge           = new WaterConsumerCharge();
             $mWaterConsumer                 = new WaterSecondConsumer();
             $mWaterSiteInspection           = new WaterSiteInspection();
-            $PaymentModes                   = Config::get('payment-constants.PAYMENT_MODE');
+            $PaymentModes                   = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
             #check Order Id 
             $requestData = $this->_WaterPaynimoPayRequest->where("order_id", $request->txnid)->where("status", 2)->first();
             if (!$requestData) {

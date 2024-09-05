@@ -59,6 +59,13 @@ return [
         "4" => "Neft",
         "5" => "Online"
     ],
+    "PAYMENT_OFFLINE_MODES" => [
+        "1" => "Cash",
+        "2" => "Cheque",
+        "3" => "DD",
+        "4" => "Neft",
+        "5" => "ONLINE"
+    ],
     "REF_PAY_MODE" => [
         "CASH"      => "Cash",
         "CHEQUE"    => "Cheque",
