@@ -3843,7 +3843,7 @@ class WaterPaymentController extends Controller
             $waterTrans = $mWaterTran->waterTransaction($request, $wardId);
             $this->saveConsumerRequestStatus($request, $PaymentModes, $activeConsumercharges, $waterTrans, $activeConRequest);
             $this->_WaterEasebuzzPayResponse->request_id = $requestData->id;
-            $this->_WaterEasebuzzPayResponse->temp_id = $requestData->temp_id;
+            $this->_WaterEasebuzzPayResponse->related_id = $requestData->related_id;
             $this->_WaterEasebuzzPayResponse->module_id = $request->moduleId;
             $this->_WaterEasebuzzPayResponse->order_id = $request->txnid;
             $this->_WaterEasebuzzPayResponse->payable_amount = $requestData->payable_amount;
