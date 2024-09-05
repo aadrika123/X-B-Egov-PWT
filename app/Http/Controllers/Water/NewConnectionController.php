@@ -1376,7 +1376,7 @@ class NewConnectionController extends Controller
         $validated = Validator::make(
             $request->all(),
             [
-                'applicationId' => 'required|numeric'
+                'applicationId' => 'required|numeric'  //applicationId
             ]
         );
         if ($validated->fails())
@@ -1408,7 +1408,8 @@ class NewConnectionController extends Controller
                 ->first();
             $connectionCharges['type'] = Config::get('waterConstaint.New_Connection');
             $connectionCharges['applicationNo'] = $refApplication->application_no;
-            $connectionCharges['applicationId'] = $refApplication->id;
+            // $connectionCharges['applicationId'] = $refApplication->id;
+            $connectionCharges['applicationId'] = $request->approveId ;
 
             $requiedDocType = $refWaterNewConnection->getDocumentTypeList($refApplication, $user);  # get All Related Document Type List
             $refOwneres = $refWaterNewConnection->getOwnereDtlByLId($refApplication->id);    # get Owneres List
