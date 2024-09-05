@@ -137,6 +137,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
 
         # test api
         Route::post('testv2', 'testv2');
+        Route::post('/water-payment/checkout','waterPaymentResponse');
     });
 
     /**
