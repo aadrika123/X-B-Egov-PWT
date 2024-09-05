@@ -133,11 +133,11 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
 
         # Paynimo Online payment Integration 
         Route::post('paynimo/payment-initiate', 'initiatePayment');
-        Route::post('worldline/payment-Response', 'waterPaymentResponse');
+        Route::post('worldline/payment-Response', 'WorldlineHandelResponse');
 
         # test api
         Route::post('testv2', 'testv2');
-        Route::post('/water-payment/checkout','waterPaymentResponse');
+        Route::post('/water-payment/checkout', 'waterPaymentResponse');
     });
 
     /**
