@@ -1787,10 +1787,10 @@ class Trade implements ITrade
                 $response = ['status' => true, "data" => ["property" => $propdet['property'], "owner" => $propdet['owner']], "message" => ""];
 
                 // if (($demand['previousInterest']) > 0 || ($demand['arrear']) > 0) {
-                //     $response = ['status' => false, "data" => '', "message" => "Please Clear The Previous Arrear Amount Of ₹" . $demand['arrearPayableAmt'] . " Before Applying The Application."];
+                //     $response = ['status' => false, "data" => '', "message" => "Please Clear The Previous Arrear Amount Of ₹" . $demand['arrearPayableAmt'] . " Before Applying The Application."];Please clear the pending property tax demand of Rs……. before applying for the trade license
                 // }
                 if (($demand['payableAmt']) > 0) {
-                    $response = ['status' => false, "data" => '', "message" => "Please Clear The Pending Demand  Amount Of ₹" . $demand['payableAmt'] . " Before Applying The Application."];
+                    $response = ['status' => false, "data" => '', "message" => "Please Clear The Pending Property Tax Demand Of ₹" . $demand['payableAmt'] . " Before Applying for The Trade License."];
                 }
             } else {
                 $response = ['status' => false, "data" => '', "message" => 'No Property Found'];
