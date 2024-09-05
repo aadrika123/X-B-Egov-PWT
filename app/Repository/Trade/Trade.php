@@ -4984,7 +4984,7 @@ class Trade implements ITrade
                                         WHERE temp_id = $id
                                             AND is_active =TRUE
                                         GROUP BY temp_id,id
-                                        ORDER BY id ASC
+                                        ORDER BY id Desc
                                         limit 1
                                         ) owner"), function ($join) {
                     $join->on("owner.temp_id", "=", "license.id");
@@ -5001,7 +5001,7 @@ class Trade implements ITrade
                                                 FROM trade_owners 
                                                 WHERE temp_id = $id
                                                     AND is_active =TRUE
-                                                ORDER BY id ASC
+                                                ORDER BY id Desc
                                                 limit 1
                                             )
                                         GROUP BY temp_id
