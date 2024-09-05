@@ -951,16 +951,15 @@ class SafApprovalBll
             $propProperties = PropProperty::find($this->_activeSaf->previous_holding_id);
             $oldIntrest = $mPropPendingArrear->getInterestByPropId($propProperties->id);
             $previousInterest = $oldIntrest->due_total_interest ?? 0;
-
+            //$arr=[];
             $totalArea = $propProperties->area_of_plot;
             $onePercOfArea = $totalArea / 100;
             $bifurcatedArea = $this->_verifiedPropDetails[0]->area_of_plot;
             $percOfBifurcatedArea = round(($bifurcatedArea / $onePercOfArea), 2);
             $unPaidDemand = $propProperties->PropDueDemands()->get();
-            $arearAmount = $unPaidDemand->due_total_tax;
             $previousInterest = ($previousInterest / 100) * $percOfBifurcatedArea;
             foreach ($unPaidDemand as $val) {
-                if ($val["fyear"] == '2024-2025') {
+                //if ($val["fyear"] == '2024-2025') {
                     $arr = [
                         "property_id"   => $this->_replicatedPropId,
                         "alv"           => ($val["alv"] / 100) * $percOfBifurcatedArea,
@@ -1025,26 +1024,35 @@ class SafApprovalBll
                         $oldDemand->update();
                         continue;
                     }
-                }
+                //}
                 $this->testDemand($arr);
                 $demand->store($arr);
                 $this->adjustOldDemand($val, $arr);
                 $val->update();
             }
-            $areaPercentage = $bifurcatedArea / $totalArea;
-            foreach ($unPaidDemand as $demand) {
-                if ($demand->fyear == '2022-2023') {
-                    $dueAmount = $arearAmount * $areaPercentage;
-                    $demand->arrear_amt = $dueAmount;
-                    $demand->save();
-                }
+            // $areaPercentage = $bifurcatedArea / $totalArea;
 
-                if ($demand->fyear == '2023-2024') {
-                    $dueAmount2 = $arearAmount * $areaPercentage;
-                    $demand->arrear_amt1 = $dueAmount2;
-                    $demand->save();
-                }
-            }
+            // foreach ($unPaidDemand as $demand) {
+            //     if ($demand->fyear == '2022-2023') {
+            //         $arearAmount2022 = $propProperties->PropDueDemands()
+            //             ->where('fyear', '2022-2023')
+            //             ->sum('due_total_tax');
+
+            //         $dueAmount = $arearAmount2022 * $areaPercentage;
+            //         $demand->arrear_amt = $dueAmount;
+            //         $demand->save();
+            //     }
+
+            //     if ($demand->fyear == '2023-2024') {
+            //         $arearAmount2023 = $propProperties->PropDueDemands()
+            //             ->where('fyear', '2023-2024')
+            //             ->sum('due_total_tax');
+
+            //         $dueAmount2 = $arearAmount2023 * $areaPercentage;
+            //         $demand->arrear_amt1 = $dueAmount2;
+            //         $demand->save();
+            //     }
+            // }
         }
     }
 
