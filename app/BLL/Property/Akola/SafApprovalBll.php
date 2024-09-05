@@ -954,7 +954,7 @@ class SafApprovalBll
 
             $totalArea = $propProperties->area_of_plot;
             $onePercOfArea = $totalArea / 100;
-            $bifurcatedArea = $this->_verifiedPropDetails[0]->area_of_plot;
+            $bifurcatedArea = $this->_verifiedPropDetails[0]->area_of_plot;        
             $percOfBifurcatedArea = round(($bifurcatedArea / $onePercOfArea), 2);
             $unPaidDemand = $propProperties->PropDueDemands()->get();
             $previousInterest = ($previousInterest / 100) * $percOfBifurcatedArea;
