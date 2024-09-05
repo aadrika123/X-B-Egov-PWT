@@ -213,7 +213,8 @@ class WaterTran extends Model
         $waterTrans->save();
 
         return [
-            'id' => $waterTrans->id
+            'id' => $waterTrans->id,
+            "tranType" => $waterTrans->tran_type
         ];
     }
 
