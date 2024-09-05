@@ -122,6 +122,7 @@ class WaterPaymentController extends Controller
     protected $_WaterEasebuzzPayResponse;
     protected $_WaterApproveApllication;
     protected $_WaterSecondConusumer;
+    protected $_WaterConsumerCharge;
 
     public function __construct()
     {
@@ -144,6 +145,7 @@ class WaterPaymentController extends Controller
         $this->_WaterApplication         = new WaterApplication();
         $this->_WaterApproveApllication  = new WaterApprovalApplicationDetail();
         $this->_WaterSecondConusumer     = new WaterSecondConsumer();
+        $this->_WaterConsumerCharge     = new WaterConsumerCharge();
     }
 
     /**
@@ -3696,6 +3698,7 @@ class WaterPaymentController extends Controller
             $user = Auth()->user();
             $rules = [
                 "applicationId" => "required|exists:" . $this->_DB_NAME . "." . $this->_WaterSecondConusumer->getTable() . ",id",
+                "applycationType" => "required"
             ];
             $validator = Validator::make($request->all(), $rules);
             if ($validator->fails()) {
@@ -3704,19 +3707,36 @@ class WaterPaymentController extends Controller
             $merchantCode          = Config::get('payment-constants.merchant_code');
             $salt                  = Config::get('payment-constants.salt');
 
-
-            $application = $this->_WaterSecondConusumer->find($request->applicationId);
-            if ($application->payment_status != 0) {
-                throw new Exception("Payment Alreay done");
+            if ($request->applycationType == 'NewConnectionCharge') {
+                $application = $this->_WaterSecondConusumer->find($request->applicationId);
+                if ($application->payment_status != 0) {
+                    throw new Exception("Payment Alreay done");
+                }
+                $chargeDetails = WaterConnectionCharge::where('application_id', $application->apply_connection_id)
+                    ->first();
+                if (!$chargeDetails) {
+                    throw new Exception('not found');
+                }
+                $owners = WaterConsumerOwner::where('consumer_id', $request->applicationId)
+                    ->first();
+            } elseif ($request->applycationType == 'reconnection') {
+                $application = $this->_WaterSecondConusumer->getApplicationByIdv1($request->applicationId)
+                    ->first();
+                if (!$application) {
+                    throw new Exception("Application details not found!");
+                }
+                $chargeDetails = $this->_WaterConsumerCharge->getWaterchargesById($request->applicationId)
+                    // ->where('charge_category_id', $activeConRequest->charge_catagory_id)
+                    ->where('paid_status', 0)
+                    ->first();
+                if (!$chargeDetails) {
+                    throw new Exception("Consumer Charges not found!");
+                }
+                $owners = WaterConsumerOwner::where('consumer_id', $request->applicationId)
+                    ->first();
             }
-            $chargeDetails = WaterConnectionCharge::where('application_id', $application->apply_connection_id)
-                ->first();
-            if (!$chargeDetails) {
-                throw new Exception('not found');
-            }
-            $owners = WaterConsumerOwner::where('consumer_id', $request->applicationId)
-                ->first();
             $chargeDetails = $chargeDetails;
+
             $data = [
                 "userId" => $user && $user->getTable() == "users" ? $user->id : null,
                 "consumerId" => $application->id,
@@ -3742,7 +3762,8 @@ class WaterPaymentController extends Controller
             $data = collect($data)->merge($chargeDetails)->merge($result);
             $request->merge($data->toArray());
             $this->_WaterPaynimoPayRequest->related_id = $application->id;
-            $this->_WaterPaynimoPayRequest->tran_type = "New Connection";
+            $this->_WaterPaynimoPayRequest->tran_type = $request->applycationType;
+            $this->_WaterPaynimoPayRequest->merchant_id = $request->merchantCode;
             $this->_WaterPaynimoPayRequest->order_id = $data["txnid"] ?? "";
             $this->_WaterPaynimoPayRequest->demand_amt = $data['amount'] ?? "0";
             $this->_WaterPaynimoPayRequest->payable_amount = $data['amount'] ?? "0";
@@ -3800,12 +3821,39 @@ class WaterPaymentController extends Controller
             if (!$requestData) {
                 throw new Exception("Request Data Not Found");
             }
-            $activeConRequest = $mWaterConsumer->getApplicationById($requestData['related_id'])
-                ->where('water_approval_application_details.payment_status', 0)
-                ->first();
-            if (!$activeConRequest) {
-                throw new Exception("Application details not found!");
+            if ($requestData->tran_type == 'NewConnectionCharge') {
+                $activeConRequest = $mWaterConsumer->getApplicationById($requestData['related_id'])
+                    ->where('water_approval_application_details.payment_status', 0)
+                    ->first();
+                if (!$activeConRequest) {
+                    throw new Exception("Application details not found!");
+                }
+
+                #check consumer exist or not 
+
+                $activeConsumercharges = $mWaterConnectionCharge->getWaterchargesById($activeConRequest->apply_connection_id)
+                    // ->where('charge_category_id', $activeConRequest->charge_catagory_id)
+                    ->where('paid_status', 0)
+                    ->first();
+                #check parameters
+                $chargeCatagory = $this->checkConReqPayment($activeConRequest);
+            } elseif ($requestData->tran_type == 'reconnection') {
+                $activeConRequest = $mWaterConsumer->getApplicationByIdv1($requestData['related_id'])
+                    // ->where('water_approval_application_details.payment_status', 0)
+                    ->first();
+                if (!$activeConRequest) {
+                    throw new Exception("Application details not found!");
+                }
+                $activeConsumercharges = $mWaterConsumerCharge->getWaterchargesById($requestData['related_id'])
+                    // ->where('charge_category_id', $activeConRequest->charge_catagory_id)
+                    ->where('paid_status', 0)
+                    ->first();
+                if (!$activeConsumercharges) {
+                    throw new Exception("Consumer Charges not found!");
+                }
+                $chargeCatagory = $this->checkConReqPaymentv1($activeConRequest);
             }
+
             $requestPayload = json_decode($requestData->request_json, true);
             $request->merge($requestPayload);
             $request->merge([
@@ -3815,14 +3863,6 @@ class WaterPaymentController extends Controller
                 "ulbId" => $activeConRequest->ulb_id,
                 "paymentGatewayType" => $request->payment_source,
             ]);
-            #check consumer exist or not 
-
-            $activeConsumercharges = $mWaterConnectionCharge->getWaterchargesById($activeConRequest->apply_connection_id)
-                // ->where('charge_category_id', $activeConRequest->charge_catagory_id)
-                ->where('paid_status', 0)
-                ->first();
-            #check parameters
-            $chargeCatagory = $this->checkConReqPayment($activeConRequest);
             $this->begin();
             $tranNo = $idGeneration->generateTransactionNo($activeConRequest->ulb_id);
             $request->merge([
@@ -3841,7 +3881,11 @@ class WaterPaymentController extends Controller
             # Save the Details of the transaction
             $wardId['ward_mstr_id'] = $activeConRequest['ward_id'];
             $waterTrans = $mWaterTran->waterTransaction($request, $wardId);
-            $this->saveConsumerRequestStatus($request, $PaymentModes, $activeConsumercharges, $waterTrans, $activeConRequest);
+            if ($waterTrans['tranType'] == 'NEW_CONNECTION') {
+                $this->saveConsumerRequestStatus($request, $PaymentModes, $activeConsumercharges, $waterTrans, $activeConRequest);
+            } else {
+                $this->saveConsumerRequestStatusv1($request, $PaymentModes, $activeConsumercharges, $waterTrans, $activeConRequest);
+            }
             $this->_WaterEasebuzzPayResponse->request_id = $requestData->id;
             $this->_WaterEasebuzzPayResponse->related_id = $requestData->related_id;
             $this->_WaterEasebuzzPayResponse->module_id = $request->moduleId;
@@ -3874,5 +3918,13 @@ class WaterPaymentController extends Controller
         }
         $orderId = (("Order_" . $modeuleId . date('dmyhism') . $randomString));
         return $orderId = explode("=", chunk_split($orderId, 30, "="))[0];
+    }
+
+    public function checkParamForReconect($request)
+    {
+        try {
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
     }
 }
