@@ -183,7 +183,7 @@ class WaterConsumerPayment
         if (!$this->_REQ->amount) {
             $this->_REQ->merge(['amount' => $this->_REQ['payableAmount']]);
         }
-        $addvanceAmt = $this->waterDemands->original['data']["remainAdvance"] ?? 0;
+            $addvanceAmt = $this->waterDemands->original['data']["remainAdvance"] ?? 0;
         $adjustAmt = 0;
         $payableAmount = $this->_REQ["amount"];
         if (strtoupper($this->_REQ["paymentMode"]) != "ONLINE") {
