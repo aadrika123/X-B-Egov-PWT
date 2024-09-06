@@ -4047,6 +4047,7 @@ class Trade implements ITrade
             # In case of ammendment no denial amount
             if ($data['application_type_id'] == 3) {
                 $denial_amount_month = 0;
+                $rate = 200;
             }
             $total_denial_amount = $denial_amount_month + $rate + $pre_app_amount + $notice_amount;
 
