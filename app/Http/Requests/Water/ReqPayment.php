@@ -9,10 +9,11 @@ use Illuminate\Support\Facades\Config;
 
 class ReqPayment extends AllRequest
 {
-    public function __construct()
+    public function __construct($data = [])
     {
+        parent::__construct();
+        $this->merge($data);
     }
-
     /**
      * Get the validation rules that apply to the request.
      *
@@ -47,7 +48,7 @@ class ReqPayment extends AllRequest
         $rules['amount'] = 'nullable|required_if:paymentType,==,isPartPayment|numeric';
         $rules['consumerId']    = 'required';
         $rules['paymentMode']   = 'required';
-        $this->merge(["ConsumerId"=>$this->consumerId,"id"=>$this->consumerId,"original"=>true]);
+        $this->merge(["ConsumerId" => $this->consumerId, "id" => $this->consumerId, "original" => true]);
 
         return $rules;
     }

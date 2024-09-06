@@ -3919,12 +3919,121 @@ class WaterPaymentController extends Controller
         $orderId = (("Order_" . $modeuleId . date('dmyhism') . $randomString));
         return $orderId = explode("=", chunk_split($orderId, 30, "="))[0];
     }
-
-    public function checkParamForReconect($request)
+    #=====================Demand Collection Online=====================# 
+    public function initiatePaymentDemand(ReqPayment $request)
     {
         try {
+            $user = Auth()->user();
+            $mWaterConsumerDemands  = new WaterConsumerDemand();
+            $merchantCode           = Config::get('payment-constants.merchant_code');
+            $salt                   = Config::get('payment-constants.salt');
+            $ConsumerPayment        = new WaterConsumerPayment($request);
+            $controller = App::makeWith(WaterWaterConsumer::class, ["IConsumer" => app(IConsumer::class)]);
+            #check Demand Amount AND Param
+            $consumerDemandResponse = $controller->listConsumerDemand($request);
+            $consumerDemandData = $consumerDemandResponse->getData(true);
+            $ConsumerPayment->waterDemands = $consumerDemandData;
+            #check Owner 
+            $owners = WaterConsumerOwner::where('consumer_id', $request->consumerId)
+                ->first();
+            $data = [
+                "userId" => $user && $user->getTable() == "users" ? $user->id : null,
+                "consumerId" => $request->consumerId,
+                "moduleId" => $this->_MODULE_ID ?? 2,
+                "email" => ($owners->whereNotNull("email")->first())->email_id ?? "test@gmail.com",                          //"test@gmail.com"
+                "mobileNumber" => ($owners->whereNotNull("mobile_no")->first())->mobile_no ?? "0123456789",                       //"0123456789"
+                "amount" => 1,                                                                                              //round($chargeDetails->amount)
+                "firstname" => "No Name",
+                "frontSuccessUrl" => $request->frontSuccessUrl,
+                "frontFailUrl" => $request->frontFailUrl,
+                "marchantId"     => $merchantCode,
+                "salt"         => $salt,
+                "txnId"        => ""
+
+            ];
+            // $easebuzzObj = new PayNimo();
+            $result =  $this->initPaymentReq($data);
+            if (!$result) {
+                throw new Exception("Payment Not Initiat Due To Internal Server Error");
+            }
+            // Merge payment result data
+            $data["url"] = $result['url'] ?? null;
+            $data['txnId'] = $result['txnid'] ?? "";
+            $this->_WaterPaynimoPayRequest->related_id = $request->consumerId;
+            $this->_WaterPaynimoPayRequest->tran_type = "Demand Collection";
+            $this->_WaterPaynimoPayRequest->merchant_id = $merchantCode;
+            $this->_WaterPaynimoPayRequest->order_id = $data["txnId"] ?? "";
+            $this->_WaterPaynimoPayRequest->demand_amt = $request->amount ?? ($consumerDemandData['data']['totalSumDemand'] ?? 0);
+            $this->_WaterPaynimoPayRequest->payable_amount = $request->amount ?? ($consumerDemandData['data']['totalSumDemand'] ?? 0);
+            $this->_WaterPaynimoPayRequest->penalty_amount = 0;
+            $this->_WaterPaynimoPayRequest->rebate_amount = 0;
+            $this->_WaterPaynimoPayRequest->payment_type = $request->paymentType;
+            $this->_WaterPaynimoPayRequest->request_json = json_encode($request->all(), JSON_UNESCAPED_UNICODE);
+            $this->_WaterPaynimoPayRequest->save();
+            return responseMsg(true, "Payment Initiat", remove_null($data));
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    /**
+        Webhook Response
+     * update online payment transaction 
+     */
+    public function WorldlineHandelResponseDemand(Request $request)
+    {
+        try {
+            $user         = authUser($request);
+            $todayDate    = Carbon::now();
+            $PaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
+
+            // Check if the request data exists based on order id and status
+            $requestData = $this->_WaterPaynimoPayRequest
+                ->where("order_id", $request->txnid)
+                ->where("status", 2)
+                ->first();
+
+            if (!$requestData) {
+                throw new Exception("Request Data Not Found");
+            }
+
+            // Merge request payload and additional data
+            $requestPayload = json_decode($requestData->request_json, true);
+            $reqPayment = new ReqPayment();
+            $reqPayment->merge($requestPayload);
+            $reqPayment->merge([
+                "paymentMode"         => "ONLINE",
+                "relatedId"           => $requestData->related_id,
+                "totalCharge"         => $requestData->payable_amount,
+                "ulbId"               => $activeConRequest->ulb_id ?? null,
+                "paymentGatewayType"  => $request->payment_source,
+            ]);
+
+            // Begin transaction
+            $this->begin();
+            $this->partPaymentV2($reqPayment);
+            // Save transaction details
+            # Save the Details of the transaction
+            $this->_WaterEasebuzzPayResponse->request_id = $requestData->id;
+            $this->_WaterEasebuzzPayResponse->related_id = $requestData->related_id;
+            $this->_WaterEasebuzzPayResponse->module_id = $request->moduleId;
+            $this->_WaterEasebuzzPayResponse->order_id = $request->txnid;
+            $this->_WaterEasebuzzPayResponse->payable_amount = $requestData->payable_amount;
+            $this->_WaterEasebuzzPayResponse->payment_id = $request->easepayid;
+            $this->_WaterEasebuzzPayResponse->tran_id = $request->tranId;
+            $this->_WaterEasebuzzPayResponse->error_message = $request->error_message;
+            $this->_WaterEasebuzzPayResponse->user_id = $request->userId;
+            $this->_WaterEasebuzzPayResponse->response_data = json_encode($request->all(), JSON_UNESCAPED_UNICODE);
+            $this->_WaterEasebuzzPayResponse->save();
+            $requestData->status = 1;
+            $requestData->update();
+
+            $this->commit();
+
+            return responseMsgs(true, "Payment Done!", remove_null($request->all()), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (Exception $e) {
+            $this->rollback();
+            return responseMsgs(false, $e->getMessage(), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
 }

@@ -134,6 +134,9 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         # Paynimo Online payment Integration 
         Route::post('paynimo/payment-initiate', 'initiatePayment');
         Route::post('worldline/payment-Response', 'WorldlineHandelResponse');
+        # worldline Online payment For Demand Collection
+        Route::post('worldline/payment-initiate-demand', 'initiatePaymentDemand');
+        Route::post('worldline/payment-response-demand', 'WorldlineHandelResponseDemand');
 
         # test api
         Route::post('testv2', 'testv2');
