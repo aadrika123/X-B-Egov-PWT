@@ -945,7 +945,7 @@ class TradeApplication extends Controller
                     ->get();
                 foreach ($owneres as $val) {
                     $refOwners = $val->replicate();
-                    $refOwners->id = $val->id;
+                    // $refOwners->id = $val->id;
                     $refOwners->setTable('trade_owners');
                     $refOwners->save();
                     $val->delete();
