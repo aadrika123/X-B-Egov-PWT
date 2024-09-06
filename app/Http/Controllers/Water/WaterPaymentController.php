@@ -3962,7 +3962,7 @@ class WaterPaymentController extends Controller
             $this->_WaterPaynimoPayRequest->related_id = $request->consumerId;
             $this->_WaterPaynimoPayRequest->tran_type = "Demand Collection";
             $this->_WaterPaynimoPayRequest->merchant_id = $merchantCode;
-            $this->_WaterPaynimoPayRequest->order_id = $data["txnId"] ?? "";
+            $this->_WaterPaynimoPayRequest->order_id = $data["txnid"] ?? "";
             $this->_WaterPaynimoPayRequest->demand_amt = $request->amount ?? ($consumerDemandData['data']['totalSumDemand'] ?? 0);
             $this->_WaterPaynimoPayRequest->payable_amount = $request->amount ?? ($consumerDemandData['data']['totalSumDemand'] ?? 0);
             $this->_WaterPaynimoPayRequest->penalty_amount = 0;
