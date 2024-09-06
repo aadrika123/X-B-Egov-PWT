@@ -3958,7 +3958,7 @@ class WaterPaymentController extends Controller
             }
             // Merge payment result data
             $data["url"] = $result['url'] ?? null;
-            $data['txnId'] = $result['txnid'] ?? "";
+            $data= $result;
             $this->_WaterPaynimoPayRequest->related_id = $request->consumerId;
             $this->_WaterPaynimoPayRequest->tran_type = "Demand Collection";
             $this->_WaterPaynimoPayRequest->merchant_id = $merchantCode;
