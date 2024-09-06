@@ -135,8 +135,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('paynimo/payment-initiate', 'initiatePayment');
         Route::post('worldline/payment-Response', 'WorldlineHandelResponse');
         # worldline Online payment For Demand Collection
-        Route::post('worldline/payment-initiate-demand', 'initiatePaymentDemand');
-        Route::post('worldline/payment-response-demand', 'WorldlineHandelResponseDemand');
+
 
         # test api
         Route::post('testv2', 'testv2');
@@ -328,6 +327,8 @@ Route::controller(WaterPaymentController::class)->group(function () {
     Route::post('citizen/get-payment-history', 'getConsumerPaymentHistory');
     Route::post('consumer/demand/generate-payment-receipt', 'generateDemandPaymentReceipt');        // Admin/ Citizen          // use in consumer part
     Route::post('admin/application/generate-payment-receipt', 'generateOfflinePaymentReceipt');     // Citizen / Admin
+    Route::post('worldline/payment-initiate-demand', 'initiatePaymentDemand');
+    Route::post('worldline/payment-response-demand', 'WorldlineHandelResponseDemand');
     // Route::post('')
 });
 
