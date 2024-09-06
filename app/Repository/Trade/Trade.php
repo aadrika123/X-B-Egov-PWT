@@ -5119,6 +5119,9 @@ class Trade implements ITrade
             }
             $rate_ids = explode(",", ($transaction->rate_id ?? "0"));
             $rates = $this->_MODEL_AkolaTradeParamLicenceRate->whereIn("id", $rate_ids)->sum("rate");
+            if($application->application_type_id==3){
+                $rates = 200;
+            }
             $penalty = TradeFineRebete::select("type", "amount")
                 ->where('tran_id', $transaction->id ?? 0)
                 ->where("status", 1)
