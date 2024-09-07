@@ -780,7 +780,6 @@ class CitizenHoldingController extends Controller
                 "frontSuccessUrl" => $request->frontSuccessUrl,
                 "frontFailUrl" => $request->frontFailUrl,
                 "marchantId"     => $merchantCode,
-                "salt"         => $salt,
                 "txnId"        => ""
 
             ];
@@ -809,11 +808,12 @@ class CitizenHoldingController extends Controller
     }
     public function initPaymentReq($param)
     {
+        $salt["salt"]         = Config::get('payment-constants.salt');
         $taxId = $this->getOderId($param["moduleId"] ?? 1);
         $param["txnid"] = $taxId;
         // $datastring = $param['marchantId'] . "|" . $param['txnid'] . "|" . $param['amount'] . "|" . "|" . $param['consumerId'] . "||||||||||" . $param['salt'];
 
-        $datastring = "{$param['marchantId']}|{$param['txnid']}|{$param['amount']}||{$param['consumerId']}||||||||||||{$param['salt']}";
+        $datastring = "{$param['marchantId']}|{$param['txnid']}|{$param['amount']}||{$param['consumerId']}||||||||||||{$salt['salt']}";
 
 
         //  $datastring = $param['marchantId'] . "|||" .  "|" .  "||||" . "||||||||||";
@@ -822,7 +822,7 @@ class CitizenHoldingController extends Controller
 
         $param["hash"] =  $hashVal;
         $param["merchantCode"] = Config::get('payment-constants.merchant_code');
-        $param["salt"]         = Config::get('payment-constants.salt');
+        
         $param["env"]          = Config::get('payment-constants.env');
         return $param;
     }
