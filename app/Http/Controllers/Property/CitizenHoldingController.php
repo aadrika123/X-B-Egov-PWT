@@ -9,10 +9,16 @@ use App\Repository\Property\Interfaces\iSafRepository;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Payment\IciciPaymentController;
 use App\Http\Requests\Property\ReqPayment;
+use App\MicroServices\IdGeneration;
 use App\Models\Property\PropIciciPaymentsRequest;
 use App\Models\Property\PropIciciPaymentsResponse;
+use App\Models\Property\PropOwner;
+use App\Models\Property\PropPaynimoPayRequest;
+use App\Models\Property\PropPaynimoPayResponse;
 use App\Models\Property\PropPinelabPaymentsRequest;
 use App\Models\Property\PropPinelabPaymentsResponse;
+use App\Models\Property\PropProperty;
+use App\Models\Property\PropTransaction;
 use App\Repository\Common\CommonFunction;
 use Carbon\Carbon;
 use Exception;
@@ -35,6 +41,10 @@ class CitizenHoldingController extends Controller
     protected $_PropPinelabPaymentsResponse;
     protected $_PineLabPayment;
     protected $_COMONFUNCTION;
+    protected $_PropProperty;
+    protected $_DB_NAME;
+    protected $_PropPaynimoPayRequest;
+    protected $_PropEasebuzzPayResponse;
 
     public function __construct(iSafRepository $safRepo)
     {
@@ -48,6 +58,9 @@ class CitizenHoldingController extends Controller
         $this->_PropPinelabPaymentsResponse = new PropPinelabPaymentsResponse();
         $this->_PineLabPayment =  new PineLabPayment;
         $this->_COMONFUNCTION = new CommonFunction();
+        $this->_PropProperty  = new PropProperty();
+        $this->_PropPaynimoPayRequest = new PropPaynimoPayRequest();
+        $this->_PropEasebuzzPayResponse = new PropPaynimoPayResponse();
     }
 
     public function getHoldingDues(Request $request)
@@ -814,6 +827,207 @@ class CitizenHoldingController extends Controller
         } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), $request->all(), "phc1.1", "1.0", "", "POST", $request->deviceId ?? "");
+        }
+    /**
+     * |Initiate Online Payment
+     * |FOR property Nakkal Payment
+        Worldline payment 
+     */
+    public function worldlineInitPayment(Request $request)
+    {
+        try {
+            $user = Auth()->user();
+            $rules = [
+                "applicationId" => "required|exists:" . $this->_PropProperty->getTable() . ",id",
+
+            ];
+            $validator = Validator::make($request->all(), $rules);
+            if ($validator->fails()) {
+                return validationErrorV2($validator);
+            }
+            $ipAddress = getClientIpAddress();
+            $merchantCode          = Config::get('payment-constants.merchant_code');
+            $salt                  = Config::get('payment-constants.salt');
+            $application = $this->_PropProperty->find($request->applicationId);
+          
+            $owners = PropOwner::where('property_id', $request->applicationId)
+                ->first();
+
+            $data = [
+                "userId" => $user && $user->getTable() == "users" ? $user->id : null,
+                "consumerId" => $application->id,
+                "applicationNo" => $application->application_no,
+                "moduleId" => $this->_MODULE_ID ?? 2,
+                "email" => ($owners->whereNotNull("email")->first())->email_id ?? "test@gmail.com",                          //"test@gmail.com"
+                "mobileNumber" => ($owners->whereNotNull("mobile_no")->first())->mobile_no ?? "0123456789",                       //"0123456789"
+                "amount" => 1,                                                                                              //round($chargeDetails->amount)
+                "firstname" => "No Name",
+                "frontSuccessUrl" => $request->frontSuccessUrl,
+                "frontFailUrl" => $request->frontFailUrl,
+                "marchantId"     => $merchantCode,
+                "txnId"        => ""
+
+            ];
+            // $easebuzzObj = new PayNimo();
+            $result =  $this->initPaymentReq($data);
+            if (!$result) {
+                throw new Exception("Payment Not Initiat Due To Internal Server Error");
+            }
+            $data["url"] = $result['url'] ?? null;
+            $data = $result;
+            $this->_PropPaynimoPayRequest->property_id = $application->id;
+            $this->_PropPaynimoPayRequest->tran_type = "isNakkalPayment";
+            $this->_PropPaynimoPayRequest->merchant_id = $merchantCode;
+            $this->_PropPaynimoPayRequest->order_id = $data["txnid"] ?? "";
+            $this->_PropPaynimoPayRequest->demand_amt = $data['amount'] ?? "0";
+            $this->_PropPaynimoPayRequest->payable_amount = $data['amount'] ?? "0";
+            $this->_PropPaynimoPayRequest->penalty_amount = 0;
+            $this->_PropPaynimoPayRequest->rebate_amount = 0;
+            $this->_PropPaynimoPayRequest->ip_address = $ipAddress;
+            $this->_PropPaynimoPayRequest->request_json = json_encode($request->all(), JSON_UNESCAPED_UNICODE);
+            $this->_PropPaynimoPayRequest->save();
+            return responseMsg(true, "Payment Initiat", remove_null($data));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+    public function initPaymentReq($param)
+    {
+        $salt["salt"]         = Config::get('payment-constants.salt');
+        $taxId = $this->getOderId($param["moduleId"] ?? 1);
+        $param["txnid"] = $taxId;
+        // $datastring = $param['marchantId'] . "|" . $param['txnid'] . "|" . $param['amount'] . "|" . "|" . $param['consumerId'] . "||||||||||" . $param['salt'];
+
+        $datastring = "{$param['marchantId']}|{$param['txnid']}|{$param['amount']}||{$param['consumerId']}||||||||||||{$salt['salt']}";
+
+
+        //  $datastring = $param['marchantId'] . "|||" .  "|" .  "||||" . "||||||||||";
+        $hashVal = hash('sha512', $datastring);
+
+
+        $param["hash"] =  $hashVal;
+        $param["merchantCode"] = Config::get('payment-constants.merchant_code');
+        
+        $param["env"]          = Config::get('payment-constants.env');
+        return $param;
+    }
+    public function getOderId(int $modeuleId = 0)
+    {
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $randomString = '';
+        for ($i = 0; $i < 10; $i++) {
+            $index = rand(0, strlen($characters) - 1);
+            $randomString .= $characters[$index];
+        }
+        $orderId = (("Order_" . $modeuleId . date('dmyhism') . $randomString));
+        return $orderId = explode("=", chunk_split($orderId, 30, "="))[0];
+    }
+    /**
+        Webhook Response
+     * update online payment transaction 
+     */
+    public function worldlineHandelResponse(Request $request)
+    {
+        try {
+
+            $mHoldingTaxController = new ActiveSafController($this->_safRepo);
+            $user         = authUser($request);
+            $todayDate    = Carbon::now();
+            $PaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
+
+            // Check if the request data exists based on order id and status
+            $requestData = $this->_PropPaynimoPayRequest
+                ->where("order_id", $request->txnid)
+                ->where("status", 2)
+                ->first();
+
+            if (!$requestData) {
+                throw new Exception("Request Data Not Found");
+            }
+            $property = PropProperty::where("id", $requestData->property_id)->first();
+            if (!$property) {
+                throw new Exception('Property Not Exist');
+            }
+
+            // Merge request payload and additional data
+            $requestPayload = json_decode($requestData->request_json, true);
+            $newReqs = new ReqPayment([
+                "paymentType" => $requestData->tran_type,
+                "paidAmount" => $requestData->payable_amount,
+                "id"         => $requestData->property_id,
+                "paymentMode" => "ONLINE",
+            ]);
+            $newReqs->merge($requestPayload);
+            $newReqs->merge([
+                "paymentMode"         => "ONLINE",
+                "relatedId"           => $requestData->related_id,
+                "totalCharge"         => $requestData->payable_amount,
+                "ulbId"               => $activeConRequest->ulb_id ?? null,
+                "paymentGatewayType"  => $request->payment_source,
+            ]);
+
+            // Begin transaction
+            DB::beginTransaction();
+
+            $idGeneration = new IdGeneration;
+            $tranNo = $idGeneration->generateTransactionNo($property->ulb_id);
+            $tranBy = auth()->user()->user_type ??  $request->userType;
+            $request->merge([
+                "demandAmt" => "",
+                "workflowId" => $property->workflow_id,
+                "tranType" => "isNakkalPayment",
+                "saf_id" => $property->id,
+                "applicationNo" => $property->saf_no,
+                "ulbId"   => $property->ulb_id,
+                "userId" => $request['userId'] ?? ($user->id ?? 0),
+                "tranNo" => $tranNo,
+                "amount" => $request->paidAmount,
+                'tranBy' => $tranBy,
+                'todayDate' => Carbon::now()->format('Y-m-d'),
+            ]);
+            $PropTrans = new PropTransaction();
+            $PropTrans->property_id = $property->id;
+            $PropTrans->saf_id = $property->saf_id;
+            $PropTrans->amount = $requestData['payable_amount'];
+            $PropTrans->tran_type = 'isNakkalPayment';
+            $PropTrans->tran_date = $request['todayDate'];
+            $PropTrans->tran_no = $request['tranNo'];
+            $PropTrans->payment_mode = $newReqs['paymentMode'];
+            $PropTrans->user_id = $request['userId'] ?? $user->id;
+            $PropTrans->ulb_id = $request['ulbId'];
+            $PropTrans->tran_by_type = $request['tranBy'];
+            $PropTrans->verify_status = $request['verifyStatus'] ?? 1;
+            $PropTrans->verified_by =  1;
+            $PropTrans->book_no = $request['bookNo'] ?? null;
+            $PropTrans->save();
+            # Activate new Property
+            if ($property) {
+                $property->nakkal_payment_status = 1;
+                $property->update();
+            }
+            // Save transaction details
+            # Save the Details of the transaction
+            $this->_PropEasebuzzPayResponse->request_id = $requestData->id;
+            $this->_PropEasebuzzPayResponse->related_id = $requestData->related_id;
+            $this->_PropEasebuzzPayResponse->module_id = $request->moduleId ?? 1;
+            $this->_PropEasebuzzPayResponse->order_id = $request->txnid;
+            $this->_PropEasebuzzPayResponse->payable_amount = $requestData->payable_amount;
+            $this->_PropEasebuzzPayResponse->payment_id = $request->easepayid;
+            $this->_PropEasebuzzPayResponse->tran_id = $PropTrans->id;
+            $this->_PropEasebuzzPayResponse->error_message = $request->error_message;
+            $this->_PropEasebuzzPayResponse->user_id = $request->userId;
+            $this->_PropEasebuzzPayResponse->ip_address = $requestData->ip_address;
+            $this->_PropEasebuzzPayResponse->response_data = json_encode($request->all(), JSON_UNESCAPED_UNICODE);
+            $this->_PropEasebuzzPayResponse->save();
+            $requestData->status = 1;
+            $requestData->update();
+
+            DB::commit();
+
+            return responseMsgs(true, "Payment Done!", remove_null($request->all()), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
 }

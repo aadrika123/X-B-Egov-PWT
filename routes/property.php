@@ -75,9 +75,9 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('saf/gb-apply', 'applyGbSaf');                                                          // Applying GB Saf (3)
 
     //wrtitten by prity pandey
-    Route::post('saf/apply-by-tc', 'applySafTc'); 
+    Route::post('saf/apply-by-tc', 'applySafTc');
     Route::post('saf/apply-by-tc-reassesment', 'applySafTcReassesment');
-    Route::post('saf/apply-by-tc-detail', 'applySafTcDetail'); 
+    Route::post('saf/apply-by-tc-detail', 'applySafTcDetail');
     Route::post('saf/consumer-verify', 'verifyConsumer');
     Route::post('saf/license-verify', 'verifyLicense');
   });
@@ -103,7 +103,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::get('saf/prop-transactions', 'getPropTransactions');                                         // Get Property Transactions(17)
     Route::post('saf/site-verification', 'siteVerification');                                           // Ulb TC Site Verification(18)
     Route::post('saf/geotagging', 'geoTagging');
-    Route::post("saf/get-uploaded-geotagging","getUploadedGeoTagging") ;                                                       // Geo Tagging(19)
+    Route::post("saf/get-uploaded-geotagging", "getUploadedGeoTagging");                                                       // Geo Tagging(19)
     Route::post('saf/get-tc-verifications', 'getTcVerifications');                                      // Get TC Verifications  Data(20)
     Route::post('saf/proptransaction-by-id', 'getTransactionBySafPropId');                              // Get Property Transaction by Property ID or SAF id(22)
     Route::post('saf/get-demand-by-id', 'getDemandBySafId');                                            // Get the demandable Amount of the Property from Admin Side(26)
@@ -396,6 +396,9 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
 
     //Written by prity pandey
     Route::post('citizen/icic-init-payment-for-process-fee', 'ICICPaymentRequestProcessFee');  
+    #======== created by Arshad===================#endregion
+    Route::post('citizen/worldline-init-payment', 'worldlineInitPayment');
+    Route::post('citizen/worldline-response-payment', 'worldlineHandelResponse');
   });
 
   /**
@@ -432,7 +435,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('v1/old-open_ploat_tax_currect', 'TaxCorrection');
     Route::post('update-mobile', 'updateMobile');
     Route::post('check-amalgamation-property', 'checkAmalgamationProperty');
-    Route::post('master-holding-data', 'masterHoldingData');     
+    Route::post('master-holding-data', 'masterHoldingData');
   });
 
   /**
@@ -563,7 +566,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('reports/property/daily-head-wise-individual-collection', 'individulaPropHeadWishDailyColl');
     Route::post('reports/property/daily-head-wise-zone-collection', 'zoneWishDailyColl');
     Route::post('reports/property/daily-head-wise-ward-collection', 'wardWishDailyColl');
-    Route::post("reports/property/individual-each-year-demand-due","propEachFyearHoldingDues");
+    Route::post("reports/property/individual-each-year-demand-due", "propEachFyearHoldingDues");
 
     /**
      * #==========created by Prity Pandey==========================     
@@ -594,7 +597,6 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('reports/bulk-demand-generated-list', 'bulkDemandList');
     Route::post('reports/bulk-demand-generated-list-download-count', 'bulkDemandListDownloadCount');
     Route::post('reports/bulk-notice-comment', 'bulkNoticeComment');
-
   });
 
   /**
@@ -607,22 +609,21 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('get-user-active-applications', 'getActiveApplications');
   });
 
-  
-//create by prity pandey
-Route::controller(ApiController::class)->group(function () {
-  Route::post('user-property-details', 'pushIGRData');
-});
+
+  //create by prity pandey
+  Route::controller(ApiController::class)->group(function () {
+    Route::post('user-property-details', 'pushIGRData');
+  });
   /**
    * =============MDM Crud===============
    *              created by : sandeep Bara
    *              date       : 2023/03/13
    */
-  Route::controller(MdmPropertyController::class)->group(function(){
+  Route::controller(MdmPropertyController::class)->group(function () {
     Route::post('add-apartment', 'addApartment');
     Route::post('edit-apartment', 'editApartment');
     Route::post('apartment-list', 'apartmentList');
   });
-
 });
 
 
@@ -676,7 +677,7 @@ Route::controller(HoldingTaxController::class)->group(function () {
   Route::post('independent/get-holding-dues', 'getHoldingDues');                            // (07) Property/ Holding Dues
   Route::post('independent/bulk-get-holding-dues', 'bulkGetHoldingDues');                            // (07.1) Property/ Holding Dues
   Route::post('independent/generate-prop-orderid', 'generateOrderId');                      // (08) Generate Property Order ID
-  Route::post('prop-payment-history', 'propPaymentHistoryv4');   
+  Route::post('prop-payment-history', 'propPaymentHistoryv4');
   // Route::post('prop-payment-history', 'propPaymentHistory');                              // (06) Property Payment History
   Route::post('prop-ulb-receipt', 'proUlbReceipt');                                         // (09) Property Ulb Payment Receipt
   Route::post('prop-comparative-demand', 'comparativeDemand');                              // (10) Property Comparative Demand
