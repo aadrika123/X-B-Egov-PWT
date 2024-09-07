@@ -828,6 +828,7 @@ class CitizenHoldingController extends Controller
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), $request->all(), "phc1.1", "1.0", "", "POST", $request->deviceId ?? "");
         }
+    }
     /**
      * |Initiate Online Payment
      * |FOR property Nakkal Payment
