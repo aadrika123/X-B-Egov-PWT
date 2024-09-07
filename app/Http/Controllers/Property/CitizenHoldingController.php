@@ -14,7 +14,7 @@ use App\Models\Property\PropIciciPaymentsRequest;
 use App\Models\Property\PropIciciPaymentsResponse;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropPaynimoPayRequest;
-use App\Models\Property\propPaynimoPayResponse;
+use App\Models\Property\PropPaynimoPayResponse;
 use App\Models\Property\PropPinelabPaymentsRequest;
 use App\Models\Property\PropPinelabPaymentsResponse;
 use App\Models\Property\PropProperty;
