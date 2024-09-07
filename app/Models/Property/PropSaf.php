@@ -429,6 +429,7 @@ class PropSaf extends PropParamModel #Model
             'prop_safs.assessment_type',
             'prop_safs_owners.owner_name',
             'prop_safs_owners.guardian_name',
+            'prop_safs.vacant_land_type'
         )
             ->leftJoin('prop_safs_owners', 'prop_safs_owners.saf_id', '=', 'prop_safs.id')
             ->where('prop_safs.previous_holding_id', $prop)
