@@ -3942,7 +3942,7 @@ class WaterPaymentController extends Controller
                 "moduleId" => $this->_MODULE_ID ?? 2,
                 "email" => ($owners->whereNotNull("email")->first())->email_id ?? "test@gmail.com",                          //"test@gmail.com"
                 "mobileNumber" => ($owners->whereNotNull("mobile_no")->first())->mobile_no ?? "0123456789",                       //"0123456789"
-                "amount" => $request->amount ?? ($consumerDemandData['data']['totalSumDemand'] ?? 0),                                                                                              //round($chargeDetails->amount)
+                "amount" => 1,                                                                                              //$request->amount ?? ($consumerDemandData['data']['totalSumDemand'] ?? 0)
                 "firstname" => "No Name",
                 "frontSuccessUrl" => $request->frontSuccessUrl,
                 "frontFailUrl" => $request->frontFailUrl,
@@ -3958,7 +3958,7 @@ class WaterPaymentController extends Controller
             }
             // Merge payment result data
             $data["url"] = $result['url'] ?? null;
-            $data= $result;
+            $data = $result;
             $this->_WaterPaynimoPayRequest->related_id = $request->consumerId;
             $this->_WaterPaynimoPayRequest->tran_type = "Demand Collection";
             $this->_WaterPaynimoPayRequest->merchant_id = $merchantCode;
