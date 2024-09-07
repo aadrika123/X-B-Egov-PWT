@@ -9,10 +9,16 @@ use App\Repository\Property\Interfaces\iSafRepository;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Payment\IciciPaymentController;
 use App\Http\Requests\Property\ReqPayment;
+use App\MicroServices\IdGeneration;
 use App\Models\Property\PropIciciPaymentsRequest;
 use App\Models\Property\PropIciciPaymentsResponse;
+use App\Models\Property\PropOwner;
+use App\Models\Property\PropPaynimoPayRequest;
+use App\Models\Property\propPaynimoPayResponse;
 use App\Models\Property\PropPinelabPaymentsRequest;
 use App\Models\Property\PropPinelabPaymentsResponse;
+use App\Models\Property\PropProperty;
+use App\Models\Property\PropTransaction;
 use App\Repository\Common\CommonFunction;
 use Carbon\Carbon;
 use Exception;
@@ -31,10 +37,14 @@ class CitizenHoldingController extends Controller
     private $_PropIciciPaymentsRequest;
     private $_PropIciciPaymentsRespone;
     protected $_safRepo;
-    protected $_PropPinelabPaymentsRequest ;
-    protected $_PropPinelabPaymentsResponse ;
-    protected $_PineLabPayment ;
+    protected $_PropPinelabPaymentsRequest;
+    protected $_PropPinelabPaymentsResponse;
+    protected $_PineLabPayment;
     protected $_COMONFUNCTION;
+    protected $_PropProperty;
+    protected $_DB_NAME;
+    protected $_PropPaynimoPayRequest;
+    protected $_PropEasebuzzPayResponse;
 
     public function __construct(iSafRepository $safRepo)
     {
@@ -48,6 +58,9 @@ class CitizenHoldingController extends Controller
         $this->_PropPinelabPaymentsResponse = new PropPinelabPaymentsResponse();
         $this->_PineLabPayment =  new PineLabPayment;
         $this->_COMONFUNCTION = new CommonFunction();
+        $this->_PropProperty  = new PropProperty();
+        $this->_PropPaynimoPayRequest = new PropPaynimoPayRequest();
+        $this->_PropEasebuzzPayResponse = new PropPaynimoPayResponse();
     }
 
     public function getHoldingDues(Request $request)
@@ -74,35 +87,33 @@ class CitizenHoldingController extends Controller
         }
         try {
             $reqData  = $this->_PropIciciPaymentsRequest->where('prop_id', $request['propId'])
-            ->where('status', 1)
-            ->orderby("created_at","DESC")
-            ->first();
-            $diffInMin = Carbon::parse(Carbon::parse())->diffInMinutes($reqData->created_at??null);
-            if($reqData && $diffInMin < 5 && !Config::get("sms-constants.sms_test"))
-            {
+                ->where('status', 1)
+                ->orderby("created_at", "DESC")
+                ->first();
+            $diffInMin = Carbon::parse(Carbon::parse())->diffInMinutes($reqData->created_at ?? null);
+            if ($reqData && $diffInMin < 5 && !Config::get("sms-constants.sms_test")) {
                 // throw new Exception("Please Wait ".(5-$diffInMin)." Minutes");
             }
-            $user = Auth()->user()??null;
+            $user = Auth()->user() ?? null;
             $isCitizenUserType = $user ? $this->_COMONFUNCTION->checkUsersWithtocken("active_citizens") : true;
             $demandsResponse = $this->_HoldingTaxController->getHoldingDues($request);
             if (!$demandsResponse->original["status"]) {
                 return $demandsResponse;
             }
             $demand = (object)$demandsResponse->original["data"];
-            
-            if ($demand["payableAmt"]<=0) {
+
+            if ($demand["payableAmt"] <= 0) {
                 throw new Exception("Deamnd Amount is 0 ");
             }
             if (!$demand["isOldTranClear"]) {
                 throw new Exception("Please waite for previous transaction clearance ");
             }
             $payableAmt = $demand["payableAmt"];
-            $arrear = $demand["arrear"]+($demand["arrearMonthlyPenalty"]??0);
+            $arrear = $demand["arrear"] + ($demand["arrearMonthlyPenalty"] ?? 0);
             if ($request->paymentType != "isPartPayment") {
                 $request->merge(["paidAmount" => $request->paymentType == "isFullPayment" ? $payableAmt : $arrear]);
             }
-            if(round($request->paidAmount) > round($payableAmt))
-            {
+            if (round($request->paidAmount) > round($payableAmt)) {
                 throw new Exception("Cannot pay advance amount through online");
             }
 
@@ -120,22 +131,21 @@ class CitizenHoldingController extends Controller
             $arrearTotaTax = $arrearDemand->sum("total_tax");
             $penalty = $arrearDemand->sum("monthlyPenalty");
             $totalaAreaDemand = $previousInterest + $arrearTotaTax + $penalty;
-            $rebats = collect($demandData["rebates"]??[]);
+            $rebats = collect($demandData["rebates"] ?? []);
             $rebatsAmt =  $rebats->sum("rebates_amt");
-            $isApplicable = $request->paymentType=="isFullPayment" || ( $request->paymentType!="isFullPayment" && round($request->paidAmount) > $demand["payableAmt"]) ? true : false;
+            $isApplicable = $request->paymentType == "isFullPayment" || ($request->paymentType != "isFullPayment" && round($request->paidAmount) > $demand["payableAmt"]) ? true : false;
             $rebatsAmt = 0;
-            $rebats =  $postPropPayment->testSpecialRebates($demand,$request->paidAmount);
-            if($isApplicable)
-            {
-                $rebatsAmt = roundFigure(collect($rebats)->where("is_applicable",true)->sum("rebates_amt"));
+            $rebats =  $postPropPayment->testSpecialRebates($demand, $request->paidAmount);
+            if ($isApplicable) {
+                $rebatsAmt = roundFigure(collect($rebats)->where("is_applicable", true)->sum("rebates_amt"));
             }
             $paidTotalExemptedGeneralTax = $postPropPayment->testArmforceRebat();
-            $firstQuaterRebats = collect($demand["QuarterlyRebates"]??[]);
-            $firstQuaterRebatsAmt =  $request->paymentType=="isFullPayment" ? $firstQuaterRebats->sum("rebates_amt"):0;
+            $firstQuaterRebats = collect($demand["QuarterlyRebates"] ?? []);
+            $firstQuaterRebatsAmt =  $request->paymentType == "isFullPayment" ? $firstQuaterRebats->sum("rebates_amt") : 0;
 
             $request->merge([
-                "rebate" =>$rebatsAmt,   
-                "amount" => round($request->paidAmount - $rebatsAmt - $paidTotalExemptedGeneralTax -$firstQuaterRebatsAmt),
+                "rebate" => $rebatsAmt,
+                "amount" => round($request->paidAmount - $rebatsAmt - $paidTotalExemptedGeneralTax - $firstQuaterRebatsAmt),
                 "id"    => $request->propId,
                 "ulbId" => $demand["basicDetails"]["ulb_id"],
                 "demandList" => $demand["demandList"],
@@ -155,13 +165,11 @@ class CitizenHoldingController extends Controller
             // {
             //     throw new Exception("Payment Gateway temporary disabled due to maintainable");
             // }
-            if(!$isCitizenUserType)
-            {
-                $request->merge(["userId"=>$user->id]);
+            if (!$isCitizenUserType) {
+                $request->merge(["userId" => $user->id]);
             }
-            if($isCitizenUserType && $user)
-            {
-                $request->merge(["CitizenId"=>$user->id]);
+            if ($isCitizenUserType && $user) {
+                $request->merge(["CitizenId" => $user->id]);
             }
             $respons = $this->_IciciPaymentController->getReferalUrl($request);
             if (!$respons->original["status"]) {
@@ -209,46 +217,42 @@ class CitizenHoldingController extends Controller
         $reqData  = $this->_PropIciciPaymentsRequest->where('req_ref_no', $req['reqRefNo'])
             ->where('payment_status', 0)
             ->first();
-              
+
         if (collect($reqData)->isEmpty())
             throw new Exception("No Transaction Found");
 
-        $reqData->update(['payment_status' => 1,"is_manual_update"=>$req->has("isManualUpdate")?$req->isManualUpdate:false]);
+        $reqData->update(['payment_status' => 1, "is_manual_update" => $req->has("isManualUpdate") ? $req->isManualUpdate : false]);
 
         $newReqs = new ReqPayment([
             "paymentType" => $reqData->tran_type,
-            "paidAmount" => $reqData->payable_amount ,
+            "paidAmount" => $reqData->payable_amount,
             "id"         => $reqData->prop_id,
             "paymentMode" => "ONLINE",
         ]);
-        if(isset($req->TrnDate))
-        {
+        if (isset($req->TrnDate)) {
             $newReqs->merge([
-                "TrnDate"=>$req->TrnDate,
+                "TrnDate" => $req->TrnDate,
             ]);
         }
-        $reqDataRequest = json_decode($reqData->request,true);
-        if(isset($reqDataRequest["userId"]))
-        {
+        $reqDataRequest = json_decode($reqData->request, true);
+        if (isset($reqDataRequest["userId"])) {
             $newReqs->merge([
-                "userId"=>$reqDataRequest["userId"],
-                "deviceType"=>$reqDataRequest["deviceType"]??null,
+                "userId" => $reqDataRequest["userId"],
+                "deviceType" => $reqDataRequest["deviceType"] ?? null,
             ]);
         }
-        if(isset($reqDataRequest["CitizenId"]))
-        {
+        if (isset($reqDataRequest["CitizenId"])) {
             $newReqs->merge([
-                "CitizenId"=>$reqDataRequest["CitizenId"],
-                "isCitizen"=>true,
+                "CitizenId" => $reqDataRequest["CitizenId"],
+                "isCitizen" => true,
             ]);
         }
-        if(isset($reqDataRequest["auth"]))
-        {
+        if (isset($reqDataRequest["auth"])) {
             $newReqs->merge([
-                "userType"=>$reqDataRequest["auth"]["user_type"]??"",
+                "userType" => $reqDataRequest["auth"]["user_type"] ?? "",
             ]);
         }
-        
+
         $data = $mHoldingTaxController->offlinePaymentHoldingV2($newReqs);
 
         $mReqs = [
@@ -286,29 +290,26 @@ class CitizenHoldingController extends Controller
         $reqData  = $this->_PropIciciPaymentsRequest->where('req_ref_no', $request['reqRefNo'])
             ->where('payment_status', 0)
             ->first();
-              
-        if (collect($reqData)->isEmpty()){
+
+        if (collect($reqData)->isEmpty()) {
             throw new Exception("No Transaction Found");
         }
-        if ($request->Status == 'SUCCESS' || $request->ResponseCode == 'E000'){
-            $responsData =  $this->ICICPaymentResponse($request);  
+        if ($request->Status == 'SUCCESS' || $request->ResponseCode == 'E000') {
+            $responsData =  $this->ICICPaymentResponse($request);
             $respons =  $responsData->original["data"];
-            $respons["bankResponse"]=$request->Status;
-            if(!$responsData->original["status"])
-            {
-                throw new Exception($responsData->original["message"]) ;
-            }            
-            return responseMsgs(true, "", $respons, "1", "1.0", "", "", $request->deviceId ?? "");         
-        }
-        try{
-            DB::beginTransaction();
-            $reqData->update(['payment_status' => 2,"is_manual_update"=>$request->isManualUpdate]);
-            DB::commit();
-            $respons = ["bankResponse"=>$request->Status,"TransactionNo"=>"","transactionId"=>""];
+            $respons["bankResponse"] = $request->Status;
+            if (!$responsData->original["status"]) {
+                throw new Exception($responsData->original["message"]);
+            }
             return responseMsgs(true, "", $respons, "1", "1.0", "", "", $request->deviceId ?? "");
         }
-        catch(Exception $e)
-        {
+        try {
+            DB::beginTransaction();
+            $reqData->update(['payment_status' => 2, "is_manual_update" => $request->isManualUpdate]);
+            DB::commit();
+            $respons = ["bankResponse" => $request->Status, "TransactionNo" => "", "transactionId" => ""];
+            return responseMsgs(true, "", $respons, "1", "1.0", "", "", $request->deviceId ?? "");
+        } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "1", "1.0", "", "", $request->deviceId ?? "");
         }
@@ -316,12 +317,11 @@ class CitizenHoldingController extends Controller
 
     public function testIcic(Request $req)
     {
-        try{         
-            $respons=  $this->ICICPaymentResponse($req);
-            return($respons);
-        }
-        catch (Exception $e) {
-            return responseMsgs(false,$e->getMessage(), "", "011604", "2.0", "", "POST", $req->deviceId ?? "");
+        try {
+            $respons =  $this->ICICPaymentResponse($req);
+            return ($respons);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011604", "2.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -344,19 +344,15 @@ class CitizenHoldingController extends Controller
                 'errors' => $validated->errors()
             ]);
         }
-        try{
+        try {
             $user = Auth()->user();
             $billRefNo = null;
 
-            if ($request->paymentType == 'isFullPayment')
-            {
+            if ($request->paymentType == 'isFullPayment') {
                 $request->merge(['isArrear' => false]);
-            }
-            elseif ($request->paymentType == 'isArrearPayment')
-            {
+            } elseif ($request->paymentType == 'isArrearPayment') {
                 $request->merge(['isArrear' => true]);
-            }
-            else{
+            } else {
                 $request->merge(['isArrear' => false]);
             }
             $demandsResponse = $this->getHoldingDues($request);
@@ -364,13 +360,13 @@ class CitizenHoldingController extends Controller
                 return $demandsResponse;
             }
             $demand = (object)$demandsResponse->original["data"];
-            
-            if ($demand["payableAmt"]<=0) {
+
+            if ($demand["payableAmt"] <= 0) {
                 throw new Exception("Deamnd Amount is 0 ");
             }
 
             $payableAmt = $demand["payableAmt"];
-            $arrear = round($demand["arrear"]+($demand["arrearMonthlyPenalty"]??0));
+            $arrear = round($demand["arrear"] + ($demand["arrearMonthlyPenalty"] ?? 0));
             if ($request->paymentType != "isPartPayment") {
                 $request->merge(["paidAmount" => $request->paymentType == "isFullPayment" ? $payableAmt : $arrear]);
             }
@@ -382,20 +378,19 @@ class CitizenHoldingController extends Controller
             $postPropPayment = new PostPropPaymentV2($newReqs);
             $postPropPayment->_propCalculation = $demandsResponse;
             $postPropPayment->chakPayentAmount();
-            $OneMinLate = Carbon::now()->addMinutes("-1")->format("Y-m-d H:i:s");            
-            $chack = $this->_PropPinelabPaymentsRequest::where("prop_id",$request->propId)
-                    ->where("created_at",">=",$OneMinLate)
-                    ->OrderBy("id","DESC")
-                    ->first();           
-            if($chack)
-            {
-                throw new Exception("Please Try After ".(60- Carbon::now()->diffInSeconds(Carbon::parse($chack->created_at)))." Seconds");
+            $OneMinLate = Carbon::now()->addMinutes("-1")->format("Y-m-d H:i:s");
+            $chack = $this->_PropPinelabPaymentsRequest::where("prop_id", $request->propId)
+                ->where("created_at", ">=", $OneMinLate)
+                ->OrderBy("id", "DESC")
+                ->first();
+            if ($chack) {
+                throw new Exception("Please Try After " . (60 - Carbon::now()->diffInSeconds(Carbon::parse($chack->created_at))) . " Seconds");
             }
             $pineLabParams = (object)[
                 "workflowId"    => $demand["basicDetails"]["workflowId"],
                 "amount"        => $request->paidAmount,
                 "moduleId"      => $demand["basicDetails"]["moduleId"],
-                "applicationId" =>$request->propId,
+                "applicationId" => $request->propId,
                 "paymentType" => "Property"
             ];
             $billRefNo = $this->_PineLabPayment->initiatePayment($pineLabParams);
@@ -414,15 +409,15 @@ class CitizenHoldingController extends Controller
                 "workflowId" => $demand["basicDetails"]["workflowId"],
                 "moduleId" => $demand["basicDetails"]["moduleId"],
                 "userId" => $user->id,
-                "tranType"=>"Property",
+                "tranType" => "Property",
             ]);
-            
+
             $respons["propId"] = $request->propId;
             $respons["paidAmount"] = $request->paidAmount;
             $respons["resRefNo"] = $request->resRefNo;
 
             DB::beginTransaction();
-            $respons["requestId"] = $this->_PropPinelabPaymentsRequest->store($request);            
+            $respons["requestId"] = $this->_PropPinelabPaymentsRequest->store($request);
             DB::commit();
 
             $respons = collect($respons)->only(
@@ -434,9 +429,7 @@ class CitizenHoldingController extends Controller
                 ]
             );
             return responseMsgs(true, "request Initiated", $respons, "phc1.1", "1.0", "", "POST", $request->deviceId ?? "");
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "1", "1.0", "", "", $request->deviceId ?? "");
         }
@@ -447,8 +440,8 @@ class CitizenHoldingController extends Controller
         $mHoldingTaxController = new HoldingTaxController($this->_safRepo);
         $validated = Validator::make(
             $request->all(),
-            [       
-                "paidAmount" =>"required|numeric" ,       
+            [
+                "paidAmount" => "required|numeric",
                 'Detail.BillingRefNo' => 'required|string',
                 'Response.ResponseMsg' => 'required|string',
                 'Response.ResponseCode' => 'required',
@@ -462,20 +455,18 @@ class CitizenHoldingController extends Controller
                 'errors' => $validated->errors()
             ]);
         }
-        try{
+        try {
             $responStatusArr = $request->Response;
-            $reqRefNo = $request->Detail["BillingRefNo"];            
+            $reqRefNo = $request->Detail["BillingRefNo"];
             $reqData  = $this->_PropPinelabPaymentsRequest->where('bill_ref_no', $reqRefNo)
-                        ->where('payment_status', 0)
-                        ->orderBy("id","DESC")
-                        ->first();              
-            if (collect($reqData)->isEmpty())
-            {
+                ->where('payment_status', 0)
+                ->orderBy("id", "DESC")
+                ->first();
+            if (collect($reqData)->isEmpty()) {
                 throw new Exception("No Transaction Found");
             }
-            
-            if($reqData->payable_amount != $request->paidAmount)
-            {
+
+            if ($reqData->payable_amount != $request->paidAmount) {
                 throw new Exception("payble Amount Missmatch");
             }
             $newReqs = new ReqPayment([
@@ -484,37 +475,31 @@ class CitizenHoldingController extends Controller
                 "id"         => $reqData->prop_id,
                 "paymentMode" => $reqData->payment_mode,
             ]);
-            $responsData = [                
+            $responsData = [
                 "requestId"  => $reqData->id,
                 "reqRefNo"     => $reqRefNo,
-                "safId"        => $reqData->saf_id ,
-                "propId"        => $reqData->prop_id ,
+                "safId"        => $reqData->saf_id,
+                "propId"        => $reqData->prop_id,
                 "paymentMode"   => $reqData->payment_mode,
                 "responseCode" => $responStatusArr["ResponseCode"],
                 "responseSms"   => $responStatusArr["ResponseMsg"],
                 "paidAmount"   => $request['paidAmount'],
                 "requst"      => $request->all(),
-                "userId"       => Auth()->user()?Auth()->user()->id:"",
+                "userId"       => Auth()->user() ? Auth()->user()->id : "",
                 "ipAddress"        => $request->ipAddress,
             ];
-            if(in_array($responStatusArr["ResponseCode"],[0]))
-            { 
+            if (in_array($responStatusArr["ResponseCode"], [0])) {
                 $data = $mHoldingTaxController->offlinePaymentHoldingV2($newReqs);
-                if($data->original['status'])
-                {
+                if ($data->original['status']) {
                     $reqData->update(['payment_status' => 1]);
-                    $responsData["tranId"]=$data->original['data']['transactionId'] ?? null;
+                    $responsData["tranId"] = $data->original['data']['transactionId'] ?? null;
                     $responsData = (object) $responsData;
                     $this->_PropPinelabPaymentsResponse->store($responsData);
                 }
                 return $data;
             }
             throw new Exception("Payment Is Failed");
-
-            
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "1", "1.0", "", "", $request->deviceId ?? "");
         }
     }
@@ -527,8 +512,8 @@ class CitizenHoldingController extends Controller
     {
         $validated = Validator::make(
             $request->all(),
-            [       
-                "fromDate" =>"nullable|date" ,       
+            [
+                "fromDate" => "nullable|date",
                 'uptoDate' => 'nullable|date',
                 'reqRefNo' => 'nullable|string',
                 'applicationNo' => 'nullable|string',
@@ -544,40 +529,32 @@ class CitizenHoldingController extends Controller
                 'errors' => $validated->errors()
             ]);
         }
-        try{
+        try {
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
             $wardId = $zoneId = $appType =  $reqRefNo = $applicationNo = null;
             $PaymentStatus = 0;
-            if($request->fromDate)
-            {
+            if ($request->fromDate) {
                 $fromDate = $request->fromDate;
             }
-            if($request->uptoDate)
-            {
+            if ($request->uptoDate) {
                 $uptoDate = $request->uptoDate;
             }
-            if($request->appType)
-            {
+            if ($request->appType) {
                 $appType = $request->appType;
             }
-            if($request->wardId)
-            {
+            if ($request->wardId) {
                 $wardId = $request->wardId;
             }
-            if($request->zoneId)
-            {
+            if ($request->zoneId) {
                 $zoneId = $request->zoneId;
             }
-            if($request->PaymentStatus)
-            {
+            if ($request->PaymentStatus) {
                 $PaymentStatus = $this->getIntPaymentStatus($request->PaymentStatus);
             }
-            if($request->reqRefNo)
-            {
+            if ($request->reqRefNo) {
                 $reqRefNo = $request->reqRefNo;
             }
-            if($request->applicationNo)
-            {
+            if ($request->applicationNo) {
                 $applicationNo = $request->applicationNo;
             }
             $data = PropIciciPaymentsRequest::select(
@@ -593,7 +570,7 @@ class CitizenHoldingController extends Controller
                 case when prop_icici_payments_requests.saf_id is not null then saf.zone_name else prop.zone_name end as zone_name
                     ")
             )
-            ->leftJoin(DB::raw("
+                ->leftJoin(DB::raw("
                     (
                         select prop_icici_payments_requests.id,prop_properties.holding_no,prop_properties.property_no,
                             zone_masters.zone_name,ulb_ward_masters.ward_name,
@@ -603,8 +580,8 @@ class CitizenHoldingController extends Controller
                         left join zone_masters on zone_masters.id = prop_properties.zone_mstr_id
                         left join ulb_ward_masters on ulb_ward_masters.id = prop_properties.ward_mstr_id                        
                     )prop
-            "),"prop.id","prop_icici_payments_requests.id")
-            ->leftJoin(DB::raw("
+            "), "prop.id", "prop_icici_payments_requests.id")
+                ->leftJoin(DB::raw("
                     (
                         select prop_icici_payments_requests.id,saf.holding_no,saf.saf_no,
                             zone_masters.zone_name,ulb_ward_masters.ward_name,
@@ -628,47 +605,43 @@ class CitizenHoldingController extends Controller
                         left join ulb_ward_masters on ulb_ward_masters.id = saf.ward_mstr_id	 
                         
                 )saf
-            "),"saf.id","prop_icici_payments_requests.id")            
-            ->where("prop_icici_payments_requests.status",1)
-            ->where("prop_icici_payments_requests.payment_status",$PaymentStatus);
+            "), "saf.id", "prop_icici_payments_requests.id")
+                ->where("prop_icici_payments_requests.status", 1)
+                ->where("prop_icici_payments_requests.payment_status", $PaymentStatus);
 
-            switch($appType)
-            {
-                case 'Saf' : $data->whereNotNull("prop_icici_payments_requests.saf_id");
-                            break;
-                case 'Property' : $data->whereNotNull("prop_icici_payments_requests.prop_id");
-                            break;
+            switch ($appType) {
+                case 'Saf':
+                    $data->whereNotNull("prop_icici_payments_requests.saf_id");
+                    break;
+                case 'Property':
+                    $data->whereNotNull("prop_icici_payments_requests.prop_id");
+                    break;
             }
-            if($reqRefNo)
-            {
-                $data->where("prop_icici_payments_requests.req_ref_no",$reqRefNo);
+            if ($reqRefNo) {
+                $data->where("prop_icici_payments_requests.req_ref_no", $reqRefNo);
             }
-            if($wardId)
-            {
-                $data->where(function($query) use($wardId){
-                    $query->OrWhere("saf.ward_mstr_id",$wardId)
-                    ->OrWhere("prop.ward_mstr_id",$wardId);
+            if ($wardId) {
+                $data->where(function ($query) use ($wardId) {
+                    $query->OrWhere("saf.ward_mstr_id", $wardId)
+                        ->OrWhere("prop.ward_mstr_id", $wardId);
                 });
             }
-            if($zoneId)
-            {
-                $data->where(function($query) use($zoneId){
-                    $query->OrWhere("saf.zone_mstr_id",$zoneId)
-                    ->OrWhere("prop.zone_mstr_id",$zoneId);
+            if ($zoneId) {
+                $data->where(function ($query) use ($zoneId) {
+                    $query->OrWhere("saf.zone_mstr_id", $zoneId)
+                        ->OrWhere("prop.zone_mstr_id", $zoneId);
                 });
             }
-            if($applicationNo)
-            {
-                $data->where(function($query)use($applicationNo){
-                    $query->where("saf.saf_no",$applicationNo)
-                          ->OrWhere("prop.holding_no",$applicationNo);
+            if ($applicationNo) {
+                $data->where(function ($query) use ($applicationNo) {
+                    $query->where("saf.saf_no", $applicationNo)
+                        ->OrWhere("prop.holding_no", $applicationNo);
                 });
+            } else {
+                $data->whereBetween(DB::raw("CAST(prop_icici_payments_requests.created_at AS DATE)"), [$fromDate, $uptoDate]);
             }
-            else{
-                $data->whereBetween(DB::raw("CAST(prop_icici_payments_requests.created_at AS DATE)"),[$fromDate,$uptoDate]);
-            }
-            $data->OrderBy("prop_icici_payments_requests.id","ASC")
-                ->OrderBy("prop_icici_payments_requests.prop_id","ASC");
+            $data->OrderBy("prop_icici_payments_requests.id", "ASC")
+                ->OrderBy("prop_icici_payments_requests.prop_id", "ASC");
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $paginator = $data->paginate($perPage);
@@ -685,22 +658,21 @@ class CitizenHoldingController extends Controller
             ];
             $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
             return responseMsgs(true, "", $list);
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "1", "1.0", "", "", $request->deviceId ?? "");
         }
     }
 
     private function getIntPaymentStatus($PaymentStatus)
-    {   
+    {
         $status = 0;
-        switch($PaymentStatus)
-        {
-            case "Success" : $status = 1;
-                            break;
-            case "Failed" : $status = 2;
-                            break;
+        switch ($PaymentStatus) {
+            case "Success":
+                $status = 1;
+                break;
+            case "Failed":
+                $status = 2;
+                break;
         }
         return $status;
     }
@@ -709,8 +681,8 @@ class CitizenHoldingController extends Controller
     {
         $validated = Validator::make(
             $request->all(),
-            [       
-                "id" =>"required",
+            [
+                "id" => "required",
             ]
         );
 
@@ -721,24 +693,22 @@ class CitizenHoldingController extends Controller
                 'errors' => $validated->errors()
             ]);
         }
-        try{
+        try {
             $users = Auth()->user();
             $requestId = $request->id;
             $reqData = PropIciciPaymentsRequest::find($requestId);
-            if(!$reqData)
-            {
-                throw New Exception("Request Data Not Found");
+            if (!$reqData) {
+                throw new Exception("Request Data Not Found");
             }
-            if($reqData->payment_status==1)
-            {
-                throw New Exception("Payment Already cleared");
+            if ($reqData->payment_status == 1) {
+                throw new Exception("Payment Already cleared");
             }
             $testPayment = checkPaymentStatus($reqData->req_ref_no);
-            if(!$testPayment["status"]){
+            if (!$testPayment["status"]) {
                 throw new Exception($testPayment["errors"]);
             }
             $respons = (object)$testPayment["response"];
-            $PaymentStatus = $respons->status??null;             
+            $PaymentStatus = $respons->status ?? null;
             $mReqs = [
                 "RT"            => $respons->RT            ?? null,
                 "IcId"          => $respons->IcId          ?? null,
@@ -746,7 +716,7 @@ class CitizenHoldingController extends Controller
                 "PayMode"       => $respons->PaymentMode   ?? null,
                 "TrnDate"       => $respons->trandate      ?? null,
                 "SettleDT"      => $respons->sdt            ?? null,
-                "Status"        => strtoupper($respons->status??null) ?? null,
+                "Status"        => strtoupper($respons->status ?? null) ?? null,
                 "InitiateDT"    => $respons->InitiateDT    ?? null,
                 "TranAmt"       => $respons->amount       ?? null,
                 "BaseAmt"       => $respons->amount       ?? null,
@@ -763,15 +733,218 @@ class CitizenHoldingController extends Controller
                 "Remarks"       => $respons->Remarks       ?? null,
                 "HashVal"       => $respons->HashVal       ?? null,
                 "reqRefNo"      => $reqData->req_ref_no    ?? null,
-                "isManualUpdate"=> true,
-                "reason"        => $respons->reason??"",
+                "isManualUpdate" => true,
+                "reason"        => $respons->reason ?? "",
             ];
             $newRequest = new Request($mReqs);
             return $this->ICICPaymentFailSuccess($newRequest);
-        }
-        catch(Exception $e)
-        {
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "1", "1.0", "", "", $request->deviceId ?? "");
+        }
+    }
+
+    /**
+     * |Initiate Online Payment
+     * |FOR property Nakkal Payment
+        Worldline payment 
+     */
+    public function worldlineInitPayment(Request $request)
+    {
+        try {
+            $user = Auth()->user();
+            $rules = [
+                "applicationId" => "required|exists:" . $this->_PropProperty->getTable() . ",id",
+
+            ];
+            $validator = Validator::make($request->all(), $rules);
+            if ($validator->fails()) {
+                return validationErrorV2($validator);
+            }
+            $ipAddress = getClientIpAddress();
+            $merchantCode          = Config::get('payment-constants.merchant_code');
+            $salt                  = Config::get('payment-constants.salt');
+            $application = $this->_PropProperty->find($request->applicationId);
+            if ($application->nakkal_payment_status != 0) {
+                throw new Exception("Payment Alreay done");
+            }
+            $owners = PropOwner::where('property_id', $request->applicationId)
+                ->first();
+
+            $data = [
+                "userId" => $user && $user->getTable() == "users" ? $user->id : null,
+                "consumerId" => $application->id,
+                "applicationNo" => $application->application_no,
+                "moduleId" => $this->_MODULE_ID ?? 2,
+                "email" => ($owners->whereNotNull("email")->first())->email_id ?? "test@gmail.com",                          //"test@gmail.com"
+                "mobileNumber" => ($owners->whereNotNull("mobile_no")->first())->mobile_no ?? "0123456789",                       //"0123456789"
+                "amount" => 1,                                                                                              //round($chargeDetails->amount)
+                "firstname" => "No Name",
+                "frontSuccessUrl" => $request->frontSuccessUrl,
+                "frontFailUrl" => $request->frontFailUrl,
+                "marchantId"     => $merchantCode,
+                "salt"         => $salt,
+                "txnId"        => ""
+
+            ];
+            // $easebuzzObj = new PayNimo();
+            $result =  $this->initPaymentReq($data);
+            if (!$result) {
+                throw new Exception("Payment Not Initiat Due To Internal Server Error");
+            }
+            $data["url"] = $result['url'] ?? null;
+            $data = $result;
+            $this->_PropPaynimoPayRequest->property_id = $application->id;
+            $this->_PropPaynimoPayRequest->tran_type = "isNakkalPayment";
+            $this->_PropPaynimoPayRequest->merchant_id = $merchantCode;
+            $this->_PropPaynimoPayRequest->order_id = $data["txnid"] ?? "";
+            $this->_PropPaynimoPayRequest->demand_amt = $data['amount'] ?? "0";
+            $this->_PropPaynimoPayRequest->payable_amount = $data['amount'] ?? "0";
+            $this->_PropPaynimoPayRequest->penalty_amount = 0;
+            $this->_PropPaynimoPayRequest->rebate_amount = 0;
+            $this->_PropPaynimoPayRequest->ip_address = $ipAddress;
+            $this->_PropPaynimoPayRequest->request_json = json_encode($request->all(), JSON_UNESCAPED_UNICODE);
+            $this->_PropPaynimoPayRequest->save();
+            return responseMsg(true, "Payment Initiat", remove_null($data));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+    public function initPaymentReq($param)
+    {
+        $taxId = $this->getOderId($param["moduleId"] ?? 1);
+        $param["txnid"] = $taxId;
+        // $datastring = $param['marchantId'] . "|" . $param['txnid'] . "|" . $param['amount'] . "|" . "|" . $param['consumerId'] . "||||||||||" . $param['salt'];
+
+        $datastring = "{$param['marchantId']}|{$param['txnid']}|{$param['amount']}||{$param['consumerId']}||||||||||||{$param['salt']}";
+
+
+        //  $datastring = $param['marchantId'] . "|||" .  "|" .  "||||" . "||||||||||";
+        $hashVal = hash('sha512', $datastring);
+
+
+        $param["hash"] =  $hashVal;
+        $param["merchantCode"] = Config::get('payment-constants.merchant_code');
+        $param["salt"]         = Config::get('payment-constants.salt');
+        $param["env"]          = Config::get('payment-constants.env');
+        return $param;
+    }
+    public function getOderId(int $modeuleId = 0)
+    {
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $randomString = '';
+        for ($i = 0; $i < 10; $i++) {
+            $index = rand(0, strlen($characters) - 1);
+            $randomString .= $characters[$index];
+        }
+        $orderId = (("Order_" . $modeuleId . date('dmyhism') . $randomString));
+        return $orderId = explode("=", chunk_split($orderId, 30, "="))[0];
+    }
+    /**
+        Webhook Response
+     * update online payment transaction 
+     */
+    public function worldlineHandelResponse(Request $request)
+    {
+        try {
+
+            $mHoldingTaxController = new ActiveSafController($this->_safRepo);
+            $user         = authUser($request);
+            $todayDate    = Carbon::now();
+            $PaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
+
+            // Check if the request data exists based on order id and status
+            $requestData = $this->_PropPaynimoPayRequest
+                ->where("order_id", $request->txnid)
+                ->where("status", 2)
+                ->first();
+
+            if (!$requestData) {
+                throw new Exception("Request Data Not Found");
+            }
+            $property = PropProperty::where("id", $requestData->property_id)->first();
+            if (!$property) {
+                throw new Exception('Property Not Exist');
+            }
+
+            // Merge request payload and additional data
+            $requestPayload = json_decode($requestData->request_json, true);
+            $newReqs = new ReqPayment([
+                "paymentType" => $requestData->tran_type,
+                "paidAmount" => $requestData->payable_amount,
+                "id"         => $requestData->property_id,
+                "paymentMode" => "ONLINE",
+            ]);
+            $newReqs->merge($requestPayload);
+            $newReqs->merge([
+                "paymentMode"         => "ONLINE",
+                "relatedId"           => $requestData->related_id,
+                "totalCharge"         => $requestData->payable_amount,
+                "ulbId"               => $activeConRequest->ulb_id ?? null,
+                "paymentGatewayType"  => $request->payment_source,
+            ]);
+
+            // Begin transaction
+            DB::beginTransaction();
+
+            $idGeneration = new IdGeneration;
+            $tranNo = $idGeneration->generateTransactionNo($property->ulb_id);
+            $tranBy = auth()->user()->user_type ??  $request->userType;
+            $request->merge([
+                "demandAmt" => "",
+                "workflowId" => $property->workflow_id,
+                "tranType" => "isNakkalPayment",
+                "saf_id" => $property->id,
+                "applicationNo" => $property->saf_no,
+                "ulbId"   => $property->ulb_id,
+                "userId" => $request['userId'] ?? ($user->id ?? 0),
+                "tranNo" => $tranNo,
+                "amount" => $request->paidAmount,
+                'tranBy' => $tranBy,
+                'todayDate' => Carbon::now()->format('Y-m-d'),
+            ]);
+            $PropTrans = new PropTransaction();
+            $PropTrans->property_id = $property->id;
+            $PropTrans->saf_id = $property->saf_id;
+            $PropTrans->amount = $requestData['payable_amount'];
+            $PropTrans->tran_type = 'isNakkalPayment';
+            $PropTrans->tran_date = $request['todayDate'];
+            $PropTrans->tran_no = $request['tranNo'];
+            $PropTrans->payment_mode = $newReqs['paymentMode'];
+            $PropTrans->user_id = $request['userId'] ?? $user->id;
+            $PropTrans->ulb_id = $request['ulbId'];
+            $PropTrans->tran_by_type = $request['tranBy'];
+            $PropTrans->verify_status = $request['verifyStatus'] ?? 1;
+            $PropTrans->verified_by =  1;
+            $PropTrans->book_no = $request['bookNo'] ?? null;
+            $PropTrans->save();
+            # Activate new Property
+            if ($property) {
+                $property->nakkal_payment_status = 1;
+                $property->update();
+            }
+            // Save transaction details
+            # Save the Details of the transaction
+            $this->_PropEasebuzzPayResponse->request_id = $requestData->id;
+            $this->_PropEasebuzzPayResponse->related_id = $requestData->related_id;
+            $this->_PropEasebuzzPayResponse->module_id = $request->moduleId ?? 1;
+            $this->_PropEasebuzzPayResponse->order_id = $request->txnid;
+            $this->_PropEasebuzzPayResponse->payable_amount = $requestData->payable_amount;
+            $this->_PropEasebuzzPayResponse->payment_id = $request->easepayid;
+            $this->_PropEasebuzzPayResponse->tran_id = $PropTrans->id;
+            $this->_PropEasebuzzPayResponse->error_message = $request->error_message;
+            $this->_PropEasebuzzPayResponse->user_id = $request->userId;
+            $this->_PropEasebuzzPayResponse->ip_address = $requestData->ip_address;
+            $this->_PropEasebuzzPayResponse->response_data = json_encode($request->all(), JSON_UNESCAPED_UNICODE);
+            $this->_PropEasebuzzPayResponse->save();
+            $requestData->status = 1;
+            $requestData->update();
+
+            DB::commit();
+
+            return responseMsgs(true, "Payment Done!", remove_null($request->all()), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
 }
