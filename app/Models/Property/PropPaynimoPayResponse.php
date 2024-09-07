@@ -10,6 +10,9 @@ class PropPaynimoPayResponse extends Model
     use HasFactory;
     protected $connection;
     protected $guarded = [];
+    public function __construct($DB = null)
+    {
+    }
 
     public static function readConnection()
     {
