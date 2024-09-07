@@ -764,9 +764,7 @@ class CitizenHoldingController extends Controller
             $merchantCode          = Config::get('payment-constants.merchant_code');
             $salt                  = Config::get('payment-constants.salt');
             $application = $this->_PropProperty->find($request->applicationId);
-            if ($application->nakkal_payment_status != 0) {
-                throw new Exception("Payment Alreay done");
-            }
+          
             $owners = PropOwner::where('property_id', $request->applicationId)
                 ->first();
 
