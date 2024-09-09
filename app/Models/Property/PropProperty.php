@@ -91,9 +91,18 @@ class PropProperty extends  PropParamModel #Model
         return DB::table('prop_properties')
             ->select(
                 'prop_properties.*',
+                'prop_safs.vacant_land_type',
+                // DB::raw("CASE 
+                //     WHEN prop_safs.vacant_land_type =="1" THEN 'Layout' 
+                //     WHEN prop_safs.vacant_land_type == "2" THEN 'Guntewadi' 
+                //     WHEN prop_safs.vacant_land_type == "3" THEN 'Government Land' 
+                //     WHEN prop_safs.vacant_land_type == "4" THEN 'Gauthan' 
+                //     ELSE '' 
+                //  END AS vacant_land_type"),
+           
                 DB::raw("REPLACE(prop_properties.holding_type, '_', ' ') AS holding_type"),
-                DB::raw("CASE WHEN TRIM(applicant_name) <> '' THEN applicant_name ELSE applicant_marathi END AS ref_applicant_name"),
-                'applicant_marathi as applicant_name',
+                DB::raw("CASE WHEN TRIM(prop_properties.applicant_name) <> '' THEN prop_properties.applicant_name ELSE prop_properties.applicant_marathi END AS ref_applicant_name"),
+                'prop_properties.applicant_marathi as applicant_name',
                 'prop_properties.status as active_status',
                 'prop_properties.assessment_type as assessment',
                 'w.ward_name as ward_no',
@@ -108,6 +117,7 @@ class PropProperty extends  PropParamModel #Model
                 DB::raw("string_agg(DISTINCT prop_owners.owner_name_marathi, ', ') as owner_names_marathi"),
                 DB::raw("SUM(prop_demands.total_tax) as total_tax")
             )
+            ->leftjoin('prop_safs','prop_safs.id','=','prop_properties.saf_id')
             ->Join('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
             ->leftJoin('ulb_ward_masters as w', 'w.id', '=', 'prop_properties.ward_mstr_id')
             ->leftJoin('ref_prop_ownership_types as o', 'o.id', '=', 'prop_properties.ownership_type_mstr_id')
@@ -127,6 +137,7 @@ class PropProperty extends  PropParamModel #Model
                 'a.apt_code',
                 'z.zone_name',
                 'cat.category',
+                'prop_safs.vacant_land_type'
                 //'prop_demands.total_tax'
             );
     }

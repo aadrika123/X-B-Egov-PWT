@@ -325,6 +325,7 @@ class GetHoldingDuesV2
             "plot_no",
             "area_of_plot",
             "building_name",
+            "vacant_land_type"
         ]);
         $demand['isOldTranClear'] = $this->_IsOldTranClear;
         $basicDtls['moduleId'] = 1;
