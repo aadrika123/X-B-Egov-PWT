@@ -23,7 +23,22 @@ class PropTransaction extends PropParamModel #Model
             ->where('status', 1)
             ->get();
     }
+    
+    public function getPropTransactionsHistory($id, $key)
+    {
+        return PropTransaction::where("$key", $id)
+            ->where('status', 1)
+            ->where('tran_type', '!=', 'isNakkalPayment')
+            ->get();
+    }
 
+    public function getPropTransactionsNakal($id, $key)
+    {
+        return PropTransaction::where("$key", $id)
+            ->where('status', 1)
+            ->where('tran_type', '=', 'isNakkalPayment')
+            ->get();
+    }
     public function getTranByTranNo($tranNo)
     {
         return PropTransaction::where('tran_no', $tranNo)

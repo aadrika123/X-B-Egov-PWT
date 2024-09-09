@@ -842,7 +842,7 @@ class HoldingTaxController extends Controller
             if (!$propertyDtls)
                 throw new Exception("Property Not Found");
 
-            $propTrans = $mPropTrans->getPropTransactions($req->propId, 'property_id');         // Holding Payment History
+            $propTrans = $mPropTrans->getPropTransactionsHistory($req->propId, 'property_id');         // Holding Payment History
             // if (!$propTrans || $propTrans->isEmpty())
             //     throw new Exception("No Transaction Found");
 
@@ -850,12 +850,21 @@ class HoldingTaxController extends Controller
                 $propTran['tran_date'] = Carbon::parse($propTran->tran_date)->format('d-m-Y');
             });
 
+
+            $propTransProcessFee = $mPropTrans->getPropTransactionsNakal($req->propId, 'property_id');         // Holding Payment History
+            // if (!$propTrans || $propTrans->isEmpty())
+            //     throw new Exception("No Transaction Found");
+
+            $propTransProcessFee->map(function ($propTransProcessFee) {
+                $propTransProcessFee['tran_date'] = Carbon::parse($propTransProcessFee->tran_date)->format('d-m-Y');
+            });
+
             $propSafId = $propertyDtls->saf_id;
 
             if (is_null($propSafId))
                 $safTrans = array();
             else {
-                $safTrans = $mPropTrans->getPropTransactions($propSafId, 'saf_id');                 // Saf payment History
+                $safTrans = $mPropTrans->getPropTransactionsHistory($propSafId, 'saf_id');                 // Saf payment History
                 $safTrans->map(function ($safTran) {
                     $safTran['tran_date'] = Carbon::parse($safTran->tran_date)->format('d-m-Y');
                 });
@@ -863,11 +872,12 @@ class HoldingTaxController extends Controller
             $msafDetail = $mSafs->getBasicDetails($propSafId);
             if ($msafDetail && $msafDetail->previous_holding_id) {
                 $previousHoldingId = $msafDetail->previous_holding_id;
-                $propTransPrevious = $mPropTrans->getPropTransactions($previousHoldingId, 'property_id');
+                $propTransPrevious = $mPropTrans->getPropTransactionsHistory($previousHoldingId, 'property_id');
                 $transactions['PreviousHolding'] = collect($propTransPrevious)->sortByDesc('id')->values();
             }
             $transactions['Holding'] = collect($propTrans)->sortByDesc('id')->values();
             $transactions['Saf'] = collect($safTrans)->sortByDesc('id')->values();
+            $transactions['NakalFee'] = collect($propTransProcessFee)->sortByDesc('id')->values();
 
             return responseMsgs(true, "", remove_null($transactions), "011606", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
