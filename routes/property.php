@@ -686,7 +686,7 @@ Route::controller(HoldingTaxController::class)->group(function () {
   Route::post('prop/generate-new-demand', 'genratePropNewTax');
 
   //unauthenticated api for prop-payment-history created by prity pandey
-  Route::post('prop-payment-history-direct', 'propPaymentHistory')->withoutMiddleware(['request_logger', 'expireBearerToken']);
+  Route::post('prop-payment-history-direct', 'propPaymentHistoryv4')->withoutMiddleware(['request_logger', 'expireBearerToken']);
   // Route::post('bulk-sms-list', 'propertyBulkSmsList');
   // Route::post('bulk-sms', 'propertyBulkSms');
   // Route::post('abhay-yojna', 'propertyAbhayYojnaSms');
