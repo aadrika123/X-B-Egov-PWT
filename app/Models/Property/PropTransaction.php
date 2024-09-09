@@ -492,37 +492,70 @@ class PropTransaction extends PropParamModel #Model
         return $this->hasOne(PropChequeDtl::class, "transaction_id", "id")->where("status", "<>", 0)->orderBy("id")->first();
     }
 
+    // public function getTransactionsNakal($tranId)
+    // {
+    //     $transactions = PropTransaction::select(
+    //         'prop_transactions.property_id',
+    //         'prop_transactions.saf_id',
+    //         DB::raw("to_char(prop_transactions.tran_date, 'DD-MM-YYYY') as tran_date"),
+    //         'prop_transactions.tran_no',
+    //         'prop_transactions.amount',
+    //         'prop_transactions.tran_type',
+    //         DB::raw("string_agg(DISTINCT prop_owners.owner_name, ', ') as owner_name"),
+    //         DB::raw("string_agg(DISTINCT prop_owners.owner_name_marathi, ', ') as owner_names_marathi")
+    //     )
+    //         ->join('prop_properties as p', 'p.id', '=', 'prop_transactions.property_id')
+    //         ->join('prop_owners', 'prop_owners.property_id', '=', 'p.id')
+    //         ->whereIn('prop_transactions.status', [1, 2])
+    //         ->where('tran_type', '=', 'isNakkalPayment')
+    //         ->where('prop_transactions.id', $tranId)
+    //         ->groupBy(
+    //             'prop_transactions.property_id',
+    //             'prop_transactions.saf_id',
+    //             'prop_transactions.tran_date',
+    //             'prop_transactions.tran_no',
+    //             'prop_transactions.amount',
+    //             'prop_transactions.tran_type'
+    //         )
+    //         ->first();
+
+    //     // Add the 'paidAmtInWords' field
+    //     $transactions->each(function ($transaction) {
+    //         $transaction->paidAmtInWords = getIndianCurrency($transaction->amount);
+    //     });
+    //     return $transactions;
+    // }
+
     public function getTransactionsNakal($tranId)
     {
-        $transactions = PropTransaction::select(
+        $transaction = PropTransaction::select(
             'prop_transactions.property_id',
             'prop_transactions.saf_id',
-            DB::raw("to_char(prop_transactions.tran_date, 'DD-MM-YYYY') as tran_date"),
+            DB::raw("TO_CHAR(prop_transactions.tran_date, 'DD-MM-YYYY') as tran_date"),
             'prop_transactions.tran_no',
             'prop_transactions.amount',
             'prop_transactions.tran_type',
             DB::raw("string_agg(DISTINCT prop_owners.owner_name, ', ') as owner_name"),
             DB::raw("string_agg(DISTINCT prop_owners.owner_name_marathi, ', ') as owner_names_marathi")
         )
-            ->join('prop_properties as p', 'p.id', '=', 'prop_transactions.property_id')
-            ->join('prop_owners', 'prop_owners.property_id', '=', 'p.id')
+            ->Join('prop_properties as p', 'p.id', '=', 'prop_transactions.property_id')
+            ->Join('prop_owners', 'prop_owners.property_id', '=', 'p.id')
             ->whereIn('prop_transactions.status', [1, 2])
             ->where('tran_type', '=', 'isNakkalPayment')
             ->where('prop_transactions.id', $tranId)
             ->groupBy(
-                'prop_transactions.property_id',
-                'prop_transactions.saf_id',
-                'prop_transactions.tran_date',
-                'prop_transactions.tran_no',
-                'prop_transactions.amount',
-                'prop_transactions.tran_type'
-            )
+                            'prop_transactions.property_id',
+                            'prop_transactions.saf_id',
+                            'prop_transactions.tran_date',
+                            'prop_transactions.tran_no',
+                            'prop_transactions.amount',
+                            'prop_transactions.tran_type'
+                        )
             ->first();
-
-        // Add the 'paidAmtInWords' field
-        $transactions->each(function ($transaction) {
+        if ($transaction) {
             $transaction->paidAmtInWords = getIndianCurrency($transaction->amount);
-        });
-        return $transactions;
+        }
+
+        return $transaction;
     }
 }

@@ -2755,7 +2755,7 @@ class HoldingTaxController extends Controller
         try {
            $propTran = new PropTransaction();
            $receipt = $propTran->getTransactionsNakal($req->tranId);
-            return responseMsgs(true, "Payment Receipt", remove_null($receipt), "011605", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(true, "Payment Receipt", $receipt, "011605", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011605", "1.0", "", "POST", $req->deviceId);
         }
