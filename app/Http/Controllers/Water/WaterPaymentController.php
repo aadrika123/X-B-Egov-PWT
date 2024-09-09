@@ -3781,12 +3781,7 @@ class WaterPaymentController extends Controller
     {
         $taxId = $this->getOderId($param["moduleId"] ?? 2);
         $param["txnid"] = $taxId;
-        // $datastring = $param['marchantId'] . "|" . $param['txnid'] . "|" . $param['amount'] . "|" . "|" . $param['consumerId'] . "||||||||||" . $param['salt'];
-
         $datastring = "{$param['marchantId']}|{$param['txnid']}|{$param['amount']}||{$param['consumerId']}||||||||||||{$param['salt']}";
-
-
-        //  $datastring = $param['marchantId'] . "|||" .  "|" .  "||||" . "||||||||||";
         $hashVal = hash('sha512', $datastring);
 
 

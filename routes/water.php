@@ -99,7 +99,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         # Consumer And Citizen Transaction Operation
 
         Route::post('master/get-listed-details', 'getWaterMasterData');                                 // Admin/ Citizen
-        Route::post('consumer/get-payment-history', 'getConsumerPaymentHistory');                       // Consumer               // use in consumer part
+        
 
         Route::post('consumer/calculate-month-demand', 'callDemandByMonth');                            // Admin/Consumer
         Route::post('application/payment/get-payment-history', 'getApplicationPaymentHistory');         // Admin/Consumer
@@ -329,6 +329,7 @@ Route::controller(WaterPaymentController::class)->group(function () {
     Route::post('admin/application/generate-payment-receipt', 'generateOfflinePaymentReceipt');     // Citizen / Admin
     Route::post('worldline/payment-initiate-demand', 'initiatePaymentDemand');
     Route::post('worldline/payment-response-demand', 'WorldlineHandelResponseDemand');
+    Route::post('consumer/get-payment-history', 'getConsumerPaymentHistory');                       // Consumer               // use in consumer part
     // Route::post('')
 });
 
