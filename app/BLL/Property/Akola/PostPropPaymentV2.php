@@ -123,7 +123,7 @@ class PostPropPaymentV2
             'isRebate' => false,
             'amount' => $this->_propCalculation->original['data']['totalInterestPenalty']
         ];
-        $this->_Rebates=[];
+        $this->_Rebates = [];
 
         $payableAmount = $this->_propCalculation->original['data']['payableAmt'];
 
@@ -138,7 +138,7 @@ class PostPropPaymentV2
             'todayDate' => $this->_REQ->TrnDate ? Carbon::parse($this->_REQ->TrnDate)->format('Y-m-d') : $this->_todayDate->format('Y-m-d'),
             'tranNo' => $this->_tranNo,
             'amount' => $payableAmount,                                                                         // Payable Amount with Arrear
-            'demandAmt' => $payableAmount,#$this->_propCalculation->original['data']['grandTaxes']['balance'],                         // Demandable Amount
+            'demandAmt' => $payableAmount, #$this->_propCalculation->original['data']['grandTaxes']['balance'],                         // Demandable Amount
             'tranBy' => $tranBy,
             'arrearSettledAmt' => $arrear,
             'isArrearSettled' => false,
@@ -399,9 +399,9 @@ class PostPropPaymentV2
                 'branch_name' => $this->_REQ['branchName'],
                 'cheque_no' => $this->_REQ['chequeNo']
             ];
-            $this->_REQ['paymentMode'] == $online_r ? $chequeReqs["status"]=1:null;
-            $this->_REQ['paymentMode'] == "DD" ? $chequeReqs["status"]=1:null;
-            $this->_REQ['paymentMode'] == "NEFT" ? $chequeReqs["status"]=1:null;
+            $this->_REQ['paymentMode'] == $online_r ? $chequeReqs["status"] = 1 : null;
+            $this->_REQ['paymentMode'] == "DD" ? $chequeReqs["status"] = 1 : null;
+            $this->_REQ['paymentMode'] == "NEFT" ? $chequeReqs["status"] = 1 : null;
             $mPropChequeDtl->postChequeDtl($chequeReqs);
         }
 
@@ -421,10 +421,9 @@ class PostPropPaymentV2
             'ulb_id' => $this->_REQ['ulbId'],
             "ward_no" => $this->_REQ["wardNo"],
         ];
-        
+
         // if($this->_REQ['paymentMode'] != $online_r)
-        if(!in_array($this->_REQ['paymentMode'],[$online_r,'DD']))
-        {
+        if (!in_array($this->_REQ['paymentMode'], [$online_r, 'DD'])) {
             $mTempTransaction->tempTransaction($tranReqs);
         }
     }
@@ -502,17 +501,13 @@ class PostPropPaymentV2
     /**
      * | Adjust On Penalty Amount
      */
-    public function penaltyAdjust()
-    {
-    }
+    public function penaltyAdjust() {}
 
 
     /**
      * | Adjust On Arrear Amount
      */
-    public function arrearAdjust()
-    {
-    }
+    public function arrearAdjust() {}
 
     /**
      * | Adjust on Current Demand
@@ -681,7 +676,7 @@ class PostPropPaymentV2
     }
     public function postPayment()
     {
-        
+
         $this->readPaymentParams();
 
         // 🔴🔴🔴🔴Begining Transactions 🔴🔴🔴
@@ -699,7 +694,7 @@ class PostPropPaymentV2
         // Adjust Demand on Part Payment
         if ($this->_REQ->paymentType == 'isPartPayment' && $this->_REQ->paidAmount < $this->_propCalculation->original['data']['payableAmt']) {
             $isPartWisePaid = true;                                                                                 // Flag has been kept for showing the partial payment receipt
-            $this->_REQ->merge(['amount' => $this->_REQ->paidAmount]); 
+            $this->_REQ->merge(['amount' => $this->_REQ->paidAmount]);
         }
 
         // Adjust Demand on Part Payment
@@ -715,7 +710,7 @@ class PostPropPaymentV2
             $this->_REQ->merge(['paidAmount' =>  $this->_propCalculation->original['data']['arrearPayableAmt']]);
             $this->_REQ->merge(['amount' => $this->_REQ->paidAmount]);
         }
-        if (isset($this->_REQ->paymentType ) && $this->_REQ->paymentType == "isFullPayment") {
+        if (isset($this->_REQ->paymentType) && $this->_REQ->paymentType == "isFullPayment") {
             $this->_REQ->merge(['paidAmount' =>  $this->_REQ['amount']]);
         }
         $addvanceAmt = $this->_propCalculation->original['data']["remainAdvance"] ?? 0;
@@ -735,14 +730,14 @@ class PostPropPaymentV2
         $adjustAmt = 0;
 
         $demandData = $this->_propCalculation->original['data'];
-        $rebats = collect($demandData["rebates"]??[]);
-        $firstQuaterRebats = collect($demandData["QuarterlyRebates"]??[]);
+        $rebats = collect($demandData["rebates"] ?? []);
+        $firstQuaterRebats = collect($demandData["QuarterlyRebates"] ?? []);
         $rebatsAmt =  $rebats->sum("rebates_amt");
         $firstQuaterRebatsAmt =  $firstQuaterRebats->sum("rebates_amt");
 
         $payableAmount = $this->_REQ->paidAmount - $previousInterest;
 
-        $specialRebaApply = $this->_REQ->paymentType=="isFullPayment" || ( $this->_REQ->paymentType!="isFullPayment" && round($this->_REQ->paidAmount) >= round($demandData['payableAmt'])) ? true : false;
+        $specialRebaApply = $this->_REQ->paymentType == "isFullPayment" || ($this->_REQ->paymentType != "isFullPayment" && round($this->_REQ->paidAmount) >= round($demandData['payableAmt'])) ? true : false;
 
         if ($this->_REQ["paymentMode"] != "ONLINE") {
             $adjustAmt = round($this->_REQ->paidAmount - $addvanceAmt);
@@ -760,8 +755,8 @@ class PostPropPaymentV2
                     $payableAmount;
                     $this->_REQ->merge(
                         [
-                            'paidAmount' => ($this->_REQ->paidAmount - $addvanceAmt)>0 ? ($this->_REQ->paidAmount - $addvanceAmt) : 0,
-                            'amount' => ($this->_REQ->paidAmount - $addvanceAmt) >0 ? ($this->_REQ->paidAmount - $addvanceAmt) : 0
+                            'paidAmount' => ($this->_REQ->paidAmount - $addvanceAmt) > 0 ? ($this->_REQ->paidAmount - $addvanceAmt) : 0,
+                            'amount' => ($this->_REQ->paidAmount - $addvanceAmt) > 0 ? ($this->_REQ->paidAmount - $addvanceAmt) : 0
                         ]
                     );
                     break;
@@ -769,8 +764,8 @@ class PostPropPaymentV2
                     $payableAmount;
                     $this->_REQ->merge(
                         [
-                            'paidAmount' => ($this->_REQ->paidAmount - $addvanceAmt)>0 ? ($this->_REQ->paidAmount - $addvanceAmt) : 0,
-                            'amount' => ($this->_REQ->paidAmount - $addvanceAmt)>0 ? ($this->_REQ->paidAmount - $addvanceAmt) : 0
+                            'paidAmount' => ($this->_REQ->paidAmount - $addvanceAmt) > 0 ? ($this->_REQ->paidAmount - $addvanceAmt) : 0,
+                            'amount' => ($this->_REQ->paidAmount - $addvanceAmt) > 0 ? ($this->_REQ->paidAmount - $addvanceAmt) : 0
                         ]
                     );
                     break;
@@ -784,7 +779,7 @@ class PostPropPaymentV2
         $paidArrearPenalty = 0;
         $totalDemandAmt = collect($demands)->sum("due_total_tax");
         foreach ($demands as $key => $val) {
-            if ($payableAmount <= 0 && $totalDemandAmt!=0) {
+            if ($payableAmount <= 0 && $totalDemandAmt != 0) {
                 continue;
             }
             $paymentDtl = ($this->demandAdjust($payableAmount, $val["id"]));
@@ -797,53 +792,48 @@ class PostPropPaymentV2
         #================Special Rebates===============
         $demandData = $this->_propCalculation->original['data'];
         $reqPaidAmount = $this->_REQ->paidAmount;
-        $rebats = collect($demandData["rebates"]??[])->map(function($val)use($specialRebaApply,$demandData,$paidDemands,$reqPaidAmount,$previousInterest,$paidArrearPenalty,$paidPenalty){ 
+        $rebats = collect($demandData["rebates"] ?? [])->map(function ($val) use ($specialRebaApply, $demandData, $paidDemands, $reqPaidAmount, $previousInterest, $paidArrearPenalty, $paidPenalty) {
             $isApplicatbel = false;
-            $oldPayment = (Carbon::parse($this->_REQ->tranDate)->between(Carbon::parse(Carbon::now()->format("Y")."-04-01"),Carbon::parse(Carbon::now()->format("Y")."-08-31")));
-            if($val["apply_on_total_tax"] && ($specialRebaApply && round($reqPaidAmount) >= round($demandData['payableAmt'])) || ($oldPayment && round($reqPaidAmount) >= round($demandData['arrearPayableAmt']))){
+            $oldPayment = (Carbon::parse($this->_REQ->tranDate)->between(Carbon::parse(Carbon::now()->format("Y") . "-04-01"), Carbon::parse(Carbon::now()->format("Y") . "-08-31")));
+            if ($val["apply_on_total_tax"] && ($specialRebaApply && round($reqPaidAmount) >= round($demandData['payableAmt'])) || ($oldPayment && round($reqPaidAmount) >= round($demandData['arrearPayableAmt']))) {
                 $isApplicatbel = true;
             }
-            if($val["apply_on_arear_tax"] && $specialRebaApply && (round(collect($paidDemands)->where("fyear", "<", getFY())->sum("paid_total_tax")) >= round($demandData['arrear'])) ){               
+            if ($val["apply_on_arear_tax"] && $specialRebaApply && (round(collect($paidDemands)->where("fyear", "<", getFY())->sum("paid_total_tax")) >= round($demandData['arrear']))) {
                 $isApplicatbel = true;
             }
-            if($val["apply_on_total_intrest"]  && $specialRebaApply  && ( round($paidPenalty+$previousInterest,2) >= round($demandData['arrearMonthlyPenalty'],2)  || is_between(round($paidPenalty,2) - round($demandData['arrearMonthlyPenalty'],2),-0.1,0.1)))
-            {                
+            if ($val["apply_on_total_intrest"]  && $specialRebaApply  && (round($paidPenalty + $previousInterest, 2) >= round($demandData['arrearMonthlyPenalty'], 2)  || is_between(round($paidPenalty, 2) - round($demandData['arrearMonthlyPenalty'], 2), -0.1, 0.1))) {
                 $isApplicatbel = true;
             }
-            if($val["apply_on_arear_intrest"] && $specialRebaApply && (round($paidArrearPenalty) >= round($demandData['arrearInterest']))){                
+            if ($val["apply_on_arear_intrest"] && $specialRebaApply && (round($paidArrearPenalty) >= round($demandData['arrearInterest']))) {
                 $isApplicatbel = true;
             }
-            if($val["apply_on_priv_intrest"] && $specialRebaApply && (round($previousInterest) >= round($demandData['previousInterest']))){                
+            if ($val["apply_on_priv_intrest"] && $specialRebaApply && (round($previousInterest) >= round($demandData['previousInterest']))) {
                 $isApplicatbel = true;
             }
             $val["is_applicable"] = $isApplicatbel;
             return $val;
         });
-        $rebats = $rebats->where("is_applicable",true);
-        if($rebats->isNotEmpty())
-        {
-            foreach($rebats as $rebat)
-            {
+        $rebats = $rebats->where("is_applicable", true);
+        if ($rebats->isNotEmpty()) {
+            foreach ($rebats as $rebat) {
                 $this->_Rebates[] = [
-                    "type"=>$rebat["rebate_type"],
-                    "isRebate"=>true,
-                    "amount"=>$rebat["rebates_amt"],
+                    "type" => $rebat["rebate_type"],
+                    "isRebate" => true,
+                    "amount" => $rebat["rebates_amt"],
                 ];
             }
         }
 
-        if((round($reqPaidAmount) >= round($demandData['payableAmt'])))
-        {
-            foreach($firstQuaterRebats as $rebat)
-            {
+        if ((round($reqPaidAmount) >= round($demandData['payableAmt']))) {
+            foreach ($firstQuaterRebats as $rebat) {
                 $this->_Rebates[] = [
-                    "type"=>$rebat["rebate_type"],
-                    "isRebate"=>true,
-                    "amount"=>$rebat["rebates_amt"],
+                    "type" => $rebat["rebate_type"],
+                    "isRebate" => true,
+                    "amount" => $rebat["rebates_amt"],
                 ];
             }
         }
-        
+
         #================end Special Rebates har================
 
         $arrearSetalAmount = collect($paidDemands)->where("fyear", "<", getFY())->sum("paid_total_tax");
@@ -851,7 +841,7 @@ class PostPropPaymentV2
             'demandAmt' => $arrearSetalAmount,                                            // Demandable Amount
             'arrearSettledAmt' => $arrearSetalAmount > 0 ? true : false,
         ]);
-        $this->_REQ->merge(["amount"=>$this->_REQ->amount - collect($this->_Rebates)->sum("amount") - collect($paidDemands)->sum("paidTotalExemptedGeneralTax")]);
+        $this->_REQ->merge(["amount" => $this->_REQ->amount - collect($this->_Rebates)->sum("amount") - collect($paidDemands)->sum("paidTotalExemptedGeneralTax")]);
 
         $this->_fromFyear = ((collect($paidDemands)->sortBy("fyear"))->first())["fyear"] ?? $this->_fromFyear;
         $this->_uptoFyear = ((collect($paidDemands)->sortBy("fyear"))->last())["fyear"] ?? $this->_uptoFyear;
@@ -862,9 +852,8 @@ class PostPropPaymentV2
         $this->_penaltyRebates["monthlyPenalty"]["amount"] = roundFigure($paidPenalty);
         $d1 = [];
         $trDtl = [];
-        foreach($demands as $key=>$val){
-            $this->insertDemandTranLog($this->_tranId,$val,($key==0?$demandData['previousInterest']:0));
-            
+        foreach ($demands as $key => $val) {
+            $this->insertDemandTranLog($this->_tranId, $val, ($key == 0 ? $demandData['previousInterest'] : 0));
         }
 
         #update Pending Arrear Penalty
@@ -995,7 +984,7 @@ class PostPropPaymentV2
         // Cheque Entry
         if (in_array($this->_REQ['paymentMode'], $this->_offlinePaymentModes)) {
             $this->_REQ->merge([
-                'applicationNo' => $this->_propDetails->holding_no??null,
+                'applicationNo' => $this->_propDetails->holding_no ?? null,
                 'chequeDate' => $this->_REQ['chequeDate'],
                 'tranId' => $propTrans['id']
             ]);
@@ -1003,7 +992,7 @@ class PostPropPaymentV2
         }
 
         #insert Advance Amount
-        if (round($payableAmount) > 0 && $totalDemandAmt!=0) {
+        if (round($payableAmount) > 0 && $totalDemandAmt != 0) {
             $advArr = [
                 "prop_id" => $this->_propId,
                 "tran_id" => $propTrans['id'],
@@ -1014,7 +1003,20 @@ class PostPropPaymentV2
             ];
             $this->_PropAdvance->store($advArr);
         }
-
+        if ($this->_REQ->paymentType == "isFullPayment") { {
+                if ($this->_REQ->paidAmount > $demandAmt) {
+                    $advArr = [
+                        "prop_id" => $this->_propId,
+                        "tran_id" => $propTrans['id'],
+                        "amount" => $this->_REQ->paidAmount - $demandAmt,
+                        "user_id" => $this->_REQ['userId'] ?? (auth()->user() ? auth()->user()->id : null),
+                        "ulb_id" => $this->_REQ['ulbId'] ?? (auth()->user() ? auth()->user()->ulbd_id : null),
+                        "remarks" => "Advance Payment",
+                    ];
+                    $this->_PropAdvance->store($advArr);
+                }
+            }
+        }
         #insert Adjusted Amount
         if (round($adjustAmt) > 0) {
             $adjArr = [
@@ -1026,13 +1028,13 @@ class PostPropPaymentV2
             ];
             $this->_PropAdjustment->store($adjArr);
         }
-        
+
         // $generatePaymentReceipt = new GeneratePaymentReceiptV2;                     // Version 2 Receipt
         // $generatePaymentReceipt->generateReceipt("", $propTrans['id']);
         // $receipt = $generatePaymentReceipt->_GRID;
         // DB::rollBack();
         // dd($paidDemands,collect($paidDemands)->sum("paidTotalExemptedGeneralTax"),$receipt,$this->_REQ["paidAmount"],$this->_REQ["amount"],$thertyPerOfpreviousInterest);
-        
+
         // sendsms
         $propertyNo  = $this->_propDetails->property_no;
         $paidAmount  = $this->_REQ->paidAmount;
@@ -1168,7 +1170,7 @@ class PostPropPaymentV2
         ];
         $data["paid_total_tax"] =  $paidDemandBifurcation["total_tax"] ?? 0;
         $data["paidCurrentTaxesBifurcation"] = $this->readPaidTaxes($paidDemandBifurcation);
-        $data["paidTotalExemptedGeneralTax"] = $data["paidCurrentTaxesBifurcation"]["paidExemptedGeneralTax"]?? 0;
+        $data["paidTotalExemptedGeneralTax"] = $data["paidCurrentTaxesBifurcation"]["paidExemptedGeneralTax"] ?? 0;
         return $data;
     }
 
@@ -1187,7 +1189,7 @@ class PostPropPaymentV2
         }
     }
 
-    public function testSpecialRebates($demandData,$reqPaidAmount)
+    public function testSpecialRebates($demandData, $reqPaidAmount)
     {
         $totalDemandAmt = $demandData["payableAmt"];
         $allDemands = $demandData["demandList"];
@@ -1197,7 +1199,7 @@ class PostPropPaymentV2
         $penalty = $arrearDemand->sum("monthlyPenalty");
         $totalaAreaDemand = $previousInterest + $arrearTotaTax + $penalty;
         $totalPenalty = $previousInterest + $penalty;
-        $rebats = collect($demandData["rebates"]??[]);
+        $rebats = collect($demandData["rebates"] ?? []);
         $rebatsAmt =  $rebats->sum("rebates_amt");
 
         $thertyPerOfpreviousInterest = $arrearTotaTax > 0 ? ($reqPaidAmount / 100) * 30 : $reqPaidAmount;
@@ -1205,30 +1207,29 @@ class PostPropPaymentV2
             $previousInterest = $previousInterest > 0 ? ($thertyPerOfpreviousInterest <= $previousInterest ? $thertyPerOfpreviousInterest : $previousInterest) : 0;
         }
         $paidTotaTax = $reqPaidAmount;
-        $isPaidTotalTax = $reqPaidAmount - $totalDemandAmt >=0 ? true:false;
-        $isPaidCurrentTotlaDemandTax = $reqPaidAmount - $totalDemandAmt >= 0 ? true : false ;
+        $isPaidTotalTax = $reqPaidAmount - $totalDemandAmt >= 0 ? true : false;
+        $isPaidCurrentTotlaDemandTax = $reqPaidAmount - $totalDemandAmt >= 0 ? true : false;
         $isPaidArearTotlaTax = $reqPaidAmount - $totalaAreaDemand >= 0 ? true : false;
         $isPaidArearTotlaDemandTax = $isPaidArearTotlaTax;
-        $isPaidArearTotlaPenalty =  $isPaidArearTotlaTax ;
-        $isPaidArearTotlaArrearPenalty =  $demandPrivInterst - $previousInterest<=0  ? true : false ;
-        $specialRebaApply = $this->_REQ->paymentType=="isFullPayment" || ( $this->_REQ->paymentType!="isFullPayment" && round($this->_REQ->paidAmount) >= round($totalDemandAmt)) ? true : false;
-        
-        $rebats = collect($demandData["rebates"]??[])->map(function($val)use($specialRebaApply,$demandData,$isPaidTotalTax,$isPaidCurrentTotlaDemandTax,$isPaidArearTotlaTax,$isPaidArearTotlaDemandTax,$isPaidArearTotlaPenalty,$isPaidArearTotlaArrearPenalty){ 
+        $isPaidArearTotlaPenalty =  $isPaidArearTotlaTax;
+        $isPaidArearTotlaArrearPenalty =  $demandPrivInterst - $previousInterest <= 0  ? true : false;
+        $specialRebaApply = $this->_REQ->paymentType == "isFullPayment" || ($this->_REQ->paymentType != "isFullPayment" && round($this->_REQ->paidAmount) >= round($totalDemandAmt)) ? true : false;
+
+        $rebats = collect($demandData["rebates"] ?? [])->map(function ($val) use ($specialRebaApply, $demandData, $isPaidTotalTax, $isPaidCurrentTotlaDemandTax, $isPaidArearTotlaTax, $isPaidArearTotlaDemandTax, $isPaidArearTotlaPenalty, $isPaidArearTotlaArrearPenalty) {
             $isApplicatbel = false;
-            if($val["apply_on_total_tax"] && $specialRebaApply && $isPaidTotalTax){
+            if ($val["apply_on_total_tax"] && $specialRebaApply && $isPaidTotalTax) {
                 $isApplicatbel = true;
             }
-            if($val["apply_on_arear_tax"] && $specialRebaApply && $isPaidArearTotlaTax ){               
+            if ($val["apply_on_arear_tax"] && $specialRebaApply && $isPaidArearTotlaTax) {
                 $isApplicatbel = true;
             }
-            if($val["apply_on_total_intrest"]  && $specialRebaApply  && $isPaidArearTotlaPenalty)
-            {                
+            if ($val["apply_on_total_intrest"]  && $specialRebaApply  && $isPaidArearTotlaPenalty) {
                 $isApplicatbel = true;
             }
-            if($val["apply_on_arear_intrest"] && $specialRebaApply && $isPaidArearTotlaPenalty){                
+            if ($val["apply_on_arear_intrest"] && $specialRebaApply && $isPaidArearTotlaPenalty) {
                 $isApplicatbel = true;
             }
-            if($val["apply_on_priv_intrest"] && $specialRebaApply && $isPaidArearTotlaArrearPenalty){                
+            if ($val["apply_on_priv_intrest"] && $specialRebaApply && $isPaidArearTotlaArrearPenalty) {
                 $isApplicatbel = true;
             }
             $val["is_applicable"] = $isApplicatbel;
@@ -1244,11 +1245,11 @@ class PostPropPaymentV2
         $paidArrearPenalty = 0;
         $previousInterest = $this->_propCalculation->original['data']["previousInterest"] ?? 0;
         $totalDemandAmt = collect($demands)->sum("due_total_tax");
-        $payableAmount = $this->_REQ->paidAmount - $previousInterest;        
+        $payableAmount = $this->_REQ->paidAmount - $previousInterest;
         $totalaAreaDemand =  $this->_propCalculation->original['data']["arrearPayableAmt"];
         $paidPenalty = $previousInterest;
         foreach ($demands as $key => $val) {
-            if ($payableAmount <= 0 && $totalDemandAmt!=0) {
+            if ($payableAmount <= 0 && $totalDemandAmt != 0) {
                 continue;
             }
             $paymentDtl = ($this->demandAdjust($payableAmount, $val["id"]));
@@ -1257,15 +1258,15 @@ class PostPropPaymentV2
             $paidPenalty += $paymentDtl["payableAmountOfPenalty"];
             $paidDemands[] = $paymentDtl;
         }
-        return(($this->_REQ->paymentType != "isPartPayment" || round($this->_REQ->paidAmount) == round($totalDemandAmt) || round($this->_REQ->paidAmount) == round($totalaAreaDemand)) ? collect($paidDemands)->sum("paidTotalExemptedGeneralTax") : 0);
+        return (($this->_REQ->paymentType != "isPartPayment" || round($this->_REQ->paidAmount) == round($totalDemandAmt) || round($this->_REQ->paidAmount) == round($totalaAreaDemand)) ? collect($paidDemands)->sum("paidTotalExemptedGeneralTax") : 0);
     }
 
-    public function insertDemandTranLog($tranId,$demand,$prive_intrest=0)
-    {        
+    public function insertDemandTranLog($tranId, $demand, $prive_intrest = 0)
+    {
         $monthely_penalty = $demand["monthlyPenalty"];
         $demands = PropDemand::find($demand["id"]);
         $demandTranLog = new PropDemandsTransaction();
-        $insertArray =[
+        $insertArray = [
             "property_id"       =>  $demands["property_id"],
             "transaction_id"    =>  $tranId,
             "demand_id"         =>  $demands["id"],

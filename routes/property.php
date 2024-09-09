@@ -693,6 +693,9 @@ Route::controller(HoldingTaxController::class)->group(function () {
   // Route::post('abhay-yojna-marathi', 'propertyAbhayYojnaMarathi');
   // Route::post('bulk-sms-report', 'bulkSmsReport');
   Route::post('test-sms', 'testSms');
+
+  //written by prity pandey
+  Route::post('nakal/payment-receipt', 'nakalPaymentReceipt');
 });
 
 

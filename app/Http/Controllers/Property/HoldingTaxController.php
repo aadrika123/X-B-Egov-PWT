@@ -2735,4 +2735,29 @@ class HoldingTaxController extends Controller
             return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "", "011613", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }
+
+    public function nakalPaymentReceipt(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'tranId' => 'nullable|integer'
+            ]
+        );
+        if ($validated->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'validation error',
+                'errors' => $validated->errors()
+            ], 401);
+        }
+
+        try {
+           $propTran = new PropTransaction();
+           $receipt = $propTran->getTransactionsNakal($req->tranId);
+            return responseMsgs(true, "Payment Receipt", remove_null($receipt), "011605", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "011605", "1.0", "", "POST", $req->deviceId);
+        }
+    }
 }

@@ -23,7 +23,7 @@ class PropTransaction extends PropParamModel #Model
             ->where('status', 1)
             ->get();
     }
-    
+
     public function getPropTransactionsHistory($id, $key)
     {
         return PropTransaction::where("$key", $id)
@@ -214,13 +214,12 @@ class PropTransaction extends PropParamModel #Model
         $propTrans->demand_amt = $req['demandAmt'];
         $propTrans->tran_by_type = $req['tranBy'];
         $propTrans->verify_status = $req['verifyStatus'];
-        $propTrans->arrear_settled_amt = $req['arrearSettledAmt']??0;
-        $propTrans->is_arrear_settled = $req['isArrearSettled']??false;
+        $propTrans->arrear_settled_amt = $req['arrearSettledAmt'] ?? 0;
+        $propTrans->is_arrear_settled = $req['isArrearSettled'] ?? false;
         $propTrans->book_no = $req['bookNo'] ?? null;
         $propTrans->device_type = $req['deviceType'] ?? null;
         $propTrans->payment_type = $req['paymentType'] ?? null;
-        if($req['isCitizen'])
-        {
+        if ($req['isCitizen']) {
             $propTrans->user_id     = null;
             $propTrans->citizen_id  = $req['CitizenId'] ?? (auth()->user() ? auth()->user()->id : null);
             $propTrans->is_citizen  = $req['isCitizen'];
@@ -463,9 +462,10 @@ class PropTransaction extends PropParamModel #Model
 
     public function getSafTranList($safId)
     {
-        return $data = self::select("prop_transactions.*",
-                            DB::raw(
-                                "users.name,
+        return $data = self::select(
+            "prop_transactions.*",
+            DB::raw(
+                "users.name,
                                 users.mobile,
                                 prop_cheque_dtls.cheque_date,
                                 prop_cheque_dtls.bank_name,                                
@@ -473,22 +473,57 @@ class PropTransaction extends PropParamModel #Model
                                 prop_cheque_dtls.cheque_no,
                                 CASE WHEN UPPER(prop_transactions.payment_mode) NOT IN ('CASH','ONLINE') AND prop_cheque_dtls.status is not null then prop_cheque_dtls.status else prop_transactions.verify_status END AS cheque_status
                                 "
-                            )
-                        )
-                ->leftJoin("prop_cheque_dtls","prop_cheque_dtls.transaction_id","prop_transactions.id")
-                ->leftJoin("users","users.id","prop_transactions.user_id")
-                ->where("prop_transactions.saf_id",$safId)
-                ->whereIn("prop_transactions.status",[1,2])
-                ->get();
+            )
+        )
+            ->leftJoin("prop_cheque_dtls", "prop_cheque_dtls.transaction_id", "prop_transactions.id")
+            ->leftJoin("users", "users.id", "prop_transactions.user_id")
+            ->where("prop_transactions.saf_id", $safId)
+            ->whereIn("prop_transactions.status", [1, 2])
+            ->get();
     }
 
     public function getAllTranDtls()
     {
-        return $this->hasMany(PropTranDtl::class,"tran_id","id")->where("status",1);
+        return $this->hasMany(PropTranDtl::class, "tran_id", "id")->where("status", 1);
     }
 
     public function getChequeDtl()
     {
-        return $this->hasOne(PropChequeDtl::class,"transaction_id","id")->where("status","<>",0)->orderBy("id")->first();
+        return $this->hasOne(PropChequeDtl::class, "transaction_id", "id")->where("status", "<>", 0)->orderBy("id")->first();
+    }
+
+    public function getTransactionsNakal($tranId)
+    {
+        $transactions = PropTransaction::select(
+            'prop_transactions.property_id',
+            'prop_transactions.saf_id',
+            'prop_transactions.tran_date',
+            'prop_transactions.tran_no',
+            'prop_transactions.amount',
+            'prop_transactions.tran_type',
+            DB::raw("string_agg(DISTINCT prop_owners.owner_name, ', ') as owner_name"),
+            DB::raw("string_agg(DISTINCT prop_owners.owner_name_marathi, ', ') as owner_names_marathi")
+        )
+            ->join('prop_properties as p', 'p.id', '=', 'prop_transactions.property_id')
+            ->join('prop_owners', 'prop_owners.property_id', '=', 'p.id')
+            ->whereIn('prop_transactions.status', [1, 2])
+            ->where('tran_type', '=', 'isNakkalPayment')
+            ->where('prop_transactions.id', $tranId)
+            ->groupBy(
+                'prop_transactions.property_id',
+                'prop_transactions.saf_id',
+                'prop_transactions.tran_date',
+                'prop_transactions.tran_no',
+                'prop_transactions.amount',
+                'prop_transactions.tran_type'
+            )
+            ->get();
+
+        // Add the 'paidAmtInWords' field
+        $transactions->each(function ($transaction) {
+            $transaction->paidAmtInWords = getIndianCurrency($transaction->amount);
+        });
+
+        return $transactions;
     }
 }
