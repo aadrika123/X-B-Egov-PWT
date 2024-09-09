@@ -497,7 +497,7 @@ class PropTransaction extends PropParamModel #Model
         $transactions = PropTransaction::select(
             'prop_transactions.property_id',
             'prop_transactions.saf_id',
-            'prop_transactions.tran_date',
+            DB::raw("to_char(prop_transactions.tran_date, 'DD-MM-YYYY') as tran_date"),
             'prop_transactions.tran_no',
             'prop_transactions.amount',
             'prop_transactions.tran_type',
@@ -517,13 +517,12 @@ class PropTransaction extends PropParamModel #Model
                 'prop_transactions.amount',
                 'prop_transactions.tran_type'
             )
-            ->get();
+            ->first();
 
         // Add the 'paidAmtInWords' field
         $transactions->each(function ($transaction) {
             $transaction->paidAmtInWords = getIndianCurrency($transaction->amount);
         });
-
         return $transactions;
     }
 }
