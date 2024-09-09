@@ -10,9 +10,9 @@ class TradeLicence extends TradeParamModel    #Model
 {
     use HasFactory;
     protected $connection;
-    public $timestamps=false;
+    public $timestamps = false;
 
-    public function __construct($DB=null)
+    public function __construct($DB = null)
     {
         parent::__construct($DB);
     }
@@ -20,33 +20,33 @@ class TradeLicence extends TradeParamModel    #Model
     # one to one
     public function cotegoryType()
     {
-        return $this->hasOne(TradeParamCategoryType::class,'id',"category_type_id");
+        return $this->hasOne(TradeParamCategoryType::class, 'id', "category_type_id");
     }
 
     public function FirmType()
     {
-        return $this->hasOne(TradeParamFirmType::class,'id',"firm_type_id");
+        return $this->hasOne(TradeParamFirmType::class, 'id', "firm_type_id");
     }
 
     public function applicationType()
     {
-        return $this->hasOne(TradeParamApplicationType::class,'id',"application_type_id");
+        return $this->hasOne(TradeParamApplicationType::class, 'id', "application_type_id");
     }
 
     public function ownershipeType()
     {
-        return $this->hasOne(TradeParamOwnershipType::class,'id',"ownership_type_id");
+        return $this->hasOne(TradeParamOwnershipType::class, 'id', "ownership_type_id");
     }
 
     public function noticeDtl()
     {
-        return $this->hasOne(TradeNoticeConsumerDtl::class,'id',"denial_id");
+        return $this->hasOne(TradeNoticeConsumerDtl::class, 'id', "denial_id");
     }
     # end one to one
     # one to many
     public function owneres()
     {
-        return $this->hasMany(TradeOwner::class,'temp_id',"id");
+        return $this->hasMany(TradeOwner::class, 'temp_id', "id");
     }
     // public function itemType()
     // {
@@ -55,41 +55,41 @@ class TradeLicence extends TradeParamModel    #Model
 
     public function transactionDtl()
     {
-        return $this->hasMany(TradeTransaction::class,'temp_id',"id")->whereNotIn("status",[0,3]);
+        return $this->hasMany(TradeTransaction::class, 'temp_id', "id")->whereNotIn("status", [0, 3]);
     }
 
     public function chequenDtl()
     {
-        return $this->hasMany(TradeChequeDtl::class,'temp_id',"id");
+        return $this->hasMany(TradeChequeDtl::class, 'temp_id', "id");
     }
 
     public function docDtl()
     {
-        return $this->hasMany(WfActiveDocument::class,'active_id',"id")
-                ->where("wf_active_documents.workflow_id",$this->workflow_id)
-                ->where("wf_active_documents.status",1);
-    }    
+        return $this->hasMany(WfActiveDocument::class, 'active_id', "id")
+            ->where("wf_active_documents.workflow_id", $this->workflow_id)
+            ->where("wf_active_documents.status", 1);
+    }
 
     public function razorPayRequest()
     {
-        return $this->hasMany(TradeRazorPayRequest::class,'temp_id',"id");
+        return $this->hasMany(TradeRazorPayRequest::class, 'temp_id', "id");
     }
 
     public function razorPayResonse()
     {
-        return $this->hasMany(TradeRazorPayResponse::class,'temp_id',"id");
+        return $this->hasMany(TradeRazorPayResponse::class, 'temp_id', "id");
     }
     # end one to many
     # one to many through
     public function tranChequenDtl()
     {
-        return $this->hasManyThrough(TradeChequeDtl::class,TradeTransaction::class,'temp_id',"tran_id","id");
+        return $this->hasManyThrough(TradeChequeDtl::class, TradeTransaction::class, 'temp_id', "tran_id", "id");
     }
 
     public function fineRebateDtl()
     {
-        return $this->hasManyThrough(TradeFineRebete::class,TradeTransaction::class,'temp_id',"tran_id","id")
-        ->where("trade_fine_rebetes.status",1);
+        return $this->hasManyThrough(TradeFineRebete::class, TradeTransaction::class, 'temp_id', "tran_id", "id")
+            ->where("trade_fine_rebetes.status", 1);
     }
 
     # end one to many through
@@ -123,6 +123,17 @@ class TradeLicence extends TradeParamModel    #Model
 
     public function getPendingApplication()
     {
-        return $this->hasOne(ActiveTradeLicence::class,"trade_id","id");
+        return $this->hasOne(ActiveTradeLicence::class, "trade_id", "id");
+    }
+    #for testing
+    public function dtls($id)
+    {
+        return self::select(
+            'trade_licences.license_no',
+            'trade_owners.owner_name'
+        )
+            ->join('trade_owners', 'trade_owners.temp_id', 'trade_licences.id')
+            ->where('trade_licences.id', $id)
+            ->first();
     }
 }

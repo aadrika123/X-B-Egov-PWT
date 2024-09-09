@@ -214,6 +214,7 @@ Route::controller(TradeApplication::class)->group(function () {
     Route::get('license-certificate/{id}', 'licenceCertificate');
     Route::post('application/list-direct', 'readApplicationv1');
     Route::post('application/dtl-by-id-direct', 'getLicenceDtlv1');
+    Route::post('application/send-sms', 'sendSms');
 });
 
 Route::controller(TradeCitizenController::class)->group(function () {
