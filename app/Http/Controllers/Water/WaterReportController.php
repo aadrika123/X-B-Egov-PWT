@@ -33,7 +33,7 @@ use App\Traits\Workflow\Workflow;
 use Illuminate\Support\Facades\App;
 use Illuminate\Database\Eloquent\Collection;
 use App\MicroServices\DocUpload;
-use App\Models\water\WaterConsumerDemandRecord;
+use App\Models\Water\WaterConsumerDemandRecord;
 use App\Models\Workflows\WfRoleusermap;
 
 /**
