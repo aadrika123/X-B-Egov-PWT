@@ -881,6 +881,8 @@ class SafDocController extends Controller
         }
 
         try {
+            $User = auth()->user();
+            $UserId = $User->id ?? 0;
             $docUpload = new DocUpload;
             $mWfActiveDocument = new WfActiveDocument();
             $propTcVisit = PropTcVisit::create([
@@ -900,7 +902,8 @@ class SafDocController extends Controller
                 'change_const_type_mstr_id' => $req->changeConsTypeId,
                 'citizen_comment' => $req->citizenComment,
                 'latitude' => $req->latitude,
-                'longitude' => $req->longitude
+                'longitude' => $req->longitude,
+                'user_id' => $UserId
             ]);
             $TcVisitId = $propTcVisit->id;
             
