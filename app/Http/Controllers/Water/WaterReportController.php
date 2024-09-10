@@ -6315,12 +6315,15 @@ class WaterReportController extends Controller
             return validationErrorV2($validated);
         try {
             $newConsumerData = new WaterSecondConsumer();
+            $mNewConsumerDemand = new WaterConsumerDemand();
             $consumerLog = $logs->find($request->applicationId);
             $users = User::find($consumerLog->emp_details_id);
             $consumerLog->property_type = $consumerLog->getProperty()->property_type ?? "";
             $consumerLog->zone = ZoneMaster::find($consumerLog->zone_mstr_id)->zone_name ?? "";
             $consumerLog->ward_name = UlbWardMaster::find($consumerLog->ward_mstr_id)->ward_name ?? "";
             $ownres      = $consumerLog->getOwners();
+            # updated details 
+            $getNewData     = $mNewConsumerDemand->consumerDemandByConsumerId($consumerLog->consumer_id);
 
             $commonFunction = new \App\Repository\Common\CommonFunction();
             $rols = ($commonFunction->getUserAllRoles($users->id)->first());
@@ -6335,7 +6338,7 @@ class WaterReportController extends Controller
             $data = [
                 "userDtls" => $header,
                 "oldConsumer" => $consumerLog,
-                "newConsumer" => $consumerLog,
+                "newConsumer" => $getNewData,
                 "oldOwnere" => $ownres,
                 // "newOwnere" => $newOwnresData,
             ];
