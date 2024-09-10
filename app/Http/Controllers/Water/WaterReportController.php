@@ -1512,7 +1512,7 @@ class WaterReportController extends Controller
         WHERE water_trans.payment_mode IN ('Cash', 'Cheque', 'DD', 'Neft', 'RTGS', 'ONLINE')
             AND water_trans.status = 1
             AND water_trans.tran_date BETWEEN '$dateFrom' AND '$dateUpto'
-            AND water_trans.tran_type = 'Demand Collection'
+            -- AND water_trans.tran_type = 'Demand Collection'
             "
                 . ($wardId ? " AND water_second_consumers.ward_mstr_id = $wardId " : "")
                 . ($zoneId ? " AND water_second_consumers.zone_mstr_id = $zoneId " : "")
