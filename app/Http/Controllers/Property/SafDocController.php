@@ -13,6 +13,7 @@ use App\Models\Property\PropSafsFloor;
 use App\Models\Property\PropSafsOwner;
 use App\Models\Property\PropSafVerification;
 use App\Models\Property\PropSafVerificationDtl;
+use App\Models\Property\PropTcVisit;
 use App\Models\Property\SecondaryDocVerification;
 use App\Models\User;
 use App\Models\Workflows\WfActiveDocument;
@@ -63,18 +64,17 @@ class SafDocController extends Controller
 
             $safOwnerDocs['ownerDocs'] = collect($refSafOwners)->map(function ($owner) use ($refSafs) {
                 return $this->getOwnerDocLists($owner, $refSafs);
-            }); 
-            
+            });
+
             $totalDocLists = collect($propTypeDocs)->merge($safOwnerDocs);
             $status =  $this->check($totalDocLists);
-            if($refSafs->doc_upload_status && isset($status["docUploadStatus"]))
-            {
+            if ($refSafs->doc_upload_status && isset($status["docUploadStatus"])) {
                 $refSafs->doc_upload_status = (!$status["docUploadStatus"]) ? 0 : $refSafs->doc_upload_status;
-            }            
+            }
             $totalDocLists['docUploadStatus'] = $refSafs->doc_upload_status;
             $totalDocLists['docVerifyStatus'] = $refSafs->doc_verify_status;
             $totalDocLists['paymentStatus'] = $refSafs->payment_status;
-            $totalDocLists['isCitizen'] = ($refSafs->citizen_id == null) ? false : true; 
+            $totalDocLists['isCitizen'] = ($refSafs->citizen_id == null) ? false : true;
             $totalDocLists['citizenCanSendOfficer'] = ($refSafs->doc_upload_status && ($refSafs->initiator_role_id == $refSafs->current_role || $refSafs->parked)) ? true  : false;
 
             return responseMsgs(true, "", remove_null($totalDocLists), "010203", "", "", 'POST', "");
@@ -148,17 +148,17 @@ class SafDocController extends Controller
                     ->first();
 
                 if ($uploadedDoc) {
-                    $seconderyData = (new SecondaryDocVerification())->SeconderyWfActiveDocumentById($uploadedDoc->id??0);
-                    $uploadeUser = $uploadedDoc->uploaded_by_type!="Citizen" ? User::find($uploadedDoc->uploaded_by??0) : ActiveCitizen::find($uploadedDoc->uploaded_by??0);
+                    $seconderyData = (new SecondaryDocVerification())->SeconderyWfActiveDocumentById($uploadedDoc->id ?? 0);
+                    $uploadeUser = $uploadedDoc->uploaded_by_type != "Citizen" ? User::find($uploadedDoc->uploaded_by ?? 0) : ActiveCitizen::find($uploadedDoc->uploaded_by ?? 0);
                     $response = [
                         "uploadedDocId" => $uploadedDoc->id ?? "",
                         "documentCode" => $item,
                         "ownerId" => $uploadedDoc->owner_dtl_id ?? "",
                         "docPath" =>  $uploadedDoc->doc_path ?? "",
                         // "verifyStatus" => $refSafs->payment_status == 1 ? ($uploadedDoc->verify_status ?? "") : 0,
-                        "verifyStatus" =>  ($uploadedDoc->verify_status ?? 0),
+                        "verifyStatus" => ($uploadedDoc->verify_status ?? 0),
                         "remarks" => ($uploadedDoc->remarks ?? ""),
-                        "uploadedBy" => ($uploadeUser->name ?? ($uploadeUser->user_name??"")) ." (".$uploadedDoc->uploaded_by_type.")",
+                        "uploadedBy" => ($uploadeUser->name ?? ($uploadeUser->user_name ?? "")) . " (" . $uploadedDoc->uploaded_by_type . ")",
                     ];
                     $documents->push($response);
                 }
@@ -287,7 +287,7 @@ class SafDocController extends Controller
             if ($docUploadStatus == 1) {                                        // Doc Upload Status Update
                 $getSafDtls->doc_upload_status = 1;
                 // if ($getSafDtls->parked == true)                                // Case of Back to Citizen
-                    // $getSafDtls->parked = false;
+                // $getSafDtls->parked = false;
 
                 $getSafDtls->save();
             }
@@ -329,12 +329,12 @@ class SafDocController extends Controller
             $refUlbId = $safDetails->ulb_id;
             $userRole = $mCOMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $workflowId);
             $sameWorkRoles = $mCOMMON_FUNCTION->getReactionActionTakenRole($refUserId, $refUlbId, $workflowId, "doc_verify");
-            $owners = $mActiveSafs->getTable()=="prop_active_safs" ? $mActiveSafsOwners->getOwnersBySafId($safDetails->id) : $mSafsOwners->getOwnersBySafId($safDetails->id) ;            
-            $documents = $documents->map(function ($val) use ($sameWorkRoles, $userRole,$owners) {
+            $owners = $mActiveSafs->getTable() == "prop_active_safs" ? $mActiveSafsOwners->getOwnersBySafId($safDetails->id) : $mSafsOwners->getOwnersBySafId($safDetails->id);
+            $documents = $documents->map(function ($val) use ($sameWorkRoles, $userRole, $owners) {
                 $seconderyData = (new SecondaryDocVerification())->SeconderyWfActiveDocumentById($val->id);
                 $val->verify_status_secondery = $seconderyData ? $seconderyData->verify_status : 0;
                 $val->remarks_secondery = $seconderyData ? $seconderyData->remarks :  "";
-                $val->owner_name = (collect($owners)->where("id",$val->owner_dtl_id)->first())->owner_name?? "";
+                $val->owner_name = (collect($owners)->where("id", $val->owner_dtl_id)->first())->owner_name ?? "";
                 if (count($sameWorkRoles) > 1 && $userRole && $userRole->role_id != ($sameWorkRoles->first())["id"] && $userRole->can_verify_document) {
                     $val->verify_status = $seconderyData ? $val->verify_status_secondery : $val->verify_status;
                     $val->remarks = $seconderyData ? $val->remarks_secondery : $val->remarks;
@@ -346,25 +346,23 @@ class SafDocController extends Controller
                 return $val;
             });
             #======getjahinama Doc=======#
-            $ActiveSafController = App::makeWith(ActiveSafController::class,["iSafRepository"=>iSafRepository::class]);
+            $ActiveSafController = App::makeWith(ActiveSafController::class, ["iSafRepository" => iSafRepository::class]);
             $jahirnamaDoc = $ActiveSafController->getJahirnamaDoc($req);
-            if($jahirnamaDoc->original["status"])
-            {
+            if ($jahirnamaDoc->original["status"]) {
                 $jahirnamaDoc = collect($jahirnamaDoc->original["data"])->sortByDesc("id");
-                foreach($jahirnamaDoc as $val)
-                {
-                    $documents->push($val );
+                foreach ($jahirnamaDoc as $val) {
+                    $documents->push($val);
                 }
             }
-            $documents = $documents->map(function($val){
-                $uploadeUser = isset($val["uploaded_by_type"]) && $val["uploaded_by_type"] !="Citizen"? User::find($val["uploaded_by"]??0) : ActiveCitizen::find($val["uploaded_by"]??0);
-                $val["uploadedBy"] = ($uploadeUser->name ?? ($uploadeUser->user_name??"")) ." (".($val["uploaded_by_type"]??"").")";
+            $documents = $documents->map(function ($val) {
+                $uploadeUser = isset($val["uploaded_by_type"]) && $val["uploaded_by_type"] != "Citizen" ? User::find($val["uploaded_by"] ?? 0) : ActiveCitizen::find($val["uploaded_by"] ?? 0);
+                $val["uploadedBy"] = ($uploadeUser->name ?? ($uploadeUser->user_name ?? "")) . " (" . ($val["uploaded_by_type"] ?? "") . ")";
                 return $val;
             });
 
             return responseMsgs(true, ["docVerifyStatus" => $safDetails->doc_verify_status], remove_null($documents), "010102", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
-            return responseMsgs(false, [$e->getMessage(),$e->getFile(),$e->getLine()], "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
+            return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
         }
     }
 
@@ -376,51 +374,44 @@ class SafDocController extends Controller
         $req->validate([
             'applicationId' => 'required|numeric'
         ]);
-        try{ 
-            $safController = App::makeWith(ActiveSafController::class,["iSafRepository",iSafRepository::class]); 
-            $safDetailsResponce = $safController->getStaticSafDetails($req); 
-            if(!$safDetailsResponce->original["status"])
-            {
+        try {
+            $safController = App::makeWith(ActiveSafController::class, ["iSafRepository", iSafRepository::class]);
+            $safDetailsResponce = $safController->getStaticSafDetails($req);
+            if (!$safDetailsResponce->original["status"]) {
                 return $safDetailsResponce;
-            }   
+            }
             $saf = $safDetailsResponce->original["data"]->all();
             $response = $this->getUploadDocuments($req);
-            if(!$response->original["status"])
-            {
+            if (!$response->original["status"]) {
                 return $response;
-            }            
-            $map = collect($response->original["data"])->where("doc_category","Layout sanction Map")->first(); 
-            $roughMap = collect($response->original["data"])->where("doc_category","naksha")->first();           
-            if($map)
-            {
-                $map["ext"] = strtolower(collect(explode(".",$map["doc_path"]))->last());
             }
-            if($roughMap)
-            {
-                $roughMap["ext"] = strtolower(collect(explode(".",$roughMap["doc_path"]))->last());
+            $map = collect($response->original["data"])->where("doc_category", "Layout sanction Map")->first();
+            $roughMap = collect($response->original["data"])->where("doc_category", "naksha")->first();
+            if ($map) {
+                $map["ext"] = strtolower(collect(explode(".", $map["doc_path"]))->last());
             }
-            $saf["is_naksha_uploaded"] = $map? true: false;
-            $saf["is_measurement_sheet_uploaded"] = $roughMap? true: false;
+            if ($roughMap) {
+                $roughMap["ext"] = strtolower(collect(explode(".", $roughMap["doc_path"]))->last());
+            }
+            $saf["is_naksha_uploaded"] = $map ? true : false;
+            $saf["is_measurement_sheet_uploaded"] = $roughMap ? true : false;
             $saf["naksha"] = $map;
             $saf["measurement_sheet"] = $roughMap;
             return responseMsgs(true, "date fetched", $saf, "010202", "1.1", "", "POST", $req->deviceId ?? "");
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010202", "1.1", "", "POST", $req->deviceId ?? "");
         }
-
     }
 
     public function nakshaVerifyReject(Request $req)
-    {
-        {
+    { {
             $req->validate([
                 'id' => 'required|digits_between:1,9223372036854775807',
                 'applicationId' => 'required|digits_between:1,9223372036854775807',
                 'docRemarks' =>  $req->docStatus == "Rejected" ? 'required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/' : "nullable",
                 'docStatus' => 'required|in:Verified,Rejected'
             ]);
-    
+
             try {
                 // Variable Assignments
                 $mWfDocument = new WfActiveDocument();
@@ -442,18 +433,18 @@ class SafDocController extends Controller
                 $senderRoleDtls = $mWfRoleusermap->getRoleByUserWfId($safReq);
                 if (!$senderRoleDtls || collect($senderRoleDtls)->isEmpty())
                     throw new Exception("Role Not Available");
-    
-                $senderRoleId = $senderRoleDtls->wf_role_id;                
+
+                $senderRoleId = $senderRoleDtls->wf_role_id;
                 if ($senderRoleId != $wfLevel['UTC'])                                // Authorization for Dealing Assistant Only
                     throw new Exception("You are not Authorized");
-    
+
                 if (!$safDtls || collect($safDtls)->isEmpty())
                     throw new Exception("Saf Details Not Found");
-    
+
                 $ifFullDocVerified = $this->ifFullDocVerified($applicationId);       // (Current Object Derivative Function 4.1)
                 // if ($ifFullDocVerified == 1)
                 //     throw new Exception("Document Fully Verified");
-    
+
                 DB::beginTransaction();
                 if ($req->docStatus == "Verified") {
                     $status = 1;
@@ -466,13 +457,13 @@ class SafDocController extends Controller
                     // For Rejection Doc Upload Status and Verify Status will disabled
                     $safDtls->doc_upload_status = 0;
                     $safDtls->doc_verify_status = 0;
-    
+
                     if ($activeDocument->doc_code == $trustDocCode)
                         $safDtls->is_trust_verified = false;
-    
+
                     $safDtls->save();
                 }
-    
+
                 $reqs = [
                     'remarks' => $req->docRemarks,
                     'verify_status' => $status,
@@ -483,7 +474,7 @@ class SafDocController extends Controller
                     $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId, $req->docStatus);
                 else
                     $ifFullDocVerifiedV1 = 0;                                       // In Case of Rejection the Document Verification Status will always remain false
-    
+
                 // dd($ifFullDocVerifiedV1);
                 if ($ifFullDocVerifiedV1 == 1) {                                     // If The Document Fully Verified Update Verify Status
                     $safDtls->doc_verify_status = 1;
@@ -492,7 +483,7 @@ class SafDocController extends Controller
                 #=====secondery Document Verification Entery=======
                 $seconderyId = $mSecondaryDocVerification->insertSecondryDoc($wfDocId);
                 $seconderyDoc = SecondaryDocVerification::find($seconderyId);
-                $seconderyDoc->verify_status = $status??1;
+                $seconderyDoc->verify_status = $status ?? 1;
                 $seconderyDoc->save();
                 DB::commit();
                 return responseMsgs(true, $req->docStatus . " Successfully", "", "010204", "1.0", responseTime(), "POST", $req->deviceId ?? "");
@@ -504,13 +495,13 @@ class SafDocController extends Controller
     }
 
     public function nakshaAreaOfPloteUpdate(Request $req)
-    { 
+    {
         $validated = Validator::make(
             $req->all(),
             [
                 'applicationId' => 'required|numeric',
-                "IsDouble"=>"required|boolean",
-                "areaOfPlot"=>"nullable|required_if:IsDouble,in,0,false|numeric|min:0",
+                "IsDouble" => "required|boolean",
+                "areaOfPlot" => "nullable|required_if:IsDouble,in,0,false|numeric|min:0",
             ]
         );
         if ($validated->fails()) {
@@ -519,21 +510,21 @@ class SafDocController extends Controller
                 'message'   => 'validation error',
                 'errors'    => $validated->errors()
             ]);
-        } 
-        try{
+        }
+        try {
             $mActiveSafs = new PropActiveSaf();
             $mActiveSafsFloors = new PropActiveSafsFloor();
             $mVerification = new PropSafVerification();
             $verificationDtl = collect();
             $mVerificationDtls = new PropSafVerificationDtl();
             $mPropSafsFloors = new PropSafsFloor();
-            
+
             $refSafs = $mActiveSafs->getSafNo($req->applicationId);                      // Get Saf Details
-            if (!$refSafs){
+            if (!$refSafs) {
                 throw new Exception("Application Not Found for this id");
             }
             $refSafsUpdate = $mActiveSafs->getSafNo($req->applicationId);
-            
+
             $safVerification = $mVerification->where("saf_id", $refSafs->id)->where("status", 1)->orderBy("id", "DESC")->first();
             $verificationDtl = $mVerificationDtls->getVerificationDtls($safVerification->id ?? 0);
             if ($safVerification) {
@@ -560,22 +551,20 @@ class SafDocController extends Controller
                 $getFloorDtls->push($val);
             });
             $totalArea = $refSafs->area_of_plot;
-            if($refSafs->prop_type_mstr_id !=4)
-            {
+            if ($refSafs->prop_type_mstr_id != 4) {
                 $totalArea = $getFloorDtls->sum("builtup_area");
             }
 
             $diffArea = ($totalArea - $req->areaOfPlot) > 0 ? ($totalArea - $req->areaOfPlot) : 0;
-            $sms = $req->IsDouble ? "Double Taxation Apply" : ("100 % Penalty Apply On " .($diffArea));
+            $sms = $req->IsDouble ? "Double Taxation Apply" : ("100 % Penalty Apply On " . ($diffArea));
             DB::beginTransaction();
             $refSafsUpdate->is_allow_double_tax = $req->IsDouble;
             $refSafsUpdate->naksha_area_of_plot = $req->areaOfPlot;
             $refSafsUpdate->update();
             DB::commit();
-            
+
             return responseMsgs(true, $sms, "", "010204", "1.0", responseTime(), "POST", $req->deviceId ?? "");
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }
@@ -719,7 +708,8 @@ class SafDocController extends Controller
                 $status = 2;
                 $safDtls->doc_verify_status = 0;
                 $safDtls->doc_verify_status = 0;
-            }$reqs = [
+            }
+            $reqs = [
                 'remarks' => $req->docRemarks,
                 'verify_status' => $status,
                 'action_taken_by' => $refUserId
@@ -858,5 +848,84 @@ class SafDocController extends Controller
             return 1;
     }
 
+    public function propTcVisit(Request $req)
+    {
+        $extention = $req->document->getClientOriginalExtension();
+        $validated = Validator::make($req->all(), [
+            'name' => 'nullable|string|max:255',
+            'zoneId' => 'nullable|integer',
+            'wardId' => 'nullable|integer',
+            'holdingNo' => 'nullable|string|max:255',
+            'propertyNo' => 'nullable|string|max:100',
+            'propAddress' => 'nullable|string|max:255',
+            'mobileNo' => 'nullable|string|max:15',
+            'arrearDemand' => 'nullable|numeric',
+            'currentDemand' => 'nullable|numeric',
+            'totalDemand' => 'nullable|numeric',
+            'interest' => 'nullable|numeric',
+            'remarks' => 'nullable|string|max:15',
+            'changeUsageTypeId' => 'nullable|integer',
+            'changeConsTypeId' => 'nullable|integer',
+            'citizenComment' => 'nullable|string|max:255',
+            'latitude' => 'nullable|string',
+            'longitude' => 'nullable|string',
+            "document" => "required|mimes:pdf,jpeg,png,jpg|" . (strtolower($extention) == 'pdf' ? 'max:10240' : 'max:5120'),
+        ]);
 
+        if ($validated->fails()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Validation error',
+                'errors' => $validated->errors()
+            ]);
+        }
+
+        try {
+            $docUpload = new DocUpload;
+            $mWfActiveDocument = new WfActiveDocument();
+            $propTcVisit = PropTcVisit::create([
+                'appartment_name' => $req->name,
+                'zone_mstr_id' => $req->zoneId,
+                'ward_mstr_id' => $req->wardId,
+                'holding_no' => $req->holdingNo,
+                'property_no' => $req->propertyNo,
+                'prop_address' => $req->propAddress,
+                'mobile_no' => $req->mobileNo,
+                'arrear_demand' => $req->arrearDemand,
+                'current_demand' => $req->currentDemand,
+                'total_demand' => $req->totalDemand,
+                'interest' => $req->interest,
+                'remarks' => $req->remarks,
+                'change_usage_type_mstr_id' => $req->changeConsTypeId,
+                'change_const_type_mstr_id' => $req->changeConsTypeId,
+                'citizen_comment' => $req->citizenComment,
+                'latitude' => $req->latitude,
+                'longitude' => $req->longitude
+            ]);
+            $TcVisitId = $propTcVisit->id;
+            
+            $relativePath = FacadesConfig::get('PropertyConstaint.TC_VISIT_RELATIVE_PATH');
+            $propModuleId = FacadesConfig::get('module-constants.PROPERTY_MODULE_ID');
+            $refImageName = $TcVisitId;
+            $document = $req->document;
+            $imageName = $docUpload->upload($refImageName, $document, $relativePath);
+
+            $metaReqs['module_id'] = $propModuleId;
+            $metaReqs['active_id'] = $TcVisitId;
+            $metaReqs['workflow_id'] = 0;
+            $metaReqs['ulb_id'] = 2;
+            $metaReqs['relative_path'] = $relativePath;
+            $metaReqs['document'] = $imageName;
+            $metaReqs['doc_code'] = null;
+            $metaReqs['doc_category'] = null;
+            $metaReqs["uploaded_by"]       = Auth()->user()->id ?? null;
+            $metaReqs["uploaded_by_type"]  = Auth()->user()->user_type ?? "Citizen";
+            $metaReqs['verify_status'] = 1;
+            $mWfActiveDocument->create($metaReqs);
+            return responseMsgs(true, "Record saved successfully", $propTcVisit, "", "010204", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "010204", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+        }
+    }
 }

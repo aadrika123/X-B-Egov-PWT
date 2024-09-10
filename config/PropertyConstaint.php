@@ -444,6 +444,7 @@ return [
     "PROP_UPDATE_RELATIVE_PATH" => "Uploads/Property/UpdateRequest",
     "SAF_JARINAMA_RELATIVE_PATH" => "Uploads/Property/Saf/Jhirnama",
     "SAF_JARINAMA_HOLD_DAYS"     => "15",
+    "TC_VISIT_RELATIVE_PATH" => "Uploads/Property/TcVisit",
 
     // Rebates
     "REBATES" => [
