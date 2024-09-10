@@ -1426,7 +1426,7 @@ class WaterReportController extends Controller
              CASE WHEN water_trans.payment_mode = 'Cheque'  THEN water_trans.id ELSE NULL END
          ) AS waterCheque,
             COUNT(
-             CASE WHEN water_trans.payment_mode = 'Online'  THEN water_trans.id ELSE NULL END
+             CASE WHEN water_trans.payment_mode = 'ONLINE'  THEN water_trans.id ELSE NULL END
          ) AS waterOnline,
             COUNT(
              CASE WHEN water_trans.payment_mode = 'DD'  THEN water_trans.id ELSE NULL END
@@ -1449,7 +1449,7 @@ class WaterReportController extends Controller
              CASE WHEN water_trans.payment_mode = 'Cheque'AND  water_trans.user_type = 'TC'  THEN water_trans.id ELSE NULL END
          ) AS TcChequeCount,
             COUNT(
-             CASE WHEN water_trans.payment_mode = 'Online' AND  water_trans.user_type = 'TC'  THEN water_trans.id ELSE NULL END
+             CASE WHEN water_trans.payment_mode = 'ONLINE' AND  water_trans.user_type = 'TC'  THEN water_trans.id ELSE NULL END
          ) AS TcOnlineCount,
             COUNT(
              CASE WHEN water_trans.payment_mode = 'DD' AND  water_trans.user_type = 'TC'  THEN water_trans.id ELSE NULL END
@@ -1469,7 +1469,7 @@ class WaterReportController extends Controller
              CASE WHEN water_trans.payment_mode = 'Cheque'AND  water_trans.user_type = 'JSK'  THEN water_trans.id ELSE NULL END
          ) AS JskChequeCount,
             COUNT(
-             CASE WHEN water_trans.payment_mode = 'Online' AND  water_trans.user_type = 'JSK'  THEN water_trans.id ELSE NULL END
+             CASE WHEN water_trans.payment_mode = 'ONLINE' AND  water_trans.user_type = 'JSK'  THEN water_trans.id ELSE NULL END
          ) AS JskOnlineCount,
             COUNT(
              CASE WHEN water_trans.payment_mode = 'DD' AND  water_trans.user_type = 'JSK'  THEN water_trans.id ELSE NULL END
@@ -1485,7 +1485,7 @@ class WaterReportController extends Controller
          SUM(CASE WHEN water_trans.payment_mode = 'Cash' THEN COALESCE(amount,0) ELSE 0 END) AS CashTotalAmount,
          SUM(CASE WHEN water_trans.payment_mode = 'Cheque' THEN COALESCE(amount,0) ELSE 0 END) AS ChequeTotalAmount,
          SUM(CASE WHEN water_trans.payment_mode = 'DD' THEN COALESCE(amount,0) ELSE 0 END) AS DdTotalAmount,
-         SUM(CASE WHEN water_trans.payment_mode = 'Online' THEN COALESCE(amount,0) ELSE 0 END ) AS OnlineTotalAmount,
+         SUM(CASE WHEN water_trans.payment_mode = 'ONLINE' THEN COALESCE(amount,0) ELSE 0 END ) AS OnlineTotalAmount,
          SUM(CASE WHEN water_trans.payment_mode = 'Neft' THEN COALESCE(amount,0) ELSE 0 END ) AS NeftTotalAmount,
          SUM(CASE WHEN water_trans.payment_mode = 'RTGS' THEN COALESCE(amount,0) ELSE 0 END ) AS RtgsTotalAmount,
          SUM(amount) AS TotalPaymentModeAmount,
@@ -1493,7 +1493,7 @@ class WaterReportController extends Controller
          SUM(CASE WHEN water_trans.payment_mode = 'Cash' AND   water_trans.user_type = 'TC' THEN COALESCE(amount,0) ELSE 0 END) AS TcCasTotalAmount,
          SUM(CASE WHEN water_trans.payment_mode = 'Cheque' AND  water_trans.user_type = 'TC' THEN COALESCE(amount,0) ELSE 0 END) AS TcChequeTotalAmount,
          SUM(CASE WHEN water_trans.payment_mode = 'DD' AND  water_trans.user_type = 'TC' THEN COALESCE(amount,0) ELSE 0 END) AS TcDdTotalAmount,
-         SUM(CASE WHEN water_trans.payment_mode = 'Online' AND  water_trans.user_type = 'TC' THEN COALESCE(amount,0) ELSE 0 END ) AS TcOnlineTotalAmount,
+         SUM(CASE WHEN water_trans.payment_mode = 'ONLINE' AND  water_trans.user_type = 'TC' THEN COALESCE(amount,0) ELSE 0 END ) AS TcOnlineTotalAmount,
          SUM(CASE WHEN water_trans.payment_mode = 'Neft' AND  water_trans.user_type = 'TC' THEN COALESCE(amount,0) ELSE 0 END ) AS TcNeftTotalAmount,
          SUM(CASE WHEN water_trans.payment_mode = 'RTGS' AND  water_trans.user_type = 'TC' THEN COALESCE(amount,0) ELSE 0 END ) AS TcRtgsTotalAmount,
          SUM(CASE WHEN  water_trans.user_type = 'TC' THEN COALESCE(amount,0) ELSE 0 END) AS tc_total_amount,
@@ -1501,7 +1501,7 @@ class WaterReportController extends Controller
          SUM(CASE WHEN water_trans.payment_mode = 'Cash' AND  water_trans.user_type = 'JSK' THEN COALESCE(amount,0) ELSE 0 END) AS JskCashTotalAmount,
          SUM(CASE WHEN water_trans.payment_mode = 'Cheque' AND  water_trans.user_type = 'JSK' THEN COALESCE(amount,0) ELSE 0 END) AS JskChequeTotalAmount,
          SUM(CASE WHEN water_trans.payment_mode = 'DD' AND  water_trans.user_type = 'JSK' THEN COALESCE(amount,0) ELSE 0 END) AS JskDdTotalAmount,
-         SUM(CASE WHEN water_trans.payment_mode = 'Online' AND  water_trans.user_type = 'JSK' THEN COALESCE(amount,0) ELSE 0 END ) AS JskOnlineTotalAmount,
+         SUM(CASE WHEN water_trans.payment_mode = 'ONLINE' AND  water_trans.user_type = 'JSK' THEN COALESCE(amount,0) ELSE 0 END ) AS JskOnlineTotalAmount,
          SUM(CASE WHEN water_trans.payment_mode = 'Neft' AND  water_trans.user_type = 'JSK' THEN COALESCE(amount,0) ELSE 0 END ) AS JskNeftTotalAmount,
          SUM(CASE WHEN water_trans.payment_mode = 'RTGS' AND  water_trans.user_type = 'JSK' THEN COALESCE(amount,0) ELSE 0 END ) AS JskRtgsTotalAmount,
          SUM(CASE WHEN  water_trans.user_type = 'JSK' THEN COALESCE(amount,0) ELSE 0 END) AS JskTotalAmount
@@ -1509,7 +1509,7 @@ class WaterReportController extends Controller
         FROM water_trans
         LEFT JOIN water_second_consumers on water_trans.related_id = water_second_consumers.id
         LEFT JOIN zone_masters ON zone_masters.id = water_second_consumers.zone_mstr_id
-        WHERE water_trans.payment_mode IN ('Cash', 'Cheque', 'DD', 'Neft', 'RTGS', 'Online')
+        WHERE water_trans.payment_mode IN ('Cash', 'Cheque', 'DD', 'Neft', 'RTGS', 'ONLINE')
             AND water_trans.status = 1
             AND water_trans.tran_date BETWEEN '$dateFrom' AND '$dateUpto'
             AND water_trans.tran_type = 'Demand Collection'
