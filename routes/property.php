@@ -136,6 +136,8 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('saf/get-uploaded-documents-naksha', 'getUploadDocumentNaksha');
     Route::post('saf/naksha-verify-reject', 'nakshaVerifyReject');
     Route::post("saf/naksha-check", "nakshaAreaOfPloteUpdate");
+    //written by prity pandey
+    Route::post("tc-visit-record", "propTcVisit");
   });
 
   /**
