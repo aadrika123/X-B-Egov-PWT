@@ -2016,9 +2016,46 @@ class WaterReportController extends Controller
                 ) water_trans_sub
                 JOIN users ON users.id = water_trans_sub.emp_dtl_id
             ";
+            $sql = "
+                    SELECT 
+                        users.id as user_id,
+                        users.name,
+                        users.mobile,
+                        users.photo,
+                        users.photo_relative_path,
+                        COALESCE(water_trans.total_amount, 0) as total_amount,
+                        COALESCE(water_trans.total_tran, 0) as total_tran,
+                        COALESCE(water_trans.total_property, 0) as total_property
+                    FROM users
+                    LEFT JOIN (
+                        SELECT 
+                            SUM(amount) as total_amount,
+                            count(water_trans.id) as total_tran,
+                            count(distinct water_trans.related_id) as total_property, 
+                            water_trans.emp_dtl_id                   
+                        FROM water_trans 
+                        JOIN water_second_consumers on water_second_consumers.id = water_trans.related_id                   
+                        WHERE water_trans.status IN (1,2)
+                            AND water_trans.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                            " . ($wardId ? " AND water_second_consumers.ward_mstr_id = $wardId" : "") . "
+                            " . ($zoneId ? " AND water_second_consumers.zone_mstr_id = $zoneId" : "") . "
+                            " . ($userId ? " AND water_trans.emp_dtl_id = $userId" : "") . "
+                            " . ($paymentMode ? " AND upper(water_trans.payment_mode) = upper('$paymentMode')" : "") . "
+                        GROUP BY water_trans.emp_dtl_id
+                    ) water_trans ON users.id = water_trans.emp_dtl_id
+                    WHERE users.user_type = 'TC'
+                    AND users.suspended = 'false'
+                    ORDER BY users.id
+                ";
             $data = DB::connection('pgsql_water')->select($sql . " limit $limit offset $offset");
-            $count = (collect(DB::connection('pgsql_water')->SELECT("SELECT COUNT(*)AS total, SUM(total_amount) AS total_amount FROM ($sql) total"))->first());
+            // $count = (collect(DB::connection('pgsql_water')->SELECT("SELECT COUNT(*)AS total, SUM(total_amount) AS total_amount FROM ($sql) total"))->first());
             $tran = (collect(DB::connection('pgsql_water')->SELECT("SELECT COUNT(*)AS total, SUM(total_tran) AS total_tran FROM ($sql) total"))->first());
+            $count = collect($this->_DB->SELECT("
+            SELECT COUNT(*) AS total, 
+                SUM(total_amount) AS total_amount,
+                SUM(total_tran) as total_tran
+            FROM ($sql) total
+                    "))->first();
             $total = ($count)->total ?? 0;
             $sum = ($count)->total_amount ?? 0;
             $lastPage = ceil($total / $perPage);
@@ -6003,15 +6040,15 @@ class WaterReportController extends Controller
                 $query->where('water_second_consumers.ward_mstr_id', $request->wardId);
             }
             if ($fromDate && $uptoDate) {
-                $query->whereBetween('water_second_consumers.notice_1_generated_at', [$fromDate,$uptoDate]);
+                $query->whereBetween('water_second_consumers.notice_1_generated_at', [$fromDate, $uptoDate]);
             }
 
             // if ($request->zoneId) {
             //     $query->where('ulb_ward_masters.zone_id', $request->zoneId); // Assuming zone_id is in ulb_ward_masters
             // 
-            $perPage = $request->perPage ?: 200; 
+            $perPage = $request->perPage ?: 200;
             $paginatedData = $query->paginate($perPage);
-    
+
             $response = [
                 'current_page' => $paginatedData->currentPage(),
                 'data' => $paginatedData->items(),
@@ -6019,7 +6056,7 @@ class WaterReportController extends Controller
                 'per_page' => $paginatedData->perPage(),
                 'last_page' => $paginatedData->lastPage()
             ];
-    
+
             return responseMsgs(true, 'Bulk Notice One', $response, '010801', '01', '', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -6065,15 +6102,15 @@ class WaterReportController extends Controller
                 $query->where('water_second_consumers.ward_mstr_id', $request->wardId);
             }
             if ($fromDate && $uptoDate) {
-                $query->whereBetween('water_second_consumers.notice_2_generated_at', [$fromDate,$uptoDate]);
+                $query->whereBetween('water_second_consumers.notice_2_generated_at', [$fromDate, $uptoDate]);
             }
 
             // if ($request->zoneId) {
             //     $query->where('ulb_ward_masters.zone_id', $request->zoneId); // Assuming zone_id is in ulb_ward_masters
             // 
-            $perPage = $request->perPage ?: 200; 
+            $perPage = $request->perPage ?: 200;
             $paginatedData = $query->paginate($perPage);
-    
+
             $response = [
                 'current_page' => $paginatedData->currentPage(),
                 'data' => $paginatedData->items(),
@@ -6081,7 +6118,7 @@ class WaterReportController extends Controller
                 'per_page' => $paginatedData->perPage(),
                 'last_page' => $paginatedData->lastPage()
             ];
-    
+
             return responseMsgs(true, 'Bulk Notice Two', $response, '010801', '01', '', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -6127,15 +6164,15 @@ class WaterReportController extends Controller
                 $query->where('water_second_consumers.ward_mstr_id', $request->wardId);
             }
             if ($fromDate && $uptoDate) {
-                $query->whereBetween('water_second_consumers.notice_3_generated_at', [$fromDate,$uptoDate]);
+                $query->whereBetween('water_second_consumers.notice_3_generated_at', [$fromDate, $uptoDate]);
             }
 
             // if ($request->zoneId) {
             //     $query->where('ulb_ward_masters.zone_id', $request->zoneId); // Assuming zone_id is in ulb_ward_masters
             // 
-            $perPage = $request->perPage ?: 200; 
+            $perPage = $request->perPage ?: 200;
             $paginatedData = $query->paginate($perPage);
-    
+
             $response = [
                 'current_page' => $paginatedData->currentPage(),
                 'data' => $paginatedData->items(),
@@ -6143,7 +6180,7 @@ class WaterReportController extends Controller
                 'per_page' => $paginatedData->perPage(),
                 'last_page' => $paginatedData->lastPage()
             ];
-    
+
             return responseMsgs(true, 'Bulk Notice Three', $response, '010801', '01', '', 'Post', '');
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
