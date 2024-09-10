@@ -265,6 +265,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('reports/tran-deactived-list', 'tranDeactivatedList');
         Route::post('reports/device-type/collection', 'deviceTypeCollection');
         Route::post('reports/demand-updated', 'searchUpdateConsumerDemand');
+        Route::post('reports/demand-updated-dtls', 'consumerUpdateDemandLogs');
 
         //written by prity pandey
         #Created On:10-08-2024

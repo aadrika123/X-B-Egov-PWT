@@ -33,6 +33,8 @@ use App\Traits\Workflow\Workflow;
 use Illuminate\Support\Facades\App;
 use Illuminate\Database\Eloquent\Collection;
 use App\MicroServices\DocUpload;
+use App\Models\Property\ZoneMaster;
+use App\Models\User;
 use App\Models\Water\WaterConsumerDemandRecord;
 use App\Models\Workflows\WfRoleusermap;
 
@@ -6298,6 +6300,48 @@ class WaterReportController extends Controller
             return responseMsgs(true, "", $list);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "");
+        }
+    }
+    public function consumerUpdateDemandLogs(Request $request)
+    {
+        $logs = new  WaterConsumerDemandRecord();
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'applicationId'         => "required|integer|exists:" . $logs->getConnectionName() . "." . $logs->getTable() . ",id",
+            ]
+        );
+        if ($validated->fails())
+            return validationErrorV2($validated);
+        try {
+            $newConsumerData = new WaterSecondConsumer();
+            $consumerLog = $logs->find($request->applicationId);
+            $users = User::find($consumerLog->emp_details_id);
+            $consumerLog->property_type = $consumerLog->getProperty()->property_type ?? "";
+            $consumerLog->zone = ZoneMaster::find($consumerLog->zone_mstr_id)->zone_name ?? "";
+            $consumerLog->ward_name = UlbWardMaster::find($consumerLog->ward_mstr_id)->ward_name ?? "";
+            $ownres      = $consumerLog->getOwners();
+
+            $commonFunction = new \App\Repository\Common\CommonFunction();
+            $rols = ($commonFunction->getUserAllRoles($users->id)->first());
+            $docUrl = Config::get('module-constants.DOC_URL');
+            $header = [
+                "user_name" => $users->name ?? "",
+                "role" => $rols->role_name ?? "",
+                "remarks" => $consumerLog->remarks ?? "",
+                "upate_date" => $consumerLog->up_created_at ? Carbon::parse($consumerLog->up_created_at)->format("d-m-Y h:i:s A") : "",
+                "document" => $consumerLog->document ? trim($docUrl . "/" . $consumerLog->relative_path . "/" . $consumerLog->document, "/") : "",
+            ];
+            $data = [
+                "userDtls" => $header,
+                "oldConsumer" => $consumerLog,
+                "newConsumer" => $consumerLog,
+                "oldOwnere" => $ownres,
+                // "newOwnere" => $newOwnresData,
+            ];
+            return responseMsgs(true, "Log Details", remove_null($data), "", "010203", "1.0", "", 'POST', "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
         }
     }
 }
