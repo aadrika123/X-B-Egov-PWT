@@ -107,7 +107,7 @@ return [
     "EASEBUZZ_MERCHANT_KEY" => env("EASEBUZZ_MERCHANT_KEY", "BFTG4OT2L"),
 
 
-    'merchant_code' => env('PAYNIMO_MERCHANT_CODE', "T1026873"), //T1026873
+    'merchant_code' => env('PAYNIMO_MERCHANT_CODE', "L1026873"), //T1026873
     'api_key' => env('PAYNIMO_API_KEY'),
     'salt' => env('PAYNIMO_SALT', "3093244878UGLABF"),
     'env' => env('PAYNIMO_ENV', "test"), // 'test' or 'prod'
