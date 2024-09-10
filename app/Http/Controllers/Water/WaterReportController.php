@@ -6323,7 +6323,7 @@ class WaterReportController extends Controller
             $consumerLog->ward_name = UlbWardMaster::find($consumerLog->ward_mstr_id)->ward_name ?? "";
             $ownres      = $consumerLog->getOwners();
             # updated details 
-            $getNewData     = $mNewConsumerDemand->consumerDemandByConsumerId($consumerLog->consumer_id);
+            $getNewData     = $mNewConsumerDemand->consumerDemandByConsumerIds($consumerLog->consumer_id);
 
             $commonFunction = new \App\Repository\Common\CommonFunction();
             $rols = ($commonFunction->getUserAllRoles($users->id)->first());

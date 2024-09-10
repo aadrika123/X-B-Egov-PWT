@@ -555,6 +555,18 @@ class WaterConsumerDemand extends Model
             ->count('water_consumer_demands.id')
             ->get();
     }
+    public function consumerDemandByConsumerIds($consumerId)
+    {
+        return WaterConsumerDemand::select(
+            'water_consumer_demands.*',
+            'water_consumer_meters.meter_no'
+        )
+            ->join('water_consumer_meters', 'water_consumer_meters.consumer_id', 'water_consumer_demands.consumer_id')
+            ->where('water_consumer_demands.consumer_id', $consumerId)
+            ->where('water_consumer_demands.status', true)
+            ->orderByDesc('water_consumer_demands.id')
+            ->first();
+    }
 
     /**
      * | Get Demands list by Demand ids
