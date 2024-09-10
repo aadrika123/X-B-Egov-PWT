@@ -7477,7 +7477,7 @@ class ReportController extends Controller
             // Base query with date filtering
             $query = PropTcVisit::select(
                 'prop_tc_visits.id',
-                'prop_tc_visits.appartment_name',
+                'prop_tc_visits.appartment_name as owner_name',
                 'prop_tc_visits.holding_no',
                 'prop_tc_visits.property_no',
                 'prop_tc_visits.prop_address',
@@ -7487,8 +7487,8 @@ class ReportController extends Controller
                 'prop_tc_visits.total_demand',
                 'prop_tc_visits.interest',
                 'prop_tc_visits.remarks',
-                'prop_tc_visits.change_usage_type_mstr_id',
-                'prop_tc_visits.change_const_type_mstr_id',
+                'prop_tc_visits.change_usage_type_mstr_id as change_usage_type',
+                'prop_tc_visits.change_const_type_mstr_id as change_const_type',
                 'prop_tc_visits.citizen_comment',
                 'prop_tc_visits.latitude',
                 'prop_tc_visits.longitude',
