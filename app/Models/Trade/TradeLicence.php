@@ -126,14 +126,13 @@ class TradeLicence extends TradeParamModel    #Model
         return $this->hasOne(ActiveTradeLicence::class, "trade_id", "id");
     }
     #for testing
-    public function dtls($id)
+    public function dtls()
     {
         return self::select(
             'trade_licences.license_no',
-            'trade_owners.owner_name'
+            'trade_owners.owner_name',
+            'trade_licences.valid_upto'
         )
-            ->join('trade_owners', 'trade_owners.temp_id', 'trade_licences.id')
-            ->where('trade_licences.id', $id)
-            ->first();
+            ->join('trade_owners', 'trade_owners.temp_id', 'trade_licences.id');
     }
 }

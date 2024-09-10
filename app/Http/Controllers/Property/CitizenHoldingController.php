@@ -775,9 +775,9 @@ class CitizenHoldingController extends Controller
                 "ulbId" => 2,
                 "workflowId" => 3,
                 "moduleId" => 1,
-                "tran_type"=>"Process_fee",
-                "from_fyear"=>'2024-2025',
-                "to_fyear"=>'2024-2025',
+                "tran_type" => "Process_fee",
+                "from_fyear" => '2024-2025',
+                "to_fyear" => '2024-2025',
                 "callbackUrl" => $request->callbackUrl ? $request->callbackUrl : $this->_callbackUrl,
             ]);
 
@@ -850,7 +850,7 @@ class CitizenHoldingController extends Controller
             $merchantCode          = Config::get('payment-constants.merchant_code');
             $salt                  = Config::get('payment-constants.salt');
             $application = $this->_PropProperty->find($request->applicationId);
-          
+
             $owners = PropOwner::where('property_id', $request->applicationId)
                 ->first();
 
@@ -861,7 +861,7 @@ class CitizenHoldingController extends Controller
                 "moduleId" => $this->_MODULE_ID ?? 2,
                 "email" => ($owners->whereNotNull("email")->first())->email_id ?? "test@gmail.com",                          //"test@gmail.com"
                 "mobileNumber" => ($owners->whereNotNull("mobile_no")->first())->mobile_no ?? "0123456789",                       //"0123456789"
-                "amount" => 1,                                                                                              //round($chargeDetails->amount)
+                "amount" => 25,                                                                                              //round($chargeDetails->amount)
                 "firstname" => "No Name",
                 "frontSuccessUrl" => $request->frontSuccessUrl,
                 "frontFailUrl" => $request->frontFailUrl,
@@ -908,7 +908,7 @@ class CitizenHoldingController extends Controller
 
         $param["hash"] =  $hashVal;
         $param["merchantCode"] = Config::get('payment-constants.merchant_code');
-        
+
         $param["env"]          = Config::get('payment-constants.env');
         return $param;
     }

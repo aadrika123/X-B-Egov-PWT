@@ -1566,13 +1566,23 @@ class TradeApplication extends Controller
     public function sendSms(Request $request)
     {
         try {
-            $mTradeLicense = new TradeLicence();
-            $Details       = $mTradeLicense->dtls(2);
-            $sms = AkolaTrade(["owner_name" => $Details['owner_name'], "saf_no" => $Details['application_no']], "Renewal");
-            if (($sms["status"] !== false)) {
-                $respons = SMSAKGOVT(6206998554, $sms["sms"], $sms["temp_id"]);
+            $currentDate = Carbon::now();
+            $oneMonthLater = $currentDate->copy()->addMonth();
+            $mTradeLicence = new TradeLicence();
+            // Get the details of licenses expiring within one month
+            $details = $mTradeLicence->dtls()
+                ->where('valid_upto', '>', $currentDate)
+                ->where('valid_upto', '<=', $oneMonthLater)
+                ->get();
+
+            foreach ($details as $detail) {
+                $sms = AkolaTrade(["owner_name" => $detail->license_no, "application_no" => $detail->valid_upto], "Renewal");
+
+                if ($sms["status"] !== false) {
+                    $respons = SMSAKGOVT(6387148933, $sms["sms"], $sms["temp_id"]);
+                }
             }
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }

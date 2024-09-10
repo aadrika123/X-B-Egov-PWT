@@ -99,7 +99,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         # Consumer And Citizen Transaction Operation
 
         Route::post('master/get-listed-details', 'getWaterMasterData');                                 // Admin/ Citizen
-        
+
 
         Route::post('consumer/calculate-month-demand', 'callDemandByMonth');                            // Admin/Consumer
         Route::post('application/payment/get-payment-history', 'getApplicationPaymentHistory');         // Admin/Consumer
@@ -264,6 +264,8 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('report/tc-visit', 'tcvisitRecordsv2');
         Route::post('reports/tran-deactived-list', 'tranDeactivatedList');
         Route::post('reports/device-type/collection', 'deviceTypeCollection');
+        Route::post('reports/demand-updated', 'searchUpdateConsumerDemand');
+        Route::post('reports/demand-updated-dtls', 'consumerUpdateDemandLogs');
 
         //written by prity pandey
         #Created On:10-08-2024

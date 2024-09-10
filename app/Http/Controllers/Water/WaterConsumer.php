@@ -753,13 +753,13 @@ class WaterConsumer extends Controller
             $confModuleId                   = Config::get('module-constants.WATER_MODULE_ID');
 
             # Check the condition for deactivation
-                $refDetails = $this->PreConsumerDeactivationCheck($request, $user);
-            
+            $refDetails = $this->PreConsumerDeactivationCheck($request, $user);
+
 
             $ulbId      = $request->ulbId ?? $refDetails['consumerDetails']['ulb_id'] ?? 2;
 
             # Get initiater and finisher
-            if ($request->requestType == 10 || $request->requestType == 11 ||  $request->requestType == 12 ) {                // static for water Complain workflow
+            if ($request->requestType == 10 || $request->requestType == 11 ||  $request->requestType == 12) {                // static for water Complain workflow
                 $refWorkflow = 41;
             }
 
@@ -3262,4 +3262,6 @@ class WaterConsumer extends Controller
             dd($e->getMessage());
         }
     }
+
+   
 }
