@@ -10,6 +10,7 @@ use App\Http\Requests\Property\Reports\SafPropIndividualDemandAndCollection;
 use App\Http\Requests\Property\Reports\UserWiseLevelPending;
 use App\Http\Requests\Property\Reports\UserWiseWardWireLevelPending;
 use App\MicroServices\IdGenerator\PrefixIdGenerator;
+// use App\Models\Advertisements\WfActiveDocument;
 use App\Models\MplYearlyReport;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropDemand;
@@ -38,6 +39,7 @@ use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use PhpParser\Node\Expr\FuncCall;
 use Illuminate\Support\Str;
+use App\Models\Workflows\WfActiveDocument;
 
 #------------date 13/03/2023 -------------------------------------------------------------------------
 #   Code By Sandeep Bara
@@ -7514,12 +7516,17 @@ class ReportController extends Controller
             if (!empty($userId)) {
                 $query->where('prop_tc_visits.user_id', $userId);
             }
-
+            //$documents = $mWfActiveDocument->getDocByRefIds($req->applicationId, 0, 1);
             // Pagination
             $perPage = $request->perPage ?? 10;  // Default to 10 results per page
             $page = $request->page ?? 1;
             $paginatedData = $query->paginate($perPage, ['*'], 'page', $page);
-
+            $paginatedData->getCollection()->transform(function ($visit) {
+                $documents = (new WfActiveDocument())->getDocByRefIds($visit->id, 0, 1); // Assuming the document fetching logic
+                $visit->documents = $documents;
+                return $visit;
+            });
+    
             // Extract pagination details
             $response = [
                 'current_page' => $paginatedData->currentPage(),
