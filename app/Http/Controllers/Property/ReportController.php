@@ -7521,12 +7521,17 @@ class ReportController extends Controller
             $perPage = $request->perPage ?? 10;  // Default to 10 results per page
             $page = $request->page ?? 1;
             $paginatedData = $query->paginate($perPage, ['*'], 'page', $page);
+            // $paginatedData->getCollection()->transform(function ($visit) {
+            //     $documents = (new WfActiveDocument())->getDocByRefIds($visit->id, 0, 1); // Assuming the document fetching logic
+            //     $visit->documents = $documents;
+            //     return $visit;
+            // });
             $paginatedData->getCollection()->transform(function ($visit) {
-                $documents = (new WfActiveDocument())->getDocByRefIds($visit->id, 0, 1); // Assuming the document fetching logic
-                $visit->documents = $documents;
+                $documents = (new WfActiveDocument())->getDocByRefIds($visit->id, 0, 1);
+                $visit->doc_path = optional($documents->first())->doc_path; // Assuming doc_path is a field in documents
                 return $visit;
             });
-    
+
             // Extract pagination details
             $response = [
                 'current_page' => $paginatedData->currentPage(),
