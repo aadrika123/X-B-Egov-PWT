@@ -436,7 +436,7 @@ class SafApprovalBll
         if (in_array($this->_activeSaf->assessment_type, ['Reassessment'])) {
             list($fromFyear, $uptoFyear) = explode("-", getFY());
             $privTwoYear = ($fromFyear - 1) . "-" . ($uptoFyear - 1);
-            $fyDemand = collect($this->_calculateTaxByUlb->_GRID['fyearWiseTaxes'])->where("fyear", ">=", $privTwoYear)->sortBy("fyear");
+            $fyDemand = collect($this->_calculateTaxByUlb->_GRID['fyearWiseTaxes'])->where("fyear", ">", $privTwoYear)->sortBy("fyear");
         }
 
 
