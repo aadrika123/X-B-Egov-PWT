@@ -906,7 +906,8 @@ class SafDocController extends Controller
                 'latitude' => $req->latitude,
                 'longitude' => $req->longitude,
                 'user_id' => $UserId,
-                'visit_date' => Carbon::now()->format("Y-m-d")
+                'visit_date' => Carbon::now()->format("Y-m-d"),
+                'visit_time' => Carbon::now()->format("H:i:s")
             ]);
             $TcVisitId = $propTcVisit->id;
             

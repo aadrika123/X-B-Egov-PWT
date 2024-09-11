@@ -7496,6 +7496,7 @@ class ReportController extends Controller
                 'prop_tc_visits.longitude',
                 'prop_tc_visits.user_id',
                 'prop_tc_visits.created_at',
+                'prop_tc_visits.visit_time',
                 'users.name as user_name',
                 'ulb_ward_masters.ward_name',
                 'zone_masters.zone_name',
