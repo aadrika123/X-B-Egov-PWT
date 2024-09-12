@@ -3210,8 +3210,8 @@ class NewConnectionController extends Controller
             $holdingDuesController = new HoldingTaxController($safRepo); // Pass safRepo to the controller constructor
 
             # Prepare request for holding dues
-            $holdingDuesRequest = new Request(['propId' => $holdingDetails->id]); // Pass safID as propId to the request
-            $holdingDuesRequest->replace(['propId' => $holdingDetails->id]); // Explicitly set propId in the request
+            $holdingDuesRequest = new Request(['propId' => $holdingDetails->propId]); // Pass safID as propId to the request
+            $holdingDuesRequest->replace(['propId' => $holdingDetails->propId]); // Explicitly set propId in the request
 
             # Call the getHoldingDues function with the new request object
             $holdingDuesResponse = $holdingDuesController->getHoldingDues($holdingDuesRequest);
