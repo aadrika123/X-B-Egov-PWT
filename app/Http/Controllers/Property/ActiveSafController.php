@@ -760,6 +760,7 @@ class ActiveSafController extends Controller
                         ->where('prop_safs.id', $req->applicationId)
                         ->first();
                     $data->current_role_name = 'Approved By ' . $data->current_role_name;
+                    $approveDate = $data->saf_approved_date;
                 }
             }
             if ($req->safNo) {                                  // <-------- Search By SAF No
@@ -772,6 +773,7 @@ class ActiveSafController extends Controller
                         ->where('prop_safs.saf_no', $req->applicationId)
                         ->first();
                     $data->current_role_name = 'Approved By ' . $data->current_role_name;
+                    $approveDate = $data->saf_approved_date;
                 }
             }
 
@@ -830,7 +832,9 @@ class ActiveSafController extends Controller
             $fullDetailsData['doc_verify_status'] = $data->doc_verify_status;
             $fullDetailsData['doc_upload_status'] = $data->doc_upload_status;
             $fullDetailsData['payment_status'] = $data->payment_status;
-            $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement, $propertyElement, $corrElement, $electElement]);
+            $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement, $propertyElement, 
+            $corrElement, $electElement]);
+            $fullDetailsData['approveDate'] = $approveDate;
             // Table Array
             // Owner Details
             $getOwnerDetails = $mPropActiveSafOwner->getOwnersBySafId($data->id);    // Model function to get Owner Details
@@ -906,6 +910,7 @@ class ActiveSafController extends Controller
             $docDetail = $mPropActiveSaf->getDocDetail($req->applicationId);
             $fullDetailsData['timelineData'] = collect($req);
             $fullDetailsData['DocDetail'] = $docDetail;
+            //$fullDetailsData['saf_approved_date'] = $data->saf_approved_date;
 
             $custom = $mCustomDetails->getCustomDetails($req);
             $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];

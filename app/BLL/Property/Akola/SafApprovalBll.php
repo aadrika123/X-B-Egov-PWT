@@ -433,11 +433,11 @@ class SafApprovalBll
             // $fyDemand = collect($this->_calculateTaxByUlb->_GRID['fyearWiseTaxes'])->where("fyear", ">=", $privThreeYear)->sortBy("fyear");
         }
         $fyDemand = collect($this->_calculateTaxByUlb->_GRID['fyearWiseTaxes'])->sortBy("fyear");
-        if (in_array($this->_activeSaf->assessment_type, ['Reassessment'])) {
-            list($fromFyear, $uptoFyear) = explode("-", getFY());
-            $privTwoYear = ($fromFyear - 1) . "-" . ($uptoFyear - 1);
-            $fyDemand = collect($this->_calculateTaxByUlb->_GRID['fyearWiseTaxes'])->where("fyear", ">", $privTwoYear)->sortBy("fyear");
-        }
+        // if (in_array($this->_activeSaf->assessment_type, ['Reassessment'])) {
+        //     list($fromFyear, $uptoFyear) = explode("-", getFY());
+        //     $privTwoYear = ($fromFyear - 1) . "-" . ($uptoFyear - 1);
+        //     $fyDemand = collect($this->_calculateTaxByUlb->_GRID['fyearWiseTaxes'])->where("fyear", ">", $privTwoYear)->sortBy("fyear");
+        // }
 
 
         $this->generateAdvance($fyDemand);
@@ -953,8 +953,18 @@ class SafApprovalBll
             $previousInterest = $oldIntrest->due_total_interest ?? 0;
             //$arr=[];
             $totalArea = $propProperties->area_of_plot;
-            $onePercOfArea = $totalArea / 100;
             $bifurcatedArea = $this->_verifiedPropDetails[0]->area_of_plot;
+            if($this->_activeSaf->prop_type_mstr_id!=4){
+                $propFloor = PropFloor::where("property_id", $propProperties->id)
+                    ->where('status', 1)
+                    ->orderby('id')
+                    ->get();
+                $totalArea = collect($propFloor)->sum("builtup_area");
+                $bifurcatedArea = collect($this->_floorDetails)->sum("builtup_area");
+               // $bifurcatedArea = collect($this->_verifiedFloors)->isNotEmpty() ? collect($this->_verifiedFloors)->sum("builtup_area") : $bifurcatedArea ;
+            }
+
+            $onePercOfArea = $totalArea / 100;
             $percOfBifurcatedArea = round(($bifurcatedArea / $onePercOfArea), 2);
             $unPaidDemand = $propProperties->PropDueDemands()->get();
             $previousInterest = ($previousInterest / 100) * $percOfBifurcatedArea;

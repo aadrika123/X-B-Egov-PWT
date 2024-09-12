@@ -77,6 +77,11 @@ class TaxCalculator
 
         $this->generateFyearWiseTaxes();    // 4
 
+        //Written by prity pandey 
+        $this->generateTaxAccOldPropDemand();    // 4.1
+
+
+
         $this->generatePayableAmount();     // 5
     }
 
@@ -128,11 +133,26 @@ class TaxCalculator
             if (isset($this->_REQUEST->assessmentType) && ($this->getAssestmentTypeStr() == 'Reassessment')) {
                 //$this->_newForm = $fromYear . "-04-01"; 
                 //changes by prity pandey
-                list($fromYear, $lastYear) = explode("-", getFY($this->_REQUEST->approvedDate));
+                //list($fromYear, $lastYear) = explode("-", getFY($this->_REQUEST->approvedDate));
                 //$this->_newForm = ($fromYear - 2) . "-04-01";
-                $this->_newForm = ($fromYear) . "-04-01";
+               // $this->_newForm = ($fromYear) . "-04-01";
+                //end of changes
 
-                 //end of changes
+                //code for reassessment calculation according to completion and building approval date
+                //added by prity pandey 12-09-2024
+                if ($this->_REQUEST->buildingPlanCompletionDate) {
+                    list($fromYear, $lastYear) = explode("-", getFY($this->_REQUEST->buildingPlanCompletionDate));
+                    $this->_newForm = ($fromYear) . "-04-01";
+                    if (getFY($this->_REQUEST->buildingPlanCompletionDate) < "2022-2023") {
+                        $this->_newForm = "2022-04-01";
+                    }
+                } elseif ($this->_REQUEST->buildingPlanApprovalDate) {
+                    list($fromYear, $lastYear) = explode("-", getFY($this->_REQUEST->buildingPlanApprovalDate));
+                    $this->_newForm = ($lastYear) . "-04-01";
+                    if (getFY($this->_REQUEST->buildingPlanApprovalDate) < "2022-2023") {
+                        $this->_newForm = "2022-04-01";
+                    }
+                }
             }
             //changes by prity pandey
             // if ($this->_REQUEST->buildingPlanCompletionDate) {
@@ -145,14 +165,14 @@ class TaxCalculator
             //changes by prity pandey
             $this->_propFyearFrom = Carbon::parse($this->_newForm)->format('Y');
             //if ($this->getAssestmentTypeStr() == 'Bifurcation') {
-                // list($fromYear, $lastYear) = explode("-", getFY($this->_REQUEST->approvedDate));
-                // $this->_newForm = ($fromYear - 2) . "-04-01";
-                // Calculate area percentage and distribute the arrear amount
-                // $totalArea = $this->_REQUEST->areaOfPlot * 0.092903; // Square meter conversion
-                // $bifurcatedArea = $this->_REQUEST->bifurcatedPlot * 0.092903; // Bifurcated area
-                // $areaPercentage = $bifurcatedArea / $totalArea;
+            // list($fromYear, $lastYear) = explode("-", getFY($this->_REQUEST->approvedDate));
+            // $this->_newForm = ($fromYear - 2) . "-04-01";
+            // Calculate area percentage and distribute the arrear amount
+            // $totalArea = $this->_REQUEST->areaOfPlot * 0.092903; // Square meter conversion
+            // $bifurcatedArea = $this->_REQUEST->bifurcatedPlot * 0.092903; // Bifurcated area
+            // $areaPercentage = $bifurcatedArea / $totalArea;
 
-                // $this->_oldUnpayedAmount = round($this->_oldUnpayedAmount * $areaPercentage);
+            // $this->_oldUnpayedAmount = round($this->_oldUnpayedAmount * $areaPercentage);
             //}
         }
         //end of change
@@ -910,6 +930,60 @@ class TaxCalculator
 
         return $this->_GRID['fyearWiseTaxes'] = $fyearWiseTaxes;
         $this->_GRID['demandPendingYrs'] = $fyearWiseTaxes->count();                // Update demand payment years
+    }
+
+
+    public function generateTaxAccOldPropDemand()
+    {
+        //changes by prity pandey
+        $fyear = null;
+        if ($this->_REQUEST->buildingPlanCompletionDate) {
+            $fyear = getFY($this->_REQUEST->buildingPlanCompletionDate);
+        } elseif ($this->_REQUEST->buildingPlanApprovalDate) {
+            $fyear = getFY($this->_REQUEST->buildingPlanApprovalDate);
+        }
+        //end of changes
+        // if (in_array($this->getAssestmentTypeStr(), ['Reassessment', 'Mutation', 'Amalgamation']) && $fyear) {
+            if (in_array($this->getAssestmentTypeStr(), ['Reassessment']) && $fyear) {
+            $propProperties = PropProperty::find($this->_REQUEST->previousHoldingId);
+            DB::enableQueryLog();
+            $unPaidDemand = $propProperties->PropDueDemands()->where("fyear", "<", $fyear)->get();
+            foreach ($unPaidDemand as $val) {
+                $fyear = $val["fyear"];
+                $arr = [
+                    "alv" => roundFigure($val["alv"]),
+                    "maintancePerc" => "0",
+                    "maintantance10Perc" => roundFigure($val["due_maintanance_amt"]),
+                    "valueAfterMaintance" => "0",
+                    "agingPerc" => "0",
+                    "agingAmt" => roundFigure($val["due_aging_amt"]),
+                    "taxValue" => "0",
+                    "generalTax" => roundFigure($val["due_general_tax"]),
+                    "roadTax" => roundFigure($val["due_road_tax"]),
+                    "firefightingTax" => roundFigure($val["due_firefighting_tax"]),
+                    "educationTax" => roundFigure($val["due_education_tax"]),
+                    "waterTax" => roundFigure($val["due_water_tax"]),
+                    "cleanlinessTax" => roundFigure($val["due_cleanliness_tax"]),
+                    "sewerageTax" => roundFigure($val["due_sewarage_tax"]),
+                    "treeTax" => roundFigure($val["due_tree_tax"]),
+                    "stateEducationTaxPerc" => "0",
+                    "stateEducationTax" => roundFigure($val["due_sp_education_tax"]),
+                    "professionalTaxPerc" => "0",
+                    "professionalTax" => roundFigure($val["due_professional_tax"]),
+                    "openPloatTax" => roundFigure($val["due_open_ploat_tax"]),
+                    "tax1" => roundFigure($val["due_tax1"]),
+                    "adjustAmount" => "0",
+                    "dueAmount" => roundFigure($val["due_total_tax"]),
+                    "totalTax" => roundFigure($val["due_total_tax"]),
+                    "totalTax2" => roundFigure($val["due_total_tax"]),
+                    "totalFloar" => "0",
+                    "fyear" => $val["fyear"]
+                ];
+                $this->_GRID['fyearWiseTaxes'][$fyear] = $arr;
+            }
+
+            $this->_GRID['fyearWiseTaxes'] = collect($this->_GRID['fyearWiseTaxes'])->sortBy("fyear");
+        }
     }
 
     /**
