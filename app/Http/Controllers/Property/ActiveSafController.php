@@ -760,7 +760,7 @@ class ActiveSafController extends Controller
                         ->where('prop_safs.id', $req->applicationId)
                         ->first();
                     $data->current_role_name = 'Approved By ' . $data->current_role_name;
-                    $approveDate = $data->saf_approved_date;
+                    $approveDate = $data->saf_approved_date ?? null;
                 }
             }
             if ($req->safNo) {                                  // <-------- Search By SAF No
@@ -773,7 +773,7 @@ class ActiveSafController extends Controller
                         ->where('prop_safs.saf_no', $req->applicationId)
                         ->first();
                     $data->current_role_name = 'Approved By ' . $data->current_role_name;
-                    $approveDate = $data->saf_approved_date;
+                    $approveDate = $data->saf_approved_date ?? null;
                 }
             }
 
