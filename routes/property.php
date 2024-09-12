@@ -599,6 +599,8 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('reports/bulk-demand-generated-list', 'bulkDemandList');
     Route::post('reports/bulk-demand-generated-list-download-count', 'bulkDemandListDownloadCount');
     Route::post('reports/bulk-notice-comment', 'bulkNoticeComment');
+    # Date : 10-09-2024 bulk demand reports
+    Route::post('reports/tc-visit-list', 'tcVisitList');
   });
 
   /**

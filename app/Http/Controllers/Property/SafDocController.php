@@ -24,6 +24,7 @@ use App\Repository\Property\Interfaces\iSafRepository;
 use App\Traits\Property\AkolaSafDoc;
 use App\Traits\Property\SAF;
 use App\Traits\Property\SafDoc;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
@@ -863,13 +864,14 @@ class SafDocController extends Controller
             'currentDemand' => 'nullable|numeric',
             'totalDemand' => 'nullable|numeric',
             'interest' => 'nullable|numeric',
-            'remarks' => 'nullable|string|max:15',
-            'changeUsageTypeId' => 'nullable|integer',
-            'changeConsTypeId' => 'nullable|integer',
+            'remark' => 'nullable|string|max:15',
+            'changeUsagesTypeId' => 'nullable',
+            'changeConsTypeId' => 'nullable',
             'citizenComment' => 'nullable|string|max:255',
             'latitude' => 'nullable|string',
             'longitude' => 'nullable|string',
             "document" => "required|mimes:pdf,jpeg,png,jpg|" . (strtolower($extention) == 'pdf' ? 'max:10240' : 'max:5120'),
+
         ]);
 
         if ($validated->fails()) {
@@ -897,13 +899,15 @@ class SafDocController extends Controller
                 'current_demand' => $req->currentDemand,
                 'total_demand' => $req->totalDemand,
                 'interest' => $req->interest,
-                'remarks' => $req->remarks,
-                'change_usage_type_mstr_id' => $req->changeConsTypeId,
+                'remarks' => $req->remark,
+                'change_usage_type_mstr_id' => $req->changeUsagesTypeId,
                 'change_const_type_mstr_id' => $req->changeConsTypeId,
                 'citizen_comment' => $req->citizenComment,
                 'latitude' => $req->latitude,
                 'longitude' => $req->longitude,
-                'user_id' => $UserId
+                'user_id' => $UserId,
+                'visit_date' => Carbon::now()->format("Y-m-d"),
+                'visit_time' => Carbon::now()->format("H:i:s")
             ]);
             $TcVisitId = $propTcVisit->id;
             

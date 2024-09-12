@@ -129,7 +129,8 @@ class TaxCalculator
                 //$this->_newForm = $fromYear . "-04-01"; 
                 //changes by prity pandey
                 list($fromYear, $lastYear) = explode("-", getFY($this->_REQUEST->approvedDate));
-                $this->_newForm = ($fromYear - 2) . "-04-01";
+                //$this->_newForm = ($fromYear - 2) . "-04-01";
+                $this->_newForm = ($fromYear) . "-04-01";
 
                  //end of changes
             }

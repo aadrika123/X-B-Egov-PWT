@@ -1097,7 +1097,8 @@ class Report implements IReport
                                 $where
                             )
                     ) saf
-                    join prop_transactions on prop_transactions.saf_id = saf.id 
+                     join prop_transactions on prop_transactions.saf_id = saf.id 
+                    --left join prop_transactions on prop_transactions.saf_id = saf.id 
                     and prop_transactions.status in(1,2)
                     GROUP BY saf.id,ward_mstr_id,parked
                 ),
@@ -1121,7 +1122,8 @@ class Report implements IReport
                     count(distinct(saf.id)) total_saf,
                     count(distinct( case when memos.memo_type = 'SAM' then memos.saf_id else null end)) as total_sam,
                     count( distinct(case when memos.memo_type = 'FAM' then memos.saf_id else null end)) as total_fam,
-                    count( distinct(case when saf.parked = true then memos.saf_id else null end)) as total_btc,
+                 count( distinct(case when saf.parked = true then memos.saf_id else null end)) as total_btc,
+                       --count( distinct(case when saf.parked = true then saf.id else null end)) as total_btc,
                     count(distinct(geotaging.saf_id)) total_geotaging,
                     COALESCE(count(distinct(saf.id)) -  count(distinct( case when memos.memo_type = 'SAM' then memos.saf_id else null end))) as pending_sam,
                     COALESCE(count(distinct(saf.id)) -  count(distinct( case when memos.memo_type = 'FAM' then memos.saf_id else null end))) as pending_fam,

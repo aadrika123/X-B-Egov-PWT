@@ -10,12 +10,14 @@ use App\Http\Requests\Property\Reports\SafPropIndividualDemandAndCollection;
 use App\Http\Requests\Property\Reports\UserWiseLevelPending;
 use App\Http\Requests\Property\Reports\UserWiseWardWireLevelPending;
 use App\MicroServices\IdGenerator\PrefixIdGenerator;
+// use App\Models\Advertisements\WfActiveDocument;
 use App\Models\MplYearlyReport;
 use App\Models\Property\PropActiveSaf;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropPropertyUpdateRequest;
 use App\Models\Property\PropSaf;
+use App\Models\Property\PropTcVisit;
 use App\Models\Property\PropTransaction;
 use App\Models\Property\ZoneMaster;
 use App\Models\Trade\TradeTransaction;
@@ -37,6 +39,7 @@ use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use PhpParser\Node\Expr\FuncCall;
 use Illuminate\Support\Str;
+use App\Models\Workflows\WfActiveDocument;
 
 #------------date 13/03/2023 -------------------------------------------------------------------------
 #   Code By Sandeep Bara
@@ -7447,6 +7450,102 @@ class ReportController extends Controller
         }
     }
 
+
+    public function tcVisitList(Request $request)
+    {
+        $rules = [
+            "fromDate"  => "nullable|date|date_format:Y-m-d|before_or_equal:" . Carbon::now()->format('Y-m-d'),
+            "uptoDate"  => "nullable|date|date_format:Y-m-d|after_or_equal:" . Carbon::parse($request->fromDate ?? Carbon::now())->format('Y-m-d'),
+            "zoneId"    => "nullable|digits_between:1,9223372036854775807",
+            "wardId"    => "nullable|digits_between:1,9223372036854775807",
+            "userId"    => "nullable|integer"
+        ];
+
+        $validated = Validator::make($request->all(), $rules);
+
+        if ($validated->fails()) {
+            return validationErrorV2($validated);
+        }
+
+        try {
+            // Default to today's date if not provided
+            $fromDate = $request->fromDate ?? Carbon::now()->format('Y-m-d');
+            $uptoDate = $request->uptoDate ?? Carbon::now()->format('Y-m-d');
+
+            $zoneId   = $request->zoneId;
+            $wardId   = $request->wardId;
+            $userId   = $request->userId;
+
+            // Base query with date filtering
+            $query = PropTcVisit::select(
+                'prop_tc_visits.id',
+                'prop_tc_visits.appartment_name as owner_name',
+                'prop_tc_visits.holding_no',
+                'prop_tc_visits.property_no',
+                'prop_tc_visits.prop_address',
+                'prop_tc_visits.mobile_no',
+                'prop_tc_visits.arrear_demand',
+                'prop_tc_visits.current_demand',
+                'prop_tc_visits.total_demand',
+                'prop_tc_visits.interest',
+                'prop_tc_visits.remarks',
+                'prop_tc_visits.change_usage_type_mstr_id as change_usage_type',
+                'prop_tc_visits.change_const_type_mstr_id as change_const_type',
+                'prop_tc_visits.citizen_comment',
+                'prop_tc_visits.latitude',
+                'prop_tc_visits.longitude',
+                'prop_tc_visits.user_id',
+                'prop_tc_visits.created_at',
+                'prop_tc_visits.visit_time',
+                'users.name as user_name',
+                'ulb_ward_masters.ward_name',
+                'zone_masters.zone_name',
+                DB::raw("TO_CHAR(prop_tc_visits.visit_date, 'DD-MM-YYYY') as visit_date")
+            )
+                ->leftJoin('zone_masters', 'zone_masters.id', '=', 'prop_tc_visits.zone_mstr_id')
+                ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'prop_tc_visits.ward_mstr_id')
+                ->join('users', 'users.id', '=', 'prop_tc_visits.user_id')
+                ->whereBetween('prop_tc_visits.visit_date', [$fromDate, $uptoDate]);  // Date range filter
+
+            // Apply filters for zone, ward, and user
+            if (!empty($zoneId)) {
+                $query->where('prop_tc_visits.zone_mstr_id', $zoneId);
+            }
+            if (!empty($wardId)) {
+                $query->where('prop_tc_visits.ward_mstr_id', $wardId);
+            }
+            if (!empty($userId)) {
+                $query->where('prop_tc_visits.user_id', $userId);
+            }
+            //$documents = $mWfActiveDocument->getDocByRefIds($req->applicationId, 0, 1);
+            // Pagination
+            $perPage = $request->perPage ?? 10;  // Default to 10 results per page
+            $page = $request->page ?? 1;
+            $paginatedData = $query->paginate($perPage, ['*'], 'page', $page);
+            // $paginatedData->getCollection()->transform(function ($visit) {
+            //     $documents = (new WfActiveDocument())->getDocByRefIds($visit->id, 0, 1); // Assuming the document fetching logic
+            //     $visit->documents = $documents;
+            //     return $visit;
+            // });
+            $paginatedData->getCollection()->transform(function ($visit) {
+                $documents = (new WfActiveDocument())->getDocByRefIds($visit->id, 0, 1);
+                $visit->doc_path = optional($documents->first())->doc_path; // Assuming doc_path is a field in documents
+                return $visit;
+            });
+
+            // Extract pagination details
+            $response = [
+                'current_page' => $paginatedData->currentPage(),
+                'last_page'    => $paginatedData->lastPage(),
+                'data_total'   => $paginatedData->total(),
+                'data'         => $paginatedData->items()
+            ];
+
+            return responseMsgs(true, "TC Visit List", $response);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), []);
+        }
+    }
 
 
 
