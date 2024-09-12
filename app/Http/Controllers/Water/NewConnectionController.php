@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Water;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Property\HoldingTaxController;
 use App\Http\Requests\Water\newApplyRules;
 use  App\Models\water\WaterSecondConnectionCharge;
 use App\Http\Requests\Water\reqSiteVerification;
@@ -80,6 +81,7 @@ use Ramsey\Collection\Collection as CollectionCollection;
 use SebastianBergmann\Type\VoidType;
 use Symfony\Contracts\Service\Attribute\Required;
 use App\Models\Workflows\WfRole;
+use App\Repository\Property\Interfaces\iSafRepository;
 
 class NewConnectionController extends Controller
 {
@@ -1409,7 +1411,7 @@ class NewConnectionController extends Controller
             $connectionCharges['type'] = Config::get('waterConstaint.New_Connection');
             $connectionCharges['applicationNo'] = $refApplication->application_no;
             // $connectionCharges['applicationId'] = $refApplication->id;
-            $connectionCharges['applicationId'] = $request->approveId ;
+            $connectionCharges['applicationId'] = $request->approveId;
 
             $requiedDocType = $refWaterNewConnection->getDocumentTypeList($refApplication, $user);  # get All Related Document Type List
             $refOwneres = $refWaterNewConnection->getOwnereDtlByLId($refApplication->id);    # get Owneres List
@@ -3195,7 +3197,7 @@ class NewConnectionController extends Controller
             $mWaterSecondConsumer   = new WaterSecondConsumer();
             $refConsumerId          = $request->consumerId;
             $workflowId             = null;
-            $moduleId          = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $moduleId               = Config::get('module-constants.PROPERTY_MODULE_ID');
             $refConnectionName      = Config::get('waterConstaint.METER_CONN_TYPE');
             #get hoding details 
             $holdingDetails    = $mPropPerty->getPropert($holding);
@@ -3203,6 +3205,27 @@ class NewConnectionController extends Controller
                 throw new Exception('holding not found !');
             }
             $safID = $holdingDetails->saf_id;
+            # Resolve iSafRepository and HoldingTaxController using Laravel's service container
+            $safRepo = app()->make(iSafRepository::class); // Resolve iSafRepository
+            $holdingDuesController = new HoldingTaxController($safRepo); // Pass safRepo to the controller constructor
+
+            # Prepare request for holding dues
+            $holdingDuesRequest = new Request(['propId' => $holdingDetails->propId]); // Pass safID as propId to the request
+            $holdingDuesRequest->replace(['propId' => $holdingDetails->propId]); // Explicitly set propId in the request
+
+            # Call the getHoldingDues function with the new request object
+            $holdingDuesResponse = $holdingDuesController->getHoldingDues($holdingDuesRequest);
+
+            # Handle the response from getHoldingDues
+            if ($holdingDuesResponse->getStatusCode() != 200) {
+                return $holdingDuesResponse;  // Return the error response if any
+            }
+            # Access the data from the response
+            $responseData = json_decode($holdingDuesResponse->getContent(), true); // Convert the response JSON into an associative array
+
+            if (isset($responseData['data']['payableAmt']) && $responseData['data']['payableAmt'] != 0) {
+                throw new Exception('Your property tax is outstanding. Please clear it before applying for a new connection');
+            }
             #get saf details 
             $safDetails = $mActiveSafs->getSafNo($safID);
             if (!$safDetails)
