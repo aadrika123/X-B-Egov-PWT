@@ -1121,7 +1121,7 @@ class NewConnectionController extends Controller
             ]
         );
         if ($validated->fails())
-            return validationError($validated);
+            return validationErrorV2($validated);
 
         try {
             $user               = authUser($req);
