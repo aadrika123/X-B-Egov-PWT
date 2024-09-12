@@ -208,33 +208,23 @@ class WaterApprovalApplicationDetail extends Model
             'ulb_masters.ulb_name',
             'ulb_masters.logo',
             'ulb_masters.association_with',
-            DB::raw("string_agg(water_approval_applicants.applicant_name,',') as applicantName"),
-            DB::raw("string_agg(water_approval_applicants.mobile_no::VARCHAR,',') as mobileNo"),
-            DB::raw("string_agg(water_approval_applicants.guardian_name,',') as guardianName"),
+            'water_road_cutter_charges.road_type',
+            'water_road_cutter_charges.per_meter_amount',
+            'water_approval_application_details.per_meter',
+            'water_second_consumers.tab_size',
+            'water_connection_type_charges.amount as connecton_amount',
+            DB::raw("(SELECT string_agg(water_approval_applicants.applicant_name, ',') FROM water_approval_applicants WHERE water_approval_applicants.application_id = water_approval_application_details.id) as applicantName"),
+            DB::raw("(SELECT string_agg(water_approval_applicants.mobile_no::VARCHAR, ',') FROM water_approval_applicants WHERE water_approval_applicants.application_id = water_approval_application_details.id) as mobileNo"),
+            DB::raw("(SELECT string_agg(water_approval_applicants.guardian_name, ',') FROM water_approval_applicants WHERE water_approval_applicants.application_id = water_approval_application_details.id) as guardianName")
         )
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_approval_application_details.ulb_id')
             ->join('water_approval_applicants', 'water_approval_applicants.application_id', '=', 'water_approval_application_details.id')
             ->join('water_second_consumers', 'water_second_consumers.apply_connection_id', 'water_approval_application_details.id')
+            ->join('water_road_cutter_charges', 'water_road_cutter_charges.id', 'water_approval_application_details.road_type_id')
+            ->join('water_connection_type_charges', 'water_connection_type_charges.id', 'water_approval_application_details.connection_type_id')
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_approval_application_details.ward_id')
             ->where('water_approval_application_details.status', true)
-            ->where('water_second_consumers.id', $applicationId)
-            ->groupBy(
-                'water_second_consumers.consumer_no',
-                'water_approval_application_details.saf_no',
-                'water_approval_application_details.holding_no',
-                'water_approval_application_details.address',
-                'water_approval_application_details.id',
-                'water_approval_applicants.application_id',
-                'water_approval_application_details.application_no',
-                'water_approval_application_details.ward_id',
-                'water_approval_application_details.ulb_id',
-                'ulb_ward_masters.ward_name',
-                'ulb_masters.id',
-                'ulb_masters.ulb_name',
-                'ulb_masters.logo',
-                'ulb_masters.association_with',
-                "water_second_consumers.category"
-            );
+            ->where('water_second_consumers.id', $applicationId);
     }
 
     public function fullWaterDetail($applicationId)

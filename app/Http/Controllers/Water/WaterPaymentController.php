@@ -448,6 +448,11 @@ class WaterPaymentController extends Controller
                 "guardianName"          => $applicationDetails['guardianName'],
                 "association"           => $applicationDetails['association_with'],
                 "mobileNo"              => $applicationDetails['mobile_no'],
+                "roadType"              => $applicationDetails['road_type'],
+                "roadTypeAmount"        => $applicationDetails['per_meter_amount'],
+                "roadWidth"             => $applicationDetails['per_meter'],
+                "ConnectionAmount"      => $applicationDetails['connecton_amount'],
+                "roadCutterAmount"      =>$applicationDetails['per_meter_amount'] * $applicationDetails['per_meter'],
 
                 "paidAmtInWords"        => getIndianCurrency($transactionDetails->amount),
             ];
