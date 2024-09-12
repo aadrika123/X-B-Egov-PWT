@@ -3224,7 +3224,7 @@ class NewConnectionController extends Controller
             $responseData = json_decode($holdingDuesResponse->getContent(), true); // Convert the response JSON into an associative array
 
             if (isset($responseData['data']['payableAmt']) && $responseData['data']['payableAmt'] != 0) {
-                throw new Exception('Your Property Tax is not clear!');
+                throw new Exception('Your property tax is outstanding. Please clear it before applying for a new connection');
             }
             #get saf details 
             $safDetails = $mActiveSafs->getSafNo($safID);
