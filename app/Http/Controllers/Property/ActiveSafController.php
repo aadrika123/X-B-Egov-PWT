@@ -745,7 +745,7 @@ class ActiveSafController extends Controller
             $ownershipTypes = collect($ownershipTypes)->flip();
             $transferMode   = collect($transferMode)->flip();
             $jahirnamaDoc = new PropSafJahirnamaDoc();
-
+            $approveDate = "";
 
             // Saf Details
             $data = array();
@@ -759,8 +759,10 @@ class ActiveSafController extends Controller
                     $data = $mPropSaf->getSafDtls()
                         ->where('prop_safs.id', $req->applicationId)
                         ->first();
-                    $data->current_role_name = 'Approved By ' . $data->current_role_name;
-                    $approveDate = $data->saf_approved_date ?? null;
+                        if (!empty($data)) {
+                            $data->current_role_name = 'Approved By ' . $data->current_role_name;
+                            $approveDate = $data->saf_approved_date ?? null; // Safely set $approveDate if available
+                        }
                 }
             }
             if ($req->safNo) {                                  // <-------- Search By SAF No
@@ -772,8 +774,10 @@ class ActiveSafController extends Controller
                     $data = $mPropSaf->getSafDtls()
                         ->where('prop_safs.saf_no', $req->applicationId)
                         ->first();
-                    $data->current_role_name = 'Approved By ' . $data->current_role_name;
-                    $approveDate = $data->saf_approved_date ?? null;
+                        if (!empty($data)) {
+                            $data->current_role_name = 'Approved By ' . $data->current_role_name;
+                            $approveDate = $data->saf_approved_date ?? null; // Safely set $approveDate if available
+                        }
                 }
             }
 
