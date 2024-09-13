@@ -80,6 +80,8 @@ class CalculateTaxByUlb extends TaxCalculator
             "assessmentType" =>(flipConstants(Config::get("PropertyConstaint.ASSESSMENT-TYPE"))[$this->_safs->assessment_type]??''),
             "nakshaAreaOfPlot" => $this->_safs->naksha_area_of_plot,
             "isAllowDoubleTax" => $this->_safs->is_allow_double_tax,
+            "buildingPlanApprovalDate"=>$this->_safs->building_plan_approval_date,
+            "buildingPlanCompletionDate"=> $this->_safs->building_plan_completion_date,
             "floor" => [],
             "owner" => []
         ];
