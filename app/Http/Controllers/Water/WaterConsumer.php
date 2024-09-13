@@ -3272,7 +3272,7 @@ class WaterConsumer extends Controller
             $req->all(),
             [
                 "consumerId" => "required|integer",
-                "ownerId"    => "nullable|integer",
+                "ownerId"    => "required|integer",
                 "mobileNo"   => "required|digits:10|regex:/[0-9]{10}/",
             ]
         );
@@ -3280,7 +3280,8 @@ class WaterConsumer extends Controller
             return validationError($validated);
 
         try {
-            $ownerDetails = WaterConsumerOwner::where('consumer_id', $req->consumerId)
+            $ownerDetails = WaterConsumerOwner::where('id', $req->ownerId)
+                ->where('consumer_id', $req->consumerId)
                 ->first();
 
             if (!$ownerDetails)
