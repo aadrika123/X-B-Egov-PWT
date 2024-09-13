@@ -3263,5 +3263,36 @@ class WaterConsumer extends Controller
         }
     }
 
-   
+    /**
+     * | Update Mobile
+     */
+    public function updateMobile(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                "consumerId" => "required|integer",
+                "ownerId"    => "required|integer",
+                "mobileNo"   => "required|digits:10|regex:/[0-9]{10}/",
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $ownerDetails = WaterConsumerOwner::where('id', $req->ownerId)
+                ->where('consumer_id', $req->consumerId)
+                ->first();
+
+            if (!$ownerDetails)
+                throw new Exception("No Data Found Against this Owner");
+
+            $ownerDetails->mobile_no = $ownerDetails->mobile_no;
+            $ownerDetails->save();
+
+            return responseMsgs(true, "Mobile No Updated", [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
 }
