@@ -3272,7 +3272,7 @@ class WaterConsumer extends Controller
             $req->all(),
             [
                 "consumerId" => "required|integer",
-                "ownerId"    => "required|integer",
+                "ownerId"    => "nullable|integer",
                 "mobileNo"   => "required|digits:10|regex:/[0-9]{10}/",
             ]
         );
@@ -3280,14 +3280,14 @@ class WaterConsumer extends Controller
             return validationError($validated);
 
         try {
-            $ownerDetails = WaterConsumerOwner::where('id', $req->ownerId)
-                ->where('consumer_id', $req->consumerId)
+            $ownerDetails = WaterConsumerOwner::where('consumer_id', $req->consumerId)
                 ->first();
 
             if (!$ownerDetails)
                 throw new Exception("No Data Found Against this Owner");
 
-            $ownerDetails->mobile_no = $ownerDetails->mobile_no;
+            $ownerDetails->old_mobile_no = $ownerDetails->mobile_no;
+            $ownerDetails->mobile_no = $req->mobileNo;
             $ownerDetails->save();
 
             return responseMsgs(true, "Mobile No Updated", [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
