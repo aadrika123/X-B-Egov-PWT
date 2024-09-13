@@ -63,6 +63,8 @@ class CalculateSafTaxById extends TaxCalculator
             "assessmentType" => (flipConstants(Config::get("PropertyConstaint.ASSESSMENT-TYPE"))[$this->_safDtls->assessment_type] ?? ''),
             "nakshaAreaOfPlot" => $this->_safDtls->naksha_area_of_plot,
             "isAllowDoubleTax" => $this->_safDtls->is_allow_double_tax,
+            "buildingPlanApprovalDate"=>$this->_safDtls->building_plan_approval_date,
+            "buildingPlanCompletionDate"=> $this->_safDtls->building_plan_completion_date,
             "floor" => [],
             "owner" => []
         ];

@@ -756,6 +756,53 @@ class TaxCalculator
     /**
      * | Summation of Taxes(4.1) && (5.1)
      */
+    // public function sumTaxes($floorTaxes)
+    // {
+    //     $annualTaxes = $floorTaxes->pipe(function (Collection $taxes) {
+    //         $totalKeys = $taxes->count();
+    //         $totalKeys = $totalKeys ? $totalKeys : 1;
+    //         return [
+    //             "alv" => (float)roundFigure($taxes->sum('alv')),
+    //             "maintancePerc" => $taxes->first()['maintancePerc'] ?? 0,
+    //             "maintantance10Perc" => roundFigure($taxes->sum('maintantance10Perc')),
+    //             "valueAfterMaintance" => roundFigure($taxes->sum('valueAfterMaintance')),
+    //             "agingPerc" => roundFigure($taxes->sum('agingPerc') / $totalKeys),
+    //             "agingAmt" => roundFigure($taxes->sum('agingAmt')),
+    //             "taxValue" => roundFigure($taxes->sum('taxValue')),
+    //             "generalTax" => roundFigure($taxes->sum('generalTax')),
+    //             "roadTax" => roundFigure($taxes->sum('roadTax')),
+    //             "firefightingTax" => roundFigure($taxes->sum('firefightingTax')),
+    //             "educationTax" => roundFigure($taxes->sum('educationTax')),
+    //             "waterTax" => roundFigure($taxes->sum('waterTax')),
+    //             "cleanlinessTax" => roundFigure($taxes->sum('cleanlinessTax')),
+    //             "sewerageTax" => roundFigure($taxes->sum('sewerageTax')),
+    //             "treeTax" => roundFigure($taxes->sum('treeTax')),
+    //             "stateEducationTaxPerc" => roundFigure($taxes->sum('stateEducationTaxPerc') / $totalKeys),
+    //             "stateEducationTax" => roundFigure($taxes->sum('stateEducationTax')),
+    //             "professionalTaxPerc" => roundFigure($taxes->sum('professionalTaxPerc') / $totalKeys),
+    //             "professionalTax" => roundFigure($taxes->sum('professionalTax')),
+    //             "openPloatTax" => roundFigure($taxes->sum('openPloatTax')),
+    //             "tax1" => roundFigure($taxes->sum('tax1')),
+    //             "adjustAmount" => roundFigure($taxes->sum("adjustAmount")),
+    //             "dueAmount" => roundFigure($taxes->sum("dueAmount")),
+    //         ];
+    //     });
+    //     $annualTaxes['totalTax'] = roundFigure(
+    //         $annualTaxes['generalTax'] + $annualTaxes['roadTax'] + $annualTaxes['firefightingTax'] + $annualTaxes['educationTax']
+    //             + $annualTaxes['waterTax'] + $annualTaxes['cleanlinessTax'] + $annualTaxes['sewerageTax']
+    //             + $annualTaxes['treeTax'] + $annualTaxes['stateEducationTax'] + $annualTaxes['professionalTax']
+    //             + ($annualTaxes['openPloatTax'] ?? 0) + ($annualTaxes['tax1'] ?? 0)
+    //     );
+    //     $annualTaxes['totalTax2'] = roundFigure(
+    //         $annualTaxes['generalTax'] + $annualTaxes['roadTax'] + $annualTaxes['firefightingTax'] + $annualTaxes['educationTax']
+    //             + $annualTaxes['waterTax'] + $annualTaxes['cleanlinessTax'] + $annualTaxes['sewerageTax']
+    //             + $annualTaxes['treeTax'] + $annualTaxes['stateEducationTax'] + $annualTaxes['professionalTax']
+    //             + ($annualTaxes['openPloatTax'] ?? 0)
+    //     );
+    //     return $annualTaxes;
+    // }
+
+    //change by prity pandey
     public function sumTaxes($floorTaxes)
     {
         $annualTaxes = $floorTaxes->pipe(function (Collection $taxes) {
@@ -783,6 +830,16 @@ class TaxCalculator
                 "professionalTax" => roundFigure($taxes->sum('professionalTax')),
                 "openPloatTax" => roundFigure($taxes->sum('openPloatTax')),
                 "tax1" => roundFigure($taxes->sum('tax1')),
+                "tax2" => roundFigure($taxes->sum('tax2')),
+                "tax3" => roundFigure($taxes->sum('tax3')),
+
+                "waterBenefitTax"=>roundFigure($taxes->sum("waterBenefitTax")),
+                "waterBillTax"=>roundFigure($taxes->sum("waterBillTax")),
+                "spWaterCessTax"=>roundFigure($taxes->sum("spWaterCessTax")),
+                "drainCessTax"=>roundFigure($taxes->sum("drainCessTax")),
+                "lightCessTax"=>roundFigure($taxes->sum("lightCessTax")),
+                "majorBuildingTax"=>roundFigure($taxes->sum("majorBuildingTax")),
+
                 "adjustAmount" => roundFigure($taxes->sum("adjustAmount")),
                 "dueAmount" => roundFigure($taxes->sum("dueAmount")),
             ];
@@ -791,13 +848,19 @@ class TaxCalculator
             $annualTaxes['generalTax'] + $annualTaxes['roadTax'] + $annualTaxes['firefightingTax'] + $annualTaxes['educationTax']
                 + $annualTaxes['waterTax'] + $annualTaxes['cleanlinessTax'] + $annualTaxes['sewerageTax']
                 + $annualTaxes['treeTax'] + $annualTaxes['stateEducationTax'] + $annualTaxes['professionalTax']
-                + ($annualTaxes['openPloatTax'] ?? 0) + ($annualTaxes['tax1'] ?? 0)
+                + ($annualTaxes['openPloatTax'] ?? 0) + ($annualTaxes['waterBenefitTax'] ?? 0) + ($annualTaxes['waterBillTax'] ?? 0)
+                + ($annualTaxes['spWaterCessTax'] ?? 0) + ($annualTaxes['drainCessTax'] ?? 0) + ($annualTaxes['lightCessTax'] ?? 0) + ($annualTaxes['majorBuildingTax'] ?? 0) 
+                + ($annualTaxes['tax2'] ?? 0) +($annualTaxes['tax3'] ?? 0) + ($annualTaxes['tax1'] ?? 0) 
+                
+
         );
         $annualTaxes['totalTax2'] = roundFigure(
             $annualTaxes['generalTax'] + $annualTaxes['roadTax'] + $annualTaxes['firefightingTax'] + $annualTaxes['educationTax']
                 + $annualTaxes['waterTax'] + $annualTaxes['cleanlinessTax'] + $annualTaxes['sewerageTax']
                 + $annualTaxes['treeTax'] + $annualTaxes['stateEducationTax'] + $annualTaxes['professionalTax']
-                + ($annualTaxes['openPloatTax'] ?? 0)
+                + ($annualTaxes['openPloatTax'] ?? 0) + ($annualTaxes['waterBenefitTax'] ?? 0) + ($annualTaxes['waterBillTax'] ?? 0)
+                + ($annualTaxes['spWaterCessTax'] ?? 0) + ($annualTaxes['drainCessTax'] ?? 0) + ($annualTaxes['lightCessTax'] ?? 0) + ($annualTaxes['majorBuildingTax'] ?? 0) 
+                + ($annualTaxes['tax2'] ?? 0) +($annualTaxes['tax3'] ?? 0) 
         );
         return $annualTaxes;
     }
@@ -933,6 +996,61 @@ class TaxCalculator
     }
 
 
+    // public function generateTaxAccOldPropDemand()
+    // {
+    //     //changes by prity pandey
+    //     $fyear = null;
+    //     if ($this->_REQUEST->buildingPlanCompletionDate) {
+    //         $fyear = getFY($this->_REQUEST->buildingPlanCompletionDate);
+    //     } elseif ($this->_REQUEST->buildingPlanApprovalDate) {
+    //         $fyear = getFY($this->_REQUEST->buildingPlanApprovalDate);
+    //     }
+    //     //end of changes
+    //     // if (in_array($this->getAssestmentTypeStr(), ['Reassessment', 'Mutation', 'Amalgamation']) && $fyear) {
+    //         if (in_array($this->getAssestmentTypeStr(), ['Reassessment']) && $fyear) {
+    //         $propProperties = PropProperty::find($this->_REQUEST->previousHoldingId);
+    //         DB::enableQueryLog();
+    //         $unPaidDemand = $propProperties->PropDueDemands()->where("fyear", "<", $fyear)->get();
+    //         foreach ($unPaidDemand as $val) {
+    //             $fyear = $val["fyear"];
+    //             $arr = [
+    //                 "alv" => roundFigure($val["alv"]),
+    //                 "maintancePerc" => "0",
+    //                 "maintantance10Perc" => roundFigure($val["due_maintanance_amt"]),
+    //                 "valueAfterMaintance" => "0",
+    //                 "agingPerc" => "0",
+    //                 "agingAmt" => roundFigure($val["due_aging_amt"]),
+    //                 "taxValue" => "0",
+    //                 "generalTax" => roundFigure($val["due_general_tax"]),
+    //                 "roadTax" => roundFigure($val["due_road_tax"]),
+    //                 "firefightingTax" => roundFigure($val["due_firefighting_tax"]),
+    //                 "educationTax" => roundFigure($val["due_education_tax"]),
+    //                 "waterTax" => roundFigure($val["due_water_tax"]),
+    //                 "cleanlinessTax" => roundFigure($val["due_cleanliness_tax"]),
+    //                 "sewerageTax" => roundFigure($val["due_sewarage_tax"]),
+    //                 "treeTax" => roundFigure($val["due_tree_tax"]),
+    //                 "stateEducationTaxPerc" => "0",
+    //                 "stateEducationTax" => roundFigure($val["due_sp_education_tax"]),
+    //                 "professionalTaxPerc" => "0",
+    //                 "professionalTax" => roundFigure($val["due_professional_tax"]),
+    //                 "openPloatTax" => roundFigure($val["due_open_ploat_tax"]),
+    //                 "tax1" => roundFigure($val["due_tax1"]),
+    //                 "adjustAmount" => "0",
+    //                 "dueAmount" => roundFigure($val["due_total_tax"]),
+    //                 "totalTax" => roundFigure($val["due_total_tax"]),
+    //                 "totalTax2" => roundFigure($val["due_total_tax"]),
+    //                 "totalFloar" => "0",
+    //                 "fyear" => $val["fyear"]
+    //             ];
+    //             $this->_GRID['fyearWiseTaxes'][$fyear] = $arr;
+    //         }
+
+    //         $this->_GRID['fyearWiseTaxes'] = collect($this->_GRID['fyearWiseTaxes'])->sortBy("fyear");
+    //     }
+    // }
+
+
+    //change by prity pandey
     public function generateTaxAccOldPropDemand()
     {
         //changes by prity pandey
@@ -972,6 +1090,14 @@ class TaxCalculator
                     "professionalTax" => roundFigure($val["due_professional_tax"]),
                     "openPloatTax" => roundFigure($val["due_open_ploat_tax"]),
                     "tax1" => roundFigure($val["due_tax1"]),
+                    "tax2" => roundFigure($val["due_tax2"]),
+                    "tax3" => roundFigure($val["due_tax3"]),
+                    "waterBenefitTax" =>roundFigure($val["due_water_benefit"]),
+                    "waterBillTax" =>roundFigure($val["due_water_bill"]),
+                    "spWaterCessTax" =>roundFigure($val["due_sp_water_cess"]),
+                    "drainCessTax" =>roundFigure($val["due_drain_cess"]),
+                    "lightCessTax" =>roundFigure($val["due_light_cess"]),
+                    "majorBuildingTax" =>roundFigure($val["due_major_building"]),
                     "adjustAmount" => "0",
                     "dueAmount" => roundFigure($val["due_total_tax"]),
                     "totalTax" => roundFigure($val["due_total_tax"]),
