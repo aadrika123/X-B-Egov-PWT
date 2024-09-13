@@ -452,7 +452,7 @@ class WaterPaymentController extends Controller
                 "roadTypeAmount"        => $applicationDetails['per_meter_amount'],
                 "roadWidth"             => $applicationDetails['per_meter'],
                 "ConnectionAmount"      => $applicationDetails['connecton_amount'],
-                "roadCutterAmount"      =>$applicationDetails['per_meter_amount'] * $applicationDetails['per_meter'],
+                "roadCutterAmount"      => $applicationDetails['per_meter_amount'] * $applicationDetails['per_meter'],
 
                 "paidAmtInWords"        => getIndianCurrency($transactionDetails->amount),
             ];
@@ -3983,7 +3983,7 @@ class WaterPaymentController extends Controller
     public function WorldlineHandelResponseDemand(Request $request)
     {
         try {
-            $user         = authUser($request);
+            // $user         = authUser($request);
             $todayDate    = Carbon::now();
             $PaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
 
