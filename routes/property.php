@@ -350,8 +350,8 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('get-filter-property-details', 'propertyListByKey');              // 02
     Route::get('get-list-saf', 'getListOfSaf');                                   // 03
     Route::post('active-application/get-user-details', 'getUserDetails');         // 04
-
-    Route::post('get-filter-application-details-saf-only', 'applicationsListByKeySafOnly');        // 01
+  //written by prity pandey
+    Route::post('get-filter-application-details-saf-only', 'applicationsListByKeySafOnly');        // 05
   });
 
 
