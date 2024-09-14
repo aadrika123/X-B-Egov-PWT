@@ -81,7 +81,7 @@ class PropertyDetailsController extends Controller
 
                         $active = $mPropActiveSaf->searchSafs()
                             ->where('prop_active_safs.saf_no', strtoupper($applicationNo))
-                            ->where('prop_active_safs.citizen_id',null)
+                            ->where('prop_active_safs.citizen_id', null)
                             ->groupby('prop_active_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
 
                         // $details = $approved->union($active)->get();
@@ -376,8 +376,8 @@ class PropertyDetailsController extends Controller
             }
             $details = $approved->union($active)->paginate($perPage);
             $transFeeWorkflowType  = (new \App\BLL\Property\Akola\SafApprovalBll())->_SkipFiledWorkWfMstrId;
-            (collect($details->items())->map(function($val) use($transFeeWorkflowType){
-                $val->current_role = in_array($val->assessment_type,$transFeeWorkflowType) ?( $val->proccess_fee_paid==0 ? "Transfer Fee Not Paid" : "Transfer Fee Paid") : "Payment Not Required";
+            (collect($details->items())->map(function ($val) use ($transFeeWorkflowType) {
+                $val->current_role = in_array($val->assessment_type, $transFeeWorkflowType) ? ($val->proccess_fee_paid == 0 ? "Transfer Fee Not Paid" : "Transfer Fee Paid") : "Payment Not Required";
                 return $val;
             }));
 
@@ -386,6 +386,70 @@ class PropertyDetailsController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "010501", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }
+
+    public function applicationsListByKeySafOnly(Request $request)
+    {
+        $request->validate([
+            'searchBy' => 'nullable',
+            'value' => 'nullable',
+            'pendingAt' => 'nullable',
+        ]);
+
+        try {
+            $mPropActiveSaf = new PropActiveSaf();
+            $mPropSafs = new PropSaf();
+            $searchBy = $request->searchBy;
+            $value = $request->value;
+            $pendingAt = $request->pendingAt;
+            $perPage = $request->perPage ?? 10;
+            $approved = $mPropSafs->searchSafs();
+            $active = $mPropActiveSaf->searchSafs()->where('prop_active_safs.citizen_id', null);
+            if ($searchBy == 'applicationNo') {
+                $approved->where('prop_safs.saf_no', strtoupper($value));
+                $active->where('prop_active_safs.saf_no', strtoupper($value));
+            } elseif ($searchBy == 'name') {
+                $approved->where('so.owner_name', 'LIKE', '%' . strtoupper($value) . '%');
+                $active->where('so.owner_name', 'LIKE', '%' . strtoupper($value) . '%');
+            } elseif ($searchBy == 'mobileNo') {
+                $approved->where('so.mobile_no', 'LIKE', '%' . $value . '%');
+                $active->where('so.mobile_no', 'LIKE', '%' . $value . '%');
+            } elseif ($searchBy == 'ptn') {
+                $approved->where('prop_safs.pt_no', $value);
+                $active->where('prop_active_safs.pt_no', $value);
+            } elseif ($searchBy == 'holding') {
+                $approved->where('prop_safs.holding_no', $value);
+                $active->where('prop_active_safs.holding_no', $value);
+            }
+            if ($pendingAt && $pendingAt !== 'All') {
+                $active->where('prop_active_safs.current_role', $pendingAt);
+            }
+            $approved->groupBy('prop_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
+            $active->groupBy('prop_active_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
+            if ($pendingAt) {
+                $details = $active->paginate($perPage);
+            } else {
+                $details = $approved->union($active)->paginate($perPage);
+            }
+
+            $transFeeWorkflowType = (new \App\BLL\Property\Akola\SafApprovalBll())->_SkipFiledWorkWfMstrId;
+            (collect($details->items())->map(function ($val) use ($transFeeWorkflowType) {
+                $val->current_role = in_array($val->assessment_type, $transFeeWorkflowType)
+                    ? ($val->proccess_fee_paid == 0 ? "Transfer Fee Not Paid" : "Transfer Fee Paid")
+                    : "Payment Not Required";
+                return $val;
+            }));
+            $paginatedData = [
+                'current_page' => $details->currentPage(),
+                'data' => $details->items(),
+                'last_page' => $details->lastPage(),
+                'total' => $details->total()
+            ];
+            return responseMsgs(true, "Application Details", remove_null($paginatedData), "010501", "1.0", "", "POST", $request->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010501", "1.0", "", "POST", $request->deviceId ?? "");
+        }
+    }
+
 
 
     // get details of the diff operation in property
@@ -426,8 +490,8 @@ class PropertyDetailsController extends Controller
                 case ("holdingNo"):
                     $data = $mPropProperty->searchPropertyV2($ulbId)
                         ->where(function ($where) use ($parameter) {
-                            $where->ORwhere('prop_properties.holding_no', 'ILIKE',  strtoupper($parameter) )
-                                ->orWhere('prop_properties.new_holding_no', 'ILIKE',  strtoupper($parameter) );
+                            $where->ORwhere('prop_properties.holding_no', 'ILIKE',  strtoupper($parameter))
+                                ->orWhere('prop_properties.new_holding_no', 'ILIKE',  strtoupper($parameter));
                         });
                     break;
 
@@ -439,11 +503,11 @@ class PropertyDetailsController extends Controller
 
                 case ("ownerName"):
                     $data = $mPropProperty->searchPropertyV2($ulbId)
-                            ->where(function($where)use($parameter){
-                                $where->where('o.owner_name', 'ILIKE', '%' . strtoupper($parameter) . '%')
+                        ->where(function ($where) use ($parameter) {
+                            $where->where('o.owner_name', 'ILIKE', '%' . strtoupper($parameter) . '%')
                                 ->orwhere('o.owner_name_marathi', 'ILIKE', '%' . strtoupper($parameter) . '%');
-                            });
-                        
+                        });
+
                     break;
 
                 case ("address"):
@@ -498,7 +562,7 @@ class PropertyDetailsController extends Controller
                 default:
                     $data = $mPropProperty->searchPropertyV2($ulbId);
             }
-            $data = $data->whereIn('prop_properties.status', [1,3]);
+            $data = $data->whereIn('prop_properties.status', [1, 3]);
 
             if ($request->zoneId) {
                 $data = $data->where("prop_properties.zone_mstr_id", $request->zoneId);
