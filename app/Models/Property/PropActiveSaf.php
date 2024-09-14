@@ -1115,6 +1115,7 @@ class  PropActiveSaf extends PropParamModel #Model
             DB::raw("'active' as status"),
             'prop_active_safs.saf_no',
             'prop_active_safs.assessment_type',
+            'prop_active_safs.current_role as current_role_id',
             DB::raw(
                 "case when prop_active_safs.payment_status = 0 then 'Payment Not Done'
                       when prop_active_safs.payment_status = 2 then 'Cheque Payment Verification Pending'
