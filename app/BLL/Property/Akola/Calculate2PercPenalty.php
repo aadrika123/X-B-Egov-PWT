@@ -2,6 +2,7 @@
 
 namespace App\BLL\Property\Akola;
 
+use App\Models\Property\PropSaf;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Config;
 
@@ -82,7 +83,13 @@ class Calculate2PercPenalty
             if ($isSingleManArmedForce || $isMobileTower)
                 $monthlyBalance = ($demand->balance - $demand->exempted_general_tax) / 12;
         }
-
+        list($currentFrom,$currentUpto)=explode("-",getFY());
+        $currentFrom = $currentFrom."-04-01";
+        $currentUpto = $currentUpto."-03-31";
+        $newAssessSaf = PropSaf::where("property_id",$demand->property_id)->where("assessment_type","New Assessment")->whereBetween("saf_approved_date",[$currentFrom,$currentUpto])->first();
+        if ($this->_assesmentType == Config::get("PropertyConstaint.ASSESSMENT-TYPE.2") && $newAssessSaf &&   $this->_propSaf && $this->_propSaf->saf_approved_date && getFY($this->_propSaf->saf_approved_date)==getFY()) {
+            $noOfPenalMonths =0;
+        }
         $amount = $monthlyBalance * $noOfPenalMonths;
         $penalAmt = $amount * 0.02;
 

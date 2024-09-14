@@ -2659,6 +2659,7 @@ class ActiveSafController extends Controller
                 "ulb_id" => $fullSafDtls['ulb_id'],
                 "saf_no" => $fullSafDtls['saf_no'],
                 "prop_address" => $fullSafDtls['prop_address'],
+                "property_no" => $fullSafDtls['property_no'],
                 "is_mobile_tower" => $fullSafDtls['is_mobile_tower'],
                 "is_hoarding_board" => $fullSafDtls['is_hoarding_board'],
                 "is_petrol_pump" => $fullSafDtls['is_petrol_pump'],

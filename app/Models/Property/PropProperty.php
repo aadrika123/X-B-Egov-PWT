@@ -105,6 +105,7 @@ class PropProperty extends  PropParamModel #Model
                 'prop_properties.applicant_marathi as applicant_name',
                 'prop_properties.status as active_status',
                 'prop_properties.assessment_type as assessment',
+                'prop_properties.property_no',
                 'w.ward_name as ward_no',
                 'o.ownership_type',
                 'ref_prop_types.property_type',
