@@ -472,6 +472,7 @@ class WaterSecondConsumer extends Model
             'water_consumer_demands.demand_from',
             'water_consumer_demands.demand_upto',
             'water_consumer_demands.balance_amount',
+            'water_consumer_owners.id as ownerId',
             DB::raw("string_agg(water_consumer_owners.applicant_name,',') as applicant_name"),
             DB::raw("string_agg(water_consumer_owners.mobile_no::VARCHAR,',') as mobile_no"),
             DB::raw("string_agg(water_consumer_owners.guardian_name,',') as guardian_name"),
@@ -501,6 +502,7 @@ class WaterSecondConsumer extends Model
             ->where('water_second_consumers.status', 1)
             ->orderBy('water_consumer_initial_meters.id', 'DESC')
             ->groupBy(
+                'water_consumer_owners.id',
                 'water_second_consumers.id',
                 'water_second_consumers.consumer_no',
                 'water_consumer_meters.meter_no',
