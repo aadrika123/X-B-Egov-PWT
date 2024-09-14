@@ -452,7 +452,7 @@ class WaterPaymentController extends Controller
                 "roadTypeAmount"        => $applicationDetails['per_meter_amount'],
                 "roadWidth"             => $applicationDetails['per_meter'],
                 "ConnectionAmount"      => $applicationDetails['connecton_amount'],
-                "roadCutterAmount"      =>$applicationDetails['per_meter_amount'] * $applicationDetails['per_meter'],
+                "roadCutterAmount"      => $applicationDetails['per_meter_amount'] * $applicationDetails['per_meter'],
 
                 "paidAmtInWords"        => getIndianCurrency($transactionDetails->amount),
             ];
@@ -3983,7 +3983,7 @@ class WaterPaymentController extends Controller
     public function WorldlineHandelResponseDemand(Request $request)
     {
         try {
-            $user         = authUser($request);
+            // $user         = authUser($request);
             $todayDate    = Carbon::now();
             $PaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
 
@@ -4011,7 +4011,12 @@ class WaterPaymentController extends Controller
 
             // Begin transaction
             $this->begin();
-            $this->partPaymentV2($reqPayment);
+            $response = $this->partPaymentV2($reqPayment);
+            $responseData = json_decode($response->getContent(), true); // Convert the response JSON into an associative array
+
+            // Get the transactionId from the response
+            $transactionId = $responseData['data']['transactionId'];
+
             // Save transaction details
             # Save the Details of the transaction
             $this->_WaterEasebuzzPayResponse->request_id = $requestData->id;
@@ -4029,8 +4034,10 @@ class WaterPaymentController extends Controller
             $requestData->update();
 
             $this->commit();
+            $requestAll = $request->all();
+            $requestAll['transactionId'] = $transactionId;
 
-            return responseMsgs(true, "Payment Done!", remove_null($request->all()), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
+            return responseMsgs(true, "Payment Done!", remove_null($requestAll), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
             $this->rollback();
             return responseMsgs(false, $e->getMessage(), "", "01", responseTime(), $request->getMethod(), $request->deviceId);
