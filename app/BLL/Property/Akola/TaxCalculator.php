@@ -320,6 +320,7 @@ class TaxCalculator
                     // $tax1 = $doubleTax1 * ($diffArrea / ($this->_REQUEST->areaOfPlot>0?$this->_REQUEST->areaOfPlot:1));
                     $tax1 = $doubleTax1 * ($diffArrea);
                 }
+                
                 $this->_floorsTaxes[$key] = [
                     'usageType' => $item->usageType,
                     'usageTypeName' => $item->usageTypeName ?? "",
