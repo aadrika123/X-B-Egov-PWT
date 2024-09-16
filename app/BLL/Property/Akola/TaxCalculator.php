@@ -258,11 +258,6 @@ class TaxCalculator
             }
             $AllDiffArrea = ($totalBuildupArea - $this->_REQUEST->nakshaAreaOfPlot) > 0 ? $totalBuildupArea - $this->_REQUEST->nakshaAreaOfPlot : 0;
 
-            if ($this->getAssestmentTypeStr() == 'Bifurcation') {
-                $AllDiffArrea = ($newFloorArea - $this->_REQUEST->nakshaAreaOfPlot) > 0 ? $newFloorArea - $this->_REQUEST->nakshaAreaOfPlot : 0;
-
-            }
-
             foreach ($this->_OldFloors as $key => $item) {
                 $item = (object)$item;
                 $rate = $this->readRateByFloor($item);                // (2.1)
