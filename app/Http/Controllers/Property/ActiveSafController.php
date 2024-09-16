@@ -959,7 +959,9 @@ class ActiveSafController extends Controller
                 ->first();
             // if (!$data)
             // throw new Exception("Application Not Found");
+            if(collect($data)->isNotEmpty()){
             $assessmentType = $data->assessment_type;
+            }
             if (collect($data)->isEmpty()) {
                 $data = $mPropSaf->getSafDtls()
                     ->where('prop_safs.id', $req->applicationId)
@@ -1045,7 +1047,7 @@ class ActiveSafController extends Controller
             if ($data['prop_type_mstr_id'] != 4) {
                 $data["builtup_area"] = $getFloorDtls->sum("builtup_area");
             }
-            if($assessmentType== "Reassessment"){
+            if(isset($assessmentType) && $assessmentType == "Reassessment"){
                 $data["builtup_area"] = $getFloorDtls->whereNotNull('prop_floor_details_id')->sum("builtup_area");
                 $data["new_builtup_area"] = $getFloorDtls->whereNull('prop_floor_details_id')->sum("builtup_area");
             }
