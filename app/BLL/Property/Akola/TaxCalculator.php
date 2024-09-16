@@ -258,6 +258,10 @@ class TaxCalculator
             }
             $AllDiffArrea = ($totalBuildupArea - $this->_REQUEST->nakshaAreaOfPlot) > 0 ? $totalBuildupArea - $this->_REQUEST->nakshaAreaOfPlot : 0;
 
+            if ($this->getAssestmentTypeStr() == 'Reassessment') {
+                $AllDiffArrea = ($newFloorArea - $this->_REQUEST->nakshaAreaOfPlot) > 0 ? $newFloorArea - $this->_REQUEST->nakshaAreaOfPlot : 0;
+            }
+            
             foreach ($this->_OldFloors as $key => $item) {
                 $item = (object)$item;
                 $rate = $this->readRateByFloor($item);                // (2.1)
@@ -311,6 +315,8 @@ class TaxCalculator
                     // $diffArrea = ($this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot)>0 ? $this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot :0;
                     $diffArrea = $AllDiffArrea / ($totalBuildupArea > 0 ? $totalBuildupArea : 1);
                 }
+
+
                 # double tax apply
                 if ($this->_REQUEST->isAllowDoubleTax) {
                     $tax1 = $doubleTax1;
@@ -320,7 +326,9 @@ class TaxCalculator
                     // $tax1 = $doubleTax1 * ($diffArrea / ($this->_REQUEST->areaOfPlot>0?$this->_REQUEST->areaOfPlot:1));
                     $tax1 = $doubleTax1 * ($diffArrea);
                 }
-                
+                if ($this->getAssestmentTypeStr() == 'Reassessment') {
+                    $tax1 = 0;
+                }
                 $this->_floorsTaxes[$key] = [
                     'usageType' => $item->usageType,
                     'usageTypeName' => $item->usageTypeName ?? "",
@@ -415,6 +423,11 @@ class TaxCalculator
                 if ($this->_REQUEST->nakshaAreaOfPlot) {
                     // $diffArrea = ($this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot)>0 ? $this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot :0;
                     $diffArrea = $AllDiffArrea / ($totalBuildupArea > 0 ? $totalBuildupArea : 1);
+                }
+
+                if ($this->_REQUEST->nakshaAreaOfPlot && $this->getAssestmentTypeStr() == 'Reassessment') {
+                    // $diffArrea = ($this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot)>0 ? $this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot :0;
+                    $diffArrea = $AllDiffArrea / ($newFloorArea > 0 ? $newFloorArea : 1);
                 }
                 # double tax apply
                 if ($this->_REQUEST->isAllowDoubleTax) {
