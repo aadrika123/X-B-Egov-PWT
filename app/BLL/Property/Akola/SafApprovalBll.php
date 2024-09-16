@@ -66,6 +66,12 @@ class SafApprovalBll
     public $_SkipFiledWorkWfMstrId = [];
     public $_paidTotalCurrentYearTax = 0;
     public $_assessmentHistoryId = null;
+
+     //prity pandey 16-09-24
+     private $_propDtls;
+     private $_REQUEST;
+     private $_propFloors;
+     private $_mPropOwners;
     // Initializations
     public function __construct()
     {
@@ -80,6 +86,8 @@ class SafApprovalBll
             $wfContent["SAF_MUTATION_ID"],
             $wfContent["SAF_BIFURCATION_ID"],
         ];
+        //prity pandey 16-09-24
+        $this->_mPropOwners = new PropOwner();
     }
 
     /**
@@ -876,8 +884,75 @@ class SafApprovalBll
         $newDemand->due_open_ploat_tax  = $demand->due_open_ploat_tax;
     }
 
+    // public function transferPropertyBifucation()
+    // {
+    //     if (in_array($this->_activeSaf->assessment_type, ['Bifurcation'])) {
+    //         $propProperties = PropProperty::find($this->_activeSaf->previous_holding_id);
+    //         if (!$propProperties) {
+    //             throw new Exception("Old Property Not Found");
+    //         }
+    //         $newPropProperties = PropProperty::find($this->_replicatedPropId);
+    //         $newPropProperties->update(["status" => 0]);
+    //         $this->transferPropertyBifurcationDemand();
+
+    //         #_Save in Assessment History Table
+    //         $oldFloor = PropFloor::where("property_id", $propProperties->id)->get();
+    //         $oldOwners = PropOwner::where("property_id", $propProperties->id)->get();
+    //         $oldDemand = PropDemand::where("property_id", $propProperties->id)->get();
+    //         $history = new PropAssessmentHistory();
+    //         $history->property_id = $propProperties->id;
+    //         $history->assessment_type = $this->_activeSaf->assessment_type;
+    //         $history->saf_id = $this->_activeSaf->id;
+    //         $history->prop_log = json_encode($propProperties->toArray(), JSON_UNESCAPED_UNICODE);
+    //         $history->owner_log = json_encode($oldOwners->toArray(), JSON_UNESCAPED_UNICODE);
+    //         $history->floar_log = json_encode($oldFloor->toArray(), JSON_UNESCAPED_UNICODE);
+    //         $history->demand_log = json_encode($oldDemand->toArray(), JSON_UNESCAPED_UNICODE);
+
+    //         $history->user_id = Auth()->user() ? Auth()->user()->id : 0;
+    //         $history->save();
+
+    //         $propProperties->update(["area_of_plot" => $propProperties->area_of_plot - $this->_verifiedPropDetails[0]->area_of_plot]);
+
+    //         if ($this->_activeSaf->prop_type_mstr_id != 4) {              // Applicable Not for Vacant Land
+    //             $mPropFloors = new PropFloor();
+
+    //             $propFloors = $mPropFloors
+    //                 ->where("property_id", $propProperties->id)
+    //                 ->where('status', 1)
+    //                 ->orderby('id')
+    //                 ->get();
+
+    //             foreach ($this->_verifiedFloors as $floorDetail) {
+    //                 $activeSafFloorDtl = $this->_floorDetails->where('id', $floorDetail->saf_floor_id);
+    //                 $activeSafFloorDtl = collect($activeSafFloorDtl)->first();
+
+    //                 // $propFloor =  collect($propFloors)->where('id', $activeSafFloorDtl->prop_floor_details_id);
+    //                 $propFloor =  $activeSafFloorDtl ? collect($propFloors)->where('id', $activeSafFloorDtl->prop_floor_details_id) : [];
+    //                 $propFloor =  collect($propFloor)->first();
+    //                 if ($propFloor) {
+    //                     $propFloor->builtup_area = $propFloor->builtup_area - $floorDetail->builtup_area;
+    //                     $propFloor->carpet_area = $propFloor->builtup_area;
+    //                     if ($propFloor->builtup_area == 0)
+    //                         $propFloor->status = 0;
+    //                     $propFloor->save();
+    //                 }
+    //             }
+    //             $isNewFloorExist = collect($this->_floorDetails)->whereNull('prop_floor_details_id');
+    //             if ($isNewFloorExist->isNotEmpty())
+    //                 $this->generateBiNewFloorDemand();
+
+    //             $newPropFloors = $mPropFloors->getFloorsByPropId($propProperties->id);
+    //             if (collect($newPropFloors)->isEmpty())
+    //                 $propProperties->update(["prop_type_mstr_id" => 4]);
+    //         }
+    //     }
+    // }
+
     public function transferPropertyBifucation()
     {
+        $user = Auth()->user();
+        $userId = $user ? $user->id : 0;
+        $ulbId = $this->_activeSaf->ulb_id;
         if (in_array($this->_activeSaf->assessment_type, ['Bifurcation'])) {
             $propProperties = PropProperty::find($this->_activeSaf->previous_holding_id);
             if (!$propProperties) {
@@ -891,6 +966,21 @@ class SafApprovalBll
             $oldFloor = PropFloor::where("property_id", $propProperties->id)->get();
             $oldOwners = PropOwner::where("property_id", $propProperties->id)->get();
             $oldDemand = PropDemand::where("property_id", $propProperties->id)->get();
+
+
+            $currentYearDemand = collect($oldDemand)->where("status", 1);
+            $currentYearDemandId = ($currentYearDemand->implode("id", ","));
+            $currentYearDemandId = $currentYearDemandId ? (int)$currentYearDemandId  : 0;
+
+            $oldTransection = $propProperties->getAllTransection()->get();
+            $oldTranDtl = new Collection();
+            $oldTransection->map(function ($val) use ($oldTranDtl, $currentYearDemandId) {
+                $trn = $val->getAllTranDtls()->where("prop_tran_dtls.prop_demand_id", $currentYearDemandId)->first();
+                if ($trn) {
+                    $oldTranDtl->push($trn);
+                }
+            });
+            $this->_paidTotalCurrentYearTax = $oldTranDtl->sum("paid_total_tax");
             $history = new PropAssessmentHistory();
             $history->property_id = $propProperties->id;
             $history->assessment_type = $this->_activeSaf->assessment_type;
@@ -899,8 +989,10 @@ class SafApprovalBll
             $history->owner_log = json_encode($oldOwners->toArray(), JSON_UNESCAPED_UNICODE);
             $history->floar_log = json_encode($oldFloor->toArray(), JSON_UNESCAPED_UNICODE);
             $history->demand_log = json_encode($oldDemand->toArray(), JSON_UNESCAPED_UNICODE);
+            $history->transection_log = json_encode($oldTransection->toArray(), JSON_UNESCAPED_UNICODE);
+            $history->current_year_paid_demand_log = json_encode($oldTranDtl->toArray(), JSON_UNESCAPED_UNICODE);
 
-            $history->user_id = Auth()->user() ? Auth()->user()->id : 0;
+            $history->user_id = $userId;
             $history->save();
 
             $propProperties->update(["area_of_plot" => $propProperties->area_of_plot - $this->_verifiedPropDetails[0]->area_of_plot]);
@@ -937,133 +1029,360 @@ class SafApprovalBll
                 if (collect($newPropFloors)->isEmpty())
                     $propProperties->update(["prop_type_mstr_id" => 4]);
             }
+            $oldPropDemand = $this->generateAfterBifurcationPropertyRequest();
+            $oldPropDemand = $oldPropDemand->where("fyear",getFY())->values();
+            $newTotalTax = collect($oldPropDemand)->sum("totalTax");
+            if($newTotalTax < $this->_paidTotalCurrentYearTax ){
+                $this->_paidTotalCurrentYearTax = $this->_paidTotalCurrentYearTax - $newTotalTax;
+                $this->generateAdvance($oldPropDemand);
+            }
+            foreach($oldPropDemand  as $newDemand){
+                $demand = new PropDemand();
+                $arr = [
+                    "property_id"   => $this->_activeSaf->previous_holding_id,
+                    "alv"           =>$newDemand["alv"],
+                    "maintanance_amt" => $newDemand["maintananceTax"] ?? 0,
+                    "aging_amt"     => $newDemand["agingAmt"] ?? 0,
+                    "general_tax"   => $newDemand["generalTax"] ?? 0,
+                    "road_tax"      => $newDemand["roadTax"] ?? 0,
+                    "firefighting_tax" => $newDemand["firefightingTax"] ?? 0,
+                    "education_tax" => $newDemand["educationTax"] ?? 0,
+                    "water_tax"     => $newDemand["waterTax"] ?? 0,
+                    "cleanliness_tax" => $newDemand["cleanlinessTax"] ?? 0,
+                    "sewarage_tax"  => $newDemand["sewerageTax"] ?? 0,
+                    "tree_tax"      => $newDemand["treeTax"] ?? 0,
+                    "professional_tax" => $newDemand["professionalTax"] ?? 0,
+                    "tax1"      => $newDemand["tax1"] ?? 0,
+                    "tax2"      => $newDemand["tax2"] ?? 0,
+                    "tax3"      => $newDemand["tax3"] ?? 0,
+                    "sp_education_tax" => $newDemand["stateEducationTax"] ?? 0,
+                    "water_benefit" => $newDemand["waterBenefitTax"] ?? 0,
+                    "water_bill"    => $newDemand["waterBillTax"] ?? 0,
+                    "sp_water_cess" => $newDemand["spWaterCessTax"] ?? 0,
+                    "drain_cess"    => $newDemand["drainCessTax"] ?? 0,
+                    "light_cess"    => $newDemand["lightCessTax"] ?? 0,
+                    "major_building" => $newDemand["majorBuildingTax"] ?? 0,
+                    "total_tax"     => $newDemand["totalTax"],
+                    "open_ploat_tax" => $newDemand["openPloatTax"] ?? 0,
+
+                    "is_arrear"     => $newDemand["fyear"] < getFY() ? true : false,
+                    "fyear"         => $newDemand["fyear"],
+                    "user_id"       => $userId ?? null,
+                    "ulb_id"        => $ulbId ?? $user->ulb_id,
+
+                    "balance" => $newDemand["totalTax"],
+                    "due_total_tax" => $newDemand["totalTax"],
+                    "due_balance" => $newDemand["totalTax"],
+                    "due_alv" => $newDemand["alv"],
+                    "due_maintanance_amt" => $newDemand["maintananceTax"] ?? 0,
+                    "due_aging_amt"     => $newDemand["agingAmt"] ?? 0,
+                    "due_general_tax"   => $newDemand["generalTax"] ?? 0,
+                    "due_road_tax"      => $newDemand["roadTax"] ?? 0,
+                    "due_firefighting_tax" => $newDemand["firefightingTax"] ?? 0,
+                    "due_education_tax" => $newDemand["educationTax"] ?? 0,
+                    "due_water_tax"     => $newDemand["waterTax"] ?? 0,
+                    "due_cleanliness_tax" => $newDemand["cleanlinessTax"] ?? 0,
+                    "due_sewarage_tax"  => $newDemand["sewerageTax"] ?? 0,
+                    "due_tree_tax"      => $newDemand["treeTax"] ?? 0,
+                    "due_professional_tax" => $newDemand["professionalTax"] ?? 0,
+                    "due_tax1"      => $newDemand["tax1"] ?? 0,
+                    "due_tax2"      => $newDemand["tax2"] ?? 0,
+                    "due_tax3"      => $newDemand["tax3"] ?? 0,
+                    "due_sp_education_tax" => $newDemand["stateEducationTax"] ?? 0,
+                    "due_water_benefit" => $newDemand["waterBenefitTax"] ?? 0,
+                    "due_water_bill"    => $newDemand["waterBillTax"] ?? 0,
+                    "due_sp_water_cess" => $newDemand["spWaterCessTax"] ?? 0,
+                    "due_drain_cess"    => $newDemand["drainCessTax"] ?? 0,
+                    "due_light_cess"    => $newDemand["lightCessTax"] ?? 0,
+                    "due_major_building" => $newDemand["majorBuildingTax"] ?? 0,
+                    "due_open_ploat_tax" => $newDemand["openPloatTax"] ?? 0,
+                ];
+                if ($oldDemand = $demand->where("fyear", $arr["fyear"])->where("property_id", $arr["property_id"])->where("status", 1)->first()) {
+                    // $arr["is_full_paid"] = true;
+                    // $arr["paid_total_tax"] = 0;
+                    // $arr["paid_status"] = 0;
+                    $arrpaid = $this->adjustPaidAmount($this->_paidTotalCurrentYearTax,$arr);
+                    dd($this->_paidTotalCurrentYearTax,$arr,$arrpaid);
+                    $oldDemand = $this->updateOldDemands($oldDemand, $arr);
+                    $oldDemand->update();
+                }
+                else{dd("store",$arr["fyear"], $arr["property_id"]);
+                    $demand->store($arr);
+                }
+            }
+            dd("kkk",$oldPropDemand);
         }
     }
 
+    // public function transferPropertyBifurcationDemand()
+    // {
+    //     if (in_array($this->_activeSaf->assessment_type, ['Bifurcation'])) {
+    //         $test = PropProperty::find($this->_replicatedPropId);
+    //         $user = Auth()->user();
+    //         $ulbId = $this->_activeSaf->ulb_id;
+    //         $demand = new PropDemand();
+    //         $mPropPendingArrear = new PropPendingArrear();
+    //         $propProperties = PropProperty::find($this->_activeSaf->previous_holding_id);
+    //         $oldIntrest = $mPropPendingArrear->getInterestByPropId($propProperties->id);
+    //         $previousInterest = $oldIntrest->due_total_interest ?? 0;
+    //         //$arr=[];
+    //         $totalArea = $propProperties->area_of_plot;
+    //         $bifurcatedArea = $this->_verifiedPropDetails[0]->area_of_plot;
+    //         if($this->_activeSaf->prop_type_mstr_id!=4){
+    //             $propFloor = PropFloor::where("property_id", $propProperties->id)
+    //                 ->where('status', 1)
+    //                 ->orderby('id')
+    //                 ->get();
+    //             $totalArea = collect($propFloor)->sum("builtup_area");
+    //             $bifurcatedArea = collect($this->_floorDetails)->sum("builtup_area");
+    //            // $bifurcatedArea = collect($this->_verifiedFloors)->isNotEmpty() ? collect($this->_verifiedFloors)->sum("builtup_area") : $bifurcatedArea ;
+    //         }
+
+    //         $onePercOfArea = $totalArea / 100;
+    //         $percOfBifurcatedArea = round(($bifurcatedArea / $onePercOfArea), 2);
+    //         $unPaidDemand = $propProperties->PropDueDemands()->get();
+    //         $previousInterest = ($previousInterest / 100) * $percOfBifurcatedArea;
+    //         foreach ($unPaidDemand as $val) {
+    //             //if ($val["fyear"] == '2024-2025') {
+    //                 $arr = [
+    //                     "property_id"   => $this->_replicatedPropId,
+    //                     "alv"           => ($val["alv"] / 100) * $percOfBifurcatedArea,
+    //                     "maintanance_amt" => ($val["due_maintanance_amt"] / 100) * $percOfBifurcatedArea,
+    //                     "aging_amt"     => ($val["due_aging_amt"] / 100) * $percOfBifurcatedArea,
+    //                     "general_tax"   => ($val["due_general_tax"] / 100) * $percOfBifurcatedArea,
+    //                     "road_tax"      => ($val["due_road_tax"] / 100) * $percOfBifurcatedArea,
+    //                     "firefighting_tax" => ($val["due_firefighting_tax"] / 100) * $percOfBifurcatedArea,
+    //                     "education_tax" => ($val["due_education_tax"] / 100) * $percOfBifurcatedArea,
+    //                     "water_tax"     => ($val["due_water_tax"] / 100) * $percOfBifurcatedArea,
+    //                     "cleanliness_tax" => ($val["due_cleanliness_tax"] / 100) * $percOfBifurcatedArea,
+    //                     "sewarage_tax"  => ($val["due_sewarage_tax"] / 100) * $percOfBifurcatedArea,
+    //                     "tree_tax"      => ($val["due_tree_tax"] / 100) * $percOfBifurcatedArea,
+    //                     "professional_tax" => ($val["due_professional_tax"] / 100) * $percOfBifurcatedArea,
+    //                     "tax1"      => ($val["due_tax1"] / 100) * $percOfBifurcatedArea,
+    //                     "tax2"      => ($val["due_tax2"] / 100) * $percOfBifurcatedArea,
+    //                     "tax3"      => ($val["due_tax3"] / 100) * $percOfBifurcatedArea,
+    //                     "sp_education_tax" => ($val["due_sp_education_tax"] / 100) * $percOfBifurcatedArea,
+    //                     "water_benefit" => ($val["due_water_benefit"] / 100) * $percOfBifurcatedArea,
+    //                     "water_bill"    => ($val["due_water_bill"] / 100) * $percOfBifurcatedArea,
+    //                     "sp_water_cess" => ($val["due_sp_water_cess"] / 100) * $percOfBifurcatedArea,
+    //                     "drain_cess"    => ($val["due_drain_cess"] / 100) * $percOfBifurcatedArea,
+    //                     "light_cess"    => ($val["due_light_cess"] / 100) * $percOfBifurcatedArea,
+    //                     "major_building" => ($val["due_major_building"] / 100) * $percOfBifurcatedArea,
+    //                     "total_tax"     => ($val["due_total_tax"] / 100) * $percOfBifurcatedArea,
+    //                     "open_ploat_tax" => ($val["due_open_ploat_tax"] / 100) * $percOfBifurcatedArea,
+
+    //                     "is_arrear"     => $val["is_arrear"],
+    //                     "fyear"         => $val["fyear"],
+    //                     "user_id"       => $user->id ?? null,
+    //                     "ulb_id"        => $ulbId ?? $user->ulb_id,
+
+    //                     "balance" => ($val["due_total_tax"] / 100) * $percOfBifurcatedArea,
+    //                     "due_total_tax" => ($val["due_total_tax"] / 100) * $percOfBifurcatedArea,
+    //                     "due_balance" => ($val["due_balance"] / 100) * $percOfBifurcatedArea,
+    //                     "due_alv" => ($val["alv"] / 100) * $percOfBifurcatedArea,
+    //                     "due_maintanance_amt" => ($val["due_maintanance_amt"] / 100) * $percOfBifurcatedArea,
+    //                     "due_aging_amt"     => ($val["due_aging_amt"] / 100) * $percOfBifurcatedArea,
+    //                     "due_general_tax"   => ($val["due_general_tax"] / 100) * $percOfBifurcatedArea,
+    //                     "due_road_tax"      => ($val["due_road_tax"] / 100) * $percOfBifurcatedArea,
+    //                     "due_firefighting_tax" => ($val["due_firefighting_tax"] / 100) * $percOfBifurcatedArea,
+    //                     "due_education_tax" => ($val["due_education_tax"] / 100) * $percOfBifurcatedArea,
+    //                     "due_water_tax"     => ($val["due_water_tax"] / 100) * $percOfBifurcatedArea,
+    //                     "due_cleanliness_tax" => ($val["due_cleanliness_tax"] / 100) * $percOfBifurcatedArea,
+    //                     "due_sewarage_tax"  => ($val["due_sewarage_tax"] / 100) * $percOfBifurcatedArea,
+    //                     "due_tree_tax"      => ($val["due_tree_tax"] / 100) * $percOfBifurcatedArea,
+    //                     "due_professional_tax" => ($val["due_professional_tax"] / 100) * $percOfBifurcatedArea,
+    //                     "due_tax1"      => ($val["due_tax1"] / 100) * $percOfBifurcatedArea,
+    //                     "due_tax2"      => ($val["due_tax2"] / 100) * $percOfBifurcatedArea,
+    //                     "due_tax3"      => ($val["due_tax3"] / 100) * $percOfBifurcatedArea,
+    //                     "due_sp_education_tax" => ($val["due_sp_education_tax"] / 100) * $percOfBifurcatedArea,
+    //                     "due_water_benefit" => ($val["due_water_benefit"] / 100) * $percOfBifurcatedArea,
+    //                     "due_water_bill"    => ($val["due_water_bill"] / 100) * $percOfBifurcatedArea,
+    //                     "due_sp_water_cess" => ($val["due_sp_water_cess"] / 100) * $percOfBifurcatedArea,
+    //                     "due_drain_cess"    => ($val["due_drain_cess"] / 100) * $percOfBifurcatedArea,
+    //                     "due_light_cess"    => ($val["due_light_cess"] / 100) * $percOfBifurcatedArea,
+    //                     "due_major_building" => ($val["due_major_building"] / 100) * $percOfBifurcatedArea,
+    //                     "due_open_ploat_tax" => ($val["due_open_ploat_tax"] / 100) * $percOfBifurcatedArea,
+    //                 ];
+    //                 if ($oldDemand = $demand->where("fyear", $arr["fyear"])->where("property_id", $arr["property_id"])->where("status", 1)->first()) {
+    //                     $oldDemand = $this->updateOldDemands($oldDemand, $arr);
+    //                     $oldDemand->update();
+    //                     continue;
+    //                 }
+    //             //}
+    //             $this->testDemand($arr);
+    //             $demand->store($arr);
+    //             $this->adjustOldDemand($val, $arr);
+    //             $val->update();
+    //         }
+    //         // $areaPercentage = $bifurcatedArea / $totalArea;
+
+    //         // foreach ($unPaidDemand as $demand) {
+    //         //     if ($demand->fyear == '2022-2023') {
+    //         //         $arearAmount2022 = $propProperties->PropDueDemands()
+    //         //             ->where('fyear', '2022-2023')
+    //         //             ->sum('due_total_tax');
+
+    //         //         $dueAmount = $arearAmount2022 * $areaPercentage;
+    //         //         $demand->arrear_amt = $dueAmount;
+    //         //         $demand->save();
+    //         //     }
+
+    //         //     if ($demand->fyear == '2023-2024') {
+    //         //         $arearAmount2023 = $propProperties->PropDueDemands()
+    //         //             ->where('fyear', '2023-2024')
+    //         //             ->sum('due_total_tax');
+
+    //         //         $dueAmount2 = $arearAmount2023 * $areaPercentage;
+    //         //         $demand->arrear_amt1 = $dueAmount2;
+    //         //         $demand->save();
+    //         //     }
+    //         // }
+    //     }
+    // }
+    //written by prity pandey 16-09-24
     public function transferPropertyBifurcationDemand()
     {
         if (in_array($this->_activeSaf->assessment_type, ['Bifurcation'])) {
             $test = PropProperty::find($this->_replicatedPropId);
+            $fyDemand = collect($this->_calculateTaxByUlb->_GRID['fyearWiseTaxes'])->sortBy("fyear");
+
             $user = Auth()->user();
             $ulbId = $this->_activeSaf->ulb_id;
             $demand = new PropDemand();
-            $mPropPendingArrear = new PropPendingArrear();
-            $propProperties = PropProperty::find($this->_activeSaf->previous_holding_id);
-            $oldIntrest = $mPropPendingArrear->getInterestByPropId($propProperties->id);
-            $previousInterest = $oldIntrest->due_total_interest ?? 0;
-            //$arr=[];
-            $totalArea = $propProperties->area_of_plot;
-            $bifurcatedArea = $this->_verifiedPropDetails[0]->area_of_plot;
-            if($this->_activeSaf->prop_type_mstr_id!=4){
-                $propFloor = PropFloor::where("property_id", $propProperties->id)
-                    ->where('status', 1)
-                    ->orderby('id')
-                    ->get();
-                $totalArea = collect($propFloor)->sum("builtup_area");
-                $bifurcatedArea = collect($this->_floorDetails)->sum("builtup_area");
-               // $bifurcatedArea = collect($this->_verifiedFloors)->isNotEmpty() ? collect($this->_verifiedFloors)->sum("builtup_area") : $bifurcatedArea ;
-            }
+            $test =collect();
+            $test2 =collect();
+            foreach ($fyDemand as $key => $val) {
+                $arr = [
+                    "property_id"   => $this->_replicatedPropId,
+                    "alv"           => $val["alv"],
+                    "maintanance_amt" => $val["maintananceTax"] ?? 0,
+                    "aging_amt"     => $val["agingAmt"] ?? 0,
+                    "general_tax"   => $val["generalTax"] ?? 0,
+                    "road_tax"      => $val["roadTax"] ?? 0,
+                    "firefighting_tax" => $val["firefightingTax"] ?? 0,
+                    "education_tax" => $val["educationTax"] ?? 0,
+                    "water_tax"     => $val["waterTax"] ?? 0,
+                    "cleanliness_tax" => $val["cleanlinessTax"] ?? 0,
+                    "sewarage_tax"  => $val["sewerageTax"] ?? 0,
+                    "tree_tax"      => $val["treeTax"] ?? 0,
+                    "professional_tax" => $val["professionalTax"] ?? 0,
+                    "tax1"      => $val["tax1"] ?? 0,
+                    "tax2"      => $val["tax2"] ?? 0,
+                    "tax3"      => $val["tax3"] ?? 0,
+                    "sp_education_tax" => $val["stateEducationTax"] ?? 0,
+                    "water_benefit" => $val["waterBenefitTax"] ?? 0,
+                    "water_bill"    => $val["waterBillTax"] ?? 0,
+                    "sp_water_cess" => $val["spWaterCessTax"] ?? 0,
+                    "drain_cess"    => $val["drainCessTax"] ?? 0,
+                    "light_cess"    => $val["lightCessTax"] ?? 0,
+                    "major_building" => $val["majorBuildingTax"] ?? 0,
+                    "total_tax"     => $val["totalTax"],
+                    "open_ploat_tax" => $val["openPloatTax"] ?? 0,
 
-            $onePercOfArea = $totalArea / 100;
-            $percOfBifurcatedArea = round(($bifurcatedArea / $onePercOfArea), 2);
-            $unPaidDemand = $propProperties->PropDueDemands()->get();
-            $previousInterest = ($previousInterest / 100) * $percOfBifurcatedArea;
-            foreach ($unPaidDemand as $val) {
-                //if ($val["fyear"] == '2024-2025') {
-                    $arr = [
-                        "property_id"   => $this->_replicatedPropId,
-                        "alv"           => ($val["alv"] / 100) * $percOfBifurcatedArea,
-                        "maintanance_amt" => ($val["due_maintanance_amt"] / 100) * $percOfBifurcatedArea,
-                        "aging_amt"     => ($val["due_aging_amt"] / 100) * $percOfBifurcatedArea,
-                        "general_tax"   => ($val["due_general_tax"] / 100) * $percOfBifurcatedArea,
-                        "road_tax"      => ($val["due_road_tax"] / 100) * $percOfBifurcatedArea,
-                        "firefighting_tax" => ($val["due_firefighting_tax"] / 100) * $percOfBifurcatedArea,
-                        "education_tax" => ($val["due_education_tax"] / 100) * $percOfBifurcatedArea,
-                        "water_tax"     => ($val["due_water_tax"] / 100) * $percOfBifurcatedArea,
-                        "cleanliness_tax" => ($val["due_cleanliness_tax"] / 100) * $percOfBifurcatedArea,
-                        "sewarage_tax"  => ($val["due_sewarage_tax"] / 100) * $percOfBifurcatedArea,
-                        "tree_tax"      => ($val["due_tree_tax"] / 100) * $percOfBifurcatedArea,
-                        "professional_tax" => ($val["due_professional_tax"] / 100) * $percOfBifurcatedArea,
-                        "tax1"      => ($val["due_tax1"] / 100) * $percOfBifurcatedArea,
-                        "tax2"      => ($val["due_tax2"] / 100) * $percOfBifurcatedArea,
-                        "tax3"      => ($val["due_tax3"] / 100) * $percOfBifurcatedArea,
-                        "sp_education_tax" => ($val["due_sp_education_tax"] / 100) * $percOfBifurcatedArea,
-                        "water_benefit" => ($val["due_water_benefit"] / 100) * $percOfBifurcatedArea,
-                        "water_bill"    => ($val["due_water_bill"] / 100) * $percOfBifurcatedArea,
-                        "sp_water_cess" => ($val["due_sp_water_cess"] / 100) * $percOfBifurcatedArea,
-                        "drain_cess"    => ($val["due_drain_cess"] / 100) * $percOfBifurcatedArea,
-                        "light_cess"    => ($val["due_light_cess"] / 100) * $percOfBifurcatedArea,
-                        "major_building" => ($val["due_major_building"] / 100) * $percOfBifurcatedArea,
-                        "total_tax"     => ($val["due_total_tax"] / 100) * $percOfBifurcatedArea,
-                        "open_ploat_tax" => ($val["due_open_ploat_tax"] / 100) * $percOfBifurcatedArea,
+                    "is_arrear"     => $val["fyear"] < getFY() ? true : false,
+                    "fyear"         => $val["fyear"],
+                    "user_id"       => $user->id ?? null,
+                    "ulb_id"        => $ulbId ?? $user->ulb_id,
 
-                        "is_arrear"     => $val["is_arrear"],
-                        "fyear"         => $val["fyear"],
-                        "user_id"       => $user->id ?? null,
-                        "ulb_id"        => $ulbId ?? $user->ulb_id,
-
-                        "balance" => ($val["due_total_tax"] / 100) * $percOfBifurcatedArea,
-                        "due_total_tax" => ($val["due_total_tax"] / 100) * $percOfBifurcatedArea,
-                        "due_balance" => ($val["due_balance"] / 100) * $percOfBifurcatedArea,
-                        "due_alv" => ($val["alv"] / 100) * $percOfBifurcatedArea,
-                        "due_maintanance_amt" => ($val["due_maintanance_amt"] / 100) * $percOfBifurcatedArea,
-                        "due_aging_amt"     => ($val["due_aging_amt"] / 100) * $percOfBifurcatedArea,
-                        "due_general_tax"   => ($val["due_general_tax"] / 100) * $percOfBifurcatedArea,
-                        "due_road_tax"      => ($val["due_road_tax"] / 100) * $percOfBifurcatedArea,
-                        "due_firefighting_tax" => ($val["due_firefighting_tax"] / 100) * $percOfBifurcatedArea,
-                        "due_education_tax" => ($val["due_education_tax"] / 100) * $percOfBifurcatedArea,
-                        "due_water_tax"     => ($val["due_water_tax"] / 100) * $percOfBifurcatedArea,
-                        "due_cleanliness_tax" => ($val["due_cleanliness_tax"] / 100) * $percOfBifurcatedArea,
-                        "due_sewarage_tax"  => ($val["due_sewarage_tax"] / 100) * $percOfBifurcatedArea,
-                        "due_tree_tax"      => ($val["due_tree_tax"] / 100) * $percOfBifurcatedArea,
-                        "due_professional_tax" => ($val["due_professional_tax"] / 100) * $percOfBifurcatedArea,
-                        "due_tax1"      => ($val["due_tax1"] / 100) * $percOfBifurcatedArea,
-                        "due_tax2"      => ($val["due_tax2"] / 100) * $percOfBifurcatedArea,
-                        "due_tax3"      => ($val["due_tax3"] / 100) * $percOfBifurcatedArea,
-                        "due_sp_education_tax" => ($val["due_sp_education_tax"] / 100) * $percOfBifurcatedArea,
-                        "due_water_benefit" => ($val["due_water_benefit"] / 100) * $percOfBifurcatedArea,
-                        "due_water_bill"    => ($val["due_water_bill"] / 100) * $percOfBifurcatedArea,
-                        "due_sp_water_cess" => ($val["due_sp_water_cess"] / 100) * $percOfBifurcatedArea,
-                        "due_drain_cess"    => ($val["due_drain_cess"] / 100) * $percOfBifurcatedArea,
-                        "due_light_cess"    => ($val["due_light_cess"] / 100) * $percOfBifurcatedArea,
-                        "due_major_building" => ($val["due_major_building"] / 100) * $percOfBifurcatedArea,
-                        "due_open_ploat_tax" => ($val["due_open_ploat_tax"] / 100) * $percOfBifurcatedArea,
-                    ];
-                    if ($oldDemand = $demand->where("fyear", $arr["fyear"])->where("property_id", $arr["property_id"])->where("status", 1)->first()) {
-                        $oldDemand = $this->updateOldDemands($oldDemand, $arr);
-                        $oldDemand->update();
-                        continue;
-                    }
-                //}
+                    "balance" => $val["totalTax"],
+                    "due_total_tax" => $val["totalTax"],
+                    "due_balance" => $val["totalTax"],
+                    "due_alv" => $val["alv"],
+                    "due_maintanance_amt" => $val["maintananceTax"] ?? 0,
+                    "due_aging_amt"     => $val["agingAmt"] ?? 0,
+                    "due_general_tax"   => $val["generalTax"] ?? 0,
+                    "due_road_tax"      => $val["roadTax"] ?? 0,
+                    "due_firefighting_tax" => $val["firefightingTax"] ?? 0,
+                    "due_education_tax" => $val["educationTax"] ?? 0,
+                    "due_water_tax"     => $val["waterTax"] ?? 0,
+                    "due_cleanliness_tax" => $val["cleanlinessTax"] ?? 0,
+                    "due_sewarage_tax"  => $val["sewerageTax"] ?? 0,
+                    "due_tree_tax"      => $val["treeTax"] ?? 0,
+                    "due_professional_tax" => $val["professionalTax"] ?? 0,
+                    "due_tax1"      => $val["tax1"] ?? 0,
+                    "due_tax2"      => $val["tax2"] ?? 0,
+                    "due_tax3"      => $val["tax3"] ?? 0,
+                    "due_sp_education_tax" => $val["stateEducationTax"] ?? 0,
+                    "due_water_benefit" => $val["waterBenefitTax"] ?? 0,
+                    "due_water_bill"    => $val["waterBillTax"] ?? 0,
+                    "due_sp_water_cess" => $val["spWaterCessTax"] ?? 0,
+                    "due_drain_cess"    => $val["drainCessTax"] ?? 0,
+                    "due_light_cess"    => $val["lightCessTax"] ?? 0,
+                    "due_major_building" => $val["majorBuildingTax"] ?? 0,
+                    "due_open_ploat_tax" => $val["openPloatTax"] ?? 0,
+                ];
+                if ($oldDemand = $demand->where("fyear", $arr["fyear"])->where("property_id", $arr["property_id"])->where("status", 1)->first()) {
+                    $oldDemand = $this->updateOldDemands($oldDemand, $arr);
+                    $oldDemand->update();
+                    continue;
+                }
                 $this->testDemand($arr);
                 $demand->store($arr);
-                $this->adjustOldDemand($val, $arr);
-                $val->update();
+                $privOld = $demand->where("property_id",$this->_activeSaf->previous_holding_id)->where("fyear",$val["fyear"])->where("status",1)->first();
+                $val["fyear"]!=getFY() ? $this->adjustOldDemand($privOld, $arr) :"";
+                $privOld->update();
+                $test->push($privOld);
+                $test2->push($arr);
             }
-            // $areaPercentage = $bifurcatedArea / $totalArea;
 
-            // foreach ($unPaidDemand as $demand) {
-            //     if ($demand->fyear == '2022-2023') {
-            //         $arearAmount2022 = $propProperties->PropDueDemands()
-            //             ->where('fyear', '2022-2023')
-            //             ->sum('due_total_tax');
-
-            //         $dueAmount = $arearAmount2022 * $areaPercentage;
-            //         $demand->arrear_amt = $dueAmount;
-            //         $demand->save();
-            //     }
-
-            //     if ($demand->fyear == '2023-2024') {
-            //         $arearAmount2023 = $propProperties->PropDueDemands()
-            //             ->where('fyear', '2023-2024')
-            //             ->sum('due_total_tax');
-
-            //         $dueAmount2 = $arearAmount2023 * $areaPercentage;
-            //         $demand->arrear_amt1 = $dueAmount2;
-            //         $demand->save();
-            //     }
-            // }
         }
+    }
+
+    //written by prity pandey 16-09-24
+    public function generateAfterBifurcationPropertyRequest()
+    {
+        $property = PropProperty::find($this->_activeSaf->previous_holding_id);
+        $calculationReq = [
+            "propertyType" => $property->prop_type_mstr_id,
+            "areaOfPlot" => $property->area_of_plot,
+            "category" => $property->category_id,
+            "dateOfPurchase" => $property->land_occupation_date,
+            "previousHoldingId" => $property->id ?? 0,
+            "applyDate" => $property->application_date ?? null,
+            "ward" => $property->ward_mstr_id ?? null,
+            "zone" => $property->zone_mstr_id ?? null,
+            "assessmentType" => 1,
+            "nakshaAreaOfPlot" => $property->naksha_area_of_plot,
+            "isAllowDoubleTax" => $property->is_allow_double_tax,
+            "floor" => [],
+            "owner" => []
+        ];
+
+        // Get Floors
+        if ($property->prop_type_mstr_id != 4) {
+            $propFloors = $this->_mPropFloors->getFloorsByPropId($property->id);
+
+            if (collect($propFloors)->isEmpty())
+                throw new Exception("Floors not available for this property");
+
+            foreach ($propFloors as $floor) {
+                $floorReq =  [
+                    "floorNo" => $floor->floor_mstr_id,
+                    "constructionType" =>  $floor->const_type_mstr_id,
+                    "occupancyType" =>  $floor->occupancy_type_mstr_id??"",
+                    "usageType" => $floor->usage_type_mstr_id,
+                    "buildupArea" =>  $floor->builtup_area,
+                    "dateFrom" =>  Carbon::now()->format("Y-m-d"),
+                    "dateUpto" =>  $floor->date_upto
+                ];
+                array_push($calculationReq['floor'], $floorReq);
+            }
+        }
+
+        // Get Owners
+        $propFirstOwners = $this->_mPropOwners->firstOwner($property->id);
+        if (collect($propFirstOwners)->isEmpty())
+            throw new Exception("Owner Details not Available");
+
+        $ownerReq = [
+            "isArmedForce" => $propFirstOwners->is_armed_force
+        ];
+        array_push($calculationReq['owner'], $ownerReq);
+        $propRequest = new Request($calculationReq);
+
+        $taxCalculator = new TaxCalculator($propRequest);
+        $taxCalculator->calculateTax();
+        return $taxCalculator->_GRID['fyearWiseTaxes'];
     }
 
     public function adjustOldDemand($oldDemand, $newDemand)
@@ -1103,6 +1422,82 @@ class SafApprovalBll
         }
         return $oldDemand;
     }
+
+    //prity pandey 16-09-24
+    public function adjustPaidAmount($paidAmount,$demand){
+        $currentTax = collect();
+        $currentTax->push($demand);
+        $totaTax = $currentTax->sum("due_balance");
+
+
+        $perPecOfTax =  $totaTax / 100;
+        $payableAmountOfTax = $paidAmount /100;
+
+        $generalTaxPerc = ($currentTax->sum('general_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $roadTaxPerc = ($currentTax->sum('road_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $firefightingTaxPerc = ($currentTax->sum('firefighting_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $educationTaxPerc = ($currentTax->sum('education_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $waterTaxPerc = ($currentTax->sum('water_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $cleanlinessTaxPerc = ($currentTax->sum('cleanliness_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $sewarageTaxPerc = ($currentTax->sum('sewarage_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $treeTaxPerc = ($currentTax->sum('tree_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $professionalTaxPerc = ($currentTax->sum('professional_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $tax1Perc = ($currentTax->sum('tax1') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $tax2Perc = ($currentTax->sum('tax2') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $tax3Perc = ($currentTax->sum('tax3') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $stateEducationTaxPerc = ($currentTax->sum('state_education_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $waterBenefitPerc = ($currentTax->sum('water_benefit') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $waterBillPerc = ($currentTax->sum('water_bill') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $spWaterCessPerc = ($currentTax->sum('sp_water_cess') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $drainCessPerc = ($currentTax->sum('drain_cess') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $lightCessPerc = ($currentTax->sum('light_cess') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $majorBuildingPerc = ($currentTax->sum('major_building') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $openPloatTaxPerc = ($currentTax->sum('open_ploat_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+
+        $totalPerc = $generalTaxPerc + $roadTaxPerc + $firefightingTaxPerc + $educationTaxPerc +
+            $waterTaxPerc + $cleanlinessTaxPerc + $sewarageTaxPerc + $treeTaxPerc
+            + $professionalTaxPerc + $tax1Perc + $tax2Perc + $tax3Perc
+            + $stateEducationTaxPerc + $waterBenefitPerc + $waterBillPerc +
+            $spWaterCessPerc + $drainCessPerc + $lightCessPerc + $majorBuildingPerc
+            + $openPloatTaxPerc;
+
+
+
+        /**
+         * | 100 % = Payable Amount
+         * | 1 % = Payable Amount/100  (Hence We Have devided the taxes by hundred)
+         */
+
+
+        $paidDemandBifurcation = [
+            'general_tax' => roundFigure(($payableAmountOfTax * $generalTaxPerc) / 100),
+            'road_tax' => roundFigure(($payableAmountOfTax * $roadTaxPerc) / 100),
+            'firefighting_tax' => roundFigure(($payableAmountOfTax * $firefightingTaxPerc) / 100),
+            'education_tax' => roundFigure(($payableAmountOfTax * $educationTaxPerc) / 100),
+            'water_tax' => roundFigure(($payableAmountOfTax * $waterTaxPerc) / 100),
+            'cleanliness_tax' => roundFigure(($payableAmountOfTax * $cleanlinessTaxPerc) / 100),
+            'sewarage_tax' => roundFigure(($payableAmountOfTax * $sewarageTaxPerc) / 100),
+            'tree_tax' => roundFigure(($payableAmountOfTax * $treeTaxPerc) / 100),
+            'professional_tax' => roundFigure(($payableAmountOfTax * $professionalTaxPerc) / 100),
+            'tax1' => roundFigure(($payableAmountOfTax * $tax1Perc) / 100),
+            'tax2' => roundFigure(($payableAmountOfTax * $tax2Perc) / 100),
+            'tax3' => roundFigure(($payableAmountOfTax * $tax3Perc) / 100),
+            'state_education_tax' => roundFigure(($payableAmountOfTax * $stateEducationTaxPerc) / 100),
+            'water_benefit' => roundFigure(($payableAmountOfTax * $waterBenefitPerc) / 100),
+            'water_bill' => roundFigure(($payableAmountOfTax * $waterBillPerc) / 100),
+            'sp_water_cess' => roundFigure(($payableAmountOfTax * $spWaterCessPerc) / 100),
+            'drain_cess' => roundFigure(($payableAmountOfTax * $drainCessPerc) / 100),
+            'light_cess' => roundFigure(($payableAmountOfTax * $lightCessPerc) / 100),
+            'major_building' => roundFigure(($payableAmountOfTax * $majorBuildingPerc) / 100),
+            'open_ploat_tax' => roundFigure(($payableAmountOfTax * $openPloatTaxPerc) / 100),
+            'total_tax' => roundFigure(($payableAmountOfTax * $totalPerc) / 100),
+        ];
+        dd($totalPerc,$roadTaxPerc,$currentTax->sum('road_tax'),$currentTax,$paidDemandBifurcation);
+        $data["paid_total_tax"] =  $paidDemandBifurcation["total_tax"] ?? 0;
+        $data["paidCurrentTaxesBifurcation"] = ($paidDemandBifurcation);
+        return $data;
+    }
+    
     public function testDemand($newDemand)
     {
         $newDemand = collect($newDemand);

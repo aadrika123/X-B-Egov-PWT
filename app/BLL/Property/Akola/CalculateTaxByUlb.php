@@ -82,6 +82,7 @@ class CalculateTaxByUlb extends TaxCalculator
             "isAllowDoubleTax" => $this->_safs->is_allow_double_tax,
             "buildingPlanApprovalDate"=>$this->_safs->building_plan_approval_date,
             "buildingPlanCompletionDate"=> $this->_safs->building_plan_completion_date,
+            "bifurcatedPlot" => $this->_propVerifications->area_of_plot,
             "floor" => [],
             "owner" => []
         ];
@@ -119,6 +120,7 @@ class CalculateTaxByUlb extends TaxCalculator
                     "rentAmount" =>  $floor->rent_amount,
                     "rentAgreementDate" =>  $floor->rent_agreement_date,
                     "propFloorDetailId" =>$floor->prop_floor_details_id,
+                    "biBuildupArea"=>$floor->builtup_area,
                 ];
                 array_push($calculationReq['floor'], $floorReq);
             }

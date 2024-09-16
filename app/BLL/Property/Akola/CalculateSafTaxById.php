@@ -65,6 +65,7 @@ class CalculateSafTaxById extends TaxCalculator
             "isAllowDoubleTax" => $this->_safDtls->is_allow_double_tax,
             "buildingPlanApprovalDate"=>$this->_safDtls->building_plan_approval_date,
             "buildingPlanCompletionDate"=> $this->_safDtls->building_plan_completion_date,
+            "bifurcatedPlot"=>$this->_safDtls->area_of_plot,
             "floor" => [],
             "owner" => []
         ];
@@ -96,6 +97,7 @@ class CalculateSafTaxById extends TaxCalculator
                     "rentAmount" =>  $floor->rent_amount,
                     "rentAgreementDate" =>  $floor->rent_agreement_date,
                     "propFloorDetailId" =>$floor->prop_floor_details_id,
+                    "biBuildupArea"=>$floor->builtup_area,
                 ];
                 array_push($calculationReq['floor'], $floorReq);
             }
@@ -117,6 +119,7 @@ class CalculateSafTaxById extends TaxCalculator
                     "rentAmount" =>  $floor->rent_amount??null,
                     "rentAgreementDate" =>  $floor->rent_agreement_date??null,
                     "propFloorDetailId" =>$floor->prop_floor_details_id,
+                    "biBuildupArea"=>$floor->builtup_area,
                 ];
                 array_push($calculationReq['floor'], $floorReq);
             }

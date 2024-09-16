@@ -959,7 +959,7 @@ class ActiveSafController extends Controller
                 ->first();
             // if (!$data)
             // throw new Exception("Application Not Found");
-
+            $assessmentType = $data->assessment_type;
             if (collect($data)->isEmpty()) {
                 $data = $mPropSaf->getSafDtls()
                     ->where('prop_safs.id', $req->applicationId)
@@ -1010,8 +1010,6 @@ class ActiveSafController extends Controller
             $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data['id']);      // Model Function to Get Floor Details
             if (collect($getFloorDtls)->isEmpty())
                 $getFloorDtls = $mPropSafsFloors->getFloorsBySafId($data['id']);
-
-
             $notInApplication = collect($verificationDtl)->whereNotIn("saf_floor_id", collect($getFloorDtls)->pluck("id"));
             $getFloorDtls = collect($getFloorDtls)->map(function ($val) use ($verificationDtl) {
                 $newFloors = $verificationDtl->where("saf_floor_id", $val->id)->first();
@@ -1047,6 +1045,11 @@ class ActiveSafController extends Controller
             if ($data['prop_type_mstr_id'] != 4) {
                 $data["builtup_area"] = $getFloorDtls->sum("builtup_area");
             }
+            if($assessmentType== "Reassessment"){
+                $data["builtup_area"] = $getFloorDtls->whereNotNull('prop_floor_details_id')->sum("builtup_area");
+                $data["new_builtup_area"] = $getFloorDtls->whereNull('prop_floor_details_id')->sum("builtup_area");
+            }
+            
             $data['floors'] = $getFloorDtls;
             $data["tranDtl"] = $mPropTransaction->getSafTranList($data['id']);
             $data["userDtl"] = [
