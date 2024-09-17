@@ -27,9 +27,9 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 
 /**
- * | Created On-28-08-2023 
+ * | Created On-28-08-2023
  * | Created by-Anshu Kumar
- * | Created for the Saf Approval 
+ * | Created for the Saf Approval
  */
 
 /**
@@ -67,11 +67,11 @@ class SafApprovalBll
     public $_paidTotalCurrentYearTax = 0;
     public $_assessmentHistoryId = null;
 
-     //prity pandey 16-09-24
-     private $_propDtls;
-     private $_REQUEST;
-     private $_propFloors;
-     private $_mPropOwners;
+    //prity pandey 16-09-24
+    private $_propDtls;
+    private $_REQUEST;
+    private $_propFloors;
+    private $_mPropOwners;
     // Initializations
     public function __construct()
     {
@@ -407,7 +407,7 @@ class SafApprovalBll
         $approvedSaf->id = $this->_activeSaf->id;
         $approvedSaf->saf_approved_date = Carbon::now()->format("Y-m-d");
         $approvedSaf->property_id = $this->_replicatedPropId;
-        $approvedSaf->property_no = $this->_activeSaf->property_no;  
+        $approvedSaf->property_no = $this->_activeSaf->property_no;
         $approvedSaf->save();
         $this->_activeSaf->delete();
 
@@ -653,7 +653,7 @@ class SafApprovalBll
         $oldDemand->due_major_building  = $newDemand["due_major_building"];
         $oldDemand->open_ploat_tax  = $newDemand["open_ploat_tax"];
         $oldDemand->due_open_ploat_tax  = $newDemand["due_open_ploat_tax"];
-        $oldDemand->paid_total_tax  = 0;
+        $oldDemand->paid_total_tax  = $newDemand["paid_total_tax"] ?? 0;
         if ($oldDemand->due_total_tax > 0 && $oldDemand->paid_status == 1) {
             $oldDemand->is_full_paid = false;
         }
@@ -1030,17 +1030,19 @@ class SafApprovalBll
                     $propProperties->update(["prop_type_mstr_id" => 4]);
             }
             $oldPropDemand = $this->generateAfterBifurcationPropertyRequest();
-            $oldPropDemand = $oldPropDemand->where("fyear",getFY())->values();
+            $oldPropDemand = $oldPropDemand->where("fyear", getFY())->values();
             $newTotalTax = collect($oldPropDemand)->sum("totalTax");
-            if($newTotalTax < $this->_paidTotalCurrentYearTax ){
+            $paidAmount = $this->_paidTotalCurrentYearTax;
+            if ($newTotalTax < $this->_paidTotalCurrentYearTax) {
                 $this->_paidTotalCurrentYearTax = $this->_paidTotalCurrentYearTax - $newTotalTax;
+                $paidAmount = $newTotalTax;
                 $this->generateAdvance($oldPropDemand);
             }
-            foreach($oldPropDemand  as $newDemand){
+            foreach ($oldPropDemand  as $newDemand) {
                 $demand = new PropDemand();
                 $arr = [
                     "property_id"   => $this->_activeSaf->previous_holding_id,
-                    "alv"           =>$newDemand["alv"],
+                    "alv"           => $newDemand["alv"],
                     "maintanance_amt" => $newDemand["maintananceTax"] ?? 0,
                     "aging_amt"     => $newDemand["agingAmt"] ?? 0,
                     "general_tax"   => $newDemand["generalTax"] ?? 0,
@@ -1098,19 +1100,13 @@ class SafApprovalBll
                     "due_open_ploat_tax" => $newDemand["openPloatTax"] ?? 0,
                 ];
                 if ($oldDemand = $demand->where("fyear", $arr["fyear"])->where("property_id", $arr["property_id"])->where("status", 1)->first()) {
-                    // $arr["is_full_paid"] = true;
-                    // $arr["paid_total_tax"] = 0;
-                    // $arr["paid_status"] = 0;
-                    $arrpaid = $this->adjustPaidAmount($this->_paidTotalCurrentYearTax,$arr);
-                    dd($this->_paidTotalCurrentYearTax,$arr,$arrpaid);
-                    $oldDemand = $this->updateOldDemands($oldDemand, $arr);
+                    $arr = $this->adjustPaidAmount($paidAmount, $arr);
+                    $oldDemand = $this->updateOldDemandsV1($oldDemand, $arr);
                     $oldDemand->update();
-                }
-                else{dd("store",$arr["fyear"], $arr["property_id"]);
+                } else {
                     $demand->store($arr);
                 }
             }
-            dd("kkk",$oldPropDemand);
         }
     }
 
@@ -1249,8 +1245,8 @@ class SafApprovalBll
             $user = Auth()->user();
             $ulbId = $this->_activeSaf->ulb_id;
             $demand = new PropDemand();
-            $test =collect();
-            $test2 =collect();
+            $test = collect();
+            $test2 = collect();
             foreach ($fyDemand as $key => $val) {
                 $arr = [
                     "property_id"   => $this->_replicatedPropId,
@@ -1312,19 +1308,18 @@ class SafApprovalBll
                     "due_open_ploat_tax" => $val["openPloatTax"] ?? 0,
                 ];
                 if ($oldDemand = $demand->where("fyear", $arr["fyear"])->where("property_id", $arr["property_id"])->where("status", 1)->first()) {
-                    $oldDemand = $this->updateOldDemands($oldDemand, $arr);
+                    $oldDemand = $this->updateOldDemandsV1($oldDemand, $arr);
                     $oldDemand->update();
                     continue;
                 }
                 $this->testDemand($arr);
                 $demand->store($arr);
-                $privOld = $demand->where("property_id",$this->_activeSaf->previous_holding_id)->where("fyear",$val["fyear"])->where("status",1)->first();
-                $val["fyear"]!=getFY() ? $this->adjustOldDemand($privOld, $arr) :"";
+                $privOld = $demand->where("property_id", $this->_activeSaf->previous_holding_id)->where("fyear", $val["fyear"])->where("status", 1)->first();
+                $val["fyear"] != getFY() ? $this->adjustOldDemand($privOld, $arr) : "";
                 $privOld->update();
                 $test->push($privOld);
                 $test2->push($arr);
             }
-
         }
     }
 
@@ -1359,7 +1354,7 @@ class SafApprovalBll
                 $floorReq =  [
                     "floorNo" => $floor->floor_mstr_id,
                     "constructionType" =>  $floor->const_type_mstr_id,
-                    "occupancyType" =>  $floor->occupancy_type_mstr_id??"",
+                    "occupancyType" =>  $floor->occupancy_type_mstr_id ?? "",
                     "usageType" => $floor->usage_type_mstr_id,
                     "buildupArea" =>  $floor->builtup_area,
                     "dateFrom" =>  Carbon::now()->format("Y-m-d"),
@@ -1424,14 +1419,15 @@ class SafApprovalBll
     }
 
     //prity pandey 16-09-24
-    public function adjustPaidAmount($paidAmount,$demand){
+    public function adjustPaidAmount($paidAmount, $demand)
+    {
         $currentTax = collect();
         $currentTax->push($demand);
         $totaTax = $currentTax->sum("due_balance");
 
 
         $perPecOfTax =  $totaTax / 100;
-        $payableAmountOfTax = $paidAmount /100;
+        $payableAmountOfTax = $paidAmount / 100;
 
         $generalTaxPerc = ($currentTax->sum('general_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
         $roadTaxPerc = ($currentTax->sum('road_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
@@ -1445,7 +1441,7 @@ class SafApprovalBll
         $tax1Perc = ($currentTax->sum('tax1') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
         $tax2Perc = ($currentTax->sum('tax2') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
         $tax3Perc = ($currentTax->sum('tax3') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
-        $stateEducationTaxPerc = ($currentTax->sum('state_education_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
+        $stateEducationTaxPerc = ($currentTax->sum('sp_education_tax') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
         $waterBenefitPerc = ($currentTax->sum('water_benefit') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
         $waterBillPerc = ($currentTax->sum('water_bill') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
         $spWaterCessPerc = ($currentTax->sum('sp_water_cess') / ($totaTax == 0 ? 1 : $totaTax)) * 100;
@@ -1470,34 +1466,36 @@ class SafApprovalBll
 
 
         $paidDemandBifurcation = [
-            'general_tax' => roundFigure(($payableAmountOfTax * $generalTaxPerc) / 100),
-            'road_tax' => roundFigure(($payableAmountOfTax * $roadTaxPerc) / 100),
-            'firefighting_tax' => roundFigure(($payableAmountOfTax * $firefightingTaxPerc) / 100),
-            'education_tax' => roundFigure(($payableAmountOfTax * $educationTaxPerc) / 100),
-            'water_tax' => roundFigure(($payableAmountOfTax * $waterTaxPerc) / 100),
-            'cleanliness_tax' => roundFigure(($payableAmountOfTax * $cleanlinessTaxPerc) / 100),
-            'sewarage_tax' => roundFigure(($payableAmountOfTax * $sewarageTaxPerc) / 100),
-            'tree_tax' => roundFigure(($payableAmountOfTax * $treeTaxPerc) / 100),
-            'professional_tax' => roundFigure(($payableAmountOfTax * $professionalTaxPerc) / 100),
-            'tax1' => roundFigure(($payableAmountOfTax * $tax1Perc) / 100),
-            'tax2' => roundFigure(($payableAmountOfTax * $tax2Perc) / 100),
-            'tax3' => roundFigure(($payableAmountOfTax * $tax3Perc) / 100),
-            'state_education_tax' => roundFigure(($payableAmountOfTax * $stateEducationTaxPerc) / 100),
-            'water_benefit' => roundFigure(($payableAmountOfTax * $waterBenefitPerc) / 100),
-            'water_bill' => roundFigure(($payableAmountOfTax * $waterBillPerc) / 100),
-            'sp_water_cess' => roundFigure(($payableAmountOfTax * $spWaterCessPerc) / 100),
-            'drain_cess' => roundFigure(($payableAmountOfTax * $drainCessPerc) / 100),
-            'light_cess' => roundFigure(($payableAmountOfTax * $lightCessPerc) / 100),
-            'major_building' => roundFigure(($payableAmountOfTax * $majorBuildingPerc) / 100),
-            'open_ploat_tax' => roundFigure(($payableAmountOfTax * $openPloatTaxPerc) / 100),
-            'total_tax' => roundFigure(($payableAmountOfTax * $totalPerc) / 100),
+            'due_general_tax' => roundFigure(($payableAmountOfTax * $generalTaxPerc)),
+            'due_road_tax' => roundFigure(($payableAmountOfTax * $roadTaxPerc)),
+            'due_firefighting_tax' => roundFigure(($payableAmountOfTax * $firefightingTaxPerc)),
+            'due_education_tax' => roundFigure(($payableAmountOfTax * $educationTaxPerc)),
+            'due_water_tax' => roundFigure(($payableAmountOfTax * $waterTaxPerc)),
+            'due_cleanliness_tax' => roundFigure(($payableAmountOfTax * $cleanlinessTaxPerc)),
+            'due_sewarage_tax' => roundFigure(($payableAmountOfTax * $sewarageTaxPerc)),
+            'due_tree_tax' => roundFigure(($payableAmountOfTax * $treeTaxPerc)),
+            'due_professional_tax' => roundFigure(($payableAmountOfTax * $professionalTaxPerc)),
+            'due_tax1' => roundFigure(($payableAmountOfTax * $tax1Perc)),
+            'due_tax2' => roundFigure(($payableAmountOfTax * $tax2Perc)),
+            'due_tax3' => roundFigure(($payableAmountOfTax * $tax3Perc)),
+            'due_sp_education_tax' => roundFigure(($payableAmountOfTax * $stateEducationTaxPerc)),
+            'due_water_benefit' => roundFigure(($payableAmountOfTax * $waterBenefitPerc)),
+            'due_water_bill' => roundFigure(($payableAmountOfTax * $waterBillPerc)),
+            'due_sp_water_cess' => roundFigure(($payableAmountOfTax * $spWaterCessPerc)),
+            'due_drain_cess' => roundFigure(($payableAmountOfTax * $drainCessPerc)),
+            'due_light_cess' => roundFigure(($payableAmountOfTax * $lightCessPerc)),
+            'due_major_building' => roundFigure(($payableAmountOfTax * $majorBuildingPerc)),
+            'due_open_ploat_tax' => roundFigure(($payableAmountOfTax * $openPloatTaxPerc)),
+            'due_total_tax' => roundFigure(($payableAmountOfTax * $totalPerc)),
+            "due_balance" => roundFigure(($payableAmountOfTax * $totalPerc)),
         ];
-        dd($totalPerc,$roadTaxPerc,$currentTax->sum('road_tax'),$currentTax,$paidDemandBifurcation);
-        $data["paid_total_tax"] =  $paidDemandBifurcation["total_tax"] ?? 0;
-        $data["paidCurrentTaxesBifurcation"] = ($paidDemandBifurcation);
-        return $data;
+        $demand["paid_total_tax"] =  $paidDemandBifurcation["due_total_tax"] ?? 0;
+        foreach ($paidDemandBifurcation as $key => $val) {
+            $demand[$key] = roundFigure($demand[$key] - $val);
+        }
+        return $demand;
     }
-    
+
     public function testDemand($newDemand)
     {
         $newDemand = collect($newDemand);
