@@ -326,7 +326,7 @@ class TaxCalculator
                     // $tax1 = $doubleTax1 * ($diffArrea / ($this->_REQUEST->areaOfPlot>0?$this->_REQUEST->areaOfPlot:1));
                     $tax1 = $doubleTax1 * ($diffArrea);
                 }
-                if ($this->getAssestmentTypeStr() == 'Reassessment') {
+                elseif ($diffArrea > 0 && $this->getAssestmentTypeStr() == 'Reassessment') {
                     $tax1 = 0;
                 }
                 $this->_floorsTaxes[$key] = [
