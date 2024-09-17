@@ -80,7 +80,7 @@ class TaxCalculator
         //Written by prity pandey 
         $this->generateTaxAccOldPropDemand();    // 4.1
 
-         //Written by prity pandey  16-09-24
+        //Written by prity pandey  16-09-24
         $this->generateBifurcationTaxAccOldPropDemand(); //4.2
 
 
@@ -134,7 +134,7 @@ class TaxCalculator
             // $this->_propFyearFrom = Carbon::parse($this->_newForm)->format('Y');
 
             //prity pandey 16-09-24
-            if(($this->getAssestmentTypeStr() == 'Bifurcation')){
+            if (($this->getAssestmentTypeStr() == 'Bifurcation')) {
                 list($fromYear, $lastYear) = explode("-", $unPaidDemand->min("fyear") ?? getFY());
                 $this->_newForm = $fromYear . "-04-01";
             }
@@ -145,7 +145,7 @@ class TaxCalculator
                 //changes by prity pandey
                 //list($fromYear, $lastYear) = explode("-", getFY($this->_REQUEST->approvedDate));
                 //$this->_newForm = ($fromYear - 2) . "-04-01";
-               // $this->_newForm = ($fromYear) . "-04-01";
+                // $this->_newForm = ($fromYear) . "-04-01";
                 //end of changes
 
                 //code for reassessment calculation according to completion and building approval date
@@ -162,6 +162,12 @@ class TaxCalculator
                     if (getFY($this->_REQUEST->buildingPlanApprovalDate) < "2022-2023") {
                         $this->_newForm = "2022-04-01";
                     }
+                } 
+                // added by prity pandey 17-09-24
+                else {
+                    list($fromYear, $lastYear) = explode("-", getFY($this->_REQUEST->approvedDate));
+                    $this->_newForm = ($fromYear - 2) . "-04-01";
+                    $this->_newForm = ($fromYear) . "-04-01";
                 }
             }
             //changes by prity pandey
@@ -262,7 +268,7 @@ class TaxCalculator
                 $newFloorArea = collect($this->_REQUEST->floor)->whereNull('propFloorDetailId')->sum("buildupArea");
                 $AllDiffArrea = ($newFloorArea - $this->_REQUEST->nakshaAreaOfPlot) > 0 ? $newFloorArea - $this->_REQUEST->nakshaAreaOfPlot : 0;
             }
-            
+
             foreach ($this->_OldFloors as $key => $item) {
                 $item = (object)$item;
                 $rate = $this->readRateByFloor($item);                // (2.1)
@@ -326,8 +332,7 @@ class TaxCalculator
                 elseif ($diffArrea > 0) {
                     // $tax1 = $doubleTax1 * ($diffArrea / ($this->_REQUEST->areaOfPlot>0?$this->_REQUEST->areaOfPlot:1));
                     $tax1 = $doubleTax1 * ($diffArrea);
-                }
-                elseif ($diffArrea > 0 && $this->getAssestmentTypeStr() == 'Reassessment') {
+                } elseif ($diffArrea > 0 && $this->getAssestmentTypeStr() == 'Reassessment') {
                     $tax1 = 0;
                 }
                 $this->_floorsTaxes[$key] = [
@@ -858,12 +863,12 @@ class TaxCalculator
                 "tax2" => roundFigure($taxes->sum('tax2')),
                 "tax3" => roundFigure($taxes->sum('tax3')),
 
-                "waterBenefitTax"=>roundFigure($taxes->sum("waterBenefitTax")),
-                "waterBillTax"=>roundFigure($taxes->sum("waterBillTax")),
-                "spWaterCessTax"=>roundFigure($taxes->sum("spWaterCessTax")),
-                "drainCessTax"=>roundFigure($taxes->sum("drainCessTax")),
-                "lightCessTax"=>roundFigure($taxes->sum("lightCessTax")),
-                "majorBuildingTax"=>roundFigure($taxes->sum("majorBuildingTax")),
+                "waterBenefitTax" => roundFigure($taxes->sum("waterBenefitTax")),
+                "waterBillTax" => roundFigure($taxes->sum("waterBillTax")),
+                "spWaterCessTax" => roundFigure($taxes->sum("spWaterCessTax")),
+                "drainCessTax" => roundFigure($taxes->sum("drainCessTax")),
+                "lightCessTax" => roundFigure($taxes->sum("lightCessTax")),
+                "majorBuildingTax" => roundFigure($taxes->sum("majorBuildingTax")),
 
                 "adjustAmount" => roundFigure($taxes->sum("adjustAmount")),
                 "dueAmount" => roundFigure($taxes->sum("dueAmount")),
@@ -874,9 +879,9 @@ class TaxCalculator
                 + $annualTaxes['waterTax'] + $annualTaxes['cleanlinessTax'] + $annualTaxes['sewerageTax']
                 + $annualTaxes['treeTax'] + $annualTaxes['stateEducationTax'] + $annualTaxes['professionalTax']
                 + ($annualTaxes['openPloatTax'] ?? 0) + ($annualTaxes['waterBenefitTax'] ?? 0) + ($annualTaxes['waterBillTax'] ?? 0)
-                + ($annualTaxes['spWaterCessTax'] ?? 0) + ($annualTaxes['drainCessTax'] ?? 0) + ($annualTaxes['lightCessTax'] ?? 0) + ($annualTaxes['majorBuildingTax'] ?? 0) 
-                + ($annualTaxes['tax2'] ?? 0) +($annualTaxes['tax3'] ?? 0) + ($annualTaxes['tax1'] ?? 0) 
-                
+                + ($annualTaxes['spWaterCessTax'] ?? 0) + ($annualTaxes['drainCessTax'] ?? 0) + ($annualTaxes['lightCessTax'] ?? 0) + ($annualTaxes['majorBuildingTax'] ?? 0)
+                + ($annualTaxes['tax2'] ?? 0) + ($annualTaxes['tax3'] ?? 0) + ($annualTaxes['tax1'] ?? 0)
+
 
         );
         $annualTaxes['totalTax2'] = roundFigure(
@@ -884,8 +889,8 @@ class TaxCalculator
                 + $annualTaxes['waterTax'] + $annualTaxes['cleanlinessTax'] + $annualTaxes['sewerageTax']
                 + $annualTaxes['treeTax'] + $annualTaxes['stateEducationTax'] + $annualTaxes['professionalTax']
                 + ($annualTaxes['openPloatTax'] ?? 0) + ($annualTaxes['waterBenefitTax'] ?? 0) + ($annualTaxes['waterBillTax'] ?? 0)
-                + ($annualTaxes['spWaterCessTax'] ?? 0) + ($annualTaxes['drainCessTax'] ?? 0) + ($annualTaxes['lightCessTax'] ?? 0) + ($annualTaxes['majorBuildingTax'] ?? 0) 
-                + ($annualTaxes['tax2'] ?? 0) +($annualTaxes['tax3'] ?? 0) 
+                + ($annualTaxes['spWaterCessTax'] ?? 0) + ($annualTaxes['drainCessTax'] ?? 0) + ($annualTaxes['lightCessTax'] ?? 0) + ($annualTaxes['majorBuildingTax'] ?? 0)
+                + ($annualTaxes['tax2'] ?? 0) + ($annualTaxes['tax3'] ?? 0)
         );
         return $annualTaxes;
     }
@@ -1087,7 +1092,7 @@ class TaxCalculator
         }
         //end of changes
         // if (in_array($this->getAssestmentTypeStr(), ['Reassessment', 'Mutation', 'Amalgamation']) && $fyear) {
-            if (in_array($this->getAssestmentTypeStr(), ['Reassessment']) && $fyear) {
+        if (in_array($this->getAssestmentTypeStr(), ['Reassessment']) && $fyear) {
             $propProperties = PropProperty::find($this->_REQUEST->previousHoldingId);
             DB::enableQueryLog();
             $unPaidDemand = $propProperties->PropDueDemands()->where("fyear", "<", $fyear)->get();
@@ -1117,12 +1122,12 @@ class TaxCalculator
                     "tax1" => roundFigure($val["due_tax1"]),
                     "tax2" => roundFigure($val["due_tax2"]),
                     "tax3" => roundFigure($val["due_tax3"]),
-                    "waterBenefitTax" =>roundFigure($val["due_water_benefit"]),
-                    "waterBillTax" =>roundFigure($val["due_water_bill"]),
-                    "spWaterCessTax" =>roundFigure($val["due_sp_water_cess"]),
-                    "drainCessTax" =>roundFigure($val["due_drain_cess"]),
-                    "lightCessTax" =>roundFigure($val["due_light_cess"]),
-                    "majorBuildingTax" =>roundFigure($val["due_major_building"]),
+                    "waterBenefitTax" => roundFigure($val["due_water_benefit"]),
+                    "waterBillTax" => roundFigure($val["due_water_bill"]),
+                    "spWaterCessTax" => roundFigure($val["due_sp_water_cess"]),
+                    "drainCessTax" => roundFigure($val["due_drain_cess"]),
+                    "lightCessTax" => roundFigure($val["due_light_cess"]),
+                    "majorBuildingTax" => roundFigure($val["due_major_building"]),
                     "adjustAmount" => "0",
                     "dueAmount" => roundFigure($val["due_total_tax"]),
                     "totalTax" => roundFigure($val["due_total_tax"]),
@@ -1138,12 +1143,13 @@ class TaxCalculator
     }
 
     //prity pandey bifurcation tax calculation 16-09-24
-    public function generateBifurcationTaxAccOldPropDemand(){
+    public function generateBifurcationTaxAccOldPropDemand()
+    {
         $propProperties = PropProperty::find($this->_REQUEST->previousHoldingId);
         if (in_array($this->getAssestmentTypeStr(), ['Bifurcation']) && $propProperties) {
             $totalArea = $propProperties->area_of_plot;
             $bifurcatedArea = $this->_REQUEST->bifurcatedPlot;
-            if($this->_REQUEST->propertyType!=4){
+            if ($this->_REQUEST->propertyType != 4) {
                 $propFloor = PropFloor::where("property_id", $propProperties->id)
                     ->where('status', 1)
                     ->orderby('id')
@@ -1153,53 +1159,53 @@ class TaxCalculator
             }
             $onePercOfArea = $totalArea / 100;
             $percOfBifurcatedArea = round(($bifurcatedArea / $onePercOfArea), 2);
-            $unPaidDemand = $propProperties->PropDueDemands()->where("fyear","<",getFY())->get();
+            $unPaidDemand = $propProperties->PropDueDemands()->where("fyear", "<", getFY())->get();
             $fyearWiseTaxes = collect();
             foreach ($unPaidDemand as $val) {
                 $fyear = $val["fyear"];
                 $arr = [
-                    "percOfBifurcatedArea"=>$percOfBifurcatedArea,
-                    "alv"=> roundFigure(($val["alv"] / 100) * $percOfBifurcatedArea),
-                    "maintancePerc"=> "0",
-                    "maintantance10Perc"=> roundFigure(($val["due_maintanance_amt"] / 100) * $percOfBifurcatedArea),
-                    "valueAfterMaintance"=> "0",
-                    "agingPerc"=> "0",
-                    "agingAmt"=> roundFigure(($val["due_aging_amt"] / 100) * $percOfBifurcatedArea),
-                    "taxValue"=> "0",
-                    "generalTax"=> roundFigure(($val["due_general_tax"] / 100) * $percOfBifurcatedArea),
-                    "roadTax"=> roundFigure(($val["due_road_tax"] / 100) * $percOfBifurcatedArea),
-                    "firefightingTax"=> roundFigure(($val["due_firefighting_tax"] / 100) * $percOfBifurcatedArea),
-                    "educationTax"=> roundFigure(($val["due_education_tax"] / 100) * $percOfBifurcatedArea),
-                    "waterTax"=> roundFigure(($val["due_water_tax"] / 100) * $percOfBifurcatedArea),
-                    "cleanlinessTax"=> roundFigure(($val["due_cleanliness_tax"] / 100) * $percOfBifurcatedArea),
-                    "sewerageTax"=> roundFigure(($val["due_sewarage_tax"] / 100) * $percOfBifurcatedArea),
-                    "treeTax"=> roundFigure(($val["due_tree_tax"] / 100) * $percOfBifurcatedArea),
-                    "stateEducationTaxPerc"=> "0",
-                    "stateEducationTax"=> roundFigure(($val["due_sp_education_tax"] / 100) * $percOfBifurcatedArea),
-                    "professionalTaxPerc"=> "0",
-                    "professionalTax"=> roundFigure(($val["due_professional_tax"] / 100) * $percOfBifurcatedArea),
-                    "openPloatTax"=> roundFigure(($val["due_open_ploat_tax"] / 100) * $percOfBifurcatedArea),
-                    "tax1"=> roundFigure(($val["due_tax1"] / 100) * $percOfBifurcatedArea),
+                    "percOfBifurcatedArea" => $percOfBifurcatedArea,
+                    "alv" => roundFigure(($val["alv"] / 100) * $percOfBifurcatedArea),
+                    "maintancePerc" => "0",
+                    "maintantance10Perc" => roundFigure(($val["due_maintanance_amt"] / 100) * $percOfBifurcatedArea),
+                    "valueAfterMaintance" => "0",
+                    "agingPerc" => "0",
+                    "agingAmt" => roundFigure(($val["due_aging_amt"] / 100) * $percOfBifurcatedArea),
+                    "taxValue" => "0",
+                    "generalTax" => roundFigure(($val["due_general_tax"] / 100) * $percOfBifurcatedArea),
+                    "roadTax" => roundFigure(($val["due_road_tax"] / 100) * $percOfBifurcatedArea),
+                    "firefightingTax" => roundFigure(($val["due_firefighting_tax"] / 100) * $percOfBifurcatedArea),
+                    "educationTax" => roundFigure(($val["due_education_tax"] / 100) * $percOfBifurcatedArea),
+                    "waterTax" => roundFigure(($val["due_water_tax"] / 100) * $percOfBifurcatedArea),
+                    "cleanlinessTax" => roundFigure(($val["due_cleanliness_tax"] / 100) * $percOfBifurcatedArea),
+                    "sewerageTax" => roundFigure(($val["due_sewarage_tax"] / 100) * $percOfBifurcatedArea),
+                    "treeTax" => roundFigure(($val["due_tree_tax"] / 100) * $percOfBifurcatedArea),
+                    "stateEducationTaxPerc" => "0",
+                    "stateEducationTax" => roundFigure(($val["due_sp_education_tax"] / 100) * $percOfBifurcatedArea),
+                    "professionalTaxPerc" => "0",
+                    "professionalTax" => roundFigure(($val["due_professional_tax"] / 100) * $percOfBifurcatedArea),
+                    "openPloatTax" => roundFigure(($val["due_open_ploat_tax"] / 100) * $percOfBifurcatedArea),
+                    "tax1" => roundFigure(($val["due_tax1"] / 100) * $percOfBifurcatedArea),
                     "tax2" => roundFigure(($val["due_tax2"] / 100) * $percOfBifurcatedArea),
                     "tax3" => roundFigure(($val["due_tax3"] / 100) * $percOfBifurcatedArea),
-                    "waterBenefitTax" =>roundFigure(($val["due_water_benefit"] / 100) * $percOfBifurcatedArea),
-                    "waterBillTax" =>roundFigure(($val["due_water_bill"] / 100) * $percOfBifurcatedArea),
-                    "spWaterCessTax" =>roundFigure(($val["due_sp_water_cess"] / 100) * $percOfBifurcatedArea),
-                    "drainCessTax" =>roundFigure(($val["due_drain_cess"] / 100) * $percOfBifurcatedArea),
-                    "lightCessTax" =>roundFigure(($val["due_light_cess"] / 100) * $percOfBifurcatedArea),
-                    "majorBuildingTax" =>roundFigure(($val["due_major_building"] / 100) * $percOfBifurcatedArea),
-                    "adjustAmount"=> "0",
-                    "dueAmount"=> roundFigure(($val["due_total_tax"] / 100) * $percOfBifurcatedArea),
-                    "totalTax"=> roundFigure(($val["due_total_tax"] / 100) * $percOfBifurcatedArea),
-                    "totalTax2"=> roundFigure(($val["due_total_tax"] / 100) * $percOfBifurcatedArea),
-                    "totalFloar"=>"0" ,
-                    "fyear"=> $val["fyear"]
+                    "waterBenefitTax" => roundFigure(($val["due_water_benefit"] / 100) * $percOfBifurcatedArea),
+                    "waterBillTax" => roundFigure(($val["due_water_bill"] / 100) * $percOfBifurcatedArea),
+                    "spWaterCessTax" => roundFigure(($val["due_sp_water_cess"] / 100) * $percOfBifurcatedArea),
+                    "drainCessTax" => roundFigure(($val["due_drain_cess"] / 100) * $percOfBifurcatedArea),
+                    "lightCessTax" => roundFigure(($val["due_light_cess"] / 100) * $percOfBifurcatedArea),
+                    "majorBuildingTax" => roundFigure(($val["due_major_building"] / 100) * $percOfBifurcatedArea),
+                    "adjustAmount" => "0",
+                    "dueAmount" => roundFigure(($val["due_total_tax"] / 100) * $percOfBifurcatedArea),
+                    "totalTax" => roundFigure(($val["due_total_tax"] / 100) * $percOfBifurcatedArea),
+                    "totalTax2" => roundFigure(($val["due_total_tax"] / 100) * $percOfBifurcatedArea),
+                    "totalFloar" => "0",
+                    "fyear" => $val["fyear"]
                 ];
                 $this->_GRID['fyearWiseTaxes'][$fyear] = $arr;
             }
             $this->_GRID['fyearWiseTaxes'] = collect($this->_GRID['fyearWiseTaxes'])->sortBy("fyear");
         }
-        }
+    }
 
     /**
      * | Generate Payable Amount (5)
