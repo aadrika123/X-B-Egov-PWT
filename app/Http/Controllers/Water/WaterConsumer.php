@@ -1980,9 +1980,9 @@ class WaterConsumer extends Controller
             if ($lastPaidDemand && $lastPaidDemand->demand_upto > $request->connectionDate) {
                 throw new Exception("Demand Already paid Upto " . Carbon::parse($lastPaidDemand->demand_upto)->format("d-m-Y") . ". Connection date can not befor or equal to last demand paid upto date");
             }
-            if ($connectinDtl && $connectinDtl->connection_type != 3 && (($lastMeterreading->initial_reading ?? 0) == $request->oldMeterFinalReading)) {
-                throw new Exception("old meter reading can not less than previouse reading");
-            }
+            // if ($connectinDtl && $connectinDtl->connection_type != 3 && (($lastMeterreading->initial_reading ?? 0) >= $request->oldMeterFinalReading)) {
+            //     throw new Exception("old meter reading can not less than previouse reading");
+            // }
             $removeDemand = collect($allUnpaidDemand)->where("demand_upto", ">=", $request->connectionDate); #->where("generation_date",">=",$request->connectionDate);
             $demandRquest = new Request(
                 [
@@ -2003,12 +2003,16 @@ class WaterConsumer extends Controller
             $endOfPrivMonthEnd = Carbon::parse($request->connectionDate)->subMonth()->endOfMonth()->format("Y-m-d");
             $lastDemand = $m_demand->akolaCheckConsumerDemand($consumerDtl->id)->get()->sortByDesc("demand_upto")->first();
             $currentDemandUpdotoDate = Carbon::parse($lastDemand->demand_upto)->format("Y-m-d");
-            $demandGenrationRes = $this->saveGenerateConsumerDemand($demandRquest);
-            if (!$demandGenrationRes->original["status"] && ($endOfPrivMonthEnd > $currentDemandUpdotoDate)) {
-                throw new Exception($demandGenrationRes->original["message"]);
+            // $demandGenrationRes = $this->saveGenerateConsumerDemand($demandRquest);
+            // if (!$demandGenrationRes->original["status"] && ($endOfPrivMonthEnd > $currentDemandUpdotoDate)) {
+            //     throw new Exception($demandGenrationRes->original["message"]);
+            // }
+            $demandGenrationRes = $this->saveDocument($request, $meterRefImageName);
+            if (!$demandGenrationRes) {
+                throw new Exception('Internal Server Error');
             }
             $request->merge(['finalRading'      => $request->newMeterInitialReading]);
-            $documentPath = $demandGenrationRes->original["data"];
+            $documentPath = $demandGenrationRes;
             $oldFile = public_path() . "/" . ($documentPath["relaivePath"] ?? "") . "/" . ($documentPath["document"] ?? "");
             $neFileName =  public_path() . "/" . ($documentPath["relaivePath"] ?? "") . "/meter_doc" . "/" . ($documentPath["document"] ?? "");
             $meterDocPath = public_path() . "/" . ($documentPath["relaivePath"] ?? "") . "/meter_doc2";
