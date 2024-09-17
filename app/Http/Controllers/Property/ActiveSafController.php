@@ -979,7 +979,6 @@ class ActiveSafController extends Controller
                 $data = $this->addjustVerifySafDtls($data, $safVerification);
                 $data = $this->addjustVerifySafDtlVal($data);
             }
-            // $data->
             if ($data->payment_status == 0) {
                 $data->current_role_name = null;
                 $data->current_role_name2 = "Payment is Pending";
