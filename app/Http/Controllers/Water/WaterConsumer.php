@@ -1980,7 +1980,7 @@ class WaterConsumer extends Controller
             if ($lastPaidDemand && $lastPaidDemand->demand_upto > $request->connectionDate) {
                 throw new Exception("Demand Already paid Upto " . Carbon::parse($lastPaidDemand->demand_upto)->format("d-m-Y") . ". Connection date can not befor or equal to last demand paid upto date");
             }
-            if ($connectinDtl && $connectinDtl->connection_type != 3 && (($lastMeterreading->initial_reading ?? 0) >= $request->oldMeterFinalReading)) {
+            if ($connectinDtl && $connectinDtl->connection_type != 3 && (($lastMeterreading->initial_reading ?? 0) == $request->oldMeterFinalReading)) {
                 throw new Exception("old meter reading can not less than previouse reading");
             }
             $removeDemand = collect($allUnpaidDemand)->where("demand_upto", ">=", $request->connectionDate); #->where("generation_date",">=",$request->connectionDate);
