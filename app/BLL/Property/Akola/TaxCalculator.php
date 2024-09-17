@@ -283,7 +283,7 @@ class TaxCalculator
 
                 //chnage prity
                 $alv = ($item->occupancyType == 2 && $item->rentAmount === null)
-                    ? roundFigure($floorBuildupArea * $rate * 1.5)
+                    ? roundFigure($floorBuildupArea * $rate * 2.5)
                     : roundFigure($item->rentAmount * 12);
 
                 //
@@ -391,7 +391,7 @@ class TaxCalculator
 
                 //chnage prity
                 $alv = ($item->occupancyType == 2 && $item->rentAmount === null)
-                    ? roundFigure($floorBuildupArea * $rate * 1.5)
+                    ? roundFigure($floorBuildupArea * $rate * 2.5)
                     : roundFigure($item->rentAmount * 12);
 
                 //
