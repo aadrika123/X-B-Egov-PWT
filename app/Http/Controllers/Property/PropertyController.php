@@ -1097,6 +1097,9 @@ class PropertyController extends Controller
                 $msg['inWorkflow'] = true;
                 $msg['currentRole'] = $data->role_name;
                 $msg['message'] = "Your " . $data->assessment_type . " application is still in workflow and pending at " . $data->role_name . ". Please Track your application with " . $data->application_no;
+                if($data->role_name == "SENIOR LIPIK"){
+                    $msg['message'] = "Your " . $data->assessment_type . " application is still in workflow and pending at " . "NAGAR RACHNA" . ". Please Track your application with " . $data->application_no;
+                }
             } else {
                 $sms = "";
                 $req->merge(["propId" => $propertyId]);
