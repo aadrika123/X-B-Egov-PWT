@@ -264,8 +264,18 @@ class TaxCalculator
             }
             $AllDiffArrea = ($totalBuildupArea - $this->_REQUEST->nakshaAreaOfPlot) > 0 ? $totalBuildupArea - $this->_REQUEST->nakshaAreaOfPlot : 0;
 
+            // if ($this->getAssestmentTypeStr() == 'Reassessment') {
+            //     $newFloorArea = collect($this->_REQUEST->floor)->whereNull('propFloorDetailId')->sum("buildupArea");
+            //     $AllDiffArrea = ($newFloorArea - $this->_REQUEST->nakshaAreaOfPlot) > 0 ? $newFloorArea - $this->_REQUEST->nakshaAreaOfPlot : 0;
+            // }
+
             if ($this->getAssestmentTypeStr() == 'Reassessment') {
-                $newFloorArea = collect($this->_REQUEST->floor)->whereNull('propFloorDetailId')->sum("buildupArea");
+                $mPropFloors = new PropFloor();
+                $oldProperty = PropProperty::find($this->_REQUEST->previousHoldingId);
+                $floors = $mPropFloors->getPropFloors($oldProperty->id);
+                $totalFloorArea = collect($floors)->sum("buildupArea");
+                $totalBuildupArea = collect($this->_REQUEST->floor)->sum("buildupArea");
+                $newFloorArea = $totalBuildupArea - $totalFloorArea;
                 $AllDiffArrea = ($newFloorArea - $this->_REQUEST->nakshaAreaOfPlot) > 0 ? $newFloorArea - $this->_REQUEST->nakshaAreaOfPlot : 0;
             }
 
