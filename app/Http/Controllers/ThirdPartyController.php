@@ -170,7 +170,7 @@ class ThirdPartyController extends Controller
             ];
             $mTblSmsLog->create($smsReqs);
 
-            return responseMsgs(true, "OTP send to your mobile No!", $generateOtp, "", "01", ".ms", "POST", "");
+            return responseMsgs(true, "OTP send to your mobile No!", "", "", "01", ".ms", "POST", "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "0101", "01", ".ms", "POST", "");
         }
