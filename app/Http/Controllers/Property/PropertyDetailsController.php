@@ -81,7 +81,7 @@ class PropertyDetailsController extends Controller
 
                         $active = $mPropActiveSaf->searchSafs()
                             ->where('prop_active_safs.saf_no', strtoupper($applicationNo))
-                            ->where('prop_active_safs.citizen_id', null)
+                            //->where('prop_active_safs.citizen_id', null)
                             ->groupby('prop_active_safs.id', 'u.ward_name', 'uu.ward_name', 'wf_roles.role_name');
 
                         // $details = $approved->union($active)->get();
