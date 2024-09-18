@@ -1048,7 +1048,7 @@ class PropertyController extends Controller
                 case 'Bifurcation':
                     $data = PropActiveSaf::select('prop_active_safs.id', 'role_name', 'saf_no as application_no', 'assessment_type')
                         ->join('wf_roles', 'wf_roles.id', 'prop_active_safs.current_role')
-                        ->where('assessment_type', 'Mutation')
+                        ->where('assessment_type', 'Bifurcation')
                         ->where('previous_holding_id', $propertyId)
                         ->where('prop_active_safs.status', 1)
                         ->first();
