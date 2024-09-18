@@ -292,9 +292,7 @@ class TaxCalculator
                 $alv = ($item->occupancyType == 2 && isset($item->rentAmount)) ? roundFigure($item->rentAmount * 12) : roundFigure($floorBuildupArea * $rate);
 
                 //chnage prity
-                $alv = ($item->occupancyType == 2 && $item->rentAmount === null)
-                    ? roundFigure($floorBuildupArea * $rate * 2.5)
-                    : roundFigure($item->rentAmount * 12);
+                $alv = ($item->occupancyType == 2 && $item->rentAmount === null)? roundFigure($floorBuildupArea * $rate * 2.5): roundFigure($floorBuildupArea * $rate);
 
                 //
                 $maintance10Perc = roundFigure(($alv * $this->_maintancePerc) / 100);
@@ -402,7 +400,7 @@ class TaxCalculator
                 //chnage prity
                 $alv = ($item->occupancyType == 2 && $item->rentAmount === null)
                     ? roundFigure($floorBuildupArea * $rate * 2.5)
-                    : roundFigure($item->rentAmount * 12);
+                    : roundFigure($floorBuildupArea * $rate);
 
                 //
                 $maintance10Perc = roundFigure(($alv * $this->_maintancePerc) / 100);
