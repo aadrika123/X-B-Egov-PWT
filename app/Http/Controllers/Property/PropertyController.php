@@ -1016,7 +1016,7 @@ class PropertyController extends Controller
         $validated = Validator::make(
             $req->all(),
             [
-                'type' => 'required|in:Reassesment,Mutation,Concession,Objection,Harvesting',
+                'type' => 'required|in:Reassesment,Mutation,Concession,Objection,Harvesting,Bifurcation',
                 //Bifurcation',
                 'propertyId' => 'required|numeric',
             ]
@@ -1102,7 +1102,7 @@ class PropertyController extends Controller
                 $req->merge(["propId" => $propertyId]);
                 $getHoldingDues = new GetHoldingDuesV2;
                 $demand = $getHoldingDues->getDues($req);
-                if (in_array($req->type, ['Mutation', 'Concession', 'Objection', 'Harvesting', 'Bifurcation'])) {
+                if (in_array($req->type, ['Mutation', 'Concession', 'Objection', 'Harvesting'])) {
                     if (($demand['previousInterest']) > 0 || ($demand['arrear']) > 0) {
                         $sms = "Please Clear The Previous Arrear Amount Of ₹" . $demand['arrearPayableAmt'] . " Before Applying The Application.";
                     }
