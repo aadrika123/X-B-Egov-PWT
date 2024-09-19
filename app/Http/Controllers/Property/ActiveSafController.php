@@ -2529,6 +2529,7 @@ class ActiveSafController extends Controller
         ]);
 
         try {
+            $userId = authUser($req)->id;
             $moduleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $safRefTableName = Config::get('PropertyConstaint.SAF_REF_TABLE');
             $saf = PropActiveSaf::findOrFail($req->applicationId);
@@ -2566,13 +2567,45 @@ class ActiveSafController extends Controller
 
             $saf->save();
 
+            if ($saf->parked = true && $saf->citizen_id) {
+                $metaReqs['receiverRoleId'] = $saf->citizen_id; // Send back to the citizen
+            } else {
+                $metaReqs['receiverRoleId'] = 11; // Send to role id 11 (fallback)
+            }
+            // $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            // $metaReqs['workflowId'] = $saf->workflow_id;
+            // $metaReqs['refTableDotId'] = $safRefTableName;
+            // $metaReqs['refTableIdValue'] = $req->applicationId;
+            // $metaReqs['user_id'] = authUser($req)->id;
+            // $metaReqs['verificationStatus'] = 2;
+            // $metaReqs['senderRoleId'] = $senderRoleId;
+            // $req->request->add($metaReqs);
+            // $track->saveTrack($req);
+
+            //changes by prity pandey
+            $preWorkflowReq = [
+                'workflowId' => $saf->workflow_id,
+                'refTableDotId' => Config::get('PropertyConstaint.SAF_REF_TABLE'),
+                'refTableIdValue' => $req->applicationId,
+                'receiverRoleId' => $senderRoleId
+            ];
+            $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
+            if ($previousWorkflowTrack && !$previousWorkflowTrack->forward_date) {
+                $previousWorkflowTrack->update([
+                    'forward_date' => Carbon::parse($previousWorkflowTrack->created_at)->format('Y-m-d'),
+                    'forward_time' => Carbon::parse($previousWorkflowTrack->created_at)->format('H:i:s')
+                ]);
+            }
+
             $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
             $metaReqs['workflowId'] = $saf->workflow_id;
-            $metaReqs['refTableDotId'] = $safRefTableName;
+            $metaReqs['refTableDotId'] = Config::get('PropertyConstaint.SAF_REF_TABLE');
             $metaReqs['refTableIdValue'] = $req->applicationId;
-            $metaReqs['user_id'] = authUser($req)->id;
-            $metaReqs['verificationStatus'] = 2;
             $metaReqs['senderRoleId'] = $senderRoleId;
+            $metaReqs['user_id'] = $userId;
+            $metaReqs['forwardDate'] = $this->_todayDate->format('Y-m-d');
+            $metaReqs['forwardTime'] = $this->_todayDate->format('H:i:s');
+            $metaReqs['trackDate'] = $previousWorkflowTrack ? $previousWorkflowTrack->forward_date : $this->_todayDate->format('Y-m-d H:i:s');
             $req->request->add($metaReqs);
             $track->saveTrack($req);
 
