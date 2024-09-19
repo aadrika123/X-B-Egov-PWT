@@ -3210,8 +3210,6 @@ class NewConnectionController extends Controller
                 
 
                 $safRepo = app()->make(iSafRepository::class); // Resolve iSafRepository
-
-                
                 $holdingDuesController = new HoldingTaxController($safRepo); // Pass safRepo to the controller constructor
 
                 # Prepare request for holding dues
