@@ -1605,17 +1605,32 @@ class ActiveSafController extends Controller
             }
 
             $saf->save();
-            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
-            $metaReqs['workflowId'] = $saf->workflow_id;
-            $metaReqs['refTableDotId'] = Config::get('PropertyConstaint.SAF_REF_TABLE');
-            $metaReqs['refTableIdValue'] = $request->applicationId;
-            $metaReqs['senderRoleId'] = $senderRoleId;
-            $metaReqs['user_id'] = $userId;
-            $metaReqs['trackDate'] = $this->_todayDate->format('Y-m-d H:i:s');
-            $request->request->add($metaReqs);
-            $track->saveTrack($request);
+            // $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            // $metaReqs['workflowId'] = $saf->workflow_id;
+            // $metaReqs['refTableDotId'] = Config::get('PropertyConstaint.SAF_REF_TABLE');
+            // $metaReqs['refTableIdValue'] = $request->applicationId;
+            // $metaReqs['senderRoleId'] = $senderRoleId;
+            // $metaReqs['user_id'] = $userId;
+            // $metaReqs['trackDate'] = $this->_todayDate->format('Y-m-d H:i:s');
+            // $request->request->add($metaReqs);
+            // $track->saveTrack($request);
 
-            // Updation of Received Date
+            // // Updation of Received Date
+            // $preWorkflowReq = [
+            //     'workflowId' => $saf->workflow_id,
+            //     'refTableDotId' => Config::get('PropertyConstaint.SAF_REF_TABLE'),
+            //     'refTableIdValue' => $request->applicationId,
+            //     'receiverRoleId' => $senderRoleId
+            // ];
+            // $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
+            // if ($previousWorkflowTrack) {
+            //     $previousWorkflowTrack->update([
+            //         'forward_date' => $this->_todayDate->format('Y-m-d'),
+            //         'forward_time' => $this->_todayDate->format('H:i:s')
+            //     ]);
+            // }
+
+            //changes by prity pandey
             $preWorkflowReq = [
                 'workflowId' => $saf->workflow_id,
                 'refTableDotId' => Config::get('PropertyConstaint.SAF_REF_TABLE'),
@@ -1623,12 +1638,24 @@ class ActiveSafController extends Controller
                 'receiverRoleId' => $senderRoleId
             ];
             $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
-            if ($previousWorkflowTrack) {
+            if ($previousWorkflowTrack && !$previousWorkflowTrack->forward_date) {
                 $previousWorkflowTrack->update([
-                    'forward_date' => $this->_todayDate->format('Y-m-d'),
-                    'forward_time' => $this->_todayDate->format('H:i:s')
+                    'forward_date' => Carbon::parse($previousWorkflowTrack->created_at)->format('Y-m-d'),
+                    'forward_time' => Carbon::parse($previousWorkflowTrack->created_at)->format('H:i:s')
                 ]);
             }
+
+            $metaReqs['moduleId'] = Config::get('module-constants.PROPERTY_MODULE_ID');
+            $metaReqs['workflowId'] = $saf->workflow_id;
+            $metaReqs['refTableDotId'] = Config::get('PropertyConstaint.SAF_REF_TABLE');
+            $metaReqs['refTableIdValue'] = $request->applicationId;
+            $metaReqs['senderRoleId'] = $senderRoleId;
+            $metaReqs['user_id'] = $userId;
+            $metaReqs['forwardDate'] = $this->_todayDate->format('Y-m-d');
+            $metaReqs['forwardTime'] = $this->_todayDate->format('H:i:s');
+            $metaReqs['trackDate'] = $previousWorkflowTrack ? $previousWorkflowTrack->forward_date : $this->_todayDate->format('Y-m-d H:i:s');
+            $request->request->add($metaReqs);
+            $track->saveTrack($request);
             DB::commit();
             DB::connection('pgsql_master')->commit();
             return responseMsgs(true, "Successfully " . $request->action . " The Application!!", $samHoldingDtls, "010109", "1.0", "", "POST", $request->deviceId);
