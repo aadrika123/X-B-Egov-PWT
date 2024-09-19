@@ -3205,27 +3205,32 @@ class NewConnectionController extends Controller
                 throw new Exception('holding not found !');
             }
             $safID = $holdingDetails->saf_id;
-            # Resolve iSafRepository and HoldingTaxController using Laravel's service container
-            $safRepo = app()->make(iSafRepository::class); // Resolve iSafRepository
-            $holdingDuesController = new HoldingTaxController($safRepo); // Pass safRepo to the controller constructor
+            if ($request->modification == null && $request->complain == null) {
 
-            # Prepare request for holding dues
-            $holdingDuesRequest = new Request(['propId' => $holdingDetails->propId]); // Pass safID as propId to the request
-            $holdingDuesRequest->replace(['propId' => $holdingDetails->propId]); // Explicitly set propId in the request
+                
 
-            # Call the getHoldingDues function with the new request object
-            $holdingDuesResponse = $holdingDuesController->getHoldingDues($holdingDuesRequest);
+                $safRepo = app()->make(iSafRepository::class); // Resolve iSafRepository
+                $holdingDuesController = new HoldingTaxController($safRepo); // Pass safRepo to the controller constructor
 
-            # Handle the response from getHoldingDues
-            if ($holdingDuesResponse->getStatusCode() != 200) {
-                return $holdingDuesResponse;  // Return the error response if any
+                # Prepare request for holding dues
+                $holdingDuesRequest = new Request(['propId' => $holdingDetails->propId]); // Pass safID as propId to the request
+                $holdingDuesRequest->replace(['propId' => $holdingDetails->propId]); // Explicitly set propId in the request
+
+                # Call the getHoldingDues function with the new request object
+                $holdingDuesResponse = $holdingDuesController->getHoldingDues($holdingDuesRequest);
+
+                # Handle the response from getHoldingDues
+                if ($holdingDuesResponse->getStatusCode() != 200) {
+                    return $holdingDuesResponse;  // Return the error response if any
+                }
+                # Access the data from the response
+                $responseData = json_decode($holdingDuesResponse->getContent(), true); // Convert the response JSON into an associative array
+
+                if (isset($responseData['data']['payableAmt']) && $responseData['data']['payableAmt'] != 0) {
+                    throw new Exception('Your property tax is outstanding. Please clear it before applying for a new connection');
+                }
             }
-            # Access the data from the response
-            $responseData = json_decode($holdingDuesResponse->getContent(), true); // Convert the response JSON into an associative array
 
-            if (isset($responseData['data']['payableAmt']) && $responseData['data']['payableAmt'] != 0) {
-                throw new Exception('Your property tax is outstanding. Please clear it before applying for a new connection');
-            }
             #get saf details 
             $safDetails = $mActiveSafs->getSafNo($safID);
             if (!$safDetails)
