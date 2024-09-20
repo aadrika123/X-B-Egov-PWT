@@ -2594,7 +2594,7 @@ class ActiveSafController extends Controller
             $saf->save();
 
             if ($saf->parked = true && $saf->citizen_id) {
-                $metaReqs['receiverRoleId'] = $saf->citizen_id; // Send back to the citizen
+                $metaReqs['receiverRoleId'] = null; // Send back to the citizen
             } else {
                 $metaReqs['receiverRoleId'] = 11; // Send to role id 11 (fallback)
             }
