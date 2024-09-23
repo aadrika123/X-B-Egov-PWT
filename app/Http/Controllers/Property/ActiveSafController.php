@@ -1755,10 +1755,10 @@ class ActiveSafController extends Controller
                 if (!$gioTag->isEmpty()) {
                     $saf->is_geo_tagged = true;
                 }
-                if (!$saf->is_field_verified && $saf->prop_type_mstr_id != 4 && $saf->current_role == $wfLevels['UTC']) #make option UTC Verification
-                {
-                    $saf->is_field_verified = true;
-                }
+                // if (!$saf->is_field_verified && $saf->prop_type_mstr_id != 4 && $saf->current_role == $wfLevels['UTC']) #make option UTC Verification
+                // {
+                //     $saf->is_field_verified = true;
+                // }
                 $saf->update();
 
                 $samHoldingDtls = $this->checkPostCondition($senderRoleId, $wfLevels, $saf, $wfMstrId, $userId);          // Check Post Next level condition
