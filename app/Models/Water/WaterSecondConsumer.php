@@ -501,7 +501,9 @@ class WaterSecondConsumer extends Model
             ->where('water_second_consumers.id', $applicationId)
             ->where('water_second_consumers.status', 1)
             ->orderBy('water_consumer_initial_meters.id', 'DESC')
+            ->orderByDesc('water_consumer_meters.id')
             ->groupBy(
+                'water_consumer_meters.id',
                 'water_consumer_owners.id',
                 'water_second_consumers.id',
                 'water_second_consumers.consumer_no',
