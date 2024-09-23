@@ -759,10 +759,10 @@ class ActiveSafController extends Controller
                     $data = $mPropSaf->getSafDtls()
                         ->where('prop_safs.id', $req->applicationId)
                         ->first();
-                        if (!empty($data)) {
-                            $data->current_role_name = 'Approved By ' . $data->current_role_name;
-                            $approveDate = $data->saf_approved_date ?? null; // Safely set $approveDate if available
-                        }
+                    if (!empty($data)) {
+                        $data->current_role_name = 'Approved By ' . $data->current_role_name;
+                        $approveDate = $data->saf_approved_date ?? null; // Safely set $approveDate if available
+                    }
                 }
             }
             if ($req->safNo) {                                  // <-------- Search By SAF No
@@ -774,10 +774,10 @@ class ActiveSafController extends Controller
                     $data = $mPropSaf->getSafDtls()
                         ->where('prop_safs.saf_no', $req->applicationId)
                         ->first();
-                        if (!empty($data)) {
-                            $data->current_role_name = 'Approved By ' . $data->current_role_name;
-                            $approveDate = $data->saf_approved_date ?? null; // Safely set $approveDate if available
-                        }
+                    if (!empty($data)) {
+                        $data->current_role_name = 'Approved By ' . $data->current_role_name;
+                        $approveDate = $data->saf_approved_date ?? null; // Safely set $approveDate if available
+                    }
                 }
             }
 
@@ -836,8 +836,12 @@ class ActiveSafController extends Controller
             $fullDetailsData['doc_verify_status'] = $data->doc_verify_status;
             $fullDetailsData['doc_upload_status'] = $data->doc_upload_status;
             $fullDetailsData['payment_status'] = $data->payment_status;
-            $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement, $propertyElement, 
-            $corrElement, $electElement]);
+            $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([
+                $basicElement,
+                $propertyElement,
+                $corrElement,
+                $electElement
+            ]);
             $fullDetailsData['approveDate'] = $approveDate;
             // Table Array
             // Owner Details
@@ -959,8 +963,8 @@ class ActiveSafController extends Controller
                 ->first();
             // if (!$data)
             // throw new Exception("Application Not Found");
-            if(collect($data)->isNotEmpty()){
-            $assessmentType = $data->assessment_type;
+            if (collect($data)->isNotEmpty()) {
+                $assessmentType = $data->assessment_type;
             }
             if (collect($data)->isEmpty()) {
                 $data = $mPropSaf->getSafDtls()
@@ -1046,11 +1050,11 @@ class ActiveSafController extends Controller
             if ($data['prop_type_mstr_id'] != 4) {
                 $data["builtup_area"] = $getFloorDtls->sum("builtup_area");
             }
-            if(isset($assessmentType) && $assessmentType == "Reassessment"){
+            if (isset($assessmentType) && $assessmentType == "Reassessment") {
                 $data["builtup_area"] = $getFloorDtls->whereNotNull('prop_floor_details_id')->sum("builtup_area");
                 $data["new_builtup_area"] = $getFloorDtls->whereNull('prop_floor_details_id')->sum("builtup_area");
             }
-            
+
             $data['floors'] = $getFloorDtls;
             $data["tranDtl"] = $mPropTransaction->getSafTranList($data['id']);
             $data["userDtl"] = [
@@ -1637,7 +1641,7 @@ class ActiveSafController extends Controller
                 'refTableIdValue' => $request->applicationId,
                 'receiverRoleId' => $senderRoleId
             ];
-            $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
+            $previousWorkflowTrack = $track->getLastWfTrackByRefId($preWorkflowReq);
             if ($previousWorkflowTrack && !$previousWorkflowTrack->forward_date) {
                 $previousWorkflowTrack->update([
                     'forward_date' => Carbon::parse($previousWorkflowTrack->created_at)->format('Y-m-d'),
@@ -1653,7 +1657,7 @@ class ActiveSafController extends Controller
             $metaReqs['user_id'] = $userId;
             $metaReqs['forwardDate'] = $this->_todayDate->format('Y-m-d');
             $metaReqs['forwardTime'] = $this->_todayDate->format('H:i:s');
-            $metaReqs['trackDate'] = $previousWorkflowTrack ? $previousWorkflowTrack->forward_date : $this->_todayDate->format('Y-m-d H:i:s');
+            $metaReqs['trackDate'] = $previousWorkflowTrack ? Carbon::parse($previousWorkflowTrack->forward_date . " " . $previousWorkflowTrack->forward_time)->format('Y-m-d H:i:s') : $this->_todayDate->format('Y-m-d H:i:s');
             $request->request->add($metaReqs);
             $track->saveTrack($request);
             DB::commit();
@@ -1850,14 +1854,14 @@ class ActiveSafController extends Controller
             //         'forward_time' => $this->_todayDate->format('H:i:s')
             //     ]);
             // }
-             //changes by prity pandey
-             $preWorkflowReq = [
+            //changes by prity pandey
+            $preWorkflowReq = [
                 'workflowId' => $saf->workflow_id,
                 'refTableDotId' => Config::get('PropertyConstaint.SAF_REF_TABLE'),
                 'refTableIdValue' => $request->applicationId,
                 'receiverRoleId' => $senderRoleId
             ];
-            $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
+            $previousWorkflowTrack = $track->getLastWfTrackByRefId($preWorkflowReq);
             if ($previousWorkflowTrack && !$previousWorkflowTrack->forward_date) {
                 $previousWorkflowTrack->update([
                     'forward_date' => Carbon::parse($previousWorkflowTrack->created_at)->format('Y-m-d'),
@@ -1873,7 +1877,7 @@ class ActiveSafController extends Controller
             $metaReqs['user_id'] = $userId;
             $metaReqs['forwardDate'] = $this->_todayDate->format('Y-m-d');
             $metaReqs['forwardTime'] = $this->_todayDate->format('H:i:s');
-            $metaReqs['trackDate'] = $previousWorkflowTrack ? $previousWorkflowTrack->forward_date : $this->_todayDate->format('Y-m-d H:i:s');
+            $metaReqs['trackDate'] = $previousWorkflowTrack ? Carbon::parse($previousWorkflowTrack->forward_date . " " . $previousWorkflowTrack->forward_time)->format('Y-m-d H:i:s') : $this->_todayDate->format('Y-m-d H:i:s');
             $request->request->add($metaReqs);
             $track->saveTrack($request);
             DB::commit();
@@ -2615,7 +2619,7 @@ class ActiveSafController extends Controller
                 'refTableIdValue' => $req->applicationId,
                 'receiverRoleId' => $senderRoleId
             ];
-            $previousWorkflowTrack = $track->getWfTrackByRefId($preWorkflowReq);
+            $previousWorkflowTrack = $track->getLastWfTrackByRefId($preWorkflowReq);
             if ($previousWorkflowTrack && !$previousWorkflowTrack->forward_date) {
                 $previousWorkflowTrack->update([
                     'forward_date' => Carbon::parse($previousWorkflowTrack->created_at)->format('Y-m-d'),
@@ -2631,7 +2635,7 @@ class ActiveSafController extends Controller
             $metaReqs['user_id'] = $userId;
             $metaReqs['forwardDate'] = $this->_todayDate->format('Y-m-d');
             $metaReqs['forwardTime'] = $this->_todayDate->format('H:i:s');
-            $metaReqs['trackDate'] = $previousWorkflowTrack ? $previousWorkflowTrack->forward_date : $this->_todayDate->format('Y-m-d H:i:s');
+            $metaReqs['trackDate'] = $previousWorkflowTrack ? Carbon::parse($previousWorkflowTrack->forward_date." ".$previousWorkflowTrack->forward_time)->format('Y-m-d H:i:s') : $this->_todayDate->format('Y-m-d H:i:s');
             $req->request->add($metaReqs);
             $track->saveTrack($req);
 
