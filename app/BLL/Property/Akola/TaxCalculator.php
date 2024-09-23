@@ -141,7 +141,7 @@ class TaxCalculator
             //end of change
             list($fromYear, $lastYear) = explode("-", $this->_oldDemand->min("fyear") ?? getFY());
             if (isset($this->_REQUEST->assessmentType) && ($this->getAssestmentTypeStr() == 'Reassessment')) {
-                //$this->_newForm = $fromYear . "-04-01"; 
+                $this->_newForm = $fromYear . "-04-01"; 
                 //changes by prity pandey
                 //list($fromYear, $lastYear) = explode("-", getFY($this->_REQUEST->approvedDate));
                 //$this->_newForm = ($fromYear - 2) . "-04-01";
@@ -164,11 +164,11 @@ class TaxCalculator
                     }
                 } 
                 // added by prity pandey 17-09-24
-                else {
-                    list($fromYear, $lastYear) = explode("-", getFY($this->_REQUEST->approvedDate));
-                    $this->_newForm = ($fromYear - 2) . "-04-01";
-                    $this->_newForm = ($fromYear) . "-04-01";
-                }
+                // else {
+                //     list($fromYear, $lastYear) = explode("-", getFY($this->_REQUEST->approvedDate));
+                //     $this->_newForm = ($fromYear - 2) . "-04-01";
+                //     $this->_newForm = ($fromYear) . "-04-01";
+                // }
             }
             //changes by prity pandey
             // if ($this->_REQUEST->buildingPlanCompletionDate) {
