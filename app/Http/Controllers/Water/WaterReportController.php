@@ -3661,13 +3661,13 @@ class WaterReportController extends Controller
         LEFT JOIN users ON users.id=water_trans.emp_dtl_id
         where water_trans.related_id is not null 
         and water_trans.status in (1, 2) 
-        and tran_type = 'Demand Collection'
+       -- and tran_type = 'Demand Collection'
         and water_trans.tran_date between '$fromDate' and '$uptoDate'
                     " . ($zoneId ? " AND  water_second_consumers.zone_mstr_id = $zoneId" : "") . "
                     " . ($wardId ? " AND water_second_consumers.ward_mstr_id = $wardId" : "") . "
                     " . ($userId ? " AND water_trans.emp_dtl_id = $userId" : "") . "
                     " . ($paymentMode ? " AND water_trans.payment_mode = '$paymentMode'" : "") . "
-            AND water_consumer_demands.paid_status=1
+            --AND water_consumer_demands.paid_status=1
         GROUP BY 
                 water_trans.id,
                     water_second_consumers.consumer_no,
