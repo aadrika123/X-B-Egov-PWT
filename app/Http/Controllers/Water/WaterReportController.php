@@ -1435,7 +1435,7 @@ class WaterReportController extends Controller
              CASE WHEN water_trans.payment_mode = 'DD'  THEN water_trans.id ELSE NULL END
          ) AS waterDd,
             COUNT(
-             CASE WHEN water_trans.payment_mode = 'Neft'  THEN water_trans.id ELSE NULL END
+             CASE WHEN water_trans.payment_mode = 'NEFT'  THEN water_trans.id ELSE NULL END
          ) AS waterNeft,
             COUNT(
              CASE WHEN water_trans.payment_mode = 'RTGS'  THEN water_trans.id ELSE NULL END
@@ -3041,11 +3041,19 @@ class WaterReportController extends Controller
             $fromDate    = $uptoDate = Carbon::now()->format("Y-m-d");
             $docUrl      = $this->_docUrl;
             $metertype   = $wardId = $userId = $zoneId = $paymentMode = null;
+            $fiYear      = $request->fiYear;
+            $quater      = $request->quater;
 
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $limit = $perPage;
             $offset =  $request->page && $request->page > 0 ? ($request->page * $perPage) : 0;
+            if ($request->quater != null) {
+                $refDate = json_decode(getMonthsByQuarter($fiYear, $quater), true);  // Decode the JSON to an array
+                $fromDate = $refDate['start_date'];  // First date of the quarter
+                $uptoDate = $refDate['end_date'];  // Last date of the quarter
+
+            }
 
             // if ($request->fromDate) {
             //     $fromDate = $request->fromDate;
@@ -3102,9 +3110,13 @@ class WaterReportController extends Controller
                     FROM water_consumer_demands wd 
                     left join water_consumer_taxes on water_consumer_taxes.id=  wd.consumer_tax_id
                     WHERE 
+
                     wd.status = TRUE 
                     AND wd.consumer_id IS NOT NULL 
                     AND wd.due_balance_amount>0 
+
+                     " . ($fromDate ? " AND wd.demand_from >= '$fromDate'" : "") . "
+                    " . ($uptoDate ? " AND wd.demand_upto <= '$uptoDate'" : "") . "
                     GROUP BY 
                     wd.consumer_id 
                 ),
@@ -3208,9 +3220,12 @@ class WaterReportController extends Controller
                 WHERE  1=1
                 " . ($wardId ? " AND water_second_consumers.ward_mstr_id = $wardId" : "") . "    
                 " . ($zoneId ? " AND water_second_consumers.zone_mstr_id = $zoneId" : "") . "  
+                  " . ($fromDate ? " AND final_demands.demand_from >= '$fromDate'" : "") . "
+                    " . ($uptoDate ? " AND final_demands.demand_upto <= '$uptoDate'" : "") . "
                 " . ($metertype ? ($metertype == 3
                 ? " AND (connection_types.current_meter_status IN($metertype) OR connection_types.consumer_id IS NULL )"
                 : " AND connection_types.current_meter_status IN($metertype)"
+
             ) : "") . "          
             ";
             $dataSql = $with . $select . $from . " 
@@ -3218,6 +3233,7 @@ class WaterReportController extends Controller
                     LIMIT $limit OFFSET $offset ";
             $countSql = $with . " SELECT COUNT(*) " . $from;
             $data = DB::connection('pgsql_water')->select(DB::raw($dataSql));
+
             $WaterConsumerController = App::makeWith(WaterWaterConsumer::class, ["IConsumer", IConsumer::class]);
             $responseCollection = collect();
             foreach ($data as $val) {
