@@ -3220,8 +3220,7 @@ class WaterReportController extends Controller
                 WHERE  1=1
                 " . ($wardId ? " AND water_second_consumers.ward_mstr_id = $wardId" : "") . "    
                 " . ($zoneId ? " AND water_second_consumers.zone_mstr_id = $zoneId" : "") . "  
-                  " . ($fromDate ? " AND final_demands.demand_from >= '$fromDate'" : "") . "
-                    " . ($uptoDate ? " AND final_demands.demand_upto <= '$uptoDate'" : "") . "
+             
                 " . ($metertype ? ($metertype == 3
                 ? " AND (connection_types.current_meter_status IN($metertype) OR connection_types.consumer_id IS NULL )"
                 : " AND connection_types.current_meter_status IN($metertype)"
