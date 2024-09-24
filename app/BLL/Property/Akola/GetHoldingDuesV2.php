@@ -339,7 +339,7 @@ class GetHoldingDuesV2
         $basicDtls["owner_name"] = $owners->implode("owner_name", ",") ?? ($firstOwner->owner_name ?? null);
         $basicDtls["owner_name_marathi"] = $owners->implode("owner_name_marathi", ",") ?? $firstOwner->owner_name_marathi ?? null;
         $basicDtls["guardian_name_marathi"] = $owners->implode("guardian_name_marathi", ",") ?? $firstOwner->owner_name_marathi ?? null;
-        $basicDtls["applicant_name"]     = $basicDtls['applicant_name'] ?? $firstOwner->guardian_name_marathi ?? $firstOwner->guardian_name;
+        //$basicDtls["applicant_name"]     = $basicDtls['applicant_name'] ?? $firstOwner->guardian_name_marathi ?? $firstOwner->guardian_name;
 
         $demand['basicDetails'] = $basicDtls;
 
