@@ -81,7 +81,7 @@ trait AkolaSafDoc
         // $this->_documentLists = collect($this->_propDocList)->where('code', 'AKOLA_APP_DOCS')->first()->requirements;
         ########end of comment #############
 
-        if($this->_refSafs->citizen_id !==null){
+        if($this->_refSafs->citizen_id !==null && $this->_refSafs->application_date > '2024-09-01' ){
                 $this->_documentLists .= collect($this->_propDocList)->where('code', 'AFFIDAVIT')->first()->requirements;
             }
         else {
