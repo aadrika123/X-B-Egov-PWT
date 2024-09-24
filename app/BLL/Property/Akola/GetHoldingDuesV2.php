@@ -321,7 +321,7 @@ class GetHoldingDuesV2
             'citizen_id',
             'user_id',
             'applicant_name',
-            'applicant_marathi',
+          'ref_applicant_name',
             'property_no',
             "plot_no",
             "area_of_plot",
