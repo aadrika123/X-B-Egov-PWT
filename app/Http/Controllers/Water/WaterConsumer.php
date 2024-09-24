@@ -2223,7 +2223,7 @@ class WaterConsumer extends Controller
             $refConnectionName      = Config::get('waterConstaint.METER_CONN_TYPE');
             $refConsumerId          = $req->applicationId;
             #consumer dettails 
-           $consumerDetails = $mwaterConsumer->fullWaterDetails($refConsumerId)->first();
+            $consumerDetails = $mwaterConsumer->fullWaterDetails($refConsumerId)->first();
             if (!$consumerDetails) {
                 throw new Exception("consumer basic details not found!");
             }
