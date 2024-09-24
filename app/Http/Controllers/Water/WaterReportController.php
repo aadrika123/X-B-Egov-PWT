@@ -1458,7 +1458,7 @@ class WaterReportController extends Controller
              CASE WHEN water_trans.payment_mode = 'DD' AND  water_trans.user_type = 'TC'  THEN water_trans.id ELSE NULL END
          ) AS TcDdCount,
             COUNT(
-             CASE WHEN water_trans.payment_mode = 'Neft' AND  water_trans.user_type = 'TC'  THEN water_trans.id ELSE NULL END
+             CASE WHEN water_trans.payment_mode = 'NEFT' AND  water_trans.user_type = 'TC'  THEN water_trans.id ELSE NULL END
          ) AS TcNeftCount,
             COUNT(
              CASE WHEN water_trans.payment_mode = 'RTGS' AND  water_trans.user_type = 'TC'  THEN water_trans.id ELSE NULL END
@@ -1478,7 +1478,7 @@ class WaterReportController extends Controller
              CASE WHEN water_trans.payment_mode = 'DD' AND  water_trans.user_type = 'JSK'  THEN water_trans.id ELSE NULL END
          ) AS JskDdCount,
             COUNT(
-             CASE WHEN water_trans.payment_mode = 'Neft' AND  water_trans.user_type = 'JSK'  THEN water_trans.id ELSE NULL END
+             CASE WHEN water_trans.payment_mode = 'NEFT' AND  water_trans.user_type = 'JSK'  THEN water_trans.id ELSE NULL END
          ) AS JskNeftCount,
             COUNT(
              CASE WHEN water_trans.payment_mode = 'RTGS' AND  water_trans.user_type = 'JSK'  THEN water_trans.id ELSE NULL END
@@ -1489,7 +1489,7 @@ class WaterReportController extends Controller
          SUM(CASE WHEN water_trans.payment_mode = 'Cheque' THEN COALESCE(amount,0) ELSE 0 END) AS ChequeTotalAmount,
          SUM(CASE WHEN water_trans.payment_mode = 'DD' THEN COALESCE(amount,0) ELSE 0 END) AS DdTotalAmount,
          SUM(CASE WHEN water_trans.payment_mode = 'ONLINE' THEN COALESCE(amount,0) ELSE 0 END ) AS OnlineTotalAmount,
-         SUM(CASE WHEN water_trans.payment_mode = 'Neft' THEN COALESCE(amount,0) ELSE 0 END ) AS NeftTotalAmount,
+         SUM(CASE WHEN water_trans.payment_mode = 'NEFT' THEN COALESCE(amount,0) ELSE 0 END ) AS NeftTotalAmount,
          SUM(CASE WHEN water_trans.payment_mode = 'RTGS' THEN COALESCE(amount,0) ELSE 0 END ) AS RtgsTotalAmount,
          SUM(amount) AS TotalPaymentModeAmount,
          -- Sum of amount of TC for diff payament mode 
@@ -1497,7 +1497,7 @@ class WaterReportController extends Controller
          SUM(CASE WHEN water_trans.payment_mode = 'Cheque' AND  water_trans.user_type = 'TC' THEN COALESCE(amount,0) ELSE 0 END) AS TcChequeTotalAmount,
          SUM(CASE WHEN water_trans.payment_mode = 'DD' AND  water_trans.user_type = 'TC' THEN COALESCE(amount,0) ELSE 0 END) AS TcDdTotalAmount,
          SUM(CASE WHEN water_trans.payment_mode = 'ONLINE' AND  water_trans.user_type = 'TC' THEN COALESCE(amount,0) ELSE 0 END ) AS TcOnlineTotalAmount,
-         SUM(CASE WHEN water_trans.payment_mode = 'Neft' AND  water_trans.user_type = 'TC' THEN COALESCE(amount,0) ELSE 0 END ) AS TcNeftTotalAmount,
+         SUM(CASE WHEN water_trans.payment_mode = 'NEFT' AND  water_trans.user_type = 'TC' THEN COALESCE(amount,0) ELSE 0 END ) AS TcNeftTotalAmount,
          SUM(CASE WHEN water_trans.payment_mode = 'RTGS' AND  water_trans.user_type = 'TC' THEN COALESCE(amount,0) ELSE 0 END ) AS TcRtgsTotalAmount,
          SUM(CASE WHEN  water_trans.user_type = 'TC' THEN COALESCE(amount,0) ELSE 0 END) AS tc_total_amount,
            -- Sum of amount of JSK for diff payament mode 
@@ -1505,14 +1505,14 @@ class WaterReportController extends Controller
          SUM(CASE WHEN water_trans.payment_mode = 'Cheque' AND  water_trans.user_type = 'JSK' THEN COALESCE(amount,0) ELSE 0 END) AS JskChequeTotalAmount,
          SUM(CASE WHEN water_trans.payment_mode = 'DD' AND  water_trans.user_type = 'JSK' THEN COALESCE(amount,0) ELSE 0 END) AS JskDdTotalAmount,
          SUM(CASE WHEN water_trans.payment_mode = 'ONLINE' AND  water_trans.user_type = 'JSK' THEN COALESCE(amount,0) ELSE 0 END ) AS JskOnlineTotalAmount,
-         SUM(CASE WHEN water_trans.payment_mode = 'Neft' AND  water_trans.user_type = 'JSK' THEN COALESCE(amount,0) ELSE 0 END ) AS JskNeftTotalAmount,
+         SUM(CASE WHEN water_trans.payment_mode = 'NEFT' AND  water_trans.user_type = 'JSK' THEN COALESCE(amount,0) ELSE 0 END ) AS JskNeftTotalAmount,
          SUM(CASE WHEN water_trans.payment_mode = 'RTGS' AND  water_trans.user_type = 'JSK' THEN COALESCE(amount,0) ELSE 0 END ) AS JskRtgsTotalAmount,
          SUM(CASE WHEN  water_trans.user_type = 'JSK' THEN COALESCE(amount,0) ELSE 0 END) AS JskTotalAmount
         
         FROM water_trans
         LEFT JOIN water_second_consumers on water_trans.related_id = water_second_consumers.id
         LEFT JOIN zone_masters ON zone_masters.id = water_second_consumers.zone_mstr_id
-        WHERE water_trans.payment_mode IN ('Cash', 'Cheque', 'DD', 'Neft', 'RTGS', 'ONLINE')
+        WHERE water_trans.payment_mode IN ('Cash', 'Cheque', 'DD', 'NEFT', 'RTGS', 'ONLINE')
             AND water_trans.status = 1
             AND water_trans.tran_date BETWEEN '$dateFrom' AND '$dateUpto'
             -- AND water_trans.tran_type = 'Demand Collection'
