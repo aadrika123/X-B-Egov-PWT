@@ -101,8 +101,10 @@ class PropProperty extends  PropParamModel #Model
                 //  END AS vacant_land_type"),
            
                 DB::raw("REPLACE(prop_properties.holding_type, '_', ' ') AS holding_type"),
-                DB::raw("CASE WHEN TRIM(prop_properties.applicant_name) <> '' THEN prop_properties.applicant_name ELSE prop_properties.applicant_marathi END AS ref_applicant_name"),
-                'prop_properties.applicant_marathi as applicant_name',
+                // DB::raw("CASE WHEN TRIM(prop_properties.applicant_name) <> '' THEN prop_properties.applicant_name ELSE prop_properties.applicant_marathi END AS ref_applicant_name"),
+                // 'prop_properties.applicant_marathi as applicant_name',
+                'prop_properties.applicant_name',
+                'prop_properties.applicant_marathi',
                 'prop_properties.status as active_status',
                 'prop_properties.assessment_type as assessment',
                 'prop_properties.property_no',
