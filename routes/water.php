@@ -184,6 +184,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post("consumer/get-demand-history", "getConsumerDemandsHistory");
         Route::post("consumer/auto-generate-fixed-demand", "gerateAutoFixedDemand");
         Route::post('consumer/update-mobile-no', 'updateMobile');
+        Route::post('consumer/tc-visit-records', 'tcVisitRecordUpdate');
     });
 
 

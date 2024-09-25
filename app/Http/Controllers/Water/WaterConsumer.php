@@ -50,6 +50,7 @@ use App\Models\Water\WaterSecondConsumer;
 use App\Models\Water\WaterSiteInspection;
 use App\Models\Water\WaterTran;
 use App\Models\Water\WaterSecondConnectionCharge;
+use App\Models\Water\WaterTcVisitReport;
 use App\Models\Water\WaterTranDetail;
 use App\Models\Workflows\WfRoleusermap;
 use App\Models\Workflows\WfWorkflow;
@@ -3298,6 +3299,80 @@ class WaterConsumer extends Controller
             return responseMsgs(true, "Mobile No Updated", [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "011918", "01", responseTime(), $req->getMethod(), $req->deviceId);
+        }
+    }
+    /**
+     * tc vistit report
+     */
+    public function tcVisitRecordUpdate(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'consumerId'         => 'required|integer',
+                'mobile_no'          => 'nullable|',            // 'nullable|digits:10|regex:/[0-9]{10}/',
+                'email'              => 'nullable|',
+                'applicant_name'     => 'nullable|',
+                'guardian_name'      => 'nullable|',
+                'zoneId'             => 'nullable|',
+                'wardId'             => 'nullable|',
+                'address'            => 'nullable|',
+                'property_no'        => 'nullable',
+                'dtcCode'            => 'nullable',
+                'oldConsumerNo'      => 'nullable',
+                "category"           => "nullable|in:General,Slum",
+                "propertytype"       =>  "nullable|in:1,2",
+                "tapsize"            =>  "nullable",
+                "landmark"           =>  "nullable",
+                "document"           =>  "nullable|mimes:pdf,jpeg,png,jpg,gif",
+                "remarks"            =>  "nullable",
+                "meterNo"            =>  "nullable",
+                "citizen_comment"    =>  "nullable"
+            ]
+        );
+        if ($validated->fails())
+            return validationErrorV2($validated);
+        try {
+            $request->merge([
+                "propertyNo" => $request->property_no,
+                "mobileNo" => $request->mobile_no,
+                "applicantName" => $request->applicant_name,
+                "guardianName" => $request->guardian_name,
+            ]);
+            $now            = Carbon::now();
+            $user           = Auth()->user();
+            $userId         = $user->id;
+             $userType       = $user->user_type;
+            $consumerId     = $request->consumerId;
+            $relativePath   = Config::get("waterConstaint.WATER_UPDATE_RELATIVE_PATH");
+            $refImageName = $request->consumerId;
+            $imageName = null;
+
+            $docUpload = new DocumentUpload();
+            $mWaterSecondConsumer = new waterSecondConsumer();
+            $mWaterConsumerOwners = new WaterConsumerOwner();
+            $mWaterTcVisitReport     = new WaterTcVisitReport();
+            $consumerDtls = $mWaterSecondConsumer->find($consumerId);
+            if (!$consumerDtls) {
+                throw new Exception("consumer details not found!");
+            }
+            $owner = $mWaterConsumerOwners->where("consumer_id", $request->consumerId)->orderBy("id", "ASC")->first();
+
+            $this->begin();
+            if ($request->document) {
+                $imageName = $docUpload->upload($consumerId, $request->document, $relativePath);
+            }
+            $conUpdaleLog = $mWaterTcVisitReport->addTcVisitRecord($request);
+            $conUpdaleLog->relative_path       = $imageName ? $relativePath : null;
+            $conUpdaleLog->document            = $imageName;
+            $conUpdaleLog->emp_details_id      = $userId;
+            $conUpdaleLog->user_type           = $userType;
+            $conUpdaleLog->update();
+            $this->commit();
+            return responseMsgs(true, "update consumer details succesfull!", "", "", "01", ".ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            $this->rollback();
+            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
         }
     }
 }
