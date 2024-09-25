@@ -3342,7 +3342,7 @@ class WaterConsumer extends Controller
             $now            = Carbon::now();
             $user           = Auth()->user();
             $userId         = $user->id;
-             $userType       = $user->user_type;
+            $userType       = $user->user_type;
             $consumerId     = $request->consumerId;
             $relativePath   = Config::get("waterConstaint.WATER_UPDATE_RELATIVE_PATH");
             $refImageName = $request->consumerId;
@@ -3362,17 +3362,127 @@ class WaterConsumer extends Controller
             if ($request->document) {
                 $imageName = $docUpload->upload($consumerId, $request->document, $relativePath);
             }
+            #add remarks of tc 
             $conUpdaleLog = $mWaterTcVisitReport->addTcVisitRecord($request);
             $conUpdaleLog->relative_path       = $imageName ? $relativePath : null;
             $conUpdaleLog->document            = $imageName;
             $conUpdaleLog->emp_details_id      = $userId;
             $conUpdaleLog->user_type           = $userType;
+            $conUpdaleLog->apply_date          = $now;
             $conUpdaleLog->update();
             $this->commit();
-            return responseMsgs(true, "update consumer details succesfull!", "", "", "01", ".ms", "POST", $request->deviceId);
+            return responseMsgs(true, "Add Tc Visit Remarks Succesfull!", "", "", "01", ".ms", "POST", $request->deviceId);
         } catch (Exception $e) {
             $this->rollback();
             return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
+        }
+    }
+    /**
+     * |list of tc visit records
+     */
+    public function searchTcVisitRecords(Request $request)
+    {
+        $now = Carbon::now()->format("Y-m-d");
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "fromDate" => "nullable|date|before_or_equal:$now|date_format:Y-m-d",
+                "uptoDate" => "nullable|date|before_or_equal:$now|date_format:Y-m-d",
+                "userId" => "nullable|digits_between:1,9223372036854775807",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "zoneId"    => "nullable|digits_between:1,9223372036854775807",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        if ($validated->fails())
+            return validationErrorV2($validated);
+        try {
+            $fromDate = $uptoDate = $now;
+            $userId = $wardId = $zoneId = null;
+            $key = $request->key;
+            if ($key) {
+                $fromDate = $uptoDate = null;
+            }
+            if ($request->fromDate) {
+                $fromDate = $request->fromDate;
+            }
+            if ($request->uptoDate) {
+                $uptoDate = $request->uptoDate;
+            }
+            if ($request->wardId) {
+                $wardId = $request->wardId;
+            }
+            if ($request->zoneId) {
+                $zoneId = $request->zoneId;
+            }
+            if ($request->userId) {
+                $userId = $request->userId;
+            }
+            $data = WaterTcVisitReport::select(
+                "water_tc_visit_reports.id",
+                "water_tc_visit_reports.consumer_id",
+                "water_tc_visit_reports.consumer_no",
+                "water_tc_visit_reports.remarks",
+                "water_tc_visit_reports.address",
+                "water_tc_visit_reports.apply_date AS created_at",
+                "zone_masters.zone_name",
+                "ulb_ward_masters.ward_name",
+                "owners.applicant_name",
+                "owners.guardian_name",
+                "owners.mobile_no",
+                "users.name AS user_name",
+            )
+                ->leftJoin("users", "users.id", "water_tc_visit_reports.emp_details_id")
+                ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_tc_visit_reports.ward_mstr_id')
+                ->leftjoin('zone_masters', 'zone_masters.id', 'water_tc_visit_reports.zone_mstr_id')
+                ->leftJoin(DB::raw("(
+                        SELECT water_consumer_owners.consumer_id,
+                            string_agg(water_consumer_owners.applicant_name,',') as applicant_name,
+                            string_agg(water_consumer_owners.guardian_name,',') as guardian_name,
+                            string_agg(water_consumer_owners.mobile_no,',') as mobile_no
+                        FROM water_consumer_owners
+                        JOIN water_tc_visit_reports ON water_tc_visit_reports.consumer_id = water_consumer_owners.consumer_id
+                        WHERE CAST(water_tc_visit_reports.apply_date AS DATE) BETWEEN '$fromDate' AND '$uptoDate' 
+                        " . ($userId ? " AND water_tc_visit_reports.emp_details_id = $userId" : "") . "
+                        " . ($wardId ? " AND water_tc_visit_reports.ward_mstr_id = $wardId" : "") . "
+                        " . ($zoneId ? " AND water_tc_visit_reports.zone_mstr_id = $zoneId" : "") . "
+                        GROUP BY water_consumer_owners.consumer_id
+                    )owners"), "owners.consumer_id", "water_tc_visit_reports.consumer_id");
+            if ($fromDate && $uptoDate) {
+                $data->whereBetween(DB::raw("CAST(water_tc_visit_reports.apply_date AS DATE)"), [$fromDate, $uptoDate]);
+            }
+            if ($userId) {
+                $data->where("water_tc_visit_reports.emp_details_id", $userId);
+            }
+            if ($wardId) {
+                $data->where("water_tc_visit_reports.ward_mstr_id", $wardId);
+            }
+            if ($zoneId) {
+                $data->where("water_tc_visit_reports.zone_mstr_id", $zoneId);
+            }
+            if ($key) {
+                $data->where(function ($where) use ($key) {
+                    $where->orWhere("water_tc_visit_reports.consumer_no", "ILIKE", "%$key%")
+                        ->orWhere("water_tc_visit_reports.old_consumer_no", "ILIKE", "%$key%")
+                        ->orWhere("water_tc_visit_reports.address", "ILIKE", "%$key%")
+                        ->orWhere("owners.applicant_name", "ILIKE", "%$key%")
+                        ->orWhere("owners.guardian_name", "ILIKE", "%$key%")
+                        ->orWhere("owners.mobile_no", "ILIKE", "%$key%");
+                });
+            }
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $paginator = $data->paginate($perPage);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true, "", $list);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "");
         }
     }
 }

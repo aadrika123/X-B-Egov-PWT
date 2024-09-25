@@ -23,7 +23,8 @@ class WaterTcVisitReport extends Model
         $waterTcVisit->address                   = $req->address;
         $waterTcVisit->meter_no                  = $req->meterNo;
         $waterTcVisit->meter_digit               = $req->meterDigit;
-        $waterTcVisit->ward_mstr_id              = $req->ward_mstr_id;
+        $waterTcVisit->ward_mstr_id              = $req->wardId;
+        $waterTcVisit->zone_mstr_id              = $req->zoneId;
         $waterTcVisit->category                  = $req->category;
         $waterTcVisit->remarks                   = $req->remarks;
         $waterTcVisit->citizen_comments          = $req->citizenComment;
