@@ -19,6 +19,7 @@ class WaterTcVisitReport extends Model
         $waterTcVisit->consumer_id               = $req->consumerId;
         $waterTcVisit->property_no               = $req->propertyNo;
         $waterTcVisit->consumer_no               = $req->ConsumerNo;
+        $waterTcVisit->holding_no                = $req->holdingNo;
         $waterTcVisit->mobile_no                 = $req->moblieNo;
         $waterTcVisit->address                   = $req->address;
         $waterTcVisit->meter_no                  = $req->meterNo;

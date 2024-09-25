@@ -3400,6 +3400,7 @@ class WaterConsumer extends Controller
         try {
             $fromDate = $uptoDate = $now;
             $userId = $wardId = $zoneId = null;
+            $docUrl = Config::get('module-constants.DOC_URL');
             $key = $request->key;
             if ($key) {
                 $fromDate = $uptoDate = null;
@@ -3432,7 +3433,12 @@ class WaterConsumer extends Controller
                 "owners.guardian_name",
                 "owners.mobile_no",
                 "users.name AS user_name",
+                "water_tc_visit_reports.longitude",
+                "water_tc_visit_reports.latitude",
+                "water_tc_visit_reports.citizen_comments",
+                DB::raw("TRIM(BOTH '/' FROM concat('$docUrl/', relative_path, '/', document)) as doc_path")
             )
+
                 ->leftJoin("users", "users.id", "water_tc_visit_reports.emp_details_id")
                 ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_tc_visit_reports.ward_mstr_id')
                 ->leftjoin('zone_masters', 'zone_masters.id', 'water_tc_visit_reports.zone_mstr_id')
@@ -3471,6 +3477,7 @@ class WaterConsumer extends Controller
                         ->orWhere("owners.mobile_no", "ILIKE", "%$key%");
                 });
             }
+            // return $data;
             $perPage = $request->perPage ? $request->perPage : 10;
             $paginator = $data->paginate($perPage);
             $list = [
@@ -3483,6 +3490,65 @@ class WaterConsumer extends Controller
             return responseMsgs(true, "", $list);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "");
+        }
+    }
+    /**
+     * | view details of tc visit records
+     * 
+     */
+    public function tcVisitReportsById(Request $request)
+    {
+        $logs = new  WaterConsumersUpdatingLog();
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'applicationId'         => "required|integer|exists:" . $logs->getConnectionName() . "." . $logs->getTable() . ",id",
+            ]
+        );
+        if ($validated->fails())
+            return validationErrorV2($validated);
+        try {
+            $newConsumerData = new WaterSecondConsumer();
+            $consumerLog = $logs->find($request->applicationId);
+            $users = User::find($consumerLog->up_user_id);
+            $consumerLog->property_type = $consumerLog->getProperty()->property_type ?? "";
+            $consumerLog->zone = ZoneMaster::find($consumerLog->zone_mstr_id)->zone_name ?? "";
+            $consumerLog->ward_name = UlbWardMaster::find($consumerLog->ward_mstr_id)->ward_name ?? "";
+            $ownres      = $consumerLog->getOwners();
+            foreach (json_decode($consumerLog->new_data_json, true) as $key => $val) {
+                $newConsumerData->$key = $val;
+            }
+            $newConsumerData->property_type = $newConsumerData->getProperty()->property_type ?? "";
+            $newConsumerData->zone = ZoneMaster::find($newConsumerData->zone_mstr_id)->zone_name ?? "";
+            $newConsumerData->ward_name = UlbWardMaster::find($newConsumerData->ward_mstr_id)->ward_name ?? "";
+            $newOwnresData = $ownres->map(function ($val) {
+                $owner = new WaterConsumerOwner();
+
+                foreach (json_decode($val->new_data_json, true) as $key => $val1) {
+                    $owner->$key = $val1;
+                }
+                return $owner;
+            });
+            $commonFunction = new \App\Repository\Common\CommonFunction();
+            $rols = ($commonFunction->getUserAllRoles($users->id)->first());
+            $docUrl = Config::get('module-constants.DOC_URL');
+            $header = [
+                "user_name" => $users->name ?? "",
+                "role" => $rols->role_name ?? "",
+                "remarks" => $consumerLog->remarks ?? "",
+                "upate_date" => $consumerLog->up_created_at ? Carbon::parse($consumerLog->up_created_at)->format("d-m-Y h:i:s A") : "",
+                "document" => $consumerLog->document ? trim($docUrl . "/" . $consumerLog->relative_path . "/" . $consumerLog->document, "/") : "",
+            ];
+            $data = [
+                "userDtls" => $header,
+                "oldConsumer" => $consumerLog,
+                "newConsumer" => $newConsumerData,
+                "oldOwnere" => $ownres,
+                "newOwnere" => $newOwnresData,
+            ];
+            return responseMsgs(true, "Log Details", remove_null($data), "", "010203", "1.0", "", 'POST', "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
         }
     }
 }
