@@ -173,23 +173,6 @@ class TaxCalculator
                 // }
             }
 
-            //condition for new assessment
-            // if (isset($this->_REQUEST->assessmentType) && ($this->getAssestmentTypeStr() == 'New Assessment')) {
-            //     $this->_calculationDateFrom = Carbon::now()->addYears(-5)->format('Y-m-d');
-            //     if ($this->_REQUEST->buildingPlanCompletionDate) {
-            //         list($fromYear, $lastYear) = explode("-", getFY($this->_REQUEST->buildingPlanCompletionDate));
-            //         $this->_newForm = ($fromYear) . "-04-01";
-            //         if (getFY($this->_REQUEST->buildingPlanCompletionDate) < "2022-2023") {
-            //             $this->_newForm = "2022-04-01";
-            //         }
-            //     } elseif ($this->_REQUEST->buildingPlanApprovalDate) {
-            //         list($fromYear, $lastYear) = explode("-", getFY($this->_REQUEST->buildingPlanApprovalDate));
-            //         $this->_newForm = ($lastYear) . "-04-01";
-            //         if (getFY($this->_REQUEST->buildingPlanApprovalDate) < "2022-2023") {
-            //             $this->_newForm = "2022-04-01";
-            //         }
-            //     }
-            // }
 
 
             //changes by prity pandey
@@ -257,9 +240,21 @@ class TaxCalculator
         if (isset($this->_REQUEST->assessmentType) && (in_array($this->getAssestmentTypeStr(), ['Reassessment', 'Bifurcation']))) {
             // $this->_calculationDateFrom =  Carbon::now()->format('Y-m-d');
         }
-        if (isset($this->_REQUEST->assessmentType) && (in_array($this->getAssestmentTypeStr(), ['New Assessment', ])) && (!$this->_REQUEST->buildingPlanCompletionDate || !$this->_REQUEST->buildingPlanApprovalDate)) {
+
+        #========condition for new assessment==Written by prity pandey ====== 25-09-2024====#
+        if (isset($this->_REQUEST->assessmentType) && (in_array($this->getAssestmentTypeStr(), ['New Assessment'])) && $this->_REQUEST->propertyType != 4) {
+
             $this->_calculationDateFrom = Carbon::now()->addYears(-5)->format('Y-m-d');
+            if ($this->_REQUEST->buildingPlanCompletionDate) {
+                list($fromYear, $lastYear) = explode("-", getFY($this->_REQUEST->buildingPlanCompletionDate));
+                $this->_calculationDateFrom = ($fromYear) . "-04-01";
+            } elseif ($this->_REQUEST->buildingPlanApprovalDate) {
+                list($fromYear, $lastYear) = explode("-", getFY($this->_REQUEST->buildingPlanApprovalDate));
+                $this->_calculationDateFrom = ($lastYear) . "-04-01";
+            }
+
         }
+        #=====End of changes==========#
         $this->_currentFyear = calculateFYear(Carbon::now()->format('Y-m-d'));
     }
 
@@ -317,8 +312,10 @@ class TaxCalculator
                 $alv = ($item->occupancyType == 2 && isset($item->rentAmount)) ? roundFigure($item->rentAmount * 12) : roundFigure($floorBuildupArea * $rate);
 
                 //chnage prity
-                $alv = ($item->occupancyType == 2 && $item->rentAmount === null) ? roundFigure($floorBuildupArea * $rate * 2.5) : roundFigure($floorBuildupArea * $rate);
 
+                $alv = ($item->occupancyType == 2 && !($item->agreementAvailable??false))
+                ? roundFigure($floorBuildupArea * $rate * 2.5)
+                : $alv;
                 //
                 $maintance10Perc = roundFigure(($alv * $this->_maintancePerc) / 100);
                 $valueAfterMaintanance = roundFigure($alv - $maintance10Perc);
@@ -430,15 +427,16 @@ class TaxCalculator
                 }
                 $agingPerc = $this->readAgingByFloor($item);           // (2.2)
 
-                $floorBuildupArea = roundFigure(isset($item->biBuildupArea) ? $item->biBuildupArea * 0.092903 :  $item->buildupArea  * 0.092903);
+                $floorBuildupArea = roundFigure(isset($item->biBuildupArea) && $this->getAssestmentTypeStr() == 'Bifurcation' ? $item->biBuildupArea * 0.092903 :  $item->buildupArea  * 0.092903);
                 $alv = ($item->occupancyType == 2 && isset($item->rentAmount)) ? roundFigure($item->rentAmount * 12) : roundFigure($floorBuildupArea * $rate);
 
                 //chnage prity
-                $alv = ($item->occupancyType == 2 && isset($item->rentAmount) === null)
+                $alv = ($item->occupancyType == 2 && !($item->agreementAvailable??false))
                     ? roundFigure($floorBuildupArea * $rate * 2.5)
-                    : roundFigure($floorBuildupArea * $rate);
+                    : $alv;
 
                 //
+            //    dd($item,$alv,!($item->agreementAvailable??false));
                 $maintance10Perc = roundFigure(($alv * $this->_maintancePerc) / 100);
                 $valueAfterMaintanance = roundFigure($alv - $maintance10Perc);
                 $aging = roundFigure(($valueAfterMaintanance * $agingPerc) / 100);
@@ -987,7 +985,11 @@ class TaxCalculator
 
         //end of changes
 
-        if ((Config::get("PropertyConstaint.ASSESSMENT-TYPE." . $this->_REQUEST->assessmentType) == 'New Assessment' || $this->_REQUEST->assessmentType == 'New Assessment') && $privFiveYear < $this->_calculationDateFrom) {
+        // if ((Config::get("PropertyConstaint.ASSESSMENT-TYPE." . $this->_REQUEST->assessmentType) == 'New Assessment' || $this->_REQUEST->assessmentType == 'New Assessment') && $privFiveYear < $this->_calculationDateFrom) {
+        //     $this->_GRID['demandPendingYrs'] = 6;
+        //     $this->_calculationDateFrom = $privFiveYear;
+        // }
+        if ((Config::get("PropertyConstaint.ASSESSMENT-TYPE." . $this->_REQUEST->assessmentType) == 'New Assessment' || $this->_REQUEST->assessmentType == 'New Assessment')  && $this->_calculationDateFrom < $privFiveYear ) {
             $this->_GRID['demandPendingYrs'] = 6;
             $this->_calculationDateFrom = $privFiveYear;
         }
