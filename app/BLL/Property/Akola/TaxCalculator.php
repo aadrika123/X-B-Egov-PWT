@@ -2,9 +2,11 @@
 
 namespace App\BLL\Property\Akola;
 
+use App\Models\Property\PropActiveSafsFloor;
 use App\Models\Property\PropFloor;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
+use App\Models\Property\PropSafsFloor;
 use App\Models\Property\RefPropConstructionType;
 use Carbon\Carbon;
 use Exception;
@@ -15,7 +17,7 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * | Author - Anshu Kumar
- * | Created On-12-08-2023 
+ * | Created On-12-08-2023
  * | Status-Closed
  */
 class TaxCalculator
@@ -77,7 +79,7 @@ class TaxCalculator
 
         $this->generateFyearWiseTaxes();    // 4
 
-        //Written by prity pandey 
+        //Written by prity pandey
         $this->generateTaxAccOldPropDemand();    // 4.1
 
         //Written by prity pandey  16-09-24
@@ -141,7 +143,7 @@ class TaxCalculator
             //end of change
             list($fromYear, $lastYear) = explode("-", $this->_oldDemand->min("fyear") ?? getFY());
             if (isset($this->_REQUEST->assessmentType) && ($this->getAssestmentTypeStr() == 'Reassessment')) {
-                //$this->_newForm = $fromYear . "-04-01"; 
+                $this->_newForm = $fromYear . "-04-01";
                 //changes by prity pandey
                 //list($fromYear, $lastYear) = explode("-", getFY($this->_REQUEST->approvedDate));
                 //$this->_newForm = ($fromYear - 2) . "-04-01";
@@ -162,12 +164,6 @@ class TaxCalculator
                     if (getFY($this->_REQUEST->buildingPlanApprovalDate) < "2022-2023") {
                         $this->_newForm = "2022-04-01";
                     }
-                } 
-                // added by prity pandey 17-09-24
-                else {
-                    list($fromYear, $lastYear) = explode("-", getFY($this->_REQUEST->approvedDate));
-                    $this->_newForm = ($fromYear - 2) . "-04-01";
-                    $this->_newForm = ($fromYear) . "-04-01";
                 }
             }
             //changes by prity pandey
@@ -230,10 +226,13 @@ class TaxCalculator
 
         if (isset($this->_REQUEST->assessmentType) && ($this->getAssestmentTypeStr() != 'New Assessment') && ($this->getAssestmentTypeStr() != 'Amalgamation')) {
             $this->_calculationDateFrom = $this->_newForm ? $this->_newForm : $this->_calculationDateFrom;
-            // $this->_calculationDateFrom =  Carbon::now()->format('Y-m-d');         
+            // $this->_calculationDateFrom =  Carbon::now()->format('Y-m-d');
         }
         if (isset($this->_REQUEST->assessmentType) && (in_array($this->getAssestmentTypeStr(), ['Reassessment', 'Bifurcation']))) {
             // $this->_calculationDateFrom =  Carbon::now()->format('Y-m-d');
+        }
+        if (isset($this->_REQUEST->assessmentType) && (in_array($this->getAssestmentTypeStr(), ['New Assessment', ])) && (!$this->_REQUEST->buildingPlanCompletionDate || !$this->_REQUEST->buildingPlanApprovalDate)) {
+            $this->_calculationDateFrom = Carbon::now()->addYears(-5)->format('Y-m-d');
         }
         $this->_currentFyear = calculateFYear(Carbon::now()->format('Y-m-d'));
     }
@@ -340,7 +339,8 @@ class TaxCalculator
                 elseif ($diffArrea > 0) {
                     // $tax1 = $doubleTax1 * ($diffArrea / ($this->_REQUEST->areaOfPlot>0?$this->_REQUEST->areaOfPlot:1));
                     $tax1 = $doubleTax1 * ($diffArrea);
-                } elseif ($diffArrea > 0 && $this->getAssestmentTypeStr() == 'Reassessment') {
+                }
+                if ($diffArrea > 0 && $this->getAssestmentTypeStr() == 'Reassessment') {
                     $tax1 = 0;
                 }
                 $this->_floorsTaxes[$key] = [
@@ -392,6 +392,16 @@ class TaxCalculator
                     $this->mangalTower($item);
                     continue;
                 }
+                $applyArrea = 0;
+                if($this->getAssestmentTypeStr() == 'Reassessment'){
+                    $AllDiffArrea = 0;
+                    $safFloor = PropActiveSafsFloor::find($item->floorID);
+                    if(!$safFloor){
+                        $safFloor = PropSafsFloor::find($item->floorID);
+                    }
+                    $applyArrea = $safFloor->builtup_area??0;
+                    $AllDiffArrea =  ($safFloor &&  $safFloor->builtup_area > $item->buildupArea) ?  ($safFloor->builtup_area - $item->buildupArea) : 0;
+                }
                 $agingPerc = $this->readAgingByFloor($item);           // (2.2)
 
                 $floorBuildupArea = roundFigure(isset($item->biBuildupArea) ? $item->biBuildupArea * 0.092903 :  $item->buildupArea  * 0.092903);
@@ -442,6 +452,10 @@ class TaxCalculator
                 if ($this->_REQUEST->nakshaAreaOfPlot && $this->getAssestmentTypeStr() == 'Reassessment') {
                     // $diffArrea = ($this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot)>0 ? $this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot :0;
                     $diffArrea = $AllDiffArrea / ($newFloorArea > 0 ? $newFloorArea : 1);
+                }
+                if ($this->getAssestmentTypeStr() == 'Reassessment') {
+                    // $diffArrea = ($this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot)>0 ? $this->_REQUEST->nakshaAreaOfPlot - $this->_REQUEST->areaOfPlot :0;
+                    $diffArrea = $AllDiffArrea / ($applyArrea > 0 ? $applyArrea : 1);
                 }
                 # double tax apply
                 if ($this->_REQUEST->isAllowDoubleTax) {
@@ -624,7 +638,7 @@ class TaxCalculator
     }
 
     /**
-     * 
+     *
      * | Read aging of the floor(2.2)
      */
     public function readAgingByFloor($item)
@@ -951,7 +965,7 @@ class TaxCalculator
             $this->_GRID['demandPendingYrs'] = 6;
             $this->_calculationDateFrom = $privFiveYear;
         }
-        #=======end========       
+        #=======end========
         // Act Of Limitations end
         while ($this->_calculationDateFrom <= $currentFyearEndDate) {
             // $annualTaxes = collect($this->_floorsTaxes)->where('dateFrom', '<=', $this->_calculationDateFrom)->where("appliedUpto",">=",getFY($privFiveYear));
@@ -1226,7 +1240,7 @@ class TaxCalculator
         $this->_GRID['rebateAmt'] = 0;
         // Read Rebates
         $firstOwner = collect($this->_REQUEST->owner)->first();
-        if (isset($firstOwner))                     // If first Owner is found 
+        if (isset($firstOwner))                     // If first Owner is found
             $isArmedForce = $firstOwner['isArmedForce'];
         else
             $isArmedForce = false;

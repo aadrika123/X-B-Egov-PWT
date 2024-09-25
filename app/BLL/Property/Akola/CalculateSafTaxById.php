@@ -66,6 +66,7 @@ class CalculateSafTaxById extends TaxCalculator
             "buildingPlanApprovalDate"=>$this->_safDtls->building_plan_approval_date,
             "buildingPlanCompletionDate"=> $this->_safDtls->building_plan_completion_date,
             "bifurcatedPlot"=>$this->_safDtls->area_of_plot,
+            "safId"=>$this->_safDtls->id,
             "floor" => [],
             "owner" => []
         ];
@@ -85,6 +86,7 @@ class CalculateSafTaxById extends TaxCalculator
                 $floor  = $this->addjustVerifyFloorDtls($floor, $verifyFloor);
                 $floor  = $this->addjustVerifyFloorDtlVal($floor);
                 $floorReq =  [
+                    "floorID" => $floor->id,
                     "floorNo" => $floor->floor_mstr_id,
                     "floorName" => $floor->floor_name, #name value
                     "constructionType" =>  $floor->const_type_mstr_id,
@@ -107,6 +109,7 @@ class CalculateSafTaxById extends TaxCalculator
                 $floor  = $this->addjustVerifyFloorDtls($newfloorObj, $newfloor);
                 $floor  = $this->addjustVerifyFloorDtlVal($floor);
                 $floorReq =  [
+                    "floorID" => 0,
                     "floorNo" => $floor->floor_mstr_id,
                     "floorName" => $floor->floor_name,
                     "constructionType" =>  $floor->const_type_mstr_id,

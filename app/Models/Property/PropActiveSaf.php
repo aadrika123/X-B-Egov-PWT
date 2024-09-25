@@ -463,9 +463,9 @@ class  PropActiveSaf extends PropParamModel #Model
             ->select(
                 'prop_active_safs.*',
                 DB::raw(
-                    "CASE 
+                    "CASE
                     WHEN prop_active_safs.workflow_id = 202 THEN 'Direct Mutation'
-                    ELSE assessment_type 
+                    ELSE assessment_type
                 END AS assessment_type"
                 ),
                 DB::raw("REPLACE(prop_active_safs.holding_type, '_', ' ') AS holding_type"),
@@ -636,7 +636,7 @@ class  PropActiveSaf extends PropParamModel #Model
                 's.user_id',
                 's.citizen_id',
                 DB::raw(
-                    "case when s.user_id is not null then 'TC/TL/JSK' when 
+                    "case when s.user_id is not null then 'TC/TL/JSK' when
                     s.citizen_id is not null then 'Citizen' end as appliedBy
                 "
                 ),
@@ -649,7 +649,7 @@ class  PropActiveSaf extends PropParamModel #Model
     }
 
     /**
-     * 
+     *
      */
 
     // Get SAF No
@@ -743,7 +743,7 @@ class  PropActiveSaf extends PropParamModel #Model
     }
 
     /**
-     * | Serch Saf 
+     * | Serch Saf
      */
     public function searchSafDtlsBySafNo($ulbId)
     {
@@ -1010,7 +1010,7 @@ class  PropActiveSaf extends PropParamModel #Model
 
 
     /**
-     * | 
+     * |
      */
     public function getpropLatLongDetails($wardId)
     {
@@ -1080,7 +1080,7 @@ class  PropActiveSaf extends PropParamModel #Model
                 'gb_office_name',
                 'building_type',
                 DB::raw(
-                    "case when s.user_id is not null then 'TC/TL/JSK' when 
+                    "case when s.user_id is not null then 'TC/TL/JSK' when
                     s.citizen_id is not null then 'Citizen' end as appliedBy
                 "
                 ),
@@ -1116,7 +1116,7 @@ class  PropActiveSaf extends PropParamModel #Model
             'prop_active_safs.saf_no',
             'prop_active_safs.assessment_type',
             'prop_active_safs.current_role as current_role_id',
-            DB::raw("to_char(prop_active_safs.application_date, 'DD-MM-YYYY') as application_date"),           
+            DB::raw("to_char(prop_active_safs.application_date, 'DD-MM-YYYY') as application_date"),
              DB::raw(
                 "case when prop_active_safs.payment_status = 0 then 'Payment Not Done'
                       when prop_active_safs.payment_status = 2 then 'Cheque Payment Verification Pending'
@@ -1135,7 +1135,7 @@ class  PropActiveSaf extends PropParamModel #Model
             'uu.ward_name as new_ward_no',
             'prop_address',
             // DB::raw(
-            //     "case when prop_active_safs.user_id is not null then 'TC/TL/JSK' when 
+            //     "case when prop_active_safs.user_id is not null then 'TC/TL/JSK' when
             //     prop_active_safs.citizen_id is not null then 'Citizen' end as appliedBy"
             // ),
             //"users.name as appliedBy",
@@ -1199,7 +1199,7 @@ class  PropActiveSaf extends PropParamModel #Model
     }
 
     /**
-     * | 
+     * |
      */
     public function getSafByApartmentId($apartmentId)
     {
@@ -1216,8 +1216,8 @@ class  PropActiveSaf extends PropParamModel #Model
     }
 
     /**
-     * | Get Appartment Details 
-     * | @param 
+     * | Get Appartment Details
+     * | @param
      */
     public function getActiveSafByApartmentId($apartmentId)
     {
@@ -1247,7 +1247,7 @@ class  PropActiveSaf extends PropParamModel #Model
     }
 
     /**
-     * | 
+     * |
      */
     public function toBePropertyBySafId($safId)
     {
@@ -1327,7 +1327,7 @@ class  PropActiveSaf extends PropParamModel #Model
     }
 
 
-    // Get the active saf details 
+    // Get the active saf details
     public function getSafDetailsByCitizenId($citizenId)
     {
         return PropActiveSaf::where('citizen_id', $citizenId)
@@ -1366,5 +1366,9 @@ class  PropActiveSaf extends PropParamModel #Model
         )
             ->where('id', $safId)
             ->first();
+    }
+
+    public function getFloorDtl(){
+        return $this->hasMany(PropActiveSafsFloor::class,"saf_detail_id","id")->where("status",1);
     }
 }
