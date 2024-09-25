@@ -34,6 +34,7 @@ class WaterTcVisitReport extends Model
         $waterTcVisit->longitude                 = $req->longitude;
         $waterTcVisit->latitude                  = $req->latitude;
         $waterTcVisit->connection_type           = $req->connection_type;
+        $waterTcVisit->demand_amount             = $req->demandAmount;
         $waterTcVisit->save();
         return $waterTcVisit;
     }
