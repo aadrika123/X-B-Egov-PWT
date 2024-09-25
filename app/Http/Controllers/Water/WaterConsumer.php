@@ -3433,6 +3433,8 @@ class WaterConsumer extends Controller
                 "owners.guardian_name",
                 "owners.mobile_no",
                 "users.name AS user_name",
+                "water_tc_visit_reports.holding_no",
+                "water_tc_visit_reports.demand_amount",
                 "water_tc_visit_reports.longitude",
                 "water_tc_visit_reports.latitude",
                 "water_tc_visit_reports.citizen_comments",
