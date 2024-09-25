@@ -1454,6 +1454,7 @@ class ActiveSafController extends Controller
      */
     public function postNextLevel(Request $request)
     {
+        
         $validated = Validator::make(
             $request->all(),
             [
@@ -1465,7 +1466,7 @@ class ActiveSafController extends Controller
         if ($validated->fails()) {
             return validationError($validated);
         }
-
+        //dd($request->all());
         try {
             // Variable Assigments
             $userId = authUser($request)->id;
