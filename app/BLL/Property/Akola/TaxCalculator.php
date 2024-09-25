@@ -165,7 +165,33 @@ class TaxCalculator
                         $this->_newForm = "2022-04-01";
                     }
                 }
+                // added by prity pandey 17-09-24
+                // else {
+                //     list($fromYear, $lastYear) = explode("-", getFY($this->_REQUEST->approvedDate));
+                //     $this->_newForm = ($fromYear - 2) . "-04-01";
+                //     $this->_newForm = ($fromYear) . "-04-01";
+                // }
             }
+
+            //condition for new assessment
+            // if (isset($this->_REQUEST->assessmentType) && ($this->getAssestmentTypeStr() == 'New Assessment')) {
+            //     $this->_calculationDateFrom = Carbon::now()->addYears(-5)->format('Y-m-d');
+            //     if ($this->_REQUEST->buildingPlanCompletionDate) {
+            //         list($fromYear, $lastYear) = explode("-", getFY($this->_REQUEST->buildingPlanCompletionDate));
+            //         $this->_newForm = ($fromYear) . "-04-01";
+            //         if (getFY($this->_REQUEST->buildingPlanCompletionDate) < "2022-2023") {
+            //             $this->_newForm = "2022-04-01";
+            //         }
+            //     } elseif ($this->_REQUEST->buildingPlanApprovalDate) {
+            //         list($fromYear, $lastYear) = explode("-", getFY($this->_REQUEST->buildingPlanApprovalDate));
+            //         $this->_newForm = ($lastYear) . "-04-01";
+            //         if (getFY($this->_REQUEST->buildingPlanApprovalDate) < "2022-2023") {
+            //             $this->_newForm = "2022-04-01";
+            //         }
+            //     }
+            // }
+
+
             //changes by prity pandey
             // if ($this->_REQUEST->buildingPlanCompletionDate) {
             //     $this->_newForm = $this->_REQUEST->buildingPlanCompletionDate >= $this->_newForm ? explode("-", getFY($this->_REQUEST->buildingPlanCompletionDate))[0] . "-04-01" : $this->_newForm;
@@ -291,7 +317,7 @@ class TaxCalculator
                 $alv = ($item->occupancyType == 2 && isset($item->rentAmount)) ? roundFigure($item->rentAmount * 12) : roundFigure($floorBuildupArea * $rate);
 
                 //chnage prity
-                $alv = ($item->occupancyType == 2 && $item->rentAmount === null)? roundFigure($floorBuildupArea * $rate * 2.5): roundFigure($floorBuildupArea * $rate);
+                $alv = ($item->occupancyType == 2 && $item->rentAmount === null) ? roundFigure($floorBuildupArea * $rate * 2.5) : roundFigure($floorBuildupArea * $rate);
 
                 //
                 $maintance10Perc = roundFigure(($alv * $this->_maintancePerc) / 100);
@@ -408,7 +434,7 @@ class TaxCalculator
                 $alv = ($item->occupancyType == 2 && isset($item->rentAmount)) ? roundFigure($item->rentAmount * 12) : roundFigure($floorBuildupArea * $rate);
 
                 //chnage prity
-                $alv = ($item->occupancyType == 2 && $item->rentAmount === null)
+                $alv = ($item->occupancyType == 2 && isset($item->rentAmount) === null)
                     ? roundFigure($floorBuildupArea * $rate * 2.5)
                     : roundFigure($floorBuildupArea * $rate);
 

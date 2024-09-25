@@ -320,7 +320,8 @@ class GetHoldingDuesV2
             'land_occupation_date',
             'citizen_id',
             'user_id',
-            //'applicant_name',
+           // 'applicant_name',
+          'ref_applicant_name',
             'property_no',
             "plot_no",
             "area_of_plot",
@@ -337,7 +338,8 @@ class GetHoldingDuesV2
         $basicDtls["tc_name"] = $userDtls->name ?? null;
         $basicDtls["owner_name"] = $owners->implode("owner_name", ",") ?? ($firstOwner->owner_name ?? null);
         $basicDtls["owner_name_marathi"] = $owners->implode("owner_name_marathi", ",") ?? $firstOwner->owner_name_marathi ?? null;
-        $basicDtls["applicant_name"]     = $basicDtls['applicant_name'] ?? $firstOwner->guardian_name_marathi ?? $firstOwner->guardian_name;
+        $basicDtls["guardian_name_marathi"] = $owners->implode("guardian_name_marathi", ",") ?? $firstOwner->owner_name_marathi ?? null;
+        $basicDtls["applicant_name_marathi"]     = $basicDtls->implode("applicant_name", ",") ??$firstOwner->guardian_name_marathi ?? $firstOwner->guardian_name;
 
         $demand['basicDetails'] = $basicDtls;
 

@@ -400,7 +400,7 @@ class WaterPaymentController extends Controller
             if (is_null($applicationDetails)) {
                 $applicationDetails = $mWaterApprovalApplicationDetail->getApprovedApplicationById($transactionDetails->related_id)->first();
                 if (!$applicationDetails) {
-                    throw new Exception('application details not found! ');
+                    throw new Exception('Application Details Not Found! ');
                 }
             }
             # Connection Charges
@@ -3749,7 +3749,7 @@ class WaterPaymentController extends Controller
                 "moduleId" => $this->_MODULE_ID ?? 2,
                 "email" => ($owners->whereNotNull("email")->first())->email_id ?? "test@gmail.com",                          //"test@gmail.com"
                 "mobileNumber" => ($owners->whereNotNull("mobile_no")->first())->mobile_no ?? "0123456789",                       //"0123456789"
-                "amount" => $chargeDetails->amount,                                                                                              //round($chargeDetails->amount)
+                "amount" => 1,                                                                                              //$chargeDetails->amount                                                                                            //round($chargeDetails->amount)
                 "firstname" => "No Name",
                 "frontSuccessUrl" => $request->frontSuccessUrl,
                 "frontFailUrl" => $request->frontFailUrl,

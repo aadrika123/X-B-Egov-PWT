@@ -204,6 +204,7 @@ class PropSaf extends PropParamModel #Model
                 $join->on('so.saf_id', 'prop_safs.id')
                     ->where("so.status", 1);
             })
+            ->where('prop_safs.status',1)
             ->groupBy('users.name');
     }
 

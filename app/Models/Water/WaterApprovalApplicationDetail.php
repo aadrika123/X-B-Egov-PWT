@@ -220,7 +220,7 @@ class WaterApprovalApplicationDetail extends Model
             ->join('ulb_masters', 'ulb_masters.id', '=', 'water_approval_application_details.ulb_id')
             ->join('water_approval_applicants', 'water_approval_applicants.application_id', '=', 'water_approval_application_details.id')
             ->join('water_second_consumers', 'water_second_consumers.apply_connection_id', 'water_approval_application_details.id')
-            ->join('water_road_cutter_charges', 'water_road_cutter_charges.id', 'water_approval_application_details.road_type_id')
+            ->leftjoin('water_road_cutter_charges', 'water_road_cutter_charges.id', 'water_approval_application_details.road_type_id')
             ->join('water_connection_type_charges', 'water_connection_type_charges.id', 'water_approval_application_details.connection_type_id')
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_approval_application_details.ward_id')
             ->where('water_approval_application_details.status', true)

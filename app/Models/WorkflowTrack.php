@@ -183,6 +183,22 @@ class WorkflowTrack extends Model
             ->where('ref_table_id_value', $req['refTableIdValue'])
             ->where('receiver_role_id', $req['receiverRoleId'])
             ->where('status', true)
+            ->orderBy("id","DESC")
+            ->first();
+    }
+
+
+    public function getLastWfTrackByRefId(array $req)
+    {
+        return WorkflowTrack::where('workflow_id', $req['workflowId'])
+            ->where('ref_table_dot_id', $req['refTableDotId'])
+            ->where('ref_table_id_value', $req['refTableIdValue'])
+            ->where(function($where){
+                $where->orWhereNotNull("receiver_role_id")
+                ->orWhereNotNull("sender_role_id");
+            })
+            ->where('status', true)
+            ->orderBy("id","DESC")
             ->first();
     }
 }
