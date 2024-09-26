@@ -3905,7 +3905,7 @@ class WaterReportController extends Controller
         left JOIN water_consumer_owners ON water_consumer_owners.consumer_id=water_trans.related_id
         left JOIN water_consumer_demands ON water_consumer_demands.consumer_id=water_trans.related_id
         left Join zone_masters on zone_masters.id= water_second_consumers.zone_mstr_id
-        LEFT JOIN water_consumer_collections on water_consumer_collections.consumer_id = water_trans.related_id
+        LEFT JOIN water_consumer_collections on water_consumer_collections.transaction_id = water_trans.id
         LEFT JOIN users ON users.id=water_trans.emp_dtl_id
         where water_trans.related_id is not null 
         and water_trans.status in (1, 2) 
