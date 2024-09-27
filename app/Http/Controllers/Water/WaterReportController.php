@@ -3866,8 +3866,8 @@ class WaterReportController extends Controller
             $data = ("SELECT 
               subquery.tran_id,
               subquery.tran_no,
-              subquery.arrear_collections,
-              subquery.current_collections,
+              COALESCE(subquery.arrear_collections, 0) AS arrear_collections,
+              COALESCE(subquery.current_collections, 0) AS current_collections,
               COALESCE(subquery.arrear_collections, 0) + COALESCE(subquery.current_collections, 0) AS total_collections,
               subquery.consumer_no,
               subquery.ward_name,
@@ -3882,8 +3882,8 @@ class WaterReportController extends Controller
               
      FROM (
          SELECT 
-             SUM(CASE WHEN water_consumer_collections.demand_upto <= '$fromDates' AND water_trans.tran_date>='$fromDates'  THEN water_consumer_collections.paid_amount ELSE 0 END) AS arrear_collections, 
-             SUM(CASE WHEN water_consumer_collections.demand_upto >=  '$fromDates'   AND water_trans.tran_date >= '$fromDates' THEN water_consumer_collections.paid_amount ELSE 0 END) AS current_collections,
+            --  SUM(CASE WHEN water_consumer_collections.demand_from  <= '$previousUptoDate'   THEN water_consumer_collections.paid_amount ELSE 0 END) AS arrear_collections, 
+            --  SUM(CASE WHEN water_consumer_collections.demand_upto >=  '$fromDates'   AND water_trans.tran_date >= '$fromDates' THEN water_consumer_collections.paid_amount ELSE 0 END) AS current_collections,
                 water_trans.id as tran_id,
                 water_trans.tran_date,
                 water_trans.tran_no,
@@ -3897,15 +3897,28 @@ class WaterReportController extends Controller
                 users.name,
                 water_trans.payment_type,
                 water_trans.payment_mode AS paymentstatus,
-                water_consumer_owners.applicant_name 
+                water_consumer_owners.applicant_name,
+
+              --  Arrear Collections: Payments for demands up to the previous financial year
+        SUM(CASE 
+            WHEN water_consumer_collections.demand_upto <= '$previousUptoDate' THEN water_consumer_collections.paid_amount 
+            ELSE 0 
+        END) AS arrear_collections,
+
+        -- Current Collections: Payments for demands in the current financial year
+        SUM(CASE 
+            WHEN water_consumer_collections.demand_from >= '$fromDates' AND water_consumer_collections.demand_upto <= '$uptoDates' 
+            THEN water_consumer_collections.paid_amount 
+            ELSE 0 
+        END) AS current_collections
           
         FROM water_trans 
         LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id=water_trans.ward_id
         LEFT JOIN water_second_consumers ON water_second_consumers.id=water_trans.related_id
         left JOIN water_consumer_owners ON water_consumer_owners.consumer_id=water_trans.related_id
-        left JOIN water_consumer_demands ON water_consumer_demands.consumer_id=water_trans.related_id
+        -- JOIN water_consumer_demands ON water_consumer_demands.consumer_id=water_trans.related_id
         left Join zone_masters on zone_masters.id= water_second_consumers.zone_mstr_id
-        LEFT JOIN water_consumer_collections on water_consumer_collections.consumer_id = water_trans.related_id
+        JOIN water_consumer_collections on water_consumer_collections.transaction_id = water_trans.id
         LEFT JOIN users ON users.id=water_trans.emp_dtl_id
         where water_trans.related_id is not null 
         and water_trans.status in (1, 2) 

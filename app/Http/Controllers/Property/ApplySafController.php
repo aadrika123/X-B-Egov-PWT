@@ -40,10 +40,10 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /**
- * | Created On-16-03-2023 
+ * | Created On-16-03-2023
  * | Created By-Anshu Kumar
  * | Created For
- *      - Apply Saf 
+ *      - Apply Saf
  *      - Apply GB Saf
  * | Status-Closed
  */
@@ -77,13 +77,13 @@ class ApplySafController extends Controller
         $this->_demandAdjustAssessmentTypes = Config::get('PropertyConstaint.REASSESSMENT_TYPES');
     }
     /**
-     * | Created On-17-02-2022 
+     * | Created On-17-02-2022
      * | Created By-Anshu Kumar
      * | --------------------------- Workflow Parameters ---------------------------------------
      * |                                 # SAF New Assessment
-     * | wf_master id=4 
+     * | wf_master id=4
      * | wf_workflow_id=4
-     * |                                 # SAF Reassessment 
+     * |                                 # SAF Reassessment
      * | wf_mstr_id=5
      * | wf_workflow_id=3
      * |                                 # SAF Mutation
@@ -106,13 +106,16 @@ class ApplySafController extends Controller
      */
     public function applySaf(reqApplySaf $request)
     {
+
         try {
             // Variable Assignments
             $mApplyDate = Carbon::now()->format("Y-m-d");
-            $user = authUser($request);
-            $user_id = $user->id;
+           // $user = authUser($request);
+//$user_id = $user->id;
+$user_id = 2;
             $ulb_id = 2;                                // ulb id for akola municipal
-            $userType = $user->user_type;
+            //$userType = $user->user_type;
+            $userType = "Citizen";
             $metaReqs = array();
             $saf = new PropActiveSaf();
             $mOwner = new PropActiveSafsOwner();
@@ -173,7 +176,7 @@ class ApplySafController extends Controller
             //     throw new Exception("Old Demand Amount Of " . $taxCalculator->_oldUnpayedAmount . " Not Cleard");
             // }
             DB::beginTransaction();
-            $createSaf = $saf->store($request);                                         // Store SAF Using Model function 
+            $createSaf = $saf->store($request);                                         // Store SAF Using Model function
             if ($request->assessmentType == 5 || $request->assessmentType == "Amalgamation") {
                 $request->merge(["safId" => $createSaf->original['safId']]);
                 $SafAmalgamatePropLog = new SafAmalgamatePropLog();
@@ -607,7 +610,7 @@ class ApplySafController extends Controller
      */
     public function readAssessUlbWfId($request, $ulb_id)
     {
-        if ($request->assessmentType == 1) {                                                    // New Assessment 
+        if ($request->assessmentType == 1) {                                                    // New Assessment
             $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
             $request->assessmentType = Config::get('PropertyConstaint.ASSESSMENT-TYPE.1');
         }

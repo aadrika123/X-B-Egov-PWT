@@ -33,7 +33,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 /**
- * | Created On-17-10-2022 
+ * | Created On-17-10-2022
  * | Created By - Anshu Kumar
  * | Created for - Code Reausable for SAF Repository
  */
@@ -156,7 +156,7 @@ trait SAF
         $floor->prop_floor_details_id = $floor_details['propFloorDetailId'] ?? null;
     }
 
-    // SAF Inbox 
+    // SAF Inbox
     public function getSaf($workflowIds)
     {
         $data = DB::table('prop_active_safs')
@@ -280,7 +280,7 @@ trait SAF
      */
     public function readAssessmentType($assessmentType)
     {
-        if ($assessmentType == 1)                                                     // New Assessment 
+        if ($assessmentType == 1)                                                     // New Assessment
             $assessmentType = Config::get('PropertyConstaint.ASSESSMENT-TYPE.1');
 
         if ($assessmentType == 2)                                                   // Reassessment
@@ -302,7 +302,7 @@ trait SAF
     }
 
     /**
-     * | Generated SAF Demand to push the value in propSafsDemand Table 
+     * | Generated SAF Demand to push the value in propSafsDemand Table
      * | @param collection
      */
     public function generateSafDemand($collection)
@@ -572,7 +572,7 @@ trait SAF
      */
     public function readAssessUlbWfId($assessmentType, $ulb_id)
     {
-        if ($assessmentType == 1)                                                    // New Assessment 
+        if ($assessmentType == 1)                                                    // New Assessment
             $workflow_id = Config::get('workflow-constants.SAF_WORKFLOW_ID');
 
 
@@ -600,7 +600,7 @@ trait SAF
      * =========== Mutasion ProccessFee ========
      *          Created By : Sandeep bara
      *          Date       : 30-11-2023
-     *          
+     *
      */
     public function readProccessFee($assessmentType, $saleVal = 0, $propertyType = 0,  $transferType = 0, $isLocateOnGovLan = false)
     {
@@ -689,6 +689,9 @@ trait SAF
         $floor->date_from                   = $verifyFloor ? ($verifyFloor->date_from ?? $floor->date_from) : $floor->date_from;
         $floor->date_upto                   = $verifyFloor ? ($verifyFloor->date_to ?? null) : $floor->date_upto;
         $floor->carpet_area                 = $verifyFloor ? ($verifyFloor->carpet_area ?? $floor->carpet_area) : $floor->carpet_area;
+        $floor->rent_agreement_date         = $verifyFloor ? ($verifyFloor->rent_agreement_date ?? $floor->rent_agreement_date) : $floor->rent_agreement_date;
+        $floor->rent_amount                 = $verifyFloor ? ($verifyFloor->rent_amount ?? $floor->rent_amount) : $floor->rent_amount;
+        $floor->is_agreement_available      = $verifyFloor ? ($verifyFloor->is_agreement_available ?? $floor->is_agreement_available) : $floor->is_agreement_available;
         return $floor;
     }
 

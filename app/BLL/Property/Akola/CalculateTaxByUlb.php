@@ -108,6 +108,7 @@ class CalculateTaxByUlb extends TaxCalculator
                 //     "dateUpto" =>  $floor->date_to
                 // ];
                 $floorReq =  [
+                    "floorID" => $floor->saf_floor_id,
                     "floorNo" => $floor->floor_mstr_id,
                     "floorName" => $floor->floor_name, #name value
                     "constructionType" =>  $floor->const_type_mstr_id,
@@ -118,6 +119,7 @@ class CalculateTaxByUlb extends TaxCalculator
                     "dateFrom" =>  $floor->date_from,
                     "dateUpto" =>  $floor->date_upto,
                     "rentAmount" =>  $floor->rent_amount,
+                    "agreementAvailable"=>$floor->is_agreement_available??null,
                     "rentAgreementDate" =>  $floor->rent_agreement_date,
                     "propFloorDetailId" =>$floor->prop_floor_details_id,
                     "biBuildupArea"=>$floor->builtup_area,

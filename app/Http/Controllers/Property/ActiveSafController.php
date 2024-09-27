@@ -116,12 +116,12 @@ class ActiveSafController extends Controller
      * | Created By-Anshu Kumar
      * | Status - Open
      * -----------------------------------------------------------------------------------------
-     * | SAF Module all operations 
+     * | SAF Module all operations
      * | --------------------------- Workflow Parameters ---------------------------------------
      * |                                 # SAF New Assessment
-     * | wf_master id=1 
+     * | wf_master id=1
      * | wf_workflow_id=4
-     * |                                 # SAF Reassessment 
+     * |                                 # SAF Reassessment
      * | wf_mstr_id=2
      * | wf_workflow_id=3
      * |                                 # SAF Mutation
@@ -129,7 +129,7 @@ class ActiveSafController extends Controller
      * | wf_workflow_id=5
      * |                                 # SAF Bifurcation
      * | wf_mstr_id=4
-     * | wf_workflow_id=182 
+     * | wf_workflow_id=182
      * |                                 # SAF Amalgamation
      * | wf_mstr_id=5
      * | wf_workflow_id=381
@@ -164,9 +164,9 @@ class ActiveSafController extends Controller
 
     /**
      * | Master data in Saf Apply
-     * | @var ulbId Logged In User Ulb 
+     * | @var ulbId Logged In User Ulb
      * | Status-Closed
-     * | Query Costing-369ms 
+     * | Query Costing-369ms
      * | Rating-3
      */
     public function masterSaf(Request $req)
@@ -396,7 +396,7 @@ class ActiveSafController extends Controller
 
             #deactivateOldOwners
             $deactivateOwner = $mPropSafOwners->where("saf_id", $safId)->update(["status" => 0]);
-            #deactivateOldFloors  
+            #deactivateOldFloors
             $deactivateFloor = $mFloors->where("saf_id", $safId)->update(["status" => 0]);
 
             collect($mOwners)->map(function ($owner) use ($mPropSafOwners, $safId) {            // Updation of Owner Basic Details
@@ -443,19 +443,19 @@ class ActiveSafController extends Controller
      * -----------------
      * | @var userId > logged in user id
      * | @var ulbId > Logged In user ulb Id
-     * | @var refWorkflowId > Workflow ID 
-     * | @var workflowId > SAF Wf Workflow ID 
+     * | @var refWorkflowId > Workflow ID
+     * | @var workflowId > SAF Wf Workflow ID
      * | @var query > Contains the Pg Sql query
      * | @var workflow > get the Data in laravel Collection
      * | @var checkDataExisting > check the fetched data collection in array
      * | @var roleId > Fetch all the Roles for the Logged In user
-     * | @var data > all the Saf data of current logged roleid 
+     * | @var data > all the Saf data of current logged roleid
      * | @var occupiedWard > get all Permitted Ward Of current logged in user id
      * | @var wardId > filtered Ward Id from the data collection
      * | @var safInbox > Final returned Data
      * | @return response #safInbox
      * | Status-Closed
-     * | Query Cost-327ms 
+     * | Query Cost-327ms
      * | Rating-3
      * ---------------------------------------------------------------
      */
@@ -605,7 +605,7 @@ class ActiveSafController extends Controller
      * | @var workflowRoles get All Roles of the user id
      * | @var roles filteration of roleid from collections
      * | Status-Closed
-     * | Query Cost-369ms 
+     * | Query Cost-369ms
      * | Rating-4
      */
 
@@ -659,8 +659,8 @@ class ActiveSafController extends Controller
      * | @return
      * | @var \Illuminate\Support\Collection $safData
      * | Status-Closed
-     * | Query Costing-336ms 
-     * | Rating-2 
+     * | Query Costing-336ms
+     * | Rating-2
      */
     public function specialInbox(Request $req)
     {
@@ -704,7 +704,7 @@ class ActiveSafController extends Controller
     /**
      * @param \Illuminate\Http\Request $req
      * @return \Illuminate\Http\JsonResponse
-     * desc This function get the application brief details 
+     * desc This function get the application brief details
      * request : saf_id (requirde)
      * ---------------Tables-----------------
      * active_saf_details            |
@@ -712,14 +712,14 @@ class ActiveSafController extends Controller
      * property_type                 |
      * active_saf_owner_details      -> Saf Owner details
      * active_saf_floore_details     -> Saf Floore Details
-     * workflow_tracks               |  
+     * workflow_tracks               |
      * users                         | Comments and  date rolles
      * role_masters                  |
      * =======================================
      * helpers : Helpers/utility_helper.php   ->remove_null() -> for remove  null values
      * | Status-Closed
-     * | Query Cost-378ms 
-     * | Rating-4 
+     * | Query Cost-378ms
+     * | Rating-4
      */
     #Saf Details
     public function safDetails(Request $req)
@@ -861,7 +861,7 @@ class ActiveSafController extends Controller
                     'tableData' => $ownerDetails
                 ];
 
-            // Floor Details            
+            // Floor Details
             $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data->id)->map(function ($val) use ($verificationDtl) {
                 $new = $verificationDtl->where("saf_floor_id", $val->id)->first();
                 $val->floor_name = $new ? $new->floor_name : $val->floor_name;
@@ -998,7 +998,7 @@ class ActiveSafController extends Controller
             // if ($data->assessment_type == 'Amalgamation') {
             //     $prevHoldingIds = explode(",", $data->previous_holding_id);
             //     $prevOwnerDtls = $mPropOwner->getOwnerByPropIds($prevHoldingIds);
-            // } else 
+            // } else
             if ($data->previous_holding_id) {
                 $prevHoldingIds = explode(",", $data->previous_holding_id);
                 $prevOwnerDtls = $mPropOwner->getOwnerByPropIds($prevHoldingIds);
@@ -1207,24 +1207,24 @@ class ActiveSafController extends Controller
 
                 $val->id = 0;
                 $val->saf_id = $data['id'];
-                // $val->floor_mstr_id = null ;    
-                // $val->usage_type_mstr_id = null ;    
-                // $val->const_type_mstr_id = null ;      
-                // $val->occupancy_type_mstr_id = null ; 
-                // $val->builtup_area = null ; 
-                // $val->date_from = null ; 
-                // $val->date_upto = null ; 
-                // $val->status = null ; 
-                // $val->carpet_area = null ; 
-                // $val->prop_floor_details_id = null ; 
-                // $val->user_id = null ; 
-                // $val->old_floor_id = null ; 
-                // $val->no_of_rooms = null ; 
-                // $val->no_of_toilets = null ; 
-                // $val->floor_name = null ; 
-                // $val->usage_type = null ; 
-                // $val->occupancy_type = null ; 
-                // $val->construction_type = null ; 
+                // $val->floor_mstr_id = null ;
+                // $val->usage_type_mstr_id = null ;
+                // $val->const_type_mstr_id = null ;
+                // $val->occupancy_type_mstr_id = null ;
+                // $val->builtup_area = null ;
+                // $val->date_from = null ;
+                // $val->date_upto = null ;
+                // $val->status = null ;
+                // $val->carpet_area = null ;
+                // $val->prop_floor_details_id = null ;
+                // $val->user_id = null ;
+                // $val->old_floor_id = null ;
+                // $val->no_of_rooms = null ;
+                // $val->no_of_toilets = null ;
+                // $val->floor_name = null ;
+                // $val->usage_type = null ;
+                // $val->occupancy_type = null ;
+                // $val->construction_type = null ;
                 $getFloorDtls->push($val);
             });
             $document = $this->getUploadDoc($req);
@@ -1362,12 +1362,12 @@ class ActiveSafController extends Controller
      * -----------------Tables---------------------
      *  active_saf_details
      * ============================================
-     * active_saf_details.is_escalate <- request->escalateStatus 
-     * active_saf_details.escalate_by <- request->escalateStatus 
+     * active_saf_details.is_escalate <- request->escalateStatus
+     * active_saf_details.escalate_by <- request->escalateStatus
      * ============================================
-     * #message -> return response 
+     * #message -> return response
      * Status-Closed
-     * | Query Cost-353ms 
+     * | Query Cost-353ms
      * | Rating-1
      */
     public function postEscalate(Request $request)
@@ -1450,11 +1450,11 @@ class ActiveSafController extends Controller
      * | @var preLevelPending Get the Previous level pending data for the saf id
      * | @var levelPending new Level Pending to be add
      * | Status-Closed
-     * | Rating-3 
+     * | Rating-3
      */
     public function postNextLevel(Request $request)
     {
-        
+
         $validated = Validator::make(
             $request->all(),
             [
@@ -2184,7 +2184,7 @@ class ActiveSafController extends Controller
             $mLogPropFloors = new LogPropFloor();
             // Edit Property
             $mProperty->editPropBySaf($propId, $activeSaf);
-            // Edit Owners 
+            // Edit Owners
             foreach ($ownerDetails as $ownerDetail) {
                 if ($assessmentType == 'Reassessment') {            // In Case of Reassessment Edit Owners
 
@@ -2252,7 +2252,7 @@ class ActiveSafController extends Controller
      * ------------------- Dump --------------------------
      * | @return msg
      * | Status-Closed
-     * | Query Cost-430ms 
+     * | Query Cost-430ms
      * | Rating-3
      */
     public function approvalRejectionSaf(Request $req)
@@ -2548,10 +2548,10 @@ class ActiveSafController extends Controller
      * | Back to Citizen
      * | @param Request $req
      * | @var redis Establishing Redis Connection
-     * | @var workflowId Workflow id of the SAF 
+     * | @var workflowId Workflow id of the SAF
      * | Status-Closed
      * | Query Costing-401ms
-     * | Rating-1 
+     * | Rating-1
      */
     public function backToCitizen(Request $req)
     {
@@ -2693,7 +2693,7 @@ class ActiveSafController extends Controller
      * | @return safTaxes returns all the calculated demand
      * | Status-Closed
      * | Query Costing-417ms
-     * | Rating-3 
+     * | Rating-3
      */
     public function calculateSafBySafId(Request $req)
     {
@@ -2776,7 +2776,7 @@ class ActiveSafController extends Controller
             ];
 
             return responseMsgs(true, "Demand Details", remove_null($demand), "", "1.0", responseTime(), "POST", $req->deviceId);
-        } catch (Exception $e) {
+        } catch (Exception $e) {dd($e);
             return responseMsgs(false, $e->getMessage(), "", "", "1.0", responseTime(), "POST", $req->deviceId);
         }
     }
@@ -3178,7 +3178,7 @@ class ActiveSafController extends Controller
 
     /**
      * | SAF Payment
-     * | @param req  
+     * | @param req
      * | @var workflowId SAF workflow ID
      * | Status-Closed
      * | Query Consting-374ms
@@ -3323,7 +3323,7 @@ class ActiveSafController extends Controller
     }
 
     /**
-     * | Offline Saf Payment  
+     * | Offline Saf Payment
      */
     public function offlinePaymentSaf(ReqPayment $req)
     {
@@ -3943,7 +3943,7 @@ class ActiveSafController extends Controller
      * ======================upload the Naksha===================
      * ||                   created By : sandeep Bara
      * ||                   Date       : 06-12-2023
-     * ||                   
+     * ||
      */
     public function uploadNaksha(Request $req)
     {
@@ -4148,7 +4148,7 @@ class ActiveSafController extends Controller
             $safVerificationDtls = new PropSafVerificationDtl();
             $mSafGeoTag = new PropSafGeotagUpload();
 
-            $data = $safVerifications->getVerificationsData($req->safId);                       // <--------- Prop Saf Verification Model Function to Get Prop Saf Verifications Data 
+            $data = $safVerifications->getVerificationsData($req->safId);                       // <--------- Prop Saf Verification Model Function to Get Prop Saf Verifications Data
             if (collect($data)->isEmpty())
                 throw new Exception("Tc Verification Not Done");
 
@@ -4170,7 +4170,7 @@ class ActiveSafController extends Controller
     /**
      * | Get the Demandable Amount By SAF ID
      * | @param $req
-     * | Query Run time -272ms 
+     * | Query Run time -272ms
      * | Rating-2
      */
     public function getDemandBySafId(Request $req)
@@ -4263,7 +4263,7 @@ class ActiveSafController extends Controller
         }
     }
 
-    # code by sandeep bara 
+    # code by sandeep bara
     # date 31-01-2023
     // ----------start------------
     public function getVerifications(Request $request)
@@ -5039,7 +5039,7 @@ class ActiveSafController extends Controller
      * ========== Akola Proccess Fee Payment ==============
      *            Created by: Sandeep Bara
      *            Date      : 30-11-2023
-     *  
+     *
      */
 
     public function getPendingProccessFeePtmLs(Request $request)
@@ -5076,7 +5076,7 @@ class ActiveSafController extends Controller
                 ->join("ref_prop_types as rpt", "rpt.id", "p.prop_type_mstr_id")
                 ->leftJoin(DB::raw("
                         (
-                            select prop_safs_owners.saf_id, 
+                            select prop_safs_owners.saf_id,
                                     string_agg(prop_safs_owners.owner_name,', ') as owner_name ,
                                     string_agg(prop_safs_owners.guardian_name,', ') as guardian_name,
                                     string_agg(prop_safs_owners.mobile_no::text,', ') as mobile_no

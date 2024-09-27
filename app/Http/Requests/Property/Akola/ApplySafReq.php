@@ -61,7 +61,7 @@ class ApplySafReq extends FormRequest
                 "floor.*.buildupArea" => "required|numeric",
                 // "floor.*.dateFrom" => "required|date|date_format:Y-m-d|before_or_equal:$this->todayDate|after_or_equal:$this->dateOfPurchase"
                 "floor.*.dateFrom" => "required|date|date_format:Y-m-d|before_or_equal:$todayDate" . ((in_array($this->assessmentType, [3, 4,5])) ? "" : "|after_or_equal:$this->dateOfPurchase"),
-                "floor.*.rentAmount"        =>   
+                "floor.*.rentAmount"        =>
                     [
                         "nullable",
                         function ($attribute, $value, $fail)
@@ -78,7 +78,8 @@ class ApplySafReq extends FormRequest
 
                         },
                     ],
-                // "required_if:floor.*.occupancyType,2|numeric_if:floor.*.occupancyType,2|not_in_if:floor.*.occupancyType,2,0",   
+                "floor.*.agreementAvailable"   =>   "nullable|bool",
+                // "required_if:floor.*.occupancyType,2|numeric_if:floor.*.occupancyType,2|not_in_if:floor.*.occupancyType,2,0",
                 "floor.*.rentAgreementDate" =>
                 [
                     "nullable",
@@ -92,7 +93,7 @@ class ApplySafReq extends FormRequest
 
                     },
                 ],
-                // "required_if:floor.*.occupancyType,2|before_or_equal_if:$todayDate", 
+                // "required_if:floor.*.occupancyType,2|before_or_equal_if:$todayDate",
             ]);
         }
         return $validation;

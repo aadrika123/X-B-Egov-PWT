@@ -66,6 +66,7 @@ class CalculateSafTaxById extends TaxCalculator
             "buildingPlanApprovalDate"=>$this->_safDtls->building_plan_approval_date,
             "buildingPlanCompletionDate"=> $this->_safDtls->building_plan_completion_date,
             "bifurcatedPlot"=>$this->_safDtls->area_of_plot,
+            "safId"=>$this->_safDtls->id,
             "floor" => [],
             "owner" => []
         ];
@@ -85,6 +86,7 @@ class CalculateSafTaxById extends TaxCalculator
                 $floor  = $this->addjustVerifyFloorDtls($floor, $verifyFloor);
                 $floor  = $this->addjustVerifyFloorDtlVal($floor);
                 $floorReq =  [
+                    "floorID" => $floor->id,
                     "floorNo" => $floor->floor_mstr_id,
                     "floorName" => $floor->floor_name, #name value
                     "constructionType" =>  $floor->const_type_mstr_id,
@@ -95,6 +97,7 @@ class CalculateSafTaxById extends TaxCalculator
                     "dateFrom" =>  $floor->date_from,
                     "dateUpto" =>  $floor->date_upto,
                     "rentAmount" =>  $floor->rent_amount,
+                    "agreementAvailable"=>$floor->is_agreement_available,
                     "rentAgreementDate" =>  $floor->rent_agreement_date,
                     "propFloorDetailId" =>$floor->prop_floor_details_id,
                     "biBuildupArea"=>$floor->builtup_area,
@@ -107,6 +110,7 @@ class CalculateSafTaxById extends TaxCalculator
                 $floor  = $this->addjustVerifyFloorDtls($newfloorObj, $newfloor);
                 $floor  = $this->addjustVerifyFloorDtlVal($floor);
                 $floorReq =  [
+                    "floorID" => 0,
                     "floorNo" => $floor->floor_mstr_id,
                     "floorName" => $floor->floor_name,
                     "constructionType" =>  $floor->const_type_mstr_id,
@@ -117,6 +121,7 @@ class CalculateSafTaxById extends TaxCalculator
                     "dateFrom" =>  $floor->date_from,
                     "dateUpto" =>  $floor->date_upto,
                     "rentAmount" =>  $floor->rent_amount??null,
+                    "agreementAvailable"=>$floor->is_agreement_available??null,
                     "rentAgreementDate" =>  $floor->rent_agreement_date??null,
                     "propFloorDetailId" =>$floor->prop_floor_details_id,
                     "biBuildupArea"=>$floor->builtup_area,
@@ -131,7 +136,7 @@ class CalculateSafTaxById extends TaxCalculator
             $propFirstOwners = $this->_mPropSafOwner->getOwnerDtlsBySafId1($this->_safDtls->id);
 
         $ownerReq = [
-            "isArmedForce" => $propFirstOwners->is_armed_force
+            "isArmedForce" => ($propFirstOwners->is_armed_force ?? false),
         ];
         array_push($calculationReq['owner'], $ownerReq);
         $this->_REQUEST = new Request($calculationReq);

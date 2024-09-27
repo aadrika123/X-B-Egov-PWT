@@ -30,21 +30,21 @@ class PropActiveSafsFloor extends PropParamModel #Model
                         0 as verification_id,
                         prop_active_safs_floors.saf_id as saf_id,
                         prop_active_safs_floors.id as saf_floor_id,
-                        prop_active_safs_floors.floor_mstr_id as floor_mstr_id,	 	
-                        prop_active_safs_floors.usage_type_mstr_id	as usage_type_id, 	
-                        prop_active_safs_floors.const_type_mstr_id as 	 construction_type_id, 	 	
-                        prop_active_safs_floors.occupancy_type_mstr_id	as occupancy_type_id,	
-                        prop_active_safs_floors.builtup_area as builtup_area, 	 	
-                        prop_active_safs_floors.date_from as date_from,	 	
-                        prop_active_safs_floors.date_upto as date_to,	 	
-                        prop_active_safs_floors.status,		
-                        prop_active_safs_floors.carpet_area	as carpet_area, 
-                        0 as verified_by,	 	
-                        prop_active_safs_floors.created_at,	 	
-                        prop_active_safs_floors.updated_at,	 	
-                        prop_active_safs_floors.user_id	, 
-                        prop_active_safs.ulb_id ,	
-                        prop_active_safs_floors.no_of_rooms	, 	
+                        prop_active_safs_floors.floor_mstr_id as floor_mstr_id,
+                        prop_active_safs_floors.usage_type_mstr_id	as usage_type_id,
+                        prop_active_safs_floors.const_type_mstr_id as 	 construction_type_id,
+                        prop_active_safs_floors.occupancy_type_mstr_id	as occupancy_type_id,
+                        prop_active_safs_floors.builtup_area as builtup_area,
+                        prop_active_safs_floors.date_from as date_from,
+                        prop_active_safs_floors.date_upto as date_to,
+                        prop_active_safs_floors.status,
+                        prop_active_safs_floors.carpet_area	as carpet_area,
+                        0 as verified_by,
+                        prop_active_safs_floors.created_at,
+                        prop_active_safs_floors.updated_at,
+                        prop_active_safs_floors.user_id	,
+                        prop_active_safs.ulb_id ,
+                        prop_active_safs_floors.no_of_rooms	,
                         prop_active_safs_floors.no_of_toilets,
                         prop_active_safs_floors.bifurcated_from_buildup_area
                 "))
@@ -147,7 +147,7 @@ class PropActiveSafsFloor extends PropParamModel #Model
 
         if ($req["assessmentType"] == "Bifurcation")
             $carpetArea = $req['biBuildupArea'];
-        
+
         $floor = [
             "saf_id"                =>$req["safId"],
             "floor_mstr_id"         =>$req['floorNo']??null,
@@ -203,6 +203,7 @@ class PropActiveSafsFloor extends PropParamModel #Model
         $floor->date_upto = $req['dateUpto'] ?? null;
         $floor->rent_agreement_date = $req['rentAgreementDate'] ?? null;
         $floor->rent_amount = $req['rentAmount'] ?? null;
+        $floor->is_agreement_available = $req['agreementAvailable'] ?? null;
         $floor->prop_floor_details_id = $req['propFloorDetailId'] ?? null;
         $floor->user_id = $userId;
         $floor->no_of_rooms = $req['noOfRooms'] ?? null;
@@ -212,7 +213,7 @@ class PropActiveSafsFloor extends PropParamModel #Model
     }
 
     /**
-     * | 
+     * |
      */
     public function getSafAppartmentFloor($safIds)
     {
