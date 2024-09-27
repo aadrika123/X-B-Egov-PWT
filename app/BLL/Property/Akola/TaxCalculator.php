@@ -233,6 +233,11 @@ class TaxCalculator
         if ($this->getAssestmentTypeStr() == 'Amalgamation')
             $this->_calculationDateFrom = $this->_REQUEST->dateOfPurchase;
 
+        // if (isset($this->_REQUEST->assessmentType) && ($this->getAssestmentTypeStr() != 'New Assessment') && ($this->getAssestmentTypeStr() != 'Amalgamation')) {
+        //     $this->_calculationDateFrom = $this->_newForm ? $this->_newForm : $this->_calculationDateFrom;
+        //     // $this->_calculationDateFrom =  Carbon::now()->format('Y-m-d');
+        // }
+
         if (isset($this->_REQUEST->assessmentType) && ($this->getAssestmentTypeStr() != 'New Assessment') && ($this->getAssestmentTypeStr() != 'Amalgamation')) {
             $this->_calculationDateFrom = $this->_newForm ? $this->_newForm : $this->_calculationDateFrom;
             // $this->_calculationDateFrom =  Carbon::now()->format('Y-m-d');
@@ -242,8 +247,7 @@ class TaxCalculator
         }
 
         #========condition for new assessment==Written by prity pandey ====== 25-09-2024====#
-        if (isset($this->_REQUEST->assessmentType) && (in_array($this->getAssestmentTypeStr(), ['New Assessment'])) && $this->_REQUEST->propertyType != 4) {
-
+        if (isset($this->_REQUEST->assessmentType) && ($this->getAssestmentTypeStr() == 'New Assessment') && ($this->_REQUEST->propertyType != 4)) {
             $this->_calculationDateFrom = Carbon::now()->addYears(-5)->format('Y-m-d');
             if ($this->_REQUEST->buildingPlanCompletionDate) {
                 list($fromYear, $lastYear) = explode("-", getFY($this->_REQUEST->buildingPlanCompletionDate));
@@ -252,7 +256,6 @@ class TaxCalculator
                 list($fromYear, $lastYear) = explode("-", getFY($this->_REQUEST->buildingPlanApprovalDate));
                 $this->_calculationDateFrom = ($lastYear) . "-04-01";
             }
-
         }
         #=====End of changes==========#
         $this->_currentFyear = calculateFYear(Carbon::now()->format('Y-m-d'));
@@ -313,9 +316,9 @@ class TaxCalculator
 
                 //chnage prity
 
-                $alv = ($item->occupancyType == 2 && !($item->agreementAvailable??false))
-                ? roundFigure($floorBuildupArea * $rate * 2.5)
-                : $alv;
+                $alv = ($item->occupancyType == 2 && !($item->agreementAvailable ?? false))
+                    ? roundFigure($floorBuildupArea * $rate * 2.5)
+                    : $alv;
                 //
                 $maintance10Perc = roundFigure(($alv * $this->_maintancePerc) / 100);
                 $valueAfterMaintanance = roundFigure($alv - $maintance10Perc);
@@ -416,13 +419,13 @@ class TaxCalculator
                     continue;
                 }
                 $applyArrea = 0;
-                if($this->getAssestmentTypeStr() == 'Reassessment'){
+                if ($this->getAssestmentTypeStr() == 'Reassessment') {
                     $AllDiffArrea = 0;
                     $safFloor = PropActiveSafsFloor::find($item->floorID);
-                    if(!$safFloor){
+                    if (!$safFloor) {
                         $safFloor = PropSafsFloor::find($item->floorID);
                     }
-                    $applyArrea = $safFloor->builtup_area??0;
+                    $applyArrea = $safFloor->builtup_area ?? 0;
                     $AllDiffArrea =  ($safFloor &&  $safFloor->builtup_area > $item->buildupArea) ?  ($safFloor->builtup_area - $item->buildupArea) : 0;
                 }
                 $agingPerc = $this->readAgingByFloor($item);           // (2.2)
@@ -431,12 +434,12 @@ class TaxCalculator
                 $alv = ($item->occupancyType == 2 && isset($item->rentAmount)) ? roundFigure($item->rentAmount * 12) : roundFigure($floorBuildupArea * $rate);
 
                 //chnage prity
-                $alv = ($item->occupancyType == 2 && !($item->agreementAvailable??false))
+                $alv = ($item->occupancyType == 2 && !($item->agreementAvailable ?? false))
                     ? roundFigure($floorBuildupArea * $rate * 2.5)
                     : $alv;
 
                 //
-            //    dd($item,$alv,!($item->agreementAvailable??false));
+                //    dd($item,$alv,!($item->agreementAvailable??false));
                 $maintance10Perc = roundFigure(($alv * $this->_maintancePerc) / 100);
                 $valueAfterMaintanance = roundFigure($alv - $maintance10Perc);
                 $aging = roundFigure(($valueAfterMaintanance * $agingPerc) / 100);
@@ -955,7 +958,6 @@ class TaxCalculator
         $fyearWiseTaxes = collect();
         // Act Of limitation
         $yearDiffs = Carbon::parse($this->_calculationDateFrom)->diffInYears(Carbon::now());                // year differences
-
         if ($yearDiffs >= 6) {                                                                              // Act of limitation 6 Years
             $this->_GRID['demandPendingYrs'] = 6;
             $this->_calculationDateFrom = Carbon::now()->addYears(-5)->format('Y-m-d');
@@ -968,7 +970,6 @@ class TaxCalculator
         // if ($this->_REQUEST->applyDate) {
         //     $privFiveYear = Carbon::parse($this->_REQUEST->applyDate)->addYears(-5)->format('Y-m-d');
         // }
-
         //changes by prity pandey
 
         if ($this->_REQUEST->approvedDate) {
@@ -989,7 +990,7 @@ class TaxCalculator
         //     $this->_GRID['demandPendingYrs'] = 6;
         //     $this->_calculationDateFrom = $privFiveYear;
         // }
-        if ((Config::get("PropertyConstaint.ASSESSMENT-TYPE." . $this->_REQUEST->assessmentType) == 'New Assessment' || $this->_REQUEST->assessmentType == 'New Assessment')  && $this->_calculationDateFrom < $privFiveYear ) {
+        if ((Config::get("PropertyConstaint.ASSESSMENT-TYPE." . $this->_REQUEST->assessmentType) == 'New Assessment' || $this->_REQUEST->assessmentType == 'New Assessment')  && $this->_calculationDateFrom < $privFiveYear) {
             $this->_GRID['demandPendingYrs'] = 6;
             $this->_calculationDateFrom = $privFiveYear;
         }
@@ -1070,8 +1071,7 @@ class TaxCalculator
 
             $this->_calculationDateFrom = Carbon::parse($this->_calculationDateFrom)->addYear()->format('Y-m-d');
         }
-
-        return $this->_GRID['fyearWiseTaxes'] = $fyearWiseTaxes;
+        $this->_GRID['fyearWiseTaxes'] = $fyearWiseTaxes;
         $this->_GRID['demandPendingYrs'] = $fyearWiseTaxes->count();                // Update demand payment years
     }
 
