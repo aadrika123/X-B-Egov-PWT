@@ -108,7 +108,7 @@ class reqApplySaf extends FormRequest
                 
                 $rules["floor.*.rentAmount"]        =    "nullable";   
                 $rules["floor.*.rentAgreementDate"] =    "nullable";
-
+                $rules["floor.*.agreementAvailable"] =    "nullable";
                 // $rules["floor.*.dateFrom"]          =   "required|date|date_format:Y-m-d|before_or_equal:$mNowDate|after_or_equal:$this->dateOfPurchase";
 
                 // if ($this->assessmentType == 4)
