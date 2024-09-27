@@ -267,11 +267,22 @@ class TaxCalculator
             $this->_OldFloors = collect($this->_REQUEST->floor)->whereNotNull("propFloorDetailId");
         }
     }
+    // public function setNewFloors()
+    // {
+    //     $this->_newFloors = collect($this->_REQUEST->floor)->whereNull("propFloorDetailId");
+    //     if ($this->getAssestmentTypeStr() == 'New Assessment') {
+    //         $this->_newFloors = collect($this->_REQUEST->floor);
+    //     }
+    // }
+
     public function setNewFloors()
     {
         $this->_newFloors = collect($this->_REQUEST->floor)->whereNull("propFloorDetailId");
         if ($this->getAssestmentTypeStr() == 'New Assessment') {
-            $this->_newFloors = collect($this->_REQUEST->floor);
+            $this->_newFloors = collect($this->_REQUEST->floor)->map(function($val){
+                $val["dateFrom"] = $val["dateFrom"] > Carbon::now()->addYears(-5)->format('Y-m-d')? Carbon::now()->addYears(-5)->format('Y-m-d') : $val["dateFrom"];
+                return $val;
+            });
         }
     }
 
