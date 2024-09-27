@@ -3382,6 +3382,7 @@ class WaterConsumer extends Controller
      */
     public function searchTcVisitRecords(Request $request)
     {
+
         $now = Carbon::now()->format("Y-m-d");
         $validated = Validator::make(
             $request->all(),
@@ -3398,6 +3399,9 @@ class WaterConsumer extends Controller
         if ($validated->fails())
             return validationErrorV2($validated);
         try {
+            $user     = authUser($request);
+            $userType = $user->user_type;
+            $tcId     = $user->id;
             $fromDate = $uptoDate = $now;
             $userId = $wardId = $zoneId = null;
             $docUrl = Config::get('module-constants.DOC_URL');
@@ -3438,6 +3442,8 @@ class WaterConsumer extends Controller
                 "water_tc_visit_reports.longitude",
                 "water_tc_visit_reports.latitude",
                 "water_tc_visit_reports.citizen_comments",
+                "water_tc_visit_reports.connection_type_name",
+                "water_tc_visit_reports.property_type",
                 DB::raw("TRIM(BOTH '/' FROM concat('$docUrl/', relative_path, '/', document)) as doc_path")
             )
 
@@ -3468,6 +3474,9 @@ class WaterConsumer extends Controller
             }
             if ($zoneId) {
                 $data->where("water_tc_visit_reports.zone_mstr_id", $zoneId);
+            }
+            if ($user->user_type == 'TC') {
+                $data->where("water_tc_visit_reports.emp_details_id", $tcId);
             }
             if ($key) {
                 $data->where(function ($where) use ($key) {

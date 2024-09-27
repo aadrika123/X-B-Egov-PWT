@@ -33,7 +33,8 @@ class WaterTcVisitReport extends Model
         $waterTcVisit->citizen_comments          = $req->citizenComment;
         $waterTcVisit->longitude                 = $req->longitude;
         $waterTcVisit->latitude                  = $req->latitude;
-        $waterTcVisit->connection_type           = $req->connection_type;
+        $waterTcVisit->connection_type           = $req->connectionType;
+        $waterTcVisit->connection_type_name      = $req->connectionTypeName;
         $waterTcVisit->demand_amount             = $req->demandAmount;
         $waterTcVisit->owner_name                = $req->applicantName;
         $waterTcVisit->property_type             = $req->propertyType;
