@@ -257,6 +257,11 @@ class TaxCalculator
                 $this->_calculationDateFrom = ($lastYear) . "-04-01";
             }
         }
+
+
+        if (isset($this->_REQUEST->assessmentType) && ($this->getAssestmentTypeStr() == 'New Assessment') && ($this->_REQUEST->propertyType == 4)) {
+            $this->_calculationDateFrom = Carbon::now()->addYears(-5)->format('Y-m-d');
+        }
         #=====End of changes==========#
         $this->_currentFyear = calculateFYear(Carbon::now()->format('Y-m-d'));
     }
