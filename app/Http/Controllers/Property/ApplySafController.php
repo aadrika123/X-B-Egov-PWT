@@ -110,12 +110,10 @@ class ApplySafController extends Controller
         try {
             // Variable Assignments
             $mApplyDate = Carbon::now()->format("Y-m-d");
-           // $user = authUser($request);
-//$user_id = $user->id;
-$user_id = 2;
+            $user = authUser($request);
+            $user_id = $user->id;
             $ulb_id = 2;                                // ulb id for akola municipal
-            //$userType = $user->user_type;
-            $userType = "Citizen";
+            $userType = $user->user_type;
             $metaReqs = array();
             $saf = new PropActiveSaf();
             $mOwner = new PropActiveSafsOwner();
