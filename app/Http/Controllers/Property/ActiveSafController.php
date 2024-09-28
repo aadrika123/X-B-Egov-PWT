@@ -3804,6 +3804,7 @@ class ActiveSafController extends Controller
                         'date_to'              => $floorDetail['dateUpto'],
                         'rent_amount'          => $floorDetail['rentAmount'],
                         'rent_agreement_date'  => $floorDetail['rentAgreementDate'],
+                        'is_agreement_available' => $floorDetail['isRentAgreement'],
                         'carpet_area'          => null,
                         'user_id'              => $userId,
                         'ulb_id'               => $ulbId,
