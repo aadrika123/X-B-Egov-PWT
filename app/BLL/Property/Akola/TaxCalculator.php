@@ -322,7 +322,8 @@ class TaxCalculator
                 $item = (object)$item;
                 $rate = $this->readRateByFloor($item);                // (2.1)
                 if ($item->usageType == $this->_mangalTowerId) {
-                    $this->mangalTower($item);
+                    //$this->mangalTower($item);
+                    $this->_floorsTaxes[$key]= $this->mangalTower($item);
                     break;
                 }
                 $agingPerc = $this->readAgingByFloor($item);           // (2.2)
@@ -431,15 +432,16 @@ class TaxCalculator
                 $item = (object)$item;
                 $rate = $this->readRateByFloor($item);                 // (2.1)
                 if ($item->usageType == $this->_mangalTowerId) {
-                    $this->mangalTower($item);
+                    //$this->mangalTower($item);
+                    $this->_floorsTaxes[$key]= $this->mangalTower($item);
                     continue;
                 }
                 $applyArrea = 0;
                 if ($this->getAssestmentTypeStr() == 'Reassessment') {
                     $AllDiffArrea = 0;
-                    $safFloor = PropActiveSafsFloor::find($item->floorID);
+                    $safFloor = PropActiveSafsFloor::find($item->floorID ?? 0);
                     if (!$safFloor) {
-                        $safFloor = PropSafsFloor::find($item->floorID);
+                        $safFloor = PropSafsFloor::find($item->floorID ?? 0);
                     }
                     $applyArrea = $safFloor->builtup_area ?? 0;
                     $AllDiffArrea =  ($safFloor &&  $safFloor->builtup_area > $item->buildupArea) ?  ($safFloor->builtup_area - $item->buildupArea) : 0;
@@ -1372,12 +1374,15 @@ class TaxCalculator
         elseif ($diffArrea > 0) {
             $tax1 = $doubleTax1 * ($diffArrea / ($this->_REQUEST->areaOfPlot > 0 ? $this->_REQUEST->areaOfPlot : 1));
         }
+        //commented by prity pandey
+        //$this->_floorsTaxes[0] = [
 
-        $this->_floorsTaxes[0] = [
+        //end of change
             // 'dateFrom' => $this->_REQUEST->approvedDate ? Carbon::parse($this->_REQUEST->approvedDate)->addYears(-5)->format('Y-m-d') : Carbon::now()->addYears(-5)->format('Y-m-d'),
             // 'dateUpto' => null,
             // 'appliedFrom' => getFY($this->_REQUEST->approvedDate ? Carbon::parse($this->_REQUEST->approvedDate)->addYears(-5)->format('Y-m-d') : Carbon::now()->addYears(-5)->format('Y-m-d')),
             // 'appliedUpto' => getFY(),
+            return[
             'dateFrom' => $item->dateFrom,
             'dateUpto' => $item->dateUpto,
             'appliedFrom' => getFY($item->dateFrom),
@@ -1410,6 +1415,6 @@ class TaxCalculator
         ];
         // }
 
-        $this->_GRID['floorsTaxes'] = $this->_floorsTaxes;
+       // $this->_GRID['floorsTaxes'] = $this->_floorsTaxes;
     }
 }
