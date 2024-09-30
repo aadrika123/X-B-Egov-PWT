@@ -28,6 +28,8 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use App\BLL\Property\Akola\GeneratePaymentReceiptV2;
+
 
 class CitizenHoldingController extends Controller
 {
@@ -109,6 +111,9 @@ class CitizenHoldingController extends Controller
                 throw new Exception("Please waite for previous transaction clearance ");
             }
             $payableAmt = $demand["payableAmt"];
+            if(round($payableAmt)<=round($demand["remainAdvance"])){
+                return $this->advanceAdjustmentPayment($request)   ;  
+            }
             $arrear = $demand["arrear"] + ($demand["arrearMonthlyPenalty"] ?? 0);
             if ($request->paymentType != "isPartPayment") {
                 $request->merge(["paidAmount" => $request->paymentType == "isFullPayment" ? $payableAmt : $arrear]);
@@ -287,6 +292,20 @@ class CitizenHoldingController extends Controller
         return $data;
     }
 
+    public function advanceAdjustmentPayment(Request $request){
+        try{
+            $request->merge(["paymentType"=>"isFullPayment",
+                             "paymentMode"=>"ADVANCE ADJUSTMENT",
+                             "id" => $request->propId
+                            ]);
+            $mHoldingTaxController = new HoldingTaxController($this->_safRepo);
+            $newReqs = new ReqPayment($request->all());
+            return $reapons = $mHoldingTaxController->offlinePaymentHoldingV2($newReqs);
+        }catch(Exception $e){
+            return responseMsgs(false, $e->getMessage(), $request->all(), "phc1.1", "1.0", "", "POST", $request->deviceId ?? "");
+        }
+    }
+    
     public function ICICPaymentFailSuccess(Request $request)
     {
         $reqData  = $this->_PropIciciPaymentsRequest->where('req_ref_no', $request['reqRefNo'])

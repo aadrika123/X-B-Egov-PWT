@@ -21,6 +21,7 @@ return [
         '5' => 'DD',
         '6' => 'NEFT',
         '7' => 'ONLINE_R',
+        "8" => "ADVANCE ADJUSTMENT",
     ],
 
     'PAYMENT_MODE_OFFLINE' => [

@@ -37,13 +37,14 @@ class ReqPayment extends FormRequest
             $rules['branchName'] = "required";
             $rules['chequeNo'] = "required";
         }
-        if(isset($this['paymentMode']) && $this['paymentMode']=='ONLINE_R')
+       // if(isset($this['paymentMode']) && $this['paymentMode']=='ONLINE_R')
+       if(isset($this['paymentMode']) && in_array($this['paymentMode'],['ONLINE_R',"ADVANCE ADJUSTMENT"]))
         {
             $rules['TrnDate'] = "nullable|required_if:paymentMode,==,ONLINE_R|date|before_or_equal:".Carbon::now()->format('Y-m-d');
             $rules['bankName'] = "nullable";
             $rules['branchName'] = "nullable";
         }
-        $rules['paymentMode'] = "required|In:CASH,CHEQUE,DD,NEFT,ONLINE,ONLINE_R,NETBANKING";
+        $rules['paymentMode'] = "required|In:CASH,CHEQUE,DD,NEFT,ONLINE,ONLINE_R,NETBANKING,ADVANCE ADJUSTMENT";
         $rules['id'] = "required";
 
         return $rules;
