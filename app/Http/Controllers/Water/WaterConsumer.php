@@ -2488,7 +2488,6 @@ class WaterConsumer extends Controller
                 throw new Exception("consumer details not found!");
             }
             $owner = $mWaterConsumerOwners->where("consumer_id", $request->consumerId)->orderBy("id", "ASC")->first();
-
             $conUpdaleLog = $consumerDtls->replicate();
             $conUpdaleLog->setTable($mWaterConsumerLog->getTable());
             $conUpdaleLog->purpose      =   "Consumer Update";
@@ -2530,8 +2529,8 @@ class WaterConsumer extends Controller
             }
 
             $ownerUdatesLog->consumers_updating_log_id = $conUpdaleLog->id;
-
-            $consumerDtls->update();
+            // return ($consumerDtls);
+             $consumerDtls->update();
             $owner ? $owner->update() : "";
 
             $conUpdaleLog->relative_path = $imageName ? $relativePath : null;
@@ -3531,6 +3530,92 @@ class WaterConsumer extends Controller
             return responseMsgs(true, "Log Details", remove_null($data), "", "010203", "1.0", "", 'POST', "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
+        }
+    }
+    /**
+     * |list demands history after payment done or not 
+     */
+    public function listConsumerDemandHistory(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'ConsumerId' => 'required|',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+
+        try {
+            $mWaterConsumerDemand   = new WaterConsumerDemand();
+            $mWaterConsumerMeter    = new WaterConsumerMeter();
+            $mWaterSecondConsumer   = new WaterSecondConsumer();
+            $mWaterAdvance          = new WaterAdvance();
+            $mWaterAdjustment       = new WaterAdjustment();
+            $mNowDate               = carbon::now()->format('Y-m-d');
+            $refConnectionName      = Config::get('waterConstaint.METER_CONN_TYPE');
+            $refConsumerId          = $request->ConsumerId;
+
+            # Basic consumer details
+            $WaterBasicDetails = $mWaterSecondConsumer->fullWaterDetails($refConsumerId)->first();
+            if (!$WaterBasicDetails) {
+                throw new Exception("Consumer detail not found ");
+            }
+
+            # Get demand details 
+            $refConsumerDemand = $mWaterConsumerDemand->getConsumerDemandV4($refConsumerId);
+            if (!($refConsumerDemand->first())) {
+                $consumerDemand['demandStatus'] = 0;                                    // Static / to represent existence of demand
+                return responseMsgs(false, "Consumer demands not found!", $consumerDemand, "", "01", responseTime(), $request->getMethod(), $request->deviceId);
+            }
+
+            $totalAdvanceAmt = $mWaterAdvance->getAdvanceAmt($refConsumerId);
+            $totalAdjustmentAmt = $mWaterAdjustment->getAdjustmentAmt($refConsumerId);
+            $remainAdvance = $totalAdvanceAmt->sum("amount") - $totalAdjustmentAmt->sum("amount");
+
+            $refConsumerDemand = collect($refConsumerDemand)->sortBy('demand_upto')->values();
+            $consumerDemand['consumerDemands'] = $refConsumerDemand;
+            $checkParam = collect($consumerDemand['consumerDemands'])->first();
+
+            # Check the details 
+            if (isset($checkParam)) {
+                $sumDemandAmount = collect($consumerDemand['consumerDemands'])->sum('balance_amount');
+                $totalPenalty = collect($consumerDemand['consumerDemands'])->sum('due_penalty');
+                $consumerDemand['fromDate'] = Carbon::parse(collect($consumerDemand['consumerDemands'])->min("demand_from"))->format("d-m-Y");
+                $consumerDemand['uptoDate'] = Carbon::parse(collect($consumerDemand['consumerDemands'])->max("demand_upto"))->format("d-m-Y");
+                $consumerDemand['totalSumDemand'] = round($sumDemandAmount, 2);
+                $consumerDemand['totalPenalty'] = round($totalPenalty, 2);
+                $consumerDemand['remainAdvance'] = round($remainAdvance ?? 0);
+                if ($consumerDemand['totalSumDemand'] == 0)
+                    unset($consumerDemand['consumerDemands']);
+
+                # Meter Details 
+                $refMeterData = $mWaterConsumerMeter->getMeterDetailsByConsumerIdV2($refConsumerId)->first();
+                $refMeterData->ref_initial_reading = (float)($refMeterData->ref_initial_reading);
+                switch ($refMeterData['connection_type']) {
+                    case (1):
+                        $connectionName = $refConnectionName['1'];
+                        break;
+                    case (3):
+                        $connectionName = $refConnectionName['3'];
+                        break;
+                }
+                if ($checkParam['demand_from'] == null && $checkParam['paid_status'] == 0 && $checkParam['demand_upto'] == null) {
+                    // return('last demand is not available');
+                    $checkParam['demand_from'] = $checkParam['generation_date'];
+                    $checkParam['demand_upto'] = $mNowDate;
+                }
+
+                $refMeterData['connectionName']     = $connectionName;
+                $refMeterData['ConnectionTypeName'] = $connectionName;
+                $refMeterData['basicDetails']       = $WaterBasicDetails;
+                $consumerDemand['meterDetails']     = $refMeterData;
+                $consumerDemand['demandStatus']     = 1;                                // Static / to represent existence of demand
+                return responseMsgs(true, "List of Consumer Demand!", ($request->original ? $consumerDemand : remove_null($consumerDemand)), "", "01", "ms", "POST", "");
+            }
+            throw new Exception("There is no demand!");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", "01", "ms", "POST", "");
         }
     }
 }

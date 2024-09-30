@@ -187,6 +187,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('consumer/tc-visit-records', 'tcVisitRecordUpdate');
         Route::post('consumer/search-records-tc-visit', 'searchTcVisitRecords');
         Route::post('consumer/view-record-by-id', 'tcVisitReportsById');
+        Route::post('consumer/list-demand-history', 'listConsumerDemandHistory');
     });
 
 

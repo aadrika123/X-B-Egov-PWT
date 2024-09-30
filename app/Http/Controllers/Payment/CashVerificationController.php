@@ -42,9 +42,11 @@ class CashVerificationController extends Controller
             $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
             $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
+            $advertisementModuleId = Config::get('module-constants.ADVERTISEMENT_MODULE_ID');
             $mTempTransaction =  new TempTransaction();
             $zoneId = $request->zone;
             $wardId = $request->wardId;
+
 
             $data = $mTempTransaction->transactionDtl($date, $ulbId);
             if ($userId) {
@@ -60,17 +62,19 @@ class CashVerificationController extends Controller
 
             $collection = collect($data->groupBy("id")->all());
 
-            $data = $collection->map(function ($val) use ($date, $propertyModuleId, $waterModuleId, $tradeModuleId) {
+            $data = $collection->map(function ($val) use ($date, $propertyModuleId, $waterModuleId, $tradeModuleId, $advertisementModuleId) {
                 $total =  $val->sum('amount');
                 $prop  = $val->where("module_id", $propertyModuleId)->sum('amount');
                 $water = $val->where("module_id", $waterModuleId)->sum('amount');
                 $trade = $val->where("module_id", $tradeModuleId)->sum('amount');
+                $advertisement = $val->where("module_id", $advertisementModuleId)->sum('amount');
                 return [
                     "id" => $val[0]['id'],
                     "user_name" => $val[0]['name'],
                     "property" => $prop,
                     "water" => $water,
                     "trade" => $trade,
+                    "advertisement" => $advertisement,
                     "total" => $total,
                     "date" => Carbon::parse($date)->format('d-m-Y'),
                     // "verified_amount" => 0,
@@ -169,6 +173,8 @@ class CashVerificationController extends Controller
             $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
             $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
+            $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
+            // $advertisementModuleId = Config::get('module-constants.ADVERTISEMENT_MODULE_ID');
             $mTempTransaction = new TempTransaction();
             $details = $mTempTransaction->transactionList($date, $userId, $ulbId);
             if ($details->isEmpty())
@@ -177,6 +183,7 @@ class CashVerificationController extends Controller
             $data['property'] = collect($details)->where('module_id', $propertyModuleId)->values();
             $data['water'] = collect($details)->where('module_id', $waterModuleId)->values();
             $data['trade'] = collect($details)->where('module_id', $tradeModuleId)->values();
+            // $data['advertisement'] = collect($details)->where('module_id', $advertisementModuleId)->values();
             $data['Cash'] = collect($details)->where('payment_mode', '=', 'CASH')->sum('amount');
             $data['Cheque'] = collect($details)->where('payment_mode', '=', 'CHEQUE')->sum('amount');
             $data['DD'] = collect($details)->where('payment_mode', '=', 'DD')->sum('amount');
@@ -263,6 +270,7 @@ class CashVerificationController extends Controller
             $property =  $request->property;
             $water    =  $request->water;
             $trade    =  $request->trade;
+            // $advertisement    =  $request->advertisement;
             $mRevDailycollection = new RevDailycollection();
             $cashParamId = Config::get('PropertyConstaint.CASH_VERIFICATION_PARAM_ID');
 
@@ -270,6 +278,7 @@ class CashVerificationController extends Controller
             DB::connection('pgsql_master')->beginTransaction();
             DB::connection('pgsql_water')->beginTransaction();
             DB::connection('pgsql_trade')->beginTransaction();
+            // DB::connection('pgsql_advertisement')->beginTransaction();
             $idGeneration = new PrefixIdGenerator($cashParamId, $ulbId);
             $tranNo = $idGeneration->generate();
 
@@ -388,6 +397,44 @@ class CashVerificationController extends Controller
                     $logTrans->save();
                     $tempDtl->delete();
                 }
+                // if ($advertisement) {
+                //     $tempTranDtl = TempTransaction::find($property[0]);
+                //     $tranDate = $tempTranDtl['tran_date'];
+                //     $tcId = $tempTranDtl['user_id'];
+                //     $mReqs = new Request([
+                //         "tran_no" => $tranNo,
+                //         "user_id" => $userId,
+                //         "demand_date" => $tranDate,
+                //         "deposit_date" => Carbon::now(),
+                //         "ulb_id" => $ulbId,
+                //         "tc_id" => $tcId,
+                //     ]);
+                //     $collectionId =  $mRevDailycollection->store($mReqs);
+    
+                //     foreach ($advertisement as $item) {
+    
+                //         $tempDtl = TempTransaction::find($item);
+                //         $tranId =  $tempDtl->transaction_id;
+    
+                //         PropTransaction::where('id', $tranId)
+                //             ->update(
+                //                 [
+                //                     'verify_status' => 1,
+                //                     'verify_date' => Carbon::now(),
+                //                     'verified_by' => $userId
+                //                 ]
+                //             );
+                //         $this->dailyCollectionDtl($tempDtl, $collectionId);
+                //         if (!$tempDtl)
+                //             throw new Exception("No Transaction Found for this id");
+    
+                //         $logTrans = $tempDtl->replicate();
+                //         $logTrans->setTable('log_temp_transactions');
+                //         $logTrans->id = $tempDtl->id;
+                //         $logTrans->save();
+                //         $tempDtl->delete();
+                //     }
+                // }
             }
             DB::commit();
             DB::connection('pgsql_master')->commit();
