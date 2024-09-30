@@ -3579,7 +3579,7 @@ class WaterConsumer extends Controller
 
             # Check the details 
             if (isset($checkParam)) {
-                $sumDemandAmount = collect($consumerDemand['consumerDemands'])->sum('balance_amount');
+                $sumDemandAmount = collect($consumerDemand['consumerDemands'])->sum('due_balance_amount');
                 $totalPenalty = collect($consumerDemand['consumerDemands'])->sum('due_penalty');
                 $consumerDemand['fromDate'] = Carbon::parse(collect($consumerDemand['consumerDemands'])->min("demand_from"))->format("d-m-Y");
                 $consumerDemand['uptoDate'] = Carbon::parse(collect($consumerDemand['consumerDemands'])->max("demand_upto"))->format("d-m-Y");
