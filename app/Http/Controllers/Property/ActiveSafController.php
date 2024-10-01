@@ -2776,7 +2776,7 @@ class ActiveSafController extends Controller
             ];
 
             return responseMsgs(true, "Demand Details", remove_null($demand), "", "1.0", responseTime(), "POST", $req->deviceId);
-        } catch (Exception $e) {dd($e);
+        } catch (Exception $e){
             return responseMsgs(false, $e->getMessage(), "", "", "1.0", responseTime(), "POST", $req->deviceId);
         }
     }
