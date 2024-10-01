@@ -3575,7 +3575,7 @@ class WaterConsumer extends Controller
 
             $refConsumerDemand = collect($refConsumerDemand)->sortBy('demand_upto')->values();
             $consumerDemand['consumerDemands'] = $refConsumerDemand;
-            $checkParam = collect($consumerDemand['consumerDemands'])->first();
+             $checkParam = collect($consumerDemand['consumerDemands'])->first();
 
             # Check the details 
             if (isset($checkParam)) {
@@ -3586,8 +3586,8 @@ class WaterConsumer extends Controller
                 $consumerDemand['totalSumDemand'] = round($sumDemandAmount, 2);
                 $consumerDemand['totalPenalty'] = round($totalPenalty, 2);
                 $consumerDemand['remainAdvance'] = round($remainAdvance ?? 0);
-                if ($consumerDemand['totalSumDemand'] == 0)
-                    unset($consumerDemand['consumerDemands']);
+                // if ($consumerDemand['totalSumDemand'] == 0)
+                //     unset($consumerDemand['consumerDemands']);
 
                 # Meter Details 
                 $refMeterData = $mWaterConsumerMeter->getMeterDetailsByConsumerIdV2($refConsumerId)->first();
