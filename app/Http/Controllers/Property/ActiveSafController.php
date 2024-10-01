@@ -1045,10 +1045,12 @@ class ActiveSafController extends Controller
                 $amalgamateProps->push($aProp);
             }
             $data["amalgamateProps"] = $amalgamateProps;
-
             $data["builtup_area"] = $data['area_of_plot'];
             if ($data['prop_type_mstr_id'] != 4) {
-                $data["builtup_area"] = $getFloorDtls->sum("builtup_area");
+                //$data["builtup_area"] = $getFloorDtls->sum("builtup_area");
+                $data["builtup_area"] = $getFloorDtls
+                    ->whereNotIn('usage_type_mstr_id', Config::get('akola-property-constant.MANGAL_TOWER_ID'))
+                    ->sum("builtup_area");
             }
             if (isset($assessmentType) && $assessmentType == "Reassessment") {
                 $data["builtup_area"] = $getFloorDtls->whereNotNull('prop_floor_details_id')->sum("builtup_area");
@@ -2639,7 +2641,7 @@ class ActiveSafController extends Controller
             $metaReqs['user_id'] = $userId;
             $metaReqs['forwardDate'] = $this->_todayDate->format('Y-m-d');
             $metaReqs['forwardTime'] = $this->_todayDate->format('H:i:s');
-            $metaReqs['trackDate'] = $previousWorkflowTrack ? Carbon::parse($previousWorkflowTrack->forward_date." ".$previousWorkflowTrack->forward_time)->format('Y-m-d H:i:s') : $this->_todayDate->format('Y-m-d H:i:s');
+            $metaReqs['trackDate'] = $previousWorkflowTrack ? Carbon::parse($previousWorkflowTrack->forward_date . " " . $previousWorkflowTrack->forward_time)->format('Y-m-d H:i:s') : $this->_todayDate->format('Y-m-d H:i:s');
             $req->request->add($metaReqs);
             $track->saveTrack($req);
 
@@ -2776,7 +2778,7 @@ class ActiveSafController extends Controller
             ];
 
             return responseMsgs(true, "Demand Details", remove_null($demand), "", "1.0", responseTime(), "POST", $req->deviceId);
-        } catch (Exception $e){
+        } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", "1.0", responseTime(), "POST", $req->deviceId);
         }
     }
