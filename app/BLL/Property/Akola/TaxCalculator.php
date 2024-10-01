@@ -1371,12 +1371,12 @@ class TaxCalculator
         }
         # double tax apply
         if ($this->_REQUEST->isAllowDoubleTax) {
-            $tax1 = $doubleTax1;
+            //$tax1 = $doubleTax1;
             $tax1 = 0;
         }
         # 100% penalty apply on diff arrea
         elseif ($diffArrea > 0) {
-            $tax1 = $doubleTax1 * ($diffArrea / ($this->_REQUEST->areaOfPlot > 0 ? $this->_REQUEST->areaOfPlot : 1));
+            // $tax1 = $doubleTax1 * ($diffArrea / ($this->_REQUEST->areaOfPlot > 0 ? $this->_REQUEST->areaOfPlot : 1));
             $tax1 = 0;
         }
         //commented by prity pandey
