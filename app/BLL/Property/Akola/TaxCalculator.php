@@ -295,7 +295,9 @@ class TaxCalculator
     {
         if ($this->_REQUEST->propertyType != 4) {
             $totalFloor = collect($this->_REQUEST->floor)->count();
-            $totalBuildupArea = collect($this->_REQUEST->floor)->sum("buildupArea");
+            //$totalBuildupArea = collect($this->_REQUEST->floor)->sum("buildupArea");
+            $totalBuildupArea = collect($this->_REQUEST->floor)->whereNotIn('usage_type_mstr_id', Config::get('akola-property-constant.MANGAL_TOWER_ID'))
+                    ->sum("builtup_area");
             if ($this->getAssestmentTypeStr() == 'Bifurcation') {
                 $bifurcatedFloorArea = collect($this->_REQUEST->floor)->whereNotNull('propFloorDetailId')->sum("biBuildupArea");
                 $newFloorArea = collect($this->_REQUEST->floor)->whereNull('propFloorDetailId')->sum("buildupArea");
