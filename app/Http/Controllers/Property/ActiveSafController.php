@@ -1557,10 +1557,10 @@ class ActiveSafController extends Controller
                     $forwardBackwardIds->forward_role_id = $wfLevels['DA'];
                 }
                 if (!$geotagExist && $saf->current_role == $wfLevels['DA'] && !in_array($wfMstrId, $this->_SkipFiledWorkWfMstrId)) {
-                    $forwardBackwardIds->forward_role_id = $wfLevels['UTC'];
+                    //$forwardBackwardIds->forward_role_id = $wfLevels['UTC'];
 
                     //change by prity pandey
-                    //$forwardBackwardIds->forward_role_id = $wfLevels['TC'];
+                    $forwardBackwardIds->forward_role_id = $wfLevels['TC'];
                     if ($saf->prop_type_mstr_id == 4) {
                         $forwardBackwardIds->forward_role_id = $wfLevels['TC'];
                     }
