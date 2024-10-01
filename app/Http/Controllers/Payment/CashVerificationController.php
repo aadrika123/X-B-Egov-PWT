@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Payment;
 
 use App\Http\Controllers\Controller;
 use App\MicroServices\IdGenerator\PrefixIdGenerator;
+use App\Models\Advertisements\AdTran;
 use App\Models\Payment\RevDailycollection;
 use App\Models\Payment\RevDailycollectiondetail;
 use App\Models\Payment\TempTransaction;
@@ -174,7 +175,7 @@ class CashVerificationController extends Controller
             $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
             $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
             $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
-            // $advertisementModuleId = Config::get('module-constants.ADVERTISEMENT_MODULE_ID');
+            $advertisementModuleId = Config::get('module-constants.ADVERTISEMENT_MODULE_ID');
             $mTempTransaction = new TempTransaction();
             $details = $mTempTransaction->transactionList($date, $userId, $ulbId);
             if ($details->isEmpty())
@@ -183,7 +184,7 @@ class CashVerificationController extends Controller
             $data['property'] = collect($details)->where('module_id', $propertyModuleId)->values();
             $data['water'] = collect($details)->where('module_id', $waterModuleId)->values();
             $data['trade'] = collect($details)->where('module_id', $tradeModuleId)->values();
-            // $data['advertisement'] = collect($details)->where('module_id', $advertisementModuleId)->values();
+            $data['advertisement'] = collect($details)->where('module_id', $advertisementModuleId)->values();
             $data['Cash'] = collect($details)->where('payment_mode', '=', 'CASH')->sum('amount');
             $data['Cheque'] = collect($details)->where('payment_mode', '=', 'CHEQUE')->sum('amount');
             $data['DD'] = collect($details)->where('payment_mode', '=', 'DD')->sum('amount');
@@ -270,7 +271,7 @@ class CashVerificationController extends Controller
             $property =  $request->property;
             $water    =  $request->water;
             $trade    =  $request->trade;
-            // $advertisement    =  $request->advertisement;
+            $advertisement    =  $request->advertisement;
             $mRevDailycollection = new RevDailycollection();
             $cashParamId = Config::get('PropertyConstaint.CASH_VERIFICATION_PARAM_ID');
 
@@ -278,7 +279,7 @@ class CashVerificationController extends Controller
             DB::connection('pgsql_master')->beginTransaction();
             DB::connection('pgsql_water')->beginTransaction();
             DB::connection('pgsql_trade')->beginTransaction();
-            // DB::connection('pgsql_advertisement')->beginTransaction();
+            DB::connection('pgsql_advertisements')->beginTransaction();
             $idGeneration = new PrefixIdGenerator($cashParamId, $ulbId);
             $tranNo = $idGeneration->generate();
 
@@ -397,55 +398,60 @@ class CashVerificationController extends Controller
                     $logTrans->save();
                     $tempDtl->delete();
                 }
-                // if ($advertisement) {
-                //     $tempTranDtl = TempTransaction::find($property[0]);
-                //     $tranDate = $tempTranDtl['tran_date'];
-                //     $tcId = $tempTranDtl['user_id'];
-                //     $mReqs = new Request([
-                //         "tran_no" => $tranNo,
-                //         "user_id" => $userId,
-                //         "demand_date" => $tranDate,
-                //         "deposit_date" => Carbon::now(),
-                //         "ulb_id" => $ulbId,
-                //         "tc_id" => $tcId,
-                //     ]);
-                //     $collectionId =  $mRevDailycollection->store($mReqs);
-    
-                //     foreach ($advertisement as $item) {
-    
-                //         $tempDtl = TempTransaction::find($item);
-                //         $tranId =  $tempDtl->transaction_id;
-    
-                //         PropTransaction::where('id', $tranId)
-                //             ->update(
-                //                 [
-                //                     'verify_status' => 1,
-                //                     'verify_date' => Carbon::now(),
-                //                     'verified_by' => $userId
-                //                 ]
-                //             );
-                //         $this->dailyCollectionDtl($tempDtl, $collectionId);
-                //         if (!$tempDtl)
-                //             throw new Exception("No Transaction Found for this id");
-    
-                //         $logTrans = $tempDtl->replicate();
-                //         $logTrans->setTable('log_temp_transactions');
-                //         $logTrans->id = $tempDtl->id;
-                //         $logTrans->save();
-                //         $tempDtl->delete();
-                //     }
-                // }
             }
+                
+                if ($advertisement) {
+                    $tempTranDtl = TempTransaction::find($advertisement[0]);
+                    
+                    $tranDate = $tempTranDtl['tran_date'];
+                    $tcId = $tempTranDtl['user_id'];
+                    $mReqs = new Request([
+                        "tran_no" => $tranNo,
+                        "user_id" => $userId,
+                        "demand_date" => $tranDate,
+                        "deposit_date" => Carbon::now(),
+                        "ulb_id" => $ulbId,
+                        "tc_id" => $tcId,
+                    ]);
+                    $collectionId =  $mRevDailycollection->store($mReqs);
+    
+                    foreach ($advertisement as $item) {
+    
+                        $tempDtl = TempTransaction::find($item);
+                        $tranId =  $tempDtl->transaction_id;
+    
+                        AdTran::where('id', $tranId)
+                            ->update(
+                                [
+                                    'verify_status' => 1,
+                                    'verified_date' => Carbon::now(),
+                                    'verified_by' => $userId
+                                ]
+                            );
+                        $this->dailyCollectionDtl($tempDtl, $collectionId);
+                        if (!$tempDtl)
+                            throw new Exception("No Transaction Found for this id");
+    
+                        $logTrans = $tempDtl->replicate();
+                        $logTrans->setTable('log_temp_transactions');
+                        $logTrans->id = $tempDtl->id;
+                        $logTrans->save();
+                        $tempDtl->delete();
+                    }
+                }
+            
             DB::commit();
             DB::connection('pgsql_master')->commit();
             DB::connection('pgsql_water')->commit();
             DB::connection('pgsql_trade')->commit();
+            DB::connection('pgsql_advertisements')->commit();
             return responseMsgs(true, "Cash Verified", '', "010201", "1.0", "", "POST", $request->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
             DB::connection('pgsql_water')->rollBack();
             DB::connection('pgsql_trade')->rollBack();
+            DB::connection('pgsql_advertisements')->rollBack();
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $request->deviceId ?? "");
         }
     }
