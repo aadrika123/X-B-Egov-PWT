@@ -126,6 +126,19 @@ class WaterConsumerDemand extends Model
             ->orderByDesc('id')
             ->get();
     }
+    /**
+     * | Get Demand According to consumerId and payment status false 
+        | Here Changes
+     */
+    public function getConsumerDemandV4($consumerId)
+    {
+        // $this->impos_penalty($consumerId);
+        return WaterConsumerDemand::where('consumer_id', $consumerId)
+            // ->where('is_full_paid', false)
+            ->where('status', true)
+            ->orderByDesc('id')
+            ->get();
+    }
 
 
     /**

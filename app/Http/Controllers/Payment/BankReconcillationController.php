@@ -7,6 +7,9 @@ use App\BLL\Water\WaterTranDeactivate;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Water\WaterPaymentController;
 use App\MicroServices\DocUpload;
+use App\Models\Advertisements\AdChequeDtl;
+use App\Models\Advertisements\AdTran;
+use App\Models\Advertisements\AgencyHoardingApproveApplication;
 use App\Models\Payment\PaymentReconciliation;
 use App\Models\Payment\TempTransaction;
 use App\Models\Property\PropActiveSaf;
@@ -77,8 +80,10 @@ class BankReconcillationController extends Controller
             $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
             $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
+            $advertisementModuleId = Config::get('module-constants.ADVERTISEMENT_MODULE_ID');
             $mPropTransaction = new PropTransaction();
             $mTradeTransaction = new TradeTransaction();
+            $mAdTrans = new AdTran();
             $mWaterTran = new WaterTran();
 
             if ($moduleId == $propertyModuleId) {
@@ -119,6 +124,20 @@ class BankReconcillationController extends Controller
 
             if ($moduleId == $tradeModuleId) {
                 $chequeTranDtl  = $mTradeTransaction->chequeTranDtl($ulbId);
+
+                if ($request->chequeNo) {
+                    $data =  $chequeTranDtl
+                        ->where('cheque_no', $request->chequeNo)
+                        ->get();
+                }
+                if (!isset($data)) {
+                    $data = $chequeTranDtl
+                        ->whereBetween('tran_date', [$fromDate, $toDate])
+                        ->get();
+                }
+            }
+            if ($moduleId == $advertisementModuleId) {
+                $chequeTranDtl  = $mAdTrans->chequeTranDtl($ulbId);
 
                 if ($request->chequeNo) {
                     $data =  $chequeTranDtl
@@ -192,9 +211,11 @@ class BankReconcillationController extends Controller
             $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
             $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
+            $advertisementModuleId = Config::get('module-constants.ADVERTISEMENT_MODULE_ID');
             $mPropChequeDtl = new PropChequeDtl();
             $mTradeChequeDtl = new TradeChequeDtl();
             $mWaterChequeDtl = new WaterChequeDtl();
+            $mAdChequeDtl = new AdChequeDtl();
 
 
             switch ($moduleId) {
@@ -211,6 +232,10 @@ class BankReconcillationController extends Controller
                     //Trade
                 case ($tradeModuleId):
                     $data = $mTradeChequeDtl->chequeDtlById($request);
+                    break;
+                    //Adevrtisement
+                case ($advertisementModuleId):
+                    $data = $mAdChequeDtl->chequeDtlById($request);
                     break;
             }
 
@@ -248,6 +273,7 @@ class BankReconcillationController extends Controller
             $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
             $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
+            $advertisementModuleId = Config::get('module-constants.ADVERTISEMENT_MODULE_ID');
             $mPaymentReconciliation = new PaymentReconciliation();
 
             if ($request->status == 'clear') {
@@ -262,6 +288,7 @@ class BankReconcillationController extends Controller
             DB::connection('pgsql_master')->beginTransaction();
             DB::connection('pgsql_water')->beginTransaction();
             DB::connection('pgsql_trade')->beginTransaction();
+            DB::connection('pgsql_advertisements')->beginTransaction();
 
             if ($moduleId == $propertyModuleId) {
                 $mChequeDtl =  PropChequeDtl::find($request->chequeId);
@@ -393,8 +420,8 @@ class BankReconcillationController extends Controller
                 # If the transaction bounce
                 if ($paymentStatus == 3) {
                     $waterDeactivateTran = new WaterTranDeactivate($transaction->id);
-                    $waterDeactivateTran->deactivate(); 
-                    
+                    $waterDeactivateTran->deactivate();
+
                     // $waterTranDtls = WaterTranDetail::where('tran_id', $transaction->id)
                     //     ->where('status', '<>', 0)
                     //     ->get();
@@ -463,7 +490,7 @@ class BankReconcillationController extends Controller
                     //     // $wardId = WaterApplication::find($transaction->related_id)->ward_id;
                     // }
                 }
- 
+
                 # If the payment got clear
                 if ($paymentStatus == 1) {
                     # For demand payment 
@@ -566,16 +593,71 @@ class BankReconcillationController extends Controller
                 // return $request;
                 $mPaymentReconciliation->addReconcilation($request);
             }
+            if ($moduleId == $advertisementModuleId) {
+                $mChequeDtl =  AdChequeDtl::find($request->chequeId);
+
+                $mChequeDtl->status = $paymentStatus;
+                $mChequeDtl->clear_bounce_date = $request->clearanceDate;
+                $mChequeDtl->bounce_amount = $request->cancellationCharge;
+                $mChequeDtl->remarks = $request->remarks;
+                $mChequeDtl->save();
+
+                $transaction = AdTran::where('id', $mChequeDtl->transaction_id)
+                    ->first();
+                    
+
+                AdTran::where('id', $mChequeDtl->transaction_id)
+                    ->update(
+                        [
+                            'verify_status' => 1,
+                            'verified_date' => Carbon::now(),
+                            'verified_by' => $userId,
+                            'status' => $paymentStatus,
+                        ]
+                    );
+
+
+                //  Update in trade applications
+              $application = AgencyHoardingApproveApplication::find($mChequeDtl->application_id);
+                if (!$application) {
+                    throw new Exception("Application Not Found");
+                }
+                $application->payment_status = $applicationPaymentStatus;
+                $application->update();
+                $wardId = $application->ward_id;
+
+                $request->merge([
+                    'id' => $mChequeDtl->id,
+                    'paymentMode' => $transaction->payment_mode,
+                    'transactionNo' => $transaction->tran_no,
+                    'transactionAmount' => $transaction->paid_amount,
+                    'transactionDate' => $transaction->tran_date,
+                    'wardId' => $wardId,
+                    'chequeNo' => $mChequeDtl->cheque_no,
+                    'branchName' => $mChequeDtl->branch_name,
+                    'bankName' => $mChequeDtl->bank_name,
+                    'clearanceDate' => $mChequeDtl->clear_bounce_date,
+                    'chequeDate' => $mChequeDtl->cheque_date,
+                    'moduleId' => $tradeModuleId,
+                    // 'ulbId' => $ulbId,
+                    // 'userId' => $userId,
+                ]);
+
+                // return $request;
+                $mPaymentReconciliation->addReconcilation($request);
+            }
             DB::commit();
             DB::connection('pgsql_master')->commit();
             DB::connection('pgsql_water')->commit();
             DB::connection('pgsql_trade')->commit();
+            DB::connection('pgsql_advertisements')->commit();
             return responseMsg(true, "Data Updated!", '');
         } catch (Exception $error) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
             DB::connection('pgsql_water')->rollBack();
             DB::connection('pgsql_trade')->rollBack();
+            DB::connection('pgsql_advertisements')->rollBack();
             return responseMsg(false, "ERROR!", $error->getMessage());
         }
     }

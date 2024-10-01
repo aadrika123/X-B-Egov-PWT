@@ -4712,6 +4712,8 @@ class WaterReportController extends Controller
         $validated = Validator::make(
             $request->all(),
             [
+                'filterBy'  => 'required',
+                'parameter' => 'required',
                 "uptoDate" => "nullable|date|before_or_equal:$now|date_format:Y-m-d",
                 "userId" => "nullable|digits_between:1,9223372036854775807",
                 "wardId" => "nullable|digits_between:1,9223372036854775807",
@@ -4730,7 +4732,10 @@ class WaterReportController extends Controller
             $userId = $request->userId;
             $wardId = $request->wardId;
             $zoneId = $request->zoneId;
-
+            $paramenter     = $request->parameter;
+            $key            = $request->filterBy;
+            $string         = preg_replace("/([A-Z])/", "_$1", $key);
+            $refstring      = strtolower($string);
             $data = waterConsumerDemand::select(
                 "water_second_consumers.id as consumer_id",
                 "water_second_consumers.consumer_no",
@@ -4757,6 +4762,7 @@ class WaterReportController extends Controller
                 ->where('water_consumer_demands.demand_upto', '<=', $uptoDate)
                 ->where('water_second_consumers.generated', false)
                 ->where('water_second_consumers.status', 1)
+                ->where('water_second_consumers.' . $refstring, 'LIKE', '%' . $paramenter . '%')
                 ->groupBy(
                     'water_second_consumers.id',
                     'water_second_consumers.consumer_no',

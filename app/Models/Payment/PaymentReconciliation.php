@@ -53,7 +53,7 @@ class PaymentReconciliation extends Model
         // $mPaymentReconciliation->department_id = $req->departmentId;
         $mPaymentReconciliation->ulb_id = $req->ulbId;
         $mPaymentReconciliation->user_id = $req->userId;
-        $mPaymentReconciliation->ward_mstr_id = $req->wardId;
+        $mPaymentReconciliation->ward_mstr_id = $req->wardId ?? null;
         $mPaymentReconciliation->cheque_no = $req->chequeNo;
         $mPaymentReconciliation->branch_name = strtoupper($req->branchName);
         $mPaymentReconciliation->bank_name = strtoupper($req->bankName);
