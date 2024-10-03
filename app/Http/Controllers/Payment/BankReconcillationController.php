@@ -669,7 +669,7 @@ class BankReconcillationController extends Controller
     {
         $validator = Validator::make($req->all(), [
             "transactionNo" => "required",
-            "tranType" => "required|In:Property,Water,Trade"
+            "tranType" => "required|In:Property,Water,Trade,Advertisement"
         ]);
 
         if ($validator->fails())
@@ -683,6 +683,11 @@ class BankReconcillationController extends Controller
                 $mWaterTransaction = new WaterTran();
                 $transactionDtl = $mWaterTransaction->getTransByTranNO($req->transactionNo);
             }
+            if ($req->tranType == "Advertisement") {
+                $mAdTransaction = new AdTran();
+                $transactionDtl = $mAdTransaction->getTransByTranNO($req->transactionNo);
+            }
+            
 
             return responseMsgs(true, "Transaction No is", $transactionDtl, "", 01, responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {

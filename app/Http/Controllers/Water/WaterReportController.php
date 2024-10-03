@@ -4712,14 +4712,15 @@ class WaterReportController extends Controller
         $validated = Validator::make(
             $request->all(),
             [
-                'filterBy'  => 'required',
-                'parameter' => 'required',
+                // 'filterBy'  => 'required',
+                // 'parameter' => 'required',
                 "uptoDate" => "nullable|date|before_or_equal:$now|date_format:Y-m-d",
                 "userId" => "nullable|digits_between:1,9223372036854775807",
                 "wardId" => "nullable|digits_between:1,9223372036854775807",
                 "zoneId" => "nullable|digits_between:1,9223372036854775807",
                 "page" => "nullable|digits_between:1,9223372036854775807",
                 "perPage" => "nullable|digits_between:1,9223372036854775807",
+                "propertyType" => "required"
             ]
         );
 
@@ -4734,6 +4735,7 @@ class WaterReportController extends Controller
             $zoneId = $request->zoneId;
             $paramenter     = $request->parameter;
             $key            = $request->filterBy;
+            $propertyType   = $request->propertyType;
             $string         = preg_replace("/([A-Z])/", "_$1", $key);
             $refstring      = strtolower($string);
             $data = waterConsumerDemand::select(
@@ -4762,7 +4764,7 @@ class WaterReportController extends Controller
                 ->where('water_consumer_demands.demand_upto', '<=', $uptoDate)
                 ->where('water_second_consumers.generated', false)
                 ->where('water_second_consumers.status', 1)
-                ->where('water_second_consumers.' . $refstring, 'LIKE', '%' . $paramenter . '%')
+                // ->where('water_second_consumers.' . $refstring, 'LIKE', '%' . $paramenter . '%')
                 ->groupBy(
                     'water_second_consumers.id',
                     'water_second_consumers.consumer_no',
@@ -4774,8 +4776,13 @@ class WaterReportController extends Controller
                     'owners.mobile_no',
                     'water_second_consumers.category',
                     'water_property_type_mstrs.property_type'
-                )
-                ->havingRaw('SUM(water_consumer_demands.due_balance_amount) > 0');
+                );
+            // Apply condition based on propertyType
+            if ($propertyType == 1) {
+                $data->havingRaw('SUM(water_consumer_demands.due_balance_amount) >= 10000');
+            } elseif ($propertyType == 2) {
+                $data->havingRaw('SUM(water_consumer_demands.due_balance_amount) >= 20000');
+            }
 
             if ($userId) {
                 $data->where('water_consumer_demands.emp_details_id', $userId);
@@ -4785,6 +4792,9 @@ class WaterReportController extends Controller
             }
             if ($zoneId) {
                 $data->where('water_second_consumers.zone_mstr_id', $zoneId);
+            }
+            if ($propertyType) {
+                $data->where('water_second_consumers.property_type_id', $propertyType);
             }
 
             $perPage = $request->perPage ?? 10;
