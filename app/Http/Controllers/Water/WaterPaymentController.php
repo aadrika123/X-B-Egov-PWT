@@ -374,6 +374,7 @@ class WaterPaymentController extends Controller
             $mWaterTran                         = new WaterTran();
             $mWaterTranFineRebate               = new WaterTranFineRebate();
             $mWaterSecondConsumer               = new WaterSecondConsumer();
+            $mwaterSiteInspection               = new WaterSiteInspection();
 
             $mTowards           = $this->_towards;
             $mAccDescription    = $this->_accDescription;
@@ -403,6 +404,10 @@ class WaterPaymentController extends Controller
                     throw new Exception('Application Details Not Found! ');
                 }
             }
+            $details  = $mwaterSiteInspection->getInspectionByIdv1($applicationDetails->id)->first();
+            if (!$details) {
+                throw new Exception('Site Inspection Data Not Found!');
+            }
             # Connection Charges
             $connectionCharges = $mWaterConnectionCharge->getChargesById($transactionDetails->demand_id)
                 ->first();
@@ -422,6 +427,8 @@ class WaterPaymentController extends Controller
                 "address"               => $applicationDetails['address'],
                 "paidFrom"              => $connectionCharges['charge_category'] ?? $transactionDetails['tran_type'],
                 "holdingNo"             => $applicationDetails['holding_no'],
+                "propertyNo"             => $applicationDetails['property_no'],
+                "meterNo"               => $applicationDetails['meter_no'],
                 "safNo"                 => $applicationDetails['saf_no'],
                 "consumerNo"            => $applicationDetails['consumer_no'],
                 "paidUpto"              => "",
@@ -450,7 +457,7 @@ class WaterPaymentController extends Controller
                 "mobileNo"              => $applicationDetails['mobile_no'],
                 "roadType"              => $applicationDetails['road_type'],
                 "roadTypeAmount"        => $applicationDetails['per_meter_amount'],
-                "roadWidth"             => $applicationDetails['per_meter'],
+                "roadWidth"             => $details['per_meter'],
                 "ConnectionAmount"      => $applicationDetails['connecton_amount'],
                 "roadCutterAmount"      => $applicationDetails['per_meter_amount'] * $applicationDetails['per_meter'],
 
@@ -1800,7 +1807,7 @@ class WaterPaymentController extends Controller
                 throw new Exception("transaction details not found!");
             }
             // return $transactionDetails;
-           $DemondReportDtl = $mWaterConsumerCollection->getDemondCollection($transactionDetails->id, $previousUptoDate, $fromDates, $uptoDates);
+            $DemondReportDtl = $mWaterConsumerCollection->getDemondCollection($transactionDetails->id, $previousUptoDate, $fromDates, $uptoDates);
 
 
             #  Data not equal to Cash
