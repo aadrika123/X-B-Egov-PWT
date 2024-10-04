@@ -325,9 +325,9 @@ class TaxCalculator
                 $rate = $this->readRateByFloor($item);                // (2.1)
                 //if ($item->usageType == $this->_mangalTowerId) {
                 //$this->mangalTower($item);
-                if (in_array($item->usageType, [$this->_mangalTowerId])) {
+                if (in_array($item->usageType, $this->_mangalTowerId)) {
                     $this->_floorsTaxes[$key] = $this->mangalTower($item);
-                    break;
+                    continue;
                 }
                 $agingPerc = $this->readAgingByFloor($item);           // (2.2)
 
@@ -436,10 +436,9 @@ class TaxCalculator
                 $rate = $this->readRateByFloor($item);                 // (2.1)
                 //if ($item->usageType == $this->_mangalTowerId) {
                 //$this->mangalTower($item);
-                if (in_array($item->usageType, [$this->_mangalTowerId])) {
+                if (in_array($item->usageType, $this->_mangalTowerId)) {
                     $this->_floorsTaxes[$key] = $this->mangalTower($item);
-                    //continue;
-                    break;
+                    continue;
                 }
                 $applyArrea = 0;
                 if ($this->getAssestmentTypeStr() == 'Reassessment') {
