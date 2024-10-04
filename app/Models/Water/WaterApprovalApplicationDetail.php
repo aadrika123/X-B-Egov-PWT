@@ -212,6 +212,7 @@ class WaterApprovalApplicationDetail extends Model
             'ulb_masters.association_with',
             'water_road_cutter_charges.road_type',
             'water_road_cutter_charges.per_meter_amount',
+            'water_param_property_types.property_type',
             // 'water_site_inspections.road_width ',
             'water_second_consumers.tab_size',
             'water_connection_type_charges.amount as connecton_amount',
@@ -225,6 +226,7 @@ class WaterApprovalApplicationDetail extends Model
             ->leftjoin('water_road_cutter_charges', 'water_road_cutter_charges.id', 'water_approval_application_details.road_type_id')
             ->join('water_connection_type_charges', 'water_connection_type_charges.id', 'water_approval_application_details.connection_type_id')
             ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_approval_application_details.ward_id')
+            ->Join('water_param_property_types', 'water_param_property_types.id', '=', 'water_second_consumers.property_type_id')
             ->where('water_approval_application_details.status', true)
             ->where('water_second_consumers.id', $applicationId);
     }
