@@ -1347,6 +1347,158 @@ class ReportController extends Controller
         }
     }
 
+    // public function userWiseCollectionSummary(Request $request)
+    // {
+    //     $validated = Validator::make(
+    //         $request->all(),
+    //         [
+    //             "fromDate" => "nullable|date|date_format:Y-m-d",
+    //             "uptoDate" => "nullable|date|date_format:Y-m-d|after_or_equal:" . $request->fromDate,
+    //             "ulbId" => "nullable|digits_between:1,9223372036854775807",
+    //             "wardId" => "nullable|digits_between:1,9223372036854775807",
+    //             "zoneId" => "nullable|digits_between:1,9223372036854775807",
+    //             "paymentMode" => "nullable",
+    //             "userId" => "nullable|digits_between:1,9223372036854775807",
+    //         ]
+    //     );
+    //     if ($validated->fails()) {
+    //         return response()->json([
+    //             'status' => false,
+    //             'message' => 'validation error',
+    //             'errors' => $validated->errors()
+    //         ]);
+    //     }
+    //     try {
+    //         $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
+    //         $user = Auth()->user();
+    //         $ulbId = $user->ulb_id ?? 2;
+    //         $perPage = $request->perPage ? $request->perPage : 10;
+    //         $page = $request->page && $request->page > 0 ? $request->page : 1;
+    //         $limit = $perPage;
+    //         $offset =  $request->page && $request->page > 0 ? (($request->page - 1) * $perPage) : 0;
+    //         $wardId = $zoneId = $paymentMode = $userId = null;
+    //         if ($request->fromDate) {
+    //             $fromDate = $request->fromDate;
+    //         }
+    //         if ($request->uptoDate) {
+    //             $uptoDate = $request->uptoDate;
+    //         }
+    //         if ($request->wardId) {
+    //             $wardId = $request->wardId;
+    //         }
+    //         if ($request->zoneId) {
+    //             $zoneId = $request->zoneId;
+    //         }
+    //         if ($request->paymentMode) {
+    //             $paymentMode = $request->paymentMode;
+    //         }
+    //         if ($request->userId) {
+    //             $userId = $request->userId;
+    //         }
+    //         $sql = "
+    //         //     SELECT prop_transactions.*,
+    //         //         users.id as user_id,
+    //         //         users.name,
+    //         //         users.mobile,
+    //         //         users.photo,
+    //         //         users.photo_relative_path
+    //         //     FROM(
+    //         //         SELECT SUM(amount) as total_amount,
+    //         //             count(prop_transactions.id) as total_tran,
+    //         //             count(distinct prop_transactions.property_id) as total_property, 
+    //         //             prop_transactions.user_id                   
+    //         //         FROM prop_transactions 
+    //         //         JOIN prop_properties on prop_properties.id = prop_transactions.property_id                   
+    //         //         WHERE prop_transactions.status IN (1,2)
+    //         //             AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+    //         //             " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
+    //         //             " . ($zoneId ? " AND prop_properties.zone_mstr_id	 = $zoneId" : "") . "
+    //         //             " . ($userId ? " AND prop_transactions.user_id = $userId" : "") . "
+    //         //             " . ($paymentMode ? " AND upper(prop_transactions.payment_mode) = upper('$paymentMode')" : "") . "
+    //         //         GROUP BY prop_transactions.user_id
+    //         //         ORDER BY prop_transactions.user_id
+    //         //     )prop_transactions
+    //         //     JOIN users ON users.id = prop_transactions.user_id
+    //         // ";
+    //         // $data = $this->_DB_READ->select($sql . " limit $limit offset $offset");
+    //         // $count = (collect($this->_DB_READ->SELECT("SELECT COUNT(*)AS total, SUM(total_amount) AS total_amount,sum(total_tran) as total_tran
+    //         //                               FROM ($sql) total"))->first());
+    //         // $total = ($count)->total ?? 0;
+    //         // $sum = ($count)->total_amount ?? 0;
+    //         // $totalBillCut = ($count)->total_tran ?? 0;
+    //         // $lastPage = ceil($total / $perPage);
+    //         // $list = [
+    //         //     "current_page" => $page,
+    //         //     "data" => $data,
+    //         //     "total" => $total,
+    //         //     "total_sum" => $sum,
+    //         //     "totalBillCut" => $totalBillCut,
+    //         //     "per_page" => $perPage,
+    //         //     "last_page" => $lastPage
+    //         // ];
+
+    //         $sql = "
+    //                 SELECT 
+    //                     users.id as user_id,
+    //                     users.name,
+    //                     users.mobile,
+    //                     users.photo,
+    //                     users.photo_relative_path,
+    //                     COALESCE(prop_transactions.total_amount, 0) as total_amount,
+    //                     COALESCE(prop_transactions.total_tran, 0) as total_tran,
+    //                     COALESCE(prop_transactions.total_property, 0) as total_property
+    //                 FROM users
+    //                 LEFT JOIN (
+    //                     SELECT 
+    //                         SUM(amount) as total_amount,
+    //                         count(prop_transactions.id) as total_tran,
+    //                         count(distinct prop_transactions.property_id) as total_property, 
+    //                         prop_transactions.user_id                   
+    //                     FROM prop_transactions 
+    //                     JOIN prop_properties on prop_properties.id = prop_transactions.property_id                   
+    //                     WHERE prop_transactions.status IN (1,2)
+    //                         AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+    //                         " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
+    //                         " . ($zoneId ? " AND prop_properties.zone_mstr_id = $zoneId" : "") . "
+    //                         " . ($userId ? " AND prop_transactions.user_id = $userId" : "") . "
+    //                         " . ($paymentMode ? " AND upper(prop_transactions.payment_mode) = upper('$paymentMode')" : "") . "
+    //                     GROUP BY prop_transactions.user_id
+    //                 ) prop_transactions ON users.id = prop_transactions.user_id
+    //                 WHERE users.user_type = 'TC'
+    //                 AND users.suspended = false
+    //                 where users.id ! = 76
+    //                 ORDER BY users.id
+    //             ";
+    //         $data = $this->_DB_READ->select($sql . " limit $limit offset $offset");
+
+    //         $count = collect($this->_DB_READ->SELECT("
+    //                     SELECT COUNT(*) AS total, 
+    //                         SUM(total_amount) AS total_amount,
+    //                         SUM(total_tran) as total_tran
+    //                     FROM ($sql) total
+    //                 "))->first();
+
+    //         $total = $count->total ?? 0;
+    //         $sum = $count->total_amount ?? 0;
+    //         $totalBillCut = $count->total_tran ?? 0;
+    //         $lastPage = ceil($total / $perPage);
+
+    //         $list = [
+    //             "current_page" => $page,
+    //             "data" => $data,
+    //             "total" => $total,
+    //             "total_sum" => $sum,
+    //             "totalBillCut" => $totalBillCut,
+    //             "per_page" => $perPage,
+    //             "last_page" => $lastPage
+    //         ];
+    //         return responseMsgs(true, "", $list, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+    //     } catch (Exception $e) {
+    //         return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
+    //     }
+    // }
+
+
     public function userWiseCollectionSummary(Request $request)
     {
         $validated = Validator::make(
@@ -1361,6 +1513,7 @@ class ReportController extends Controller
                 "userId" => "nullable|digits_between:1,9223372036854775807",
             ]
         );
+
         if ($validated->fails()) {
             return response()->json([
                 'status' => false,
@@ -1368,6 +1521,7 @@ class ReportController extends Controller
                 'errors' => $validated->errors()
             ]);
         }
+
         try {
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
             $user = Auth()->user();
@@ -1375,107 +1529,74 @@ class ReportController extends Controller
             $perPage = $request->perPage ? $request->perPage : 10;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $limit = $perPage;
-            $offset =  $request->page && $request->page > 0 ? (($request->page - 1) * $perPage) : 0;
+            $offset = $request->page && $request->page > 0 ? (($request->page - 1) * $perPage) : 0;
             $wardId = $zoneId = $paymentMode = $userId = null;
+
             if ($request->fromDate) {
                 $fromDate = $request->fromDate;
             }
+
             if ($request->uptoDate) {
                 $uptoDate = $request->uptoDate;
             }
+
             if ($request->wardId) {
                 $wardId = $request->wardId;
             }
+
             if ($request->zoneId) {
                 $zoneId = $request->zoneId;
             }
+
             if ($request->paymentMode) {
                 $paymentMode = $request->paymentMode;
             }
+
             if ($request->userId) {
                 $userId = $request->userId;
             }
-            $sql = "
-            //     SELECT prop_transactions.*,
-            //         users.id as user_id,
-            //         users.name,
-            //         users.mobile,
-            //         users.photo,
-            //         users.photo_relative_path
-            //     FROM(
-            //         SELECT SUM(amount) as total_amount,
-            //             count(prop_transactions.id) as total_tran,
-            //             count(distinct prop_transactions.property_id) as total_property, 
-            //             prop_transactions.user_id                   
-            //         FROM prop_transactions 
-            //         JOIN prop_properties on prop_properties.id = prop_transactions.property_id                   
-            //         WHERE prop_transactions.status IN (1,2)
-            //             AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
-            //             " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
-            //             " . ($zoneId ? " AND prop_properties.zone_mstr_id	 = $zoneId" : "") . "
-            //             " . ($userId ? " AND prop_transactions.user_id = $userId" : "") . "
-            //             " . ($paymentMode ? " AND upper(prop_transactions.payment_mode) = upper('$paymentMode')" : "") . "
-            //         GROUP BY prop_transactions.user_id
-            //         ORDER BY prop_transactions.user_id
-            //     )prop_transactions
-            //     JOIN users ON users.id = prop_transactions.user_id
-            // ";
-            // $data = $this->_DB_READ->select($sql . " limit $limit offset $offset");
-            // $count = (collect($this->_DB_READ->SELECT("SELECT COUNT(*)AS total, SUM(total_amount) AS total_amount,sum(total_tran) as total_tran
-            //                               FROM ($sql) total"))->first());
-            // $total = ($count)->total ?? 0;
-            // $sum = ($count)->total_amount ?? 0;
-            // $totalBillCut = ($count)->total_tran ?? 0;
-            // $lastPage = ceil($total / $perPage);
-            // $list = [
-            //     "current_page" => $page,
-            //     "data" => $data,
-            //     "total" => $total,
-            //     "total_sum" => $sum,
-            //     "totalBillCut" => $totalBillCut,
-            //     "per_page" => $perPage,
-            //     "last_page" => $lastPage
-            // ];
 
             $sql = "
-                    SELECT 
-                        users.id as user_id,
-                        users.name,
-                        users.mobile,
-                        users.photo,
-                        users.photo_relative_path,
-                        COALESCE(prop_transactions.total_amount, 0) as total_amount,
-                        COALESCE(prop_transactions.total_tran, 0) as total_tran,
-                        COALESCE(prop_transactions.total_property, 0) as total_property
-                    FROM users
-                    LEFT JOIN (
-                        SELECT 
-                            SUM(amount) as total_amount,
-                            count(prop_transactions.id) as total_tran,
-                            count(distinct prop_transactions.property_id) as total_property, 
-                            prop_transactions.user_id                   
-                        FROM prop_transactions 
-                        JOIN prop_properties on prop_properties.id = prop_transactions.property_id                   
-                        WHERE prop_transactions.status IN (1,2)
-                            AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
-                            " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
-                            " . ($zoneId ? " AND prop_properties.zone_mstr_id = $zoneId" : "") . "
-                            " . ($userId ? " AND prop_transactions.user_id = $userId" : "") . "
-                            " . ($paymentMode ? " AND upper(prop_transactions.payment_mode) = upper('$paymentMode')" : "") . "
-                        GROUP BY prop_transactions.user_id
-                    ) prop_transactions ON users.id = prop_transactions.user_id
-                    WHERE users.user_type = 'TC'
-                    AND users.suspended = 'false'
-                    ORDER BY users.id
-                ";
-            $data = $this->_DB_READ->select($sql . " limit $limit offset $offset");
+            SELECT 
+                users.id as user_id,
+                users.name,
+                users.mobile,
+                users.photo,
+                users.photo_relative_path,
+                COALESCE(prop_transactions.total_amount, 0) as total_amount,
+                COALESCE(prop_transactions.total_tran, 0) as total_tran,
+                COALESCE(prop_transactions.total_property, 0) as total_property
+            FROM users
+            LEFT JOIN (
+                SELECT 
+                    SUM(amount) as total_amount,
+                    COUNT(prop_transactions.id) as total_tran,
+                    COUNT(DISTINCT prop_transactions.property_id) as total_property, 
+                    prop_transactions.user_id                   
+                FROM prop_transactions 
+                JOIN prop_properties ON prop_properties.id = prop_transactions.property_id                   
+                WHERE prop_transactions.status IN (1, 2)
+                    AND prop_transactions.tran_date BETWEEN '$fromDate' AND '$uptoDate'
+                    " . ($wardId ? " AND prop_properties.ward_mstr_id = $wardId" : "") . "
+                    " . ($zoneId ? " AND prop_properties.zone_mstr_id = $zoneId" : "") . "
+                    " . ($userId ? " AND prop_transactions.user_id = $userId" : "") . "
+                    " . ($paymentMode ? " AND UPPER(prop_transactions.payment_mode) = UPPER('$paymentMode')" : "") . "
+                GROUP BY prop_transactions.user_id
+            ) prop_transactions ON users.id = prop_transactions.user_id
+            WHERE users.user_type = 'TC'
+            AND users.suspended = false
+            AND users.id <> 76
+            ORDER BY users.id
+        ";
 
-            $count = collect($this->_DB_READ->SELECT("
-                        SELECT COUNT(*) AS total, 
-                            SUM(total_amount) AS total_amount,
-                            SUM(total_tran) as total_tran
-                        FROM ($sql) total
-                    "))->first();
+            $data = $this->_DB_READ->select($sql . " LIMIT $limit OFFSET $offset");
+
+            $count = collect($this->_DB_READ->select("
+                    SELECT COUNT(*) AS total, 
+                        SUM(total_amount) AS total_amount,
+                        SUM(total_tran) as total_tran
+                    FROM ($sql) total
+                "))->first();
 
             $total = $count->total ?? 0;
             $sum = $count->total_amount ?? 0;
@@ -1491,6 +1612,7 @@ class ReportController extends Controller
                 "per_page" => $perPage,
                 "last_page" => $lastPage
             ];
+
             return responseMsgs(true, "", $list, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
