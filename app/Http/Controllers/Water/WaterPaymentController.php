@@ -374,6 +374,7 @@ class WaterPaymentController extends Controller
             $mWaterTran                         = new WaterTran();
             $mWaterTranFineRebate               = new WaterTranFineRebate();
             $mWaterSecondConsumer               = new WaterSecondConsumer();
+            $mwaterSiteInspection               = new WaterSiteInspection();
 
             $mTowards           = $this->_towards;
             $mAccDescription    = $this->_accDescription;
@@ -403,6 +404,10 @@ class WaterPaymentController extends Controller
                     throw new Exception('Application Details Not Found! ');
                 }
             }
+            $details  = $mwaterSiteInspection->getInspectionByIdv1($applicationDetails->id)->first();
+            if (!$details) {
+                throw new Exception('Site Inspection Data Not Found!');
+            }
             # Connection Charges
             $connectionCharges = $mWaterConnectionCharge->getChargesById($transactionDetails->demand_id)
                 ->first();
@@ -422,6 +427,8 @@ class WaterPaymentController extends Controller
                 "address"               => $applicationDetails['address'],
                 "paidFrom"              => $connectionCharges['charge_category'] ?? $transactionDetails['tran_type'],
                 "holdingNo"             => $applicationDetails['holding_no'],
+                "propertyNo"             => $applicationDetails['property_no'],
+                "meterNo"               => $applicationDetails['meter_no'],
                 "safNo"                 => $applicationDetails['saf_no'],
                 "consumerNo"            => $applicationDetails['consumer_no'],
                 "paidUpto"              => "",
@@ -450,9 +457,9 @@ class WaterPaymentController extends Controller
                 "mobileNo"              => $applicationDetails['mobile_no'],
                 "roadType"              => $applicationDetails['road_type'],
                 "roadTypeAmount"        => $applicationDetails['per_meter_amount'],
-                "roadWidth"             => $applicationDetails['per_meter'],
+                "roadWidth"             => $details['per_meter'],
                 "ConnectionAmount"      => $applicationDetails['connecton_amount'],
-                "roadCutterAmount"      => $applicationDetails['per_meter_amount'] * $applicationDetails['per_meter'],
+                "roadCutterAmount"      => $applicationDetails['per_meter_amount'] * $details['per_meter'],
 
                 "paidAmtInWords"        => getIndianCurrency($transactionDetails->amount),
             ];
@@ -1769,6 +1776,7 @@ class WaterPaymentController extends Controller
             $mWaterConsumerOwners   = new WaterConsumerOwner();
             $WaterAdvance           = new WaterAdvance();
             $WaterAdjustment        = new WaterAdjustment();
+            $mWaterConsumerCollection = new WaterConsumerCollection();
 
             $mTowardsDemand     = Config::get("waterConstaint.TOWARDS_DEMAND");
             $mTranType          = Config::get("waterConstaint.PAYMENT_FOR");
@@ -1776,6 +1784,19 @@ class WaterPaymentController extends Controller
             $mAccDescription    = $this->_accDescription;
             $mDepartmentSection = $this->_departmentSection;
             $mPaymentModes      = $this->_paymentModes;
+            $now                        = Carbon::now();
+            $currentDate                = $now->format('Y-m-d');
+            $currentYear                = collect(explode('-', $req->fiYear))->first() ?? $now->year;
+            $currentFyear               = $request->fiYear ?? getFinancialYear($currentDate);
+            $startOfCurrentYear         = Carbon::createFromDate($currentYear, 4, 1);
+            $startOfPreviousYear        = $startOfCurrentYear->copy()->subYear();
+            $refDate                    = $this->getFyearDate($currentFyear);
+            $fromDates                  = $refDate['fromDate'];
+            $uptoDates                  = $refDate['uptoDate'];
+            $previousFinancialYear      = getFinancialYear($startOfPreviousYear);
+            $refDate                    = $this->getFyearDate($previousFinancialYear);
+            $previousFromDate           = $refDate['fromDate'];
+            $previousUptoDate           = $refDate['uptoDate'];
 
             # transaction Deatils
             $transactionDetails = $mWaterTran->getTransactionByTransactionNoV2($refTransactionNo, $refTranId)
@@ -1785,6 +1806,9 @@ class WaterPaymentController extends Controller
             if (!$transactionDetails) {
                 throw new Exception("transaction details not found!");
             }
+            // return $transactionDetails;
+            $DemondReportDtl = $mWaterConsumerCollection->getDemondCollection($transactionDetails->id, $previousUptoDate, $fromDates, $uptoDates);
+
 
             #  Data not equal to Cash
             if (!in_array($transactionDetails['payment_mode'], [$mPaymentModes['1'], $mPaymentModes['5']])) {
@@ -1919,6 +1943,8 @@ class WaterPaymentController extends Controller
                 "advancePaidAmount"       => $advanceAmt,
                 "adjustAmount"            => $adjustAmt,
                 "netAdvance"              => $advanceAmt - $adjustAmt,
+                "currentCollection"       => $DemondReportDtl->current_collections,
+                "arrearCollection"        => $DemondReportDtl->arrear_collections,
             ];
 
             return responseMsgs(true, "Payment Receipt", remove_null($returnValues), "", "1.0", "", "POST", $req->deviceId ?? "");
@@ -1926,6 +1952,20 @@ class WaterPaymentController extends Controller
             return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "", "01", "ms", "POST", "");
         }
     }
+    public function getFyearDate($fyear)
+    {
+        list($fromYear, $toYear) = explode("-", $fyear);
+        if ($toYear - $fromYear != 1) {
+            throw new Exception("Enter Valide Financial Year");
+        }
+        $fromDate = $fromYear . "-04-01";
+        $uptoDate = $toYear . "-03-31";
+        return [
+            "fromDate" => $fromDate,
+            "uptoDate" => $uptoDate
+        ];
+    }
+
 
 
     /**

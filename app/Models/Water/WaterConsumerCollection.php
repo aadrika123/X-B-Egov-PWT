@@ -51,4 +51,22 @@ class WaterConsumerCollection extends Model
         return WaterConsumerCollection::where('transaction_id', $tranId)
             ->update($updateDetils);
     }
+    public function getDemondCollection($tranId,$previousUptoDate, $fromDates, $uptoDates)
+    {
+        return self::selectRaw(
+            "SUM(CASE 
+                WHEN water_consumer_collections.demand_upto <= ? THEN water_consumer_collections.paid_amount 
+                ELSE 0 
+            END) AS arrear_collections,
+            
+            SUM(CASE 
+                WHEN water_consumer_collections.demand_from >= ? AND water_consumer_collections.demand_upto <= ? 
+                THEN water_consumer_collections.paid_amount 
+                ELSE 0 
+            END) AS current_collections",
+            [$previousUptoDate, $fromDates, $uptoDates] // Binding parameters to prevent SQL injection
+        )
+            ->where('water_consumer_collections.transaction_id',$tranId) // Assuming transaction_id should be valid
+            ->first();
+    }
 }

@@ -35,4 +35,23 @@ class AdTran extends Model
             ->where('ad_trans.status', 1)
             ->where('ad_trans.ulb_id', $ulbId);
     }
+    /**
+     * | Get water Transaction by Transaction No
+     */
+    public function getTransByTranNo($tranNo)
+    {
+        return AdTran::select(
+            'ad_trans.id as transaction_id',
+            'ad_trans.tran_no as transaction_no',
+            'ad_trans.amount',
+            'ad_trans.payment_mode',
+            'ad_trans.tran_date',
+            'ad_trans.tran_type',
+            DB::raw('14 as moduleId'),
+            'ad_trans.status'
+        )
+            ->where('ad_trans.tran_no', $tranNo)
+            ->where('status', 1)
+            ->get();
+    }
 }

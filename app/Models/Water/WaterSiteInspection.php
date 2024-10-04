@@ -81,7 +81,25 @@ class WaterSiteInspection extends Model
             ->orderByDesc('water_site_inspections.id');
     }
 
-
+    /**
+     * | Get Site inspection Details by ApplicationId
+     * | According to verification status false
+     * | @param applicationId
+        | Not Used 
+     */
+    public function getInspectionByIdv1($applicationId)
+    {
+        return WaterSiteInspection::select(
+            'water_site_inspections.road_width as per_meter',
+            'id as site_inspection_id',
+            'property_type_id as site_inspection_property_type_id',
+            'area_sqft as site_inspection_area_sqft'
+        )
+            ->where('apply_connection_id', $applicationId)
+            ->where('status', true)
+            ->where('payment_status', 0)
+            ->orderByDesc('water_site_inspections.id');
+    }
     /**
      * | Save the Sheduled Date and Time of the Site Inspection
      * | Create a record for further Edit in site inspection
