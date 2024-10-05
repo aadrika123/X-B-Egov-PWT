@@ -72,6 +72,7 @@ use Maatwebsite\Excel\Excel as ExcelExcel;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\CssSelector\Node\FunctionNode;
 
+
 class WaterConsumer extends Controller
 {
     use Workflow;
@@ -2530,7 +2531,7 @@ class WaterConsumer extends Controller
 
             $ownerUdatesLog->consumers_updating_log_id = $conUpdaleLog->id;
             // return ($consumerDtls);
-             $consumerDtls->update();
+            $consumerDtls->update();
             $owner ? $owner->update() : "";
 
             $conUpdaleLog->relative_path = $imageName ? $relativePath : null;
@@ -3575,7 +3576,7 @@ class WaterConsumer extends Controller
 
             $refConsumerDemand = collect($refConsumerDemand)->sortBy('demand_upto')->values();
             $consumerDemand['consumerDemands'] = $refConsumerDemand;
-             $checkParam = collect($consumerDemand['consumerDemands'])->first();
+            $checkParam = collect($consumerDemand['consumerDemands'])->first();
 
             # Check the details 
             if (isset($checkParam)) {
@@ -3615,6 +3616,35 @@ class WaterConsumer extends Controller
             }
             throw new Exception("There is no demand!");
         } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "", "01", "ms", "POST", "");
+        }
+    }
+    /**
+     * |check meter number if exist or not 
+     */
+    public function validateMeterNumber(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'meterNo' => 'required|',
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        try {
+
+            $mWaterConsumerDemand   = new WaterConsumerDemand();
+            $mWaterConsumerMeter    = new WaterConsumerMeter();
+
+            $checkConsumerMeter     = $mWaterConsumerMeter->checkMeterNo($request)->get();
+            if (($checkConsumerMeter->isNotEmpty())) {
+                throw new Exception("Meter Number Is Not Valid");
+            }
+            // Return success response if the meter number does not exist
+            return responseMsgs(true, "Meter Number Is  Valid", "", "", "01", "ms", "POST", "");
+        } catch (Exception $e) {
+            // Return error response
             return responseMsgs(false, $e->getMessage(), "", "", "01", "ms", "POST", "");
         }
     }
