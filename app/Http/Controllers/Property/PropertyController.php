@@ -721,8 +721,8 @@ class PropertyController extends Controller
                 "applicationDate" => $application->created_at ? Carbon::parse($application->created_at)->format("m-d-Y H:s:i A") : null,
                 "requestNo" => $application->request_no,
                 "updationType" => $application->is_full_update ? "Full Update" : "Basice Update",
-                "objectionFor"=>$application->objection_for,
-                "verifiedBy" =>$approve->name?? null
+                "objectionFor" => $application->objection_for,
+                "verifiedBy" => $approve->name ?? null
             ];
             if ($application->objection_for) {
                 $document = $this->getUploadedDocuments($request);
@@ -1097,7 +1097,7 @@ class PropertyController extends Controller
                 $msg['inWorkflow'] = true;
                 $msg['currentRole'] = $data->role_name;
                 $msg['message'] = "Your " . $data->assessment_type . " application is still in workflow and pending at " . $data->role_name . ". Please Track your application with " . $data->application_no;
-                if($data->role_name == "SENIOR LIPIK"){
+                if ($data->role_name == "SENIOR LIPIK") {
                     $msg['message'] = "Your " . $data->assessment_type . " application is still in workflow and pending at " . "NAGAR RACHNA" . ". Please Track your application with " . $data->application_no;
                 }
             } else {
@@ -1105,7 +1105,8 @@ class PropertyController extends Controller
                 $req->merge(["propId" => $propertyId]);
                 $getHoldingDues = new GetHoldingDuesV2;
                 $demand = $getHoldingDues->getDues($req);
-                if (in_array($req->type, ['Mutation', 'Concession', 'Objection', 'Harvesting'])) {
+                //if (in_array($req->type, ['Mutation', 'Concession', 'Objection', 'Harvesting'])) {
+                if (in_array($req->type, ['Concession', 'Objection', 'Harvesting'])) {
                     if (($demand['previousInterest']) > 0 || ($demand['arrear']) > 0) {
                         $sms = "Please Clear The Previous Arrear Amount Of ₹" . $demand['arrearPayableAmt'] . " Before Applying The Application.";
                     }
@@ -1433,7 +1434,7 @@ class PropertyController extends Controller
                 'property_from' => $minFloorFromDate,
                 'geo_tag_image' =>  $geotaggedImg,
                 'demands'     => $propDemand,
-               // 'userDetails' => $req->auth,
+                // 'userDetails' => $req->auth,
                 'userDetails' => Auth()->user(),
             ];
 
@@ -1442,7 +1443,7 @@ class PropertyController extends Controller
                 // 'user_id'     => $req->auth['id'],
                 // 'user_name'   => $req->auth['name']??null,
                 'user_id'     => authUser($req)->id,
-                'user_name'   => $user_name??null,
+                'user_name'   => $user_name ?? null,
             ];
             $mNakkalViewList->store($mReqs);
 
