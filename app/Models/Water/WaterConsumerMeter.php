@@ -165,4 +165,11 @@ class WaterConsumerMeter extends Model
                 'meter_no' => $checkExist->meter_number,                                                 // Static
             ]);
     }
+    /**
+     * | Get consumer by consumer Id
+     */
+    public function checkMeterNo($request)
+    {
+        return WaterConsumerMeter::where('meter_no', $request->meterNo);
+    }
 }

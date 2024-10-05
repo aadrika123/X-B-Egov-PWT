@@ -4781,7 +4781,7 @@ class WaterReportController extends Controller
             if ($propertyType == 1) {
                 $data->havingRaw('SUM(water_consumer_demands.due_balance_amount) >= 10000');
             } elseif ($propertyType == 2) {
-                $data->havingRaw('SUM(water_consumer_demands.due_balance_amount) >= 20000');
+                $data->havingRaw('SUM(water_consumer_demands.due_balance_amount) >= 25000');
             }
 
             if ($userId) {
