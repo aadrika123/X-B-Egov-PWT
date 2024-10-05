@@ -1581,9 +1581,14 @@ class ActiveSafController extends Controller
                         
                             $forwardBackwardIds->forward_role_id = $wfLevels['TC'];
                     }
-                    else {
-                        $forwardBackwardIds->forward_role_id = $wfLevels['SI'];
-                    }
+                    
+                    $forwardBackwardIds->forward_role_id = $wfLevels['SI'];
+                    
+                    $saf->update();
+                }
+                if($saf->workflow_id == 3 && $saf->current_role == $wfLevels['SI'])
+                {
+                    $forwardBackwardIds->forward_role_id = $wfLevels['EO'];
                     $saf->update();
                 }
                 #==========enf of code change ===============
