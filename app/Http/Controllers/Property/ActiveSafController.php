@@ -1579,10 +1579,11 @@ class ActiveSafController extends Controller
                          ($propbuildupArea != $safbuildupArea)) && 
                         $saf->current_role == $wfLevels['DA']) {
                         
-                        $forwardBackwardIds->forward_role_id = $wfLevels['TC'];
+                            $saf->current_role = $forwardBackwardIds->forward_role_id = $wfLevels['TC'];
                     } else {
-                        $forwardBackwardIds->forward_role_id = $wfLevels['SI'];
+                        $saf->current_role = $forwardBackwardIds->forward_role_id = $wfLevels['SI'];
                     }
+                    $saf->update();
                 }
                 
                 #==========enf of code change ===============
