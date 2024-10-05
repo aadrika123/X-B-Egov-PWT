@@ -1581,10 +1581,11 @@ class ActiveSafController extends Controller
                         
                             $forwardBackwardIds->forward_role_id = $wfLevels['TC'];
                     }
+                    else {
+                        // If the condition is false, forward to SI
+                        $forwardBackwardIds->forward_role_id = $wfLevels['SI'];
+                    }
                     $saf->update();
-                }
-                else{
-                    $forwardBackwardIds->forward_role_id = $wfLevels['SI'];
                 }
                 #==========enf of code change ===============
 
