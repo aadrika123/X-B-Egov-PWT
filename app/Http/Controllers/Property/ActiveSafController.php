@@ -1052,7 +1052,7 @@ class ActiveSafController extends Controller
                     ->whereNotIn('usage_type_mstr_id', Config::get('akola-property-constant.MANGAL_TOWER_ID'))
                     ->sum("builtup_area");
             }
-            if (isset($assessmentType) && $assessmentType == "Reassessment") {
+            if (isset($assessmentType) && ($assessmentType == "Reassessment" ||$assessmentType == "Mutation") ) {
                 $data["builtup_area"] = $getFloorDtls->whereNotNull('prop_floor_details_id')->sum("builtup_area");
                 $data["new_builtup_area"] = $getFloorDtls->whereNull('prop_floor_details_id')->sum("builtup_area");
             }
