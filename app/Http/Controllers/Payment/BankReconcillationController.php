@@ -7,8 +7,11 @@ use App\BLL\Water\WaterTranDeactivate;
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\Water\WaterPaymentController;
 use App\MicroServices\DocUpload;
+use App\Models\Advertisements\AdApplicationAmount;
 use App\Models\Advertisements\AdChequeDtl;
+use App\Models\Advertisements\AdDirectApplicationAmount;
 use App\Models\Advertisements\AdTran;
+use App\Models\Advertisements\AdTransactionDeactivateDtl;
 use App\Models\Advertisements\AgencyHoardingApproveApplication;
 use App\Models\Payment\PaymentReconciliation;
 use App\Models\Payment\TempTransaction;
@@ -604,7 +607,7 @@ class BankReconcillationController extends Controller
 
                 $transaction = AdTran::where('id', $mChequeDtl->transaction_id)
                     ->first();
-                    
+
 
                 AdTran::where('id', $mChequeDtl->transaction_id)
                     ->update(
@@ -618,7 +621,7 @@ class BankReconcillationController extends Controller
 
 
                 //  Update in trade applications
-              $application = AgencyHoardingApproveApplication::find($mChequeDtl->application_id);
+                $application = AgencyHoardingApproveApplication::find($mChequeDtl->application_id);
                 if (!$application) {
                     throw new Exception("Application Not Found");
                 }
@@ -669,7 +672,7 @@ class BankReconcillationController extends Controller
     {
         $validator = Validator::make($req->all(), [
             "transactionNo" => "required",
-            "tranType" => "required|In:Property,Water,Trade,Advertisement"
+            "tranType" => "required|In:Property,Water,Trade,Advertisements"
         ]);
 
         if ($validator->fails())
@@ -683,11 +686,11 @@ class BankReconcillationController extends Controller
                 $mWaterTransaction = new WaterTran();
                 $transactionDtl = $mWaterTransaction->getTransByTranNO($req->transactionNo);
             }
-            if ($req->tranType == "Advertisement") {
+            if ($req->tranType == "Advertisements") {
                 $mAdTransaction = new AdTran();
                 $transactionDtl = $mAdTransaction->getTransByTranNO($req->transactionNo);
             }
-            
+
 
             return responseMsgs(true, "Transaction No is", $transactionDtl, "", 01, responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
@@ -713,15 +716,23 @@ class BankReconcillationController extends Controller
             $propertyModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
             $waterModuleId = Config::get('module-constants.WATER_MODULE_ID');
             $tradeModuleId = Config::get('module-constants.TRADE_MODULE_ID');
+            $advertisementModuleId = Config::get('module-constants.ADVERTISEMENT_MODULE_ID');
             $docUpload = new DocUpload;
             $document = $req->document;
             $refImageName = $req->id . "_" . $req->moduleId . "_" . (Carbon::now()->format("Y-m-d"));
-            $relativePath = $req->moduleId == $propertyModuleId ? "Property/TranDeactivate" : ($req->moduleId == $waterModuleId ? "Water/TranDeactivate" : ($req->moduleId == $tradeModuleId ? "Trade/TranDeactivate" : "Others/TranDeactivate"));
+            // $relativePath = $req->moduleId == $propertyModuleId ? "Property/TranDeactivate" : ($req->moduleId == $waterModuleId ? "Water/TranDeactivate" : ($req->moduleId == $tradeModuleId ? "Trade/TranDeactivate" : "Others/TranDeactivate"));
+            $relativePath = $req->moduleId == $propertyModuleId ? "Property/TranDeactivate"
+                : ($req->moduleId == $waterModuleId ? "Water/TranDeactivate"
+                    : ($req->moduleId == $tradeModuleId ? "Trade/TranDeactivate"
+                        : ($req->moduleId == $advertisementModuleId ? "Advertisement/Transaction"
+                            : "Others/TranDeactivate")));
+
             $user = Auth()->user();
             DB::beginTransaction();
             DB::connection('pgsql_master')->beginTransaction();
             DB::connection('pgsql_water')->beginTransaction();
             DB::connection('pgsql_trade')->beginTransaction();
+            DB::connection('pgsql_advertisements')->beginTransaction();
 
             $imageName = $req->document ? $relativePath . "/" . $docUpload->upload($refImageName, $document, $relativePath) : "";
             $deactivationArr = [
@@ -780,17 +791,50 @@ class BankReconcillationController extends Controller
                 $tradeTrans->update();
                 $application->update();
             }
-
+            #_For Trade Transaction Deactivation
+            if ($req->moduleId == $advertisementModuleId) {
+                $advertisementTrans = AdTran::find($req->id);
+                $advertisementTranDeativetion = new AdTransactionDeactivateDtl();
+                $advertisementDirApplicationCharges = new AdDirectApplicationAmount();
+                $advertisementApplicationCharges = new AdApplicationAmount();
+                $advertisementTranDeativetion->create($deactivationArr);
+                if (!$advertisementTrans) {
+                    throw new Exception("Advertisement Transaction Not Available");
+                }
+                if ($advertisementTrans->verify_status == 1) {
+                    throw new Exception("Transaction Verified");
+                }
+                $application = AgencyHoardingApproveApplication::find($advertisementTrans->related_id);
+                if (!$application) {
+                    throw new Exception("Application Not Found");
+                }
+                if ($application->direct_hoarding == 1) {
+                    $advertisementDirApplicationCharges->updateStatus($application->id);
+                } else {
+                    $advertisementApplicationCharges->updateStatus($application->id);
+                }
+                if (!in_array(Str::upper($advertisementTrans->payment_mode), ['ONLINE', 'ONL', 'CASH'])) {
+                    $propChequeDtl = AdChequeDtl::where('transaction_id', $advertisementTrans->id)->first();
+                    $propChequeDtl->status = 0;
+                    $propChequeDtl->update();
+                }
+                $application->payment_status = 0;
+                $advertisementTrans->status = 0;
+                $advertisementTrans->update();
+                $application->update();
+            }
             DB::commit();
             DB::connection('pgsql_master')->commit();
             DB::connection('pgsql_water')->commit();
             DB::connection('pgsql_trade')->commit();
+            DB::connection('pgsql_advertisements')->commit();
             return responseMsgs(true, "Transaction Deactivated", "", "", 01, responseTime(), $req->getMethod(), $req->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
             DB::connection('pgsql_master')->rollBack();
             DB::connection('pgsql_water')->rollBack();
             DB::connection('pgsql_trade')->rollBack();
+            DB::connection('pgsql_advertisements')->rollBack();
             return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $req->getMethod(), $req->deviceId);
         }
     }

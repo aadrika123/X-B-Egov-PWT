@@ -206,10 +206,11 @@ class ThirdPartyController extends Controller
                 $msg = "OTP not match!";
                 return responseMsgs(false, $msg, "", "", "01", ".ms", "POST", "");
             }
-            $token = $mActiveCitizen->changeToken($request);
+            // return $request;
+            // $token = $mActiveCitizen->changeToken($request);
             $checkOtp->delete();
             $this->commit();
-            return responseMsgs(true, "OTP Validated!", remove_null($token), "", "01", ".ms", "POST", "");
+            return responseMsgs(true, "OTP Validated!",  "", "01", ".ms", "POST", "");   //   return responseMsgs(true, "OTP Validated!", remove_null($token), "", "01", ".ms", "POST", "");
         } catch (Exception $e) {
             $this->rollback();
             return responseMsgs(false, $e->getMessage(), "", "", "01", ".ms", "POST", "");
@@ -221,8 +222,8 @@ class ThirdPartyController extends Controller
      */
     public function generateOtp()
     {
-        //$otp = str_pad(Carbon::createFromDate()->milli . random_int(100, 999), 6, 0);
-        $otp = 123123;
+        $otp = str_pad(Carbon::createFromDate()->milli . random_int(100, 999), 6, 0);
+        // $otp = 123123;
         return $otp;
     }
 }
