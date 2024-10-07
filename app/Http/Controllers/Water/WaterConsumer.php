@@ -2222,6 +2222,7 @@ class WaterConsumer extends Controller
         try {
             $mwaterConsumer         = new WaterSecondConsumer();
             $mWaterConsumerMeter    = new WaterConsumerMeter();
+            $mWaterConsumerDemand    = new WaterConsumerDemand();
             $refConnectionName      = Config::get('waterConstaint.METER_CONN_TYPE');
             $refConsumerId          = $req->applicationId;
             #consumer dettails 
@@ -2229,6 +2230,17 @@ class WaterConsumer extends Controller
             if (!$consumerDetails) {
                 throw new Exception("consumer basic details not found!");
             }
+            // # Get demand details 
+            $refConsumerDemand = $mWaterConsumerDemand->getConsumerDemandV4($refConsumerId);
+            if (!($refConsumerDemand->first())) {
+                $consumerDemand['demandStatus'] = 0;                                    // Static / to represent existence of demand
+                return responseMsgs(false, "Consumer demands not found!", $consumerDemand, "", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            }
+            $refConsumerDemand = collect($refConsumerDemand)->sortBy('demand_upto')->values();
+            $consumerDemands['consumerDemands'] = $refConsumerDemand;
+            $checkParam = collect($consumerDemands['consumerDemands'])->first();
+            $sumDemandAmount = collect($consumerDemands['consumerDemands'])->sum('due_balance_amount');
+            $consumerDemandDetails['totalSumDemand'] = round($sumDemandAmount, 2);
 
             # meter Details 
             $refMeterData = $mWaterConsumerMeter->getMeterDetailsByConsumerIdV2($refConsumerId)->first();
@@ -2243,10 +2255,10 @@ class WaterConsumer extends Controller
                         break;
                 }
             }
-            $refMeterData['connectionName'] = $connectionName ?? "";
-            $refMeterData['ConnectionTypeName'] = $connectionName ?? "";
+
+            // Merge data
             $consumerDemand['meterDetails'] = $refMeterData;
-            $returnValues = collect($consumerDetails)->merge($consumerDemand);
+            $returnValues = collect($consumerDetails)->merge($consumerDemand)->merge($consumerDemandDetails);
             return responseMsgs(true, "Consumer Details!", remove_null($returnValues), "", "01", ".ms", "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
