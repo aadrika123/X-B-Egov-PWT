@@ -2208,62 +2208,66 @@ class WaterConsumer extends Controller
      | change the validation key  
      */
 
-    public function WaterConsumerDetails(Request $req)
-    {
-        $validated = Validator::make(
-            $req->all(),
-            [
-                'applicationId' => 'required|integer',
-            ]
-        );
-        if ($validated->fails()) {
-            return validationError($validated);
-        }
-        try {
-            $mwaterConsumer         = new WaterSecondConsumer();
-            $mWaterConsumerMeter    = new WaterConsumerMeter();
-            $mWaterConsumerDemand    = new WaterConsumerDemand();
-            $refConnectionName      = Config::get('waterConstaint.METER_CONN_TYPE');
-            $refConsumerId          = $req->applicationId;
-            #consumer dettails 
-            $consumerDetails = $mwaterConsumer->fullWaterDetails($refConsumerId)->first();
-            if (!$consumerDetails) {
-                throw new Exception("consumer basic details not found!");
-            }
-            // # Get demand details 
-            $refConsumerDemand = $mWaterConsumerDemand->getConsumerDemandV4($refConsumerId);
-            if (!($refConsumerDemand->first())) {
-                $consumerDemand['demandStatus'] = 0;                                    // Static / to represent existence of demand
-                return responseMsgs(false, "Consumer demands not found!", $consumerDemand, "", "01", responseTime(), $req->getMethod(), $req->deviceId);
-            }
-            $refConsumerDemand = collect($refConsumerDemand)->sortBy('demand_upto')->values();
-            $consumerDemands['consumerDemands'] = $refConsumerDemand;
-            $checkParam = collect($consumerDemands['consumerDemands'])->first();
-            $sumDemandAmount = collect($consumerDemands['consumerDemands'])->sum('due_balance_amount');
-            $consumerDemandDetails['totalSumDemand'] = round($sumDemandAmount, 2);
-
-            # meter Details 
-            $refMeterData = $mWaterConsumerMeter->getMeterDetailsByConsumerIdV2($refConsumerId)->first();
-            if ($refMeterData) {
-                $refMeterData->ref_initial_reading = (float)($refMeterData->ref_initial_reading);
-                switch ($refMeterData['connection_type']) {
-                    case (1):
-                        $connectionName = $refConnectionName['1'];                                      // Meter 
-                        break;
-                    case (3):
-                        $connectionName = $refConnectionName['3'];                                      // Fixed - Non Meter
-                        break;
-                }
-            }
-
-            // Merge data
-            $consumerDemand['meterDetails'] = $refMeterData;
-            $returnValues = collect($consumerDetails)->merge($consumerDemand)->merge($consumerDemandDetails);
-            return responseMsgs(true, "Consumer Details!", remove_null($returnValues), "", "01", ".ms", "POST", $req->deviceId);
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
-        }
-    }
+     public function WaterConsumerDetails(Request $req)
+     {
+         // Validation
+         $validated = Validator::make(
+             $req->all(),
+             [
+                 'applicationId' => 'required|integer',
+             ]
+         );
+         if ($validated->fails()) {
+             return validationError($validated);
+         }
+     
+         try {
+             // Initialize models
+             $mWaterConsumer = new WaterSecondConsumer();
+             $mWaterConsumerMeter = new WaterConsumerMeter();
+             $mWaterConsumerDemand = new WaterConsumerDemand();
+             $refConnectionName = Config::get('waterConstaint.METER_CONN_TYPE');
+             $refConsumerId = $req->applicationId;
+     
+             // Consumer details
+             $consumerDetails = $mWaterConsumer->fullWaterDetails($refConsumerId)->first();
+             if (!$consumerDetails) {
+                 throw new Exception("Consumer basic details not found!");
+             }
+     
+             // Demand details
+             $refConsumerDemand = $mWaterConsumerDemand->getConsumerDemandV4($refConsumerId);
+             if (!($refConsumerDemand->first())) {
+                 return responseMsgs(false, "Consumer demands not found!", ['demandStatus' => 0], "", "01", responseTime(), $req->getMethod(), $req->deviceId);
+             }
+     
+             // Sort demands by 'demand_upto'
+             $refConsumerDemand = collect($refConsumerDemand)->sortBy('demand_upto')->values();
+             $consumerDemands['consumerDemands'] = $refConsumerDemand;
+             $sumDemandAmount = $refConsumerDemand->sum('due_balance_amount');
+             $consumerDemandDetails['totalSumDemand'] = round($sumDemandAmount, 2);
+     
+             // Meter details
+             $refMeterData = $mWaterConsumerMeter->getMeterDetailsByConsumerIdV2($refConsumerId)->first();
+             if ($refMeterData) {
+                 $refMeterData->ref_initial_reading = (float) $refMeterData->ref_initial_reading;
+     
+                 // Determine connection name
+                 $connectionName = $refConnectionName[$refMeterData['connection_type']] ?? "";
+                 $refMeterData['connectionName'] = $connectionName;
+                 $refMeterData['ConnectionTypeName'] = $connectionName;  // Add ConnectionTypeName
+             }
+     
+             // Merge data
+             $consumerDemand['meterDetails'] = $refMeterData;
+             $returnValues = collect($consumerDetails)->merge($consumerDemand)->merge($consumerDemandDetails);
+     
+             return responseMsgs(true, "Consumer Details!", remove_null($returnValues), "", "01", ".ms", "POST", $req->deviceId);
+         } catch (Exception $e) {
+             return responseMsg(false, $e->getMessage(), "");
+         }
+     }
+     
     /***
      * get deactivation Doc list 
      */
