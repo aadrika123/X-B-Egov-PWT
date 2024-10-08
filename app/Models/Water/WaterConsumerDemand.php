@@ -600,4 +600,14 @@ class WaterConsumerDemand extends Model
             ->where('consumer_id', $applicationId)
             ->where('status', 1);
     }
+    /**
+     * |Update Connection Type 
+     */
+    public function updateMeterConnection($connectionType, $consumerId)
+    {
+        return WaterConsumerDemand::where('water_consumer_demands.consumer_id', $consumerId)
+            ->update([
+                'connection_type' => $connectionType
+            ]);
+    }
 }
