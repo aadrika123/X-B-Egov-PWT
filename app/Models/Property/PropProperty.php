@@ -116,7 +116,9 @@ class PropProperty extends  PropParamModel #Model
                 'cat.category AS categoryType',
                 DB::raw("string_agg(DISTINCT prop_owners.owner_name, ', ') as owner_name"),
                 DB::raw("string_agg(DISTINCT prop_owners.owner_name_marathi, ', ') as owner_names_marathi"),
-                DB::raw("SUM(prop_demands.total_tax) as total_tax")
+                DB::raw("SUM(prop_demands.total_tax) as total_tax"),
+                'prop_safs.building_plan_completion_no',
+                'prop_safs.building_plan_completion_date',
             )
             ->leftjoin('prop_safs','prop_safs.id','=','prop_properties.saf_id')
             ->Join('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
