@@ -1567,29 +1567,49 @@ class ActiveSafController extends Controller
                 }
                 #=========mutation condition=======prity pandey======
 
-                if ($saf->workflow_id == 3) {
-                    $previousHolding = $saf->previous_holding_id;
-                    $oldProp = PropProperty::where('id', '=', $previousHolding)->first();
-                    $propfloorCount = PropFloor::where('property_id', $previousHolding)->count();
-                    $safFloorCount = PropActiveSafsFloor::where('saf_id', $saf->id)->count();
-                    $propbuildupArea = PropFloor::where('property_id', $previousHolding)->sum('builtup_area');
-                    $safbuildupArea = PropActiveSafsFloor::where('saf_id', $saf->id)->sum('builtup_area');
-                    if ((($oldProp->prop_type_mstr_id == 4 && $saf->prop_type_mstr_id != 4) ||
-                            ($propfloorCount != $safFloorCount) ||
-                            ($propbuildupArea != $safbuildupArea)) &&
-                        $saf->current_role == $wfLevels['DA']
-                    ) {
-
-                        $forwardBackwardIds->forward_role_id = $wfLevels['TC'];
-                    } else {
-                        $forwardBackwardIds->forward_role_id = $wfLevels['SI'];
+                $isFloorChange = false;
+                $privProp = PropProperty::find($saf->previous_holding_id);
+                if ($saf->prop_type_mstr_id != ($privProp->prop_type_mstr_id ?? "A")) {
+                    $isFloorChange = true;
+                }
+                foreach ($saf->getFloorDtl()->whereNotNull("prop_floor_details_id")->get() as $floor) {
+                    $propFloor = PropFloor::find($floor->prop_floor_details_id);
+                    if (!$propFloor) {
+                        $isFloorChange = true;
+                        break;
                     }
-                    $saf->update();
+                    $keys = ["floor_mstr_id", "usage_type_mstr_id", "const_type_mstr_id", "occupancy_type_mstr_id", "builtup_area", "date_from", "date_upto", "no_of_rooms", "no_of_toilets", "rent_agreement_date", "rent_amount", "is_agreement_available"];
+                    if (collect($propFloor->only($keys))->diff($floor->only($keys))->isNotEmpty()) {
+                        $isFloorChange = true;
+                        break;
+                    }
                 }
-                if ($saf->workflow_id == 3 && $saf->current_role == $wfLevels['SI']) {
-                    $forwardBackwardIds->forward_role_id = $wfLevels['EO'];
-                    $saf->update();
+                if ($saf->current_role == $wfLevels['DA'] && $wfMstrId == 3 && ($isFloorChange || $saf->getFloorDtl()->whereNull("prop_floor_details_id")->count() > 0)) {
+                    $forwardBackwardIds->forward_role_id = $wfLevels['TC'];
                 }
+                // if ($saf->workflow_id == 3) {
+                //     $previousHolding = $saf->previous_holding_id;
+                //     $oldProp = PropProperty::where('id', '=', $previousHolding)->first();
+                //     $propfloorCount = PropFloor::where('property_id', $previousHolding)->count();
+                //     $safFloorCount = PropActiveSafsFloor::where('saf_id', $saf->id)->count();
+                //     $propbuildupArea = PropFloor::where('property_id', $previousHolding)->sum('builtup_area');
+                //     $safbuildupArea = PropActiveSafsFloor::where('saf_id', $saf->id)->sum('builtup_area');
+                //     if ((($oldProp->prop_type_mstr_id == 4 && $saf->prop_type_mstr_id != 4) ||
+                //             ($propfloorCount != $safFloorCount) ||
+                //             ($propbuildupArea != $safbuildupArea)) &&
+                //         $saf->current_role == $wfLevels['DA']
+                //     ) {
+
+                //         $forwardBackwardIds->forward_role_id = $wfLevels['TC'];
+                //     } else {
+                //         $forwardBackwardIds->forward_role_id = $wfLevels['SI'];
+                //     }
+                //     $saf->update();
+                // }
+                // if ($saf->workflow_id == 3 && $saf->current_role == $wfLevels['SI']) {
+                //     $forwardBackwardIds->forward_role_id = $wfLevels['EO'];
+                //     $saf->update();
+                // }
                 #==========enf of code change ===============
 
                 if ($saf->is_bt_da == true) {
