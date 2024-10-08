@@ -140,7 +140,9 @@ class PropProperty extends  PropParamModel #Model
                 'a.apt_code',
                 'z.zone_name',
                 'cat.category',
-                'prop_safs.vacant_land_type'
+                'prop_safs.vacant_land_type',
+                'prop_safs.building_plan_completion_no',
+                'prop_safs.building_plan_completion_date',
                 //'prop_demands.total_tax'
             );
     }
