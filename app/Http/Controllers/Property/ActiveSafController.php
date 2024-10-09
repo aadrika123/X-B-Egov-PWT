@@ -1587,29 +1587,6 @@ class ActiveSafController extends Controller
                 if ($saf->current_role == $wfLevels['DA'] && $wfMstrId == 3 && ($isFloorChange || $saf->getFloorDtl()->whereNull("prop_floor_details_id")->count() > 0)) {
                     $forwardBackwardIds->forward_role_id = $wfLevels['TC'];
                 }
-                // if ($saf->workflow_id == 3) {
-                //     $previousHolding = $saf->previous_holding_id;
-                //     $oldProp = PropProperty::where('id', '=', $previousHolding)->first();
-                //     $propfloorCount = PropFloor::where('property_id', $previousHolding)->count();
-                //     $safFloorCount = PropActiveSafsFloor::where('saf_id', $saf->id)->count();
-                //     $propbuildupArea = PropFloor::where('property_id', $previousHolding)->sum('builtup_area');
-                //     $safbuildupArea = PropActiveSafsFloor::where('saf_id', $saf->id)->sum('builtup_area');
-                //     if ((($oldProp->prop_type_mstr_id == 4 && $saf->prop_type_mstr_id != 4) ||
-                //             ($propfloorCount != $safFloorCount) ||
-                //             ($propbuildupArea != $safbuildupArea)) &&
-                //         $saf->current_role == $wfLevels['DA']
-                //     ) {
-
-                //         $forwardBackwardIds->forward_role_id = $wfLevels['TC'];
-                //     } else {
-                //         $forwardBackwardIds->forward_role_id = $wfLevels['SI'];
-                //     }
-                //     $saf->update();
-                // }
-                // if ($saf->workflow_id == 3 && $saf->current_role == $wfLevels['SI']) {
-                //     $forwardBackwardIds->forward_role_id = $wfLevels['EO'];
-                //     $saf->update();
-                // }
                 #==========enf of code change ===============
 
                 if ($saf->is_bt_da == true) {
