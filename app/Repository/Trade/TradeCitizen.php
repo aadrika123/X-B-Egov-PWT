@@ -37,6 +37,7 @@ use App\Models\Trade\TradeLicence;
 use App\Models\Trade\TradePinelabPayRequest;
 use App\Models\Trade\TradeRenewal;
 use App\Models\Workflows\WfActiveDocument;
+use App\Models\Workflows\WorkflowTrack as WorkflowsWorkflowTrack;
 use App\Models\WorkflowTrack;
 use App\Repository\Notice\Notice;
 use Illuminate\Support\Facades\Validator;
@@ -226,14 +227,12 @@ class TradeCitizen implements ITradeCitizen
             $mDenialAmount  = 0;
             $mPaymentStatus = 1;
             $mNoticeDate    = null;
-            $mShortUlbName  = $refUlbDtl->short_name??"";
+            $mShortUlbName  = $refUlbDtl->short_name ?? "";
             $mWardNo        = "";
-            if(!$mShortUlbName)
-            {
+            if (!$mShortUlbName) {
                 foreach ($refUlbName as $val) {
                     $mShortUlbName .= $val[0];
                 }
-
             }
 
             #-----------valication-------------------   
@@ -321,7 +320,7 @@ class TradeCitizen implements ITradeCitizen
             $Tradetransaction->ulb_id           = $refUlbId;
             $Tradetransaction->save();
             $transaction_id                     = $Tradetransaction->id;
-            $Tradetransaction->tran_no   = $this->_REPOSITORY_TRADE->createTransactionNo($transaction_id,$mShortUlbName);#$args["transactionNo"]; ;//"TRANML" . date('d') . $transaction_id . date('Y') . date('m') . date('s');
+            $Tradetransaction->tran_no   = $this->_REPOSITORY_TRADE->createTransactionNo($transaction_id, $mShortUlbName); #$args["transactionNo"]; ;//"TRANML" . date('d') . $transaction_id . date('Y') . date('m') . date('s');
             $Tradetransaction->update();
 
             $TradeFineRebet = new TradeFineRebete();
@@ -399,14 +398,12 @@ class TradeCitizen implements ITradeCitizen
             $mDenialAmount  = 0;
             $mPaymentStatus = 1;
             $mNoticeDate    = null;
-            $mShortUlbName  = $refUlbDtl->short_name??"";
+            $mShortUlbName  = $refUlbDtl->short_name ?? "";
             $mWardNo        = "";
-            if(!$mShortUlbName)
-            {
+            if (!$mShortUlbName) {
                 foreach ($refUlbName as $val) {
                     $mShortUlbName .= $val[0];
                 }
-
             }
 
             #-----------valication-------------------   
@@ -453,7 +450,7 @@ class TradeCitizen implements ITradeCitizen
             $args['nature_of_business']  = $refLecenceData->nature_of_bussiness;
             $args['noticeDate']          = $mNoticeDate;
             $args['curdate']             = $refLecenceData->application_date;
-            
+
             // $chargeData = $this->_REPOSITORY_TRADE->cltCharge($args);
             $chargeData = $this->_REPOSITORY_TRADE->AkolaCltCharge($args);
             if ($chargeData['response'] == false || round($args['amount']) != round($chargeData['total_charge'])) {
@@ -496,7 +493,7 @@ class TradeCitizen implements ITradeCitizen
             $Tradetransaction->ulb_id           = $refUlbId;
             $Tradetransaction->save();
             $transaction_id                     = $Tradetransaction->id;
-            $Tradetransaction->tran_no   = $this->_REPOSITORY_TRADE->createTransactionNo($transaction_id,$mShortUlbName); //$args["transactionNo"];//"TRANML" . date('d') . $transaction_id . date('Y') . date('m') . date('s');
+            $Tradetransaction->tran_no   = $this->_REPOSITORY_TRADE->createTransactionNo($transaction_id, $mShortUlbName); //$args["transactionNo"];//"TRANML" . date('d') . $transaction_id . date('Y') . date('m') . date('s');
             $Tradetransaction->update();
 
             $TradeFineRebet = new TradeFineRebete();
@@ -515,13 +512,13 @@ class TradeCitizen implements ITradeCitizen
                 $TradeFineRebet2->created_at     = $mTimstamp;
                 $TradeFineRebet2->save();
             }
-            $request = new Request(["applicationId" => $licenceId, "ulb_id" => $refUlbId, "user_id" => $refUserId]);            
+            $request = new Request(["applicationId" => $licenceId, "ulb_id" => $refUlbId, "user_id" => $refUserId]);
 
             $provNo = $this->_REPOSITORY_TRADE->createProvisinalNo($mShortUlbName, $mWardNo, $licenceId);
             $refLecenceData->provisional_license_no = $provNo;
             $refLecenceData->payment_status         = $mPaymentStatus;
             if ($refNoticeDetails) {
-                $this->_NOTICE->noticeClose($refLecenceData->denial_id);                    
+                $this->_NOTICE->noticeClose($refLecenceData->denial_id);
             }
             ($refLecenceData->id);
             $refLecenceData->update();
@@ -536,7 +533,7 @@ class TradeCitizen implements ITradeCitizen
             return responseMsg(false, $e->getMessage(), $args);
         }
     }
-    
+
 
     # Serial No : 27
     public function citizenApplication_old(Request $request)
@@ -914,12 +911,13 @@ class TradeCitizen implements ITradeCitizen
         try {
             $id = $request->id;
             $refUser        = Auth()->user();
-            $refUserId      = $refUser->id??0;
+            $refUserId      = $refUser->id ?? 0;
             $refUlbId       = $refUser->ulb_id ?? 0;
             $refWorkflowId  = $this->_WF_MASTER_Id;
             $modul_id = $this->_MODULE_ID;
-
-
+            $mWorkflowTracks = new WorkflowTrack();
+            $mRefTable = $this->_REF_TABLE;
+            $levelComment = $mWorkflowTracks->getTracksByRefIdv1($mRefTable, $id);
             $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId);
             $refApplication = $this->_REPOSITORY_TRADE->getAllLicenceById($id);
             $mStatus = $this->_REPOSITORY_TRADE->applicationStatus($id);
@@ -957,6 +955,7 @@ class TradeCitizen implements ITradeCitizen
                 $pendingAt = $mlevelData->receiver_user_type_id;
             }
 
+
             $data['licenceDtl']     = $refApplication;
             $data['ownerDtl']       = $refOwnerDtl;
             $data['transactionDtl'] = $refTransactionDtl;
@@ -964,6 +963,7 @@ class TradeCitizen implements ITradeCitizen
             $data['documents']      = $refUploadDocuments;
             $data["userType"]       = $mUserType;
             $data["pendingAt"]      = $pendingAt;
+            $data["workflowComment"] =  $levelComment;
             $data = remove_null($data);
 
             return responseMsg(true, "", $data);
