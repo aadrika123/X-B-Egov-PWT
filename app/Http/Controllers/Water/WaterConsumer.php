@@ -2477,7 +2477,7 @@ class WaterConsumer extends Controller
                 'dtcCode'            => 'nullable',
                 'oldConsumerNo'      => 'nullable',
                 "category"           => "nullable|in:General,Slum",
-                "propertytype"       =>  "nullable|in:1,2",
+                "propertytype"       =>  "nullable|in:1,2,3",
                 "tapsize"            =>  "nullable",
                 "landmark"           =>  "nullable",
                 "document"           =>  "nullable|mimes:pdf,jpeg,png,jpg,gif",
