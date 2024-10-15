@@ -215,7 +215,7 @@ class WaterApprovalApplicationDetail extends Model
             'water_param_property_types.property_type',
             // 'water_site_inspections.road_width ',
             'water_second_consumers.tab_size',
-            'water_Second_consumers.connection_type',
+            // 'water_second_consumers.connection_type',
             'water_connection_type_charges.amount as connecton_amount',
             DB::raw("(SELECT string_agg(water_approval_applicants.applicant_name, ',') FROM water_approval_applicants WHERE water_approval_applicants.application_id = water_approval_application_details.id) as applicantName"),
             DB::raw("(SELECT string_agg(water_approval_applicants.mobile_no::VARCHAR, ',') FROM water_approval_applicants WHERE water_approval_applicants.application_id = water_approval_application_details.id) as mobileNo"),

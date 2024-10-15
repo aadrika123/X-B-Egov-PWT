@@ -2244,9 +2244,9 @@ class WaterConsumer extends Controller
 
             // Demand details
             $refConsumerDemand = $mWaterConsumerDemand->getConsumerDemandV4($refConsumerId);
-            if (!($refConsumerDemand->first())) {
-                return responseMsgs(false, "Consumer demands not found!", ['demandStatus' => 0], "", "01", responseTime(), $req->getMethod(), $req->deviceId);
-            }
+            // if (!($refConsumerDemand->first())) {
+            //     return responseMsgs(false, "Consumer demands not found!", ['demandStatus' => 0], "", "01", responseTime(), $req->getMethod(), $req->deviceId);
+            // }
 
             // Sort demands by 'demand_upto'
             $refConsumerDemand = collect($refConsumerDemand)->sortBy('demand_upto')->values();
