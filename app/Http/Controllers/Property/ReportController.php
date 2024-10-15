@@ -7659,7 +7659,7 @@ class ReportController extends Controller
             $response = [
                 'current_page' => $paginatedData->currentPage(),
                 'last_page'    => $paginatedData->lastPage(),
-                'data_total'   => $paginatedData->total(),
+                'total'   => $paginatedData->total(),
                 'data'         => $paginatedData->items()
             ];
 
