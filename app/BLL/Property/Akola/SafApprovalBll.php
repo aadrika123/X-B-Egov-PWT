@@ -193,6 +193,7 @@ class SafApprovalBll
         {
             return $this->updateOldHolding();
         }
+    
         // Self Assessed Saf Prop Properties and Floors
         $propProperties = $this->_toBeProperties->replicate();
         $propProperties->setTable('prop_properties');
@@ -200,6 +201,12 @@ class SafApprovalBll
         $propProperties->holding_no = $this->_activeSaf->holding_no;
         $propProperties->new_holding_no = $this->_activeSaf->holding_no;
         $propProperties->property_no = $this->_activeSaf->property_no;
+        if ($this->_activeSaf->assessment_type == 'Reassessment') {
+            $oldProp = PropProperty::find($this->_activeSaf->previous_holding_id); 
+            if ($oldProp) {
+                $propProperties->property_no = $oldProp->property_no; 
+            }
+        }
         $propProperties->save();
 
         $this->_replicatedPropId = $propProperties->id;
