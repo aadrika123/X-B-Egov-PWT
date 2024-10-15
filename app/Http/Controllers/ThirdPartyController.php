@@ -222,9 +222,9 @@ class ThirdPartyController extends Controller
      */
     public function generateOtp()
     {
-        //$otp = str_pad(Carbon::createFromDate()->milli . random_int(100, 999), 6, 0);
+        $otp = str_pad(Carbon::createFromDate()->milli . random_int(100, 999), 6, 0);
 
-        $otp = 123123;
+        //$otp = 123123;
         return $otp;
     }
 }
