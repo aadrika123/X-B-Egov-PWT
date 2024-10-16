@@ -6268,7 +6268,7 @@ class ReportController extends Controller
                 "penalty"      =>  roundFigure($currentReports->sum("penalty")),
                 "advance_amount"      =>  roundFigure($currentReports->sum("advance_amount")),
                 "adjusted_amount"      =>  roundFigure($currentReports->sum("adjusted_amount")),
-                "procces_fee"      =>  roundFigure($arrearReports->sum("procces_fee")),
+                "procces_fee"      =>  roundFigure($currentReports->sum("procces_fee")),
                 "mutation_fee_tran_date"      =>  "---",
             ];
 
@@ -6315,7 +6315,7 @@ class ReportController extends Controller
                 "penalty"      =>  roundFigure($report->sum("penalty")),
                 "advance_amount"      =>  roundFigure($report->sum("advance_amount")),
                 "adjusted_amount"      =>  roundFigure($report->sum("adjusted_amount")),
-                "procces_fee"      =>  roundFigure($arrearReports->sum("procces_fee")),
+                "procces_fee"      =>  roundFigure($report->sum("procces_fee")),
                 "mutation_fee_tran_date"      =>  "---",
             ];
 
