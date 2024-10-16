@@ -6714,7 +6714,11 @@ class WaterReportController extends Controller
               subquery.per_meter_amount,
               subquery.property_no,
               subquery.road_width,
-              subquery.connection_type_amount
+              subquery.connection_type_amount,
+              subquery.security_deposit,
+              subquery.bore_charge,
+              subquery.inspection_fee,
+              subquery.pipe_connection_charge
               
      FROM (
          SELECT 
@@ -6737,7 +6741,11 @@ class WaterReportController extends Controller
                 water_road_cutter_charges.per_meter_amount,
                 water_approval_application_details.property_no,
                 water_site_inspections.road_width,
-                water_connection_type_charges.amount as connection_type_amount
+                water_connection_type_charges.amount as connection_type_amount,
+                water_connection_type_charges.security_deposit,
+                water_connection_type_charges.bore_charge,
+                water_connection_type_charges.inspection_fee, 
+                water_connection_type_charges.pipe_connection_charge 
           
         FROM water_trans 
         LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id=water_trans.ward_id
@@ -6772,18 +6780,23 @@ class WaterReportController extends Controller
                     water_road_cutter_charges.road_type,
                     water_second_consumers.tab_size,
                     water_road_cutter_charges.per_meter_amount,
-                    water_approval_application_details.property_no,
+                    water_approval_application_details.property_no,    
                     water_site_inspections.road_width,
-                    water_connection_type_charges.amount
+                    water_connection_type_charges.amount,
+                    water_connection_type_charges.security_deposit,
+                    water_connection_type_charges.bore_charge,
+                    water_connection_type_charges.inspection_fee,
+                    water_connection_type_charges.pipe_connection_charge 
      ) AS subquery");
             $data = DB::connection('pgsql_water')->select(DB::raw($data));
             $refData = collect($data);
 
             $refDetailsV2 = [
                 "array" => $data,
-                "sum_current_coll" => roundFigure($refData->pluck('current_collections')->sum() ?? 0),
-                "sum_arrear_coll" => roundFigure($refData->pluck('arrear_collections')->sum() ?? 0),
-                "sum_total_coll" => roundFigure($refData->pluck('total_collections')->sum() ?? 0),
+                "security_deposit" => roundFigure($refData->pluck('security_deposit')->sum() ?? 0),
+                "bore_charge" => roundFigure($refData->pluck('bore_charge')->sum() ?? 0),
+                "inspection_fee" => roundFigure($refData->pluck('inspection_fee')->sum() ?? 0),
+                "pipe_connection_charge" => roundFigure($refData->pluck('pipe_connection_charge')->sum() ?? 0),
                 "totalAmount"   =>  roundFigure($refData->pluck('amount')->sum() ?? 0),
                 "totalColletion" => $refData->pluck('tran_id')->count(),
                 "currentDate"  => $currentDate
