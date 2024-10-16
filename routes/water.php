@@ -237,7 +237,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
 
     /**
      * | Created On : 17-04-2023
-     * | Created By : Sam kerketta
+     * | Created By : Arshad Hussain 
      * |------------- Water Reports -------------|
      */
     Route::controller(WaterReportController::class)->group(function () {
@@ -266,6 +266,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('receipt/bulk-receipt', 'bulkReceipt');
         Route::post('report/date-wise-collection', 'dateCollectuionReport');
         Route::post('report/tc-collection-report', 'tcCollectionReport');
+        Route::post('report/new-connection-collection-report', 'tcNewCollectionReport');                         // New Connection Collection Report
         Route::post('report/tc-visit-records', 'tcvisitRecords');
         Route::post('report/tc-visit', 'tcvisitRecordsv2');
         Route::post('reports/tran-deactived-list', 'tranDeactivatedList');
