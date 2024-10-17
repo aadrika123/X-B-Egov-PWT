@@ -1093,6 +1093,7 @@ class WaterSecondConsumer extends Model
                             GROUP BY water_consumer_owners.consumer_id
                         ) AS subquery"), 'subquery.consumer_id', '=', 'water_second_consumers.id')
             ->whereIn("water_second_consumers.id", $consumerIds)
+            ->where('water_consumer_demands.status', true)
             ->groupBy(
                 'water_second_consumers.saf_no',
                 'water_second_consumers.holding_no',
