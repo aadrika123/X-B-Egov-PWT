@@ -2535,7 +2535,7 @@ class WaterConsumer extends Controller
             $consumerDtls->property_type_id     =  $request->propertytype   ? $request->propertytype : $consumerDtls->property_type_id;
             $consumerDtls->tab_size             =  $request->tapsize        ? $request->tapsize : $consumerDtls->tab_size;
             $consumerDtls->landmark             =  $request->landmark       ? $request->landmark : $consumerDtls->landmark;
-            $consumerDtls->address              =  $request->address       ? $request->address : $consumerDtls->address;
+            $consumerDtls->address              =  $request->address        ? $request->address : $consumerDtls->address;
 
             #=========consumer updates=================
             if ($owner) {
@@ -3332,7 +3332,7 @@ class WaterConsumer extends Controller
         $validated = Validator::make(
             $request->all(),
             [
-                'consumerId'         => 'required|integer',
+                'consumerId'         => 'nullable|integer',
                 'mobile_no'          => 'nullable|',            // 'nullable|digits:10|regex:/[0-9]{10}/',
                 'email'              => 'nullable|',
                 'applicant_name'     => 'nullable|',
