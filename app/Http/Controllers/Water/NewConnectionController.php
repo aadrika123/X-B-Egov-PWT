@@ -3207,7 +3207,7 @@ class NewConnectionController extends Controller
             $safID = $holdingDetails->saf_id;
             if ($request->modification == null && $request->complain == null) {
 
-                
+
 
                 $safRepo = app()->make(iSafRepository::class); // Resolve iSafRepository
                 $holdingDuesController = new HoldingTaxController($safRepo); // Pass safRepo to the controller constructor
@@ -3667,7 +3667,13 @@ class NewConnectionController extends Controller
             return validationError($validated);
 
         try {
-            $user = authUser($request);
+            $user = null;
+
+            // Check if authentication is required for the current request
+            if ($request->authRequired == true && $request->token != null) {
+                $user = authUser($request);
+            }
+            // $user = authUser($request);
             $mWaterSiteInspectionsScheduling = new WaterSiteInspectionsScheduling();
             $mWaterConnectionCharge          = new WaterConnectionCharge();
             $mWaterApplication               = new WaterApplication();
@@ -3688,7 +3694,7 @@ class NewConnectionController extends Controller
             $reconnectId   = $applicationDetails['applicationDetails']->reconnectId;
             # Document Details
             $metaReqs = [
-                'userId'    => $user->id,
+                'userId'    => $user->id ?? null,
                 'ulbId'     => $user->ulb_id ?? $applicationDetails['applicationDetails']['ulb_id'],
                 'applicationId' => $applicationId,
                 'approveId' => $request->applicationId

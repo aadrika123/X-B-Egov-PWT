@@ -324,6 +324,7 @@ Route::controller(WaterConsumer::class)->group(function () {
 });
 Route::controller(NewConnectionController::class)->group(function () {
     Route::post('citizen/consumer-search', 'searchWaterConsumer');                                                                              // citizen consumer search
+    Route::post('approve-application/get-by-id-v1', 'getApproveApplicationsDetails');                  // Admin
 
 });
 Route::controller(WaterConsumer::class)->group(function () {
