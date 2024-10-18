@@ -344,8 +344,8 @@ class PropertyController extends Controller
         $rules = [
             "propertyId"                => "required|digits_between:1,9223372036854775807",
             "document"                  => "required|mimes:pdf,jpeg,png,jpg,gif",
-            "applicantName"             => "required",
-            "applicantMarathi"          => "required|string",
+            "applicantName"             => "nullable",
+            "applicantMarathi"          => "nullable",
             "appartmentName"            => "nullable|string",
             "electricityConnection"     => "nullable|string",
             "electricityCustNo"         => "nullable|string",
