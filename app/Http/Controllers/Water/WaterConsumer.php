@@ -3376,9 +3376,9 @@ class WaterConsumer extends Controller
             $mWaterConsumerOwners = new WaterConsumerOwner();
             $mWaterTcVisitReport     = new WaterTcVisitReport();
             $consumerDtls = $mWaterSecondConsumer->find($consumerId);
-            if (!$consumerDtls) {
-                throw new Exception("consumer details not found!");
-            }
+            // if (!$consumerDtls) {
+            //     throw new Exception("consumer details not found!");
+            // }
             $owner = $mWaterConsumerOwners->where("consumer_id", $request->consumerId)->orderBy("id", "ASC")->first();
 
             $this->begin();
