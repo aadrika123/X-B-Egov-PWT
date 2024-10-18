@@ -3041,6 +3041,7 @@ class Trade implements ITrade
             }
             $license = TradeLicence::select(
                 "trade_licences.id",
+                "trade_licences.citizen_id",
                 "trade_licences.application_no",
                 "trade_licences.application_type_id",
                 "application_type",
