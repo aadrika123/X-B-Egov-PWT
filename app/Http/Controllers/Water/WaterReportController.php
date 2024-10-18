@@ -6750,9 +6750,9 @@ class WaterReportController extends Controller
           
         FROM water_trans 
         LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id=water_trans.ward_id
-        LEFT JOIN water_second_consumers ON water_second_consumers.id=water_trans.related_id
+             JOIN water_second_consumers ON water_second_consumers.id=water_trans.related_id
              JOIN water_approval_application_details ON water_approval_application_details.id=water_second_consumers.apply_connection_id
-        left JOIN water_consumer_owners ON water_consumer_owners.consumer_id=water_trans.related_id
+             JOIN water_consumer_owners ON water_consumer_owners.consumer_id=water_trans.related_id
         left Join zone_masters on zone_masters.id= water_second_consumers.zone_mstr_id
         left JOIN water_site_inspections on water_site_inspections.apply_connection_id = water_approval_application_details.id
              JOIN water_road_cutter_charges on water_road_cutter_charges.id = water_approval_application_details.road_type_id
