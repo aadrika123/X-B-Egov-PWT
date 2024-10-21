@@ -21,6 +21,7 @@ use App\Models\Property\PropProperty;
 use App\Models\Property\PropSaf;
 use App\Models\Property\PropSafsOwner;
 use App\Models\Workflows\WfRoleusermap;
+use App\Models\Workflows\WfWardUser;
 use App\Repository\Property\Interfaces\iPropertyDetailsRepo;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
@@ -473,6 +474,7 @@ class PropertyDetailsController extends Controller
         }
 
         try {
+            $mWfWardUser = new WfWardUser();
             $mPropProperty = new PropProperty();
             $mWfRoleUser = new WfRoleusermap();
             $user = authUser($request);
@@ -485,20 +487,22 @@ class PropertyDetailsController extends Controller
             $parameter = $request->parameter;
             $isLegacy = $request->isLegacy;
             $perPage = $request->perPage ?? 5;
-
+            $occupiedWards = $mWfWardUser->getWardsByUserId($userId)->pluck('ward_id');
             switch ($key) {
                 case ("holdingNo"):
                     $data = $mPropProperty->searchPropertyV2($ulbId)
                         ->where(function ($where) use ($parameter) {
                             $where->ORwhere('prop_properties.holding_no', 'ILIKE',  strtoupper($parameter))
                                 ->orWhere('prop_properties.new_holding_no', 'ILIKE',  strtoupper($parameter));
-                        });
+                        })
+                        ->whereIn('prop_properties.ward_mstr_id',$occupiedWards);
                     break;
 
                 case ("ptn"):
                     $data = $mPropProperty->searchPropertyV2($ulbId)
                         // ->where('prop_properties.pt_no', 'LIKE', '%' . $parameter . '%');
-                        ->where('prop_properties.property_no', 'ILIKE', '%' . $parameter . '%');
+                        ->where('prop_properties.property_no', 'ILIKE', '%' . $parameter . '%')
+                        ->whereIn('prop_properties.ward_mstr_id',$occupiedWards);
                     break;
 
                 case ("ownerName"):
@@ -506,18 +510,21 @@ class PropertyDetailsController extends Controller
                         ->where(function ($where) use ($parameter) {
                             $where->where('o.owner_name', 'ILIKE', '%' . strtoupper($parameter) . '%')
                                 ->orwhere('o.owner_name_marathi', 'ILIKE', '%' . strtoupper($parameter) . '%');
-                        });
+                        })
+                        ->whereIn('prop_properties.ward_mstr_id',$occupiedWards);
 
                     break;
 
                 case ("address"):
                     $data = $mPropProperty->searchPropertyV2($ulbId)
-                        ->where('prop_properties.prop_address', 'ILIKE', '%' . strtoupper($parameter) . '%');
+                        ->where('prop_properties.prop_address', 'ILIKE', '%' . strtoupper($parameter) . '%')
+                        ->whereIn('prop_properties.ward_mstr_id',$occupiedWards);
                     break;
 
                 case ("mobileNo"):
                     $data = $mPropProperty->searchPropertyV2($ulbId)
-                        ->where('o.mobile_no', 'LIKE', '%' . $parameter . '%');
+                        ->where('o.mobile_no', 'LIKE', '%' . $parameter . '%')
+                        ->whereIn('prop_properties.ward_mstr_id',$occupiedWards);
                     break;
 
                 case ("khataNo"):
@@ -557,10 +564,12 @@ class PropertyDetailsController extends Controller
 
                 case ("propertyNo"):
                     $data = $mPropProperty->searchPropertyV2($ulbId)
-                        ->where('prop_properties.property_no', 'LIKE', $parameter);
+                        ->where('prop_properties.property_no', 'LIKE', $parameter)
+                        ->whereIn('prop_properties.ward_mstr_id',$occupiedWards);
                     break;
                 default:
-                    $data = $mPropProperty->searchPropertyV2($ulbId);
+                    $data = $mPropProperty->searchPropertyV2($ulbId)
+                    ->whereIn('prop_properties.ward_mstr_id',$occupiedWards);
             }
             $data = $data->whereIn('prop_properties.status', [1, 3]);
 
