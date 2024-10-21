@@ -245,6 +245,8 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken']], function
         Route::get('get-all-ulb-wards', 'getAllUlbWards'); //not for use      // Get All Ulb Wards
         Route::post('property/v1/get-ward-by-zone', 'getWardByZone');
         Route::post('property/v1/get_ward_name_by_zone', 'getWardByZone')->withoutMiddleware(['request_logger', 'expireBearerToken']);
+        Route::post('property/v1/get_ward_name_by_zone_by_user', 'getWardZoneByUser')->withoutMiddleware(['request_logger', 'expireBearerToken']);
+
     });
 });
 

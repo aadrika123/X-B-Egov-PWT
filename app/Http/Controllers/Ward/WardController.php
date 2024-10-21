@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Property\ZoneMaster;
 use App\Models\Ulb\UlbNewWardmap;
 use App\Models\UlbWardMaster;
+use App\Models\Workflows\WfWardUser;
 use App\Repository\Ward\EloquentWardRepository;
 use Exception;
 use Illuminate\Http\Request;
@@ -90,9 +91,33 @@ class WardController extends Controller
             $wardsByZone = collect($wardsByZone)->sortBy(function ($item) {
                 // Extract the numeric part from the "ward_name"
                 preg_match('/\d+/', $item->ward_name, $matches);
-                return (int) ($matches[0]??"");
+                return (int) ($matches[0] ?? "");
             })->values();
             return responseMsgs(true, "Ward List", remove_null($wardsByZone), "", "1.0", responseTime(), "POST", $req->deviceId);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), [], "", "1.0", responseTime(), "POST", $req->deviceId);
+        }
+    }
+
+    public function getWardZoneByUser(Request $req)
+    {
+        $validate = Validator::make($req->all(), [
+            'zoneId' => 'required|integer'
+        ]);
+
+        if ($validate->fails()) {
+            return validationError($validate);
+        }
+
+        try {
+            $mWfWardUser = new WfWardUser();
+            $mUlbWardMstr = new UlbWardMaster();
+            $mUserId = authUser($req)->id;
+            $occupiedWards = $mWfWardUser->getWardsByUserId($mUserId)->pluck('ward_id');
+            $wardsByZone = $mUlbWardMstr->getWardsByZone($req->zoneId)->pluck('id');
+            $filteredWardIds = $occupiedWards->intersect($wardsByZone);
+            $filteredWards = $mUlbWardMstr->whereIn('id', $filteredWardIds)->get();
+            return responseMsgs(true, "Ward List", remove_null($filteredWards), "", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), [], "", "1.0", responseTime(), "POST", $req->deviceId);
         }
