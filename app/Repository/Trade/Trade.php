@@ -413,6 +413,23 @@ class Trade implements ITrade
                     //         $owner->save();
                     //     }
                     // }
+                    foreach ($request->ownerDetails as $owners) {
+                        if (!isset($owners['ownerId']) || empty($owners['ownerId'])) {
+                            // New owner, add them
+                            $owner = new ActiveTradeOwner();
+                            $owner->temp_id = $licenceId;
+                            $this->addNewOwners($owner, $owners);
+                            $owner->user_id = $refUserId;
+                            $owner->save();
+                        } else {
+                            $existingOwner = ActiveTradeOwner::find($owners['ownerId']);
+                            if ($existingOwner) {
+                                $this->transerOldOwneres($existingOwner, $owners, $request);
+                                $existingOwner->user_id = $refUserId;
+                                $existingOwner->save();
+                            }
+                        }
+                    }
                 } elseif ($mApplicationTypeId == 1) # code for New License
                 {
                     $wardId = $request->firmDetails['wardNo'];
