@@ -564,12 +564,12 @@ class PropertyDetailsController extends Controller
 
                 case ("propertyNo"):
                     $data = $mPropProperty->searchPropertyV2($ulbId)
-                        ->where('prop_properties.property_no', 'LIKE', $parameter)
-                        ->whereIn('prop_properties.ward_mstr_id',$occupiedWards);
+                        ->where('prop_properties.property_no', 'LIKE', $parameter);
+                        //->whereIn('prop_properties.ward_mstr_id',$occupiedWards);
                     break;
                 default:
-                    $data = $mPropProperty->searchPropertyV2($ulbId)
-                    ->whereIn('prop_properties.ward_mstr_id',$occupiedWards);
+                    $data = $mPropProperty->searchPropertyV2($ulbId);
+                    //->whereIn('prop_properties.ward_mstr_id',$occupiedWards);
             }
             $data = $data->whereIn('prop_properties.status', [1, 3]);
 
