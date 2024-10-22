@@ -168,7 +168,7 @@ class ApplySafController extends Controller
             $this->_REQUEST = $request;
             $this->mergeAssessedExtraFields();                                          // Merge Extra Fields for Property Reassessment,Mutation,Bifurcation & Amalgamation(2.2)
             // Generate Calculation
-            if (!$request->no_calculater)
+            if (!$request->no_calculater && $request->mutationType !== "direct")
                 $taxCalculator->calculateTax();
             // if (($taxCalculator->_oldUnpayedAmount ?? 0) > 0 && ($request->assessmentType == 3 || $request->assessmentType == 4 || $request->assessmentType == "Mutation" || $request->assessmentType == "Bifurcation")) {
             //     throw new Exception("Old Demand Amount Of " . $taxCalculator->_oldUnpayedAmount . " Not Cleard");
@@ -232,7 +232,7 @@ class ApplySafController extends Controller
                 "safNo" => $safNo,
                 "applyDate" => ymdToDmyDate($mApplyDate),
                 "safId" => $safId,
-                "calculatedTaxes" => (!$request->no_calculater ? $taxCalculator->_GRID : []),
+                "calculatedTaxes" => (!$request->no_calculater && $request->mutationType !== "direct"? $taxCalculator->_GRID : []),
             ], "010102", "1.0", "1s", "POST", $request->deviceId);
         } catch (Exception $e) {
             DB::rollBack();
