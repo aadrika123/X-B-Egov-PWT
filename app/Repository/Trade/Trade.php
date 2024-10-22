@@ -398,23 +398,38 @@ class Trade implements ITrade
                     $licence->save();
                     $licenceId = $licence->id;
                     
-                    foreach ($refOldowners as $owners) {
-                        $owner = new ActiveTradeOwner();
-                        $owner->temp_id      = $licenceId;
-                        $this->transerOldOwneres($owner, $owners, $request);
-                        $owner->user_id  = $refUserId;
-                        $owner->save();
-                    }
+                    // foreach ($refOldowners as $owners) {
+                    //     $owner = new ActiveTradeOwner();
+                    //     $owner->temp_id      = $licenceId;
+                    //     $this->transerOldOwneres($owner, $owners, $request);
+                    //     $owner->user_id  = $refUserId;
+                    //     $owner->save();
+                    // }
+                    // foreach ($request->ownerDetails as $owners) {
+                    //     if (!isset($owners['ownerId']) || empty($owners['ownerId'])) {
+                    //         $owner = new ActiveTradeOwner();
+                    //         $owner->temp_id      = $licenceId;
+                    //         $this->addNewOwners($owner, $owners);
+                    //         $owner->user_id  = $refUserId;
+                    //         $owner->save();
+                    //     }
+                    // }
                     foreach ($request->ownerDetails as $owners) {
-                        if (!isset($owners['ownerId']) || empty($owners['ownerId'])) {
+                        if (isset($owners['ownerId']) && !empty($owners['ownerId'])) {
                             $owner = new ActiveTradeOwner();
-                            $owner->temp_id      = $licenceId;
+                            $owner->temp_id = $licenceId;
+                            $this->transerOldOwneres($owner, $owners, $request);
+                            $owner->user_id = $refUserId;
+                            $owner->save();
+                        } else {
+                            $owner = new ActiveTradeOwner();
+                            $owner->temp_id = $licenceId;
                             $this->addNewOwners($owner, $owners);
-                            $owner->user_id  = $refUserId;
+                
+                            $owner->user_id = $refUserId;
                             $owner->save();
                         }
                     }
-                    
                 } elseif ($mApplicationTypeId == 1) # code for New License
                 {
                     $wardId = $request->firmDetails['wardNo'];
