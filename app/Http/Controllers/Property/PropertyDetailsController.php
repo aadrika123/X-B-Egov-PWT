@@ -494,15 +494,15 @@ class PropertyDetailsController extends Controller
                         ->where(function ($where) use ($parameter) {
                             $where->ORwhere('prop_properties.holding_no', 'ILIKE',  strtoupper($parameter))
                                 ->orWhere('prop_properties.new_holding_no', 'ILIKE',  strtoupper($parameter));
-                        })
-                        ->whereIn('prop_properties.ward_mstr_id',$occupiedWards);
+                        });
+                       // ->whereIn('prop_properties.ward_mstr_id',$occupiedWards);
                     break;
 
                 case ("ptn"):
                     $data = $mPropProperty->searchPropertyV2($ulbId)
                         // ->where('prop_properties.pt_no', 'LIKE', '%' . $parameter . '%');
-                        ->where('prop_properties.property_no', 'ILIKE', '%' . $parameter . '%')
-                        ->whereIn('prop_properties.ward_mstr_id',$occupiedWards);
+                        ->where('prop_properties.property_no', 'ILIKE', '%' . $parameter . '%');
+                        //->whereIn('prop_properties.ward_mstr_id',$occupiedWards);
                     break;
 
                 case ("ownerName"):
@@ -510,21 +510,21 @@ class PropertyDetailsController extends Controller
                         ->where(function ($where) use ($parameter) {
                             $where->where('o.owner_name', 'ILIKE', '%' . strtoupper($parameter) . '%')
                                 ->orwhere('o.owner_name_marathi', 'ILIKE', '%' . strtoupper($parameter) . '%');
-                        })
-                        ->whereIn('prop_properties.ward_mstr_id',$occupiedWards);
+                        });
+                        //->whereIn('prop_properties.ward_mstr_id',$occupiedWards);
 
                     break;
 
                 case ("address"):
                     $data = $mPropProperty->searchPropertyV2($ulbId)
-                        ->where('prop_properties.prop_address', 'ILIKE', '%' . strtoupper($parameter) . '%')
-                        ->whereIn('prop_properties.ward_mstr_id',$occupiedWards);
+                        ->where('prop_properties.prop_address', 'ILIKE', '%' . strtoupper($parameter) . '%');
+                       // ->whereIn('prop_properties.ward_mstr_id',$occupiedWards);
                     break;
 
                 case ("mobileNo"):
                     $data = $mPropProperty->searchPropertyV2($ulbId)
-                        ->where('o.mobile_no', 'LIKE', '%' . $parameter . '%')
-                        ->whereIn('prop_properties.ward_mstr_id',$occupiedWards);
+                        ->where('o.mobile_no', 'LIKE', '%' . $parameter . '%');
+                       // ->whereIn('prop_properties.ward_mstr_id',$occupiedWards);
                     break;
 
                 case ("khataNo"):
