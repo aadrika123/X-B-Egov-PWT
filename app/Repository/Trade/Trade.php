@@ -674,7 +674,7 @@ class Trade implements ITrade
     public function transerOldOwneres($refOwner, $owners, $request)
     {
         $newData = collect($request->ownerDetails)->where("ownerId", $owners->id)->first();
-        if (!$newData) {
+        if ($newData != null) {
             return ($this->addNewOwners($refOwner, $newData));
         }
         $refOwner->owner_name      = $owners->owner_name;
