@@ -397,7 +397,7 @@ class Trade implements ITrade
                     $licence->valid_from    = Carbon::now()->format('Y-m-d');
                     $licence->save();
                     $licenceId = $licence->id;
-                    if (!empty($refOldowners)){
+                    
                     foreach ($refOldowners as $owners) {
                         $owner = new ActiveTradeOwner();
                         $owner->temp_id      = $licenceId;
@@ -405,7 +405,6 @@ class Trade implements ITrade
                         $owner->user_id  = $refUserId;
                         $owner->save();
                     }
-                }
                     foreach ($request->ownerDetails as $owners) {
                         if (!isset($owners['ownerId']) || empty($owners['ownerId'])) {
                             $owner = new ActiveTradeOwner();
