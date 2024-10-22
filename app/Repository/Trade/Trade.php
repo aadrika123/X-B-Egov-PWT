@@ -404,15 +404,15 @@ class Trade implements ITrade
                         $owner->user_id  = $refUserId;
                         $owner->save();
                     }
-                    foreach ($request->ownerDetails as $owners) {
-                        if (!isset($owners['ownerId']) || empty($owners['ownerId'])) {
-                            $owner = new ActiveTradeOwner();
-                            $owner->temp_id      = $licenceId;
-                            $this->addNewOwners($owner, $owners);
-                            $owner->user_id  = $refUserId;
-                            $owner->save();
-                        }
-                    }
+                    // foreach ($request->ownerDetails as $owners) {
+                    //     if (!isset($owners['ownerId']) || empty($owners['ownerId'])) {
+                    //         $owner = new ActiveTradeOwner();
+                    //         $owner->temp_id      = $licenceId;
+                    //         $this->addNewOwners($owner, $owners);
+                    //         $owner->user_id  = $refUserId;
+                    //         $owner->save();
+                    //     }
+                    // }
                 } elseif ($mApplicationTypeId == 1) # code for New License
                 {
                     $wardId = $request->firmDetails['wardNo'];
