@@ -397,7 +397,8 @@ class Trade implements ITrade
                     $licence->valid_from    = Carbon::now()->format('Y-m-d');
                     $licence->save();
                     $licenceId = $licence->id;
-                    
+                    # ==========changes by prity pandey ===========
+
                     // foreach ($refOldowners as $owners) {
                     //     $owner = new ActiveTradeOwner();
                     //     $owner->temp_id      = $licenceId;
@@ -415,22 +416,25 @@ class Trade implements ITrade
                     //     }
                     // }
                     foreach ($request->ownerDetails as $owners) {
-                        if (isset($owners['ownerId']) && !empty($owners['ownerId'])) {
-                            $owner = new ActiveTradeOwner();
-                            $owner->temp_id = $licenceId;
-                            $this->transerOldOwneres($owner, $owners, $request);
-                            $owner->user_id = $refUserId;
-                            $owner->save();
-                        } else {
-                            $owner = new ActiveTradeOwner();
-                            $owner->temp_id = $licenceId;
-                            $this->addNewOwners($owner, $owners);
-                
-                            $owner->user_id = $refUserId;
-                            $owner->save();
+                        if (is_array($owners)) {
+                            if (isset($owners['ownerId']) && !empty($owners['ownerId'])) {
+                                $owner = new ActiveTradeOwner();
+                                $owner->temp_id = $licenceId;
+                                $this->transerOldOwneresAmendement($owner, $owners, $request);
+                                $owner->user_id = $refUserId;
+                                $owner->save();
+                            } else {
+                                $owner = new ActiveTradeOwner();
+                                $owner->temp_id = $licenceId;
+                                $this->addNewOwners($owner, $owners);
+                                $owner->user_id = $refUserId;
+                                $owner->save();
+                            }
                         }
                     }
-                } elseif ($mApplicationTypeId == 1) # code for New License
+                } 
+                 # ==========end of changes ===========
+                elseif ($mApplicationTypeId == 1) # code for New License
                 {
                     $wardId = $request->firmDetails['wardNo'];
                     $mWardNo = (collect($data['wardList'])->where("id", $wardId)->pluck("ward_no"));
@@ -705,6 +709,25 @@ class Trade implements ITrade
         $refOwner->district        = $owners->district;
         $refOwner->state           = $owners->state;
         $refOwner->email_id         = $owners->email_id;
+    }
+
+    # Serial No : 01.06 changes by prity pandey 
+    public function transerOldOwneresAmendement($refOwner, $owners, $request)
+    {
+        $newData = collect($request->ownerDetails)->where("ownerId", $owners['ownerId'])->first();
+        if ($newData != null) {
+            return ($this->addNewOwners($refOwner, $newData));
+        }
+        $refOwner->owner_name = $owners['owner_name'];
+        $refOwner->guardian_name = $owners['guardian_name'];
+        $refOwner->owner_name_marathi = $owners['owner_name_marathi'];
+        $refOwner->guardian_name_marathi = $owners['guardian_name_marathi'];
+        $refOwner->address = $owners['address'];
+        $refOwner->mobile_no = $owners['mobile_no'];
+        $refOwner->city = $owners['city'];
+        $refOwner->district = $owners['district'];
+        $refOwner->state = $owners['state'];
+        $refOwner->email_id = $owners['email_id'];
     }
 
     // public function transerOldOwneres($refOwner, $owners, $request)
@@ -5137,7 +5160,7 @@ class Trade implements ITrade
             }
             $rate_ids = explode(",", ($transaction->rate_id ?? "0"));
             $rates = $this->_MODEL_AkolaTradeParamLicenceRate->whereIn("id", $rate_ids)->sum("rate");
-            if($application->application_type_id==3){
+            if ($application->application_type_id == 3) {
                 $rates = 200;
             }
             $penalty = TradeFineRebete::select("type", "amount")
