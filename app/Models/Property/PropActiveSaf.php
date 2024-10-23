@@ -110,6 +110,7 @@ class  PropActiveSaf extends PropParamModel #Model
             'proccess_fee_paid' => (($req->proccessFee ?? 0) > 0 && (in_array($req->assessmentType, ['Mutation', 'Bifurcation']))) ? 0 : 1,
             "property_no" => ($req->propertyNo ?? null),
             "bifurcated_from_plot_area" => isset($req->bifurcatedPlot) ? $req->areaOfPlot : null,
+            "mutation_type" =>$req->MutationType,
         ];
         $propActiveSafs = PropActiveSaf::create($reqs);                 // SAF No is Created Using Observer
         return response()->json([

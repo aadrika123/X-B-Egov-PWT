@@ -158,6 +158,7 @@ class ApplySafController extends Controller
                 $metaReqs['userId'] = null;
                 $metaReqs['citizenId'] = $user_id;
             }
+            $metaReqs['MutationType']= $request->mutationType;
             $metaReqs['finisherRoleId'] = collect($finisherRoleId)['role_id'];
             $metaReqs['holdingType'] = $this->holdingType($request['floor']);
             $request->merge($metaReqs);

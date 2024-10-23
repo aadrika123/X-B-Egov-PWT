@@ -180,7 +180,8 @@ class GeneratePaymentReceiptV2
             $this->_overDueDemand["advancePaidAmount"]    = 0;
             $this->_overDueDemand["netAdvance"] = 0;
             $this->_overDueDemand["processFee"] = 0;
-
+            // $this->_overDueDemand["TotalTax"] = roundFigure($this->_overDueDemand["FinalTax"]);
+            // $this->_currentDemand["TotalTax"] = roundFigure($this->_currentDemand["FinalTax"]);
             $this->_currentDemand["FinalTax1"] =   roundFigure($this->_currentDemand["FinalTax"] + (($this->_advanceAmt ?? 0) - ($this->_adjustAmt ?? 0)));
             $this->_currentDemand["FinalTax"] =   roundFigure($this->_currentDemand["FinalTax"] + (($this->_advanceAmt ?? 0) - ($this->_adjustAmt ?? 0) + $this->_processFee));
             $this->_currentDemand["advancePaidAmount"]    =  ($this->_adjustAmt ?? 0);
@@ -190,7 +191,8 @@ class GeneratePaymentReceiptV2
 
             $this->_GRID['overdueDemand'] = $this->_overDueDemand;
             $this->_GRID['currentDemand'] = $this->_currentDemand;
-
+            // $this->_GRID['advanceOverdueDemand'] = $this->advanceAdjustment($this->_overDueDemand);
+            // $this->_GRID['advanceCurrentDemand'] = $this->advanceAdjustment($this->_currentDemand);
             $aggregateDemandList = new Collection([$this->_currentDemand, $this->_overDueDemand]);
             $aggregateDemand = $this->aggregateDemand($aggregateDemandList);
             $aggregateDemand["FinalTax"] =   round($aggregateDemand["FinalTax"] + (($this->_advanceAmt ?? 0) - ($this->_adjustAmt ?? 0)) + $this->_processFee);
@@ -380,4 +382,14 @@ class GeneratePaymentReceiptV2
 
         $this->_GRID['receiptDtls'] = $receiptDtls;
     }
+
+    // public function advanceAdjustment($demands){
+    //     $advanceAmt = $demands["netAdvance"]??0;
+    //     $tax = $demands["TotalTax"]??0;
+    //     return collect($demands)->map(function($val,$key)use($advanceAmt,$tax){
+    //         $percentOfTax = $val/($tax>0?$tax:1); 
+    //         return ($key=="netAdvance"?0 : roundFigure($advanceAmt*$percentOfTax));
+    //     });
+    // }
+
 }
