@@ -48,7 +48,7 @@ class Calculate2PercPenalty
                 }
                 $uptoDate = new Carbon($uptoYear . "-09-01");
                 $noOfPenalMonths = $uptoDate->diffInMonths($now);
-                if($uptoDate->greaterThan($now)){
+                if ($uptoDate->greaterThan($now)) {
                     $noOfPenalMonths = 0;
                 }
             }
@@ -60,7 +60,7 @@ class Calculate2PercPenalty
                 $uptoDate = new Carbon($uptoYear . "-04-01");
                 // $now = Carbon::now()->firstOfMonth()->format("Y-m-d");
                 $noOfPenalMonths = $uptoDate->diffInMonths($now) + 1;
-                if($uptoDate->greaterThan($now)){
+                if ($uptoDate->greaterThan($now)) {
                     $noOfPenalMonths = 0;
                 }
             }
@@ -83,13 +83,25 @@ class Calculate2PercPenalty
             if ($isSingleManArmedForce || $isMobileTower)
                 $monthlyBalance = ($demand->balance - $demand->exempted_general_tax) / 12;
         }
-        list($currentFrom,$currentUpto)=explode("-",getFY());
-        $currentFrom = $currentFrom."-04-01";
-        $currentUpto = $currentUpto."-03-31";
-        $newAssessSaf = PropSaf::where("property_id",$demand->property_id)->where("assessment_type","New Assessment")->whereBetween("saf_approved_date",[$currentFrom,$currentUpto])->first();
-        if ($this->_assesmentType == Config::get("PropertyConstaint.ASSESSMENT-TYPE.2") && $newAssessSaf &&   $this->_propSaf && $this->_propSaf->saf_approved_date && getFY($this->_propSaf->saf_approved_date)==getFY()) {
-            $noOfPenalMonths =0;
+        list($currentFrom, $currentUpto) = explode("-", getFY());
+        $currentFrom = $currentFrom . "-04-01";
+        $currentUpto = $currentUpto . "-03-31";
+        $newAssessSaf = PropSaf::where("property_id", $demand->property_id)->where("assessment_type", "New Assessment")->whereBetween("saf_approved_date", [$currentFrom, $currentUpto])->first();
+        if ($this->_assesmentType == Config::get("PropertyConstaint.ASSESSMENT-TYPE.2") && $newAssessSaf &&   $this->_propSaf && $this->_propSaf->saf_approved_date && getFY($this->_propSaf->saf_approved_date) == getFY()) {
+            $noOfPenalMonths = 0;
         }
+        //written by prity pandey
+        $amalgamationSaf = PropSaf::where("property_id", $demand->property_id)
+            ->where("assessment_type", "Amalgamation")
+            ->whereBetween("saf_approved_date", [$currentFrom, $currentUpto])
+            ->first();
+        if (
+            $this->_assesmentType == Config::get("PropertyConstaint.ASSESSMENT-TYPE.5") && $amalgamationSaf && $this->_propSaf && $this->_propSaf->saf_approved_date && getFY($this->_propSaf->saf_approved_date) == getFY()
+        ) {
+
+            $noOfPenalMonths = 0;
+        }
+        //==========end of code changes ===========
         $amount = $monthlyBalance * $noOfPenalMonths;
         $penalAmt = $amount * 0.02;
 

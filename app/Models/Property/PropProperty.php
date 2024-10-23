@@ -121,7 +121,7 @@ class PropProperty extends  PropParamModel #Model
                 'prop_safs.building_plan_completion_date',
             )
             ->leftjoin('prop_safs','prop_safs.id','=','prop_properties.saf_id')
-            ->Join('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
+            ->leftJoin('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
             ->leftJoin('ulb_ward_masters as w', 'w.id', '=', 'prop_properties.ward_mstr_id')
             ->leftJoin('ref_prop_ownership_types as o', 'o.id', '=', 'prop_properties.ownership_type_mstr_id')
             ->leftJoin('ref_prop_types', 'ref_prop_types.id', '=', 'prop_properties.prop_type_mstr_id')
