@@ -433,7 +433,7 @@ class Report implements IReport
                 "owner.owner_name",
                 "owner.mobile_no",
                 "owner.address",
-                
+
                 DB::raw("ulb_ward_masters.ward_name as ward_no,
                 ulb_masters.ulb_name,
                 TO_CHAR( CAST(licences.valid_from AS DATE), 'DD-MM-YYYY') as valid_from ,
@@ -1220,7 +1220,8 @@ class Report implements IReport
                 "licences.pending_status",
                 "licences.is_parked",
                 "licences.workflow_id",
-                "owners.owner_name", "owners.mobile_no",
+                "owners.owner_name",
+                "owners.mobile_no",
                 DB::raw("ulb_ward_masters.ward_name as ward_no,
                     TO_CHAR(CAST(licences.application_date AS DATE) , 'DD-MM-YYYY') as application_date
                 ")
@@ -2207,10 +2208,18 @@ class Report implements IReport
                         ulb_masters.ulb_type,
                         TO_CHAR(CAST(licences.application_date AS DATE), 'DD-MM-YYYY') as application_date,
                         TO_CHAR(CAST(licences.valid_from AS DATE), 'DD-MM-YYYY') as valid_from,
-                        TO_CHAR(CAST(licences.valid_upto AS DATE), 'DD-MM-YYYY') as valid_upto
+                        TO_CHAR(CAST(licences.valid_upto AS DATE), 'DD-MM-YYYY') as valid_upto,
+                        CASE 
+                WHEN licences.table_name = 'active_trade_licences' THEN 'pending at ' || users.name
+                WHEN licences.table_name = 'trade_licences' THEN 'approved'
+                WHEN licences.table_name = 'rejected_trade_licences' THEN 'rejected'
+                ELSE 'unknown'
+            END as application_status
+            
                         "),
-                          "licences.payment_status"
-                      
+                "licences.payment_status",
+
+
             ];
             $active = $this->_DB_READ->TABLE("active_trade_licences AS licences")
                 ->select($select)
@@ -2219,6 +2228,7 @@ class Report implements IReport
                 ->join("ulb_ward_masters", function ($join) {
                     $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
                 })
+                ->Join("users", "users.id", "=", "licences.user_id")
                 ->leftjoin(DB::raw("(SELECT STRING_AGG(active_trade_owners.owner_name,',') as owner_name,
                                                 STRING_AGG(active_trade_owners.guardian_name,',') as guardian_name,
                                                 STRING_AGG(active_trade_owners.mobile_no::text,',') as mobile,
@@ -2243,6 +2253,7 @@ class Report implements IReport
                 ->join("ulb_ward_masters", function ($join) {
                     $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
                 })
+                ->Join("users", "users.id", "=", "licences.user_id")
                 ->leftjoin(DB::raw("(SELECT STRING_AGG(trade_owners.owner_name,',') as owner_name,
                                             STRING_AGG(trade_owners.guardian_name,',') as guardian_name,
                                             STRING_AGG(trade_owners.mobile_no,',') as mobile,
@@ -2266,6 +2277,7 @@ class Report implements IReport
                 ->join("ulb_ward_masters", function ($join) {
                     $join->on("ulb_ward_masters.id", "=", "licences.ward_id");
                 })
+                ->Join("users", "users.id", "=", "licences.user_id")
                 ->leftjoin(DB::raw("(SELECT STRING_AGG(rejected_trade_owners.owner_name,',') as owner_name,
                                             STRING_AGG(rejected_trade_owners.guardian_name,',') as guardian_name,
                                             STRING_AGG(rejected_trade_owners.mobile_no,',') as mobile,
