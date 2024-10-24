@@ -2214,6 +2214,7 @@ class Report implements IReport
                     WHEN licences.is_active = false OR licences.reject_remarks IS NOT NULL THEN 'inactive'
                     WHEN licences.is_active = true THEN 'active'
                     ELSE 'unknown'
+                    END as status
             "),
                 "licences.payment_status",
                 "licences.reject_remarks"
