@@ -956,6 +956,7 @@ class TradeApplication extends Controller
                 $approvedLicence->setTable('rejected_trade_licences');
                 $approvedLicence->id = $activeLicence->id;
                 $approvedLicence->pending_status = 4;
+                $approvedLicence->reject_remarks = $req->comment;
                 $approvedLicence->save();
                 $owneres = $this->_MODEL_ActiveTradeOwner->select("*")
                     ->where("temp_id", $activeLicence->id)
