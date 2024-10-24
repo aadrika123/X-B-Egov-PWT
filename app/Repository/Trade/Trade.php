@@ -2009,196 +2009,6 @@ class Trade implements ITrade
      * | @var refUlbId  = refUser->ulb_id
      * | @var mInputs   = request->all() 
      */
-    public function readApplication(Request $request)
-    {
-        try {
-            $refUser    = Auth()->user();
-            $refUlbId   = $refUser->ulb_id ?? 2;
-            $mInputs    = $request->all();
-            DB::enableQueryLog();
-            $licence = ActiveTradeLicence::select(
-                "active_trade_licences.id",
-                "active_trade_licences.application_no",
-                "active_trade_licences.provisional_license_no",
-                "active_trade_licences.license_no",
-                "active_trade_licences.firm_name",
-                "active_trade_licences.application_date",
-                "active_trade_licences.apply_from",
-                "active_trade_licences.valid_upto",
-                "owner.owner_name",
-                "owner.owner_id",
-                "owner.guardian_name",
-                "owner.mobile_no",
-                "owner.email_id",
-                'trade_param_application_types.application_type',
-                "active_trade_licences.payment_status",
-                DB::raw("'pending' as type"),
-            )
-                ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
-                                        STRING_AGG(guardian_name,',') AS guardian_name,
-                                        STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
-                                        STRING_AGG(email_id,',') AS email_id,
-                                        temp_id,id as owner_id
-                                    FROM active_trade_owners 
-                                    WHERE is_active  =TRUE
-                                    GROUP BY temp_id,id
-                                    )owner"), function ($join) {
-                    $join->on("owner.temp_id", "active_trade_licences.id");
-                })
-                ->leftjoin('trade_param_application_types', 'trade_param_application_types.id', '=', 'active_trade_licences.application_type_id');
-            // ->where("active_trade_licences.status",1) 
-
-            $aropved = TradeLicence::select(
-                "trade_licences.id",
-                "trade_licences.application_no",
-                "trade_licences.provisional_license_no",
-                "trade_licences.license_no",
-                "trade_licences.firm_name",
-                "trade_licences.application_date",
-                "trade_licences.apply_from",
-                "trade_licences.valid_upto",
-                "owner.owner_name",
-                "owner.owner_id",
-                "owner.guardian_name",
-                "owner.mobile_no",
-                "owner.email_id",
-                'trade_param_application_types.application_type',
-                "trade_licences.payment_status",
-                DB::raw("'Approved' as type"),
-            )
-                ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
-                                        STRING_AGG(guardian_name,',') AS guardian_name,
-                                        STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
-                                        STRING_AGG(email_id,',') AS email_id,
-                                        temp_id, id as owner_id
-                                    FROM trade_owners 
-                                    WHERE is_active  =TRUE
-                                    GROUP BY temp_id,id
-                                    )owner"), function ($join) {
-                    $join->on("owner.temp_id", "trade_licences.id");
-                })
-                ->leftjoin('trade_param_application_types', 'trade_param_application_types.id', '=', 'trade_licences.application_type_id');
-
-            $old = tradeRenewal::select(
-                "trade_renewals.id",
-                "trade_renewals.application_no",
-                "trade_renewals.provisional_license_no",
-                "trade_renewals.license_no",
-                "trade_renewals.firm_name",
-                "trade_renewals.application_date",
-                "trade_renewals.apply_from",
-                "trade_renewals.valid_upto",
-                "owner.owner_name",
-                "owner.owner_id",
-                "owner.guardian_name",
-                "owner.mobile_no",
-                "owner.email_id",
-                'trade_param_application_types.application_type',
-                "trade_renewals.payment_status",
-                DB::raw("'Old' as type"),
-            )
-                ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
-                                        STRING_AGG(guardian_name,',') AS guardian_name,
-                                        STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
-                                        STRING_AGG(email_id,',') AS email_id,
-                                        temp_id ,id as owner_id
-                                    FROM trade_owners 
-                                    WHERE is_active  =TRUE
-                                    GROUP BY temp_id,id
-                                    )owner"), function ($join) {
-                    $join->on("owner.temp_id", "trade_renewals.id");
-                })
-                ->leftjoin('trade_param_application_types', 'trade_param_application_types.id', '=', 'trade_renewals.application_type_id');
-
-
-            $licence = $licence->where("active_trade_licences.ulb_id", $refUlbId);
-            $aropved = $aropved->where("trade_licences.ulb_id", $refUlbId);
-            $old = $old->where("trade_renewals.ulb_id", $refUlbId);
-
-            if (isset($mInputs['entityValue']) && trim($mInputs['entityValue']) && isset($mInputs['entityName']) && trim($mInputs['entityName'])) {
-                $key = trim($mInputs['entityValue']);
-                $column = strtoupper(trim($mInputs['entityName']));
-                $licence = $licence->where(function ($query) use ($key, $column) {
-                    if ($column == "FIRM") {
-                        $query->orwhere('active_trade_licences.firm_name', 'ILIKE', '%' . $key . '%');
-                    } elseif ($column == "APPLICATION") {
-                        $query->orwhere('active_trade_licences.application_no', 'ILIKE', '%' . $key . '%');
-                    } elseif ($column == "LICENSE") {
-                        $query->orwhere('active_trade_licences.license_no', 'ILIKE', '%' . $key . '%');
-                    } elseif ($column == "PROVISIONAL") {
-                        $query->orwhere('active_trade_licences.provisional_license_no', 'ILIKE', '%' . $key . '%');
-                    } elseif ($column == "OWNER") {
-                        $query->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%');
-                    } elseif ($column == "GUARDIAN") {
-                        $query->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%');
-                    } elseif ($column == "MOBILE") {
-                        $query->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
-                    } else {
-                        $query->orwhere('active_trade_licences.application_no', 'ILIKE', '%' . $key . '%');
-                    }
-                });
-
-                $aropved = $aropved->where(function ($query) use ($key, $column) {
-                    if ($column == "FIRM") {
-                        $query->orwhere('trade_licences.firm_name', 'ILIKE', '%' . $key . '%');
-                    } elseif ($column == "APPLICATION") {
-                        $query->orwhere('trade_licences.application_no', 'ILIKE', '%' . $key . '%');
-                    } elseif ($column == "LICENSE") {
-                        $query->orwhere('trade_licences.license_no', 'ILIKE', '%' . $key . '%');
-                    } elseif ($column == "PROVISIONAL") {
-                        $query->orwhere('trade_licences.provisional_license_no', 'ILIKE', '%' . $key . '%');
-                    } elseif ($column == "OWNER") {
-                        $query->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%');
-                    } elseif ($column == "GUARDIAN") {
-                        $query->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%');
-                    } elseif ($column == "MOBILE") {
-                        $query->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
-                    } else {
-                        $query->orwhere('trade_licences.application_no', 'ILIKE', '%' . $key . '%');
-                    }
-                });
-
-                $old = $old->where(function ($query) use ($key, $column) {
-                    if ($column == "FIRM") {
-                        $query->orwhere('trade_renewals.firm_name', 'ILIKE', '%' . $key . '%');
-                    } elseif ($column == "APPLICATION") {
-                        $query->orwhere('trade_renewals.application_no', 'ILIKE', '%' . $key . '%');
-                    } elseif ($column == "LICENSE") {
-                        $query->orwhere('trade_renewals.license_no', 'ILIKE', '%' . $key . '%');
-                    } elseif ($column == "PROVISIONAL") {
-                        $query->orwhere('trade_renewals.provisional_license_no', 'ILIKE', '%' . $key . '%');
-                    } elseif ($column == "OWNER") {
-                        $query->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%');
-                    } elseif ($column == "GUARDIAN") {
-                        $query->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%');
-                    } elseif ($column == "MOBILE") {
-                        $query->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
-                    } else {
-                        $query->orwhere('trade_renewals.application_no', 'ILIKE', '%' . $key . '%');
-                    }
-                });
-            }
-            $licence = $licence->union($aropved)->union($old)
-                ->orderBy("id", "DESC")
-                //->limit(10)
-                ->get();
-            // dd(DB::getQueryLog());
-            if ($licence->isEmpty()) {
-                throw new Exception("Application Not Found");
-            }
-            $data = [
-                "licence" => $licence->map(function ($val) {
-                    $val->application_date = $val->application_date ? Carbon::parse($val->application_date)->format("d-m-Y") : null;
-                    $val->valid_upto = $val->valid_upto ? Carbon::parse($val->valid_upto)->format("d-m-Y") : null;
-                    return $val;
-                }),
-            ];
-            return responseMsg(true, "", remove_null($data));
-        } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), $request->all());
-        }
-    }
-
     // public function readApplication(Request $request)
     // {
     //     try {
@@ -2206,8 +2016,6 @@ class Trade implements ITrade
     //         $refUlbId   = $refUser->ulb_id ?? 2;
     //         $mInputs    = $request->all();
     //         DB::enableQueryLog();
-
-    //         // Active trade licenses
     //         $licence = ActiveTradeLicence::select(
     //             "active_trade_licences.id",
     //             "active_trade_licences.application_no",
@@ -2217,41 +2025,29 @@ class Trade implements ITrade
     //             "active_trade_licences.application_date",
     //             "active_trade_licences.apply_from",
     //             "active_trade_licences.valid_upto",
-    //             DB::raw("STRING_AGG(owner.owner_name, ', ') AS owner_name"),
-    //             DB::raw("STRING_AGG(owner.guardian_name, ', ') AS guardian_name"),
-    //             DB::raw("STRING_AGG(owner.mobile_no::TEXT, ', ') AS mobile_no"),
-    //             DB::raw("STRING_AGG(owner.email_id, ', ') AS email_id"),
+    //             "owner.owner_name",
+    //             "owner.owner_id",
+    //             "owner.guardian_name",
+    //             "owner.mobile_no",
+    //             "owner.email_id",
     //             'trade_param_application_types.application_type',
     //             "active_trade_licences.payment_status",
-    //             DB::raw("'pending' as type")
+    //             DB::raw("'pending' as type"),
     //         )
-    //             ->leftjoin(DB::raw("(select STRING_AGG(owner_name, ', ') AS owner_name,
-    //                             STRING_AGG(guardian_name, ', ') AS guardian_name,
-    //                             STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no,
-    //                             STRING_AGG(email_id, ', ') AS email_id,
-    //                             temp_id 
-    //                         FROM active_trade_owners 
-    //                         WHERE is_active = TRUE
-    //                         GROUP BY temp_id
-    //                         ) owner"), function ($join) {
+    //             ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
+    //                                     STRING_AGG(guardian_name,',') AS guardian_name,
+    //                                     STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
+    //                                     STRING_AGG(email_id,',') AS email_id,
+    //                                     temp_id,id as owner_id
+    //                                 FROM active_trade_owners 
+    //                                 WHERE is_active  =TRUE
+    //                                 GROUP BY temp_id,id
+    //                                 )owner"), function ($join) {
     //                 $join->on("owner.temp_id", "active_trade_licences.id");
     //             })
-    //             ->leftjoin('trade_param_application_types', 'trade_param_application_types.id', '=', 'active_trade_licences.application_type_id')
-    //             ->where("active_trade_licences.ulb_id", $refUlbId)
-    //             ->groupBy(
-    //                 "active_trade_licences.id",
-    //                 "active_trade_licences.application_no",
-    //                 "active_trade_licences.provisional_license_no",
-    //                 "active_trade_licences.license_no",
-    //                 "active_trade_licences.firm_name",
-    //                 "active_trade_licences.application_date",
-    //                 "active_trade_licences.apply_from",
-    //                 "active_trade_licences.valid_upto",
-    //                 'trade_param_application_types.application_type',
-    //                 "active_trade_licences.payment_status"
-    //             );
+    //             ->leftjoin('trade_param_application_types', 'trade_param_application_types.id', '=', 'active_trade_licences.application_type_id');
+    //         // ->where("active_trade_licences.status",1) 
 
-    //         // Approved trade licenses
     //         $aropved = TradeLicence::select(
     //             "trade_licences.id",
     //             "trade_licences.application_no",
@@ -2261,42 +2057,29 @@ class Trade implements ITrade
     //             "trade_licences.application_date",
     //             "trade_licences.apply_from",
     //             "trade_licences.valid_upto",
-    //             DB::raw("STRING_AGG(owner.owner_name, ', ') AS owner_name"),
-    //             DB::raw("STRING_AGG(owner.guardian_name, ', ') AS guardian_name"),
-    //             DB::raw("STRING_AGG(owner.mobile_no::TEXT, ', ') AS mobile_no"),
-    //             DB::raw("STRING_AGG(owner.email_id, ', ') AS email_id"),
+    //             "owner.owner_name",
+    //             "owner.owner_id",
+    //             "owner.guardian_name",
+    //             "owner.mobile_no",
+    //             "owner.email_id",
     //             'trade_param_application_types.application_type',
     //             "trade_licences.payment_status",
-    //             DB::raw("'Approved' as type")
+    //             DB::raw("'Approved' as type"),
     //         )
-    //             ->leftjoin(DB::raw("(select STRING_AGG(owner_name, ', ') AS owner_name,
-    //                             STRING_AGG(guardian_name, ', ') AS guardian_name,
-    //                             STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no,
-    //                             STRING_AGG(email_id, ', ') AS email_id,
-    //                             temp_id 
-    //                         FROM trade_owners 
-    //                         WHERE is_active = TRUE
-    //                         GROUP BY temp_id
-    //                         ) owner"), function ($join) {
+    //             ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
+    //                                     STRING_AGG(guardian_name,',') AS guardian_name,
+    //                                     STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
+    //                                     STRING_AGG(email_id,',') AS email_id,
+    //                                     temp_id, id as owner_id
+    //                                 FROM trade_owners 
+    //                                 WHERE is_active  =TRUE
+    //                                 GROUP BY temp_id,id
+    //                                 )owner"), function ($join) {
     //                 $join->on("owner.temp_id", "trade_licences.id");
     //             })
-    //             ->leftjoin('trade_param_application_types', 'trade_param_application_types.id', '=', 'trade_licences.application_type_id')
-    //             ->where("trade_licences.ulb_id", $refUlbId)
-    //             ->groupBy(
-    //                 "trade_licences.id",
-    //                 "trade_licences.application_no",
-    //                 "trade_licences.provisional_license_no",
-    //                 "trade_licences.license_no",
-    //                 "trade_licences.firm_name",
-    //                 "trade_licences.application_date",
-    //                 "trade_licences.apply_from",
-    //                 "trade_licences.valid_upto",
-    //                 'trade_param_application_types.application_type',
-    //                 "trade_licences.payment_status"
-    //             );
+    //             ->leftjoin('trade_param_application_types', 'trade_param_application_types.id', '=', 'trade_licences.application_type_id');
 
-    //         // Trade renewals
-    //         $old = TradeRenewal::select(
+    //         $old = tradeRenewal::select(
     //             "trade_renewals.id",
     //             "trade_renewals.application_no",
     //             "trade_renewals.provisional_license_no",
@@ -2305,48 +2088,104 @@ class Trade implements ITrade
     //             "trade_renewals.application_date",
     //             "trade_renewals.apply_from",
     //             "trade_renewals.valid_upto",
-    //             DB::raw("STRING_AGG(owner.owner_name, ', ') AS owner_name"),
-    //             DB::raw("STRING_AGG(owner.guardian_name, ', ') AS guardian_name"),
-    //             DB::raw("STRING_AGG(owner.mobile_no::TEXT, ', ') AS mobile_no"),
-    //             DB::raw("STRING_AGG(owner.email_id, ', ') AS email_id"),
+    //             "owner.owner_name",
+    //             "owner.owner_id",
+    //             "owner.guardian_name",
+    //             "owner.mobile_no",
+    //             "owner.email_id",
     //             'trade_param_application_types.application_type',
     //             "trade_renewals.payment_status",
-    //             DB::raw("'Old' as type")
+    //             DB::raw("'Old' as type"),
     //         )
-    //             ->leftjoin(DB::raw("(select STRING_AGG(owner_name, ', ') AS owner_name,
-    //                             STRING_AGG(guardian_name, ', ') AS guardian_name,
-    //                             STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no,
-    //                             STRING_AGG(email_id, ', ') AS email_id,
-    //                             temp_id 
-    //                         FROM trade_owners 
-    //                         WHERE is_active = TRUE
-    //                         GROUP BY temp_id
-    //                         ) owner"), function ($join) {
+    //             ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
+    //                                     STRING_AGG(guardian_name,',') AS guardian_name,
+    //                                     STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
+    //                                     STRING_AGG(email_id,',') AS email_id,
+    //                                     temp_id ,id as owner_id
+    //                                 FROM trade_owners 
+    //                                 WHERE is_active  =TRUE
+    //                                 GROUP BY temp_id,id
+    //                                 )owner"), function ($join) {
     //                 $join->on("owner.temp_id", "trade_renewals.id");
     //             })
-    //             ->leftjoin('trade_param_application_types', 'trade_param_application_types.id', '=', 'trade_renewals.application_type_id')
-    //             ->where("trade_renewals.ulb_id", $refUlbId)
-    //             ->groupBy(
-    //                 "trade_renewals.id",
-    //                 "trade_renewals.application_no",
-    //                 "trade_renewals.provisional_license_no",
-    //                 "trade_renewals.license_no",
-    //                 "trade_renewals.firm_name",
-    //                 "trade_renewals.application_date",
-    //                 "trade_renewals.apply_from",
-    //                 "trade_renewals.valid_upto",
-    //                 'trade_param_application_types.application_type',
-    //                 "trade_renewals.payment_status"
-    //             );
+    //             ->leftjoin('trade_param_application_types', 'trade_param_application_types.id', '=', 'trade_renewals.application_type_id');
 
+
+    //         $licence = $licence->where("active_trade_licences.ulb_id", $refUlbId);
+    //         $aropved = $aropved->where("trade_licences.ulb_id", $refUlbId);
+    //         $old = $old->where("trade_renewals.ulb_id", $refUlbId);
+
+    //         if (isset($mInputs['entityValue']) && trim($mInputs['entityValue']) && isset($mInputs['entityName']) && trim($mInputs['entityName'])) {
+    //             $key = trim($mInputs['entityValue']);
+    //             $column = strtoupper(trim($mInputs['entityName']));
+    //             $licence = $licence->where(function ($query) use ($key, $column) {
+    //                 if ($column == "FIRM") {
+    //                     $query->orwhere('active_trade_licences.firm_name', 'ILIKE', '%' . $key . '%');
+    //                 } elseif ($column == "APPLICATION") {
+    //                     $query->orwhere('active_trade_licences.application_no', 'ILIKE', '%' . $key . '%');
+    //                 } elseif ($column == "LICENSE") {
+    //                     $query->orwhere('active_trade_licences.license_no', 'ILIKE', '%' . $key . '%');
+    //                 } elseif ($column == "PROVISIONAL") {
+    //                     $query->orwhere('active_trade_licences.provisional_license_no', 'ILIKE', '%' . $key . '%');
+    //                 } elseif ($column == "OWNER") {
+    //                     $query->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%');
+    //                 } elseif ($column == "GUARDIAN") {
+    //                     $query->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%');
+    //                 } elseif ($column == "MOBILE") {
+    //                     $query->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
+    //                 } else {
+    //                     $query->orwhere('active_trade_licences.application_no', 'ILIKE', '%' . $key . '%');
+    //                 }
+    //             });
+
+    //             $aropved = $aropved->where(function ($query) use ($key, $column) {
+    //                 if ($column == "FIRM") {
+    //                     $query->orwhere('trade_licences.firm_name', 'ILIKE', '%' . $key . '%');
+    //                 } elseif ($column == "APPLICATION") {
+    //                     $query->orwhere('trade_licences.application_no', 'ILIKE', '%' . $key . '%');
+    //                 } elseif ($column == "LICENSE") {
+    //                     $query->orwhere('trade_licences.license_no', 'ILIKE', '%' . $key . '%');
+    //                 } elseif ($column == "PROVISIONAL") {
+    //                     $query->orwhere('trade_licences.provisional_license_no', 'ILIKE', '%' . $key . '%');
+    //                 } elseif ($column == "OWNER") {
+    //                     $query->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%');
+    //                 } elseif ($column == "GUARDIAN") {
+    //                     $query->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%');
+    //                 } elseif ($column == "MOBILE") {
+    //                     $query->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
+    //                 } else {
+    //                     $query->orwhere('trade_licences.application_no', 'ILIKE', '%' . $key . '%');
+    //                 }
+    //             });
+
+    //             $old = $old->where(function ($query) use ($key, $column) {
+    //                 if ($column == "FIRM") {
+    //                     $query->orwhere('trade_renewals.firm_name', 'ILIKE', '%' . $key . '%');
+    //                 } elseif ($column == "APPLICATION") {
+    //                     $query->orwhere('trade_renewals.application_no', 'ILIKE', '%' . $key . '%');
+    //                 } elseif ($column == "LICENSE") {
+    //                     $query->orwhere('trade_renewals.license_no', 'ILIKE', '%' . $key . '%');
+    //                 } elseif ($column == "PROVISIONAL") {
+    //                     $query->orwhere('trade_renewals.provisional_license_no', 'ILIKE', '%' . $key . '%');
+    //                 } elseif ($column == "OWNER") {
+    //                     $query->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%');
+    //                 } elseif ($column == "GUARDIAN") {
+    //                     $query->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%');
+    //                 } elseif ($column == "MOBILE") {
+    //                     $query->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
+    //                 } else {
+    //                     $query->orwhere('trade_renewals.application_no', 'ILIKE', '%' . $key . '%');
+    //                 }
+    //             });
+    //         }
     //         $licence = $licence->union($aropved)->union($old)
     //             ->orderBy("id", "DESC")
+    //             //->limit(10)
     //             ->get();
-
+    //         // dd(DB::getQueryLog());
     //         if ($licence->isEmpty()) {
     //             throw new Exception("Application Not Found");
     //         }
-
     //         $data = [
     //             "licence" => $licence->map(function ($val) {
     //                 $val->application_date = $val->application_date ? Carbon::parse($val->application_date)->format("d-m-Y") : null;
@@ -2354,12 +2193,163 @@ class Trade implements ITrade
     //                 return $val;
     //             }),
     //         ];
-
     //         return responseMsg(true, "", remove_null($data));
     //     } catch (Exception $e) {
     //         return responseMsg(false, $e->getMessage(), $request->all());
     //     }
     // }
+
+    #==========changed by prity pandey========
+    public function readApplication(Request $request)
+    {
+        try {
+            $refUser = Auth()->user();
+            $refUlbId = $refUser->ulb_id ?? 2;
+            $mInputs = $request->all();
+            DB::enableQueryLog();
+
+            // Modify the first query for active trade licenses
+            $licence = ActiveTradeLicence::select(
+                "active_trade_licences.id",
+                "active_trade_licences.application_no",
+                "active_trade_licences.provisional_license_no",
+                "active_trade_licences.license_no",
+                "active_trade_licences.firm_name",
+                "active_trade_licences.application_date",
+                "active_trade_licences.apply_from",
+                "active_trade_licences.valid_upto",
+                DB::raw("STRING_AGG(owner.owner_name, ', ') AS owner_names"),
+                DB::raw("STRING_AGG(owner.mobile_no, ', ') AS owner_mobiles"),
+                DB::raw("'pending' as type")
+            )
+                ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
+                                    STRING_AGG(guardian_name,',') AS guardian_name,
+                                    STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
+                                    STRING_AGG(email_id,',') AS email_id,
+                                    temp_id, id as owner_id
+                                FROM active_trade_owners 
+                                WHERE is_active = TRUE
+                                GROUP BY temp_id,id
+                            ) owner"), function ($join) {
+                    $join->on("owner.temp_id", "active_trade_licences.id");
+                })
+                ->where("active_trade_licences.ulb_id", $refUlbId)
+                ->groupBy("active_trade_licences.id");
+
+            // Similarly for approved trade licenses
+            $aropved = TradeLicence::select(
+                "trade_licences.id",
+                "trade_licences.application_no",
+                "trade_licences.provisional_license_no",
+                "trade_licences.license_no",
+                "trade_licences.firm_name",
+                "trade_licences.application_date",
+                "trade_licences.apply_from",
+                "trade_licences.valid_upto",
+                DB::raw("STRING_AGG(owner.owner_name, ', ') AS owner_names"),
+                DB::raw("STRING_AGG(owner.mobile_no, ', ') AS owner_mobiles"),
+                DB::raw("'Approved' as type")
+            )
+                ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
+                                    STRING_AGG(guardian_name,',') AS guardian_name,
+                                    STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
+                                    STRING_AGG(email_id,',') AS email_id,
+                                    temp_id, id as owner_id
+                                FROM trade_owners 
+                                WHERE is_active = TRUE
+                                GROUP BY temp_id,id
+                            ) owner"), function ($join) {
+                    $join->on("owner.temp_id", "trade_licences.id");
+                })
+                ->where("trade_licences.ulb_id", $refUlbId)
+                ->groupBy("trade_licences.id");
+
+            // And for trade renewals
+            $old = TradeRenewal::select(
+                "trade_renewals.id",
+                "trade_renewals.application_no",
+                "trade_renewals.provisional_license_no",
+                "trade_renewals.license_no",
+                "trade_renewals.firm_name",
+                "trade_renewals.application_date",
+                "trade_renewals.apply_from",
+                "trade_renewals.valid_upto",
+                DB::raw("STRING_AGG(owner.owner_name, ', ') AS owner_names"),
+                DB::raw("STRING_AGG(owner.mobile_no, ', ') AS owner_mobiles"),
+                DB::raw("'Old' as type")
+            )
+                ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
+                                    STRING_AGG(guardian_name,',') AS guardian_name,
+                                    STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
+                                    STRING_AGG(email_id,',') AS email_id,
+                                    temp_id, id as owner_id
+                                FROM trade_owners 
+                                WHERE is_active = TRUE
+                                GROUP BY temp_id,id
+                            ) owner"), function ($join) {
+                    $join->on("owner.temp_id", "trade_renewals.id");
+                })
+                ->where("trade_renewals.ulb_id", $refUlbId)
+                ->groupBy("trade_renewals.id");
+
+            // Add filtering based on input values
+            if (isset($mInputs['entityValue']) && trim($mInputs['entityValue']) && isset($mInputs['entityName']) && trim($mInputs['entityName'])) {
+                $key = trim($mInputs['entityValue']);
+                $column = strtoupper(trim($mInputs['entityName']));
+
+                $licence = $this->applyFilters($licence, $key, $column);
+                $aropved = $this->applyFilters($aropved, $key, $column, true);
+                $old = $this->applyFilters($old, $key, $column, true);
+            }
+
+            // Combine the results
+            $licence = $licence->union($aropved)->union($old)
+                ->orderBy("id", "DESC")
+                ->get();
+
+            if ($licence->isEmpty()) {
+                throw new Exception("Application Not Found");
+            }
+
+            // Format the dates
+            $data = [
+                "licence" => $licence->map(function ($val) {
+                    $val->application_date = $val->application_date ? Carbon::parse($val->application_date)->format("d-m-Y") : null;
+                    $val->valid_upto = $val->valid_upto ? Carbon::parse($val->valid_upto)->format("d-m-Y") : null;
+                    return $val;
+                }),
+            ];
+
+            return responseMsg(true, "", remove_null($data));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+
+    // Helper function to apply filters
+    private function applyFilters($query, $key, $column, $isApproved = false)
+    {
+        return $query->where(function ($query) use ($key, $column, $isApproved) {
+            if ($column == "FIRM") {
+                $query->orWhere('firm_name', 'ILIKE', '%' . $key . '%');
+            } elseif ($column == "APPLICATION") {
+                $query->orWhere('application_no', 'ILIKE', '%' . $key . '%');
+            } elseif ($column == "LICENSE") {
+                $query->orWhere('license_no', 'ILIKE', '%' . $key . '%');
+            } elseif ($column == "PROVISIONAL") {
+                $query->orWhere('provisional_license_no', 'ILIKE', '%' . $key . '%');
+            } elseif ($column == "OWNER") {
+                $query->orWhere(DB::raw("STRING_AGG(owner.owner_name, ', ')"), 'ILIKE', '%' . $key . '%');
+            } elseif ($column == "GUARDIAN") {
+                $query->orWhere('guardian_name', 'ILIKE', '%' . $key . '%');
+            } elseif ($column == "MOBILE") {
+                $query->orWhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
+            } else {
+                $query->orWhere('application_no', 'ILIKE', '%' . $key . '%');
+            }
+        });
+    }
+
 
 
     public function readApplicationv1(Request $request)
