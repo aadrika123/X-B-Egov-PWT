@@ -2210,8 +2210,8 @@ class Report implements IReport
                         TO_CHAR(CAST(licences.valid_from AS DATE), 'DD-MM-YYYY') as valid_from,
                         TO_CHAR(CAST(licences.valid_upto AS DATE), 'DD-MM-YYYY') as valid_upto,
                         CASE 
-                    WHEN licences.status = 0 THEN 'inactive'
-                    WHEN licences.status = 1 THEN 'active'
+                    WHEN licences.is_active = false THEN 'inactive'
+                    WHEN licences.is_active = true THEN 'active'
                     ELSE 'unknown'  -- Optional: handle other statuses if needed
                 END as status
             "),
