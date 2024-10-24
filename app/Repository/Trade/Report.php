@@ -2208,7 +2208,9 @@ class Report implements IReport
                         TO_CHAR(CAST(licences.application_date AS DATE), 'DD-MM-YYYY') as application_date,
                         TO_CHAR(CAST(licences.valid_from AS DATE), 'DD-MM-YYYY') as valid_from,
                         TO_CHAR(CAST(licences.valid_upto AS DATE), 'DD-MM-YYYY') as valid_upto
-                        ")
+                        "),
+                          "licences.payment_status"
+                      
             ];
             $active = $this->_DB_READ->TABLE("active_trade_licences AS licences")
                 ->select($select)
