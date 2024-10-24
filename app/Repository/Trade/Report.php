@@ -2208,10 +2208,13 @@ class Report implements IReport
                         ulb_masters.ulb_type,
                         TO_CHAR(CAST(licences.application_date AS DATE), 'DD-MM-YYYY') as application_date,
                         TO_CHAR(CAST(licences.valid_from AS DATE), 'DD-MM-YYYY') as valid_from,
-                        TO_CHAR(CAST(licences.valid_upto AS DATE), 'DD-MM-YYYY') as valid_upto
+                        TO_CHAR(CAST(licences.valid_upto AS DATE), 'DD-MM-YYYY') as valid_upto,
+                        CASE 
+                    WHEN licences.status = 0 THEN 'inactive'
+                    WHEN licences.status = 1 THEN 'active'
+                    ELSE 'unknown'  -- Optional: handle other statuses if needed
+                END as status
             "),
-            
-                        
                 "licences.payment_status",
                 "licences.reject_remarks"
 
