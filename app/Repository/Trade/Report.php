@@ -2213,6 +2213,7 @@ class Report implements IReport
             
                         
                 "licences.payment_status",
+                "licences.reject_remarks"
 
 
             ];
