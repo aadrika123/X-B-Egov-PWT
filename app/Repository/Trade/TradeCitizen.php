@@ -943,6 +943,7 @@ class TradeCitizen implements ITradeCitizen
                 $mItemName = trim($mItemName, ',');
                 $mCods = trim($mCods, ',');
             }
+            $refApplication->nature_of_bussiness      = $mItemName;
             $refApplication->items      = $mItemName;
             $refApplication->items_code = $mCods;
             $refOwnerDtl                = $this->_REPOSITORY_TRADE->getAllOwnereDtlByLId($id);
