@@ -4342,6 +4342,7 @@ class Trade implements ITrade
                 "trade_param_category_types.category_type",
                 "trade_param_firm_types.firm_type",
                 "trade_param_ownership_types.ownership_type",
+                "akola_trade_param_item_types.trade_item as nature_of_bussiness",
                 DB::raw("ulb_ward_masters.ward_name AS ward_no, new_ward.ward_name as new_ward_no,ulb_masters.ulb_name, zone_masters.zone_name , '$table' AS tbl")
             );
             if (!$test) {
@@ -4353,6 +4354,7 @@ class Trade implements ITrade
                     "trade_param_category_types.category_type",
                     "trade_param_firm_types.firm_type",
                     "trade_param_ownership_types.ownership_type",
+                    "akola_trade_param_item_types.trade_item as nature_of_bussiness",
                     DB::raw("ulb_ward_masters.ward_name AS ward_no, new_ward.ward_name as new_ward_no,ulb_masters.ulb_name, zone_masters.zone_name , '$table' AS tbl")
                 );
             }
@@ -4365,6 +4367,7 @@ class Trade implements ITrade
                     "trade_param_category_types.category_type",
                     "trade_param_firm_types.firm_type",
                     "trade_param_ownership_types.ownership_type",
+                    "akola_trade_param_item_types.trade_item as nature_of_bussiness",
                     DB::raw("ulb_ward_masters.ward_name AS ward_no, 
                     new_ward.ward_name as new_ward_no,ulb_masters.ulb_name, zone_masters.zone_name , '$table' AS tbl")
                 );
@@ -4377,6 +4380,7 @@ class Trade implements ITrade
                     "trade_param_category_types.category_type",
                     "trade_param_firm_types.firm_type",
                     "trade_param_ownership_types.ownership_type",
+                    "akola_trade_param_item_types.trade_item as nature_of_bussiness",
                     DB::raw("ulb_ward_masters.ward_name AS ward_no, 
                     new_ward.ward_name as new_ward_no,ulb_masters.ulb_name, zone_masters.zone_name , '$table' AS tbl")
                 );
@@ -4395,6 +4399,7 @@ class Trade implements ITrade
                 ->leftjoin("trade_param_category_types", "trade_param_category_types.id", $table . ".category_type_id")
                 ->leftjoin("trade_param_firm_types", "trade_param_firm_types.id", $table . ".firm_type_id")
                 ->leftjoin("trade_param_ownership_types", "trade_param_ownership_types.id", $table . ".ownership_type_id")
+                ->join("akola_trade_param_item_types","akola_trade_param_item_types.id",$table . ".nature_of_bussiness")
                 ->where($table . '.id', $id)
                 ->first();
             return $application;
