@@ -179,7 +179,8 @@ trait SafDetailsTrait
             ['displayString' => 'Plot-Area(In Sqft)', 'key' => 'plotArea', 'value' => $req->area_of_plot],
             ['displayString' => 'Is-Water-Harvesting', 'key' => 'isWaterHarvesting', 'value' => ($req->is_water_harvesting == true) ? 'Yes' : 'No'],
             ['displayString' => 'Is-Hoarding-Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No'],
-            ['displayString' => 'Category', 'key' => 'category', 'value' => $req->category ]
+            ['displayString' => 'Category', 'key' => 'category', 'value' => $req->category ],
+            ['displayString' => 'Process Fee', 'key' => 'ProcessFee', 'value' => $req->process_fee]
         ]);
         if(trim($req->property_no))
         {
