@@ -13,6 +13,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Water\WaterConsumer;
 use App\Http\Requests\Property\reqApplySaf;
 use App\Http\Requests\ReqGBSaf;
+use App\MicroServices\DocUpload;
+use App\Models\Advertisements\WfActiveDocument;
+use App\Models\PropActiveSafsTransferDetail;
 use App\Models\Property\Logs\PropSmsLog;
 use App\Models\Property\Logs\SafAmalgamatePropLog;
 use App\Models\Property\PropActiveGbOfficer;
@@ -129,7 +132,32 @@ class ApplySafController extends Controller
             // Derivative Assignments
             $ulbWorkflowId = $this->readAssessUlbWfId($request, $ulb_id);           // (2.1)
             $roadWidthType = $this->readRoadWidthType($request->roadType);          // Read Road Width Type
-            $mutationProccessFee = $this->readProccessFee($request->assessmentType, $request->saleValue, $request->propertyType, $request->transferModeId);
+            $mutationProccessFee = 0;
+            $firstSaleVal = null;
+            if (is_array($request->transferDetails)) {
+                foreach ($request->transferDetails as $key=>$val) {
+                    if($key==0){
+                        $firstSaleVal =  $val["saleValue"];
+                    }
+                    $saleVal = $val["saleValue"];
+                    $mutationProccessFee += $this->readProccessFee($request->assessmentType, $saleVal, $request->propertyType, $request->transferModeId);
+                }
+            }
+            $deedArr = [];
+            $docUpload = new DocUpload();
+            
+            $relativePath = Config::get('PropertyConstaint.PROCCESS_RELATIVE_PATH');
+            foreach ($request->transferDetails as $key => $deedDoc) {
+                
+                $deedArr[$key] = $deedDoc;
+                $document = $deedDoc["deed"];
+                $refImageName =  $saf->id . "-" . $key + 1;
+                unset($deedArr[$key]["deed"]);
+                $deedArr[$key]["upload"] = $document ? ($relativePath . "/" . $docUpload->upload($refImageName, $document, $relativePath)) : "";
+            }
+            $request->merge(["saleValueNew" => $deedArr,"saleValue"=>$firstSaleVal]);
+            $request->merge(["deedJson" => preg_replace('/\//', '', json_encode($request->saleValueNew, JSON_UNESCAPED_UNICODE))]);
+            // $mutationProccessFee = $this->readProccessFee($request->assessmentType, $request->saleValue, $request->propertyType, $request->transferModeId);
             // if ($request->assessmentType == 'Bifurcation')
             //     $request->areaOfPlot = $this->checkBifurcationCondition($saf, $prop, $request);
 
@@ -175,7 +203,7 @@ class ApplySafController extends Controller
             //     throw new Exception("Old Demand Amount Of " . $taxCalculator->_oldUnpayedAmount . " Not Cleard");
             // }
             DB::beginTransaction();
-            $createSaf = $saf->store($request);                                         // Store SAF Using Model function
+            $createSaf = $saf->store($request);                    // Store SAF Using Model function
             if ($request->assessmentType == 5 || $request->assessmentType == "Amalgamation") {
                 $request->merge(["safId" => $createSaf->original['safId']]);
                 $SafAmalgamatePropLog = new SafAmalgamatePropLog();
@@ -187,7 +215,7 @@ class ApplySafController extends Controller
             // SAF Owner Details
             if ($request['owner']) {
                 $ownerDetail = $request['owner'];
-                if ($request->assessmentType == 'Mutation')                             // In Case of Mutation Abort Existing Owner Detail
+                if ($request->assessmentType == 'Mutation')                             // In Case of Mutation Abort Existing Owner Detail66
                     $ownerDetail = collect($ownerDetail)->where('propOwnerDetailId', null);
                 foreach ($ownerDetail as $ownerDetails) {
                     $mOwner->addOwner($ownerDetails, $safId, $user_id);
@@ -205,6 +233,43 @@ class ApplySafController extends Controller
                     }
                 }
             }
+            
+            /*
+            if ($request->assessmentType == 'Mutation' && $request['transferDetails']) {
+                $transferDetailModel = new PropActiveSafsTransferDetail();
+                $relativePath = Config::get('PropertyConstaint.TC_VISIT_RELATIVE_PATH');
+                $propModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+                $docUpload = new DocUpload();
+                foreach ($request['transferDetails'] as $transferDetail) {
+                    $savedTransfer = $transferDetailModel->addTransferDetail($transferDetail, $safId);
+                    $transferId = $savedTransfer->id;
+                    if (isset($transferDetail['deed']) && $savedTransfer) {
+                        //$refImageName = $savedTransfer->id; // Use Transfer Detail ID as reference
+                        $document = $transferDetail['deed'];
+                        // if ($request->hasFile('document')) {
+                        //     $documentFile = $request->file('document');
+                        $docUpload->upload($transferId, $document, $relativePath);
+                        $mWfActiveDocument = new WfActiveDocument();
+                        $mWfActiveDocument->module_id = $propModuleId;
+                        $mWfActiveDocument->active_id = $transferId;
+                        $mWfActiveDocument->workflow_id = 0;
+                        $mWfActiveDocument->ulb_id = 2;
+                        $mWfActiveDocument->relative_path = $relativePath;
+                        $mWfActiveDocument->document = $docUpload;
+                        $mWfActiveDocument->doc_code = null; // Or assign a specific value if necessary
+                        $mWfActiveDocument->doc_category = null; // Or assign a specific value if necessary
+                        $mWfActiveDocument->uploaded_by = Auth()->user()->id ?? null;
+                        $mWfActiveDocument->uploaded_by_type = Auth()->user()->user_type ?? "Citizen";
+                        $mWfActiveDocument->verify_status = 1;
+
+                        // Finally, save the instance to the database
+                        $mWfActiveDocument->save();
+
+                    }
+                }
+            }
+            */
+
             $this->sendToWorkflow($createSaf, $user_id);
             DB::commit();
 

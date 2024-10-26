@@ -38,11 +38,20 @@ class reqApplySaf extends FormRequest
         $rules['category'] = "required|int";
         $rules['vacantLandType'] = "nullable";
         if (isset($this->assessmentType) && $this->assessmentType == 3) {
-            $rules['transferModeId'] = "required";
+            //$rules['transferModeId'] = "nullable";
             $rules['dateOfPurchase'] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";
             $rules["isOwnerChanged"] = "required|bool";
-            $rules["saleValue"]      = "required|digits_between:1,9223372036854775807";
+           // $rules["saleValue"]      = "nullable|digits_between:1,9223372036854775807";
         }
+
+        if (isset($this->assessmentType) && $this->assessmentType == 3) {
+            $rules['transferDetails'] = 'required|array';
+            $rules['transferDetails.*.owner'] = 'required|string';
+            $rules['transferDetails.*.transferMode'] = 'required|int';
+            $rules['transferDetails.*.saleValue'] = 'required|numeric|min:0';
+            $rules['transferDetails.*.deed'] = 'required|file|mimes:pdf,doc,docx|max:10240';
+        }
+        
         if (isset($this->assessmentType) && $this->assessmentType == 4) {
             $rules['bifurcatedPlot'] = "required|numeric|max:" . $this->areaOfPlot;
             $rules['biDateOfPurchase'] = "required|date|date_format:Y-m-d|before_or_equal:$mNowDate";

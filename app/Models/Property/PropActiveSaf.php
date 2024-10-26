@@ -106,6 +106,7 @@ class  PropActiveSaf extends PropParamModel #Model
             'trust_type' => $req->trustType ?? null,
             'category_id' => $req->category,
             'sale_value' => (in_array($req->assessmentType, ['Mutation', 'Bifurcation'])) ? ($req->saleValue ?? null) : null,
+            "deed_json"=>(in_array($req->assessmentType,['Mutation','Bifurcation'])) ? ($req->deedJson??null) : null,
             'proccess_fee' => (in_array($req->assessmentType, ['Mutation', 'Bifurcation'])) ? ($req->proccessFee ?? 0) : 0,
             'proccess_fee_paid' => (($req->proccessFee ?? 0) > 0 && (in_array($req->assessmentType, ['Mutation', 'Bifurcation']))) ? 0 : 1,
             "property_no" => ($req->propertyNo ?? null),
