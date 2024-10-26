@@ -972,7 +972,7 @@ class SafApprovalBll
                 throw new Exception("Old Property Not Found");
             }
             $newPropProperties = PropProperty::find($this->_replicatedPropId);
-            $newPropProperties->update(["status" => 1]);
+            $newPropProperties->update(["status" => 0]);
             $this->transferPropertyBifurcationDemand();
 
             #_Save in Assessment History Table
