@@ -284,12 +284,12 @@ class ActiveSafController extends Controller
 
             $data['transfer_mode'] = $transferModuleType;
             // Property Types
-            if (!$vacLand) {
-                $vacLand = $vacantLandType->propPropertyVacantLandType();
-                $redisConn->set('ref_prop_vacant_lands', json_encode($vacLand));
-            }
+            // if (!$vacLand) {
+            //     $vacLand = $vacantLandType->propPropertyVacantLandType();
+            //     $redisConn->set('ref_prop_vacant_lands', json_encode($vacLand));
+            // }
 
-            $data['vacant_land_type'] = $vacLand;
+            // $data['vacant_land_type'] = $vacLand;
 
             return responseMsgs(true, 'Property Masters', $data, "010101", "1.0", responseTime(), "GET", "");
         } catch (Exception $e) {
@@ -797,6 +797,7 @@ class ActiveSafController extends Controller
                 $verificationDtl = $mVerificationDtls->getVerificationDtls($safVerification->id);
             }
              $data->transferDetails = collect(json_decode($data->deed_json,true))->map(function($val){
+                $val["transferModeName"] = RefPropTransferMode::find($val["transferMode"]??0)->transfer_mode??"";
                 ($val["upload"] ?? false) ?($val["upload"] =  Config::get('module-constants.DOC_URL')."/".$val["upload"]) : "";
                 return $val;
             });
@@ -861,7 +862,7 @@ class ActiveSafController extends Controller
 
             $transferElement = [
                 'headerTitle' => 'Transfer Details',
-                'tableHead' => ["#", "Owner Name", "Transfer Mode", "Sale Value", "Deed Document"],
+                'tableHead' => ["#", "Owner Name", "transfer Mode","Sale Value", "Deed Document"],
                 'tableData' => $transferDetailsData
             ]; 
 
@@ -990,6 +991,7 @@ class ActiveSafController extends Controller
 
             $data->current_role_name = 'Approved By ' . $data->current_role_name;
             $data->transferDetails = collect(json_decode($data->deed_json,true))->map(function($val){
+                $val["transferModeName"] = RefPropTransferMode::find($val["transferMode"]??0)->transfer_mode??"";
                 ($val["upload"] ?? false) ?($val["upload"] =  Config::get('module-constants.DOC_URL')."/".$val["upload"]) : "";
                 return $val;
             });
@@ -1322,6 +1324,7 @@ class ActiveSafController extends Controller
                 $data->current_role_name2 = $data->current_role_name;
 
             $data->transferDetails = collect(json_decode($data->deed_json,true))->map(function($val){
+                $val["transferModeName"] = RefPropTransferMode::find($val["transferMode"]??0)->transfer_mode??"";
                 ($val["upload"] ?? false) ?($val["upload"] =  Config::get('module-constants.DOC_URL')."/".$val["upload"]) : "";
                 return $val;
             });

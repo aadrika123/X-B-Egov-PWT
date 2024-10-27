@@ -469,9 +469,11 @@ trait SafDetailsTrait
             return [
                 $key + 1,
                 $transferDetail['owner'] ?? 'N/A',
-                $transferDetail['transferMode'] ?? 'N/A',
+                //$transferDetail['transferMode'] ?? 'N/A',
+                $transferDetail['transferModeName'] ?? 'N/A',
                 $transferDetail['saleValue'] ?? 'N/A',
-                $transferDetail['upload'] ?? '',
+                $transferDetail['upload'] ?? '
+                ',
             ];
         });
     }
