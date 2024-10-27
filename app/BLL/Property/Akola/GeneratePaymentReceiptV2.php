@@ -82,6 +82,129 @@ class GeneratePaymentReceiptV2
     /**
      * | Read parameters
      */
+    // public function readParams()
+    // {
+    //     $this->_mTowards = Config::get('PropertyConstaint.SAF_TOWARDS');
+    //     $this->_mAccDescription = Config::get('PropertyConstaint.ACCOUNT_DESCRIPTION');
+    //     $this->_mDepartmentSection = Config::get('PropertyConstaint.DEPARTMENT_SECTION');
+
+    //     $currentFyear = getFY();
+
+    //     if (isset($this->_tranId))
+    //         $trans = $this->_mPropTransaction->getPropByTranId($this->_tranId);
+    //     else
+    //         $trans = $this->_mPropTransaction->getPropByTranPropId($this->_tranNo);
+
+    //     $this->_trans = $trans;
+    //     $currentFyear = getFY($this->_trans->tran_date);
+    //     if (collect($trans)->isEmpty())
+    //         throw new Exception("Transaction Not Available for this Transaction No");
+
+    //     $this->_GRID['transactionNo'] = $trans->tran_no;
+    //     $this->_tranType = $trans->tran_type;                // Property or SAF       
+    //     $this->_advanceAmt = $this->_mPropAdvance->getAdvanceAmtByTrId($this->_trans->id)->sum("amount");
+    //     $this->_adjustAmt = $this->_mPropAdjustment->getAdjustmentAmtByTrId($this->_trans->id)->sum("amount");
+
+    //     $tranDtls = $this->_mPropTranDtl->getTranDemandsByTranId($trans->id);
+    //     // $this->_propertyDtls = $this->_mPropProperty->getBasicDetails($trans->property_id);             // Get details from property table
+    //     $this->_propertyDtls = $this->_mPropProperty->getBasicDetailsV2($trans->property_id);
+    //     $safTran = $this->_mPropTransaction->whereIn("status", [1, 2])->where("tran_type", "Saf Proccess Fee")->where("saf_id", $this->_propertyDtls->saf_id)->first();
+    //     $isFirstTransaction = $this->_mPropTransaction->whereIn("status", [1, 2])->where("property_id", $trans->property_id)->where("id", "<", $this->_trans->id)->count("id") == 0 ? true : false;
+    //     $this->_processFee = $isFirstTransaction && $safTran ? $safTran->amount : 0;
+    //     if ($this->_tranType == 'Property') {                                   // Get Property Demands by demand ids
+    //         if (collect($this->_propertyDtls)->isEmpty())
+    //             throw new Exception("Property Details not available");
+    //     }
+
+    //     if ($this->_tranType == 'Saf') {                                   // Get Saf Demands by demand ids
+    //         $this->_propertyDtls = $this->_mPropSaf->getBasicDetails($trans->saf_id);                       // Get Details from saf table
+    //         if (collect($this->_propertyDtls)->isEmpty())
+    //             throw new Exception("Saf Details not available");
+    //     }
+
+    //     $this->_ulbDetails = $this->_mUlbMasters->getUlbDetails($this->_propertyDtls->ulb_id);
+
+    //     $this->_GRID['penaltyRebates'] = [];
+    //     $this->_GRID['tranDtls'] = $tranDtls;
+    //     if (collect($tranDtls)->isNotEmpty()) {
+    //         $this->_isArrearReceipt = false;
+    //         if ($this->_tranType == 'Property') {                                   // Get Property Demands by demand ids
+    //             $demandIds = collect($tranDtls)->pluck('prop_demand_id')->toArray();
+    //             $demandsList = $this->_mPropDemands->getDemandsListByIds($demandIds);
+    //             foreach ($demandsList as $list) {
+    //                 $paidTranDemands =  collect($tranDtls)->where("prop_demand_id", $list->id)->first();
+    //                 $list->general_tax = $paidTranDemands->paid_general_tax;
+    //                 $list->road_tax = $paidTranDemands->paid_road_tax;
+    //                 $list->firefighting_tax = $paidTranDemands->paid_firefighting_tax;
+    //                 $list->education_tax = $paidTranDemands->paid_education_tax;
+    //                 $list->water_tax = $paidTranDemands->paid_water_tax;
+    //                 $list->cleanliness_tax = $paidTranDemands->paid_cleanliness_tax;
+    //                 $list->sewarage_tax = $paidTranDemands->paid_sewarage_tax;
+    //                 $list->tree_tax = $paidTranDemands->paid_tree_tax;
+    //                 $list->professional_tax = $paidTranDemands->paid_professional_tax;
+    //                 $list->total_tax = $paidTranDemands->paid_total_tax;
+    //                 $list->balance = $paidTranDemands->paid_balance;
+    //                 $list->tax1 = $paidTranDemands->paid_tax1;
+    //                 $list->tax2 = $paidTranDemands->paid_tax2;
+    //                 $list->tax3 = $paidTranDemands->paid_tax3;
+    //                 $list->sp_education_tax = $paidTranDemands->paid_sp_education_tax;
+    //                 $list->water_benefit = $paidTranDemands->paid_water_benefit;
+    //                 $list->water_bill = $paidTranDemands->paid_water_bill;
+    //                 $list->sp_water_cess = $paidTranDemands->paid_sp_water_cess;
+    //                 $list->drain_cess = $paidTranDemands->paid_drain_cess;
+    //                 $list->light_cess = $paidTranDemands->paid_light_cess;
+    //                 $list->major_building = $paidTranDemands->paid_major_building;
+    //                 $list->open_ploat_tax = $paidTranDemands->paid_open_ploat_tax;
+    //                 $list->exempted_general_tax     = $paidTranDemands->paid_exempted_general_tax ?? 0;
+    //             }
+    //             $this->_GRID['penaltyRebates'] = $this->_mPropPenaltyRebates->getPenaltyRebatesHeads($trans->id, "Property");
+    //         }
+
+    //         if ($this->_tranType == 'Saf') {                                   // Get Saf Demands by demand ids
+    //             $demandIds = collect($tranDtls)->pluck('saf_demand_id')->toArray();
+    //             $demandsList = $this->_mPropDemands->getDemandsListByIds($demandIds);
+    //             $this->_GRID['penaltyRebates'] = $this->_mPropPenaltyRebates->getPenaltyRebatesHeads($trans->id, "Saf");
+    //         }
+    //         $this->_GRID['arrearPenalty'] = collect($this->_GRID['penaltyRebates'])->where('head_name', 'Monthly Penalty')->first()->amount ?? 0;
+    //         $this->_GRID['arrearPenaltyRebate'] = collect($this->_GRID['penaltyRebates'])->where('head_name', 'Shasti Abhay Yojana')->where("is_rebate", true)->first()->amount ?? 0;
+    //         $this->_GRID['quarterlyRebates'] = collect($this->_GRID['penaltyRebates'])->whereIn('head_name', ['First Quieter Rebate', 'Second Quieter Rebate', 'Third Quieter Rebate', 'Forth Quieter Rebate'])->where("is_rebate", true)->first()->amount ?? 0;
+    //         $currentDemand = $demandsList->where('fyear', $currentFyear);
+    //         $this->_currentDemand = $this->aggregateDemand($currentDemand, true);       // Current Demand true
+    //         $this->_currentDemand['arrearPenalty'] = 0;
+    //         $this->_currentDemand['arearPenaltyRebate'] = 0;
+
+    //         $overdueDemand = $demandsList->where('fyear', '<>', $currentFyear);
+    //         $this->_overDueDemand = $this->aggregateDemand($overdueDemand);
+
+    //         $this->_overDueDemand["advancePaidAmount"]    =  0;
+    //         $this->_overDueDemand["advancePaidAmount"]    = 0;
+    //         $this->_overDueDemand["netAdvance"] = 0;
+    //         $this->_overDueDemand["processFee"] = 0;
+    //         // $this->_overDueDemand["TotalTax"] = roundFigure($this->_overDueDemand["FinalTax"]);
+    //         // $this->_currentDemand["TotalTax"] = roundFigure($this->_currentDemand["FinalTax"]);
+    //         $this->_currentDemand["FinalTax1"] =   roundFigure($this->_currentDemand["FinalTax"] + (($this->_advanceAmt ?? 0) - ($this->_adjustAmt ?? 0)));
+    //         $this->_currentDemand["FinalTax"] =   roundFigure($this->_currentDemand["FinalTax"] + (($this->_advanceAmt ?? 0) - ($this->_adjustAmt ?? 0) + $this->_processFee));
+    //         $this->_currentDemand["advancePaidAmount"]    =  ($this->_adjustAmt ?? 0);
+    //         $this->_currentDemand["advancePaidAmount"]    =  ($this->_advanceAmt ?? 0);
+    //         $this->_currentDemand["netAdvance"] =  (($this->_advanceAmt ?? 0) - ($this->_adjustAmt ?? 0));
+    //         $this->_currentDemand["processFee"] = $this->_processFee;
+
+    //         $this->_GRID['overdueDemand'] = $this->_overDueDemand;
+    //         $this->_GRID['currentDemand'] = $this->_currentDemand;
+    //         // $this->_GRID['advanceOverdueDemand'] = $this->advanceAdjustment($this->_overDueDemand);
+    //         // $this->_GRID['advanceCurrentDemand'] = $this->advanceAdjustment($this->_currentDemand);
+    //         $aggregateDemandList = new Collection([$this->_currentDemand, $this->_overDueDemand]);
+    //         $aggregateDemand = $this->aggregateDemand($aggregateDemandList);
+    //         $aggregateDemand["FinalTax"] =   round($aggregateDemand["FinalTax"] + (($this->_advanceAmt ?? 0) - ($this->_adjustAmt ?? 0)) + $this->_processFee);
+    //         $aggregateDemand["advancePaidAmount"]    =  ($this->_adjustAmt ?? 0);
+    //         $aggregateDemand["advancePaidAmount"]    =  ($this->_advanceAmt ?? 0);
+    //         $aggregateDemand["netAdvance"] =  (($this->_advanceAmt ?? 0) - ($this->_adjustAmt ?? 0));
+    //         $aggregateDemand["processFee"] = $this->_processFee;
+    //         $this->_GRID['aggregateDemand'] = $aggregateDemand;
+    //     }
+    // }
+
+    #==============chnages by prity pandey===============#
     public function readParams()
     {
         $this->_mTowards = Config::get('PropertyConstaint.SAF_TOWARDS');
@@ -191,16 +314,27 @@ class GeneratePaymentReceiptV2
 
             $this->_GRID['overdueDemand'] = $this->_overDueDemand;
             $this->_GRID['currentDemand'] = $this->_currentDemand;
+            $totalAdvanceAmt = $this->_mPropAdvance->getAdvanceAmt($trans->property_id)->where("tran_id" , "<" ,$trans->id);
+            $totalAdjustmentAmt = $this->_mPropAdjustment->getAdjustmentAmt($trans->property_id)->where("tran_id" , "<" ,$trans->id);
+            $netBeforeTranAdvance = $totalAdvanceAmt->sum("amount") - $totalAdjustmentAmt->sum("amount");
+            $remainingAdvance = $netBeforeTranAdvance + (($this->_advanceAmt ?? 0) - ($this->_adjustAmt ?? 0));            
             // $this->_GRID['advanceOverdueDemand'] = $this->advanceAdjustment($this->_overDueDemand);
             // $this->_GRID['advanceCurrentDemand'] = $this->advanceAdjustment($this->_currentDemand);
             $aggregateDemandList = new Collection([$this->_currentDemand, $this->_overDueDemand]);
             $aggregateDemand = $this->aggregateDemand($aggregateDemandList);
+            $aggregateDemand["TotalTax"] = roundFigure($aggregateDemand["FinalTax"]);
             $aggregateDemand["FinalTax"] =   round($aggregateDemand["FinalTax"] + (($this->_advanceAmt ?? 0) - ($this->_adjustAmt ?? 0)) + $this->_processFee);
             $aggregateDemand["advancePaidAmount"]    =  ($this->_adjustAmt ?? 0);
             $aggregateDemand["advancePaidAmount"]    =  ($this->_advanceAmt ?? 0);
             $aggregateDemand["netAdvance"] =  (($this->_advanceAmt ?? 0) - ($this->_adjustAmt ?? 0));
             $aggregateDemand["processFee"] = $this->_processFee;
             $this->_GRID['aggregateDemand'] = $aggregateDemand;
+            $this->_GRID['advanceAdjustDemand'] = $this->advanceAdjustment($this->_GRID['aggregateDemand']);
+            $this->_GRID["advanceAmountBeforePayment"]=$netBeforeTranAdvance;
+            $this->_GRID["remainAdvanceAmountAfterPayment"]=$remainingAdvance;
+            $this->_GRID["adustAdvance"]=($this->_adjustAmt ?? 0);
+            $this->_GRID["paidAdvance"]=($this->_advanceAmt ?? 0);
+            // $this->_GRID['aggregateDemand']["netAdvance"] = ($this->_GRID['aggregateDemand']["netAdvance"] < 0 ? -1 : 1 ) * $this->_GRID['aggregateDemand']["netAdvance"];
         }
     }
 
@@ -383,13 +517,18 @@ class GeneratePaymentReceiptV2
         $this->_GRID['receiptDtls'] = $receiptDtls;
     }
 
-    // public function advanceAdjustment($demands){
-    //     $advanceAmt = $demands["netAdvance"]??0;
-    //     $tax = $demands["TotalTax"]??0;
-    //     return collect($demands)->map(function($val,$key)use($advanceAmt,$tax){
-    //         $percentOfTax = $val/($tax>0?$tax:1); 
-    //         return ($key=="netAdvance"?0 : roundFigure($advanceAmt*$percentOfTax));
-    //     });
-    // }
+    #===============written by prity pandey=============#
+    public function advanceAdjustment($demands){
+        $advanceAmt = $demands["netAdvance"]??0;
+        $advanceAmt = ($advanceAmt<0?(-1):1)*$advanceAmt;
+        if(($demands["netAdvance"]??0)>=0){
+            $advanceAmt=0;
+        }
+        $tax = $demands["TotalTax"]??0;
+        return collect($demands)->map(function($val,$key)use($advanceAmt,$tax){
+            $percentOfTax = $val/(($tax>0?$tax:1)); 
+            return ($key=="netAdvance" ? 0 : roundFigure($advanceAmt*$percentOfTax));
+        });
+    }
 
 }
