@@ -862,7 +862,7 @@ class ActiveSafController extends Controller
 
             $transferElement = [
                 'headerTitle' => 'Transfer Details',
-                'tableHead' => ["#", "Owner Name", "transfer Mode","Sale Value", "Deed Document"],
+                'tableHead' => ["#", "Owner Name", "transfer Mode","Sale Value"],
                 'tableData' => $transferDetailsData
             ]; 
 
