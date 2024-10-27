@@ -49,7 +49,7 @@ class reqApplySaf extends FormRequest
             $rules['transferDetails.*.owner'] = 'required|string';
             $rules['transferDetails.*.transferMode'] = 'required|int';
             $rules['transferDetails.*.saleValue'] = 'required|numeric|min:0';
-            $rules['transferDetails.*.deed'] = 'required|file|mimes:pdf,doc,docx|max:10240';
+            $rules['transferDetails.*.deed'] = 'required|file|mimes:pdf,jpg,jpeg,png,doc,docx|max:10240';
         }
         
         if (isset($this->assessmentType) && $this->assessmentType == 4) {
