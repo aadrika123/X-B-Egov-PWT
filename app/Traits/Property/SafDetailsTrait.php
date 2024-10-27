@@ -123,6 +123,7 @@ trait SafDetailsTrait
         });
     }
 
+
     /**
      * | Generate Floor Details
      */
@@ -461,4 +462,18 @@ trait SafDetailsTrait
         ];
         // });
     }
+
+    public function generateTransferDetails($transferDetails)
+    {
+        return collect($transferDetails)->map(function ($transferDetail, $key) {
+            return [
+                $key + 1,
+                $transferDetail['owner'] ?? 'N/A',
+                $transferDetail['transferMode'] ?? 'N/A',
+                $transferDetail['saleValue'] ?? 'N/A',
+                $transferDetail['upload'] ?? '',
+            ];
+        });
+    }
+
 }

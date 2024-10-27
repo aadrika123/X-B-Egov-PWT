@@ -796,6 +796,10 @@ class ActiveSafController extends Controller
                 $data->category = $safVerification->category ? $safVerification->category : $data->category;
                 $verificationDtl = $mVerificationDtls->getVerificationDtls($safVerification->id);
             }
+             $data->transferDetails = collect(json_decode($data->deed_json,true))->map(function($val){
+                ($val["upload"] ?? false) ?($val["upload"] =  Config::get('module-constants.DOC_URL')."/".$val["upload"]) : "";
+                return $val;
+            });
             // Basic Details
             $basicDetails = $this->generateBasicDetails($data);      // Trait function to get Basic Details
             $basicElement = [
@@ -853,6 +857,14 @@ class ActiveSafController extends Controller
                 'tableData' => $ownerDetails
             ];
 
+            $transferDetailsData = $this->generateTransferDetails($data->transferDetails);
+
+            $transferElement = [
+                'headerTitle' => 'Transfer Details',
+                'tableHead' => ["#", "Owner Name", "Transfer Mode", "Sale Value", "Deed Document"],
+                'tableData' => $transferDetailsData
+            ]; 
+
             //Bhagwatdar In the case of Imla and Occupier
             if ($data->transfer_mode_mstr_id == $transferMode['Imla'] || $data->ownership_type_mstr_id == $ownershipTypes['OCCUPIER'])
                 $ownerElement = [
@@ -884,7 +896,7 @@ class ActiveSafController extends Controller
                     'tableData' => $floorDetails
                 ];
             }
-            $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement, $floorElement]);
+            $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement, $floorElement,$transferElement]);
             // Card Detail Format
             $cardDetails = $this->generateCardDetails($data, $getOwnerDetails);
             $cardElement = [
@@ -922,7 +934,7 @@ class ActiveSafController extends Controller
 
             $custom = $mCustomDetails->getCustomDetails($req);
             $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
-
+            
             return responseMsgs(true, 'Data Fetched', remove_null($fullDetailsData), "010104", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -977,6 +989,10 @@ class ActiveSafController extends Controller
                 throw new Exception("Application Not Found");
 
             $data->current_role_name = 'Approved By ' . $data->current_role_name;
+            $data->transferDetails = collect(json_decode($data->deed_json,true))->map(function($val){
+                ($val["upload"] ?? false) ?($val["upload"] =  Config::get('module-constants.DOC_URL')."/".$val["upload"]) : "";
+                return $val;
+            });
             $safVerification = $mVerification->where("saf_id", $data->id)->where("status", 1)->orderBy("id", "DESC")->first();
             $verificationDtl = $mVerificationDtls->getVerificationDtls($safVerification->id ?? 0);
             if ($safVerification) {
@@ -1305,8 +1321,12 @@ class ActiveSafController extends Controller
             } else
                 $data->current_role_name2 = $data->current_role_name;
 
+            $data->transferDetails = collect(json_decode($data->deed_json,true))->map(function($val){
+                ($val["upload"] ?? false) ?($val["upload"] =  Config::get('module-constants.DOC_URL')."/".$val["upload"]) : "";
+                return $val;
+            });
             $data = json_decode(json_encode($data), true);
-
+            
             $assessmentType = collect(Config::get("PropertyConstaint.ASSESSMENT-TYPE"))->flip();
             $data["assessment_type_id"] = $assessmentType[$data["assessment_type"]] ?? null;
             $flipArea = $data["bifurcated_from_plot_area"];
@@ -5239,7 +5259,141 @@ class ActiveSafController extends Controller
             ]);
 
             $saf->proccess_fee_paid = 1;
-            $saf->deed_json = preg_replace('/\//', '', json_encode($request->saleValueNew, JSON_UNESCAPED_UNICODE));
+            //$saf->deed_json = preg_replace('/\//', '', json_encode($request->saleValueNew, JSON_UNESCAPED_UNICODE));
+            $saf->deed_json = preg_replace('/\\\\/', '', json_encode($request->saleValueNew, JSON_UNESCAPED_UNICODE));
+            $safTrans = new PropTransaction();
+            $safTrans->saf_id = $saf->id;
+            $safTrans->amount = $request['amount'];
+            $safTrans->tran_type = 'Saf Proccess Fee';
+            $safTrans->tran_date = $request['todayDate'];
+            $safTrans->tran_no = $request['tranNo'];
+            $safTrans->payment_mode = $request['paymentMode'];
+            $safTrans->user_id = $request['userId'] ?? $user->id;
+            $safTrans->ulb_id = $request['ulbId'];
+            $safTrans->demand_amt = $request['demandAmt'];
+            $safTrans->tran_by_type = $request['tranBy'];
+            $safTrans->verify_status = $request['verifyStatus'];
+            $safTrans->book_no = $request['bookNo'] ?? null;
+
+            $property = PropProperty::where("saf_id", $saf->id)->first();
+            $Oldproperty = PropProperty::find($saf->previous_holding_id ?? 0);
+
+            DB::beginTransaction();
+            DB::connection('pgsql_master')->beginTransaction();
+            $safTrans->save();
+            $saf->update();
+            # Activate new Property
+            if ($property) {
+                $property->status = 1;
+                $property->update();
+            }
+            if ($saf->assessment_type == 'Mutation') {
+                # Deactivate Old Property
+                if ($Oldproperty) {
+                    $Oldproperty->status = 4;
+                    $Oldproperty->update();
+                }
+            }
+
+            if (in_array($request['paymentMode'], $offlinePaymentModes)) {
+                $request->merge(["tranId" => $safTrans->id]);
+                $this->postOtherPaymentModes($request);
+            }
+            DB::commit();
+            DB::connection('pgsql_master')->commit();
+            return responseMsgs(true, "Payment Successfully Done", ['TransactionNo' => $safTrans->tran_no, 'transactionId' => $safTrans->id], "011604", "1.0", responseTime(), "POST", $request->deviceId);
+        } catch (Exception $e) {
+            DB::rollBack();
+            DB::connection('pgsql_master')->rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "011604", "1.0", "", "POST", $request->deviceId ?? "");
+        }
+    }
+
+    public function proccessFeePaymentMutation(ReqPayment $request)
+    {
+        // $rules = $this->getMutationFeeReqRules($request);
+        // $rules["paidAmount"] = 'required|numeric|min:1';
+        // $rules["saleValue.*.owner"] = is_array($request->saleValue) && sizeOf($request->saleValue) > 1 ? 'required' : "nullable";
+        // $rules["saleValue.*.deed"] = is_array($request->saleValue) && sizeOf($request->saleValue) > 1 ? 'required|mimes:pdf,jpeg,png,jpg' : "nullable";
+        // $validated = Validator::make(
+        //     $request->all(),
+        //     $rules
+        // );
+        // if ($validated->fails()) {
+        //     return response()->json([
+        //         'status' => false,
+        //         'message' => 'validation error',
+        //         'errors' => $validated->errors()
+        //     ]);
+        // }
+
+        try {
+            $user = Auth()->user();
+            $verifyPaymentModes = Config::get('payment-constants.VERIFICATION_PAYMENT_MODES');
+            $offlinePaymentModes = Config::get('payment-constants.PAYMENT_MODE_OFFLINE');
+            $verifyStatus = 1;
+            $saf = PropActiveSaf::find($request->id);
+            if (!$saf) {
+                $saf = PropSaf::find($request->id);
+            }
+            if (!$saf) {
+                throw new Exception("Data Not Found");
+            }
+            if ($saf->proccess_fee_paid) {
+                throw new Exception("Proccessing Fee Already Pay");
+            }
+            if ($saf->getTable() == "prop_active_safs") {
+                throw new Exception("Please Wait For Approval");
+            }
+            $proccessFee = $saf->proccess_fee;
+            // $newSaleValue = $saf->proccess_fee;
+            // $proccessFeePayment = $this->getProccessFeePayment($request);
+            // if ($proccessFeePayment->original["status"]) {
+            //     $newSaleValue = $proccessFeePayment->original["data"]["proccess_fee"];
+            // }
+
+            // $proccessFee = $newSaleValue;
+            // if ($proccessFee != $request->paidAmount) {
+            //     throw new Exception("Demand Amount And Paied Amount Missmatched");
+            // }
+            // $deedArr = [];
+            // $docUpload = new DocUpload;
+            // $relativePath = Config::get('PropertyConstaint.PROCCESS_RELATIVE_PATH');
+            // $propModuleId = Config::get('module-constants.PROPERTY_MODULE_ID');
+            // foreach ($request->saleValue as $key => $deedDoc) {
+            //     $deedArr[$key] = $deedDoc;
+            //     $document = $deedDoc["deed"];
+            //     $refImageName =  $saf->id . "-" . $key + 1;
+            //     unset($deedArr[$key]["deed"]);
+            //     $deedArr[$key]["upload"] = $document ? ($relativePath . "/" . $docUpload->upload($refImageName, $document, $relativePath)) : "";
+            // }
+            // $request->merge(["saleValueNew" => $deedArr]);
+            if (in_array($request->paymentMode, $verifyPaymentModes)) {
+                $verifyStatus = 2;
+            }
+            $request->merge(["verifyStatus" => $verifyStatus,'paidAmount'=>$proccessFee]);
+
+            $idGeneration = new IdGeneration;
+            $tranNo = $idGeneration->generateTransactionNo($saf->ulb_id);
+            $paymentReceiptNo = $this->generatePaymentReceiptNoSV2($saf);
+            $tranBy = auth()->user()->user_type ??  $request->userType;
+            $request->merge($paymentReceiptNo);
+            $request->merge([
+                "demandAmt" => $proccessFee,
+                "workflowId" => $saf->workflow_id,
+                "tranType" => "Saf",
+                "saf_id" => $saf->id,
+                "applicationNo" => $saf->saf_no,
+                "ulbId"   => $saf->ulb_id,
+                "userId" => $request['userId'] ?? ($user->id ?? 0),
+                "tranNo" => $tranNo,
+                "amount" => $request->paidAmount,
+                'tranBy' => $tranBy,
+                'todayDate' => Carbon::now()->format('Y-m-d'),
+            ]);
+
+            $saf->proccess_fee_paid = 1;
+            // $saf->deed_json = preg_replace('/\//', '', json_encode($request->saleValueNew, JSON_UNESCAPED_UNICODE));
             $safTrans = new PropTransaction();
             $safTrans->saf_id = $saf->id;
             $safTrans->amount = $request['amount'];

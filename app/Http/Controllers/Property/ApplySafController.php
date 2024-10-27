@@ -140,23 +140,28 @@ class ApplySafController extends Controller
                         $firstSaleVal =  $val["saleValue"];
                     }
                     $saleVal = $val["saleValue"];
-                    $mutationProccessFee += $this->readProccessFee($request->assessmentType, $saleVal, $request->propertyType, $request->transferModeId);
+                    $mutationProccessFee += $this->readProccessFee($request->assessmentType, $saleVal, $request->propertyType, $request->transferMode);
                 }
+            }elseif($request->assessmentType == 4 || $request->assessmentType == "Bifurcation"){
+                $mutationProccessFee = $this->readProccessFee($request->assessmentType, $request->saleValue, $request->propertyType, $request->transferModeId);
+                $firstSaleVal = $request->saleValue;
             }
             $deedArr = [];
             $docUpload = new DocUpload();
             
             $relativePath = Config::get('PropertyConstaint.PROCCESS_RELATIVE_PATH');
-            foreach ($request->transferDetails as $key => $deedDoc) {
-                
-                $deedArr[$key] = $deedDoc;
-                $document = $deedDoc["deed"];
-                $refImageName =  $saf->id . "-" . $key + 1;
-                unset($deedArr[$key]["deed"]);
-                $deedArr[$key]["upload"] = $document ? ($relativePath . "/" . $docUpload->upload($refImageName, $document, $relativePath)) : "";
+            if($request->assessmentType == 3 || $request->assessmentType == "Mutation"){
+                foreach ($request->transferDetails as $key => $deedDoc) {
+                    
+                    $deedArr[$key] = $deedDoc;
+                    $document = $deedDoc["deed"];
+                    $refImageName =  $saf->id . "-" . $key + 1;
+                    unset($deedArr[$key]["deed"]);
+                    $deedArr[$key]["upload"] = $document ? ($relativePath . "/" . $docUpload->upload($refImageName, $document, $relativePath)) : "";
+                }
             }
             $request->merge(["saleValueNew" => $deedArr,"saleValue"=>$firstSaleVal]);
-            $request->merge(["deedJson" => preg_replace('/\//', '', json_encode($request->saleValueNew, JSON_UNESCAPED_UNICODE))]);
+            $request->merge(["deedJson" => preg_replace('/\\\\/', '', json_encode($request->saleValueNew, JSON_UNESCAPED_UNICODE))]);
             // $mutationProccessFee = $this->readProccessFee($request->assessmentType, $request->saleValue, $request->propertyType, $request->transferModeId);
             // if ($request->assessmentType == 'Bifurcation')
             //     $request->areaOfPlot = $this->checkBifurcationCondition($saf, $prop, $request);
