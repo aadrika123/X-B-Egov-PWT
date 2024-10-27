@@ -472,7 +472,7 @@ trait SafDetailsTrait
                 //$transferDetail['transferMode'] ?? 'N/A',
                 $transferDetail['transferModeName'] ?? 'N/A',
                 $transferDetail['saleValue'] ?? 'N/A',
-                //$transferDetail['upload'] ?? '',
+                $transferDetail['upload'] ?? '',
             ];
         });
     }
