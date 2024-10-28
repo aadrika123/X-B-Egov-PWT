@@ -216,7 +216,7 @@ class ApplySafController extends Controller
                     $deedArr[$key]["upload"] = $document ? ($relativePath . "/" . $docUpload->upload($refImageName, $document, $relativePath)) : "";
                 }
                 $request->merge(["deedJson" => preg_replace('/\\\\/', '', json_encode($request->saleValueNew, JSON_UNESCAPED_UNICODE))]);
-                $newSaf = $createSaf->find($safId);
+                $newSaf = $saf->find($safId);
                 $newSaf->deed_json = $request->deedJson;
                 $newSaf->update();
             }
