@@ -378,7 +378,43 @@ class ActiveSafController extends Controller
 
             $ulbWorkflowId = (new ApplySafController())->readAssessUlbWfId($req, $ulb_id);
             $roadWidthType = $applysafController->readRoadWidthType($req->roadType);
-            $mutationProccessFee = $applysafController->readProccessFee($req->assessmentType, $req->saleValue, $req->propertyType, $req->transferModeId);
+            $mutationProccessFee = 0;
+            //$mutationProccessFee = $applysafController->readProccessFee($req->assessmentType, $req->saleValue, $req->propertyType, $req->transferModeId);
+            
+            
+            if (is_array($req->transferDetails)) {
+                foreach ($req->transferDetails as $key=>$val) {
+                    if($key==0){
+                        $firstSaleVal =  $val["saleValue"];
+                    }
+                    $saleVal = $val["saleValue"];
+                    $mutationProccessFee += $applysafController->readProccessFee($req->assessmentType, $saleVal, $req->propertyType, $req->transferMode);
+                }
+            }elseif($req->assessmentType == 4 || $req->assessmentType == "Bifurcation"){
+                $mutationProccessFee = $applysafController->readProccessFee($req->assessmentType, $req->saleValue, $req->propertyType, $req->transferModeId);
+                $firstSaleVal = $req->saleValue;
+            }
+            $deedArr = [];
+            $docUpload = new DocUpload();
+            
+            $relativePath = Config::get('PropertyConstaint.PROCCESS_RELATIVE_PATH');
+            if($req->assessmentType == 3 || $req->assessmentType == "Mutation"){
+                foreach ($req->transferDetails as $key => $deedDoc) {
+                    
+                $deedArr[$key] = $deedDoc;
+                    $document = $deedDoc["deed"];
+                    $refImageName =  $safId . "-" . $key + 1;
+                    unset($deedArr[$key]["deed"]);
+                    $deedArr[$key]["upload"] = $document ? ($relativePath . "/" . $docUpload->upload($refImageName, $document, $relativePath)) : "";
+                }
+            }
+            $req->merge(["saleValueNew" => $deedArr,"saleValue"=>$firstSaleVal]);
+            $req->merge(["deedJson" => preg_replace('/\\\\/', '', json_encode($req->saleValueNew, JSON_UNESCAPED_UNICODE))]);
+   
+            
+            
+            
+            
             $metaReqs['holdingType'] = $applysafController->holdingType($req['floor']);
             $metaReqs["road_type_mstr_id"] = $roadWidthType;
             $req->merge($metaReqs);
