@@ -113,10 +113,10 @@ class ApplySafController extends Controller
         try {
             // Variable Assignments
             $mApplyDate = Carbon::now()->format("Y-m-d");
-            $user = authUser($request);
-            $user_id = $user->id;
+            $user = null;//authUser($request);
+            $user_id = 1;//$user->id;
             $ulb_id = 2;                                // ulb id for akola municipal
-            $userType = $user->user_type;
+            $userType = 'jsk';//$user->user_type;
             $metaReqs = array();
             $saf = new PropActiveSaf();
             $mOwner = new PropActiveSafsOwner();
@@ -151,7 +151,7 @@ class ApplySafController extends Controller
             
             $relativePath = Config::get('PropertyConstaint.PROCCESS_RELATIVE_PATH');
 
-            $request->merge(["saleValueNew" => $deedArr,"saleValue"=>$firstSaleVal]);
+            $request->merge(["saleValue"=>$firstSaleVal]);
             // $mutationProccessFee = $this->readProccessFee($request->assessmentType, $request->saleValue, $request->propertyType, $request->transferModeId);
             // if ($request->assessmentType == 'Bifurcation')
             //     $request->areaOfPlot = $this->checkBifurcationCondition($saf, $prop, $request);
@@ -215,12 +215,11 @@ class ApplySafController extends Controller
                     unset($deedArr[$key]["deed"]);
                     $deedArr[$key]["upload"] = $document ? ($relativePath . "/" . $docUpload->upload($refImageName, $document, $relativePath)) : "";
                 }
-                $request->merge(["deedJson" => preg_replace('/\\\\/', '', json_encode($request->saleValueNew, JSON_UNESCAPED_UNICODE))]);
-                $newSaf = $createSaf->find($safId);
+                $request->merge(["deedJson" => preg_replace('/\\\\/', '', json_encode($deedArr, JSON_UNESCAPED_UNICODE))]);
+                $newSaf = $saf->find($safId);
                 $newSaf->deed_json = $request->deedJson;
                 $newSaf->update();
             }
-
             // SAF Owner Details
             if ($request['owner']) {
                 $ownerDetail = $request['owner'];

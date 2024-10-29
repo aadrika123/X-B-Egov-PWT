@@ -1031,6 +1031,7 @@ class ActiveSafController extends Controller
                 ($val["upload"] ?? false) ?($val["upload"] =  Config::get('module-constants.DOC_URL')."/".$val["upload"]) : "";
                 return $val;
             });
+            $data->no_of_transfer = $data->transferDetails->count(); 
             $safVerification = $mVerification->where("saf_id", $data->id)->where("status", 1)->orderBy("id", "DESC")->first();
             $verificationDtl = $mVerificationDtls->getVerificationDtls($safVerification->id ?? 0);
             if ($safVerification) {
@@ -1364,6 +1365,7 @@ class ActiveSafController extends Controller
                 ($val["upload"] ?? false) ?($val["upload"] =  Config::get('module-constants.DOC_URL')."/".$val["upload"]) : "";
                 return $val;
             });
+            $data->no_of_transfer = $data->transferDetails->count();
             $data = json_decode(json_encode($data), true);
             
             $assessmentType = collect(Config::get("PropertyConstaint.ASSESSMENT-TYPE"))->flip();
