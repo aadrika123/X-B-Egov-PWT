@@ -4694,7 +4694,8 @@ class Report implements IReport
                 sum(COALESCE(arear_major_building,0)::numeric ) as arear_major_building,
                 sum(COALESCE(arear_open_ploat_tax,0)::numeric ) as arear_open_ploat_tax,
                 sum(COALESCE(rebadet,0)::numeric) as rebadet,
-                sum(COALESCE(shasti_rebadet,0)::numeric) as shasti_rebadet,
+                sum(COALESCE(shasti_rebadet,0)::numeric) as shasti_rebadet,                				
+				sum(COALESCE(first_qtr_rebadet,0)::numeric) as first_qtr_rebadet,
 				sum(COALESCE(total_rebadet,0)::numeric) as total_rebadet,
                 sum(COALESCE(penalty,0)::numeric) as penalty,
 				sum(COALESCE(advance_amount,0)::numeric) as advance_amount,
@@ -4807,8 +4808,9 @@ class Report implements IReport
             )prop_tran_dtls on prop_tran_dtls.tran_id = prop_transactions.id
             left join(
                 select distinct(prop_transactions.id)as tran_id ,
-                    sum(case when prop_penaltyrebates.is_rebate =true AND prop_penaltyrebates.head_name ='Shasti Abhay Yojana'  then COALESCE(round(prop_penaltyrebates.amount),0) else 0 end) as shasti_rebadet,
-                    sum(case when prop_penaltyrebates.is_rebate =true AND prop_penaltyrebates.head_name !='Shasti Abhay Yojana' then COALESCE(round(prop_penaltyrebates.amount),0) else 0 end) as rebadet,
+					sum(case when prop_penaltyrebates.is_rebate =true AND prop_penaltyrebates.head_name ='Shasti Abhay Yojana'  then COALESCE(round(prop_penaltyrebates.amount),0) else 0 end) as shasti_rebadet,
+					sum(case when prop_penaltyrebates.is_rebate =true AND prop_penaltyrebates.head_name ='First Quieter Rebate'  then COALESCE(round(prop_penaltyrebates.amount),0) else 0 end) as first_qtr_rebadet,
+					sum(case when prop_penaltyrebates.is_rebate =true AND prop_penaltyrebates.head_name !='Shasti Abhay Yojana'  AND prop_penaltyrebates.head_name !='First Quieter Rebate' then COALESCE(round(prop_penaltyrebates.amount),0) else 0 end) as rebadet,
                     sum(case when prop_penaltyrebates.is_rebate =true then COALESCE(round(prop_penaltyrebates.amount),0) else 0 end) as total_rebadet,
                     sum(case when prop_penaltyrebates.is_rebate !=true then COALESCE(round(prop_penaltyrebates.amount),0) else 0 end) as penalty
                 from prop_penaltyrebates
