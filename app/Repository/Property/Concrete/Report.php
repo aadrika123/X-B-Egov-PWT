@@ -5517,6 +5517,9 @@ class Report implements IReport
             if ($request->tranType == "Water" || $request->selectedModuleOption == "Water") {
                 return ((new ConcreteReport())->tranDeactivatedList($request));
             }
+            if ($request->tranType == "Advertisement" || $request->selectedModuleOption == "Advertisement") {
+                return ((new ConcreteReport())->tranDeactivatedListAdvertisement($request));
+            }
 
             if ($request->tranType == "Trade" || $request->selectedModuleOption == "Trade") {
             }
