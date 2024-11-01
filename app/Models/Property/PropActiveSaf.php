@@ -410,6 +410,8 @@ class  PropActiveSaf extends PropParamModel #Model
             'proccess_fee' => (in_array($req->assessmentType, ['Mutation', 'Bifurcation'])) ? ($req->proccessFee ?? 0) : 0,
             'proccess_fee_paid' => (($req->proccessFee ?? 0) > 0 && (in_array($req->assessmentType, ['Mutation', 'Bifurcation']))) ? 0 : 1,
             "property_no" => ($req->propertyNo ?? null),
+            "deed_json"=>(in_array($req->assessmentType,['Mutation','Bifurcation'])) ? ($req->deedJson??null) : null,
+
         ];
 
         return $saf->update($reqs);

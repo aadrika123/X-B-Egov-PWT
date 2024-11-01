@@ -123,6 +123,7 @@ trait SafDetailsTrait
         });
     }
 
+
     /**
      * | Generate Floor Details
      */
@@ -181,8 +182,8 @@ trait SafDetailsTrait
             ['displayString' => 'Is-Hoarding-Board', 'key' => 'isHoardingBoard', 'value' => ($req->is_hoarding_board == true) ? 'Yes' : 'No'],
             ['displayString' => 'Category', 'key' => 'category', 'value' => $req->category ],
             ['displayString' => 'Process Fee', 'key' => 'ProcessFee', 'value' => $req->proccess_fee],
-            ['displayString' => 'Sale Value', 'key' => 'SaleValue', 'value' => $req->sale_value],
-            ['displayString' => 'Transfer Mode', 'key' => 'Transfer Mode', 'value' => $req->transfer_mode]
+            //['displayString' => 'Sale Value', 'key' => 'SaleValue', 'value' => $req->sale_value],
+            //['displayString' => 'Transfer Mode', 'key' => 'Transfer Mode', 'value' => $req->transfer_mode]
             
         ]);
         if(trim($req->property_no))
@@ -461,4 +462,19 @@ trait SafDetailsTrait
         ];
         // });
     }
+
+    public function generateTransferDetails($transferDetails)
+    {
+        return collect($transferDetails)->map(function ($transferDetail, $key) {
+            return [
+                $key + 1,
+                $transferDetail['owner'] ?? 'N/A',
+                //$transferDetail['transferMode'] ?? 'N/A',
+                $transferDetail['transferModeName'] ?? 'N/A',
+                $transferDetail['saleValue'] ?? 'N/A',
+                $transferDetail['upload'] ?? '',
+            ];
+        });
+    }
+
 }
