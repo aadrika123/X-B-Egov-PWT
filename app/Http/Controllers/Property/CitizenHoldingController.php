@@ -94,7 +94,7 @@ class CitizenHoldingController extends Controller
                 ->first();
             $diffInMin = Carbon::parse(Carbon::parse())->diffInMinutes($reqData->created_at ?? null);
             if ($reqData && $diffInMin < 5 && !Config::get("sms-constants.sms_test")) {
-                // throw new Exception("Please Wait ".(5-$diffInMin)." Minutes");
+                 throw new Exception("Please Wait ".(5-$diffInMin)." Minutes");
             }
             $user = Auth()->user() ?? null;
             $isCitizenUserType = $user ? $this->_COMONFUNCTION->checkUsersWithtocken("active_citizens") : true;
@@ -117,6 +117,8 @@ class CitizenHoldingController extends Controller
             $arrear = $demand["arrear"] + ($demand["arrearMonthlyPenalty"] ?? 0);
             if ($request->paymentType != "isPartPayment") {
                 $request->merge(["paidAmount" => $request->paymentType == "isFullPayment" ? $payableAmt : $arrear]);
+                //changes by prity pandey
+                $request->merge(["paidAmount" => round($request->paidAmount - $demand["remainAdvance"])]);
             }
             if (round($request->paidAmount) > round($payableAmt)) {
                 throw new Exception("Cannot pay advance amount through online");

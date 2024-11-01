@@ -739,7 +739,7 @@ class PostPropPaymentV2
 
         $specialRebaApply = $this->_REQ->paymentType == "isFullPayment" || ($this->_REQ->paymentType != "isFullPayment" && round($this->_REQ->paidAmount) >= round($demandData['payableAmt'])) ? true : false;
 
-        if ($this->_REQ["paymentMode"] != "ONLINE") {
+        //if ($this->_REQ["paymentMode"] != "ONLINE") {
             $adjustAmt = round($this->_REQ->paidAmount - $addvanceAmt);
             $adjustAmt = $adjustAmt > 0 ? $addvanceAmt : $this->_REQ->paidAmount;
             switch ($this->_REQ->paymentType) {
@@ -770,7 +770,7 @@ class PostPropPaymentV2
                     );
                     break;
             }
-        }
+        //}
 
         $demands = collect($this->_propCalculation->original['data']["demandList"])->sortBy(["fyear", "id"]);
         $paidPenalty = $previousInterest; #$this->_propCalculation->original['data']["previousInterest"];
