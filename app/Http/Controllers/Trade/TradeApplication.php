@@ -976,7 +976,7 @@ class TradeApplication extends Controller
                 $tradC = $this->_CONTROLLER_TRADE;
                 $owners = $tradC->getAllOwnereDtlByLId($req->applicationId);
                 foreach ($owners as $val) {
-                    // $respons=send_sms($val["mobile_no"],$sms["sms"],$sms["temp_id"]);
+                    $respons=send_sms($val["mobile_no"],$sms["sms"],$sms["temp_id"]);
                 }
             }
             $this->commit();
