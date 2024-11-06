@@ -862,8 +862,10 @@ class Trade implements ITrade
      * |
      */
     public function paymentCounter(Request $request)
+
     {
         try {
+
             $refUser        = Auth()->user();
             $refUserId      = $refUser ? $refUser->id : $request->userId;
             $refUlbId       = $refUser ? $refUser->ulb_id : $request->ulbId;
@@ -946,10 +948,11 @@ class Trade implements ITrade
             $args['nature_of_business']  = $refLecenceData->nature_of_bussiness;
             $args['noticeDate']          = $mNoticeDate;
             $chargeData = $this->AkolaCltCharge($args);
+
             // $chargeData = $this->cltCharge($args);
-            if ($chargeData['response'] == false || $chargeData['total_charge'] != $request->totalCharge) {
-                throw new Exception("Payble Amount Missmatch!!!");
-            }
+            // if ($chargeData['response'] == false || $chargeData['total_charge'] != $request->totalCharge) {      // 
+            //     throw new Exception("Payble Amount Missmatch!!!");
+            // }
 
             $transactionType = $this->_TRADE_CONSTAINT['APPLICATION-TYPE-BY-ID'][$refLecenceData->application_type_id];
             $rate_id = $chargeData["rate_id"];

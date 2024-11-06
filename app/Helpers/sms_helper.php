@@ -70,7 +70,7 @@ if (!function_exists('send_sms')) {
             $mobile = "9153975142";                 #_office mobile no
             // $mobile = $mobile;                 #_office mobile no
             // $mobile = "7631035473";                 #_deepankar sir
-            // $mobile = "8797770238";                 #_mrinal sir
+            // $mobile = "8797770238";                 #_mrinal 
         }
         $res = SMSAKGOVT($mobile, $message, $templateid);
         // print_var($message);
