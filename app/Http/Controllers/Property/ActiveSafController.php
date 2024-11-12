@@ -284,12 +284,12 @@ class ActiveSafController extends Controller
 
             $data['transfer_mode'] = $transferModuleType;
             // Property Types
-            // if (!$vacLand) {
-            //     $vacLand = $vacantLandType->propPropertyVacantLandType();
-            //     $redisConn->set('ref_prop_vacant_lands', json_encode($vacLand));
-            // }
+            if (!$vacLand) {
+                $vacLand = $vacantLandType->propPropertyVacantLandType();
+                $redisConn->set('ref_prop_vacant_lands', json_encode($vacLand));
+            }
 
-            // $data['vacant_land_type'] = $vacLand;
+            $data['vacant_land_type'] = $vacLand;
 
             return responseMsgs(true, 'Property Masters', $data, "010101", "1.0", responseTime(), "GET", "");
         } catch (Exception $e) {
