@@ -284,7 +284,7 @@ class ActiveSafController extends Controller
 
             $data['transfer_mode'] = $transferModuleType;
             // Property Types
-            if ($vacLand) {
+            if (!$vacLand) {
                 $vacLand = $vacantLandType->propPropertyVacantLandType();
                 $redisConn->set('ref_prop_vacant_lands', json_encode($vacLand));
             }
