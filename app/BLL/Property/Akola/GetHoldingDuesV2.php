@@ -171,8 +171,8 @@ class GetHoldingDuesV2
 
         if ($grandTaxes['balance'] <= 0)
             $paymentStatus = 1;
-        $demand["safApproved"] = $this->_propSaf->saf_approved_date??"";
-        $demand["safId"] = $this->_propSaf->id??"";
+        $demand["safApproved"] = $this->_propSaf->saf_approved_date ?? "";
+        $demand["safId"] = $this->_propSaf->id ?? "";
         $demand['isSingleManArmedForce'] = $this->_isSingleManArmedForce;
         $demand['isMobileTower']         = $this->_isMobileTower;
         $demand['fromFyear'] = collect($demandList)->first()['fyear'] ?? "";
@@ -320,8 +320,8 @@ class GetHoldingDuesV2
             'land_occupation_date',
             'citizen_id',
             'user_id',
-           // 'applicant_name',
-          'ref_applicant_name',
+            // 'applicant_name',
+            'ref_applicant_name',
             'property_no',
             "plot_no",
             "area_of_plot",
@@ -339,7 +339,8 @@ class GetHoldingDuesV2
         $basicDtls["owner_name"] = $owners->implode("owner_name", ",") ?? ($firstOwner->owner_name ?? null);
         $basicDtls["owner_name_marathi"] = $owners->implode("owner_name_marathi", ",") ?? $firstOwner->owner_name_marathi ?? null;
         $basicDtls["guardian_name_marathi"] = $owners->implode("guardian_name_marathi", ",") ?? $firstOwner->owner_name_marathi ?? null;
-        $basicDtls["applicant_name_marathi"]     = $basicDtls->implode("applicant_name", ",") ??$firstOwner->guardian_name_marathi ?? $firstOwner->guardian_name;
+        // $basicDtls["applicant_name_marathi"]     = $basicDtls->implode("applicant_name", ",") ?? $firstOwner->guardian_name_marathi ?? $firstOwner->guardian_name;
+        $basicDtls["applicant_name_marathi"]     =  $firstOwner->guardian_name_marathi ?? $firstOwner->guardian_name;
 
         $demand['basicDetails'] = $basicDtls;
 
