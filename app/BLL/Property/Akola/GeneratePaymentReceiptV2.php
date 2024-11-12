@@ -314,10 +314,10 @@ class GeneratePaymentReceiptV2
 
             $this->_GRID['overdueDemand'] = $this->_overDueDemand;
             $this->_GRID['currentDemand'] = $this->_currentDemand;
-            $totalAdvanceAmt = $this->_mPropAdvance->getAdvanceAmt($trans->property_id)->where("tran_id" , "<" ,$trans->id);
-            $totalAdjustmentAmt = $this->_mPropAdjustment->getAdjustmentAmt($trans->property_id)->where("tran_id" , "<" ,$trans->id);
+            $totalAdvanceAmt = $this->_mPropAdvance->getAdvanceAmt($trans->property_id)->where("tran_id", "<", $trans->id);
+            $totalAdjustmentAmt = $this->_mPropAdjustment->getAdjustmentAmt($trans->property_id)->where("tran_id", "<", $trans->id);
             $netBeforeTranAdvance = $totalAdvanceAmt->sum("amount") - $totalAdjustmentAmt->sum("amount");
-            $remainingAdvance = $netBeforeTranAdvance + (($this->_advanceAmt ?? 0) - ($this->_adjustAmt ?? 0));            
+            $remainingAdvance = $netBeforeTranAdvance + (($this->_advanceAmt ?? 0) - ($this->_adjustAmt ?? 0));
             // $this->_GRID['advanceOverdueDemand'] = $this->advanceAdjustment($this->_overDueDemand);
             // $this->_GRID['advanceCurrentDemand'] = $this->advanceAdjustment($this->_currentDemand);
             $aggregateDemandList = new Collection([$this->_currentDemand, $this->_overDueDemand]);
@@ -330,10 +330,10 @@ class GeneratePaymentReceiptV2
             $aggregateDemand["processFee"] = $this->_processFee;
             $this->_GRID['aggregateDemand'] = $aggregateDemand;
             $this->_GRID['advanceAdjustDemand'] = $this->advanceAdjustment($this->_GRID['aggregateDemand']);
-            $this->_GRID["advanceAmountBeforePayment"]=$netBeforeTranAdvance;
-            $this->_GRID["remainAdvanceAmountAfterPayment"]=$remainingAdvance;
-            $this->_GRID["adustAdvance"]=($this->_adjustAmt ?? 0);
-            $this->_GRID["paidAdvance"]=($this->_advanceAmt ?? 0);
+            $this->_GRID["advanceAmountBeforePayment"] = $netBeforeTranAdvance;
+            $this->_GRID["remainAdvanceAmountAfterPayment"] = $remainingAdvance;
+            $this->_GRID["adustAdvance"] = ($this->_adjustAmt ?? 0);
+            $this->_GRID["paidAdvance"] = ($this->_advanceAmt ?? 0);
             // $this->_GRID['aggregateDemand']["netAdvance"] = ($this->_GRID['aggregateDemand']["netAdvance"] < 0 ? -1 : 1 ) * $this->_GRID['aggregateDemand']["netAdvance"];
         }
     }
@@ -470,7 +470,7 @@ class GeneratePaymentReceiptV2
             "chequeStatus" => $this->_trans->cheque_status ?? 1,
             "verifyStatus" => $this->_trans->verify_status,                     // (0-Not Verified,1-Verified,2-Under Verification,3-Bounce)
             "applicationNo" => $this->_propertyDtls->application_no ?? "",
-            "customerName" => $this->_propertyDtls->applicant_marathi ?? "", //trim($this->_propertyDtls->applicant_name) ? $this->_propertyDtls->applicant_name : $this->_propertyDtls->applicant_marathi,
+            "customerName" => $this->_propertyDtls->guardian_name_marathi ?? "", //trim($this->_propertyDtls->applicant_name) ? $this->_propertyDtls->applicant_name : $this->_propertyDtls->applicant_marathi,
             "ownerName" => $this->_propertyDtls->owner_name_marathi ?? "", //trim($this->_propertyDtls->owner_name) ? $this->_propertyDtls->owner_name : $this->_propertyDtls->owner_name_marathi,
             "guardianName" => trim($this->_propertyDtls->guardian_name ?? "") ? $this->_propertyDtls->guardian_name : $this->_propertyDtls->guardian_name_marathi ?? "",
             "mobileNo" => $this->_propertyDtls->mobile_no ?? "",
@@ -511,24 +511,24 @@ class GeneratePaymentReceiptV2
             'duration' => ($duration),
             'mobileDuration' => ($mobileDuration),
             'currentFinancialYear' => getFY(),
-            'payment_type'=>$this->_trans->payment_type ?? "",
+            'payment_type' => $this->_trans->payment_type ?? "",
         ];
 
         $this->_GRID['receiptDtls'] = $receiptDtls;
     }
 
     #===============written by prity pandey=============#
-    public function advanceAdjustment($demands){
-        $advanceAmt = $demands["netAdvance"]??0;
-        $advanceAmt = ($advanceAmt<0?(-1):1)*$advanceAmt;
-        if(($demands["netAdvance"]??0)>=0){
-            $advanceAmt=0;
+    public function advanceAdjustment($demands)
+    {
+        $advanceAmt = $demands["netAdvance"] ?? 0;
+        $advanceAmt = ($advanceAmt < 0 ? (-1) : 1) * $advanceAmt;
+        if (($demands["netAdvance"] ?? 0) >= 0) {
+            $advanceAmt = 0;
         }
-        $tax = $demands["TotalTax"]??0;
-        return collect($demands)->map(function($val,$key)use($advanceAmt,$tax){
-            $percentOfTax = $val/(($tax>0?$tax:1)); 
-            return ($key=="netAdvance" ? 0 : roundFigure($advanceAmt*$percentOfTax));
+        $tax = $demands["TotalTax"] ?? 0;
+        return collect($demands)->map(function ($val, $key) use ($advanceAmt, $tax) {
+            $percentOfTax = $val / (($tax > 0 ? $tax : 1));
+            return ($key == "netAdvance" ? 0 : roundFigure($advanceAmt * $percentOfTax));
         });
     }
-
 }
