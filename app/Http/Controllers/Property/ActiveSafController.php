@@ -284,7 +284,7 @@ class ActiveSafController extends Controller
 
             $data['transfer_mode'] = $transferModuleType;
             // Property Types
-            if (!$vacLand) {
+            if ($vacLand) {
                 $vacLand = $vacantLandType->propPropertyVacantLandType();
                 $redisConn->set('ref_prop_vacant_lands', json_encode($vacLand));
             }
@@ -380,41 +380,41 @@ class ActiveSafController extends Controller
             $roadWidthType = $applysafController->readRoadWidthType($req->roadType);
             $mutationProccessFee = 0;
             //$mutationProccessFee = $applysafController->readProccessFee($req->assessmentType, $req->saleValue, $req->propertyType, $req->transferModeId);
-            
-            
+
+
             if (is_array($req->transferDetails)) {
-                foreach ($req->transferDetails as $key=>$val) {
-                    if($key==0){
+                foreach ($req->transferDetails as $key => $val) {
+                    if ($key == 0) {
                         $firstSaleVal =  $val["saleValue"];
                     }
                     $saleVal = $val["saleValue"];
                     $mutationProccessFee += $applysafController->readProccessFee($req->assessmentType, $saleVal, $req->propertyType, $req->transferMode);
                 }
-            }elseif($req->assessmentType == 4 || $req->assessmentType == "Bifurcation"){
+            } elseif ($req->assessmentType == 4 || $req->assessmentType == "Bifurcation") {
                 $mutationProccessFee = $applysafController->readProccessFee($req->assessmentType, $req->saleValue, $req->propertyType, $req->transferModeId);
                 $firstSaleVal = $req->saleValue;
             }
             $deedArr = [];
             $docUpload = new DocUpload();
-            
+
             $relativePath = Config::get('PropertyConstaint.PROCCESS_RELATIVE_PATH');
-            if($req->assessmentType == 3 || $req->assessmentType == "Mutation"){
+            if ($req->assessmentType == 3 || $req->assessmentType == "Mutation") {
                 foreach ($req->transferDetails as $key => $deedDoc) {
-                    
-                $deedArr[$key] = $deedDoc;
+
+                    $deedArr[$key] = $deedDoc;
                     $document = $deedDoc["deed"];
                     $refImageName =  $safId . "-" . $key + 1;
                     unset($deedArr[$key]["deed"]);
                     $deedArr[$key]["upload"] = $document ? ($relativePath . "/" . $docUpload->upload($refImageName, $document, $relativePath)) : "";
                 }
             }
-            $req->merge(["saleValueNew" => $deedArr,"saleValue"=>$firstSaleVal]);
+            $req->merge(["saleValueNew" => $deedArr, "saleValue" => $firstSaleVal]);
             $req->merge(["deedJson" => preg_replace('/\\\\/', '', json_encode($req->saleValueNew, JSON_UNESCAPED_UNICODE))]);
-   
-            
-            
-            
-            
+
+
+
+
+
             $metaReqs['holdingType'] = $applysafController->holdingType($req['floor']);
             $metaReqs["road_type_mstr_id"] = $roadWidthType;
             $req->merge($metaReqs);
@@ -832,9 +832,9 @@ class ActiveSafController extends Controller
                 $data->category = $safVerification->category ? $safVerification->category : $data->category;
                 $verificationDtl = $mVerificationDtls->getVerificationDtls($safVerification->id);
             }
-             $data->transferDetails = collect(json_decode($data->deed_json,true))->map(function($val){
-                $val["transferModeName"] = RefPropTransferMode::find($val["transferMode"]??0)->transfer_mode??"";
-                ($val["upload"] ?? false) ?($val["upload"] =  Config::get('module-constants.DOC_URL')."/".$val["upload"]) : "";
+            $data->transferDetails = collect(json_decode($data->deed_json, true))->map(function ($val) {
+                $val["transferModeName"] = RefPropTransferMode::find($val["transferMode"] ?? 0)->transfer_mode ?? "";
+                ($val["upload"] ?? false) ? ($val["upload"] =  Config::get('module-constants.DOC_URL') . "/" . $val["upload"]) : "";
                 return $val;
             });
             // Basic Details
@@ -898,9 +898,9 @@ class ActiveSafController extends Controller
 
             $transferElement = [
                 'headerTitle' => 'Transfer Details',
-                'tableHead' => ["#", "Owner Name", "transfer Mode","Sale Value", "Deed Document"],
+                'tableHead' => ["#", "Owner Name", "transfer Mode", "Sale Value", "Deed Document"],
                 'tableData' => $transferDetailsData
-            ]; 
+            ];
 
             //Bhagwatdar In the case of Imla and Occupier
             if ($data->transfer_mode_mstr_id == $transferMode['Imla'] || $data->ownership_type_mstr_id == $ownershipTypes['OCCUPIER'])
@@ -933,7 +933,7 @@ class ActiveSafController extends Controller
                     'tableData' => $floorDetails
                 ];
             }
-            $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement, $floorElement,$transferElement]);
+            $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement, $floorElement, $transferElement]);
             // Card Detail Format
             $cardDetails = $this->generateCardDetails($data, $getOwnerDetails);
             $cardElement = [
@@ -971,7 +971,7 @@ class ActiveSafController extends Controller
 
             $custom = $mCustomDetails->getCustomDetails($req);
             $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
-            
+
             return responseMsgs(true, 'Data Fetched', remove_null($fullDetailsData), "010104", "1.0", responseTime(), "POST", $req->deviceId);
         } catch (Exception $e) {
             return responseMsg(false, $e->getMessage(), "");
@@ -1026,12 +1026,12 @@ class ActiveSafController extends Controller
                 throw new Exception("Application Not Found");
 
             $data->current_role_name = 'Approved By ' . $data->current_role_name;
-            $data->transferDetails = collect(json_decode($data->deed_json,true))->map(function($val){
-                $val["transferModeName"] = RefPropTransferMode::find($val["transferMode"]??0)->transfer_mode??"";
-                ($val["upload"] ?? false) ?($val["upload"] =  Config::get('module-constants.DOC_URL')."/".$val["upload"]) : "";
+            $data->transferDetails = collect(json_decode($data->deed_json, true))->map(function ($val) {
+                $val["transferModeName"] = RefPropTransferMode::find($val["transferMode"] ?? 0)->transfer_mode ?? "";
+                ($val["upload"] ?? false) ? ($val["upload"] =  Config::get('module-constants.DOC_URL') . "/" . $val["upload"]) : "";
                 return $val;
             });
-            $data->no_of_transfer = $data->transferDetails->count(); 
+            $data->no_of_transfer = $data->transferDetails->count();
             $safVerification = $mVerification->where("saf_id", $data->id)->where("status", 1)->orderBy("id", "DESC")->first();
             $verificationDtl = $mVerificationDtls->getVerificationDtls($safVerification->id ?? 0);
             if ($safVerification) {
@@ -1360,14 +1360,14 @@ class ActiveSafController extends Controller
             } else
                 $data->current_role_name2 = $data->current_role_name;
 
-            $data->transferDetails = collect(json_decode($data->deed_json,true))->map(function($val){
-                $val["transferModeName"] = RefPropTransferMode::find($val["transferMode"]??0)->transfer_mode??"";
-                ($val["upload"] ?? false) ?($val["upload"] =  Config::get('module-constants.DOC_URL')."/".$val["upload"]) : "";
+            $data->transferDetails = collect(json_decode($data->deed_json, true))->map(function ($val) {
+                $val["transferModeName"] = RefPropTransferMode::find($val["transferMode"] ?? 0)->transfer_mode ?? "";
+                ($val["upload"] ?? false) ? ($val["upload"] =  Config::get('module-constants.DOC_URL') . "/" . $val["upload"]) : "";
                 return $val;
             });
             $data->no_of_transfer = $data->transferDetails->count();
             $data = json_decode(json_encode($data), true);
-            
+
             $assessmentType = collect(Config::get("PropertyConstaint.ASSESSMENT-TYPE"))->flip();
             $data["assessment_type_id"] = $assessmentType[$data["assessment_type"]] ?? null;
             $flipArea = $data["bifurcated_from_plot_area"];
@@ -5412,7 +5412,7 @@ class ActiveSafController extends Controller
             if (in_array($request->paymentMode, $verifyPaymentModes)) {
                 $verifyStatus = 2;
             }
-            $request->merge(["verifyStatus" => $verifyStatus,'paidAmount'=>$proccessFee]);
+            $request->merge(["verifyStatus" => $verifyStatus, 'paidAmount' => $proccessFee]);
 
             $idGeneration = new IdGeneration;
             $tranNo = $idGeneration->generateTransactionNo($saf->ulb_id);
