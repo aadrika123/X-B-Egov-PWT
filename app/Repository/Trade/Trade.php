@@ -873,6 +873,8 @@ class Trade implements ITrade
             $refWorkflows   = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
             $refNoticeDetails = null;
             $refDenialId    = null;
+            $mItemName      = "";
+            $mCods          = "";
             $refUlbDtl      = UlbMaster::find($refUlbId);
             $refUlbName     = explode(' ', $refUlbDtl->ulb_name);
 
@@ -898,6 +900,15 @@ class Trade implements ITrade
             // $refLecenceData = ActiveTradeLicence::find($request->licenceId);
             $refLecenceData = TradeLicence::find($request->licenceId);
             $licenceId = $request->licenceId;
+            if ($refLecenceData->nature_of_bussiness) {
+                $items = AkolaTradeParamItemType::itemsById($refLecenceData->nature_of_bussiness);
+                foreach ($items as $val) {
+                    $mItemName  .= $val->trade_item . ",";
+                    $mCods      .= $val->trade_code . ",";
+                }
+                $mItemName = trim($mItemName, ',');
+                $mCods = trim($mCods, ',');
+            }
 
             // $refLevelData = $this->getWorkflowTrack($licenceId); //TradeLevelPending::getLevelData($licenceId);
             if (!$refLecenceData) {
@@ -945,7 +956,7 @@ class Trade implements ITrade
             }
             $args['tobacco_status']      = $refLecenceData->is_tobacco;
             $args['licenseFor']          = $request->licenseFor;
-            $args['nature_of_business']  = $refLecenceData->nature_of_bussiness;
+            $args['nature_of_business']  = $mCods;
             $args['noticeDate']          = $mNoticeDate;
             $chargeData = $this->AkolaCltCharge($args);
 
