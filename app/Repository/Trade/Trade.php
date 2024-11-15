@@ -956,7 +956,7 @@ class Trade implements ITrade
             }
             $args['tobacco_status']      = $refLecenceData->is_tobacco;
             $args['licenseFor']          = $request->licenseFor;
-            $args['nature_of_business']  = $mCods;
+            $args['nature_of_business']  = $refLecenceData->nature_of_bussiness;
             $args['noticeDate']          = $mNoticeDate;
             $chargeData = $this->AkolaCltCharge($args);
 
