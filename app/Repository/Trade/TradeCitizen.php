@@ -933,19 +933,20 @@ class TradeCitizen implements ITradeCitizen
             $init_finish = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
             $finisher = $init_finish['finisher'];
             $finisher['short_user_name'] = $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][strtoupper($init_finish['finisher']['role_name'])];
-
-            if ($refApplication->nature_of_bussiness) {
-                $items = AkolaTradeParamItemType::itemsById($refApplication->nature_of_bussiness);
-                foreach ($items as $val) {
-                    $mItemName  .= $val->trade_item . ",";
-                    $mCods      .= $val->trade_code . ",";
-                }
-                $mItemName = trim($mItemName, ',');
-                $mCods = trim($mCods, ',');
-            }
+            // if ($refApplication->nature_of_bussiness) {
+            //     $items = AkolaTradeParamItemType::itemsById($refApplication->nature_of_bussiness);
+            //     foreach ($items as $val) {
+            //         $mItemName  .= $val->trade_item . ",";
+            //         $mCods      .= $val->trade_code . ",";
+            //     }
+            //     $mItemName = trim($mItemName, ',');
+            //     $mCods = trim($mCods, ',');
+            // }
+            $mCods = $refApplication->nature_of_bussiness;
             $refApplication->nature_of_bussiness      = $mItemName;
             $refApplication->items      = $mItemName;
             $refApplication->items_code = $mCods;
+            // $refApplication->items_code = $refApplication->nature_of_bussiness;
             $refOwnerDtl                = $this->_REPOSITORY_TRADE->getAllOwnereDtlByLId($id);
             $refTransactionDtl          = TradeTransaction::listByLicId($id);
             $refUploadDocuments         = $this->_MODEL_WfActiveDocument->getTradeDocByAppNo($refApplication->id, $refApplication->workflow_id, $modul_id);
