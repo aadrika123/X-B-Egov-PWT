@@ -976,7 +976,7 @@ class TradeApplication extends Controller
                 $tradC = $this->_CONTROLLER_TRADE;
                 $owners = $tradC->getAllOwnereDtlByLId($req->applicationId);
                 foreach ($owners as $val) {
-                    $respons=send_sms($val["mobile_no"],$sms["sms"],$sms["temp_id"]);
+                    $respons = send_sms($val["mobile_no"], $sms["sms"], $sms["temp_id"]);
                 }
             }
             $this->commit();
@@ -1571,18 +1571,20 @@ class TradeApplication extends Controller
             $oneMonthLater = $currentDate->copy()->addMonth();
             $mTradeLicence = new TradeLicence();
             // Get the details of licenses expiring within one month
-            $details = $mTradeLicence->dtls()
-                ->where('valid_upto', '>', $currentDate)
-                ->where('valid_upto', '<=', $oneMonthLater)
-                ->get();
+            // $details = $mTradeLicence->dtls()
+            //     ->where('valid_upto', '>', $currentDate)
+            //     ->where('valid_upto', '<=', $oneMonthLater)
+            //     ->get();
+            $detail = 'https://vm.ltd/AKOLAM/hGbyXn';
 
-            foreach ($details as $detail) {
-                $sms = AkolaTrade(["owner_name" => $detail->license_no, "application_no" => $detail->valid_upto], "Renewal");
+            // foreach ($details as $detail) {
+            // $sms = AkolaTrade(["owner_name" => $detail->license_no, "application_no" => $detail->valid_upto], "Renewal");
+            $sms = AkolaTrade(["url" => $detail], "Renewal");
 
-                if ($sms["status"] !== false) {
-                    $respons = SMSAKGOVT(6387148933, $sms["sms"], $sms["temp_id"]);
-                }
+            if ($sms["status"] !== false) {
+                $respons = SMSAKGOVT(8092343431, $sms["sms"], $sms["temp_id"]);
             }
+            // }
         } catch (\Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $request->deviceId ?? "");
         }

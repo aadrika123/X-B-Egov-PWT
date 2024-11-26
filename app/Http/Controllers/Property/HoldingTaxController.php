@@ -740,7 +740,7 @@ class HoldingTaxController extends Controller
     /**
      * | written by prity pandey all previous tran details function
      */
-    
+
     // public function propPaymentHistory(Request $req)
     // {
     //     $validated = Validator::make(
@@ -2214,6 +2214,81 @@ class HoldingTaxController extends Controller
             return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }
     }
+    /**
+     * | Abhay Yojna Marathi
+     */
+    public function propertyVoteProcess(Request $req)
+    {
+        try {
+
+            $mPropSmsLog = new PropSmsLog();
+            $getHoldingDues = new GetHoldingDuesV2;
+            $templateId = 1707173207997175896;
+            $propDetails = PropOwner::select(
+                'prop_sms_logs.id as sms_log_id',
+                'prop_owners.property_id',
+                'prop_owners.owner_name_marathi',
+                'prop_owners.mobile_no'
+            )
+                ->leftJoin('prop_sms_logs', function ($join) {
+                    $join->on('prop_sms_logs.ref_id', '=', 'prop_owners.property_id')
+                        ->where('prop_sms_logs.ref_type', 'PROPERTY')
+                        ->where('prop_sms_logs.response', 'success')
+                        ->where('prop_sms_logs.purpose', 'Text Msg For Poll Day'); 
+                })
+                ->whereNull('prop_sms_logs.id') // Only those who have not received the SMS
+                ->whereRaw('LENGTH(prop_owners.mobile_no) = 10') // Valid mobile numbers
+                ->groupBy('prop_owners.property_id','prop_owners.owner_name_marathi', 'prop_owners.mobile_no', 'prop_sms_logs.id')
+                // ->limit(10)
+                ->get();
+            $totalList = $propDetails->count();
+
+            foreach ($propDetails as $key => $propDetail) {
+                try {
+
+            $newReq = new Request(['propId' => $propDetail->property_id]);
+            // $demand = $getHoldingDues->getDues($newReq);
+
+            $ownerName       = Str::limit(trim($propDetail->owner_name_marathi), 30);
+            $ownerMobile     = $propDetail->mobile_no;
+            // // $totalTax        = $demand['payableAmt'];
+            // $url             = "https://vm.ltd/AKOLAM/hGbyXn";
+            // // $fyear           = $propDetail->max_fyear;
+            $propertyId      = $propDetail->property_id;
+            // $propertyNo      = $demand['basicDetails']['property_no'];
+            // $wardNo          = $demand['basicDetails']['ward_no'];
+            // dd(Config::get("database"),$ownerMobile);
+            // $sms      = "प्रिय " . $ownerName . ", तुमचा मालमत्ता कर रु. " . $totalTax . " मालमत्ता क्रमांक " . $propertyNo . " प्रभाग क्र. " . $wardNo . " देय आहे. कृपया 31 मार्च 2024 पूर्वी तुमचा कर भरा आणि अभय योजनेअंतर्गत लाभ घ्या. आधीच पैसे दिले असल्यास दुर्लक्ष करा. तपशीलांसाठी amcakola.in ला भेट द्या किंवा 08069493299 वर कॉल करा. स्वाती इंडस्ट्रीज";
+            $sms      = "विधानसभा सार्वत्रिक निवडणुकीच्या अनुषंगाने आज दि. २० नोव्हेंबर २०२४ रोजी सकाळी ७ ते सायंकाळी ६ वाजेपर्यंत मतदान होणार आहे, तरी मतदान करून आपण आपले राष्ट्रीय कर्तव्य पार पाडून या लोकशाही उत्सवात सहभाग नोंदवावा. डॉ. सुनिल लहाने आयुक्त तथा प्रशासक अकोला महानगरपालिका, अकोला. SWATI INDUSTRIES";
+            $response = send_sms($ownerMobile, $sms, $templateId);
+                    print_var("==================index($key) remaining(" . $totalList - ($key + 1) . ")=========================\n");
+                    print_var("property_id=======>" . $propDetail->property_id . "\n");
+                    print_var("sms=======>" . $sms . "\n");
+                    print_var($response);
+
+                    $smsReqs = [
+                        "emp_id" => 5695,
+                        "ref_id" => $propertyId,
+                        "ref_type" => 'PROPERTY',
+                        "mobile_no" => $ownerMobile,
+                        "purpose" => 'Text Msg For Poll Day',
+                        "template_id" => $templateId,
+                        "message" => $sms,
+                        "response" => $response['status'],
+                        "smgid" => $response['msg'],
+                        "stampdate" => Carbon::now(),
+                    ];
+                    $mPropSmsLog->create($smsReqs);
+                } catch (Exception $e) {
+                    print_var([$e->getMessage(), $e->getFile(), $e->getLine()]);
+                }
+            }
+
+            return responseMsgs(true, "SMS Send Successfully of "  . " Property", [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+        }
+    }
 
     /**
      * | 7 Percent 
@@ -2617,6 +2692,30 @@ class HoldingTaxController extends Controller
 
         return responseMsgs(true, "SMS Send Successfully", [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
     }
+    public function testSmsv1(Request $req)
+    {
+        $mPropSmsLog = new PropSmsLog();
+
+        $sms      = "प्रिय मालमत्ता धारक, आगामी निवडणुकीच्या अनुषंगाने, आपल्याला मतदान प्रक्रियेत सहभागी होण्याची विनंती आहे. आपला प्रत्येक मत महत्त्वाचा आहे. अधिक माहितीसाठी कृपया येथे भेट द्या: https://www.facebook.com/share/v/19W5UQ6nvf/ आपल्या सहभागाबद्दल धन्यवाद SWATI INDUSTRIES";
+        return $response = send_sms(6387148933, $sms, 1707173166699117540);
+
+        $smsReqs = [
+            "emp_id" => 1,
+            "ref_id" => 1,
+            "ref_type" => 'PROPERTY',
+            "mobile_no" => 6387148933,
+            "purpose" => 'Vote Process',
+            "template_id" => 1707173166699117540,
+            "message" => $sms,
+            "response" => $response['status'],
+            "smgid" => $response['msg'],
+            "stampdate" => Carbon::now(),
+        ];
+        $mPropSmsLog->create($smsReqs);
+
+
+        return responseMsgs(true, "SMS Send Successfully", [], "", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+    }
 
     /**
      * | Send Bulk Sms
@@ -2672,7 +2771,12 @@ class HoldingTaxController extends Controller
     public function genratePropNewTax(Request $request)
     {
         $excelData[] = [
-            "prop id", "Holding No", "Property No", "status", "error", "primaryError",
+            "prop id",
+            "Holding No",
+            "Property No",
+            "status",
+            "error",
+            "primaryError",
         ];
         try {
             $zoneId = 1;
@@ -2753,8 +2857,8 @@ class HoldingTaxController extends Controller
         }
 
         try {
-           $propTran = new PropTransaction();
-           $receipt = $propTran->getTransactionsNakal($req->tranId);
+            $propTran = new PropTransaction();
+            $receipt = $propTran->getTransactionsNakal($req->tranId);
             return responseMsgs(true, "Payment Receipt", $receipt, "011605", "1.0", "", "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "011605", "1.0", "", "POST", $req->deviceId);

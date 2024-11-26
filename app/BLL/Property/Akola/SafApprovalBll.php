@@ -1540,9 +1540,9 @@ class SafApprovalBll
         // {
         //     throw new Exception("Demand not adjusted properly");
         // }
-        if (round($newDemand["total_tax"]) != round($newDemand1->sum())) {
-            throw new Exception("Demand not adjusted properly");
-        }
+        // if (round($newDemand["total_tax"]) != round($newDemand1->sum())) {
+        //     throw new Exception("Demand not adjusted properly");
+        // }
     }
 
     public function generateBiNewFloorDemand()

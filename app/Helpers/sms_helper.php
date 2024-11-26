@@ -67,8 +67,8 @@ if (!function_exists('send_sms')) {
     {
         if (Config::get("sms-constants.sms_test")) {
             // $mobile = "6299068110";                 #_office mobile no
-            $mobile = "9153975142";                 #_office mobile no
-            // $mobile = $mobile;                 #_office mobile no
+            // $mobile = "9153975142";                 #_office mobile no
+            $mobile = $mobile;                 #_office mobile no
             // $mobile = "7631035473";                 #_deepankar sir
             // $mobile = "8797770238";                 #_mrinal 
         }
@@ -823,12 +823,16 @@ if (!function_exists("AkolaTrade")) {
         if (strtoupper($sms_for) == strtoupper('Renewal')) {
             try {
                 //Dear {#var#}, congratulations on submitting your renewal application! Your Ref No. is {#var#}. For details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES               
-                $sms = "Dear " . $data['owner_name'] . ", congratulations on submitting your renewal application! Your Ref No. is " . $data['application_no'] . ". For details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
-                $temp_id = "1707169564221433065";
+                // $sms = "Dear " . $data['owner_name'] . ", congratulations on submitting your renewal application! Your Ref No. is " . $data['application_no'] . ". For details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";/
+                $sms = "प्रिय मालमत्ता धारक, आगामी निवडणुकीच्या अनुषंगाने, आपल्याला मतदान प्रक्रियेत सहभागी होण्याची विनंती आहे. आपला प्रत्येक मत महत्त्वाचा आहे. अधिक माहितीसाठी कृपया येथे भेट द्या: " . $data['url'] . ". आपल्या सहभागाबद्दल धन्यवाद SWATI INDUSTRIES";
+                // $sms = "OTP for 123123 at Akola Municipal Corporation's portal is 123123 This OTP is valid for 10 minutes.";
+                // $temp_id = "1707169564221433065";
+                $temp_id = "1707173166699117540";
                 return array("sms" => $sms, "temp_id" => $temp_id, 'status' => true);
             } catch (Exception $e) {
                 return array(
                     "sms_formate" => "Dear {#var#}, congratulations on submitting your renewal application! Your Ref No. is {#var#}. For details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES",
+                    // "sms_formate" => "OTP for 123123 at Akola Municipal Corporation's portal is 123123 This OTP is valid for 10 minutes.",
                     "discriuption" => "1. 2 para required 
                         2. 1st para array('owner_name'=>'','application_no'=>'') sizeof 2  
                         3. 2nd para sms for ",

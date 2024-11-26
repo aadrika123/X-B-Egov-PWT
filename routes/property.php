@@ -112,7 +112,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('saf/static-saf-dtls', 'getStaticSafDetails');                                          // (27) Static SAf Details
     Route::post('saf/static-saf-dtls-orignal', 'getOrignalSaf');
     Route::post('saf/static-saf-dtls-verification', 'getSafOrignalDetails');
-    Route::post('saf/offline-saf-payment', 'offlinePaymentSaf');                                        
+    Route::post('saf/offline-saf-payment', 'offlinePaymentSaf');
 
     Route::post('saf/proccess-fee/pending-list', 'getPendingProccessFeePtmLs');
     Route::post('saf/offline-saf-payment/proccess-fee', 'proccessFeePayment');
@@ -351,7 +351,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('get-filter-property-details', 'propertyListByKey');              // 02
     Route::get('get-list-saf', 'getListOfSaf');                                   // 03
     Route::post('active-application/get-user-details', 'getUserDetails');         // 04
-  //written by prity pandey
+    //written by prity pandey
     Route::post('get-filter-application-details-saf-only', 'applicationsListByKeySafOnly');        // 05
   });
 
@@ -400,7 +400,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('v1/response-pine-lab-payment', 'pinLabResponse');                      // (16) For React And Posh Machine Pine Lab Payment And Update data Throw Reference No
 
     //Written by prity pandey
-    Route::post('citizen/icic-init-payment-for-process-fee', 'ICICPaymentRequestProcessFee');  
+    Route::post('citizen/icic-init-payment-for-process-fee', 'ICICPaymentRequestProcessFee');
     #======== created by Arshad===================#endregion
     Route::post('citizen/worldline-init-payment', 'worldlineInitPayment');
     Route::post('citizen/worldline-response-payment', 'worldlineHandelResponse');
@@ -698,8 +698,10 @@ Route::controller(HoldingTaxController::class)->group(function () {
   // Route::post('bulk-sms', 'propertyBulkSms');
   // Route::post('abhay-yojna', 'propertyAbhayYojnaSms');
   // Route::post('abhay-yojna-marathi', 'propertyAbhayYojnaMarathi');
+  Route::post('vote-awareness', 'propertyVoteProcess');
   // Route::post('bulk-sms-report', 'bulkSmsReport');
   Route::post('test-sms', 'testSms');
+  Route::post('test-smsv1', 'testSmsv1');
 
   //written by prity pandey
   Route::post('nakal/payment-receipt', 'nakalPaymentReceipt');
