@@ -4048,6 +4048,7 @@ class WaterPaymentController extends Controller
                 "totalCharge"         => $requestData->payable_amount,
                 "ulbId"               => $activeConRequest->ulb_id ?? null,
                 "paymentGatewayType"  => $request->payment_source,
+                "userId"              => $request->userId
             ]);
 
             // Begin transaction
