@@ -38,17 +38,18 @@ class WaterConsumerMeter extends Model
     {
         return WaterConsumerMeter::select(
             'subquery.initial_reading as ref_initial_reading',
-            DB::raw("concat(relative_path,'/',meter_doc) as doc_path"),
-            'water_consumer_meters.*',
+            'subquery.created_at as ref_created_at', // Include created_at from subquery
+            DB::raw("concat(relative_path, '/', meter_doc) as doc_path"),
+            'water_consumer_meters.*'
         )
-            ->leftjoinSub(
+            ->leftJoinSub(
                 DB::connection('pgsql_water')
                     ->table('water_consumer_initial_meters')
-                    ->select('*')
+                    ->select('consumer_id', 'initial_reading', DB::raw('DATE(created_at) as created_at')) // Format created_at in the subquery
                     ->where('consumer_id', '=', $consumerId)
                     ->orderBy('id', 'desc')
-                    ->skip(1)
-                    ->take(1),
+                    ->skip(1) // Skip the most recent record
+                    ->take(1), // Take the second latest record
                 'subquery',
                 function ($join) {
                     $join->on('subquery.consumer_id', '=', 'water_consumer_meters.consumer_id');

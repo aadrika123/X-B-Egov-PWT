@@ -76,6 +76,7 @@ class WaterConsumerDemandReceipt
     private $_mWaterMeterReadingDoc;
     private $_mUsers;
     private $_propertyType;
+    private $_previousReadinDatev1;
 
     public function __construct($consumerId)
     {
@@ -239,6 +240,7 @@ class WaterConsumerDemandReceipt
             $this->_fromUnit = isset($this->_lastTowReading[1]) ? ($this->_lastTowReading[1])->initial_reading : 0;
         }
         $this->_consumptionUnit     = $this->_uptoUnit - $this->_fromUnit;
+        $this->_previousReadinDatev1 = $this->_mWaterConsumerMeter->getMeterDetailsByConsumerIdV2($this->_consumerId)->first();
 
         $this->setLastUnitConsume();
     }
@@ -282,7 +284,8 @@ class WaterConsumerDemandReceipt
             "meterNo"           => !$this->_meterNo ? ($this->_meterReadingDocuments->meter_no ?? "") : $this->_meterNo,
             "currentReadingDate"    => $this->_currentReadingDate,
             "currentReading"        => $this->_uptoUnit,
-            "previousReadingDate"   => $this->_prevuesReadingDate,
+            // "previousReadingDate"   => $this->_prevuesReadingDate,
+            "previousReadingDate"   => $this->_previousReadinDatev1->ref_created_at,
             "previousReading"       => $this->_fromUnit,
             "totalUnitUsed"         => $this->_consumptionUnit,
             "meterStatus"           => $this->_meterStatus,
