@@ -6757,7 +6757,7 @@ class WaterReportController extends Controller
         left Join zone_masters on zone_masters.id= water_second_consumers.zone_mstr_id
         left JOIN water_site_inspections on water_site_inspections.apply_connection_id = water_approval_application_details.id
              JOIN water_road_cutter_charges on water_road_cutter_charges.id = water_approval_application_details.road_type_id
-             JOIN water_connection_type_charges on water_connection_type_charges.id = water_second_consumers.connection_type_id
+             JOIN water_connection_type_charges on water_connection_type_charges.tab_size = water_second_consumers.tab_size
         -- JOIN water_consumer_collections on water_consumer_collections.transaction_id = water_trans.id
         LEFT JOIN users ON users.id=water_trans.emp_dtl_id
         where water_trans.related_id is not null 
