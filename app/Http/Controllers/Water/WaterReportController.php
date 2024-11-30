@@ -6739,7 +6739,7 @@ class WaterReportController extends Controller
                 water_trans.payment_type,
                 water_trans.payment_mode AS paymentstatus,
                 water_consumer_owners.applicant_name,
-                water_road_cutter_charges.road_type,
+                water_road_cutter_charges.road_type,                                                                        
                 water_road_cutter_charges.per_meter_amount,
                 water_approval_application_details.property_no,
                 water_site_inspections.road_width,
@@ -6748,8 +6748,7 @@ class WaterReportController extends Controller
                 water_connection_type_charges.bore_charge,
                 water_connection_type_charges.inspection_fee, 
                 water_connection_type_charges.pipe_connection_charge,
-                water_road_cutter_charges.per_meter_amount * water_site_inspections.road_width as road_cutting_charges 
-          
+                water_road_cutter_charges.per_meter_amount * water_site_inspections.road_width as road_cutting_charges
         FROM water_trans 
         LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id=water_trans.ward_id
              JOIN water_second_consumers ON water_second_consumers.id=water_trans.related_id
