@@ -6719,7 +6719,8 @@ class WaterReportController extends Controller
               subquery.security_deposit,
               subquery.bore_charge,
               subquery.inspection_fee,
-              subquery.pipe_connection_charge
+              subquery.pipe_connection_charge,
+              subquery.road_cutting_charges
               
      FROM (
          SELECT 
@@ -6746,7 +6747,8 @@ class WaterReportController extends Controller
                 water_connection_type_charges.security_deposit,
                 water_connection_type_charges.bore_charge,
                 water_connection_type_charges.inspection_fee, 
-                water_connection_type_charges.pipe_connection_charge 
+                water_connection_type_charges.pipe_connection_charge,
+                water_road_cutter_charges.per_meter_amount * water_site_inspections.road_width as road_cutting_charges 
           
         FROM water_trans 
         LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id=water_trans.ward_id
