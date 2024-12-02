@@ -404,7 +404,7 @@ class PropertyDetailsController extends Controller
             $pendingAt = $request->pendingAt;
             $perPage = $request->perPage ?? 10;
             $approved = $mPropSafs->searchSafs();
-            $active = $mPropActiveSaf->searchSafs()->where('prop_active_safs.citizen_id', null);
+            $active = $mPropActiveSaf->searchSafs()->where('prop_active_safs.status','<>',4);
             if ($searchBy == 'applicationNo') {
                 $approved->where('prop_safs.saf_no', strtoupper($value));
                 $active->where('prop_active_safs.saf_no', strtoupper($value));

@@ -1666,9 +1666,12 @@ class SafApprovalBll
     {
         if ($this->_activeSaf->assessment_type == "Amalgamation") {
             $amalgamateProps = $this->_activeSaf->getAmalgamateLogs()->where("is_master", false);
-            foreach ($amalgamateProps as $aProp) {
-                $aProp->status = 4;
-                $aProp->update();
+            foreach ($amalgamateProps as $amalgamateProp) {
+                $mpropProperty = PropProperty::find($amalgamateProp->property_id);
+                if ($mpropProperty) {
+                    $mpropProperty->status = 4;
+                    $mpropProperty->save();
+                }
             }
         }
     }
