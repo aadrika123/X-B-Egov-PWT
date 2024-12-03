@@ -381,7 +381,7 @@ class ActiveSafController extends Controller
             $mutationProccessFee = 0;
             //$mutationProccessFee = $applysafController->readProccessFee($req->assessmentType, $req->saleValue, $req->propertyType, $req->transferModeId);
 
-
+            $firstSaleVal = [];
             if (is_array($req->transferDetails)) {
                 foreach ($req->transferDetails as $key => $val) {
                     if ($key == 0) {
