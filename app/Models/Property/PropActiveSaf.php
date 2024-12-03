@@ -306,6 +306,8 @@ class  PropActiveSaf extends PropParamModel #Model
             'elect_cons_category' => $req->electricityConsCategory,
             'building_plan_approval_no' => $req->buildingPlanApprovalNo,
             'building_plan_approval_date' => $req->buildingPlanApprovalDate,
+            'building_plan_completion_date' => $req->buildingPlanCompletionDate,
+            'building_plan_completion_no' => $req->buildingPlanCompletionNo,
             'water_conn_no' => $req->waterConnNo,
             'water_conn_date' => $req->waterConnDate,
             'khata_no' => $req->khataNo,
