@@ -1401,6 +1401,18 @@ class ActiveSafController extends Controller
                 "ulb_id" => $user->ulb_id ?? 0,
                 "user_name" => $user->name ?? ""
             ];
+            if ($data['building_plan_approval_no'] != null || $data['building_plan_approval_date'] != null) {
+                $data['buildingPlanAvailable'] = 1; // Use array syntax instead of object property syntax
+            }
+            else {
+                $data['buildingPlanAvailable'] = 0;
+            }
+            if ($data['building_plan_completion_date'] != null || $data['building_plan_completion_no'] != null) {
+                $data['buildingComplitionOption'] = 1; // Use array syntax instead of object property syntax
+            } else {
+                $data['buildingComplitionOption'] = 0;
+            }
+
             $memoDtls = $mPropSafMemoDtls->memoLists($data['id']);
             $data['memoDtls'] = $memoDtls;
             if ($status = ((new \App\Repository\Property\Concrete\SafRepository())->applicationStatus($req->applicationId, true))) {
