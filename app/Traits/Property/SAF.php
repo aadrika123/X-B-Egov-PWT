@@ -516,7 +516,7 @@ trait SAF
      */
     public function holdingType($req)
     {
-        $useType =  collect($req)->pluck('useType');
+        $useType =  collect($req)->pluck('usageType');
         // Check Pure Residential
         $pureResidential = collect($useType)->every(function ($value) {
             return in_array($value, Config::get('akola-property-constant.RESIDENTIAL_USAGE_TYPE'));
