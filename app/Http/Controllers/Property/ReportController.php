@@ -4065,9 +4065,14 @@ class ReportController extends Controller
                                 COUNT(DISTINCT ad_trans.related_id) AS total_advertisement,
                                 COALESCE(SUM(ad_trans.amount), 0) AS total_tran_amount,
                                 COALESCE(SUM(dtls.arrear_collection), 0) AS arrear_collection,
+                                COALESCE(SUM(dtls.temporary_collection), 0) AS temporary_collection,
+                                COALESCE(SUM(dtls.permanant_collection), 0) AS permanant_collection,
+                                COALESCE(SUM(dtls.permanant_count), 0) AS permanant_count,
                                 COALESCE(SUM(dtls.arrear_count), 0) AS arrear_count,
                                 COALESCE(SUM(dtls.current_count), 0) AS current_count,
+                                COALESCE(SUM(dtls.temporary_count), 0) AS temporary_count,
                                 COALESCE(SUM(dtls.current_collection), 0) AS current_collection
+
                             FROM 
                                 ad_trans
                             JOIN 
@@ -4079,6 +4084,10 @@ class ReportController extends Controller
                                     COUNT(DISTINCT CASE WHEN ad_trans.tran_date < '$previousUptoDate' THEN ad_trans.related_id ELSE NULL END) AS arrear_count,
                                     COALESCE(SUM(CASE WHEN ad_trans.tran_date >= '$previousUptoDate' THEN ad_trans.amount ELSE 0 END),0) AS current_collection,
                                     COUNT(DISTINCT CASE WHEN ad_trans.tran_date >= '$previousUptoDate' THEN ad_trans.related_id ELSE NULL END) AS current_count,
+                                    COUNT(DISTINCT CASE WHEN ad_trans.tran_type = 'TEMPORARY' THEN ad_trans.related_id ELSE NULL END) AS temporary_count,
+                                    COUNT(DISTINCT CASE WHEN ad_trans.tran_type = 'PERMANANT' THEN ad_trans.related_id ELSE NULL END) AS permanant_count,
+                                    COALESCE(SUM(CASE WHEN ad_trans.tran_type = 'TEMPORARY' THEN ad_trans.amount ELSE 0 END),0) AS temporary_collection,
+                                    COALESCE(SUM(CASE WHEN ad_trans.tran_type = 'PERMANANT' THEN ad_trans.amount ELSE 0 END),0) AS permanant_collection,
                                     COALESCE(SUM(ad_trans.amount),0) AS paid_total_amount 
                                 FROM 
                                     ad_trans
