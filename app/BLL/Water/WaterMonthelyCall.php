@@ -591,6 +591,9 @@ class WaterMonthelyCall
             $currentDateQuater = calculateQtr($today);
             $currentDateYear =  Carbon::parse($today)->format("Y");
             $totalDayDiff = Carbon::parse($lastDemand->generation_date ? $lastDemand->generation_date : $lastDemandUpto)->diffInDays($this->_now->copy());
+            if ($lastDemand->demand_upto <= $lastDemand->demand_from) {
+                throw new Exception('Demand Date Is InCorrect!');
+            }
             if ($lastDemandUpto >= $today) {
                 throw new Exception("The demand is generated till " . $this->_fromDate);
             }
