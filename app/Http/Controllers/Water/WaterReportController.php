@@ -2338,6 +2338,24 @@ class WaterReportController extends Controller
             $perPage = $request->perPage ? $request->perPage : 5;
             $page = $request->page && $request->page > 0 ? $request->page : 1;
             $fromDate = $uptoDate = Carbon::now()->format("Y-m-d");
+            $now                        = Carbon::now();
+            $currentDate                = $now->format('Y-m-d');
+            $currentYear                = collect(explode('-', $request->fiYear))->first() ?? $now->year;
+            $currentFyear               = $request->fiYear ?? getFinancialYear($currentDate);
+            $startOfCurrentYear         = Carbon::createFromDate($currentYear, 4, 1);           // Start date of current financial year
+            $startOfPreviousYear        = $startOfCurrentYear->copy()->subYear();               // Start date of previous financial year
+            $previousFinancialYear      = getFinancialYear($startOfPreviousYear);
+
+            #get financial  year 
+            $refDate = $this->getFyearDate($currentFyear);
+            $fromDates = $refDate['fromDate'];
+            $uptoDates = $refDate['uptoDate'];
+
+            #common function 
+            $refDate = $this->getFyearDate($previousFinancialYear);
+            $previousFromDate = $refDate['fromDate'];
+            $previousUptoDate = $refDate['uptoDate'];
+
             if ($request->fromDate) {
                 $fromDate = $request->fromDate;
             }
@@ -2381,69 +2399,110 @@ class WaterReportController extends Controller
             // DB::connection('pgsql_water')->enableQueryLog();
 
             $rawData = ("SELECT 
-            water_consumer_demands.*,
-            ulb_ward_masters.ward_name AS ward_no,
-            water_second_consumers.id,
-            'water' as type,
-            water_second_consumers.consumer_no,
-            water_second_consumers.user_type,
-            water_second_consumers.property_no,
-            water_second_consumers.address,
-            water_consumer_owners.applicant_name,
-            water_consumer_owners.guardian_name,
-            water_consumer_owners.mobile_no,
-            water_second_consumers.ward_mstr_id,
-            zone_masters.zone_name,
-            water_property_type_mstrs.property_type
-        FROM (
-            SELECT 
-                COUNT(water_consumer_demands.id)as demand_count,
-                SUM(due_balance_amount) as sum_balance_amount,
-                water_consumer_demands.consumer_id,
-                water_consumer_demands.connection_type,
-                water_consumer_demands.status,
-                min(water_consumer_demands.demand_from) as demand_from ,
-                max(water_consumer_demands.demand_upto) as demand_upto
-            FROM water_consumer_demands
-            WHERE  
-                 water_consumer_demands.status = TRUE
-                AND water_consumer_demands.consumer_id IS NOT NULL
-                AND water_consumer_demands.paid_status= 0
-            GROUP BY water_consumer_demands.consumer_id, 
-                             water_consumer_demands.connection_type,
-                             water_consumer_demands.status
-        ) water_consumer_demands
-        JOIN water_second_consumers ON water_second_consumers.id = water_consumer_demands.consumer_id
-        LEFT JOIN water_consumer_owners ON water_consumer_owners.consumer_id = water_second_consumers.id
-        LEFT JOIN zone_masters ON zone_masters.id = water_second_consumers.zone_mstr_id
-        LEFT JOIN ulb_ward_masters ON ulb_ward_masters.id = water_second_consumers.ward_mstr_id
-        LEFT JOIN water_property_type_mstrs ON water_property_type_mstrs.id =water_second_consumers.property_type_id
-        JOIN (
-            SELECT 
-                STRING_AGG(applicant_name, ', ') AS owner_name, 
-                STRING_AGG(water_consumer_owners.mobile_no::TEXT, ', ') AS mobile_no, 
-                water_consumer_owners.consumer_id 
-            FROM water_second_consumers 
-            JOIN water_consumer_demands ON water_consumer_demands.consumer_id = water_second_consumers.id
-            JOIN water_consumer_owners ON water_consumer_owners.consumer_id = water_second_consumers.id
-            GROUP BY water_consumer_owners.consumer_id
-        ) owners ON owners.consumer_id = water_second_consumers.id
-        WHERE water_consumer_demands.status = true
-        ");
+                              wcd.consumer_id,
+                              wcd.connection_type,
+                              wcd.status,
+                              wcd.demand_from,
+                              wcd.demand_upto,
+                              uwm.ward_name AS ward_no,
+                              wsc.id AS consumer_id,
+                              'water' AS type,
+                              wsc.consumer_no,
+                              wsc.user_type,
+                              wsc.property_no,
+                              wsc.address,
+                              wco.applicant_name,
+                              wco.guardian_name,
+                              wco.mobile_no,
+                              wsc.ward_mstr_id,
+                              zm.zone_name,
+                              wptm.property_type,
+                              owners.owner_name,
+                              owners.mobile_no,
+                              wcd.arrear_demand,
+                              wcd.current_demand,
+                              wcd.sum_balance_amount
+                              FROM (
+                                SELECT 
+                                    consumer_id,
+                                    connection_type,
+                                    status,                          
+                                  MIN(demand_from) AS demand_from,
+                                  MAX(demand_upto) AS demand_upto,
+                                   SUM(due_balance_amount) as sum_balance_amount,
+                                  -- Arrear Collections: Payments for demands before the previous year
+                                  SUM(CASE 
+                                      WHEN demand_upto <= '$previousUptoDate' THEN due_balance_amount
+                                      ELSE 0 
+                                  END) AS arrear_demand,
+                                  -- Current Collections: Payments for demands in the current financial year
+                                  SUM(CASE 
+                                      WHEN demand_from >= '$fromDates' AND demand_upto <= '$uptoDates' THEN due_balance_amount
+                                      ELSE 0 
+                                  END) AS current_demand
+                              FROM water_consumer_demands
+                              WHERE 
+                                  status = TRUE
+                                  AND consumer_id IS NOT NULL
+                                  AND paid_status = 0
+                              GROUP BY consumer_id, connection_type, status
+                                ) wcd
+                                JOIN water_second_consumers wsc ON wsc.id = wcd.consumer_id
+                                LEFT JOIN water_consumer_owners wco ON wco.consumer_id = wsc.id
+                                LEFT JOIN zone_masters zm ON zm.id = wsc.zone_mstr_id
+                                LEFT JOIN ulb_ward_masters uwm ON uwm.id = wsc.ward_mstr_id
+                                LEFT JOIN water_property_type_mstrs wptm ON wptm.id = wsc.property_type_id
+                                LEFT JOIN (
+                                    SELECT 
+                                        consumer_id,
+                                        STRING_AGG(applicant_name, ', ') AS owner_name,
+                                        STRING_AGG(mobile_no::TEXT, ', ') AS mobile_no
+                                    FROM water_consumer_owners
+                                    GROUP BY consumer_id
+                                ) owners ON owners.consumer_id = wsc.id
+                               WHERE 
+                                    1=1 " .
+                ($zoneId ? " AND wsc.zone_mstr_id = $zoneId" : "") .
+                ($wardId ? " AND wsc.ward_mstr_id = $wardId" : "") .
+                ($metertype ? " AND wcd.connection_type = $metertype" : "") .
+                ($propertyType ? " AND wsc.property_type_id = $propertyType" : "") .
+                " GROUP BY 
+                                    wcd.consumer_id, 
+                                    wcd.connection_type, 
+                                    wcd.status,
+                                    wcd.demand_from,
+                                    wcd.demand_upto,
+                                    wcd.arrear_demand,
+                                    wcd.current_demand,
+                                    wcd.sum_balance_amount,
+                                    uwm.ward_name,
+                                    wsc.id,
+                                    wsc.consumer_no,
+                                    wsc.user_type,
+                                    wsc.property_no,
+                                    wsc.address,
+                                    wco.applicant_name,
+                                    wco.guardian_name,
+                                    wco.mobile_no,
+                                    wsc.ward_mstr_id,
+                                    zm.zone_name,
+                                    wptm.property_type,
+                                    owners.owner_name,
+                                    owners.mobile_no");
 
             // return ["details" => $data->get()];
-            if ($wardId) {
-                $rawData = $rawData . "and ulb_ward_masters.id = $wardId";
-            }
-            if ($zoneId) {
-                $rawData = $rawData . " and water_second_consumers.zone_mstr_id = $zoneId";
-            }
-            if ($metertype) {
-                $rawData = $rawData . "and water_consumer_demands.connection_type = '$metertype'";
-            }
-            if ($propertyType) {
-                $rawData = $rawData . "and water_second_consumers.property_type_id = '$propertyType'";
-            }
+            // if ($wardId) {
+            //     $rawData .= " AND ulb_ward_masters.id = $wardId";
+            // }
+            // if ($zoneId) {
+            //     $rawData .= " AND water_second_consumers.zone_mstr_id = $zoneId";
+            // }
+            // if ($metertype) {
+            //     $rawData .= " AND water_consumer_demands.connection_type = '$metertype'";
+            // }
+            // if ($propertyType) {
+            //     $rawData .= " AND water_second_consumers.property_type_id = '$propertyType'";
+            // }
 
             $data = DB::connection('pgsql_water')->select(DB::raw($rawData . " OFFSET 0
                     LIMIT $perPage"));
