@@ -10,6 +10,7 @@ use App\Http\Requests\Property\Reports\SafPropIndividualDemandAndCollection;
 use App\Http\Requests\Property\Reports\UserWiseLevelPending;
 use App\Http\Requests\Property\Reports\UserWiseWardWireLevelPending;
 use App\MicroServices\IdGenerator\PrefixIdGenerator;
+use App\Models\Advertisements\AdTran;
 // use App\Models\Advertisements\WfActiveDocument;
 use App\Models\MplYearlyReport;
 use App\Models\Property\PropActiveSaf;
@@ -3817,7 +3818,7 @@ class ReportController extends Controller
                 "toDayCollection" => ($toDayCollection ? $toDayCollection : 0),
                 "propDetails" => $propTransactionQuery,
                 "tradeDetails" => $tradeTransactionQuery,
-                "waterDetails" => $waterTransactionQuery,
+                "waterDetails" => $waterTransactionQuery
             ];
 
             return responseMsgs(true, "Mpl Report Today Coll", $data, "", 01, responseTime(), $request->getMethod(), $request->deviceId);
@@ -3839,6 +3840,24 @@ class ReportController extends Controller
             $currentfyear = getFY();
             $fromDate = explode("-", $currentfyear)[0] . "-04-01";
             $uptoDate = explode("-", $currentfyear)[1] . "-03-31";
+            $now                        = Carbon::now();
+            $currentDate                = $now->format('Y-m-d');
+            $currentYear                = collect(explode('-', $request->fiYear))->first() ?? $now->year;
+            $currentFyear               = $request->fiYear ?? getFinancialYear($currentDate);
+            $startOfCurrentYear         = Carbon::createFromDate($currentYear, 4, 1);           // Start date of current financial year
+            $startOfPreviousYear        = $startOfCurrentYear->copy()->subYear();               // Start date of previous financial year
+            $previousFinancialYear      = getFinancialYear($startOfPreviousYear);
+
+            #get financial  year 
+            $refDate = $this->getFyearDate($currentFyear);
+            $fromDates = $refDate['fromDate'];
+            $uptoDates = $refDate['uptoDate'];
+
+            #common function 
+            $refDate = $this->getFyearDate($previousFinancialYear);
+            $previousFromDate = $refDate['fromDate'];
+            $previousUptoDate = $refDate['uptoDate'];
+
             $propTransactionQuery = DB::select(DB::raw("
                             SELECT  
                                 assessment_types.assessment_type, 
@@ -4040,6 +4059,36 @@ class ReportController extends Controller
                                 where mar_shop_payments.payment_date = '$currentDate'
 
                         "));
+            $advertisementTransactionQuery =  DB::connection("pgsql_advertisements")->select(DB::raw("
+                            SELECT --id,
+                                COUNT(ad_trans.id) AS total_tran,
+                                COUNT(DISTINCT ad_trans.related_id) AS total_advertisement,
+                                COALESCE(SUM(ad_trans.amount), 0) AS total_tran_amount,
+                                COALESCE(SUM(dtls.arrear_collection), 0) AS arrear_collection,
+                                COALESCE(SUM(dtls.arrear_count), 0) AS arrear_count,
+                                COALESCE(SUM(dtls.current_count), 0) AS current_count,
+                                COALESCE(SUM(dtls.current_collection), 0) AS current_collection
+                            FROM 
+                                ad_trans
+                            JOIN 
+                                (
+                                SELECT 
+                                    ad_trans.id as tran_id,
+                                    COUNT(DISTINCT ad_trans.related_id) AS total_advertisement,
+                                    COALESCE(SUM(CASE WHEN ad_trans.tran_date <= '$previousUptoDate' THEN ad_trans.amount ELSE 0 END),0) AS arrear_collection,
+                                    COUNT(DISTINCT CASE WHEN ad_trans.tran_date < '$previousUptoDate' THEN ad_trans.related_id ELSE NULL END) AS arrear_count,
+                                    COALESCE(SUM(CASE WHEN ad_trans.tran_date >= '$previousUptoDate' THEN ad_trans.amount ELSE 0 END),0) AS current_collection,
+                                    COUNT(DISTINCT CASE WHEN ad_trans.tran_date >= '$previousUptoDate' THEN ad_trans.related_id ELSE NULL END) AS current_count,
+                                    COALESCE(SUM(ad_trans.amount),0) AS paid_total_amount 
+                                FROM 
+                                    ad_trans
+                                WHERE ad_trans.status = '1' 
+                                GROUP BY 
+                                    ad_trans.id
+                                ) AS dtls ON dtls.tran_id = ad_trans.id
+                                where ad_trans.tran_date = '$currentDate'
+
+                        "));
 
 
 
@@ -4051,6 +4100,7 @@ class ReportController extends Controller
                 "tradeDetails" => $tradeTransactionQuery,
                 "propTax" => $propTax,
                 "marketDeatails" => $marketTransactionQuery,
+                "advertisementDetails" => $advertisementTransactionQuery,
                 "date" => $currentDate
             ];
 
@@ -4059,6 +4109,27 @@ class ReportController extends Controller
             return responseMsgs(false, $e->getMessage(), "", "", 01, responseTime(), $request->getMethod(), $request->deviceId);
         }
     }
+     /**
+     * | for collecting finantial year's starting date and end date
+     * | common functon
+     * | @param fyear
+        | Serial No : 04.01
+        | Working
+     */
+    public function getFyearDate($fyear)
+    {
+        list($fromYear, $toYear) = explode("-", $fyear);
+        if ($toYear - $fromYear != 1) {
+            throw new Exception("Enter Valide Financial Year");
+        }
+        $fromDate = $fromYear . "-04-01";
+        $uptoDate = $toYear . "-03-31";
+        return [
+            "fromDate" => $fromDate,
+            "uptoDate" => $uptoDate
+        ];
+    }
+
 
 
     /**
@@ -4075,6 +4146,23 @@ class ReportController extends Controller
             $currentfyear = getFY();
             $fromDate = explode("-", $currentfyear)[0] . "-04-01";
             $uptoDate = explode("-", $currentfyear)[1] . "-03-31";
+            $now                        = Carbon::now();
+            $currentDate                = $now->format('Y-m-d');
+            $currentYear                = collect(explode('-', $request->fiYear))->first() ?? $now->year;
+            $currentFyear               = $request->fiYear ?? getFinancialYear($currentDate);
+            $startOfCurrentYear         = Carbon::createFromDate($currentYear, 4, 1);           // Start date of current financial year
+            $startOfPreviousYear        = $startOfCurrentYear->copy()->subYear();               // Start date of previous financial year
+            $previousFinancialYear      = getFinancialYear($startOfPreviousYear);
+
+            #get financial  year 
+            $refDate = $this->getFyearDate($currentFyear);
+            $fromDates = $refDate['fromDate'];
+            $uptoDates = $refDate['uptoDate'];
+
+            #common function 
+            $refDate = $this->getFyearDate($previousFinancialYear);
+            $previousFromDate = $refDate['fromDate'];
+            $previousUptoDate = $refDate['uptoDate'];
 
             $propTransactionQuery = DB::select(DB::raw("
                             SELECT  
@@ -4288,6 +4376,37 @@ class ReportController extends Controller
                                
 
                         "));
+                        $advertisementTransactionQuery =  DB::connection("pgsql_advertisements")->select(DB::raw("
+                            SELECT --id,
+                                COUNT(ad_trans.id) AS total_tran,
+                                COUNT(DISTINCT ad_trans.related_id) AS total_advertisement,
+                                COALESCE(SUM(ad_trans.amount), 0) AS total_tran_amount,
+                                COALESCE(SUM(dtls.arrear_collection), 0) AS arrear_collection,
+                                COALESCE(SUM(dtls.arrear_count), 0) AS arrear_count,
+                                COALESCE(SUM(dtls.current_count), 0) AS current_count,
+                                COALESCE(SUM(dtls.current_collection), 0) AS current_collection
+                            FROM 
+                                ad_trans
+                            JOIN 
+                                (
+                                SELECT 
+                                    ad_trans.id as tran_id,
+                                    COUNT(DISTINCT ad_trans.related_id) AS total_advertisement,
+                                    COALESCE(SUM(CASE WHEN ad_trans.tran_date <= '$previousUptoDate' THEN ad_trans.amount ELSE 0 END),0) AS arrear_collection,
+                                    COUNT(DISTINCT CASE WHEN ad_trans.tran_date < '$previousUptoDate' THEN ad_trans.related_id ELSE NULL END) AS arrear_count,
+                                    COALESCE(SUM(CASE WHEN ad_trans.tran_date >= '$previousUptoDate' THEN ad_trans.amount ELSE 0 END),0) AS current_collection,
+                                    COUNT(DISTINCT CASE WHEN ad_trans.tran_date >= '$previousUptoDate' THEN ad_trans.related_id ELSE NULL END) AS current_count,
+                                    COALESCE(SUM(ad_trans.amount),0) AS paid_total_amount 
+                                FROM 
+                                    ad_trans
+                                WHERE ad_trans.status = '1' 
+                                GROUP BY 
+                                    ad_trans.id
+                                ) AS dtls ON dtls.tran_id = ad_trans.id
+                                where ad_trans.tran_date = '$currentDate'
+
+                        "));
+
 
 
 
@@ -4299,6 +4418,7 @@ class ReportController extends Controller
                 "tradeDetails" => $tradeTransactionQuery,
                 "propTax" => $propTax,
                 "marketDeatails" => $marketTransactionQuery,
+                "advertisementDetails" => $advertisementTransactionQuery,
                 "date" => $currentDate
             ];
 
