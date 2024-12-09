@@ -628,8 +628,8 @@ class SafDocController extends Controller
             if ($safDtls->doc_verify_status && ($senderRoleId != $wfLevel['DA'])) {
                 return $this->seconderyDocverify($req);
             }
-            if ($senderRoleId != $wfLevel['DA'])                                // Authorization for Dealing Assistant Only
-                throw new Exception("You are not Authorized");
+            // if ($senderRoleId != $wfLevel['DA'])                                // Authorization for Dealing Assistant Only
+            //     throw new Exception("You are not Authorized");
 
             if (!$safDtls || collect($safDtls)->isEmpty())
                 throw new Exception("Saf Details Not Found");
