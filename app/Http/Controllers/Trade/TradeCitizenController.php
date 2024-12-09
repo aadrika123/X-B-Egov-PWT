@@ -896,7 +896,7 @@ class TradeCitizenController extends Controller
             $receiverRole = array_values(objToArray($allRolse->where("id", $request->receiverRoleId)))[0] ?? [];
             $sms = "";
             $this->begin();
-            if ($refLecenceData->pending_status == 1) {
+            if ($refLecenceData->pending_status == 1 || $refLecenceData->pending_status == 0) {
                 $refLecenceData->current_role = $refWorkflows['initiator']['forward_role_id'];
                 $refLecenceData->document_upload_status = 1;
                 $refLecenceData->pending_status  = 1;
