@@ -802,7 +802,7 @@ class ActiveSafControllerV2 extends Controller
 
         try {
             $safDetails = new PropSafGeotagUpload();
-            $details = $safDetails->getDetails($req)->first();
+            $details = $safDetails->getDetails($req)->get();
             return responseMsgs(true, "Details", remove_null($details), "011809", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
             DB::rollBack();
