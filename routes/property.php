@@ -419,6 +419,7 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('saf/get-cluster-saf-due', 'getClusterSafDues');              // 07 Saf Cluster Dues
     Route::post('saf/cluster-saf-payment', 'clusterSafPayment');              // 08 Saf Cluster Dues
     Route::post('saf/edit-active-saf', 'editActiveSaf');                      // 09 Edit Active Saf
+    Route::post('saf/get-lat-lan-by-saf-id', 'getSafLatLanById');                      // 09 Edit Active Saf
   });
 
   /**

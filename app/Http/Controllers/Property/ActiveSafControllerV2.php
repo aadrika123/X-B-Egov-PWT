@@ -18,6 +18,7 @@ use App\Models\Property\PropDemand;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropSaf;
+use App\Models\Property\PropSafGeotagUpload;
 use App\Models\Property\PropSafMemoDtl;
 use App\Models\Property\PropSafsDemand;
 use App\Models\Property\PropSafTax;
@@ -786,6 +787,24 @@ class ActiveSafControllerV2 extends Controller
             return responseMsgs(true, "Application Edited Successfully", [], "011809", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         } catch (Exception $e) {
 
+            DB::rollBack();
+            return responseMsgs(false, $e->getMessage(), [], "011809", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+        }
+    }
+    /**
+     * | Edit Active Saf
+     */
+    public function getSafLatLanById(Request $req)
+    {
+        $req->validate([
+            "safId" => 'required|integer'
+        ]);
+
+        try {
+            $safDetails = new PropSafGeotagUpload();
+            $details = $safDetails->getDetails($req)->first();
+            return responseMsgs(true, "Details", remove_null($details), "011809", "1.0", responseTime(), "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
             DB::rollBack();
             return responseMsgs(false, $e->getMessage(), [], "011809", "1.0", responseTime(), "POST", $req->deviceId ?? "");
         }

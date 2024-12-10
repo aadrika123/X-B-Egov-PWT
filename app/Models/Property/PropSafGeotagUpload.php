@@ -41,6 +41,14 @@ class PropSafGeotagUpload extends PropParamModel #Model
             ->where('status', 1)
             ->first();
     }
+    /**
+     * | Get Geo Tag Done By Saf id and Direction Type
+     */
+    public function getDetails($req)
+    {
+        return PropSafGeotagUpload::where('saf_id', $req->safId)
+            ->where('status', 1);
+    }
 
     /**
      * | Store New Images
