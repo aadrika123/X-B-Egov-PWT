@@ -485,6 +485,7 @@ class PropProperty extends  PropParamModel #Model
             ->orWhere('new_holding_no', $req->holdingNo)
             ->orWhere('pt_no', $req->holdingNo)
             ->where('ulb_id', $req->ulbId)
+            ->where('status',1)
             ->first();
     }
 
