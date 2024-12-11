@@ -961,9 +961,9 @@ class Trade implements ITrade
             $chargeData = $this->AkolaCltCharge($args);
 
             // $chargeData = $this->cltCharge($args);
-            if ($chargeData['response'] == false || $chargeData['total_charge'] != $request->totalCharge) {      // 
-                throw new Exception("Payble Amount Missmatch!!!");
-            }
+            // if ($chargeData['response'] == false || $chargeData['total_charge'] != $request->totalCharge) {      // 
+            //     throw new Exception("Payble Amount Missmatch!!!");
+            // }
 
             $transactionType = $this->_TRADE_CONSTAINT['APPLICATION-TYPE-BY-ID'][$refLecenceData->application_type_id];
             $rate_id = $chargeData["rate_id"];
