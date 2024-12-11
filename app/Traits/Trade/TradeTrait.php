@@ -284,8 +284,10 @@ trait TradeTrait
             $OwnerImage = ((($filteredDocs['documents']->where("docName","Owner Image")->first())["uploadedDoc"])??[]);
             $ShopImage = ((($filteredDocs['documents']->where("docName","PHOTO WITH A DEPICTION OF THE SHOP")->first())["uploadedDoc"])??[]);
             $OwnerImage = $OwnerImage ? $OwnerImage : $ShopImage ;
+            $filteredDocs['ownerDetails']['reqDocCount'] = $filteredDocs['documents']->count();
             $filteredDocs['ownerDetails']["uploadedDoc"]= $OwnerImage["docPath"]??null;
             $filteredDocs['ownerDetails']["verifyStatus"]= $OwnerImage["verifyStatus"]??null;
+            $filteredDocs['ownerDetails']['uploadedDocCount'] = $filteredDocs['documents']->whereNotNull('uploadedDoc')->count();
 
         } 
         else

@@ -342,7 +342,11 @@ class TradeApplication extends Controller
         if ($response->original["status"]) {
             $ownerDoc = $response->original["data"]["ownerDocs"];
             $Wdocuments = collect();
+
+            // $ownerDocCount = $ownerDoc->count();
+            // $response->original["data"]["ownerDocCount"] = $ownerDocCount;
             $ownerDoc->map(function ($val) use ($Wdocuments) {
+                
                 $ownerId = $val["ownerDetails"]["ownerId"] ?? "";
                 $val["documents"]->map(function ($val1) use ($Wdocuments, $ownerId) {
                     $val1["ownerId"] = $ownerId;
