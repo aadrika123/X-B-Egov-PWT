@@ -5059,7 +5059,7 @@ class Report implements IReport
 
         return collect($demands)->map(function ($val, $key) use ($advanceAmt, $tax) {
             $percentOfTax = $val / (($tax > 0 ? $tax : 1));
-            return ($key == 'net_advance' ? 0 : round($advanceAmt * $percentOfTax, 2));
+            return ($key == 'net_advance' ? 0 : round($advanceAmt * $percentOfTax));
         });
     }
 
