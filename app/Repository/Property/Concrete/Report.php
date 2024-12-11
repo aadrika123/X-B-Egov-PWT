@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Mockery\CountValidator\Exact;
 use Illuminate\Support\Str;
+use Illuminate\Support\Collection;
 
 class Report implements IReport
 {
@@ -4490,7 +4491,8 @@ class Report implements IReport
     public function paymentModedealyCollectionRptV1(Request $request)
     {
         try {
-            $user = Auth()->user();
+            // $user = Auth()->user();
+            $user = 203;
             $paymentMode = "";
             $fromDate = $toDate = Carbon::now()->format("Y-m-d");
             $wardId = $zoneId = $userId = null;
@@ -4943,6 +4945,10 @@ class Report implements IReport
             $report->open_ploat_tax  = round($report->current_open_ploat_tax)      +  round($report->arear_open_ploat_tax);
             $report->net_advance     = round($report->advance_amount)      -  round($report->adjusted_amount);
             $report->process_fee     = round($report->arear_process_fee)  + round($report->current_process_fee);
+            // Create an array of relevant fields
+
+
+
 
             $data["report"] = collect($report)->map(function ($val, $key) {
                 if ($key == "payment_mode") {
@@ -4988,8 +4994,34 @@ class Report implements IReport
             $data["total"] = [
                 "arear" => round($arear),
                 "current" => round($current),
+
+            ];
+            $selectedFields = [
+                'general_tax'       => $report->general_tax,
+                'exempted_general_tax' => $report->exempted_general_tax,
+                'road_tax'          => $report->road_tax,
+                'firefighting_tax'  => $report->firefighting_tax,
+                'education_tax'     => $report->education_tax,
+                'water_tax'         => $report->water_tax,
+                'cleanliness_tax'   => $report->cleanliness_tax,
+                'sewarage_tax'      => $report->sewarage_tax,
+                'tree_tax'          => $report->tree_tax,
+                'professional_tax'  => $report->professional_tax,
+                'tax1'              => $report->tax1,
+                'tax2'              => $report->tax2,
+                'tax3'              => $report->tax3,
+                'sp_education_tax'  => $report->sp_education_tax,
+                'water_benefit'     => $report->water_benefit,
+                'water_bill'        => $report->water_bill,
+                'sp_water_cess'     => $report->sp_water_cess,
+                'drain_cess'        => $report->drain_cess,
+                'light_cess'        => $report->light_cess,
+                'major_building'    => $report->major_building,
+                'open_ploat_tax'    => $report->open_ploat_tax,
+                'net_advance'       => $report->net_advance,
                 "total" => round(($arear + $current)),
             ];
+            $data['advanceAdjustDemand'] = $this->advanceAdjustment($selectedFields);
             $data["headers"] = [
                 "fromDate" => Carbon::parse($fromDate)->format('d-m-Y'),
                 "uptoDate" => Carbon::parse($toDate)->format('d-m-Y'),
@@ -5006,6 +5038,25 @@ class Report implements IReport
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), []);
         }
+    }
+    public function advanceAdjustment($demands)
+    {
+        // Ensure $demands is converted to an array if it's an object
+        $demands = (array) $demands;
+
+        $advanceAmt = $demands['net_advance'] ?? 0;
+        $advanceAmt = ($advanceAmt < 0 ? -1 : 1) * $advanceAmt;
+
+        if (($demands['net_advance'] ?? 0) >= 0) {
+            $advanceAmt = 0;
+        }
+
+        $tax = $demands['total'] ?? 0;
+
+        return collect($demands)->map(function ($val, $key) use ($advanceAmt, $tax) {
+            $percentOfTax = $tax > 0 ? $val / $tax : 0;
+            return $key === 'net_advance' ? 0 : round($advanceAmt * $percentOfTax, 2);
+        });
     }
 
     public function individualDedealyCollectionRptV1(Request $request)
