@@ -4994,6 +4994,7 @@ class Report implements IReport
             $data["total"] = [
                 "arear" => round($arear),
                 "current" => round($current),
+                "total" => round(($arear + $current)),
 
             ];
             $selectedFields = [
@@ -5019,8 +5020,11 @@ class Report implements IReport
                 'major_building'    => $report->major_building,
                 'open_ploat_tax'    => $report->open_ploat_tax,
                 'net_advance'       => $report->net_advance,
-                "total" => round(($arear + $current)),
             ];
+            // Calculate the total sum of all fields except 'net_advance'
+            $selectedFields['total'] = round(array_sum(array_filter($selectedFields, function ($key) {
+                return $key !== 'net_advance';
+            }, ARRAY_FILTER_USE_KEY)), 2);
             $data['advanceAdjustDemand'] = $this->advanceAdjustment($selectedFields);
             $data["headers"] = [
                 "fromDate" => Carbon::parse($fromDate)->format('d-m-Y'),
@@ -5054,8 +5058,8 @@ class Report implements IReport
         $tax = $demands['total'] ?? 0;
 
         return collect($demands)->map(function ($val, $key) use ($advanceAmt, $tax) {
-            $percentOfTax = $tax > 0 ? $val / $tax : 0;
-            return $key === 'net_advance' ? 0 : round($advanceAmt * $percentOfTax, 2);
+            $percentOfTax = $val / (($tax > 0 ? $tax : 1));
+            return ($key == 'net_advance' ? 0 : round($advanceAmt * $percentOfTax, 2));
         });
     }
 
