@@ -9,6 +9,7 @@ use App\Models\Property\Logs\PropDemandsTransaction;
 use App\Models\Property\Logs\PropSmsLog;
 use App\Models\Property\PropAdjustment;
 use App\Models\Property\PropAdvance;
+use App\Models\Property\PropAdvancePaidBifurcation;
 use App\Models\Property\PropChequeDtl;
 use App\Models\Property\PropDemand;
 use App\Models\Property\PropOwner;
@@ -63,6 +64,7 @@ class PostPropPaymentV2
     private $_PropAdvance;
     private $_PropAdjustment;
     private $_PropPendingArrear;
+    private $_PropAdvanceBifurcation;
     /**
      * | Required @param Requests(propertyId as id)
      */
@@ -72,6 +74,7 @@ class PostPropPaymentV2
         $this->_PropAdvance = new PropAdvance();
         $this->_PropAdjustment = new PropAdjustment();
         $this->_PropPendingArrear = new PropPendingArrear();
+        $this->_PropAdvanceBifurcation = new PropAdvancePaidBifurcation();
         $this->_REQ = $req;
         $this->readGenParams();
     }
@@ -740,36 +743,36 @@ class PostPropPaymentV2
         $specialRebaApply = $this->_REQ->paymentType == "isFullPayment" || ($this->_REQ->paymentType != "isFullPayment" && round($this->_REQ->paidAmount) >= round($demandData['payableAmt'])) ? true : false;
 
         //if ($this->_REQ["paymentMode"] != "ONLINE") {
-            $adjustAmt = round($this->_REQ->paidAmount - $addvanceAmt);
-            $adjustAmt = $adjustAmt > 0 ? $addvanceAmt : $this->_REQ->paidAmount;
-            switch ($this->_REQ->paymentType) {
-                case "isPartPayment":
-                    $payableAmount = $payableAmount + $addvanceAmt;
-                    $this->_REQ->merge(
-                        [
-                            'amount' => $this->_REQ->paidAmount
-                        ]
-                    );
-                    break;
-                case "isFullPayment":
-                    $payableAmount;
-                    $this->_REQ->merge(
-                        [
-                            'paidAmount' => ($this->_REQ->paidAmount - $addvanceAmt) > 0 ? ($this->_REQ->paidAmount - $addvanceAmt) : 0,
-                            'amount' => ($this->_REQ->paidAmount - $addvanceAmt) > 0 ? ($this->_REQ->paidAmount - $addvanceAmt) : 0
-                        ]
-                    );
-                    break;
-                case "isArrearPayment":
-                    $payableAmount;
-                    $this->_REQ->merge(
-                        [
-                            'paidAmount' => ($this->_REQ->paidAmount - $addvanceAmt) > 0 ? ($this->_REQ->paidAmount - $addvanceAmt) : 0,
-                            'amount' => ($this->_REQ->paidAmount - $addvanceAmt) > 0 ? ($this->_REQ->paidAmount - $addvanceAmt) : 0
-                        ]
-                    );
-                    break;
-            }
+        $adjustAmt = round($this->_REQ->paidAmount - $addvanceAmt);
+        $adjustAmt = $adjustAmt > 0 ? $addvanceAmt : $this->_REQ->paidAmount;
+        switch ($this->_REQ->paymentType) {
+            case "isPartPayment":
+                $payableAmount = $payableAmount + $addvanceAmt;
+                $this->_REQ->merge(
+                    [
+                        'amount' => $this->_REQ->paidAmount
+                    ]
+                );
+                break;
+            case "isFullPayment":
+                $payableAmount;
+                $this->_REQ->merge(
+                    [
+                        'paidAmount' => ($this->_REQ->paidAmount - $addvanceAmt) > 0 ? ($this->_REQ->paidAmount - $addvanceAmt) : 0,
+                        'amount' => ($this->_REQ->paidAmount - $addvanceAmt) > 0 ? ($this->_REQ->paidAmount - $addvanceAmt) : 0
+                    ]
+                );
+                break;
+            case "isArrearPayment":
+                $payableAmount;
+                $this->_REQ->merge(
+                    [
+                        'paidAmount' => ($this->_REQ->paidAmount - $addvanceAmt) > 0 ? ($this->_REQ->paidAmount - $addvanceAmt) : 0,
+                        'amount' => ($this->_REQ->paidAmount - $addvanceAmt) > 0 ? ($this->_REQ->paidAmount - $addvanceAmt) : 0
+                    ]
+                );
+                break;
+        }
         //}
 
         $demands = collect($this->_propCalculation->original['data']["demandList"])->sortBy(["fyear", "id"]);
@@ -782,7 +785,7 @@ class PostPropPaymentV2
             if ($payableAmount <= 0 && $totalDemandAmt != 0) {
                 continue;
             }
-            $paymentDtl = ($this->demandAdjust($payableAmount, $val["id"]));
+            $paymentDtl = ($this->demandAdjust($payableAmount, $val["id"], $addvanceAmt, $this->_REQ['id']));
             $payableAmount = $paymentDtl["balence"];
             $paidArrearPenalty  += $paymentDtl["payableAmountOfPenalty"];
             $paidPenalty += $paymentDtl["payableAmountOfPenalty"];
@@ -1069,7 +1072,7 @@ class PostPropPaymentV2
     /**
      * | demand Adjust
      */
-    public function demandAdjust($currentPayableAmount, $demanId)
+    public function demandAdjust($currentPayableAmount, $demanId, $addvanceAmt, $PropId)
     {
         $currentTax = collect($this->_propCalculation->original['data']["demandList"])->where("id", $demanId);
 
@@ -1168,6 +1171,35 @@ class PostPropPaymentV2
             'open_ploat_tax' => roundFigure(($payableAmountOfTax * $openPloatTaxPerc) / 100),
             'total_tax' => roundFigure(($payableAmountOfTax * $totalPerc) / 100),
         ];
+        if ($addvanceAmt > 0) {
+            $advanceBifurcation = [
+                'prop_id'     => $PropId,
+                'general_tax' => roundFigure(($addvanceAmt * $generalTaxPerc) / 100),
+                'exempted_general_tax' => roundFigure(($addvanceAmt * $exemptedGeneralTaxPerc) / 100),
+                'road_tax' => roundFigure(($addvanceAmt * $roadTaxPerc) / 100),
+                'firefighting_tax' => roundFigure(($addvanceAmt * $firefightingTaxPerc) / 100),
+                'education_tax' => roundFigure(($addvanceAmt * $educationTaxPerc) / 100),
+                'water_tax' => roundFigure(($addvanceAmt * $waterTaxPerc) / 100),
+                'cleanliness_tax' => roundFigure(($addvanceAmt * $cleanlinessTaxPerc) / 100),
+                'sewarage_tax' => roundFigure(($addvanceAmt * $sewarageTaxPerc) / 100),
+                'tree_tax' => roundFigure(($addvanceAmt * $treeTaxPerc) / 100),
+                'professional_tax' => roundFigure(($addvanceAmt * $professionalTaxPerc) / 100),
+                'tax1' => roundFigure(($addvanceAmt * $tax1Perc) / 100),
+                'tax2' => roundFigure(($addvanceAmt * $tax2Perc) / 100),
+                'tax3' => roundFigure(($addvanceAmt * $tax3Perc) / 100),
+                'state_education_tax' => roundFigure(($addvanceAmt * $stateEducationTaxPerc) / 100),
+                'water_benefit' => roundFigure(($addvanceAmt * $waterBenefitPerc) / 100),
+                'water_bill' => roundFigure(($addvanceAmt * $waterBillPerc) / 100),
+                'sp_water_cess' => roundFigure(($addvanceAmt * $spWaterCessPerc) / 100),
+                'drain_cess' => roundFigure(($addvanceAmt * $drainCessPerc) / 100),
+                'light_cess' => roundFigure(($addvanceAmt * $lightCessPerc) / 100),
+                'major_building' => roundFigure(($addvanceAmt * $majorBuildingPerc) / 100),
+                'open_ploat_tax' => roundFigure(($addvanceAmt * $openPloatTaxPerc) / 100),
+                'total_tax' => roundFigure(($addvanceAmt * $totalPerc) / 100),
+                'tran_date' => Carbon::now()->format('Y-m-d')
+            ];
+            $this->_PropAdvanceBifurcation->store($advanceBifurcation);
+        }
         $data["paid_total_tax"] =  $paidDemandBifurcation["total_tax"] ?? 0;
         $data["paidCurrentTaxesBifurcation"] = $this->readPaidTaxes($paidDemandBifurcation);
         $data["paidTotalExemptedGeneralTax"] = $data["paidCurrentTaxesBifurcation"]["paidExemptedGeneralTax"] ?? 0;

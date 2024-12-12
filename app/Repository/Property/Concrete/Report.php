@@ -4,6 +4,7 @@ namespace App\Repository\Property\Concrete;
 
 use App\EloquentModels\Common\ModelWard;
 use App\Models\Property\PropActiveSaf;
+use App\Models\Property\PropAdvancePaidBifurcation;
 use App\Models\Property\PropProperty;
 use App\Models\Property\PropTransaction;
 use App\Models\Property\ZoneMaster;
@@ -38,7 +39,7 @@ class Report implements IReport
     protected $_DB;
     protected $_DB_READ;
     protected $_DB_NAME;
-
+    private $_PropAdvanceBifurcation;
     public function __construct()
     {
         $this->_DB_NAME = (new PropProperty())->getConnectionName();
@@ -47,6 +48,7 @@ class Report implements IReport
         $this->_common = new CommonFunction();
         $this->_modelWard = new ModelWard();
         $this->_Saf = new SafRepository();
+        $this->_PropAdvanceBifurcation = new PropAdvancePaidBifurcation();
     }
     /**
      * | Property Collection
@@ -5025,7 +5027,7 @@ class Report implements IReport
             $selectedFields['total'] = round(array_sum(array_filter($selectedFields, function ($key) {
                 return $key !== 'net_advance';
             }, ARRAY_FILTER_USE_KEY)), 2);
-            $data['advanceAdjustDemand'] = $this->advanceAdjustment($selectedFields);
+            $data['advanceAdjustDemand'] = $this->_PropAdvanceBifurcation->advanceAdjustment($fromDate, $toDate);
             $data["headers"] = [
                 "fromDate" => Carbon::parse($fromDate)->format('d-m-Y'),
                 "uptoDate" => Carbon::parse($toDate)->format('d-m-Y'),
@@ -5043,26 +5045,6 @@ class Report implements IReport
             return responseMsgs(false, $e->getMessage(), []);
         }
     }
-    public function advanceAdjustment($demands)
-    {
-        // Ensure $demands is converted to an array if it's an object
-        $demands = (array) $demands;
-
-        $advanceAmt = $demands['net_advance'] ?? 0;
-        $advanceAmt = ($advanceAmt < 0 ? -1 : 1) * $advanceAmt;
-
-        if (($demands['net_advance'] ?? 0) >= 0) {
-            $advanceAmt = 0;
-        }
-
-        $tax = $demands['total'] ?? 0;
-
-        return collect($demands)->map(function ($val, $key) use ($advanceAmt, $tax) {
-            $percentOfTax = $val / (($tax > 0 ? $tax : 1));
-            return ($key == 'net_advance' ? 0 : round($advanceAmt * $percentOfTax));
-        });
-    }
-
     public function individualDedealyCollectionRptV1(Request $request)
     {
         try {
