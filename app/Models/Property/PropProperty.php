@@ -482,7 +482,7 @@ class PropProperty extends  PropParamModel #Model
     {
         return PropProperty::select('*')
             ->where('holding_no', $req->holdingNo)
-            ->Where('new_holding_no', $req->holdingNo)
+            // ->Where('new_holding_no', $req->holdingNo)
             // ->Where('pt_no', $req->holdingNo)
             ->where('ulb_id', $req->ulbId)
             ->where('status', 1)
