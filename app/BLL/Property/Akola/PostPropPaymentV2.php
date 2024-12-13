@@ -1280,11 +1280,13 @@ class PostPropPaymentV2
         $payableAmount = $this->_REQ->paidAmount - $previousInterest;
         $totalaAreaDemand =  $this->_propCalculation->original['data']["arrearPayableAmt"];
         $paidPenalty = $previousInterest;
+        $addvanceAmt = $this->_propCalculation->original['data']["remainAdvance"] ?? 0;
+        $this->_REQ['propId'];
         foreach ($demands as $key => $val) {
             if ($payableAmount <= 0 && $totalDemandAmt != 0) {
                 continue;
             }
-            $paymentDtl = ($this->demandAdjust($payableAmount, $val["id"]));
+            $paymentDtl = ($this->demandAdjust($payableAmount, $val["id"], $addvanceAmt, $this->_REQ['propId']));
             $payableAmount = $paymentDtl["balence"];
             $paidArrearPenalty  += $paymentDtl["payableAmountOfPenalty"];
             $paidPenalty += $paymentDtl["payableAmountOfPenalty"];
