@@ -601,9 +601,9 @@ class WaterMonthelyCall
             // {
             //     throw new Exception("the demand is generated Of this Quater ");
             // }
-            // if ($this->_meterStatus != "Meter" && $currentDateYear == $lastDemandGenerationYear && $lastDemandGenerationQuater == $currentDateQuater) {
-            //     throw new Exception("The demand is generated of this Quater ");
-            // }
+            if ($this->_meterStatus != "Meter" && $currentDateYear == $lastDemandGenerationYear && $lastDemandGenerationQuater == $currentDateQuater) {
+                throw new Exception("The demand is generated of this Quater ");
+            }
             if ($this->_meterStatus == "Meter" && $totalDayDiff < 45) {
                 throw new Exception("Total difference between previous demand and current demand should be minimum 45 days.");
             }
