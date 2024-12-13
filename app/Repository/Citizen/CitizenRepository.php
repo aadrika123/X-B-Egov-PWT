@@ -206,9 +206,9 @@ class CitizenRepository implements iCitizenRepository
         $applications['concessions'] = $concessionApplications;
 
         $objectionApplications = DB::table('prop_property_update_requests')
-            ->select('prop_property_update_requests.*','prop_owner_update_requests.owner_id','prop_owner_update_requests.owner_name','prop_owner_update_requests.guardian_name','prop_owner_update_requests.mobile_no','prop_owner_update_requests.email','prop_owner_update_requests.dob','prop_floors_update_requests.floor_id','prop_floors_update_requests.builtup_area','prop_floors_update_requests.carpet_area','prop_floors_update_requests.date_from','prop_floors_update_requests.date_upto')
-            ->leftjoin('prop_owner_update_requests','prop_owner_update_requests.request_id','=','prop_property_update_requests.id')
-            ->leftjoin('prop_floors_update_requests','prop_floors_update_requests.request_id','=','prop_property_update_requests.id')
+            ->select('prop_property_update_requests.*', 'prop_owner_update_requests.owner_id', 'prop_owner_update_requests.owner_name', 'prop_owner_update_requests.guardian_name', 'prop_owner_update_requests.mobile_no', 'prop_owner_update_requests.email', 'prop_owner_update_requests.dob', 'prop_floors_update_requests.floor_id', 'prop_floors_update_requests.builtup_area', 'prop_floors_update_requests.carpet_area', 'prop_floors_update_requests.date_from', 'prop_floors_update_requests.date_upto')
+            ->leftjoin('prop_owner_update_requests', 'prop_owner_update_requests.request_id', '=', 'prop_property_update_requests.id')
+            ->leftjoin('prop_floors_update_requests', 'prop_floors_update_requests.request_id', '=', 'prop_property_update_requests.id')
             ->where('prop_property_update_requests.citizen_id', $userId)
             //->where('prop_property_update_requests.pending_status',1)
             ->get();
@@ -459,6 +459,7 @@ class CitizenRepository implements iCitizenRepository
         $applications = array();
         $properties = PropProperty::select('holding_no', 'applicant_name', 'application_date')
             ->where('citizen_id', $userId)
+            ->where('status', 1)
             ->get();
 
         $applications['applications'] = $properties;
