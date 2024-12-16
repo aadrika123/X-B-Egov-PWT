@@ -18,6 +18,7 @@ use App\Models\Water\WaterApplication;
 use App\Models\WorkflowTrack;
 use App\Traits\Auth;
 use App\Traits\Workflow\Workflow;
+use Carbon\Carbon;
 use Exception;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -389,10 +390,24 @@ class CitizenRepository implements iCitizenRepository
                     'prop_properties.balance',
                     'prop_transactions.amount',
                     DB::raw("TO_CHAR(prop_transactions.tran_date, 'DD-MM-YYYY') as tran_date"),
+                    DB::raw("sum(prop_demands.balance)as due_demand"),
 
                 )
                 ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
                 ->leftjoin('prop_transactions', 'prop_transactions.property_id', 'prop_properties.id')
+                ->leftjoin('prop_demands', 'prop_demands.property_id', 'prop_properties.id')
+                ->where('prop_demands.paid_status',0)
+                ->groupBy(
+                    'prop_properties.id',
+                    'prop_properties.holding_no',
+                    'prop_properties.new_holding_no',
+                    'application_date',
+                    'prop_owners.owner_name',
+                    'prop_properties.balance',
+                    'prop_transactions.amount',
+                    'prop_transactions.id',
+                    'tran_date'
+                )
                 ->orderBydesc('prop_transactions.id')
                 ->first();
 
@@ -402,7 +417,7 @@ class CitizenRepository implements iCitizenRepository
                 'new_holding_no' => $propdtl->new_holding_no,
                 'apply_date' => $propdtl->application_date,
                 'owner_name' => $propdtl->owner_name,
-                'leftamount' => $propdtl->balance,
+                'leftamount' => $propdtl->due_demand,
                 'lastpaidamount' => $propdtl->amount,
                 'lastpaiddate' => $propdtl->tran_date,
             ];
@@ -411,6 +426,8 @@ class CitizenRepository implements iCitizenRepository
         }
         return collect($data);
     }
+
+
 
     /**
      * | Get care taker trade
