@@ -390,27 +390,15 @@ class CitizenRepository implements iCitizenRepository
                     'prop_properties.balance',
                     'prop_transactions.amount',
                     DB::raw("TO_CHAR(prop_transactions.tran_date, 'DD-MM-YYYY') as tran_date"),
-                    DB::raw("sum(prop_demands.balance)as due_demand"),
-
+                    DB::raw("(SELECT SUM(balance) 
+                          FROM prop_demands 
+                          WHERE prop_demands.property_id = prop_properties.id 
+                            AND prop_demands.paid_status = 0) as due_demand")
                 )
-                ->join('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
-                ->leftjoin('prop_transactions', 'prop_transactions.property_id', 'prop_properties.id')
-                ->leftjoin('prop_demands', 'prop_demands.property_id', 'prop_properties.id')
-                ->where('prop_demands.paid_status',0)
-                ->groupBy(
-                    'prop_properties.id',
-                    'prop_properties.holding_no',
-                    'prop_properties.new_holding_no',
-                    'application_date',
-                    'prop_owners.owner_name',
-                    'prop_properties.balance',
-                    'prop_transactions.amount',
-                    'prop_transactions.id',
-                    'tran_date'
-                )
-                ->orderBydesc('prop_transactions.id')
+                ->leftJoin('prop_owners', 'prop_owners.property_id', 'prop_properties.id')
+                ->leftJoin('prop_transactions', 'prop_transactions.property_id', 'prop_properties.id')
+                ->orderByDesc('prop_transactions.id')
                 ->first();
-
             $propDtls = [
                 'prop_id' => $propdtl->id,
                 'holding_no' => $propdtl->holding_no,
