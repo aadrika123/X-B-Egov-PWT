@@ -319,7 +319,7 @@ class CitizenRepository implements iCitizenRepository
                                 p.new_holding_no,
                                 p.application_date AS apply_date,
                                 o.owner_name,
-                                p.balance AS leftAmount,
+                                -- p.balance AS leftAmount,
                               
                                 t.tran_date AS lastPaidDate,
                                 p.status    AS active_status,
@@ -331,6 +331,7 @@ class CitizenRepository implements iCitizenRepository
 
                 COALESCE(t.demand_amt, 0) AS totalTax,
                 COALESCE(t.amount, 0) AS lastPaidAmount,
+                COALESCE(pd.due_balance,0) AS leftAmount,
                 (COALESCE(t.demand_amt, 0) - COALESCE(t.amount, 0)) AS balanceCalculate
                 
     
@@ -355,8 +356,20 @@ class CitizenRepository implements iCitizenRepository
                                     FROM prop_owners 
                                     ORDER BY id ASC 
                                     ) AS o ON o.property_id=p.id AND ROW1=1
-                                    WHERE p.citizen_id=$userId   
-                                    AND   p.status = 1";
+                                    LEFT JOIN (
+                                       SELECT 
+                                           property_id,
+                                           SUM(balance) AS due_balance
+                                       FROM 
+                                           prop_demands
+                                       WHERE 
+                                           paid_status = 0
+                                       GROUP BY 
+                                           property_id
+                                            ) AS pd ON pd.property_id = p.id
+                                            WHERE 
+                                                p.citizen_id = $userId
+                                                AND p.status = 1";
             $properties = DB::select($query);
             $application['applications'] = $properties;
             $application['totalApplications'] = collect($properties)->count();
@@ -462,7 +475,11 @@ class CitizenRepository implements iCitizenRepository
     public function getProperties($userId, $careTakerProperties)
     {
         $applications = array();
-        $properties = PropProperty::select('holding_no', 'applicant_name', 'application_date')
+        $properties = PropProperty::select(
+            'holding_no',
+            'applicant_name',
+            'application_date',
+        )
             ->where('citizen_id', $userId)
             ->where('status', 1)
             ->get();
