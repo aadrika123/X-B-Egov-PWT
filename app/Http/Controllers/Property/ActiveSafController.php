@@ -1069,7 +1069,7 @@ class ActiveSafController extends Controller
             $data['previous_owners'] = $prevOwnerDtls;
             $getFloorDtls = $mActiveSafsFloors->getFloorsBySafId($data['id']);      // Model Function to Get Floor Details
             if (collect($getFloorDtls)->isEmpty())
-                $getFloorDtls = $mPropSafsFloors->getFloorsBySafId($data['id']);
+                $getFloorDtls = $mPropSafsFloors->getFloorsBySafId($data['id']);    
             $notInApplication = collect($verificationDtl)->whereNotIn("saf_floor_id", collect($getFloorDtls)->pluck("id"));
             $getFloorDtls = collect($getFloorDtls)->map(function ($val) use ($verificationDtl) {
                 $newFloors = $verificationDtl->where("saf_floor_id", $val->id)->first();
