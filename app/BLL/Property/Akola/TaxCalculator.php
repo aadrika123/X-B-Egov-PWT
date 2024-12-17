@@ -1228,7 +1228,7 @@ class TaxCalculator
                     ->get();
                 $totalArea = collect($propFloor)->sum("builtup_area");
                 if ($totalArea == 0) {
-                    $propFloor = PropActiveSafsFloor::where("saf_id", $this->_REQUEST->safId)
+                    $propFloor = PropActiveSafsFloor::where("saf_id", $this->_REQUEST->safId ?? $this->_REQUEST->safIds)
                         ->where('status', 1)
                         ->orderby('id')
                         ->get();

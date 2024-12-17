@@ -83,6 +83,7 @@ class CalculateTaxByUlb extends TaxCalculator
             "buildingPlanApprovalDate"=>$this->_safs->building_plan_approval_date,
             "buildingPlanCompletionDate"=> $this->_safs->building_plan_completion_date,
             "bifurcatedPlot" => $this->_propVerifications->area_of_plot,
+            "safIds"    => $this->_propVerifications->saf_id,
             "floor" => [],
             "owner" => []
         ];
