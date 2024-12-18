@@ -1013,10 +1013,10 @@ class WaterConsumerWfController extends Controller
 
             # validating role for DA
             $senderRoleId = $senderRoleDtls->wf_role_id;
-            $authorizedRoles = [$wfLevel['DA'], $wfLevel['JE']];
-            if (!in_array($senderRoleId, $authorizedRoles)) {                                    // Authorization for Dealing Assistant Only
-                throw new Exception("You are not Authorized");
-            }
+            // $authorizedRoles = [$wfLevel['DA'], $wfLevel['JE']];
+            // if (!in_array($senderRoleId, $authorizedRoles)) {                                    // Authorization for Dealing Assistant Only
+            //     throw new Exception("You are not Authorized");
+            // }
 
             # validating if full documet is uploaded
             $ifFullDocVerified = $this->ifFullDocVerified($applicationId);                          // (Current Object Derivative Function 0.1)

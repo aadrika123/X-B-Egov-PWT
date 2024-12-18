@@ -15,12 +15,14 @@ use App\Models\Property\PropActiveSafsOwner;
 use App\Models\Property\PropOwner;
 use App\Models\Property\PropProperty;
 use App\Models\Property\ZoneMaster;
+use App\Models\Trade\ActiveTempTradeOwner;
 use App\Models\Trade\TradeLicence;
 use App\Models\Trade\TradeDocument;
 use App\Models\Trade\ActiveTradeDocument;
 use App\Models\Trade\ActiveTradeLicence;
 use App\Models\Trade\ActiveTradeNoticeConsumerDtl;
 use App\Models\Trade\ActiveTradeOwner;
+use App\Models\Trade\ActiveTradeTempLicence;
 use App\Models\Trade\AkolaTradeParamItemType;
 use App\Models\Trade\AkolaTradeParamLicenceRate;
 use App\Models\Trade\RejectedTradeLicence;
@@ -111,6 +113,7 @@ class Trade implements ITrade
     protected $_MODEL_ActiveTradeOwner;
     protected $_MODEL_AkolaTradeParamItemType;
     protected $_MODEL_AkolaTradeParamLicenceRate;
+    protected $_WF_TEMP_MASTER_Id;
 
 
     public function __construct()
@@ -131,6 +134,7 @@ class Trade implements ITrade
         $this->_LICENCE_ID = NULL;
         $this->_SHORT_ULB_NAME = NULL;
         $this->_WF_MASTER_Id = Config::get('workflow-constants.TRADE_MASTER_ID');
+        $this->_WF_TEMP_MASTER_Id = Config::get('workflow-constants.TRADE_TEMP_MASTER_ID');
         $this->_WF_NOTICE_MASTER_Id = Config::get('workflow-constants.TRADE_NOTICE_ID');
         $this->_MODULE_ID = Config::get('module-constants.TRADE_MODULE_ID');
         $this->_TRADE_CONSTAINT = Config::get("TradeConstant");
@@ -580,6 +584,30 @@ class Trade implements ITrade
         $refActiveLicense->street_name         = $request->firmDetails['streetName'] ?? null;
         $refActiveLicense->property_type       = "Property";
         $refActiveLicense->is_tobacco      = $request->firmDetails['tocStatus'];
+    }
+    public function newLicenseTemp($refActiveLicense, $request)
+    {
+        $refActiveLicense->firm_type_id                     = $request->firmType;
+        $refActiveLicense->firm_description                 = $request->otherFirmType ?? null;
+        $refActiveLicense->category_type_id                 = $request->categoryTypeId ?? null;
+        $refActiveLicense->ownership_type_id                = $request->ownershipType;
+        $refActiveLicense->zone_id                          = $request->zoneId;
+        $refActiveLicense->ward_id                          = $request->wardNo;
+        $refActiveLicense->holding_no                       = $request->holdingNo;
+        $refActiveLicense->firm_name                        = $request->firmName;
+        $refActiveLicense->firm_name_marathi                = $request->firmNameMarathi ?? null;
+        $refActiveLicense->premises_owner_name              = $request->premisesOwner ?? null;
+        $refActiveLicense->brief_firm_desc                  = $request->businessDescription;
+        $refActiveLicense->area_in_sqft                     = $request->areaSqft;
+        $refActiveLicense->establishment_date               = $request->firmEstdDate;
+        $refActiveLicense->address                          = $request->businessAddress;
+        $refActiveLicense->landmark                         = $request->landmark ?? null;
+        $refActiveLicense->pin_code                         = $request->pincode ?? null;
+        $refActiveLicense->street_name                      = $request->streetName ?? null;
+        $refActiveLicense->amount                           = $request->calculatedFees ?? null;
+        $refActiveLicense->day_count                        = $request->calculatedDays ?? null;
+        $refActiveLicense->property_type                    = "Property";
+        $refActiveLicense->is_tobacco                       = $request->tocStatus;
     }
     # Serial No : 01.02
     public function amedmentLicense($refActiveLicense, $refOldLicece, $request)
@@ -5302,6 +5330,181 @@ class Trade implements ITrade
             $application->license_print_counter = $application->license_print_counter + 1;
             $application->update();
         } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    public function addRecordTemp(Request $request)
+    {
+        try {
+            #------------------------ Declaration-----------------------           
+            // $refUser            = Auth()->user();
+            // $refUserId          = $refUser->id;
+            $refUserId          = 203;
+            // $refUlbId           = $refUser->ulb_id ?? $request->ulbId;
+            $refUlbId           = 2;
+            // $refUlbId           = $request->ulbId;
+            $refUlbDtl          = UlbMaster::find($refUlbId);
+            $refUlbName         = explode(' ', $refUlbDtl->ulb_name);
+            $refNoticeDetails   = null;
+            $refWorkflowId      = $this->_WF_TEMP_MASTER_Id;
+            $refWfWorkflow     = WfWorkflow::where('wf_master_id', $refWorkflowId)
+                ->where('ulb_id', $refUlbId)
+                ->first();
+            if (!$refWfWorkflow) {
+                throw new Exception("Workflow Not Available");
+            }
+
+            $refWorkflows       = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
+            $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
+            $mShortUlbName      = "";
+            $mApplicationTypeId = $this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType];
+            $mNowdate           = Carbon::now()->format('Y-m-d');
+            $mNoticeDate        = null;
+            $mProprtyId         = null;
+            $mnaturOfBusiness   = null;
+            $mOldLicenceId      = null;
+            $data               = array();
+            foreach ($refUlbName as $mval) {
+                $mShortUlbName .= $mval[0];
+            }
+            #------------------------End Declaration-----------------------
+            if (in_array(strtoupper($mUserType), $this->_TRADE_CONSTAINT["CANE-NO-HAVE-WARD"])) {
+                $data['wardList'] = $this->_MODEL_WARD->getAllWard($refUlbId)->map(function ($val) {
+                    $val->ward_no = $val->ward_name;
+                    return $val;
+                });
+                $data['wardList'] = objToArray($data['wardList']);
+            } else {
+                $data['wardList'] = $this->_COMMON_FUNCTION->WardPermission($refUserId);
+            }
+            if ($request->getMethod() == "POST") {
+                if ($request->holdingNo) {
+                    $property = $this->propertyDetailsfortradebyHoldingNo($request->holdingNo, $refUlbId);
+                    if ($property['status'])
+                        $mProprtyId = $property['property']['id'];
+                    else
+                        throw new Exception("Property Details Not Found");
+                }
+
+                if (in_array($mApplicationTypeId, [5])) {
+                    $mnaturOfBusiness = array_map(function ($val) {
+                        return $val['name'];
+                    }, $request->natureOfBusiness);
+
+                    $mnaturOfBusiness = implode(',', $mnaturOfBusiness);
+                }
+                #
+                $this->begin();
+                $licence = new ActiveTradeTempLicence();
+                $licence->application_type_id = $mApplicationTypeId;
+                $licence->ulb_id              = $refUlbId;
+                // $licence->trade_id            = $mOldLicenceId;
+                $licence->property_id         = $mProprtyId;
+                $licence->user_id             = $refUserId;
+                $licence->application_date    = $mNowdate;
+                $licence->apply_from          = $mUserType;
+                $licence->current_role        = $refWorkflows['initiator']['id'];
+                $licence->initiator_role      = $refWorkflows['initiator']['id'];
+                $licence->finisher_role       = $refWorkflows['finisher']['id'];
+                $licence->workflow_id         = $refWfWorkflow->id;
+
+                if (strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""]) {
+                    $licence->citizen_id      = $refUserId;
+                }
+                $licence->save();
+                $licenceId = $licence->id;
+                #----------------Crate Application--------------------
+                foreach ($request->owners as $owners) {
+                    if (is_array($owners)) {
+                        if (isset($owners['ownerId']) && !empty($owners['ownerId'])) {
+                            $owner = new ActiveTempTradeOwner();
+                            $owner->temp_id = $licenceId;
+                            $this->transerOldOwneresAmendement($owner, $owners, $request);
+                            $owner->user_id = $refUserId;
+                            $owner->save();
+                        } else {
+                            $owner = new ActiveTempTradeOwner();
+                            $owner->temp_id = $licenceId;
+                            $this->addNewOwners($owner, $owners);
+                            $owner->user_id = $refUserId;
+                            $owner->save();
+                        }
+                    }
+                }
+                # ==========end of changes ===========
+                if ($mApplicationTypeId == 5) # code for New License
+                {
+                    $wardId = $request->wardNo;
+                    $mWardNo = (collect($data['wardList'])->where("id", $wardId)->pluck("ward_no"));
+
+                    $mWardNo =  $mWardNo[0] ?? "";
+                    $this->newLicenseTemp($licence, $request);
+                    $licence->valid_from    = $licence->application_date;
+                    $licence->save();
+                    $licenceId = $licence->id;
+                    foreach ($request->owners as $owners) {
+                        $owner = new ActiveTradeOwner();
+                        $owner->temp_id      = $licenceId;
+                        $this->addNewOwners($owner, $owners);
+                        $owner->user_id      = $refUserId;
+                        $owner->save();
+                    }
+                }
+                $licence->nature_of_bussiness = $mnaturOfBusiness;
+                $mAppNo = $this->createApplicationNo($mWardNo, $licenceId, $mShortUlbName);
+                $licence->application_no = $mAppNo;
+                $licence->update();
+                #----------------End Crate Application--------------------
+                #---------------- transaction of payment-------------------------------
+                if ($mApplicationTypeId == 1 && $request->initialBusinessDetails['applyWith'] == 1) {
+                    $noticeNo = trim($request->initialBusinessDetails['noticeNo']);
+                    $firm_date = $request->firmDetails['firmEstdDate'];
+                    // $refNoticeDetails = $this->getDenialFirmDetails($refUlbId, strtoupper(trim($noticeNo)));
+                    $refNoticeDetails = $this->_NOTICE->getDtlByNoticeNo(strtoupper(trim($noticeNo)), $refUlbId);
+                    if ($refNoticeDetails) {
+                        $refDenialId = $refNoticeDetails->id;
+                        $licence->denial_id = $refDenialId;
+                        $licence->update();
+                        $mNoticeDate = date("Y-m-d", strtotime($refNoticeDetails['notice_date'])); //notice date  
+
+                        if ($firm_date > $mNoticeDate) {
+                            throw new Exception("Firm Establishment Date Can Not Be Greater Than Notice Date ");
+                        }
+                    }
+                }
+                #---------------- End transaction of payment----------------------------
+                $this->commit();
+                // $mTradeSmsLog      = new TradeSmsLog();
+                // $firstOwnerDetails = collect($request->ownerDetails)->first();
+                // $firstOwnerName    = $firstOwnerDetails['businessOwnerName'];
+                // $firstOwnerMobile  = $firstOwnerDetails['mobileNo'];
+
+                // if (strlen($firstOwnerMobile) == 10) {
+                //     $sms      = "Dear " . $firstOwnerName . ", congratulations on submitting your License application. Your Ref No. is " . $mAppNo . ". For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
+                //     $response = send_sms($firstOwnerMobile, $sms, 1707171938021689821);
+
+                //     $smsReqs = [
+                //         "emp_id"      => (auth()->user() ? auth()->user()->id : null),
+                //         "ref_id"      => $licenceId,
+                //         "ref_type"    => 'TRADE',
+                //         "mobile_no"   => $firstOwnerMobile,
+                //         "purpose"     => $request->applicationType,
+                //         "template_id" => 1707171938021689821,
+                //         "message"     => $sms,
+                //         "response"    => $response['status'],
+                //         "smgid"       => $response['msg'],
+                //         "stampdate"   => Carbon::now(),
+                //     ];
+                //     $mTradeSmsLog->create($smsReqs);
+                // }
+
+                $res['applicationNo'] = $mAppNo;
+                $res['applyLicenseId'] = $licenceId;
+                return responseMsg(true, $mAppNo, $res);
+            }
+        } catch (Exception $e) {
+            $this->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
     }

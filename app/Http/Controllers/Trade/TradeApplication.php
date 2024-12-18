@@ -31,6 +31,7 @@ use App\Http\Requests\Trade\paymentCounter;
 use App\Http\Requests\Trade\ReqApplyDenail;
 use App\Http\Requests\Trade\ReqGetUpdateBasicDtl;
 use App\Http\Requests\Trade\ReqPaybleAmount;
+use App\Http\Requests\Trade\ReqTempAddRecord;
 use App\Models\Trade\TradeParamCategoryType;
 use App\Models\Trade\TradeParamOwnershipType;
 use App\Http\Requests\Trade\ReqUpdateBasicDtl;
@@ -69,6 +70,7 @@ class TradeApplication extends Controller
     protected $_MODULE_ID;
     protected $_REF_TABLE;
     protected $_TRADE_CONSTAINT;
+    protected $_WF_TEMP_MASTER_Id;
 
     protected $_CONTROLLER_TRADE;
 
@@ -105,6 +107,7 @@ class TradeApplication extends Controller
         $this->_MODEL_AkolaTradeParamItemType = new AkolaTradeParamItemType($this->_DB_NAME);
 
         $this->_WF_MASTER_Id = Config::get('workflow-constants.TRADE_MASTER_ID');
+        $this->_WF_TEMP_MASTER_Id = Config::get('workflow-constants.TRADE_TEMP_MASTER_ID');
         $this->_WF_NOTICE_MASTER_Id = Config::get('workflow-constants.TRADE_NOTICE_ID');
         $this->_MODULE_ID = Config::get('module-constants.TRADE_MODULE_ID');
         $this->_TRADE_CONSTAINT = Config::get("TradeConstant");
@@ -313,6 +316,48 @@ class TradeApplication extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+    # Serial No : 02
+    public function applyTempApplication(ReqTempAddRecord $request)
+    {
+        // $refUser            = Auth()->user();
+        // $refUserId          = $refUser->id;
+        $refUserId          = 203;
+        $refUlbId           = 2;
+        // if ($refUser->user_type == $this->_TRADE_CONSTAINT["CITIZEN"]) {
+        //     $refUlbId = $request->ulbId ?? 0;
+        // }
+        $refWorkflowId      = $this->_WF_TEMP_MASTER_Id;
+        $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
+        $refWorkflows       = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
+        $mApplicationTypeId = ($this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType] ?? null);
+        try {
+            if (!$this->_COMMON_FUNCTION->checkUsersWithtocken("users")) {
+                throw new Exception("Citizen Not Allowed");
+            }
+            if (!in_array(strtoupper($mUserType), $this->_TRADE_CONSTAINT["CANE-APPLY-APPLICATION"])) {
+                throw new Exception("You Are Not Authorized For This Action !");
+            }
+            if (!$mApplicationTypeId) {
+                throw new Exception("Invalide Application Type");
+            }
+            if (!$refWorkflows) {
+                throw new Exception("Workflow Not Available");
+            }
+            if (!$refWorkflows['initiator']) {
+                throw new Exception("Initiator Not Available");
+            }
+            if (!$refWorkflows['finisher']) {
+                throw new Exception("Finisher Not Available");
+            }
+            // return $request->applicationType;
+            if (in_array($mApplicationTypeId, ["2", "3", "4"]) && (!$request->licenseId || !is_numeric($request->licenseId))) {
+                throw new Exception("Old licence Id Requird");
+            }
+            return $this->_REPOSITORY->addRecordTemp($request);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
     public function paymentCounter(paymentCounter $request)
     {
         try {
@@ -346,7 +391,7 @@ class TradeApplication extends Controller
             // $ownerDocCount = $ownerDoc->count();
             // $response->original["data"]["ownerDocCount"] = $ownerDocCount;
             $ownerDoc->map(function ($val) use ($Wdocuments) {
-                
+
                 $ownerId = $val["ownerDetails"]["ownerId"] ?? "";
                 $val["documents"]->map(function ($val1) use ($Wdocuments, $ownerId) {
                     $val1["ownerId"] = $ownerId;

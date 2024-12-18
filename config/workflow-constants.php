@@ -32,6 +32,7 @@ return [
     "WATER_MASTER_ID"                   => "15",
     "WATER_DISCONNECTION"               => "33",
     "TRADE_MASTER_ID"                   => "16",
+    "TRADE_TEMP_MASTER_ID"              => "45",
     "TRADE_NOTICE_ID"                   => "17",
 
     "GENERAL_NOTICE_MASTER_ID"            => "27",

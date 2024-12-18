@@ -19,7 +19,8 @@ return [
         "NEWLICENSE"    =>  "1",
         "RENEWAL"       =>  "2",
         "AMENDMENT"     =>  "3",
-        "SURRENDER"     =>  "4"
+        "SURRENDER"     =>  "4",
+        "TEMPORARY"     =>  "5"
     ],
     "APPLICATION-TYPE-BY-ID" =>
     [

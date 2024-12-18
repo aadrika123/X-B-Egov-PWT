@@ -30,6 +30,8 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         // Route::post("application/amendment", "getMstrForAmendment");
         // Route::post("application/surrender", "getMstrForSurender");
         Route::post('application/add', 'applyApplication');
+        
+        Route::post('application/add-temporary', 'applyTempApplication');
 
         Route::post('application/get-demand', 'paybleAmount');
 
