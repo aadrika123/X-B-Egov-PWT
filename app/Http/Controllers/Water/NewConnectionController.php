@@ -2187,8 +2187,8 @@ class NewConnectionController extends Controller
 
             # validating role for DA
             $senderRoleId = $senderRoleDtls->wf_role_id;
-            if ($senderRoleId != $wfLevel['DA'])                                    // Authorization for Dealing Assistant Only
-                throw new Exception("You are not Authorized");
+            // if ($senderRoleId != $wfLevel['DA'] )                                    // Authorization for Dealing Assistant Only
+            //     throw new Exception("You are not Authorized");
 
             # validating if full documet is uploaded
             $ifFullDocVerified = $this->ifFullDocVerified($applicationId);          // (Current Object Derivative Function 0.1)
