@@ -13,6 +13,7 @@ return [
 
     "TRADE_NOTICE_REF_TABLE" => "active_trade_notice_consumer_dtls",
     "TRADE_NOTICE_RELATIVE_PATH" => "Uploads/Trade/Notice",
+    "TRADE_MODULE_ID"  => "3",
 
     "APPLICATION-TYPE" =>
     [

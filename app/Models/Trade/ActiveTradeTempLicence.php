@@ -13,4 +13,14 @@ class ActiveTradeTempLicence extends TradeParamModel
     {
         parent::__construct($DB);
     }
+
+    /**
+     * | Get application details by Id
+     */
+    public function getApplicationDtls($appId)
+    {
+        return self::select('*')
+            ->where('id', $appId)
+            ->first();
+    }
 }

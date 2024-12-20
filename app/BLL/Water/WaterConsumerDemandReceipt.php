@@ -129,10 +129,10 @@ class WaterConsumerDemandReceipt
         })
             ->orderBy("consumer_tax_id", "DESC")
             ->first();
-        if ($lastTaxId) {
-            $this->_demandFrom = collect($this->_dueDemandsList)->where("consumer_tax_id", $lastTaxId)->min("demand_from");
-            $this->_demandUpto = collect($this->_dueDemandsList)->where("consumer_tax_id", $lastTaxId)->max("demand_upto");
-        }
+        // if ($lastTaxId) {
+        //     $this->_demandFrom = collect($this->_dueDemandsList)->where("consumer_tax_id", $lastTaxId)->min("demand_from");
+        //     $this->_demandUpto = collect($this->_dueDemandsList)->where("consumer_tax_id", $lastTaxId)->max("demand_upto");
+        // }
         $this->_currentDemand = collect(collect($this->_dueDemandsList)->where("consumer_tax_id", $lastTaxId)->values());
 
         $currenBillDemadFrom = collect($this->_currentDemand)->min("demand_from");
@@ -245,12 +245,12 @@ class WaterConsumerDemandReceipt
         $this->setLastUnitConsume();
     }
 
-
     public function setReceipts()
 
     {
+    
         $this->setParams();
-        $this->_GRID = [
+          $this->_GRID = [
             "demandType"            => $this->_mTowards,
             "consumerNo"            => $this->_connectionDtls->consumer_no,
             "fromDate"              => $this->_demandFrom,

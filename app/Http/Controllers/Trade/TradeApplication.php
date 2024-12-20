@@ -331,9 +331,9 @@ class TradeApplication extends Controller
         $refWorkflows       = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
         $mApplicationTypeId = ($this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType] ?? null);
         try {
-            if (!$this->_COMMON_FUNCTION->checkUsersWithtocken("users")) {
-                throw new Exception("Citizen Not Allowed");
-            }
+            // if (!$this->_COMMON_FUNCTION->checkUsersWithtocken("users")) {
+            //     throw new Exception("Citizen Not Allowed");
+            // }
             if (!in_array(strtoupper($mUserType), $this->_TRADE_CONSTAINT["CANE-APPLY-APPLICATION"])) {
                 throw new Exception("You Are Not Authorized For This Action !");
             }

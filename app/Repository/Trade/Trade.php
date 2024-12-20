@@ -6,6 +6,7 @@ use App\BLL\Property\Akola\GetHoldingDuesV2;
 use App\BLL\Property\Akola\TaxCalculator;
 use Illuminate\Support\Facades\Storage;
 use App\EloquentModels\Common\ModelWard;
+use App\MicroServices\DocumentUpload;
 use App\Models\CustomDetail;
 use App\Models\Payment\TempTransaction;
 use App\Models\Property\ActiveSafsOwnerDtl;
@@ -5455,6 +5456,12 @@ class Trade implements ITrade
                 $mAppNo = $this->createApplicationNo($mWardNo, $licenceId, $mShortUlbName);
                 $licence->application_no = $mAppNo;
                 $licence->update();
+
+                #================ proocess for document Uploadation =============================#
+                $mDocuments                     = $request->documents;
+                $this->uploadHoardDocument($licenceId, $mDocuments, $request->auth, $request);
+
+                #============== End Of Document Uploadation ====================================#
                 #----------------End Crate Application--------------------
                 #---------------- transaction of payment-------------------------------
                 if ($mApplicationTypeId == 1 && $request->initialBusinessDetails['applyWith'] == 1) {
@@ -5475,30 +5482,6 @@ class Trade implements ITrade
                 }
                 #---------------- End transaction of payment----------------------------
                 $this->commit();
-                // $mTradeSmsLog      = new TradeSmsLog();
-                // $firstOwnerDetails = collect($request->ownerDetails)->first();
-                // $firstOwnerName    = $firstOwnerDetails['businessOwnerName'];
-                // $firstOwnerMobile  = $firstOwnerDetails['mobileNo'];
-
-                // if (strlen($firstOwnerMobile) == 10) {
-                //     $sms      = "Dear " . $firstOwnerName . ", congratulations on submitting your License application. Your Ref No. is " . $mAppNo . ". For more details visit www.akolamc.org/call us at:18008907909 SWATI INDUSTRIES";
-                //     $response = send_sms($firstOwnerMobile, $sms, 1707171938021689821);
-
-                //     $smsReqs = [
-                //         "emp_id"      => (auth()->user() ? auth()->user()->id : null),
-                //         "ref_id"      => $licenceId,
-                //         "ref_type"    => 'TRADE',
-                //         "mobile_no"   => $firstOwnerMobile,
-                //         "purpose"     => $request->applicationType,
-                //         "template_id" => 1707171938021689821,
-                //         "message"     => $sms,
-                //         "response"    => $response['status'],
-                //         "smgid"       => $response['msg'],
-                //         "stampdate"   => Carbon::now(),
-                //     ];
-                //     $mTradeSmsLog->create($smsReqs);
-                // }
-
                 $res['applicationNo'] = $mAppNo;
                 $res['applyLicenseId'] = $licenceId;
                 return responseMsg(true, $mAppNo, $res);
@@ -5507,5 +5490,37 @@ class Trade implements ITrade
             $this->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
+    }
+    public function uploadHoardDocument($licenceId, $documents, $auth, $request)
+    {
+        $docUpload = new DocumentUpload;
+        $mWfActiveDocument = new WfActiveDocument();
+        $mActiveTradeTemp = new ActiveTradeTempLicence();
+        $relativePath = $this->_TRADE_CONSTAINT["TRADE_RELATIVE_PATH"];
+
+        // collect($documents)->map(function ($doc) use ($licenceId, $docUpload, $mWfActiveDocument, $mActiveTradeTemp, $relativePath, $auth) {
+            $metaReqs = array();
+            $getApplicationDtls = $mActiveTradeTemp->getApplicationDtls($licenceId);
+            // $refImageName = $doc['docCode'];
+            // $refImageName = $getApplicationDtls->id . '-' . $refImageName;
+            // $documentImg = $doc['image'];
+            // $imageName = $docUpload->upload($refImageName, $documentImg, $relativePath);
+            $metaReqs['moduleId'] = Config::get('TradeConstant.TRADE_MODULE_ID');
+            $metaReqs['activeId'] = $getApplicationDtls->id;
+            $metaReqs['workflowId'] = $getApplicationDtls->workflow_id;
+            $metaReqs['ulbId'] = $getApplicationDtls->ulb_id;
+            $metaReqs['relativePath'] = $relativePath;
+            // $metaReqs['document'] = $imageName;
+            // $metaReqs['docCode'] = $doc['docCode'];
+            // $metaReqs['ownerDtlId'] = $doc['ownerDtlId'];
+            $a = new Request($metaReqs);
+            // $mWfActiveDocument->postDocuments($a, $auth);
+            $metaReqs =  $mWfActiveDocument->metaReqs($metaReqs);
+            $mWfActiveDocument->create($metaReqs);
+            // foreach ($metaReqs as $key => $val) {
+            //     $mWfActiveDocument->$key = $val;
+            // }
+            // $mWfActiveDocument->save();
+        // });
     }
 }
