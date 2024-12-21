@@ -28,6 +28,8 @@ use Mockery\CountValidator\Exact;
 use Illuminate\Support\Str;
 use Illuminate\Support\Collection;
 
+
+
 class Report implements IReport
 {
     use SAF;
@@ -5690,4 +5692,203 @@ class Report implements IReport
             return responseMsgs(false, $e->getMessage(), []);
         }
     }
+
+    #============================alok=============================
+
+    public function getCurrentFinancialYear()
+    {
+        $currentYear = Carbon::now()->year;
+
+        // Assuming the financial year starts from April 1
+        if (Carbon::now()->month < 4) {
+            return ($currentYear - 1) . '-' . $currentYear;
+        }
+    
+        return $currentYear . '-' . ($currentYear + 1);     
+        
+    }
+
+
+    public function getTaxReport(Request $request){
+
+        // Get the current financial year
+         $currentFinancialYear = $this->getCurrentFinancialYear();
+
+     
+        $data = DB::select("
+            SELECT 
+                SUM(CASE WHEN fyear < '$currentFinancialYear' THEN due_general_tax ELSE 0 END) AS due_general_tax_arrears_amount, 
+                SUM(CASE WHEN fyear = '$currentFinancialYear' THEN due_general_tax ELSE 0 END) AS due_general_tax_current_year_amount,
+                SUM(CASE WHEN fyear < '$currentFinancialYear' THEN due_road_tax ELSE 0 END) AS due_road_tax_arrears_amount, 
+                SUM(CASE WHEN fyear = '$currentFinancialYear' THEN due_road_tax ELSE 0 END) AS due_road_tax_current_year_amount,
+                SUM(CASE WHEN fyear < '$currentFinancialYear' THEN due_firefighting_tax ELSE 0 END) AS due_firefighting_tax_arrears_amount, 
+                SUM(CASE WHEN fyear = '$currentFinancialYear' THEN due_firefighting_tax ELSE 0 END) AS due_firefighting_tax_current_year_amount,
+                SUM(CASE WHEN fyear < '$currentFinancialYear' THEN due_education_tax ELSE 0 END) AS due_education_tax_arrears_amount, 
+                SUM(CASE WHEN fyear = '$currentFinancialYear' THEN due_education_tax ELSE 0 END) AS due_education_tax_current_year_amount,
+                SUM(CASE WHEN fyear < '$currentFinancialYear' THEN due_water_tax ELSE 0 END) AS due_water_tax_arrears_amount, 
+                SUM(CASE WHEN fyear = '$currentFinancialYear' THEN due_water_tax ELSE 0 END) AS due_water_tax_current_year_amount,
+                SUM(CASE WHEN fyear < '$currentFinancialYear' THEN due_cleanliness_tax ELSE 0 END) AS due_cleanliness_tax_arrears_amount, 
+                SUM(CASE WHEN fyear = '$currentFinancialYear' THEN due_cleanliness_tax ELSE 0 END) AS due_cleanliness_tax_current_year_amount,
+                SUM(CASE WHEN fyear < '$currentFinancialYear' THEN due_sewarage_tax ELSE 0 END) AS due_sewarage_tax_arrears_amount, 
+                SUM(CASE WHEN fyear = '$currentFinancialYear' THEN due_sewarage_tax ELSE 0 END) AS due_sewarage_tax_current_year_amount,
+                SUM(CASE WHEN fyear < '$currentFinancialYear' THEN due_tree_tax ELSE 0 END) AS due_tree_tax_arrears_amount, 
+                SUM(CASE WHEN fyear = '$currentFinancialYear' THEN due_tree_tax ELSE 0 END) AS due_tree_tax_current_year_amount,
+                SUM(CASE WHEN fyear < '$currentFinancialYear' THEN due_professional_tax ELSE 0 END) AS due_professional_tax_arrears_amount, 
+                SUM(CASE WHEN fyear = '$currentFinancialYear' THEN due_professional_tax ELSE 0 END) AS due_professional_tax_current_year_amount,
+                SUM(CASE WHEN fyear < '$currentFinancialYear' THEN due_tax1 ELSE 0 END) AS due_tax1_arrears_amount, 
+                SUM(CASE WHEN fyear = '$currentFinancialYear' THEN due_tax1 ELSE 0 END) AS due_tax1_current_year_amount,
+                SUM(CASE WHEN fyear < '$currentFinancialYear' THEN due_tax2 ELSE 0 END) AS due_tax2_arrears_amount, 
+                SUM(CASE WHEN fyear = '$currentFinancialYear' THEN due_tax2 ELSE 0 END) AS due_tax2_current_year_amount,
+                SUM(CASE WHEN fyear < '$currentFinancialYear' THEN due_tax3 ELSE 0 END) AS due_tax3_arrears_amount, 
+                SUM(CASE WHEN fyear = '$currentFinancialYear' THEN due_tax3 ELSE 0 END) AS due_tax3_current_year_amount,
+                SUM(CASE WHEN fyear < '$currentFinancialYear' THEN due_sp_education_tax ELSE 0 END) AS due_sp_education_tax_arrears_amount, 
+                SUM(CASE WHEN fyear = '$currentFinancialYear' THEN due_sp_education_tax ELSE 0 END) AS due_sp_education_tax_current_year_amount,
+                SUM(CASE WHEN fyear < '$currentFinancialYear' THEN due_water_benefit ELSE 0 END) AS due_water_benefit_arrears_amount, 
+                SUM(CASE WHEN fyear = '$currentFinancialYear' THEN due_water_benefit ELSE 0 END) AS due_water_benefit_current_year_amount,
+                SUM(CASE WHEN fyear < '$currentFinancialYear' THEN due_water_bill ELSE 0 END) AS due_water_bill_arrears_amount, 
+                SUM(CASE WHEN fyear = '$currentFinancialYear' THEN due_water_bill ELSE 0 END) AS due_water_bill_current_year_amount,
+                SUM(CASE WHEN fyear < '$currentFinancialYear' THEN due_sp_water_cess ELSE 0 END) AS due_sp_water_cess_arrears_amount,
+                SUM(CASE WHEN fyear = '$currentFinancialYear' THEN due_sp_water_cess ELSE 0 END) AS due_sp_water_cess_current_year_amount,
+                SUM(CASE WHEN fyear < '$currentFinancialYear' THEN due_drain_cess ELSE 0 END) AS due_drain_cess_arrears_amount, 
+                SUM(CASE WHEN fyear = '$currentFinancialYear' THEN due_drain_cess ELSE 0 END) AS due_drain_cess_current_year_amount,
+                SUM(CASE WHEN fyear < '$currentFinancialYear' THEN due_light_cess ELSE 0 END) AS due_light_cess_arrears_amount, 
+                SUM(CASE WHEN fyear = '$currentFinancialYear' THEN due_light_cess ELSE 0 END) AS due_light_cess_current_year_amount,
+                SUM(CASE WHEN fyear < '$currentFinancialYear' THEN due_major_building ELSE 0 END) AS due_major_building_arrears_amount, 
+                SUM(CASE WHEN fyear = '$currentFinancialYear' THEN due_major_building ELSE 0 END) AS due_major_building_current_year_amount,
+                SUM(CASE WHEN fyear < '$currentFinancialYear' THEN due_open_ploat_tax ELSE 0 END) AS due_open_ploat_tax_arrears_amount, 
+                SUM(CASE WHEN fyear = '$currentFinancialYear' THEN due_open_ploat_tax ELSE 0 END) AS due_open_ploat_tax_current_year_amount
+            FROM prop_demands
+            WHERE status = 1
+        ");
+        
+        if (empty($data)) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No Data Found',
+            ]);
+        }
+
+        $arrearsAmounts = [
+            'due_general_tax'       => $data[0]->due_general_tax_arrears_amount,
+            'due_road_tax'          => $data[0]->due_road_tax_arrears_amount,
+            'due_firefighting_tax'  => $data[0]->due_firefighting_tax_arrears_amount,
+            'due_education_tax'     => $data[0]->due_education_tax_arrears_amount,
+            'due_water_tax'         => $data[0]->due_water_tax_arrears_amount,
+            'due_cleanliness_tax'   => $data[0]->due_cleanliness_tax_arrears_amount,
+            'due_sewarage_tax'      => $data[0]->due_sewarage_tax_arrears_amount,
+            'due_tree_tax'          => $data[0]->due_tree_tax_arrears_amount,
+            'due_professional_tax'  => $data[0]->due_professional_tax_arrears_amount,
+            'due_tax1'              => $data[0]->due_tax1_arrears_amount,
+            'due_tax2'              => $data[0]->due_tax2_arrears_amount,
+            'due_tax3'              => $data[0]->due_tax3_arrears_amount,
+            'due_sp_education_tax'  => $data[0]->due_sp_education_tax_arrears_amount,
+            'due_water_benefit'     => $data[0]->due_water_benefit_arrears_amount,
+            'due_water_bill'        => $data[0]->due_water_bill_arrears_amount,
+            'due_sp_water_cess'     => $data[0]->due_sp_water_cess_arrears_amount,
+            'due_drain_cess'        => $data[0]->due_drain_cess_arrears_amount,
+            'due_light_cess'        => $data[0]->due_light_cess_arrears_amount,
+            'due_major_building'    => $data[0]->due_major_building_arrears_amount,
+            'due_open_ploat_tax'    => $data[0]->due_open_ploat_tax_arrears_amount,
+        ];        
+        $totalArrearsAmount = array_sum($arrearsAmounts);
+        
+        $currentYearAmounts = [
+            'due_general_tax'       => $data[0]->due_general_tax_current_year_amount,
+            'due_road_tax'          => $data[0]->due_road_tax_current_year_amount,
+            'due_firefighting_tax'  => $data[0]->due_firefighting_tax_current_year_amount,
+            'due_education_tax'     => $data[0]->due_education_tax_current_year_amount,
+            'due_water_tax'         => $data[0]->due_water_tax_current_year_amount,
+            'due_cleanliness_tax'   => $data[0]->due_cleanliness_tax_current_year_amount,
+            'due_sewarage_tax'      => $data[0]->due_sewarage_tax_current_year_amount,
+            'due_tree_tax'          => $data[0]->due_tree_tax_current_year_amount,
+            'due_professional_tax'  => $data[0]->due_professional_tax_current_year_amount,
+            'due_tax1'              => $data[0]->due_tax1_current_year_amount,
+            'due_tax2'              => $data[0]->due_tax2_current_year_amount,
+            'due_tax3'              => $data[0]->due_tax3_current_year_amount,
+            'due_sp_education_tax'  => $data[0]->due_sp_education_tax_current_year_amount,
+            'due_water_benefit'     => $data[0]->due_water_benefit_current_year_amount,
+            'due_water_bill'        => $data[0]->due_water_bill_current_year_amount,
+            'due_sp_water_cess'     => $data[0]->due_sp_water_cess_current_year_amount,
+            'due_drain_cess'        => $data[0]->due_drain_cess_current_year_amount,
+            'due_light_cess'        => $data[0]->due_light_cess_current_year_amount,
+            'due_major_building'    => $data[0]->due_major_building_current_year_amount,
+            'due_open_ploat_tax'    => $data[0]->due_open_ploat_tax_current_year_amount,
+        ];        
+        $totalCurrentYearAmount = array_sum($currentYearAmounts);
+        
+        $totalAmounts = [               
+            'due_general_tax'       => $data[0]->due_general_tax_arrears_amount      +  $data[0]->due_general_tax_current_year_amount,
+            'due_road_tax'          => $data[0]->due_road_tax_arrears_amount         +  $data[0]->due_road_tax_current_year_amount,
+            'due_firefighting_tax'  => $data[0]->due_firefighting_tax_arrears_amount +  $data[0]->due_firefighting_tax_current_year_amount,
+            'due_education_tax'     => $data[0]->due_education_tax_arrears_amount    +  $data[0]->due_education_tax_current_year_amount,
+            'due_water_tax'         => $data[0]->due_water_tax_arrears_amount        +  $data[0]->due_water_tax_current_year_amount,
+            'due_cleanliness_tax'   => $data[0]->due_cleanliness_tax_arrears_amount  +  $data[0]->due_cleanliness_tax_current_year_amount,
+            'due_sewarage_tax'      => $data[0]->due_sewarage_tax_arrears_amount     +  $data[0]->due_sewarage_tax_current_year_amount,
+            'due_tree_tax'          => $data[0]->due_tree_tax_arrears_amount         +  $data[0]->due_tree_tax_current_year_amount,
+            'due_professional_tax'  => $data[0]->due_professional_tax_arrears_amount +  $data[0]->due_professional_tax_current_year_amount,
+            'due_tax1'              => $data[0]->due_tax1_arrears_amount             +  $data[0]->due_tax1_current_year_amount,
+            'due_tax2'              => $data[0]->due_tax2_arrears_amount             +  $data[0]->due_tax2_current_year_amount,
+            'due_tax3'              => $data[0]->due_tax3_arrears_amount             +  $data[0]->due_tax3_current_year_amount,
+            'due_sp_education_tax'  => $data[0]->due_sp_education_tax_arrears_amount +  $data[0]->due_sp_education_tax_current_year_amount,
+            'due_water_benefit'     => $data[0]->due_water_benefit_arrears_amount    +  $data[0]->due_water_benefit_current_year_amount,
+            'due_water_bill'        => $data[0]->due_water_bill_arrears_amount       +  $data[0]->due_water_bill_current_year_amount,
+            'due_sp_water_cess'     => $data[0]->due_sp_water_cess_arrears_amount    +  $data[0]->due_sp_water_cess_current_year_amount,
+            'due_drain_cess'        => $data[0]->due_drain_cess_arrears_amount       +  $data[0]->due_drain_cess_current_year_amount,
+            'due_light_cess'        => $data[0]->due_light_cess_arrears_amount       +  $data[0]->due_light_cess_current_year_amount,
+            'due_major_building'    => $data[0]->due_major_building_arrears_amount   +  $data[0]->due_major_building_current_year_amount,
+            'due_open_ploat_tax'    => $data[0]->due_open_ploat_tax_arrears_amount   +  $data[0]->due_open_ploat_tax_current_year_amount
+        ];
+        $totalAmountsTotal = array_sum($totalAmounts);
+    
+
+        $detailType = $request->input('details');
+
+        
+            $responseData = [];
+
+            switch ($detailType) {
+
+                case 'arrears':
+                    $responseData = [
+                        'arrears_amounts' => $arrearsAmounts,
+                        'total_arrears_amount' => $totalArrearsAmount,
+                    ];
+                break;
+
+                case 'current_year':
+                    $responseData = [
+                        'current_year_amounts' => $currentYearAmounts,
+                        'total_current_year_amount' => $totalCurrentYearAmount,
+                    ];
+                break;
+
+                case 'all_details':
+                    $responseData = [
+                        'arrears_amounts' => $arrearsAmounts,
+                        'current_year_amounts' => $currentYearAmounts,
+                        'total_amounts' => $totalAmounts,
+                        'total_arrears_amount' => $totalArrearsAmount,
+                        'total_current_year_amount' => $totalCurrentYearAmount,
+                        'total_amounts_total' => $totalAmountsTotal,
+                    ];
+                break;
+                
+                default:
+
+                    $responseData = [
+                        'error' => 'Invalid detail type requested.'
+                    ];
+                break;
+                    
+            }
+
+        return response()->json([
+            'status' => true,
+            'data' => $responseData,
+        ]);
+
+
+    }
+
+
 }
