@@ -1214,17 +1214,17 @@ class PropertyController extends Controller
         // Validate the incoming request
         $req->validate([
             'wardId' => 'required|integer',
-            'uldId' => 'nullable|integer', 
+            'ulbId' => 'nullable|integer', 
         ]);
     
         try {
             $mPropProperty = new PropProperty();
             
-            // Fetch properties with wardId and uldId
-            $propDetails = $mPropProperty->getPropLatlong($req->wardId, $req->uldId);
+            // Fetch properties with wardId and ulbId
+            $propDetails = $mPropProperty->getPropLatlong($req->wardId, $req->ulbId);
     
-            // Check if uldId is empty and if there are no property details returned
-            if (!empty($req->uldId) && $propDetails->isEmpty()) {
+            // Check if ulbId is empty and if there are no property details returned
+            if (!empty($req->ulbId) && $propDetails->isEmpty()) {
                 return response()->json([
                     "status" => true,
                     "message" => "latLong Details",
