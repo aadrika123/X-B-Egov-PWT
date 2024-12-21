@@ -115,6 +115,8 @@ class Trade implements ITrade
     protected $_MODEL_AkolaTradeParamItemType;
     protected $_MODEL_AkolaTradeParamLicenceRate;
     protected $_WF_TEMP_MASTER_Id;
+    protected $_ACTIVE_TEMP_LICENSE;
+    protected $_ACTIVE_TEMP_OWNER_LICENSE;
 
 
     public function __construct()
@@ -151,6 +153,8 @@ class Trade implements ITrade
 
         $this->_MODEL_AkolaTradeParamItemType = new AkolaTradeParamItemType($this->_DB_NAME);
         $this->_MODEL_AkolaTradeParamLicenceRate = new AkolaTradeParamLicenceRate($this->_DB_NAME);
+        $this->_ACTIVE_TEMP_LICENSE = new ActiveTradeTempLicence();
+        $this->_ACTIVE_TEMP_OWNER_LICENSE = new ActiveTempTradeOwner();
     }
 
     public function begin()
@@ -5548,6 +5552,89 @@ class Trade implements ITrade
             return responseMsgs(true, "Documents Fetched", remove_null($DocsType), "010203", "1.0", "", 'POST', "");
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
+        }
+    }
+    /**
+     * |---------------------------- Search Hoarding Application ----------------------------|
+     * | Search Application using provided condition 
+     */
+
+    public function searchTempTradeLicense($request)
+    {
+        try {
+            // $user           = authUser($request);
+            // $userType       = $user->user_type;
+            $userId         = 203;
+            $key            = $request['filterBy'];
+            $paramenter     = $request['parameter'];
+            $pages          = $request['perPage'] ? $request['perPage'] : 10;
+            $string         = preg_replace("/([A-Z])/", "_$1", $key);
+            $refstring      = strtolower($string);
+            $ReturnDetails = null;
+            if ($key !== null) {
+                // switch ($key) {
+                //     case "applicationNo":
+                //         $data = $this->_ACTIVE_TEMP_LICENSE->getByItsDetailsV2($request, $refstring, $paramenter,);
+                //         if ($userType == 'Citizen') {
+                //             $data->where('active_trade_temp_licences.citizen_id', $userId);
+                //         }
+                //         if ($paramenter !== null) {
+                //             $data->where('active_trade_temp_licences.' . $refstring, 'LIKE', '%' . $paramenter . '%');
+                //         }
+                //         $ReturnDetails = $data->paginate($pages);
+                //         // Check if data is not found
+                //         $checkVal = $ReturnDetails->count();
+                //         if (!$checkVal || $checkVal == 0) {
+                //             throw new Exception("Data according to " . $key . " not Found!");
+                //         }
+                //         break;
+                //     case ("mobile"):
+                //         $data = $this->_ACTIVE_TEMP_LICENSE->getByItsDetailsV2($request, $refstring, $paramenter, $request->auth['email']);
+                //         if ($paramenter !== null) {
+                //             $data->where('agency_masters.' . $refstring, 'LIKE', '%' . $paramenter . '%');
+                //         }
+                //         $ReturnDetails = $data->paginate($pages);
+                //         // Check if data is not found
+                //         $checkVal = $ReturnDetails->count();
+                //         if (!$checkVal || $checkVal == 0) {
+                //             throw new Exception("Data according to " . $key . " not Found!");
+                //         }
+                //         break;
+                //     case ("hoardingNo"):
+                //         $data = $this->_ACTIVE_TEMP_LICENSE->getByItsDetailsV2($request, $refstring, $paramenter, $request->auth['email']);
+                //         if ($paramenter !== null) {
+                //             $data->where('hoarding_masters.' . $refstring, 'LIKE', '%' . $paramenter . '%');
+                //         }
+                //         $ReturnDetails = $data->paginate($pages);
+                //         // Check if data is not found
+                //         $checkVal = $ReturnDetails->count();
+                //         if (!$checkVal || $checkVal == 0) {
+                //             throw new Exception("Data according to " . $key . " not Found!");
+                //         }
+                //         break;
+                //     default:
+                //         throw new Exception("Data provided in filterBy is not valid!");
+                // }
+            } else {
+                $ReturnDetails = $this->_ACTIVE_TEMP_LICENSE->getByItsDetailsV2($request, $refstring, $paramenter,);
+                // if ($userType == 'Citizen') {
+                //     $ReturnDetails->where('active_trade_temp_licences.citizen_id', $userId);
+                // }
+                // $ReturnDetails = $ReturnDetails->paginate($pages);
+                // if (!$ReturnDetails) {
+                //     throw new Exception('data not found');
+                // }
+            }
+            $list = [
+                "current_page" => $ReturnDetails->currentPage(),
+                "last_page" => $ReturnDetails->lastPage(),
+                "data" => $ReturnDetails->items(),
+                "total" => $ReturnDetails->total(),
+            ];
+
+            return responseMsgs(true, " Data According To Parameter!", remove_null($list), "", "01", "652 ms", "POST", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
         }
     }
 }

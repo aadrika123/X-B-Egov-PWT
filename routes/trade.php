@@ -97,8 +97,10 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
 
         # ==== written by Arshad =========#
         Route::post('application/add-temporary', 'applyTempApplication');
-        
+
         Route::post('application/get-trade-temp-docs','getTempUploadDocuments');
+        
+        Route::post('application/search-temp-application','searchTempTrade');
 
     });
 

@@ -1615,6 +1615,38 @@ class TradeApplication extends Controller
         return $this->_REPOSITORY->updateLicenseCounter($request->id);
     }
 
+    /**
+     * |---------------------------- Search Hoarding Application ----------------------------|
+     * | Search Application using provided condition 
+     */
+
+    public function searchTempTrade(Request $request)
+    {
+        $id = $request->id;
+        $request->setMethod('POST');
+        $request->request->add(["id" => $id]);
+        $rules =
+            [
+                'filterBy'  => 'nullable',
+                'parameter' => 'nullable',
+                'pages'     => 'nullable',
+                'wardId'    => 'nullable',
+                'zoneId'    => 'nullable',
+                'perPage'   => 'nullabel'
+            ];
+        $validator = Validator::make($request->all(), $rules,);
+        if ($validator->fails()) {
+            return responseMsg(false, $validator->errors(), "");
+        }
+        try {
+            return $this->_REPOSITORY->searchTempTradeLicense($rules);
+
+            return responseMsgs(true, " Data According To Parameter!", remove_null($list), "", "01", "652 ms", "POST", "");
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
     public function sendSms(Request $request)
     {
         try {

@@ -48,4 +48,5 @@ interface ITrade
     public function getLicenceDocuments($id, $tbl = "active_");
     public function getLicenceById($id);
     public function updateLicenseCounter($id);
+    public function searchTempTradeLicense($request);
 }
