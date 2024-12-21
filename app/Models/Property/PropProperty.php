@@ -932,7 +932,7 @@ class PropProperty extends  PropParamModel #Model
     /**
      * | Get details according to ward for heat map
      */
-    public function getPropLatlong($wardId)
+    public function getPropLatlong($wardId, $ulbId)
     {
         return PropProperty::select(
             'prop_properties.id as property_id',
@@ -950,6 +950,7 @@ class PropProperty extends  PropParamModel #Model
             ->join('prop_saf_geotag_uploads', 'prop_saf_geotag_uploads.saf_id', '=', 'prop_properties.saf_id')
             ->join('prop_owners', 'prop_owners.property_id', '=', 'prop_properties.id')
             ->where('prop_properties.ward_mstr_id', $wardId)
+            ->where('prop_properties.ulb_id', $ulbId)
             ->where('prop_properties.holding_no', '!=', null)
             ->orderByDesc('prop_properties.id')
             ->skip(0)

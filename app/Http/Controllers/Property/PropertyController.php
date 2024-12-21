@@ -52,6 +52,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 
+
 /**
  * | Created On - 11-03-2023
  * | Created By - Mrinal Kumar
@@ -1148,7 +1149,8 @@ class PropertyController extends Controller
      * | @param req
         | For MVP testing
      */
-    public function getpropLatLong(Request $req)
+
+    /* public function getpropLatLong(Request $req)
     {
         $req->validate([
             'wardId' => 'required|integer',
@@ -1158,15 +1160,12 @@ class PropertyController extends Controller
             $propDetails = [];
             // $propDetails = $mPropProperty->getPropLatlong($req->wardId);
             // $propDetails = collect($propDetails)->map(function ($value) {
-
             //     $currentDate = Carbon::now()->format('Y-04-01');
             //     $refCurrentDate = Carbon::createFromFormat('Y-m-d', $currentDate);
             //     $mPropDemand = new PropDemand();
-
             //     $geoDate = strtotime($value['created_at']);
             //     $geoDate = date('Y-m-d', $geoDate);
             //     $ref2023 = Carbon::createFromFormat('Y-m-d', "2023-01-01")->toDateString();
-
             //     $path = $this->readDocumentPath($value['doc_path']);
             //     # arrrer,current,paid
             //     $refUnpaidPropDemands = $mPropDemand->getDueDemandByPropId($value['property_id']);
@@ -1206,7 +1205,135 @@ class PropertyController extends Controller
         } catch (Exception $e) {
             return responseMsgs(false, $e->getMessage(), $e->getFile(), "", "01", ".ms", "POST", $req->deviceId);
         }
+    } */
+
+    
+    #================================alok====================================
+    public function getpropLatLong(Request $req)
+    {
+        // Validate the incoming request
+        $req->validate([
+            'wardId' => 'required|integer',
+            'uldId' => 'nullable|integer', 
+        ]);
+    
+        try {
+            $mPropProperty = new PropProperty();
+            
+            // Fetch properties with wardId and uldId
+            $propDetails = $mPropProperty->getPropLatlong($req->wardId, $req->uldId);
+    
+            // Check if uldId is empty and if there are no property details returned
+            if (!empty($req->uldId) && $propDetails->isEmpty()) {
+                return response()->json([
+                    "status" => true,
+                    "message" => "latLong Details",
+                    "meta-data" => [
+                        "apiId" => "011707",
+                        "version" => "01",
+                        "responsetime" => microtime(true) - LARAVEL_START, // Calculate response time
+                        "epoch" => now()->toDateTimeString(),
+                        "action" => "POST",
+                        "deviceId" => $req->deviceId,
+                    ],
+                    "data" => [], // Return empty data
+                ]);
+            }
+    
+            // Map through the property details to add additional information
+            $propDetails = collect($propDetails)->map(function ($value) {
+                // Prepare date references
+                $currentDate = Carbon::now()->format('Y-04-01');
+                $refCurrentDate = Carbon::createFromFormat('Y-m-d', $currentDate);
+
+                $mPropDemand = new PropDemand(); //handel property demand-relaeted quaries 
+    
+                // Extract and format dates
+                $geoDate = strtotime($value['created_at']);
+                $geoDate = date('Y-m-d', $geoDate);
+                $ref2023 = Carbon::createFromFormat('Y-m-d', "2023-01-01")->toDateString();
+    
+                // Get the document path
+                $path = $this->readDocumentPath($value['doc_path']);
+    
+                // Check property demands
+                $refUnpaidPropDemands = $mPropDemand->getDueDemandByPropId($value['property_id']);
+                $checkPropDemand = collect($refUnpaidPropDemands)->last();
+    
+                // Determine current status and status name
+                if (is_null($checkPropDemand)) {
+                    $currentStatus = 3; // Static
+                    $statusName = "No Dues"; // Static
+                } else {
+                    $lastDemand = collect($refUnpaidPropDemands)->last();
+                    if (is_null($lastDemand->due_date)) {
+                        $currentStatus = 3; // Static
+                        $statusName = "No Dues"; // Static
+                    } else {
+                        $refDate = Carbon::createFromFormat('Y-m-d', $lastDemand->due_date);
+                        if ($refDate < $refCurrentDate) {
+                            $currentStatus = 1; // Static
+                            $statusName = "Arrear"; // Static
+                        } else {
+                            $currentStatus = 2; // Static
+                            $statusName = "Current Dues"; // Static
+                        }
+                    }
+                }
+    
+                // Add status details to value
+                $value['statusName'] = $statusName;
+                $value['currentStatus'] = $currentStatus;
+    
+                // Handle document path based on date
+                if ($geoDate < $ref2023) {
+                    $path = $this->readRefDocumentPath($value['doc_path']);
+                    $value['full_doc'] = !empty(trim($value['doc_path'])) ? $path : null;
+                } else {
+                    $value['full_doc'] = !empty(trim($value['doc_path'])) ? $path : null;
+                }
+    
+                return $value;
+            })->filter(function ($refValues) {
+                return $refValues['new_holding_no'] != null; // Filter out entries with null new_holding_no
+            });
+    
+            // Prepare the response structure
+            $response = [
+                "status" => true,
+                "message" => "latLong Details",
+                "meta-data" => [
+                    "apiId" => "011707",
+                    "version" => "01",
+                    "responsetime" => microtime(true) - LARAVEL_START, // Calculate response time
+                    "epoch" => now()->toDateTimeString(),
+                    "action" => "POST",
+                    "deviceId" => $req->deviceId, // Include deviceId from request
+                ],
+                "data" => remove_null($propDetails->toArray()), // Convert collection to array and remove nulls
+            ];
+    
+            return response()->json($response);
+        } catch (Exception $e) {
+            // Handle exceptions and return error response
+            return response()->json([
+                "status" => false,
+                "message" => $e->getMessage(),
+                "meta-data" => [
+                    "apiId" => "011707",
+                    "version" => "01",
+                    "responsetime" => microtime(true) - LARAVEL_START,
+                    "epoch" => now()->toDateTimeString(),
+                    "action" => "POST",
+                    "deviceId" => $req->deviceId,
+                ],
+            ], 500);
+        }
     }
+
+    #===============================END======================================
+
+
     public function readRefDocumentPath($path)
     {
         $path = ("https://smartulb.co.in/RMCDMC/getImageLink.php?path=" . "/" . $path);                      // Static

@@ -605,6 +605,9 @@ Route::group(['middleware' => ['request_logger', 'expireBearerToken', 'auth_make
     Route::post('reports/bulk-notice-comment', 'bulkNoticeComment');
     # Date : 10-09-2024 bulk demand reports
     Route::post('reports/tc-visit-list', 'tcVisitList');
+    #========================alok=========================
+    Route::post('reports/tax-report', 'getTaxReport');
+
   });
 
   /**

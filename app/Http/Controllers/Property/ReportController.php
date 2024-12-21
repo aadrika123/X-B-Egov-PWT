@@ -66,6 +66,8 @@ class ReportController extends Controller
         $this->_common = new CommonFunction();
     }
 
+   
+    
     public function collectionReport(CollectionReport $request)
     {
         $request->merge(["metaData" => ["pr1.1", 1.1, null, $request->getMethod(), null,]]);
@@ -7806,7 +7808,11 @@ class ReportController extends Controller
         }
     }
 
-
+    #==========================alok=======================
+    public function getTaxReport(Request $request){
+        $request->merge(["metaData" => ["pr100.1", 1.1, null, $request->getMethod(), null,]]);
+        return $this->Repository->getTaxReport($request);
+    }
 
 
 
