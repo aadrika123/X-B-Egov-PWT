@@ -5498,29 +5498,56 @@ class Trade implements ITrade
         $mActiveTradeTemp = new ActiveTradeTempLicence();
         $relativePath = $this->_TRADE_CONSTAINT["TRADE_RELATIVE_PATH"];
 
-        // collect($documents)->map(function ($doc) use ($licenceId, $docUpload, $mWfActiveDocument, $mActiveTradeTemp, $relativePath, $auth) {
+        collect($documents)->map(function ($doc) use ($licenceId, $docUpload, $mWfActiveDocument, $mActiveTradeTemp, $relativePath, $auth) {
             $metaReqs = array();
             $getApplicationDtls = $mActiveTradeTemp->getApplicationDtls($licenceId);
-            // $refImageName = $doc['docCode'];
-            // $refImageName = $getApplicationDtls->id . '-' . $refImageName;
-            // $documentImg = $doc['image'];
-            // $imageName = $docUpload->upload($refImageName, $documentImg, $relativePath);
+            $refImageName = $doc['docCode'];
+            $refImageName = $getApplicationDtls->id . '-' . $refImageName;
+            $documentImg = $doc['image'];
+            $imageName = $docUpload->upload($refImageName, $documentImg, $relativePath);
             $metaReqs['moduleId'] = Config::get('TradeConstant.TRADE_MODULE_ID');
             $metaReqs['activeId'] = $getApplicationDtls->id;
             $metaReqs['workflowId'] = $getApplicationDtls->workflow_id;
             $metaReqs['ulbId'] = $getApplicationDtls->ulb_id;
             $metaReqs['relativePath'] = $relativePath;
-            // $metaReqs['document'] = $imageName;
-            // $metaReqs['docCode'] = $doc['docCode'];
-            // $metaReqs['ownerDtlId'] = $doc['ownerDtlId'];
+            $metaReqs['document'] = $imageName;
+            $metaReqs['docCode'] = $doc['docCode'];
+            $metaReqs['ownerDtlId'] = $doc['ownerDtlId'];
             $a = new Request($metaReqs);
             // $mWfActiveDocument->postDocuments($a, $auth);
-            $metaReqs =  $mWfActiveDocument->metaReqs($metaReqs);
+            $metaReqs =  $mWfActiveDocument->metaRequest($metaReqs);
             $mWfActiveDocument->create($metaReqs);
             // foreach ($metaReqs as $key => $val) {
             //     $mWfActiveDocument->$key = $val;
             // }
             // $mWfActiveDocument->save();
-        // });
+        });
+    }
+
+    #-------------------- End core function of core function --------------
+
+    public function getTempLicenseDocLists(Request $request)
+    {
+        $request->validate([
+            'applicationId' => 'required|numeric'
+        ]);
+        try {
+            $refApplication = ActiveTradeTempLicence::find($request->applicationId);
+            if (!$refApplication) {
+                throw new Exception("Application Not Found for this id");
+            }
+            $refOwners = ActiveTempTradeOwner::owneresByLId($request->applicationId);
+            $DocsType['listDocs'] = $this->getApplTypeDocList($refApplication);
+            $DocsType['ownerDocs'] = collect($refOwners)->map(function ($owner) use ($refApplication) {
+                return $this->getOwnerDocLists($owner, $refApplication);
+            });
+            $status =  $this->check($DocsType);
+            $DocsType['docUploadStatus'] = ($status["docUploadStatus"] ?? false) ? 1 : 0;
+            $DocsType['docVerifyStatus'] = ($status["docVerifyStatus"] ?? false) ? 1 : 0;
+            $DocsType["citizenCanSendOfficer"] = ($DocsType['docUploadStatus'] && ($refApplication->initiator_role == $refApplication->current_role || $refApplication->is_parked)) ? true  : false;
+            return responseMsgs(true, "Documents Fetched", remove_null($DocsType), "010203", "1.0", "", 'POST', "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010203", "1.0", "", 'POST', "");
+        }
     }
 }

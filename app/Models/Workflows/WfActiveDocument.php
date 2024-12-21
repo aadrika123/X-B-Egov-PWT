@@ -50,6 +50,8 @@ class WfActiveDocument extends Model
         ];
     }
 
+    
+
     public function metaRequest($req)
     {
         return [
@@ -59,8 +61,8 @@ class WfActiveDocument extends Model
             "module_id" => $req['moduleId'],
             "relative_path" => $req['relativePath'],
             "document" => $req['document'],
-            "uploaded_by" =>  Auth()->user()->id,
-            "uploaded_by_type" => Auth()->user()->user_type,
+            // "uploaded_by" =>  Auth()->user()->id,
+            // "uploaded_by_type" => Auth()->user()->user_type,
             "remarks" => $req->remarks ?? null,
             "doc_code" => $req['docCode'],
             "owner_dtl_id" => $req['ownerDtlId'],

@@ -31,7 +31,7 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         // Route::post("application/surrender", "getMstrForSurender");
         Route::post('application/add', 'applyApplication');
         
-        Route::post('application/add-temporary', 'applyTempApplication');
+        
 
         Route::post('application/get-demand', 'paybleAmount');
 
@@ -94,6 +94,12 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
 
         Route::post('application/old-app-edit', 'editOldApp');
         Route::post("license/counter", "updateLicenseCounter");
+
+        # ==== written by Arshad =========#
+        Route::post('application/add-temporary', 'applyTempApplication');
+        
+        Route::post('application/get-trade-temp-docs','getTempUploadDocuments');
+
     });
 
     Route::controller(TradeNoticeController::class)->group(function () {

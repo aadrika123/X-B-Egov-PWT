@@ -37,7 +37,9 @@ use App\Models\Trade\TradeParamOwnershipType;
 use App\Http\Requests\Trade\ReqUpdateBasicDtl;
 use App\Models\ActiveCitizen;
 use App\Models\Property\ZoneMaster;
+use App\Models\Trade\ActiveTempTradeOwner;
 use App\Models\Trade\ActiveTradeOwner;
+use App\Models\Trade\ActiveTradeTempLicence;
 use App\Models\Trade\AkolaTradeParamItemType;
 use App\Models\Trade\RejectedTradeOwner;
 use App\Models\Trade\TradeRenewal;
@@ -1637,5 +1639,53 @@ class TradeApplication extends Controller
         } catch (\Exception $e) {
             return responseMsgs(false, $e->getMessage(), "", "010201", "1.0", "", "POST", $request->deviceId ?? "");
         }
+    }
+
+    /**
+     * | get document list uploaded for temporary trade license
+     */
+
+    public function getTempUploadDocuments(Request $req)
+    {
+        $validated = Validator::make(
+            $req->all(),
+            [
+                'applicationId' => 'required|numeric'
+            ]
+        );
+        if ($validated->fails()) {
+            return response()->json(['errors' => $validated->errors()], 422);
+        }
+        try {
+            $mWfActiveDocument     = new WfActiveDocument();
+            $mActivetradeTemp      = new ActiveTradeTempLicence();
+            $mActiveTradeTempOwner = new ActiveTempTradeOwner();
+            $moduleId              = Config::get('TradeConstant.TRADE_MODULE_ID');
+            $tempTradeDetails      = $mActivetradeTemp->getApplicationDtls($req->applicationId);
+            if ($tempTradeDetails == null) {
+                $tempTradeDetails = $mActiveTradeTempOwner->checkdtlsByIds($req->applicationId);
+            }
+
+            if (!$tempTradeDetails)
+                throw new Exception("Application Not Found for this application Id");
+
+            $workflowId = $tempTradeDetails->workflow_id;
+
+            $documents = $mWfActiveDocument->getTradeDocByAppNo($req->applicationId, $workflowId, $moduleId);
+            $returnData = collect($documents)->map(function ($value) {                          // Static
+                $path =  $this->readDocumentPath($value->doc_path);
+                $value->doc_path = !empty(trim($value->doc_path)) ? trim($path, "/") : null;
+                return $value;
+            });
+            return responseMsgs(true, "Uploaded Documents", remove_null($returnData), "010102", "1.0", "", "POST", $req->deviceId ?? "");
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "", "010202", "1.0", "", "POST", $req->deviceId ?? "");
+        }
+    }
+    # function get doc path with url 
+    public function readDocumentPath($path)
+    {
+        $path = (config('app.url') . "/" . $path);
+        return $path;
     }
 }
