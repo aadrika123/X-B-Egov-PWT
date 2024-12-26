@@ -1696,8 +1696,8 @@ class TradeApplication extends Controller
 
             $documents = $mWfActiveDocument->getTradeDocByAppNo($req->applicationId, $workflowId, $moduleId);
             $returnData = collect($documents)->map(function ($value) {                          // Static
-                $path =  $this->readDocumentPath($value->doc_path);
-                $value->doc_path = !empty(trim($value->doc_path)) ? trim($path, "/") : null;
+                // $path =  $this->readDocumentPath($value->doc_path);
+                $value->doc_path = $value->doc_path;
                 return $value;
             });
             return responseMsgs(true, "Uploaded Documents", remove_null($returnData), "010102", "1.0", "", "POST", $req->deviceId ?? "");
