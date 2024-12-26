@@ -5241,6 +5241,7 @@ class WaterReportController extends Controller
             $wardId = $request->wardId;
             $zoneId = $request->zoneId;
             $notice = $request->notice;
+            $consumerNo = $request->consumerNo;
 
             $data = waterConsumerDemand::select(
                 "water_second_consumers.id as consumer_id",
@@ -5291,6 +5292,9 @@ class WaterReportController extends Controller
             }
             if ($zoneId) {
                 $data->where('water_second_consumers.zone_mstr_id', $zoneId);
+            }
+            if (isset($consumerNo)) {
+                $data->where('water_second_consumers.consumer_no', $consumerNo);
             }
             if ($notice) {
                 switch ($notice) {

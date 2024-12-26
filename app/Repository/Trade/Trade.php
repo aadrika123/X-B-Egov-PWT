@@ -5571,7 +5571,7 @@ class Trade implements ITrade
             $string         = preg_replace("/([A-Z])/", "_$1", $key);
             $refstring      = strtolower($string);
             $ReturnDetails = null;
-            if ($key !== null) {
+            if ($key !== 'nullable') {
                 // switch ($key) {
                 //     case "applicationNo":
                 //         $data = $this->_ACTIVE_TEMP_LICENSE->getByItsDetailsV2($request, $refstring, $paramenter,);
@@ -5616,7 +5616,7 @@ class Trade implements ITrade
                 //         throw new Exception("Data provided in filterBy is not valid!");
                 // }
             } else {
-                $ReturnDetails = $this->_ACTIVE_TEMP_LICENSE->getByItsDetailsV2($request, $refstring, $paramenter,);
+             $ReturnDetails = $this->_ACTIVE_TEMP_LICENSE->getByItsDetailsV2()->paginate($pages);
                 // if ($userType == 'Citizen') {
                 //     $ReturnDetails->where('active_trade_temp_licences.citizen_id', $userId);
                 // }
