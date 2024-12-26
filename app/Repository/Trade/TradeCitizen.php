@@ -978,7 +978,7 @@ class TradeCitizen implements ITradeCitizen
      {
          try {
              $id = $request->id;
-             $refUser        = Auth()->user();
+            //  $refUser        = Auth()->user();
              $refUserId      = $refUser->id ?? 0;
              $refUlbId       = $refUser->ulb_id ?? 0;
              $refWorkflowId  = $this->_WF_MASTER_Id;
@@ -987,7 +987,7 @@ class TradeCitizen implements ITradeCitizen
              $mRefTable = $this->_REF_TABLE;
              $levelComment = $mWorkflowTracks->getTracksByRefIdv1($mRefTable, $id);
              $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId);
-             $refApplication = $this->_REPOSITORY_TRADE->getAllLicenceById($id);
+             $refApplication = $this->_REPOSITORY_TRADE->getAllTempLicenceById($id);
              $mStatus = $this->_REPOSITORY_TRADE->applicationStatus($id);
              $mItemName      = "";
              $mCods          = "";
