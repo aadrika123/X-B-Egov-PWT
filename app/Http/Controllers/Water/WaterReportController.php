@@ -4777,6 +4777,7 @@ class WaterReportController extends Controller
                 "userId" => "nullable|digits_between:1,9223372036854775807",
                 "wardId" => "nullable|digits_between:1,9223372036854775807",
                 "zoneId" => "nullable|digits_between:1,9223372036854775807",
+                "consumerNo" => "nullable",
                 "page" => "nullable|digits_between:1,9223372036854775807",
                 "perPage" => "nullable|digits_between:1,9223372036854775807",
                 "propertyType" => "required"
@@ -4792,6 +4793,7 @@ class WaterReportController extends Controller
             $userId = $request->userId;
             $wardId = $request->wardId;
             $zoneId = $request->zoneId;
+            $consumerNo = $request->consumerNo;
             $paramenter     = $request->parameter;
             $key            = $request->filterBy;
             $propertyType   = $request->propertyType;
@@ -4854,6 +4856,9 @@ class WaterReportController extends Controller
             }
             if ($propertyType) {
                 $data->where('water_second_consumers.property_type_id', $propertyType);
+            }
+            if (isset($consumerNo)) {
+                $data->where('water_second_consumers.consumer_no', $consumerNo);
             }
 
             $perPage = $request->perPage ?? 10;
