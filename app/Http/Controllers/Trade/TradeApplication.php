@@ -321,13 +321,13 @@ class TradeApplication extends Controller
     # Serial No : 02
     public function applyTempApplication(ReqTempAddRecord $request)
     {
-        $refUser            = Auth()->user();
+        $refUser            = authUser($request);
         $refUserId          = $refUser->id;
         // if ($refUser->user_type == $this->_TRADE_CONSTAINT["CITIZEN"]) {
-            $refUlbId = $request->ulbId ?? 2;
+        $refUlbId = $request->ulbId ?? 2;
         // }
         $refWorkflowId      = $this->_WF_TEMP_MASTER_Id;
-        $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
+        $mUserType          = $this->_COMMON_FUNCTION->userTypev1($request, $refWorkflowId, $refUlbId);
         $refWorkflows       = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
         $mApplicationTypeId = ($this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType] ?? null);
         try {

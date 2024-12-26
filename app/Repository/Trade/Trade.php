@@ -49,6 +49,7 @@ use App\Models\Workflows\WfActiveDocument;
 use App\Models\Workflows\WfWorkflow;
 use App\Models\WorkflowTrack;
 use App\Models\Workflows\WfRole;
+use App\Models\Workflows\WfRoleusermap;
 use App\Repository\Common\CommonFunction;
 use App\Repository\WorkflowMaster\Concrete\WorkflowMap;
 use Illuminate\Http\Request;
@@ -4480,10 +4481,10 @@ class Trade implements ITrade
             $table = "active_trade_temp_licences";
             $application = ActiveTradeTempLicence::select(
                 "active_trade_temp_licences.*",
-                    "trade_param_application_types.application_type",
-                    "trade_param_category_types.category_type",
-                    "trade_param_firm_types.firm_type",
-                    "trade_param_ownership_types.ownership_type",
+                "trade_param_application_types.application_type",
+                "trade_param_category_types.category_type",
+                "trade_param_firm_types.firm_type",
+                "trade_param_ownership_types.ownership_type",
                 DB::raw("ulb_ward_masters.ward_name AS ward_no")
             );
             // }
@@ -5413,12 +5414,9 @@ class Trade implements ITrade
     {
         try {
             #------------------------ Declaration-----------------------           
-            // $refUser            = Auth()->user();
-            // $refUserId          = $refUser->id;
-            $refUserId          = 203;
-            // $refUlbId           = $refUser->ulb_id ?? $request->ulbId;
-            $refUlbId           = 2;
-            // $refUlbId           = $request->ulbId;
+            $refUser             = authUser($request);
+            $refUserId          = $refUser->id;
+            $refUlbId           = $refUser->ulb_id ?? $request->ulbId;
             $refUlbDtl          = UlbMaster::find($refUlbId);
             $refUlbName         = explode(' ', $refUlbDtl->ulb_name);
             $refNoticeDetails   = null;
@@ -5431,7 +5429,7 @@ class Trade implements ITrade
             }
 
             $refWorkflows       = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
-            $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
+            $mUserType          = $this->_COMMON_FUNCTION->userTypev1($request, $refWorkflowId, $refUlbId);
             $mShortUlbName      = "";
             $mApplicationTypeId = $this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType];
             $mNowdate           = Carbon::now()->format('Y-m-d');
@@ -5565,6 +5563,23 @@ class Trade implements ITrade
             $this->rollBack();
             return responseMsg(false, $e->getMessage(), "");
         }
+    }
+    //logged in user role 
+    public function getRole($request)
+    {
+        $userId = authUser($request)->id;
+        // DB::enableQueryLog();
+        $role = WfRoleusermap::select(
+            'wf_workflowrolemaps.*',
+            'wf_roleusermaps.user_id'
+        )
+            ->join('wf_workflowrolemaps', 'wf_workflowrolemaps.wf_role_id', 'wf_roleusermaps.wf_role_id')
+            ->where('user_id', $userId)
+            ->where('wf_workflowrolemaps.workflow_id', $request->workflowId)
+            ->first();
+        // return (DB::getQueryLog());
+
+        return remove_null($role);
     }
     public function uploadHoardDocument($licenceId, $documents, $auth, $request)
     {

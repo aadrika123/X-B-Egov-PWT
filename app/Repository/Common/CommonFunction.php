@@ -244,6 +244,7 @@ class CommonFunction implements ICommonFunction
             echo $e->getMessage();
         }
     }
+
     public function iniatorFinisher($user_id, $ulb_id, $refWorkflowId) //array
     {
         try {
@@ -278,6 +279,15 @@ class CommonFunction implements ICommonFunction
         } else
             return "Online";
     }
+    public function userTypev1($request, $refWorkflowId, $ulb_id): string
+    {
+        $user = authUser($request);
+        $user_type_sort = Config::get('TradeConstant.USER-TYPE-SHORT-NAME.' . strtoupper($user->user_type));
+        if (!$user_type_sort) {
+            return "Online";
+        }
+        return $user_type_sort;
+    }
 
     public function getWorkFlowAllRoles($user_id, int $ulb_id, int $work_flow_id, $all = false)
     {
@@ -311,22 +321,24 @@ class CommonFunction implements ICommonFunction
         return true;
     }
 
-    public function getReactionActionTakenRole($user_id, int $ulb_id, int $work_flow_id,$action="doc_verify")
+    public function getReactionActionTakenRole($user_id, int $ulb_id, int $work_flow_id, $action = "doc_verify")
     {
         $roles = ((collect($this->getWorkFlowRoles($user_id, $ulb_id, $work_flow_id))->sortBy("serial_no"))->values());
-        switch($action)
-        {
-            case "doc_verify": $roles = $roles->where("can_verify_document",true);
-                                break;
-            case "doc_upload": $roles = $roles->where("can_upload_document",true);
-                                break;
-            case "can_edit": $roles = $roles->where("can_edit",true);
-                                break;
+        switch ($action) {
+            case "doc_verify":
+                $roles = $roles->where("can_verify_document", true);
+                break;
+            case "doc_upload":
+                $roles = $roles->where("can_upload_document", true);
+                break;
+            case "can_edit":
+                $roles = $roles->where("can_edit", true);
+                break;
         }
-        return($roles);
+        return ($roles);
     }
 
-    public function getUserAllRoles($userId=null)
+    public function getUserAllRoles($userId = null)
     {
         $user = Auth()->user();
         $constaint = Config::get("TradeConstant.USER-TYPE-SHORT-NAME");
@@ -334,17 +346,16 @@ class CommonFunction implements ICommonFunction
             DB::raw(
                 "distinct wf_roles.id as role_id, 
                 wf_roles.role_name,user_id"
-                )
             )
-            ->join("wf_roles","wf_roles.id","wf_roleusermaps.wf_role_id")
-            ->where("wf_roleusermaps.user_id",$userId ? $userId:($user->id??0))
-            ->where("wf_roles.is_suspended",FALSE)
-            ->where("wf_roleusermaps.is_suspended",FALSE)
+        )
+            ->join("wf_roles", "wf_roles.id", "wf_roleusermaps.wf_role_id")
+            ->where("wf_roleusermaps.user_id", $userId ? $userId : ($user->id ?? 0))
+            ->where("wf_roles.is_suspended", FALSE)
+            ->where("wf_roleusermaps.is_suspended", FALSE)
             ->get()
-            ->map(function($val) use($constaint){
-                $val->sort_name = $constaint[strtoupper($val->role_name)]??"";
+            ->map(function ($val) use ($constaint) {
+                $val->sort_name = $constaint[strtoupper($val->role_name)] ?? "";
                 return $val;
             });
-            
     }
 }
