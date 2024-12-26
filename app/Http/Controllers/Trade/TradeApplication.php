@@ -323,9 +323,9 @@ class TradeApplication extends Controller
     {
         $refUser            = Auth()->user();
         $refUserId          = $refUser->id;
-        if ($refUser->user_type == $this->_TRADE_CONSTAINT["CITIZEN"]) {
-            $refUlbId = $request->ulbId ?? 0;
-        }
+        // if ($refUser->user_type == $this->_TRADE_CONSTAINT["CITIZEN"]) {
+            $refUlbId = $request->ulbId ?? 2;
+        // }
         $refWorkflowId      = $this->_WF_TEMP_MASTER_Id;
         $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
         $refWorkflows       = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
