@@ -321,13 +321,11 @@ class TradeApplication extends Controller
     # Serial No : 02
     public function applyTempApplication(ReqTempAddRecord $request)
     {
-        // $refUser            = Auth()->user();
-        // $refUserId          = $refUser->id;
-        $refUserId          = 203;
-        $refUlbId           = 2;
-        // if ($refUser->user_type == $this->_TRADE_CONSTAINT["CITIZEN"]) {
-        //     $refUlbId = $request->ulbId ?? 0;
-        // }
+        $refUser            = Auth()->user();
+        $refUserId          = $refUser->id;
+        if ($refUser->user_type == $this->_TRADE_CONSTAINT["CITIZEN"]) {
+            $refUlbId = $request->ulbId ?? 0;
+        }
         $refWorkflowId      = $this->_WF_TEMP_MASTER_Id;
         $mUserType          = $this->_COMMON_FUNCTION->userType($refWorkflowId);
         $refWorkflows       = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
@@ -1622,8 +1620,16 @@ class TradeApplication extends Controller
 
     public function searchTempTrade(Request $request)
     {
-        
+
         try {
+            $rules = [
+                "entityValue"   =>  "required",
+                "entityName"    =>  "required",
+            ];
+            $validator = Validator::make($request->all(), $rules,);
+            if ($validator->fails()) {
+                return responseMsg(false, $validator->errors(), "");
+            }
             return $this->_REPOSITORY->searchTempTradeLicense($request);
 
             return responseMsgs(true, " Data According To Parameter!", remove_null($list), "", "01", "652 ms", "POST", "");

@@ -928,6 +928,18 @@ class TradeCitizenController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+    # Serial No : 28
+    public function readCitizenTemplicenseDtl(Request $request)
+    {
+        try {
+            $request->validate([
+                'id' => 'required|digits_between:1,9223372036854775807'
+            ]);
+            return $this->_REPOSITORY->readCitizenTemplicenseDtl($request);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
 
     # Serial No
     public function expiredLicence(Request $request)

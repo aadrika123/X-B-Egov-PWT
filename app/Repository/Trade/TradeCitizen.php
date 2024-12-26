@@ -89,7 +89,7 @@ class TradeCitizen implements ITradeCitizen
         $this->_MODULE_ID = Config::get('module-constants.TRADE_MODULE_ID');
         $this->_TRADE_CONSTAINT = Config::get("TradeConstant");
         $this->_REF_TABLE = $this->_TRADE_CONSTAINT["TRADE_REF_TABLE"];
-
+          
         $this->_META_DATA = [
             "apiId" => $this->_API_ID,
             "version" => 1.1,
@@ -973,4 +973,73 @@ class TradeCitizen implements ITradeCitizen
             return responseMsg(false, $e->getMessage(), '');
         }
     }
-}
+     # Serial No : 28
+     public function readCitizenTemplicenseDtl(Request $request)
+     {
+         try {
+             $id = $request->id;
+             $refUser        = Auth()->user();
+             $refUserId      = $refUser->id ?? 0;
+             $refUlbId       = $refUser->ulb_id ?? 0;
+             $refWorkflowId  = $this->_WF_MASTER_Id;
+             $modul_id = $this->_MODULE_ID;
+             $mWorkflowTracks = new WorkflowTrack();
+             $mRefTable = $this->_REF_TABLE;
+             $levelComment = $mWorkflowTracks->getTracksByRefIdv1($mRefTable, $id);
+             $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId);
+             $refApplication = $this->_REPOSITORY_TRADE->getAllLicenceById($id);
+             $mStatus = $this->_REPOSITORY_TRADE->applicationStatus($id);
+             $mItemName      = "";
+             $mCods          = "";
+             if (!$refApplication) {
+                 throw new Exception("Data Not Found");
+             }
+             if (!$refUlbId) {
+                 $refUlbId = $refApplication->ulb_id;
+             }
+ 
+             $init_finish = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
+             $finisher = $init_finish['finisher'];
+             $finisher['short_user_name'] = $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][strtoupper($init_finish['finisher']['role_name'])];
+             // if ($refApplication->nature_of_bussiness) {
+             //     $items = AkolaTradeParamItemType::itemsById($refApplication->nature_of_bussiness);
+             //     foreach ($items as $val) {
+             //         $mItemName  .= $val->trade_item . ",";
+             //         $mCods      .= $val->trade_code . ",";
+             //     }
+             //     $mItemName = trim($mItemName, ',');
+             //     $mCods = trim($mCods, ',');
+             // }
+             $mCods = $refApplication->nature_of_bussiness;
+             $refApplication->nature_of_bussiness      = $mItemName;
+             $refApplication->items      = $mItemName;
+             $refApplication->items_code = $mCods;
+             // $refApplication->items_code = $refApplication->nature_of_bussiness;
+             $refOwnerDtl                = $this->_REPOSITORY_TRADE->getAllOwnereDtlByLId($id);
+             $refTransactionDtl          = TradeTransaction::listByLicId($id);
+             $refUploadDocuments         = $this->_MODEL_WfActiveDocument->getTradeDocByAppNo($refApplication->id, $refApplication->workflow_id, $modul_id);
+ 
+             $pendingAt  = $init_finish['initiator']['id'];
+             $mlevelData = $this->_REPOSITORY_TRADE->getWorkflowTrack($id);
+             if ($mlevelData) {
+                 $pendingAt = $mlevelData->receiver_user_type_id;
+             }
+ 
+ 
+             $data['licenceDtl']     = $refApplication;
+             $data['ownerDtl']       = $refOwnerDtl;
+             $data['transactionDtl'] = $refTransactionDtl;
+             $data['pendingStatus']  = $mStatus;
+             $data['documents']      = $refUploadDocuments;
+             $data["userType"]       = $mUserType;
+             $data["pendingAt"]      = $pendingAt;
+             $data["workflowComment"] =  $levelComment;
+             $data = remove_null($data);
+ 
+             return responseMsg(true, "", $data);
+         } catch (Exception $e) {
+             return responseMsg(false, $e->getMessage(), '');
+         }
+     }
+ 
+   }

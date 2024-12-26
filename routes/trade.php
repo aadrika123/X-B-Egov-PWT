@@ -140,6 +140,8 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
 
         Route::post('application/citizen-by-id', 'readCitizenLicenceDtl');         #id = c7
 
+   
+
         Route::post('application/renewable-list', 'renewalList');                  #id = c8
 
         Route::post('application/amendable-list', 'amendmentList');                 #id = c9
@@ -156,6 +158,8 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         Route::post('application/init-payment', "initPayment");
         Route::post('application/easebuzz-handel-response', "easebuzzHandelResponse");
         Route::post('application/license-init-payment', "initPaymentReceipt");
+        
+        Route::post('application-temp/citizen-by-id', 'readCitizenTemplicenseDtl');        
     });
 
     #-----------report----------------------------------

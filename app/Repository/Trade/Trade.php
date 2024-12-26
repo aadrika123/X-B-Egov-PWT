@@ -4701,9 +4701,9 @@ class Trade implements ITrade
             if ($application->application_type_id == 4) {
                 $status = "License Surrenderd Successfully";
             }
-            if ($application->valid_upto < Carbon::now()->format("Y-m-d")) {
-                $status = "License Expired On " . $application->valid_upto;
-            }
+            // if ($application->valid_upto < Carbon::now()->format("Y-m-d")) {
+            //     $status = "License Expired On " . $application->valid_upto;
+            // }
         } elseif ($application->pending_status == 5 && $application->payment_status != 1) {
             $status = "Application is Approved But Payment Not Clear";
             if ($application->application_type_id == 4) {
@@ -4721,41 +4721,41 @@ class Trade implements ITrade
         } elseif (!$application->is_active) {
             $status = "Application rejected ";
         } # && $application->payment_status == 0
-        elseif ($docChequ2 && strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""] && $application->citizen_id == $refUserId && $application->document_upload_status == 0) {
-            $request = new Request(["applicationId" => $licenceId, "ulb_id" => $refUlbId, "user_id" => $refUserId]);
-            $doc_status = $this->checkWorckFlowForwardBackord($request);
-            if ($doc_status) { #&& $application->payment_status == 0
-                $status = "All Required Documents Are Uploaded"; # But Payment is Pending 
-            } elseif ($doc_status && $application->payment_status == 1) {
-                $status = "Pending At Counter";
-            } elseif (!$doc_status && $application->payment_status == 1) {
-                $status = "Payment is Done But Document Not Uploaded";
-            } elseif (!$doc_status) { # && $application->payment_status == 0
-                $status = "Document Not Uploaded"; #Payment is Pending And 
-            }
-        } elseif ($docChequ2 && $application->payment_status == 1 && $application->document_upload_status == 0 && $application->application_type_id == 4) {
-            $request = new Request(["applicationId" => $licenceId, "ulb_id" => $refUlbId, "user_id" => $refUserId]);
-            $doc_status = $this->checkWorckFlowForwardBackord($request);
-            if ($doc_status) {
-                $status = "All Required Documents Are Uploaded ";
-            } else {
-                $status = "All Required Documents Are Not Uploaded ";
-            }
-        } elseif ($application->payment_status == 0 && $application->document_upload_status == 0) {
-            $status = "Payment is pending and document not uploaded ";
-        } elseif ($application->payment_status == 1 && $application->document_upload_status == 0) {
-            $status = "Payment is done but document not uploaded ";
-        } elseif ($application->payment_status == 0 && $application->document_upload_status == 1) {
-            $status = "Payment is pending but document is uploaded ";
-        } elseif ($application->payment_status == 1 && $application->document_upload_status == 1) {
-            $status = "Payment is done and document is uploaded ";
-        } elseif ($application->payment_status == 2 && $application->document_upload_status == 1) {
-            $status = "Document is uploaded but Payment is not clear";
-        } elseif ($application->payment_status == 2 && $application->document_upload_status == 0) {
-            $status = "Payment is not clear and document not uploaded ";
-        } else {
-            $status = "Applilcation Not Appoved";
-        }
+        // elseif ($docChequ2 && strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""] && $application->citizen_id == $refUserId && $application->document_upload_status == 0) {
+        //     $request = new Request(["applicationId" => $licenceId, "ulb_id" => $refUlbId, "user_id" => $refUserId]);
+        //     $doc_status = $this->checkWorckFlowForwardBackord($request);
+        //     if ($doc_status) { #&& $application->payment_status == 0
+        //         $status = "All Required Documents Are Uploaded"; # But Payment is Pending 
+        //     } elseif ($doc_status && $application->payment_status == 1) {
+        //         $status = "Pending At Counter";
+        //     } elseif (!$doc_status && $application->payment_status == 1) {
+        //         $status = "Payment is Done But Document Not Uploaded";
+        //     } elseif (!$doc_status) { # && $application->payment_status == 0
+        //         $status = "Document Not Uploaded"; #Payment is Pending And 
+        //     }
+        // } elseif ($docChequ2 && $application->payment_status == 1 && $application->document_upload_status == 0 && $application->application_type_id == 4) {
+        //     $request = new Request(["applicationId" => $licenceId, "ulb_id" => $refUlbId, "user_id" => $refUserId]);
+        //     $doc_status = $this->checkWorckFlowForwardBackord($request);
+        //     if ($doc_status) {
+        //         $status = "All Required Documents Are Uploaded ";
+        //     } else {
+        //         $status = "All Required Documents Are Not Uploaded ";
+        //     }
+        // } elseif ($application->payment_status == 0 && $application->document_upload_status == 0) {
+        //     $status = "Payment is pending and document not uploaded ";
+        // } elseif ($application->payment_status == 1 && $application->document_upload_status == 0) {
+        //     $status = "Payment is done but document not uploaded ";
+        // } elseif ($application->payment_status == 0 && $application->document_upload_status == 1) {
+        //     $status = "Payment is pending but document is uploaded ";
+        // } elseif ($application->payment_status == 1 && $application->document_upload_status == 1) {
+        //     $status = "Payment is done and document is uploaded ";
+        // } elseif ($application->payment_status == 2 && $application->document_upload_status == 1) {
+        //     $status = "Document is uploaded but Payment is not clear";
+        // } elseif ($application->payment_status == 2 && $application->document_upload_status == 0) {
+        //     $status = "Payment is not clear and document not uploaded ";
+        // } else {
+        //     $status = "Applilcation Not Appoved";
+        // }
 
 
         return $status;
@@ -5445,7 +5445,8 @@ class Trade implements ITrade
 
                     $mWardNo =  $mWardNo[0] ?? "";
                     $this->newLicenseTemp($licence, $request);
-                    $licence->valid_from    = $licence->application_date;
+                    $licence->valid_from    = $request->applyFrom;
+                    $licence->valid_upto    = $request->applyUpto;
                     $licence->save();
                     $licenceId = $licence->id;
                     foreach ($request->owners as $owners) {
@@ -5466,7 +5467,7 @@ class Trade implements ITrade
                 $this->uploadHoardDocument($licenceId, $mDocuments, $request->auth, $request);
 
                 #============== End Of Document Uploadation ====================================#
-                #----------------End Crate Application--------------------
+                #----------------End Create Application--------------------
                 #---------------- transaction of payment-------------------------------
                 if ($mApplicationTypeId == 1 && $request->initialBusinessDetails['applyWith'] == 1) {
                     $noticeNo = trim($request->initialBusinessDetails['noticeNo']);
@@ -5559,82 +5560,364 @@ class Trade implements ITrade
      * | Search Application using provided condition 
      */
 
-    public function searchTempTradeLicense($request)
+    // public function searchTempTradeLicense($request)
+    // {
+    //     try {
+    //         $user           = authUser($request);
+    //         $userType       = $user->user_type;
+    //         $userId         = 203;
+    //         $key            = $request->filterBy;
+    //         $paramenter     = $request->parameter;
+    //         $fromDate       = $request->fromDate;
+    //         $uptoDate       = $request->uptoDate;
+    //         $pages          = $request['perPage'] ? $request['perPage'] : 10;
+    //         $string         = preg_replace("/([A-Z])/", "_$1", $key);
+    //         $refstring      = strtolower($string);
+    //         $ReturnDetails = null;
+    //         if ($key !== null) {
+    //             switch ($key) {
+    //                 case "applicationNo":
+    //                     $data = $this->_ACTIVE_TEMP_LICENSE->getByItsDetailsV2();
+    //                     if ($userType == 'Citizen') {
+    //                         $data->where('active_trade_temp_licences.citizen_id', $userId);
+    //                     }
+    //                     if ($paramenter !== null) {
+    //                         $data->where('active_trade_temp_licences.' . $refstring, 'LIKE', '%' . $paramenter . '%');
+    //                     }
+    //                     $ReturnDetails = $data->paginate($pages);
+    //                     // Check if data is not found
+    //                     $checkVal = $ReturnDetails->count();
+    //                     if (!$checkVal || $checkVal == 0) {
+    //                         throw new Exception("Data according to " . $key . " not Found!");
+    //                     }
+    //                     break;
+    //                 case ("licenseNo"):
+    //                     $data = $this->_ACTIVE_TEMP_LICENSE->getByItsDetailsV2();
+    //                     if ($paramenter !== null) {
+    //                         $data->where('active_trade_temp_licences.' . $refstring, 'LIKE', '%' . $paramenter . '%');
+    //                     }
+    //                     $ReturnDetails = $data->paginate($pages);
+    //                     // Check if data is not found
+    //                     $checkVal = $ReturnDetails->count();
+    //                     if (!$checkVal || $checkVal == 0) {
+    //                         throw new Exception("Data according to " . $key . " not Found!");
+    //                     }
+    //                     break;
+    //                 case ("hoardingNo"):
+    //                     $data = $this->_ACTIVE_TEMP_LICENSE->getByItsDetailsV2();
+    //                     if ($paramenter !== null) {
+    //                         $data->where('active_trade_temp_licences.' . $refstring, 'LIKE', '%' . $paramenter . '%');
+    //                     }
+    //                     $ReturnDetails = $data->paginate($pages);
+    //                     // Check if data is not found
+    //                     $checkVal = $ReturnDetails->count();
+    //                     if (!$checkVal || $checkVal == 0) {
+    //                         throw new Exception("Data according to " . $key . " not Found!");
+    //                     }
+    //                     break;
+    //                 default:
+    //                     throw new Exception("Data provided in filterBy is not valid!");
+    //             }
+    //         } elseif ($key == null) {
+    //             $ReturnDetails = $this->_ACTIVE_TEMP_LICENSE->getByItsDetailsV2();
+    //             if ($userType == 'Citizen') {
+    //                 $ReturnDetails->where('active_trade_temp_licences.citizen_id', $userId);
+    //             }
+    //             $ReturnDetails = $ReturnDetails->paginate($pages);
+    //             if (!$ReturnDetails) {
+    //                 throw new Exception('data not found');
+    //             }
+    //         } elseif ($fromDate && $uptoDate) {
+    //             $ReturnDetails = $this->_ACTIVE_TEMP_LICENSE->getByItsDetailsV2();
+    //             $ReturnDetails->wherebetween('active_trade_temp_licences.application_date', [$fromDate, $uptoDate]);
+    //             $ReturnDetails = $ReturnDetails->paginate($pages);
+    //             if (!$ReturnDetails) {
+    //                 throw new Exception('data not found');
+    //             }
+    //         }
+    //         $list = [
+    //             "current_page" => $ReturnDetails->currentPage(),
+    //             "last_page" => $ReturnDetails->lastPage(),
+    //             "data" => $ReturnDetails->items(),
+    //             "total" => $ReturnDetails->total(),
+    //         ];
+
+    //         return responseMsgs(true, " Data According To Parameter!", remove_null($list), "", "01", "652 ms", "POST", "");
+    //     } catch (Exception $e) {
+    //         return responseMsg(false, $e->getMessage(), "");
+    //     }
+    // }
+
+    public function searchTempTradeLicense(Request $request)
     {
         try {
-            // $user           = authUser($request);
-            // $userType       = $user->user_type;
-            $userId         = 203;
-            $key            = $request['filterBy'];
-            $paramenter     = $request['parameter'];
-            $pages          = $request['perPage'] ? $request['perPage'] : 10;
-            $string         = preg_replace("/([A-Z])/", "_$1", $key);
-            $refstring      = strtolower($string);
-            $ReturnDetails = null;
-            if ($key !== 'nullable') {
-                // switch ($key) {
-                //     case "applicationNo":
-                //         $data = $this->_ACTIVE_TEMP_LICENSE->getByItsDetailsV2($request, $refstring, $paramenter,);
-                //         if ($userType == 'Citizen') {
-                //             $data->where('active_trade_temp_licences.citizen_id', $userId);
-                //         }
-                //         if ($paramenter !== null) {
-                //             $data->where('active_trade_temp_licences.' . $refstring, 'LIKE', '%' . $paramenter . '%');
-                //         }
-                //         $ReturnDetails = $data->paginate($pages);
-                //         // Check if data is not found
-                //         $checkVal = $ReturnDetails->count();
-                //         if (!$checkVal || $checkVal == 0) {
-                //             throw new Exception("Data according to " . $key . " not Found!");
-                //         }
-                //         break;
-                //     case ("mobile"):
-                //         $data = $this->_ACTIVE_TEMP_LICENSE->getByItsDetailsV2($request, $refstring, $paramenter, $request->auth['email']);
-                //         if ($paramenter !== null) {
-                //             $data->where('agency_masters.' . $refstring, 'LIKE', '%' . $paramenter . '%');
-                //         }
-                //         $ReturnDetails = $data->paginate($pages);
-                //         // Check if data is not found
-                //         $checkVal = $ReturnDetails->count();
-                //         if (!$checkVal || $checkVal == 0) {
-                //             throw new Exception("Data according to " . $key . " not Found!");
-                //         }
-                //         break;
-                //     case ("hoardingNo"):
-                //         $data = $this->_ACTIVE_TEMP_LICENSE->getByItsDetailsV2($request, $refstring, $paramenter, $request->auth['email']);
-                //         if ($paramenter !== null) {
-                //             $data->where('hoarding_masters.' . $refstring, 'LIKE', '%' . $paramenter . '%');
-                //         }
-                //         $ReturnDetails = $data->paginate($pages);
-                //         // Check if data is not found
-                //         $checkVal = $ReturnDetails->count();
-                //         if (!$checkVal || $checkVal == 0) {
-                //             throw new Exception("Data according to " . $key . " not Found!");
-                //         }
-                //         break;
-                //     default:
-                //         throw new Exception("Data provided in filterBy is not valid!");
-                // }
-            } else {
-             $ReturnDetails = $this->_ACTIVE_TEMP_LICENSE->getByItsDetailsV2()->paginate($pages);
-                // if ($userType == 'Citizen') {
-                //     $ReturnDetails->where('active_trade_temp_licences.citizen_id', $userId);
-                // }
-                // $ReturnDetails = $ReturnDetails->paginate($pages);
-                // if (!$ReturnDetails) {
-                //     throw new Exception('data not found');
-                // }
-            }
-            $list = [
-                "current_page" => $ReturnDetails->currentPage(),
-                "last_page" => $ReturnDetails->lastPage(),
-                "data" => $ReturnDetails->items(),
-                "total" => $ReturnDetails->total(),
-            ];
+            $refUser    = Auth()->user();
+            $refUlbId   = $refUser->ulb_id ?? 2;
+            $mInputs    = $request->all();
+            DB::enableQueryLog();
+            $licence = ActiveTradeTempLicence::select(
+                "active_trade_temp_licences.id",
+                "active_trade_temp_licences.application_no",
+                "active_trade_temp_licences.provisional_license_no",
+                "active_trade_temp_licences.license_no",
+                "active_trade_temp_licences.firm_name",
+                "active_trade_temp_licences.application_date",
+                "active_trade_temp_licences.apply_from",
+                "active_trade_temp_licences.valid_upto",
+                "owner.owner_name",
+                "owner.owner_id",
+                "owner.guardian_name",
+                "owner.mobile_no",
+                "owner.email_id",
+                'trade_param_application_types.application_type',
+                "active_trade_temp_licences.payment_status",
+                DB::raw("'pending' as type"),
+            )
+                ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
+                                        STRING_AGG(guardian_name,',') AS guardian_name,
+                                        STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
+                                        STRING_AGG(email_id,',') AS email_id,
+                                        temp_id,id as owner_id
+                                    FROM active_temp_trade_owners 
+                                    WHERE is_active  =TRUE
+                                    GROUP BY temp_id,id
+                                    )owner"), function ($join) {
+                    $join->on("owner.temp_id", "active_trade_temp_licences.id");
+                })
+                ->leftjoin('trade_param_application_types', 'trade_param_application_types.id', '=', 'active_trade_temp_licences.application_type_id');
+            // ->where("active_trade_temp_licences.status",1) 
 
-            return responseMsgs(true, " Data According To Parameter!", remove_null($list), "", "01", "652 ms", "POST", "");
+            $aropved = TradeLicence::select(
+                "trade_licences.id",
+                "trade_licences.application_no",
+                "trade_licences.provisional_license_no",
+                "trade_licences.license_no",
+                "trade_licences.firm_name",
+                "trade_licences.application_date",
+                "trade_licences.apply_from",
+                "trade_licences.valid_upto",
+                "owner.owner_name",
+                "owner.owner_id",
+                "owner.guardian_name",
+                "owner.mobile_no",
+                "owner.email_id",
+                'trade_param_application_types.application_type',
+                "trade_licences.payment_status",
+                DB::raw("'Approved' as type"),
+            )
+                ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
+                                        STRING_AGG(guardian_name,',') AS guardian_name,
+                                        STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
+                                        STRING_AGG(email_id,',') AS email_id,
+                                        temp_id, id as owner_id
+                                    FROM trade_owners 
+                                    WHERE is_active  =TRUE
+                                    GROUP BY temp_id,id
+                                    )owner"), function ($join) {
+                    $join->on("owner.temp_id", "trade_licences.id");
+                })
+                ->leftjoin('trade_param_application_types', 'trade_param_application_types.id', '=', 'trade_licences.application_type_id');
+
+            $old = tradeRenewal::select(
+                "trade_renewals.id",
+                "trade_renewals.application_no",
+                "trade_renewals.provisional_license_no",
+                "trade_renewals.license_no",
+                "trade_renewals.firm_name",
+                "trade_renewals.application_date",
+                "trade_renewals.apply_from",
+                "trade_renewals.valid_upto",
+                "owner.owner_name",
+                "owner.owner_id",
+                "owner.guardian_name",
+                "owner.mobile_no",
+                "owner.email_id",
+                'trade_param_application_types.application_type',
+                "trade_renewals.payment_status",
+                DB::raw("'Old' as type"),
+            )
+                ->leftjoin(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
+                                        STRING_AGG(guardian_name,',') AS guardian_name,
+                                        STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
+                                        STRING_AGG(email_id,',') AS email_id,
+                                        temp_id ,id as owner_id
+                                    FROM trade_owners 
+                                    WHERE is_active  =TRUE
+                                    GROUP BY temp_id,id
+                                    )owner"), function ($join) {
+                    $join->on("owner.temp_id", "trade_renewals.id");
+                })
+                ->leftjoin('trade_param_application_types', 'trade_param_application_types.id', '=', 'trade_renewals.application_type_id');
+
+
+            $licence = $licence->where("active_trade_temp_licences.ulb_id", $refUlbId);
+            $aropved = $aropved->where("trade_licences.ulb_id", $refUlbId);
+            $old = $old->where("trade_renewals.ulb_id", $refUlbId);
+
+            if (isset($mInputs['entityValue']) && trim($mInputs['entityValue']) && isset($mInputs['entityName']) && trim($mInputs['entityName'])) {
+                $key = trim($mInputs['entityValue']);
+                $column = strtoupper(trim($mInputs['entityName']));
+                $licence = $licence->where(function ($query) use ($key, $column) {
+                    if ($column == "FIRM") {
+                        $query->orwhere('active_trade_temp_licences.firm_name', 'ILIKE', '%' . $key . '%');
+                    } elseif ($column == "APPLICATION") {
+                        $query->orwhere('active_trade_temp_licences.application_no', 'ILIKE', '%' . $key . '%');
+                    } elseif ($column == "LICENSE") {
+                        $query->orwhere('active_trade_temp_licences.license_no', 'ILIKE', '%' . $key . '%');
+                    } elseif ($column == "PROVISIONAL") {
+                        $query->orwhere('active_trade_temp_licences.provisional_license_no', 'ILIKE', '%' . $key . '%');
+                    } elseif ($column == "OWNER") {
+                        $query->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%');
+                    } elseif ($column == "GUARDIAN") {
+                        $query->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%');
+                    } elseif ($column == "MOBILE") {
+                        $query->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
+                    } else {
+                        $query->orwhere('active_trade_temp_licences.application_no', 'ILIKE', '%' . $key . '%');
+                    }
+                });
+
+                $aropved = $aropved->where(function ($query) use ($key, $column) {
+                    if ($column == "FIRM") {
+                        $query->orwhere('trade_licences.firm_name', 'ILIKE', '%' . $key . '%');
+                    } elseif ($column == "APPLICATION") {
+                        $query->orwhere('trade_licences.application_no', 'ILIKE', '%' . $key . '%');
+                    } elseif ($column == "LICENSE") {
+                        $query->orwhere('trade_licences.license_no', 'ILIKE', '%' . $key . '%');
+                    } elseif ($column == "PROVISIONAL") {
+                        $query->orwhere('trade_licences.provisional_license_no', 'ILIKE', '%' . $key . '%');
+                    } elseif ($column == "OWNER") {
+                        $query->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%');
+                    } elseif ($column == "GUARDIAN") {
+                        $query->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%');
+                    } elseif ($column == "MOBILE") {
+                        $query->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
+                    } else {
+                        $query->orwhere('trade_licences.application_no', 'ILIKE', '%' . $key . '%');
+                    }
+                });
+
+                $old = $old->where(function ($query) use ($key, $column) {
+                    if ($column == "FIRM") {
+                        $query->orwhere('trade_renewals.firm_name', 'ILIKE', '%' . $key . '%');
+                    } elseif ($column == "APPLICATION") {
+                        $query->orwhere('trade_renewals.application_no', 'ILIKE', '%' . $key . '%');
+                    } elseif ($column == "LICENSE") {
+                        $query->orwhere('trade_renewals.license_no', 'ILIKE', '%' . $key . '%');
+                    } elseif ($column == "PROVISIONAL") {
+                        $query->orwhere('trade_renewals.provisional_license_no', 'ILIKE', '%' . $key . '%');
+                    } elseif ($column == "OWNER") {
+                        $query->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%');
+                    } elseif ($column == "GUARDIAN") {
+                        $query->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%');
+                    } elseif ($column == "MOBILE") {
+                        $query->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
+                    } else {
+                        $query->orwhere('trade_renewals.application_no', 'ILIKE', '%' . $key . '%');
+                    }
+                });
+            }
+            $licence = $licence->union($aropved)->union($old)
+                ->orderBy("id", "DESC")
+                //->limit(10)
+                ->get();
+            // dd(DB::getQueryLog());
+            if ($licence->isEmpty()) {
+                throw new Exception("Application Not Found");
+            }
+            $data = [
+                "licence" => $licence->map(function ($val) {
+                    $val->application_date = $val->application_date ? Carbon::parse($val->application_date)->format("d-m-Y") : null;
+                    $val->valid_upto = $val->valid_upto ? Carbon::parse($val->valid_upto)->format("d-m-Y") : null;
+                    return $val;
+                }),
+            ];
+            return responseMsg(true, "", remove_null($data));
         } catch (Exception $e) {
-            return responseMsg(false, $e->getMessage(), "");
+            return responseMsg(false, $e->getMessage(), $request->all());
         }
+    }
+
+    public function applicationStatusTemp($licenceId, $docChequ2 = true)
+    {
+        $refUser        = Auth()->user();
+        $refUserId      = $refUser->id ?? 0;
+        $refUlbId       = $refUser->ulb_id ?? 0;
+        $refWorkflowId  = $this->_WF_MASTER_Id;
+        $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId, $refUlbId);
+        $application = TradeLicence::find($licenceId);
+        if (!$application) {
+            $application = ActiveTradeTempLicence::find($licenceId);
+        }
+        if (!$application) {
+            $application = RejectedTradeLicence::find($licenceId);
+        }
+        if (!$application) {
+            $application = TradeRenewal::find($licenceId);
+        }
+        $status = "";
+        if ($application->pending_status == 5 && $application->payment_status == 1) {
+            $status = "License Created Successfully";
+            if ($application->application_type_id == 4) {
+                $status = "License Surrenderd Successfully";
+            }
+            if ($application->valid_upto < Carbon::now()->format("Y-m-d")) {
+                $status = "License Expired On " . $application->valid_upto;
+            }
+        } elseif ($application->pending_status == 5 && $application->payment_status != 1) {
+            $status = "Application is Approved But Payment Not Clear";
+            if ($application->application_type_id == 4) {
+                $status = "License Surrenderd Successfully";
+            }
+        } elseif ($application->gettable() == (new RejectedTradeLicence)->gettable()) {
+            $rols  = WfRole::find($application->current_role);
+            $status = "Application Is Rejected By " . ($rols->role_name ?? "");
+        } elseif ($application->is_parked) {
+            $rols  = WfRole::find($application->current_role);
+            $status = "Application back to citizen by " . ($rols->role_name ?? "");
+        } elseif ($application->pending_status != 0 && (($application->current_role != $application->finisher_role) || ($application->current_role == $application->finisher_role))) {
+            $rols  = WfRole::find($application->current_role);
+            $status = "Application pending at " . ($rols->role_name ?? "");
+        } elseif (!$application->is_active) {
+            $status = "Application rejected ";
+        } # && $application->payment_status == 0
+        elseif ($docChequ2 && strtoupper($mUserType) == $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][""] && $application->citizen_id == $refUserId && $application->document_upload_status == 0) {
+            $request = new Request(["applicationId" => $licenceId, "ulb_id" => $refUlbId, "user_id" => $refUserId]);
+            $doc_status = $this->checkWorckFlowForwardBackord($request);
+            if ($doc_status) { #&& $application->payment_status == 0
+                $status = "All Required Documents Are Uploaded"; # But Payment is Pending 
+            } elseif ($doc_status && $application->payment_status == 1) {
+                $status = "Pending At Counter";
+            } elseif (!$doc_status && $application->payment_status == 1) {
+                $status = "Payment is Done But Document Not Uploaded";
+            } elseif (!$doc_status) { # && $application->payment_status == 0
+                $status = "Document Not Uploaded"; #Payment is Pending And 
+            }
+        } elseif ($docChequ2 && $application->payment_status == 1 && $application->document_upload_status == 0 && $application->application_type_id == 4) {
+            $request = new Request(["applicationId" => $licenceId, "ulb_id" => $refUlbId, "user_id" => $refUserId]);
+            $doc_status = $this->checkWorckFlowForwardBackord($request);
+            if ($doc_status) {
+                $status = "All Required Documents Are Uploaded ";
+            } else {
+                $status = "All Required Documents Are Not Uploaded ";
+            }
+        } elseif ($application->payment_status == 0 && $application->document_upload_status == 0) {
+            $status = "Payment is pending and document not uploaded ";
+        } elseif ($application->payment_status == 1 && $application->document_upload_status == 0) {
+            $status = "Payment is done but document not uploaded ";
+        } elseif ($application->payment_status == 0 && $application->document_upload_status == 1) {
+            $status = "Payment is pending but document is uploaded ";
+        } elseif ($application->payment_status == 1 && $application->document_upload_status == 1) {
+            $status = "Payment is done and document is uploaded ";
+        } elseif ($application->payment_status == 2 && $application->document_upload_status == 1) {
+            $status = "Document is uploaded but Payment is not clear";
+        } elseif ($application->payment_status == 2 && $application->document_upload_status == 0) {
+            $status = "Payment is not clear and document not uploaded ";
+        } else {
+            $status = "Applilcation Not Appoved";
+        }
+
+
+        return $status;
     }
 }

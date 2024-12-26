@@ -28,7 +28,8 @@ return [
         "1" =>  "NEW LICENSE",
         "2" =>  "RENEWAL",
         "3" =>  "AMENDMENT",
-        "4" =>  "SURRENDER"
+        "4" =>  "SURRENDER",
+        "5" =>  "TEMPORARY"
     ],
     "USER-TYPE-SHORT-NAME" =>
     [
