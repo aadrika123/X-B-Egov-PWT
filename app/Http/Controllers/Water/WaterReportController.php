@@ -4792,6 +4792,7 @@ class WaterReportController extends Controller
             $userId = $request->userId;
             $wardId = $request->wardId;
             $zoneId = $request->zoneId;
+            $consumerNo = $request->consumerNo;
             $paramenter     = $request->parameter;
             $key            = $request->filterBy;
             $propertyType   = $request->propertyType;
@@ -4856,6 +4857,11 @@ class WaterReportController extends Controller
                 $data->where('water_second_consumers.property_type_id', $propertyType);
             }
 
+            #======added by alok========== 
+            if ($consumerNo) {
+                $data->where('water_second_consumers.consumer_no', $consumerNo);
+            }
+            
             $perPage = $request->perPage ?? 10;
             $paginator = $data->paginate($perPage);
 
@@ -6389,6 +6395,11 @@ class WaterReportController extends Controller
                 $query->whereBetween('water_second_consumers.notice_1_generated_at', [$fromDate, $uptoDate]);
             }
 
+            #=======added by alok============
+            if ($request->consumerNo) {
+                $query->where('water_second_consumers.consumer_no', $request->consumerNo);
+            }
+
             // if ($request->zoneId) {
             //     $query->where('ulb_ward_masters.zone_id', $request->zoneId); // Assuming zone_id is in ulb_ward_masters
             // 
@@ -6429,7 +6440,7 @@ class WaterReportController extends Controller
                 'water_second_consumers.ulb_id',
                 'ulb_ward_masters.ward_name',
                 "water_temp_disconnections.status as deactivated_status",
-                "water_temp_disconnections.demand_upto_1",
+                "water_temp_disconnections.demand_upto",
                 "water_temp_disconnections.amount_notice_2",
                 "water_second_consumers.notice_no_2",
                 "water_second_consumers.notice_2_generated_at",
@@ -6441,7 +6452,7 @@ class WaterReportController extends Controller
                 ->leftjoin('water_temp_disconnections', 'water_temp_disconnections.consumer_id', '=', 'water_second_consumers.id')
                 ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
                 ->where('water_second_consumers.status', 1)
-                ->groupby('water_second_consumers.id', "ulb_ward_masters.ward_name", "water_temp_disconnections.status", "water_temp_disconnections.demand_upto_1", "water_temp_disconnections.amount_notice_2");
+                ->groupby('water_second_consumers.id', "ulb_ward_masters.ward_name", "water_temp_disconnections.status", "water_temp_disconnections.demand_upto", "water_temp_disconnections.amount_notice_2");
 
             // Apply filters
             if ($request->wardId) {
@@ -6451,6 +6462,10 @@ class WaterReportController extends Controller
                 $query->whereBetween('water_second_consumers.notice_2_generated_at', [$fromDate, $uptoDate]);
             }
 
+            #=======added by alok============
+            if ($request->consumerNo) {
+                $query->where('water_second_consumers.consumer_no', $request->consumerNo);
+            }
             // if ($request->zoneId) {
             //     $query->where('ulb_ward_masters.zone_id', $request->zoneId); // Assuming zone_id is in ulb_ward_masters
             // 
@@ -6491,7 +6506,7 @@ class WaterReportController extends Controller
                 'water_second_consumers.ulb_id',
                 'ulb_ward_masters.ward_name',
                 "water_temp_disconnections.status as deactivated_status",
-                "water_temp_disconnections.demand_upto_2",
+                "water_temp_disconnections.demand_upto",
                 "water_temp_disconnections.amount_notice_3",
                 "water_second_consumers.notice_no_3",
                 "water_second_consumers.notice_3_generated_at",
@@ -6503,7 +6518,7 @@ class WaterReportController extends Controller
                 ->leftjoin('water_temp_disconnections', 'water_temp_disconnections.consumer_id', '=', 'water_second_consumers.id')
                 ->leftJoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
                 ->where('water_second_consumers.status', 1)
-                ->groupby('water_second_consumers.id', "ulb_ward_masters.ward_name", "water_temp_disconnections.status", "water_temp_disconnections.demand_upto_2", "water_temp_disconnections.amount_notice_3");
+                ->groupby('water_second_consumers.id', "ulb_ward_masters.ward_name", "water_temp_disconnections.status", "water_temp_disconnections.demand_upto", "water_temp_disconnections.amount_notice_3");
 
             // Apply filters
             if ($request->wardId) {
@@ -6511,6 +6526,11 @@ class WaterReportController extends Controller
             }
             if ($fromDate && $uptoDate) {
                 $query->whereBetween('water_second_consumers.notice_3_generated_at', [$fromDate, $uptoDate]);
+            }
+
+            #=======added by alok============
+            if ($request->consumerNo) {
+                $query->where('water_second_consumers.consumer_no', $request->consumerNo);
             }
 
             // if ($request->zoneId) {
@@ -6532,6 +6552,11 @@ class WaterReportController extends Controller
             return responseMsg(false, $e->getMessage(), "");
         }
     }
+
+
+    
+
+
 
     /**
      * 
