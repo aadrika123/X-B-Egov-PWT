@@ -36,6 +36,7 @@ use App\Models\Trade\TradeParamCategoryType;
 use App\Models\Trade\TradeParamOwnershipType;
 use App\Http\Requests\Trade\ReqUpdateBasicDtl;
 use App\Models\ActiveCitizen;
+use App\Models\Advertisements\RefRequiredDocument;
 use App\Models\Property\ZoneMaster;
 use App\Models\Trade\ActiveTempTradeOwner;
 use App\Models\Trade\ActiveTradeOwner;
@@ -644,6 +645,7 @@ class TradeApplication extends Controller
     {
         return $this->_REPOSITORY->inbox($request);
     }
+
     # Serial No : 17
     public function outbox(ReqInbox $request)
     {
@@ -1710,5 +1712,186 @@ class TradeApplication extends Controller
     {
         $path = (config('app.url') . "/" . $path);
         return $path;
+    }
+
+    # Serial No : 16 App\Http\Requests\Trade\ReqInbox
+    public function inboxTemplice(ReqInbox $request)
+    {
+        return $this->_REPOSITORY->inboxTemplice($request);
+    }
+    # Serial No : 16 App\Http\Requests\Trade\ReqInbox
+    public function outboxTempLicense(ReqInbox $request)
+    {
+        return $this->_REPOSITORY->outboxTempLicense($request);
+    }
+    # Serial No : 16 App\Http\Requests\Trade\ReqInbox
+    public function specialTempInbox(ReqInbox $request)
+    {
+        return $this->_REPOSITORY->specialTempInbox($request);
+    }
+
+    # Serial No : 08 
+    public function readLicenceDtlTempLicense(Request $request)
+    {
+
+        $rules["applicationId"] = "required|digits_between:1,9223372036854775807";
+        $validator = Validator::make($request->all(), $rules,);
+        if ($validator->fails()) {
+            return responseMsg(false, $validator->errors(), $request->all());
+        }
+        return $this->_REPOSITORY->readLicenceDtlTempLicense($request);
+    }
+
+    # Serial No : 07
+    public function documentVerifyTempLicense(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|digits_between:1,9223372036854775807',
+            'applicationId' => 'required|digits_between:1,9223372036854775807',
+            'docRemarks' =>  $request->docStatus == "Rejected" ? 'required|regex:/^[a-zA-Z1-9][a-zA-Z1-9\. \s]+$/' : "nullable",
+            'docStatus' => 'required|in:Verified,Rejected'
+        ]);
+        try {
+            if ((!$this->_COMMON_FUNCTION->checkUsersWithtocken("users"))) {
+                throw new Exception("Citizen Not Allowed");
+            }
+            // Variable Assignments
+            $user = Auth()->user();
+            $userId = $user->id;
+            $ulbId = $user->ulb_id;
+            $mWfDocument = new WfActiveDocument();
+            $mAdvActiveTradeTempLicense = new ActiveTradeTempLicence();
+            $workflow_id = $this->_WF_MASTER_Id;
+            $rolles = $this->_COMMON_FUNCTION->getUserRoll($userId, $ulbId, $workflow_id);
+            if (!$rolles || !$rolles->can_verify_document) {
+                throw new Exception("You are Not Authorized For Document Verify");
+            }
+            $wfDocId = $request->id;
+            $applicationId = $request->applicationId;
+            $appDetails = $mAdvActiveTradeTempLicense->getSelfAdvertNo($applicationId);
+            $this->begin();
+            if ($request->docStatus == "Verified") {
+                $status = 1;
+            }
+            if ($request->docStatus == "Rejected") {
+                $status = 2;
+            }
+
+            $myRequest = [
+                'remarks' => $request->docRemarks,
+                'verify_status' => $status,
+                'action_taken_by' => $userId
+            ];
+            $mWfDocument->docVerifyReject($wfDocId, $myRequest);
+            $this->commit();
+            $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId);
+            $tradR = $this->_CONTROLLER_TRADE;
+            if ($ifFullDocVerifiedV1 == 1) {                                     // If The Document Fully Verified Update Verify Status
+                $appDetails->doc_verify_status = 1;
+                $appDetails->save();
+            }
+
+            return responseMsgs(true, ["docVerifyStatus" => $request->docStatus], "", "tc7.1", "1.0", "", "POST", $request->deviceId ?? "");
+        } catch (Exception $e) {
+            $this->rollBack();
+            return responseMsgs(false, $e->getMessage(), "", "tc7.1", "1.0", "", "POST", $request->deviceId ?? "");
+        }
+    }
+
+    /**
+     * | Check if the Document is Fully Verified or Not (4.1)
+     * |  Function - 32
+     */
+    public function ifFullDocVerified($applicationId)
+    {
+        // Variable initialization
+        $mAdvActiveTradeTempLicense = new ActiveTradeTempLicence();
+        $mWfActiveDocument = new WfActiveDocument();
+        $mAdvActiveSelfadvertisement = $mAdvActiveTradeTempLicense->getSelfAdvertNo($applicationId); // Get Application Details
+
+        $refReq = [
+            'activeId' => $applicationId,
+            'workflowId' => $mAdvActiveSelfadvertisement->workflow_id,
+            'moduleId' =>  3
+        ];
+        $req = new Request($refReq);
+        $refDocList = $mWfActiveDocument->getDocsByActiveId($req);
+        $totalApproveDoc = $refDocList->count();
+        $ifAdvDocUnverified = $refDocList->contains('verify_status', 0);
+
+        $totalNoOfDoc = $mWfActiveDocument->totalNoOfDocs($this->_docCode);
+        // $totalNoOfDoc=$mWfActiveDocument->totalNoOfDocs($this->_docCodeRenew);
+        // if($mMarActiveBanquteHall->renew_no==NULL){
+        //     $totalNoOfDoc=$mWfActiveDocument->totalNoOfDocs($this->_docCode);
+        // }
+        if ($totalApproveDoc == $totalNoOfDoc) {
+            if ($ifAdvDocUnverified == 1)
+                return 0;
+            else
+                return 1;
+        } else {
+            return 0;
+        }
+    }
+    /**
+     * | Checks the Document Upload Or Verify Status
+     * | @param activeApplicationId
+     * | @param refDocList list of Verified and Uploaded Documents
+     * | @param refSafs saf Details
+     */
+    public function isAllDocs($applicationId, $refDocList, $refapp)
+    {
+        $docList = array();
+        $verifiedDocList = array();
+        $verifiedDocList['advDocs'] = $refDocList->where('owner_dtl_id', null)->values();
+        $collectUploadDocList = collect();
+        $advListDocs = $this->getadvTypeDocList($refapp);
+        $docList['advDocs'] = explode('#', $advListDocs);
+        collect($verifiedDocList['advDocs'])->map(function ($item) use ($collectUploadDocList) {
+            return $collectUploadDocList->push($item['doc_code']);
+        });
+        $madvDocs = collect($docList['advDocs']);
+        // List Documents
+        $flag = 1;
+        foreach ($madvDocs as $item) {
+            if (!$item) {
+                continue;
+            }
+            $explodeDocs = explode(',', $item);
+            $type = $explodeDocs[0] ?? "O";
+            array_shift($explodeDocs);
+            foreach ($explodeDocs as $explodeDoc) {
+                $changeStatus = 0;
+                if (in_array($explodeDoc, $collectUploadDocList->toArray())) {
+                    $changeStatus = 1;
+                    break;
+                }
+            }
+            // if ($changeStatus == 0 && $type == "R") {
+            //     $flag = 0;
+            //     break;
+            // }
+            if ($changeStatus == 0)
+                break;
+        }
+        if ($flag == 0)
+            return 0;
+        else
+            return 1;
+    }
+
+    #get doc which is required 
+
+    public function getadvTypeDocList($refapps)
+    {
+        $moduleId = 14;
+
+        $mrefRequiredDoc = RefRequiredDocument::firstWhere('module_id', $moduleId);
+        if ($mrefRequiredDoc && isset($mrefRequiredDoc['requirements'])) {
+            $documentLists = $mrefRequiredDoc['requirements'];
+        } else {
+            $documentLists = [];
+        }
+        return $documentLists;
     }
 }

@@ -30,8 +30,8 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         // Route::post("application/amendment", "getMstrForAmendment");
         // Route::post("application/surrender", "getMstrForSurender");
         Route::post('application/add', 'applyApplication');
-        
-        
+
+
 
         Route::post('application/get-demand', 'paybleAmount');
 
@@ -95,13 +95,20 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         Route::post('application/old-app-edit', 'editOldApp');
         Route::post("license/counter", "updateLicenseCounter");
 
-        # ==== written by Arshad =========#
+        # ==== written by Arshad Temporary license=========#
         Route::post('application/add-temporary', 'applyTempApplication');
 
-        Route::post('application/get-trade-temp-docs','getTempUploadDocuments');
-        
-        Route::post('application/search-temp-application','searchTempTrade');
+        Route::post('application/get-trade-temp-docs', 'getTempUploadDocuments');
 
+        Route::post('application/search-temp-application', 'searchTempTrade');
+
+        Route::post('application/inbox-temp-license', 'inboxTemplice');
+
+        Route::post('application/outbox-temp-license', 'outboxTempLicense');
+
+        Route::post('application/special-temp-license', 'specialTempInbox');
+
+        Route::post('application/temp-dtl-by-id', 'readLicenceDtlTempLicense');
     });
 
     Route::controller(TradeNoticeController::class)->group(function () {
@@ -140,7 +147,7 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
 
         Route::post('application/citizen-by-id', 'readCitizenLicenceDtl');         #id = c7
 
-   
+
 
         Route::post('application/renewable-list', 'renewalList');                  #id = c8
 
@@ -158,8 +165,8 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         Route::post('application/init-payment', "initPayment");
         Route::post('application/easebuzz-handel-response', "easebuzzHandelResponse");
         Route::post('application/license-init-payment', "initPaymentReceipt");
-        
-        Route::post('application-temp/citizen-by-id', 'readCitizenTemplicenseDtl');        
+
+        Route::post('application-temp/citizen-by-id', 'readCitizenTemplicenseDtl');
     });
 
     #-----------report----------------------------------

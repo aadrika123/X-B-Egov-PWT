@@ -118,6 +118,7 @@ class Trade implements ITrade
     protected $_WF_TEMP_MASTER_Id;
     protected $_ACTIVE_TEMP_LICENSE;
     protected $_ACTIVE_TEMP_OWNER_LICENSE;
+    protected $_REF_TEMP_TABLE;
 
 
     public function __construct()
@@ -143,6 +144,7 @@ class Trade implements ITrade
         $this->_MODULE_ID = Config::get('module-constants.TRADE_MODULE_ID');
         $this->_TRADE_CONSTAINT = Config::get("TradeConstant");
         $this->_REF_TABLE = $this->_TRADE_CONSTAINT["TRADE_REF_TABLE"];
+        $this->_REF_TEMP_TABLE = $this->_TRADE_CONSTAINT["TRADE_TEMP_TABLE"];
         $this->_DOC_URL = Config::get("module-constants.DOC_URL");
 
         $this->_MODEL_TradeParamFirmType = new TradeParamFirmType($this->_DB_NAME);
@@ -2542,6 +2544,52 @@ class Trade implements ITrade
                         END AS ward_no")
             )
             ->WHERE("active_trade_licences.is_active", TRUE);
+    }
+    # for Temporary License
+    public function WorkFlowMetaListTemp()
+    {
+        return $this->_DB->table("active_trade_temp_licences")
+            ->JOIN("trade_param_application_types", "trade_param_application_types.id", "active_trade_temp_licences.application_type_id")
+            ->join(DB::raw("(select STRING_AGG(owner_name,',') AS owner_name,
+                                                    STRING_AGG(guardian_name,',') AS guardian_name,
+                                                    STRING_AGG(mobile_no::TEXT,',') AS mobile_no,
+                                                    STRING_AGG(email_id,',') AS email_id,
+                                                    temp_id
+                                         FROM active_temp_trade_owners 
+                                                WHERE is_active = TRUE
+                                                GROUP BY temp_id
+                                                )owner"), function ($join) {
+                $join->on("owner.temp_id", "active_trade_temp_licences.id");
+            })
+            ->leftjoin("trade_param_firm_types", "trade_param_firm_types.id", "active_trade_temp_licences.firm_type_id")
+            ->leftjoin("ulb_ward_masters", function ($join) {
+                $join->on("ulb_ward_masters.id", "=", "active_trade_temp_licences.ward_id");
+            })
+            ->select(
+                "active_trade_temp_licences.id",
+                "active_trade_temp_licences.application_no",
+                "active_trade_temp_licences.provisional_license_no",
+                "active_trade_temp_licences.license_no",
+                "active_trade_temp_licences.document_upload_status",
+                "active_trade_temp_licences.payment_status",
+                "active_trade_temp_licences.firm_name",
+                "active_trade_temp_licences.apply_from",
+                "active_trade_temp_licences.workflow_id",
+                "owner.owner_name",
+                "owner.guardian_name",
+                "owner.mobile_no",
+                "owner.email_id",
+                "active_trade_temp_licences.application_type_id",
+                "trade_param_application_types.application_type",
+                "trade_param_firm_types.firm_type",
+                "active_trade_temp_licences.firm_type_id",
+                DB::raw("TO_CHAR(CAST(active_trade_temp_licences.application_date AS DATE), 'DD-MM-YYYY') as application_date"),
+                ('ulb_ward_masters.id as ward_id'),
+                DB::RAW("CASE WHEN old_ward_name IS NULL THEN CAST(ward_name AS TEXT) 
+                        ELSE old_ward_name 
+                        END AS ward_no")
+            )
+            ->WHERE("active_trade_temp_licences.is_active", TRUE);
     }
     # Serial No : 16
     /**
@@ -6005,5 +6053,498 @@ class Trade implements ITrade
 
 
         return $status;
+    }
+    /**
+     * | Function For Temporary Trade License 
+     */
+    public function inboxTemplice(Request $request)
+    {
+        try {
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $refUlbId       = $refUser->ulb_id;
+            $refWorkflowId  = $this->_WF_MASTER_Id;
+            $refWfWorkflow     = WfWorkflow::where('wf_master_id', $refWorkflowId)
+                ->where('ulb_id', $refUlbId)
+                ->first();
+            if (!$refWfWorkflow) {
+                throw new Exception("Workflow Not Available");
+            }
+            $mUserType = $this->_COMMON_FUNCTION->userType($refWorkflowId);
+            $mWardPermission = $this->_COMMON_FUNCTION->WardPermission($refUserId);
+            $mRole = $this->_COMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $refWorkflowId);
+
+            if (!$mRole) {
+                throw new Exception("You Are Not Authorized For This Action");
+            }
+            if ($mRole->is_initiator) {
+                $mWardPermission = $this->_MODEL_WARD->getAllWard($refUlbId)->map(function ($val) {
+                    $val->ward_no = $val->ward_name;
+                    return $val;
+                });
+                $mWardPermission = objToArray($mWardPermission);
+            }
+
+            $mWardIds = array_map(function ($val) {
+                return $val['id'];
+            }, $mWardPermission);
+
+            $mRoleId = $mRole->role_id;
+
+            $license = $this->WorkFlowMetaListTemp()
+                ->where("active_trade_temp_licences.is_parked", FALSE)
+                // ->where("active_trade_licences.payment_status", 1)
+                ->where("active_trade_temp_licences.current_role", $mRoleId)
+                ->where("active_trade_temp_licences.ulb_id", $refUlbId);
+            if ($request->applicationType) {
+                $mApplicationTypeId = $this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType] ?? 0;
+                $license = $license->where('active_trade_temp_licences.application_type_id', $mApplicationTypeId);
+            }
+            if ($request->todayReceived) {
+                $metaRequest = new Request([
+                    'workflowId'    => $this->_WF_MASTER_Id,
+                    'ulbId'         => $refUlbId,
+                    'moduleId'      => $this->_MODULE_ID
+                ]);
+                $track = new WorkflowTrack();
+                $dateWiseData = $track->getWfDashbordData($metaRequest)->get();
+
+                $appId = (collect($dateWiseData)->where('receiver_role_id', $mRole->role_id)->unique("ref_table_id_value"))->pluck("ref_table_id_value");
+                if ($appId->isEmpty()) {
+                    $appId->push(0);
+                }
+
+                if ($mRole->is_initiator == true) {
+                    $license = $license->where(function ($query) use ($appId) {
+                        $query->orWhere('active_trade_temp_licences.application_date', Carbon::now()->format('Y-m-d'))
+                            ->orWhereIn('active_trade_temp_licences.id', $appId);
+                    });
+                } else {
+                    $license = $license->whereIn('active_trade_temp_licences.id', $appId);
+                }
+            }
+            if (trim($request->key)) {
+                $key = trim($request->key);
+                $license = $license->where(function ($query) use ($key) {
+                    $query->orwhere('active_trade_temp_licences.holding_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('active_trade_temp_licences.application_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere("active_trade_temp_licences.license_no", 'ILIKE', '%' . $key . '%')
+                        ->orwhere("active_trade_temp_licences.provisional_license_no", 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
+                });
+            }
+            if ($request->wardNo && $request->wardNo != "ALL") {
+                $mWardIds = [$request->wardNo];
+            }
+            if ($request->formDate && $request->toDate) {
+                $license = $license
+                    ->whereBetween('active_trade_temp_licences.application_date', [$request->formDate, $request->toDate]);
+            }
+            $license = $license
+                ->whereIn('active_trade_temp_licences.ward_id', $mWardIds)
+                ->orderBy("active_trade_temp_licences.application_date", "DESC");
+            if ($request->all) {
+                $license = $license->get();
+                return responseMsg(true, "", $license);
+            }
+            $perPage = $request->perPage ? $request->perPage :  10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+
+            $paginator = $license->paginate($perPage);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ];
+            return responseMsg(true, "", remove_null($list));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+
+    # Serial No : 17
+    public function outboxTempLicense(Request $request)
+    {
+        try {
+            $user = Auth()->user();
+            $user_id = $user->id;
+            $ulb_id = $user->ulb_id;
+            $refWorkflowId = $this->_WF_MASTER_Id;
+            $refWfWorkflow     = WfWorkflow::where('wf_master_id', $refWorkflowId)
+                ->where('ulb_id', $ulb_id)
+                ->first();
+            if (!$refWfWorkflow) {
+                throw new Exception("Workflow Not Available");
+            }
+            $mUserType = $this->_COMMON_FUNCTION->userType($refWorkflowId);
+            $ward_permission = $this->_COMMON_FUNCTION->WardPermission($user_id);
+            $role = $this->_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $refWorkflowId);
+            if (!$role) {
+                throw new Exception("You Are Not Authorized");
+            }
+            if ($role->is_initiator || in_array(strtoupper($mUserType), $this->_TRADE_CONSTAINT["CANE-NO-HAVE-WARD"])) {
+
+                $ward_permission = $this->_MODEL_WARD->getAllWard($ulb_id)->map(function ($val) {
+                    $val->ward_no = $val->ward_name;
+                    return $val;
+                });
+                $ward_permission = objToArray($ward_permission);
+            }
+            $role_id = $role->role_id;
+
+            $mWardIds = array_map(function ($val) {
+                return $val['id'];
+            }, $ward_permission);
+
+            $license = $this->WorkFlowMetaListTemp()
+                ->where("active_trade_temp_licences.is_parked", FALSE)
+                ->where("active_trade_temp_licences.current_role", "<>", $role_id)
+                ->where("active_trade_temp_licences.ulb_id", $ulb_id);
+
+            if ($request->applicationType) {
+                $mApplicationTypeId = $this->_TRADE_CONSTAINT["APPLICATION-TYPE"][$request->applicationType] ?? 0;
+                $license = $license->where('active_trade_temp_licences.application_type_id', $mApplicationTypeId);
+            }
+            if ($request->todayForward) {
+                $metaRequest = new Request([
+                    'workflowId'    => $this->_WF_MASTER_Id,
+                    'ulbId'         => $ulb_id,
+                    'moduleId'      => $this->_MODULE_ID
+                ]);
+                $track = new WorkflowTrack();
+                $dateWiseData = $track->getWfDashbordData($metaRequest)->get();
+
+                $appId = (collect($dateWiseData)->where('sender_role_id', $role->role_id)->unique("ref_table_id_value"))->pluck("ref_table_id_value");
+                if ($appId->isEmpty()) {
+                    $appId->push(0);
+                }
+
+                $license = $license->whereIn('active_trade_temp_licences.id', $appId);
+            }
+
+            if (trim($request->key)) {
+                $key = trim($request->key);
+                $license = $license->where(function ($query) use ($key) {
+                    $query->orwhere('active_trade_temp_licences.holding_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('active_trade_temp_licences.application_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere("active_trade_temp_licences.license_no", 'ILIKE', '%' . $key . '%')
+                        ->orwhere("active_trade_temp_licences.provisional_license_no", 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
+                });
+            }
+
+            if ($request->wardNo && $request->wardNo != "ALL") {
+                $mWardIds = [$request->wardNo];
+            }
+            if ($request->formDate && $request->toDate) {
+                $license = $license
+                    ->whereBetween('active_trade_temp_licences.application_date', [$request->formDate, $request->toDate]);
+            }
+            $license = $license
+                ->whereIn('active_trade_temp_licences.ward_id', $mWardIds)
+                ->orderBy("active_trade_temp_licences.application_date", "DESC");
+            if ($request->all) {
+                $license = $license->get();
+                return responseMsg(true, "", $license);
+            }
+            $perPage = $request->perPage ? $request->perPage :  10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+
+            $paginator = $license->paginate($perPage);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ];
+            return responseMsg(true, "", remove_null($list));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+    # special Inbox Temp License
+    public function specialTempInbox(Request $request)
+    {
+        try {
+            $refUser        = Auth()->user();
+            $refUserId      = $refUser->id;
+            $refUlbId       = $refUser->ulb_id;
+            $refWorkflowId  = $this->_WF_MASTER_Id;
+            $refWfWorkflow     = WfWorkflow::where('wf_master_id', $refWorkflowId)
+                ->where('ulb_id', $refUlbId)
+                ->first();
+            if (!$refWfWorkflow) {
+                throw new Exception("Workflow Not Available");
+            }
+            $mUserType = $this->_COMMON_FUNCTION->userType($refWorkflowId);
+            $ward_permission = $this->_COMMON_FUNCTION->WardPermission($refUserId);
+            $role = $this->_COMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $refWorkflowId);
+
+            if ($role->is_initiator || in_array(strtoupper($mUserType), $this->_TRADE_CONSTAINT["CANE-NO-HAVE-WARD"])) {
+
+                $ward_permission = $this->_MODEL_WARD->getAllWard($refUlbId)->map(function ($val) {
+                    $val->ward_no = $val->ward_name;
+                    return $val;
+                });
+                $ward_permission = objToArray($ward_permission);
+            }
+
+            $mWardIds = array_map(function ($val) {
+                return $val['id'];
+            }, $ward_permission);
+
+            $license = $this->WorkFlowMetaListTemp()
+                ->where("active_trade_temp_licences.is_escalate", TRUE)
+                ->where("active_trade_temp_licences.ulb_id", $refUlbId);
+
+            if (trim($request->key)) {
+                $key = trim($request->key);
+                $license = $license->where(function ($query) use ($key) {
+                    $query->orwhere('active_trade_temp_licences.holding_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('active_trade_temp_licences.application_no', 'ILIKE', '%' . $key . '%')
+                        ->orwhere("active_trade_temp_licences.license_no", 'ILIKE', '%' . $key . '%')
+                        ->orwhere("active_trade_temp_licences.provisional_license_no", 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.owner_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.guardian_name', 'ILIKE', '%' . $key . '%')
+                        ->orwhere('owner.mobile_no', 'ILIKE', '%' . $key . '%');
+                });
+            }
+            if ($request->wardNo && $request->wardNo != "ALL") {
+                $mWardIds = [$request->wardNo];
+            }
+            if ($request->formDate && $request->toDate) {
+                $license = $license
+                    ->whereBetween('active_trade_temp_licences.application_date', [$request->formDate, $request->toDate]);
+            }
+            $license = $license
+                ->whereIn('active_trade_temp_licences.ward_id', $mWardIds)
+                ->orderBy("active_trade_temp_licences.application_date", "DESC");
+            if ($request->all) {
+                $license = $license->get();
+                return responseMsg(true, "", $license);
+            }
+            $perPage = $request->perPage ? $request->perPage :  10;
+            $page = $request->page && $request->page > 0 ? $request->page : 1;
+
+            $paginator = $license->paginate($perPage);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ];
+            return responseMsg(true, "", remove_null($list));
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), $request->all());
+        }
+    }
+
+    # Serial No : 08 
+    /**
+     * | Get License All Dtl
+     * |-------------------------------------------------------------------------
+     * | @var mUserType      = $this->_COMMON_FUNCTION->userType() | login user Role Name
+     * | @var refApplication = this->getLicenceById(id)  | read application dtl
+     * | @var items          = TradeParamItemType::itemsById(refApplication->nature_of_bussiness) | read trade licence Items
+     * | @var refOwnerDtl    = ActiveLicenceOwner::owneresByLId(id)  | read owner dtl
+     * | @var refTransactionDtl  = TradeTransaction::listByLicId(id)    | read Transaction Dtl
+     * | @var refTimeLine    = this->getTimelin(id)      | read Level remarks
+     * | @var refUploadDocuments = this->getLicenceDocuments(id)    | read upload Documents
+     */
+    public function readLicenceDtlTempLicense($request)
+    {
+
+        try {
+            $mWorkflowTracks = new WorkflowTrack();
+            $mCustomDetails = new CustomDetail();
+            $forwardBackward = new WorkflowMap;
+            $id = $request->applicationId;
+            // $refUser        = Auth()->user();
+            // $refUserId      = $refUser->id;
+            $refUserId      = 72;
+            // $refUlbId       = $refUser->ulb_id;
+            $refUlbId       = 2;
+            $refWorkflowId  = $this->_WF_TEMP_MASTER_Id;
+            $mRefTable = $this->_REF_TEMP_TABLE;
+
+            $init_finish = $this->_COMMON_FUNCTION->iniatorFinisher($refUserId, $refUlbId, $refWorkflowId);
+            $finisher = $init_finish['finisher'];
+            $role = $this->_COMMON_FUNCTION->getUserRoll($refUserId, $refUlbId, $refWorkflowId);
+            $finisher['short_user_name'] = $this->_TRADE_CONSTAINT["USER-TYPE-SHORT-NAME"][strtoupper($init_finish['finisher']['role_name'])];
+            $mUserType      = $this->_COMMON_FUNCTION->userType($refWorkflowId);
+            $refApplication = $this->getAllTempLicenceById($id);
+            if (!$refApplication) {
+                throw new Exception("Data Not Found");
+            }
+            $refApplication->application_date = $refApplication->application_date ? Carbon::parse($refApplication->application_date)->format("d-m-Y") : "";
+            $refApplication->license_date = $refApplication->license_date ? Carbon::parse($refApplication->license_date)->format("d-m-Y") : "";
+            $refApplication->valid_from = $refApplication->valid_from ? Carbon::parse($refApplication->valid_from)->format("d-m-Y") : "";
+            $refApplication->valid_upto = $refApplication->valid_upto ? Carbon::parse($refApplication->valid_upto)->format("d-m-Y") : "";
+            $refApplication->establishment_date = $refApplication->establishment_date ? Carbon::parse($refApplication->establishment_date)->format("d-m-Y") : "";
+
+            $mStatus = $this->applicationStatusTemp($id);
+            $mItemName      = "";
+            $mCods          = "";
+            // if (trim($refApplication->nature_of_bussiness)) {
+            //     $items = AkolaTradeParamItemType::itemsById($refApplication->nature_of_bussiness);
+            //     foreach ($items as $val) {
+            //         $mItemName  .= $val->trade_item . ",";
+            //         $mCods      .= $val->trade_code . ",";
+            //     }
+            //     $mItemName = trim($mItemName, ',');
+            //     $mCods = trim($mCods, ',');
+            // }
+            $refApplication->items      = $mItemName;
+            $refApplication->items_code = $mCods;
+            $refOwnerDtl                = $this->getAllTempOwnereDtlByLId($id);
+            $refTransactionDtl          = TradeTransaction::listByLicId($id)->map(function ($val) {
+                $val->tran_date = $val->tran_date ? Carbon::parse($val->tran_date)->format("d-m-Y") : "";
+                return $val;
+            });
+            $refTimeLine                = $this->getTimelineTemplicense($id);
+
+            $mworkflowRoles = $this->_COMMON_FUNCTION->getWorkFlowAllRoles($refUserId, $refUlbId, $refWorkflowId, true);
+            $mileSton = $this->_COMMON_FUNCTION->sortsWorkflowRols($mworkflowRoles);
+
+
+            $licenseDetail =  $refApplication;
+            $ownerDetails  = $refOwnerDtl;
+            $transactionDtl = $refTransactionDtl;
+            $data['pendingStatus']  = $mStatus;
+            $data['remarks']        = $refTimeLine;
+            $data["userType"]       = $mUserType;
+            $data["roles"]          = $mileSton;
+
+
+            $newData = array();
+            $fullDetailsData = array();
+            $basicDetails = $this->generateBasicDetails($licenseDetail);      // Trait function to get Basic Details
+            $basicElement = [
+                'headerTitle' => "Basic Details",
+                "data" => $basicDetails
+            ];
+
+
+            $paymentDetail = sizeOf($transactionDtl) > 0 ? $this->generatepaymentDetails($transactionDtl) : (array) null;      // Trait function to get payment Details
+            $paymentElement = [
+                'headerTitle' => "Transaction Details",
+                'tableHead' => ["#", "Payment For", "Tran No", "Payment Mode", "Date"],
+                'tableData' => $paymentDetail,
+
+            ];
+
+            $ownerDetailsTable = $this->generateOwnerDetails($ownerDetails);
+            $ownerElement = [
+                'headerTitle' => 'Owner Details',
+                // 'tableHead' => ["#", "Owner Name", "Gender", "DOB", "Guardian Name", "Relation", "Mobile No", "Aadhar", "PAN", "Email", "Address"],
+                'tableHead' => ["#", "Owner Name",  "Guardian Name",  "Mobile No",  "Email",],
+                'tableData' => $ownerDetailsTable
+            ];
+
+            $cardDetails = $this->generateCardDetails($licenseDetail, $ownerDetails);
+            $cardElement = [
+                'headerTitle' => "About Trade",
+                'data' => $cardDetails
+            ];
+            $fullDetailsData["propId"]         = $licenseDetail->property_id;
+            $fullDetailsData["workflowId"]     = $licenseDetail->workflow_id;
+            $fullDetailsData['application_no'] = $licenseDetail->application_no;
+            $fullDetailsData['apply_date'] = $licenseDetail->application_date;
+            $fullDetailsData['fullDetailsData']['dataArray'] = new Collection([$basicElement]);
+            $fullDetailsData['fullDetailsData']['tableArray'] = new Collection([$ownerElement, $paymentElement]);
+            $fullDetailsData['fullDetailsData']['cardArray'] = $cardElement;
+
+            $metaReqs['customFor'] = 'Trade';
+            $metaReqs['wfRoleId'] = ($role && $role->is_initiator && $licenseDetail->is_parked) ? $role->role_id : $licenseDetail->current_role;
+            $metaReqs['workflowId'] = $licenseDetail->workflow_id;
+            $metaReqs['lastRoleId'] = $licenseDetail->last_role_id;
+            $levelComment = $mWorkflowTracks->getTracksByRefId($mRefTable, $licenseDetail->id)->map(function ($val) {
+                $val->forward_date = $val->forward_date ? Carbon::parse($val->forward_date)->format("d-m-Y") : "";
+                $val->track_date = $val->track_date ? Carbon::parse($val->track_date)->format("d-m-Y") : "";
+                $val->duration = (Carbon::parse($val->forward_date)->diffInDays(Carbon::parse($val->track_date))) . " Days";
+                return $val;
+            });
+            $fullDetailsData['levelComment'] = $levelComment;
+
+            $citizenComment = $mWorkflowTracks->getCitizenTracks($mRefTable, $licenseDetail->id, $licenseDetail->user_id);
+            $fullDetailsData['citizenComment'] = $citizenComment;
+
+            $request->request->add($metaReqs);
+            $forwardBackward = $forwardBackward->getRoleDetails($request);
+            $fullDetailsData['roleDetails'] = collect($forwardBackward)['original']['data'];
+
+            $fullDetailsData['timelineData'] = collect($request);
+
+            $custom = $mCustomDetails->getCustomDetails($request);
+            $fullDetailsData['departmentalPost'] = collect($custom)['original']['data'];
+
+            return responseMsgs(true, 'Data Fetched', remove_null($fullDetailsData), "010104", "1.0", "303ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            return responseMsg(false, $e->getMessage(), '');
+        }
+    }
+
+    public function getAllTempOwnereDtlByLId($id)
+    {
+        try {
+            $ownerDtl   = ActiveTempTradeOwner::select("*")
+                ->where("temp_id", $id)
+                ->where("is_active", 1)
+                ->get();
+            // if (sizeOf($ownerDtl) < 1) {
+            //     $ownerDtl   = RejectedTradeOwner::select("*")
+            //         ->where("temp_id", $id)
+            //         ->where("is_active", 1)
+            //         ->get();
+            // }
+            // if (sizeOf($ownerDtl) < 1) {
+            //     $ownerDtl   = TradeOwner::select("*")
+            //         ->where("temp_id", $id)
+            //         ->where("is_active", 1)
+            //         ->get();
+            // }
+            return $ownerDtl;
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
+    }
+
+    public function getTimelineTemplicense($id)
+    {
+        try {
+            //    DB::enableQueryLog();
+            $time_line =  workflowTrack::select(
+                "workflow_tracks.message",
+                "workflow_tracks.forward_date",
+                "workflow_tracks.forward_time",
+                "workflow_tracks.receiver_role_id",
+                "role_name",
+                DB::raw("workflow_tracks.created_at as receiving_date")
+            )
+                ->leftjoin('wf_roles', "wf_roles.id", "workflow_tracks.receiver_role_id")
+                ->where('workflow_tracks.ref_table_id_value', $id)
+                ->where('workflow_tracks.ref_table_dot_id', $this->_REF_TEMP_TABLE)
+                ->whereNotNull('workflow_tracks.sender_role_id')
+                ->where('workflow_tracks.status', true)
+                ->groupBy(
+                    'workflow_tracks.receiver_role_id',
+                    'workflow_tracks.message',
+                    'workflow_tracks.forward_date',
+                    'workflow_tracks.forward_time',
+                    'wf_roles.role_name',
+                    'workflow_tracks.created_at'
+                )
+                ->orderBy('workflow_tracks.created_at', 'desc')
+                ->get();
+            // dd(DB::getQueryLog());
+            return $time_line;
+        } catch (Exception $e) {
+            echo $e->getMessage();
+        }
     }
 }

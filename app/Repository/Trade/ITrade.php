@@ -29,6 +29,7 @@ interface ITrade
     public function getUploadDocuments(Request $request);
     public function documentVirify(Request $request);
     public function readLicenceDtl($id);
+    public function readLicenceDtlTempLicense($id);
     public function readLicenceDtlv1($id);
     public function readDenialdtlbyNoticno(Request $request);
     public function getPaybleAmount(Request $request);
@@ -37,13 +38,16 @@ interface ITrade
     public function specialInbox(Request $request);
     public function btcInbox(Request $request);
     public function inbox(Request $request);
+    public function inboxTemplice(Request $request);
+    public function outboxTempLicense(Request $request);
+    public function specialTempInbox(Request $request);
     public function outbox(Request $request);
     public function approvedButNotPayment(Request $request);
     public function addIndependentComment(Request $request);
     public function readIndipendentComment(Request $request);
     public function provisionalCertificate($id);
     public function licenceCertificate($id);
-    
+
     public function approvedApplication(Request $request);
     public function getLicenceDocuments($id, $tbl = "active_");
     public function getLicenceById($id);
