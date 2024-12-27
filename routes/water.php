@@ -337,7 +337,7 @@ Route::controller(WaterPaymentController::class)->group(function () {
     Route::post('citizen/get-payment-history', 'getConsumerPaymentHistory');
     Route::post('consumer/demand/generate-payment-receipt', 'generateDemandPaymentReceipt');        // Admin/ Citizen          // use in consumer part
     Route::post('admin/application/generate-payment-receipt', 'generateOfflinePaymentReceipt');     // Citizen / Admin
-    Route::post('worldline/payment-initiate-demand1', 'initiatePaymentDemand');
+    Route::post('worldline/payment-initiate-demand', 'initiatePaymentDemand');
     Route::post('worldline/payment-response-demand', 'WorldlineHandelResponseDemand');
     Route::post('consumer/get-payment-history', 'getConsumerPaymentHistory');                       // Consumer               // use in consumer part
     // Route::post('')
