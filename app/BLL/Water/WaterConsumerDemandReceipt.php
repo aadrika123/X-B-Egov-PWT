@@ -13,6 +13,7 @@ use App\Models\Water\WaterConsumerTax;
 use App\Models\Water\WaterMeterReadingDoc;
 use App\Models\Water\WaterPropertyTypeMstr;
 use App\Models\Water\WaterSecondConsumer;
+use App\Models\Water\WaterTran;
 use Carbon\Carbon;
 use Exception;
 use Hamcrest\Type\IsObject;
@@ -77,6 +78,8 @@ class WaterConsumerDemandReceipt
     private $_mUsers;
     private $_propertyType;
     private $_previousReadinDatev1;
+    private $_mWaterTrans;
+    private $_lastPaymentDtls;
 
     public function __construct($consumerId)
     {
@@ -94,6 +97,7 @@ class WaterConsumerDemandReceipt
         $this->_mUlbWards                = new UlbMaster();
         $this->_mZones                   = new ZoneMaster();
         $this->_mUsers                   = new User();
+        $this->_mWaterTrans              = new WaterTran();
     }
 
     private function setConsumerDtl()
@@ -157,7 +161,7 @@ class WaterConsumerDemandReceipt
 
     private function setLastFiveTax()
     {
-        $this->_lastFiveTax      = $this->_mWaterConsumerTax->select("id", "charge_type", "initial_reading", "final_reading","amount")
+        $this->_lastFiveTax      = $this->_mWaterConsumerTax->select("id", "charge_type", "initial_reading", "final_reading", "amount")
             ->where("consumer_id", $this->_consumerId)
             ->where("status", 1)
             ->orderBy("id", "DESC")
@@ -242,15 +246,17 @@ class WaterConsumerDemandReceipt
         $this->_consumptionUnit     = $this->_uptoUnit - $this->_fromUnit;
         $this->_previousReadinDatev1 = $this->_mWaterConsumerMeter->getMeterDetailsByConsumerIdV2($this->_consumerId)->first();
 
+        $this->_lastPaymentDtls  = $this->_mWaterTrans->ConsumerTransaction($this->_consumerId)->first();
+
         $this->setLastUnitConsume();
     }
 
     public function setReceipts()
 
     {
-    
+
         $this->setParams();
-          $this->_GRID = [
+        $this->_GRID = [
             "demandType"            => $this->_mTowards,
             "consumerNo"            => $this->_connectionDtls->consumer_no,
             "fromDate"              => $this->_demandFrom,
@@ -293,6 +299,8 @@ class WaterConsumerDemandReceipt
             "previousReadingDtls"   => $this->_lastFiveTax,
             "billPeriodInDay"       => $this->_currentBillDays,
             "propertyTypeId"        => $this->_connectionDtls->property_type_id, //changes by akshay for demand receipt 
+            "lastPaymentAmount"     =>  $this->_lastPaymentDtls->amount ?? "",
+            "lastPaymentDate"       =>  $this->_lastPaymentDtls->tran_date ?? "",
 
             "billOutstandingDetails" => [
                 "currentBillAmount" => $this->_currentDemandAmount,
@@ -304,11 +312,10 @@ class WaterConsumerDemandReceipt
         ];
         $property = WaterPropertyTypeMstr::find($this->_connectionDtls->property_type_id);
         $this->_GRID['propertyType'] = $property->property_type;
-
     }
 
     public function generateDemandReceipts()
     {
-         $this->setReceipts();
+        $this->setReceipts();
     }
 }
