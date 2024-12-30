@@ -42,6 +42,8 @@ use App\Models\Water\WaterConsumerDisconnection;
 use App\Models\Water\WaterConsumerInitialMeter;
 use App\Models\Water\WaterConsumerMeter;
 use App\Models\Water\WaterConsumerTax;
+use App\Models\Water\WaterDeactivatedDemand;
+use App\Models\Water\WaterDemandDeactivateLog;
 use App\Models\Water\WaterDisconnection;
 use App\Models\Water\WaterMeterReadingDoc;
 use App\Models\Water\WaterPenaltyInstallment;
@@ -3669,6 +3671,87 @@ class WaterConsumer extends Controller
         } catch (Exception $e) {
             // Return error response
             return responseMsgs(false, $e->getMessage(), "", "", "01", "ms", "POST", "");
+        }
+    }
+
+    /**
+     * | Function for Deativate Demands
+     */
+
+    public function diactivateDemands(Request $request)
+    {
+        $validated = Validator::make(
+            $request->all(),
+            [
+                'consumerId' => 'required|',
+                'generationDate' => 'required|date',
+                'document'   => 'nullable|mimes:pdf,jpeg,png,jpg,gif'
+            ]
+        );
+        if ($validated->fails())
+            return validationError($validated);
+        try {
+            // return $request;
+            $userDetails = Auth()->user();
+            // $userDetails ? $userDetails["emp_id"] = $userDetails->id : null;
+            $m_consumer      = new WaterSecondConsumer();
+            $m_meter         = new WaterConsumerMeter();
+            $merterReading   = new WaterConsumerInitialMeter();
+            $m_demand        = new WaterConsumerDemand();
+            $mwaterConsumerTax = new WaterConsumerTax();
+            $m_deactivateDemand = new WaterDemandDeactivateLog();
+            $meterRefImageName      = config::get('waterConstaint.WATER_METER_CODE');
+            $consumerDtl = $m_consumer->find($request->consumerId);
+            $connectinDtl = $consumerDtl->getLastConnectionDtl();
+            $lastMeterreading = $consumerDtl->getLastReading();
+            $lastDemand = $consumerDtl->getLastDemand();
+            $lastPaidDemand = $consumerDtl->getLastPaidDemand();
+            $allUnpaidDemand = $consumerDtl->getAllUnpaidDemand();
+            $removeDemand = collect($allUnpaidDemand)->where("generation_date", "=", $request->generationDate); #->where("generation_date",">=",$request->connectionDate);
+            $demandRquest = new Request(
+                [
+                    "consumerId" => $consumerDtl->id,
+                    "demandUpto"       => $request->connectionDate,
+                    'finalRading'      => $request->oldMeterFinalReading,
+                    "isNotstrickChek"  => true,
+                    "document"         => $request->document,
+                    "auth"             => $request->auth,
+                ]
+            );
+
+            $this->begin();
+            $deactivatedDemandIds = [];
+            $demandFromDates = [];
+            $demandUptoDates = [];
+            $demandAmount = 0;
+            foreach ($removeDemand as $val) {
+                $deactivatedDemandIds[] = $val->id;
+                $demandFromDates[] = $val->demand_from;
+                $demandUptoDates[] = $val->demand_upto;
+                $demandAmount += $val->due_balance_amount;
+                $val->status = 0;
+                $val->save();
+            }
+            // Get the earliest and latest dates for the range
+            $demandFromDate = min($demandFromDates);
+            $demandUptoDate = max($demandUptoDates);
+
+            // save relative document 
+            $demandGenrationRes = $this->saveDocument($request, $meterRefImageName);
+            if (!$demandGenrationRes) {
+                throw new Exception('Internal Server Error');
+            }
+            # maintain logs of deactivate demands 
+            $m_deactivateDemand->saveDeativateDemands($request, $deactivatedDemandIds, $demandFromDate, $demandUptoDate, $demandGenrationRes, $lastMeterreading, $demandAmount);
+            $m_consumer->deactivateReading($request->consumerId, $request->generationDate);
+            $lastMeterreading = $consumerDtl->getLastReading();
+            $upadatePreviosReading = $m_meter->updatePreviouReading($request->consumerId, $lastMeterreading->initial_reading);
+            $mwaterConsumerTax->deactivateTaxes($request->consumerId, $request->generationDate);
+            $this->commit();
+            return responseMsgs(true, "Consumer Demand Deactivate successfully", "");
+        } catch (Exception $e) {
+            $this->rollback();
+            return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "", $e->getCode(), "1.0", "", 'POST', "");
         }
     }
 }

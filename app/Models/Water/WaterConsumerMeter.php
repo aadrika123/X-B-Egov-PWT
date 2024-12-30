@@ -173,4 +173,17 @@ class WaterConsumerMeter extends Model
     {
         return WaterConsumerMeter::where('meter_no', $request->meterNo);
     }
+
+    /**
+     * |update consumer meter
+     */
+    public function updatePreviouReading($consumerId, $meterReading)
+    {
+       return  WaterConsumerMeter::where('consumer_id', $consumerId)
+            ->orderByDesc('id')
+            ->first()
+            ->update([
+                'final_meter_reading' => $meterReading,                                                 // Static
+            ]);
+    }
 }

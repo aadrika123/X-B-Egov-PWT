@@ -53,4 +53,12 @@ class WaterConsumerTax extends Model
         return WaterConsumerTax::whereIn('id', $taxIds)
             ->where('status', 1);
     }
+
+    public function deactivateTaxes($consumerId, $generationDate)
+    {
+        return WaterConsumerTax::where("consumer_id", $consumerId)->where("status", 1)->whereDate("created_at", $generationDate)
+            ->update([
+                'status' => 0
+            ]);
+    }
 }

@@ -925,6 +925,14 @@ class WaterSecondConsumer extends Model
         return $this->hasOne(WaterConsumerInitialMeter::class, "consumer_id", "id")->where("status", 1)->orderBy("id", "DESC")->first();
     }
 
+    public function deactivateReading($consumerId, $generationDate)
+    {
+        return WaterConsumerInitialMeter::where("consumer_id", $consumerId)->where("status", 1)->whereDate("created_at", $generationDate)
+            ->update([
+                'status' => 0
+            ]);
+    }
+
     public function getProperty()
     {
         return $this->hasOne(WaterPropertyTypeMstr::class, "id", "property_type_id")->first();

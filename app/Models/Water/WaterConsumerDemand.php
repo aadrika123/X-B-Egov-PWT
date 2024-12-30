@@ -610,4 +610,15 @@ class WaterConsumerDemand extends Model
                 'connection_type' => $connectionType
             ]);
     }
+    /**
+     * |Update Connection Type 
+     */
+    public function deactivateDemand($generationDate, $consumerId)
+    {
+        return WaterConsumerDemand::where('water_consumer_demands.consumer_id', $consumerId)
+            ->where('water_consumer_demands.generation_date', $generationDate)
+            ->update([
+                'status' => false
+            ]);
+    }
 }
