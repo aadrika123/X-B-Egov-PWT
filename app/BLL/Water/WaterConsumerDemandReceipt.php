@@ -157,7 +157,7 @@ class WaterConsumerDemandReceipt
 
     private function setLastFiveTax()
     {
-        $this->_lastFiveTax      = $this->_mWaterConsumerTax->select("id", "charge_type", "initial_reading", "final_reading")
+        $this->_lastFiveTax      = $this->_mWaterConsumerTax->select("id", "charge_type", "initial_reading", "final_reading","amount")
             ->where("consumer_id", $this->_consumerId)
             ->where("status", 1)
             ->orderBy("id", "DESC")
