@@ -3685,6 +3685,7 @@ class WaterConsumer extends Controller
             [
                 'consumerId' => 'required|',
                 'generationDate' => 'required|date',
+                'remarks' => 'nullable',
                 'document'   => 'nullable|mimes:pdf,jpeg,png,jpg,gif'
             ]
         );
@@ -3752,6 +3753,141 @@ class WaterConsumer extends Controller
         } catch (Exception $e) {
             $this->rollback();
             return responseMsgs(false, [$e->getMessage(), $e->getFile(), $e->getLine()], "", $e->getCode(), "1.0", "", 'POST', "");
+        }
+    }
+    /**
+     * | deativate demand report
+     */
+    public function searchDemandDeactivate(Request $request)
+    {
+        $now = Carbon::now()->format("Y-m-d");
+        $validated = Validator::make(
+            $request->all(),
+            [
+                "fromDate" => "nullable|date|before_or_equal:$now|date_format:Y-m-d",
+                "uptoDate" => "nullable|date|before_or_equal:$now|date_format:Y-m-d",
+                "userId" => "nullable|digits_between:1,9223372036854775807",
+                "wardId" => "nullable|digits_between:1,9223372036854775807",
+                "zoneId"    => "nullable|digits_between:1,9223372036854775807",
+                "page" => "nullable|digits_between:1,9223372036854775807",
+                "perPage" => "nullable|digits_between:1,9223372036854775807",
+            ]
+        );
+        if ($validated->fails())
+            return validationErrorV2($validated);
+        try {
+            $docUrl = Config::get('module-constants.DOC_URL');
+            $fromDate = $uptoDate = $now;
+            $userId = $wardId = $zoneId = null;
+            $key = $request->key;
+            if ($key) {
+                $fromDate = $uptoDate = null;
+            }
+            if ($request->fromDate) {
+                $fromDate = $request->fromDate;
+            }
+            if ($request->uptoDate) {
+                $uptoDate = $request->uptoDate;
+            }
+            if ($request->wardId) {
+                $wardId = $request->wardId;
+            }
+            if ($request->zoneId) {
+                $zoneId = $request->zoneId;
+            }
+            if ($request->userId) {
+                $userId = $request->userId;
+            }
+            $data = WaterDemandDeactivateLog::select(
+                "water_demand_deactivate_logs.id",
+                "water_demand_deactivate_logs.consumer_id",
+                "water_second_consumers.consumer_no",
+                "water_demand_deactivate_logs.remarks",
+                "water_demand_deactivate_logs.demand_from",
+                "water_demand_deactivate_logs.demand_upto",
+                "water_demand_deactivate_logs.meter_reading",
+                "water_demand_deactivate_logs.remarks",
+                "water_demand_deactivate_logs.amount",
+                "water_second_consumers.address",
+                "water_demand_deactivate_logs.logged_at AS created_at",
+                "zone_masters.zone_name",
+                "ulb_ward_masters.ward_name",
+                "owners.applicant_name",
+                "owners.guardian_name",
+                "owners.mobile_no",
+                "users.name AS user_name",
+                "demands.demand_generated_by",
+                DB::raw("TRIM(BOTH '/' FROM concat('$docUrl/', document_path, '/', document)) as doc_path")
+            )
+                ->join('water_second_consumers', 'water_second_consumers.id', 'water_demand_deactivate_logs.consumer_id')
+                ->leftJoin("users", "users.id", "water_demand_deactivate_logs.user_id")
+                ->leftjoin('ulb_ward_masters', 'ulb_ward_masters.id', '=', 'water_second_consumers.ward_mstr_id')
+                ->leftjoin('zone_masters', 'zone_masters.id', 'water_second_consumers.zone_mstr_id')
+                ->orderBy('water_demand_deactivate_logs.id', 'DESC')
+                ->leftJoin(DB::raw("(
+                        SELECT water_consumer_owners.consumer_id,
+                            string_agg(water_consumer_owners.applicant_name,',') as applicant_name,
+                            string_agg(water_consumer_owners.guardian_name,',') as guardian_name,
+                            string_agg(water_consumer_owners.mobile_no,',') as mobile_no
+                        FROM water_consumer_owners
+                        JOIN water_demand_deactivate_logs ON water_demand_deactivate_logs.consumer_id = water_consumer_owners.consumer_id
+                        WHERE CAST(water_demand_deactivate_logs.logged_at AS DATE) BETWEEN '$fromDate' AND '$uptoDate' 
+                        " . ($userId ? " AND water_demand_deactivate_logs.user_id = $userId" : "") . "
+                        " . ($wardId ? " AND water_second_consumers.ward_mstr_id = $wardId" : "") . "
+                        " . ($zoneId ? " AND water_second_consumers.zone_mstr_id = $zoneId" : "") . "
+                        GROUP BY water_consumer_owners.consumer_id
+                    )owners"), "owners.consumer_id", "water_demand_deactivate_logs.consumer_id")
+                ->leftJoin(
+                    DB::raw("
+                            (
+                                SELECT 
+                                    water_consumer_demands.consumer_id,
+                                    users.name AS demand_generated_by
+                                FROM water_consumer_demands
+                                LEFT JOIN users ON users.id = water_consumer_demands.emp_details_id
+                                where water_consumer_demands.status = false
+                                GROUP BY water_consumer_demands.consumer_id, users.name
+                            ) AS demands
+                        "),
+                    "demands.consumer_id",
+                    "=",
+                    "water_demand_deactivate_logs.consumer_id"
+                )
+                ->orderBy("water_demand_deactivate_logs.id", "DESC");
+            if ($fromDate && $uptoDate) {
+                $data->whereBetween(DB::raw("CAST(water_demand_deactivate_logs.logged_at AS DATE)"), [$fromDate, $uptoDate]);
+            }
+            if ($userId) {
+                $data->where("water_demand_deactivate_logs.user_id", $userId);
+            }
+            if ($wardId) {
+                $data->where("water_second_consumers.ward_mstr_id", $wardId);
+            }
+            if ($zoneId) {
+                $data->where("water_second_consumers.zone_mstr_id", $zoneId);
+            }
+            if ($key) {
+                $data->where(function ($where) use ($key) {
+                    $where->orWhere("water_second_consumers.consumer_no", "ILIKE", "%$key%")
+                        ->orWhere("water_second_consumers.old_consumer_no", "ILIKE", "%$key%")
+                        ->orWhere("water_second_consumers.address", "ILIKE", "%$key%")
+                        ->orWhere("owners.applicant_name", "ILIKE", "%$key%")
+                        ->orWhere("owners.guardian_name", "ILIKE", "%$key%")
+                        ->orWhere("owners.mobile_no", "ILIKE", "%$key%");
+                });
+            }
+            $perPage = $request->perPage ? $request->perPage : 10;
+            $paginator = $data->paginate($perPage);
+            $list = [
+                "current_page" => $paginator->currentPage(),
+                "last_page" => $paginator->lastPage(),
+                "data" => $paginator->items(),
+                "total" => $paginator->total(),
+            ];
+            $queryRunTime = (collect(DB::getQueryLog())->sum("time"));
+            return responseMsgs(true, "", $list);
+        } catch (Exception $e) {
+            return responseMsgs(false, $e->getMessage(), "");
         }
     }
 }

@@ -190,6 +190,7 @@ Route::group(['middleware' => ['json.response', 'auth_maker']], function () { //
         Route::post('consumer/list-demand-history', 'listConsumerDemandHistory');
         Route::post('consumer/Validate-meter-number', 'validateMeterNumber');              // To validate Meter Number citizen Side
         Route::post('consumer/deactivate-demand', 'diactivateDemands');              // Demand Deactivate 
+        Route::post('consumer/search-demand-deactivated', 'searchDemandDeactivate');              // Demand Deactivate  Reports
     });
 
 

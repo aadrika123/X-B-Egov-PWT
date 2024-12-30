@@ -24,6 +24,7 @@ class WaterDemandDeactivateLog extends Model
         $mWaterDemandDeactivate->demand_from               = $demandFromDate ?? null;
         $mWaterDemandDeactivate->demand_upto               = $demandUptoDate ?? 0;
         $mWaterDemandDeactivate->amount                    = $demandAmount ?? 0;
+        $mWaterDemandDeactivate->remarks                    = $request->remarks ?? 0;
         $mWaterDemandDeactivate->status_before             = 1;
         $mWaterDemandDeactivate->status_after              = 0;                        // Static for meter connection
         $mWaterDemandDeactivate->document_path             = $documentPath['relaivePath'];                          // For fixed connection
