@@ -463,8 +463,8 @@ class WaterSecondConsumer extends Model
             'water_consumer_meters.meter_no',
             'water_consumer_meters.connection_type',
             'water_consumer_meters.initial_reading',
-            'water_consumer_meters.final_meter_reading',
-            'water_consumer_initial_meters.initial_reading as finalReading',
+            // 'water_consumer_meters.final_meter_reading',
+            'water_consumer_initial_meters.initial_reading as final_meter_reading',
             'ulb_masters.ulb_name',
             'water_second_consumers.property_no',
             'water_property_type_mstrs.property_type',
@@ -500,6 +500,7 @@ class WaterSecondConsumer extends Model
             ->leftjoin('water_consumer_demands', 'water_consumer_demands.consumer_id', '=', 'water_second_consumers.id')
             ->where('water_second_consumers.id', $applicationId)
             ->where('water_second_consumers.status', 1)
+            ->where('water_consumer_initial_meters.status', 1)
             ->orderBy('water_consumer_initial_meters.id', 'DESC')
             ->orderByDesc('water_consumer_meters.id')
             ->groupBy(
