@@ -84,6 +84,8 @@ class TradeApplication extends Controller
     protected $_MODEL_ActiveTradeLicence;
     protected $_MODEL_ActiveTradeOwner;
     protected $_MODEL_AkolaTradeParamItemType;
+    protected $_refapplications;
+    protected $_documentLists;
 
     public function __construct(ITrade $TradeRepository)
     {
@@ -1768,7 +1770,7 @@ class TradeApplication extends Controller
             }
             $wfDocId = $request->id;
             $applicationId = $request->applicationId;
-            $appDetails = $mAdvActiveTradeTempLicense->getSelfAdvertNo($applicationId);
+            $appDetails = $mAdvActiveTradeTempLicense->getApplicationDtls($applicationId);
             $this->begin();
             if ($request->docStatus == "Verified") {
                 $status = 1;
@@ -1787,7 +1789,7 @@ class TradeApplication extends Controller
             $ifFullDocVerifiedV1 = $this->ifFullDocVerified($applicationId);
             $tradR = $this->_CONTROLLER_TRADE;
             if ($ifFullDocVerifiedV1 == 1) {                                     // If The Document Fully Verified Update Verify Status
-                $appDetails->doc_verify_status = 1;
+                $appDetails->is_doc_verified = 1;
                 $appDetails->save();
             }
 
@@ -1807,31 +1809,20 @@ class TradeApplication extends Controller
         // Variable initialization
         $mAdvActiveTradeTempLicense = new ActiveTradeTempLicence();
         $mWfActiveDocument = new WfActiveDocument();
-        $mAdvActiveSelfadvertisement = $mAdvActiveTradeTempLicense->getSelfAdvertNo($applicationId); // Get Application Details
+        $refapplication = $mAdvActiveTradeTempLicense->getApplicationDtls($applicationId); // Get Application Details
 
         $refReq = [
             'activeId' => $applicationId,
-            'workflowId' => $mAdvActiveSelfadvertisement->workflow_id,
+            'workflowId' => $refapplication->workflow_id,
             'moduleId' =>  3
         ];
         $req = new Request($refReq);
         $refDocList = $mWfActiveDocument->getDocsByActiveId($req);
-        $totalApproveDoc = $refDocList->count();
-        $ifAdvDocUnverified = $refDocList->contains('verify_status', 0);
-
-        $totalNoOfDoc = $mWfActiveDocument->totalNoOfDocs($this->_docCode);
-        // $totalNoOfDoc=$mWfActiveDocument->totalNoOfDocs($this->_docCodeRenew);
-        // if($mMarActiveBanquteHall->renew_no==NULL){
-        //     $totalNoOfDoc=$mWfActiveDocument->totalNoOfDocs($this->_docCode);
-        // }
-        if ($totalApproveDoc == $totalNoOfDoc) {
-            if ($ifAdvDocUnverified == 1)
-                return 0;
-            else
-                return 1;
-        } else {
+        $ifDocUnverified = $refDocList->contains('verify_status', 0);
+        if ($ifDocUnverified == true)
             return 0;
-        }
+        else
+            return 1;
     }
     /**
      * | Checks the Document Upload Or Verify Status
@@ -1884,14 +1875,16 @@ class TradeApplication extends Controller
 
     public function getadvTypeDocList($refapps)
     {
-        $moduleId = 14;
+        $moduleId = 3;
+        $this->_refapplications = $refapps;
 
-        $mrefRequiredDoc = RefRequiredDocument::firstWhere('module_id', $moduleId);
-        if ($mrefRequiredDoc && isset($mrefRequiredDoc['requirements'])) {
-            $documentLists = $mrefRequiredDoc['requirements'];
+        $mrefRequiredDoc = RefRequiredDocument::Where('module_id', $moduleId)
+            ->where('code', 'TEMP LICENSE')->first();
+        if ($mrefRequiredDoc && isset($mrefRequiredDoc->requirements)) {
+            $this->_documentLists = $mrefRequiredDoc->requirements;
         } else {
-            $documentLists = [];
+            $this->_documentLists = [];
         }
-        return $documentLists;
+        return $this->_documentLists;
     }
 }

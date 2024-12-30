@@ -50,7 +50,7 @@ class WfActiveDocument extends Model
         ];
     }
 
-    
+
 
     public function metaRequest($req)
     {
@@ -484,7 +484,7 @@ class WfActiveDocument extends Model
             // ->where('current_status', '1')
             ->where('status', 1)
             ->get();
-            // ->count();
+        // ->count();
     }
 
     /**
@@ -537,6 +537,24 @@ class WfActiveDocument extends Model
             ->where('module_id', $moduleId)
             ->where('status', 1)
             ->orderByDesc('id')
+            ->get();
+    }
+
+    /**
+     * | Get Verified Documents
+     */
+    public function getVerifiedDocsByActiveIdv1(array $req)
+    {
+        return WfActiveDocument::where('active_id', $req['activeId'])
+            ->select(
+                'doc_code',
+                'owner_dtl_id',
+                'verify_status'
+            )
+            ->where('workflow_id', $req['workflowId'])
+            ->where('module_id', $req['moduleId'])
+            ->where('verify_status', 1)
+            ->where('status', 1)
             ->get();
     }
 }

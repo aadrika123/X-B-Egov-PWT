@@ -109,6 +109,8 @@ Route::group(['middleware' => ['json.response', "auth_maker"]], function () {
         Route::post('application/special-temp-license', 'specialTempInbox');
 
         Route::post('application/temp-dtl-by-id', 'readLicenceDtlTempLicense');
+
+        Route::post('application/temp-doc-verify-reject', 'documentVerifyTempLicense');
     });
 
     Route::controller(TradeNoticeController::class)->group(function () {
