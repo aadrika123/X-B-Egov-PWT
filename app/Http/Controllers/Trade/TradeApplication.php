@@ -86,6 +86,8 @@ class TradeApplication extends Controller
     protected $_MODEL_AkolaTradeParamItemType;
     protected $_refapplications;
     protected $_documentLists;
+    protected $_MODEL_ActiveTradeTempLicence;
+    protected $_REF_TEMP_TABLE;
 
     public function __construct(ITrade $TradeRepository)
     {
@@ -108,6 +110,7 @@ class TradeApplication extends Controller
         $this->_MODEL_TradeParamCategoryType = new TradeParamCategoryType($this->_DB_NAME);
         $this->_MODEL_TradeParamItemType = new TradeParamItemType($this->_DB_NAME);
         $this->_MODEL_ActiveTradeLicence = new ActiveTradeLicence($this->_DB_NAME);
+        $this->_MODEL_ActiveTradeTempLicence = new ActiveTradeTempLicence($this->_DB_NAME);
         $this->_MODEL_ActiveTradeOwner  = new ActiveTradeOwner($this->_DB_NAME);
         $this->_MODEL_AkolaTradeParamItemType = new AkolaTradeParamItemType($this->_DB_NAME);
 
@@ -117,6 +120,7 @@ class TradeApplication extends Controller
         $this->_MODULE_ID = Config::get('module-constants.TRADE_MODULE_ID');
         $this->_TRADE_CONSTAINT = Config::get("TradeConstant");
         $this->_REF_TABLE = $this->_TRADE_CONSTAINT["TRADE_REF_TABLE"];
+        $this->_REF_TEMP_TABLE = $this->_TRADE_CONSTAINT["TRADE_TEMP_TABLE"];
     }
 
     public function begin()
@@ -1886,5 +1890,182 @@ class TradeApplication extends Controller
             $this->_documentLists = [];
         }
         return $this->_documentLists;
+    }
+
+    # Serial No : 18
+    #please not use custome request
+    public function postNextLevelTemp(Request $request)
+    {
+        $user = Auth()->user();
+        $user_id = $user->id;
+        $ulb_id = $user->ulb_id;
+
+        $refWorkflowId =    $this->_WF_TEMP_MASTER_Id;;
+        $role = $this->_COMMON_FUNCTION->getUserRoll($user_id, $ulb_id, $refWorkflowId);
+
+        $request->validate([
+            "action"        => 'required|in:forward,backward',
+            'applicationId' => 'required|digits_between:1,9223372036854775807',
+            'senderRoleId' => 'nullable|integer',
+            'receiverRoleId' => 'nullable|integer',
+            'comment' => ($role->is_initiator ?? false) ? "nullable" : 'required',
+        ]);
+
+        try {
+            if (!$request->senderRoleId) {
+                $request->merge(["senderRoleId" => $role->role_id ?? 0]);
+            }
+            if (!$request->receiverRoleId) {
+                if ($request->action == 'forward') {
+                    $request->merge(["receiverRoleId" => $role->forward_role_id ?? 0]);
+                }
+                if ($request->action == 'backward') {
+                    $request->merge(["receiverRoleId" => $role->backward_role_id ?? 0]);
+                }
+            }
+
+
+            #if finisher forward then
+            if (($role->is_finisher ?? 0) && $request->action == 'forward') {
+                $request->merge(["status" => 1]);
+                return $this->approveReject($request);
+            }
+
+            // if (!$this->_COMMON_FUNCTION->checkUsersWithtocken("users")) {
+            //     throw new Exception("Citizen Not Allowed");
+            // }
+
+            #Trade Application Update Current Role Updation
+
+            $workflowId = WfWorkflow::where('wf_master_id', $refWorkflowId)
+                ->where('ulb_id', $ulb_id)
+                ->first();
+            if (!$workflowId) {
+                throw new Exception("Workflow Not Available");
+            }
+
+            $licence = $this->_MODEL_ActiveTradeTempLicence->find($request->applicationId);
+            if (!$licence) {
+                throw new Exception("Data Not Found");
+            }
+            // if($licence->is_parked && $request->action=='forward')
+            // {
+            //      $request->request->add(["receiverRoleId"=>$licence->current_role??0]);
+            // }
+            $allRolse     = collect($this->_COMMON_FUNCTION->getAllRoles($user_id, $ulb_id, $refWorkflowId, 0, true));
+
+            $initFinish   = $this->_COMMON_FUNCTION->iniatorFinisher($user_id, $ulb_id, $refWorkflowId);
+            $receiverRole = array_values(objToArray($allRolse->where("id", $request->receiverRoleId)))[0] ?? [];
+            $senderRole   = array_values(objToArray($allRolse->where("id", $request->senderRoleId)))[0] ?? [];
+
+            if ($licence->is_doc_verified == false) {
+                throw new Exception("Document Not Fully Verified");
+            }
+            if ((!$role->is_finisher ?? 0) && $request->action == 'backward' && $receiverRole["id"] == $initFinish['initiator']['id']) {
+                $request->merge(["currentRoleId" => $request->senderRoleId]);
+                return $this->backToCitizen($request);
+            }
+
+            if ($licence->current_role != $role->role_id && (!$licence->is_parked)) {
+                throw new Exception("You Have Not Pending This Application");
+            }
+            if ($licence->is_parked && !$role->is_initiator) {
+                throw new Exception("You Aer Not Authorized For Forword BTC Application");
+            }
+
+            $sms = "Application BackWord To " . $receiverRole["role_name"] ?? "";
+
+            if ($role->serial_no  < $receiverRole["serial_no"] ?? 0) {
+                $sms = "Application Forward To " . $receiverRole["role_name"] ?? "";
+            }
+            $tradC = $this->_CONTROLLER_TRADE;
+            // $documents = $tradC->checkWorckFlowForwardBackord($request);
+
+            // if ((($senderRole["serial_no"] ?? 0) < ($receiverRole["serial_no"] ?? 0)) && !$documents) {
+            //     if (($role->can_upload_document ?? false) && $licence->is_parked) {
+            //         throw new Exception("Rejected documents are not uploaded");
+            //     }
+            //     if (($role->can_upload_document ?? false)) {
+            //         throw new Exception("No all mandatory documents are uploaded");
+            //     }
+            //     if ($role->can_verify_document ?? false) {
+            //         throw new Exception("Not all documents have been verified, or the mandatory document has been rejected.");
+            //     }
+            //     throw new Exception("Not all actions are performed");
+            // }
+            if ($role->can_upload_document) {
+                if (($role->serial_no < $receiverRole["serial_no"] ?? 0)) {
+                    $licence->document_upload_status = true;
+                    $licence->pending_status = 1;
+                    $licence->is_parked = false;
+                }
+                if (($role->serial_no > $receiverRole["serial_no"] ?? 0)) {
+                    $licence->document_upload_status = false;
+                }
+            }
+            if ($role->can_verify_document) {
+                if (($role->serial_no < $receiverRole["serial_no"] ?? 0)) {
+                    $licence->is_doc_verified = true;
+                    $licence->doc_verified_by = $user_id;
+                    $licence->doc_verify_date = Carbon::now()->format("Y-m-d");
+                }
+                if (($role->serial_no > $receiverRole["serial_no"] ?? 0)) {
+                    $licence->is_doc_verified = false;
+                }
+            }
+
+            $this->begin();
+            $licence->max_level_attained = ($licence->max_level_attained < ($receiverRole["serial_no"] ?? 0)) ? ($receiverRole["serial_no"] ?? 0) : $licence->max_level_attained;
+            $licence->current_role = $request->receiverRoleId;
+            if ($licence->is_parked && $request->action == 'forward') {
+                $licence->is_parked = false;
+            }
+            $licence->update();
+
+            $track = new WorkflowTrack();
+            $lastworkflowtrack = $track->select("*")
+                ->where('ref_table_id_value', $request->applicationId)
+                ->where('module_id', $this->_MODULE_ID)
+                ->where('ref_table_dot_id', $this->_REF_TEMP_TABLE)
+                ->whereNotNull('sender_role_id')
+                ->orderBy("track_date", 'DESC')
+                ->first();
+
+
+            $metaReqs['moduleId'] = $this->_MODULE_ID;
+            $metaReqs['workflowId'] = $licence->workflow_id;
+            $metaReqs['refTableDotId'] = $this->_REF_TEMP_TABLE;
+            $metaReqs['refTableIdValue'] = $request->applicationId;
+            $metaReqs['user_id'] = $user_id;
+            $metaReqs['ulb_id'] = $ulb_id;
+            $metaReqs['trackDate'] = $lastworkflowtrack && $lastworkflowtrack->forward_date ? ($lastworkflowtrack->forward_date . " " . $lastworkflowtrack->forward_time) : Carbon::now()->format('Y-m-d H:i:s');
+            $metaReqs['forwardDate'] = Carbon::now()->format('Y-m-d');
+            $metaReqs['forwardTime'] = Carbon::now()->format('H:i:s');
+            $metaReqs['verificationStatus'] = ($request->action == 'forward') ? $this->_TRADE_CONSTAINT["VERIFICATION-STATUS"]["VERIFY"] : $this->_TRADE_CONSTAINT["VERIFICATION-STATUS"]["BACKWARD"];
+            $request->merge($metaReqs);
+            $track->saveTrack($request);
+
+            $this->commit();
+            return responseMsgs(true, $sms, "", "010109", "1.0", "286ms", "POST", $request->deviceId);
+        } catch (Exception $e) {
+            $this->rollBack();
+            return responseMsg(false, $e->getMessage(), "");
+        }
+    }
+
+    public function checkPostCondition($senderRoleId, $wfLevels, $application)
+    {
+        switch ($senderRoleId) {
+            case $wfLevels['BO']:                                                                       // Back Office Condition
+                if ($application->doc_upload_status == false)
+                    throw new Exception("Document Not Fully Uploaded ");
+                break;
+            case $wfLevels['DA']:
+                if ($application->doc_upload_status == false)
+                    throw new Exception("Document Not Fully Uploaded ");                                                                      // DA Condition
+                if ($application->doc_verify_status == false)
+                    throw new Exception("Document Not Fully Verified!");
+                break;
+        }
     }
 }
